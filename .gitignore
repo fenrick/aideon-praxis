@@ -13,7 +13,7 @@ build/
 .cache/
 .turbo/
 .eslintcache
-.tsbuildinfo
+*.tsbuildinfo
 
 # Yarn / npm
 .pnp.*
@@ -55,3 +55,9 @@ out/
 electron-out/
 *.asar
 
+# Local project artifacts to ignore
+issues.csv
+scripts/gh_bootstrap.sh
+packages/app/extra/worker/**
+!packages/app/extra/worker/.gitkeep
+aideon-worker.spec
