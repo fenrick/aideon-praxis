@@ -43,4 +43,3 @@ This document describes how the codebase implements the guardrails in `AGENTS.md
 - [x] Worker sidecar only, RPC via stdio
 - [x] Worker binary embedded in packaged installers
 - [x] Version injection via semantic-release
-
