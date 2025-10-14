@@ -1,0 +1,19 @@
+* text=auto eol=lf
+
+# Normalize line endings for common text formats
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+
+# Treat diagrams-as-code as text
+*.puml text eol=lf
+*.mmd text eol=lf
+*.dsl text eol=lf
+
