@@ -58,6 +58,6 @@ electron-out/
 # Local project artifacts to ignore
 issues.csv
 scripts/gh_bootstrap.sh
-packages/app/extra/worker/**
+packages/app/extra/worker/*
 !packages/app/extra/worker/.gitkeep
 aideon-worker.spec
