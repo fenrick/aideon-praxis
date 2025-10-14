@@ -1,13 +1,16 @@
 // ESLint v9 flat config
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import sonarjs from 'eslint-plugin-sonarjs';
 import importPlugin from 'eslint-plugin-import';
 import promise from 'eslint-plugin-promise';
 import regexp from 'eslint-plugin-regexp';
 import unicorn from 'eslint-plugin-unicorn';
-import security from 'eslint-plugin-security';
+// Node security plugin
+// (Switch from eslint-plugin-security to eslint-plugin-security-node)
 import { defineConfig, globalIgnores } from 'eslint/config';
+import { FlatCompat } from '@eslint/eslintrc';
+
+const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 
 export default defineConfig(
   [
@@ -46,11 +49,13 @@ export default defineConfig(
   },
 
   // sonarjs: plugin registered below with project overrides
-  // Register additional plugins via overrides below
+  // Add legacy shareable configs via compat for plugins without flat exports
+  ...compat.extends('plugin:security-node/recommended'),
+  ...compat.extends('plugin:unicorn/recommended'),
 
   {
     name: 'project-overrides',
-    plugins: { sonarjs, security, import: importPlugin, promise, regexp, unicorn, '@typescript-eslint': tseslint.plugin },
+    plugins: { import: importPlugin, promise, regexp, unicorn, '@typescript-eslint': tseslint.plugin },
     ignores: [
       'node_modules/**',
       'dist/**',
@@ -63,9 +68,15 @@ export default defineConfig(
       '**/out/**',
     ],
     rules: {
-      'sonarjs/cognitive-complexity': ['error', 8],
+      complexity: ['error', 8],
       'unicorn/no-null': 'off',
       'unicorn/prefer-module': 'off',
+      'unicorn/expiring-todo-comments': 'off',
+      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/prefer-query-selector': 'off',
+      'unicorn/catch-error-name': 'off',
+      'unicorn/prefer-top-level-await': 'off',
+      'security-node/detect-crlf': 'off',
       'import/no-unresolved': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
