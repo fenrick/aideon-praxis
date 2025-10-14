@@ -1,0 +1,25 @@
+{
+  "branches": ["main", { "name": "nightly", "channel": "nightly", "prerelease": "nightly" }],
+  "plugins": [
+    ["@semantic-release/commit-analyzer"],
+    ["@semantic-release/release-notes-generator"],
+    ["@semantic-release/changelog", { "changelogFile": "CHANGELOG.md" }],
+    [
+      "@semantic-release/exec",
+      { "prepareCmd": "node scripts/inject-version.mjs ${nextRelease.version}" }
+    ],
+    ["@semantic-release/github"],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "CHANGELOG.md",
+          "package.json",
+          "packages/app/src/version.ts",
+          "packages/worker/src/aideon_worker/_version.py"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}

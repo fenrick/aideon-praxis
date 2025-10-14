@@ -1,0 +1,26 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nightly
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: corepack enable || true
+      - run: yarn install --frozen-lockfile || npm ci
+      - run: yarn lint || npm run lint --if-present
+      - run: yarn typecheck || npm run typecheck --if-present
+      - run: yarn test || npm test --if-present
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
