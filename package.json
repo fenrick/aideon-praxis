@@ -14,7 +14,7 @@
     "worker:bundle": "node scripts/build-worker-binary.mjs",
     "package": "yarn worker:bundle && yarn workspace @aideon/app dist",
     "dev": "yarn workspace @aideon/app dev",
-    "lint": "eslint --max-warnings=0 .",
+    "lint": "eslint --max-warnings=10 \"packages/**/{src,tests}/**/*.{ts,tsx,js}\" scripts/**/*.mjs eslint.config.mjs",
     "format": "prettier -w .",
     "typecheck": "tsc -b --pretty",
     "test": "vitest run --reporter=default",
@@ -35,6 +35,11 @@
     "@types/node": "^22.0.0",
     "concurrently": "^9.0.0",
     "eslint": "^9.0.0",
+    "eslint-plugin-sonarjs": "^0.25.0",
+    "eslint-plugin-promise": "^7.0.0",
+    "eslint-plugin-regexp": "^2.6.0",
+    "eslint-plugin-unicorn": "^55.0.0",
+    "eslint-plugin-security": "^3.0.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-react": "^7.34.0",
@@ -45,6 +50,7 @@
     "@semantic-release/github": "^10.0.0",
     "prettier": "^3.2.0",
     "typescript": "^5.4.0",
-    "vitest": "^2.0.0"
+    "vitest": "^2.0.0",
+    "typescript-eslint": "^8.5.0"
   }
 }

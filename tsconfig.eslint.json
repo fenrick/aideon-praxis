@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "scripts/**/*.mjs",
+    "eslint.config.mjs"
+  ],
+  "exclude": [
+    "**/dist/**",
+    "**/build/**",
+    "**/out/**",
+    "**/.yarn/**",
+    "**/node_modules/**",
+    "packages/**/tsconfig.tsbuildinfo"
+  ]
+}
+
