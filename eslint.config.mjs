@@ -1,103 +1,83 @@
-// ESLint v9 flat config
+// ESLint v9 flat config (pure flat presets, no compat, TS type-checked)
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import importPlugin from 'eslint-plugin-import';
 import promise from 'eslint-plugin-promise';
 import regexp from 'eslint-plugin-regexp';
 import unicorn from 'eslint-plugin-unicorn';
-// Node security plugin
-// (Switch from eslint-plugin-security to eslint-plugin-security-node)
+import sonarjs from 'eslint-plugin-sonarjs';
+import security from 'eslint-plugin-security';
 import { defineConfig, globalIgnores } from 'eslint/config';
-import { FlatCompat } from '@eslint/eslintrc';
-
-const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 
 export default defineConfig(
+  // Global ignores first so they short‑circuit for all subsequent configs
   [
     globalIgnores([
       'node_modules/**',
       'dist/**',
       'build/**',
       'coverage/**',
-      'src/stories/**',
-      'tests/**/fixtures/**',
-      '**/*.min.js',
       '**/.yarn/**',
       '**/out/**',
     ]),
   ],
-
+  // Base JS rules roughly equivalent to the “core” checks Sonar also relies on
   js.configs.recommended,
 
-  // Base language options for all files (JS)
+  // TypeScript: parser + recommended rules (scoped to TS files only)
+  ...tseslint.configs.strictTypeChecked.map((c) => ({ ...c, files: ['**/*.{ts,tsx}'] })),
+  ...tseslint.configs.stylisticTypeChecked.map((c) => ({ ...c, files: ['**/*.{ts,tsx}'] })),
+  ...tseslint.configs.recommendedTypeChecked.map((c) => ({ ...c, files: ['**/*.{ts,tsx}'] })),
+
+  // Base language options for JS/MJS
   {
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: {
-        __dirname: 'readonly',
-        process: 'readonly',
-        console: 'readonly',
-        Buffer: 'readonly',
-        setTimeout: 'readonly',
-        module: 'readonly',
-        require: 'readonly',
-        window: 'readonly',
-        document: 'readonly',
-      },
     },
   },
 
-  // sonarjs: plugin registered below with project overrides
-  // Add legacy shareable configs via compat for plugins without flat exports
-  ...compat.extends('plugin:security-node/recommended'),
-  ...compat.extends('plugin:unicorn/recommended'),
+  // High-value community rule packs that cover areas Sonar also cares about
+  importPlugin.flatConfigs.recommended,
+  importPlugin.flatConfigs.typescript,
+  promise.configs['flat/recommended'],
+  regexp.configs['flat/recommended'],
+  unicorn.configs.recommended,
+  sonarjs.configs.recommended,
 
+  // Security hygiene rules (note: NOT equivalent to Sonar’s taint analysis)
+  security.configs.recommended,
+
+  // Project-specific tweaks
   {
     name: 'project-overrides',
-    plugins: { import: importPlugin, promise, regexp, unicorn, '@typescript-eslint': tseslint.plugin },
-    ignores: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      'src/stories/**',
-      'tests/**/fixtures/**',
-      '**/*.min.js',
-      '**/.yarn/**',
-      '**/out/**',
-    ],
     rules: {
-      complexity: ['error', 8],
-      'unicorn/no-null': 'off',
-      'unicorn/prefer-module': 'off',
-      'unicorn/expiring-todo-comments': 'off',
-      'unicorn/prevent-abbreviations': 'off',
-      'unicorn/prefer-query-selector': 'off',
-      'unicorn/catch-error-name': 'off',
-      'unicorn/prefer-top-level-await': 'off',
-      'security-node/detect-crlf': 'off',
-      'import/no-unresolved': 'off',
+      // Sonar-like maintainability signal
+      'sonarjs/cognitive-complexity': ['error', 8],
+
+      // Keep noise down where packs overlap
+      'unicorn/no-null': 'off', // often too strict
+      'unicorn/prefer-module': 'off', // off if you still use CommonJS
+      'import/no-unresolved': 'off', // leave to TS when using path aliases
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
   },
 
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
         projectService: true,
-        project: './tsconfig.eslint.json',
+        project: ['./tsconfig.eslint.json'],
         tsconfigRootDir: import.meta.dirname,
-        allowDefaultProject: ['packages/**/src/stories/**/*'],
+        allowDefaultProject: ['src/stories/**/*'],
       },
     },
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
-      'no-unused-vars': 'off',
     },
   },
 );
