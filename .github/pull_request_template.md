@@ -13,4 +13,3 @@ Describe the change. Link to issues/ADRs. Use Conventional Commits in title.
 ## Screenshots / Logs
 
 If applicable.
-

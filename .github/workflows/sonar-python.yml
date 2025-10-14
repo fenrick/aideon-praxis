@@ -2,9 +2,9 @@ name: SonarCloud (Python)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:
@@ -30,4 +30,3 @@ jobs:
             -Dsonar.sources=src
             -Dsonar.tests=tests
             -Dsonar.python.version=3.11
-

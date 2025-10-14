@@ -2,9 +2,9 @@ name: SonarCloud (Node/TS)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:
@@ -30,4 +30,3 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORG }}
             -Dsonar.sources=.
             -Dsonar.exclusions=**/dist/**,**/build/**,**/out/**,**/.yarn/**,**/node_modules/**,packages/worker/**
-
