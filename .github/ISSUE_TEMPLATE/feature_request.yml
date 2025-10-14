@@ -1,0 +1,17 @@
+name: Feature request
+description: Suggest an idea
+labels: ["type/feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale / trade-offs
+
