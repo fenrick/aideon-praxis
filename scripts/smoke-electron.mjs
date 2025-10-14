@@ -12,9 +12,9 @@ const child = spawn(electronBin, ['.'], {
   cwd: appDir,
   env: {
     ...process.env,
-    ELECTRON_ENABLE_LOGGING: '1'
+    ELECTRON_ENABLE_LOGGING: '1',
   },
-  stdio: ['ignore', 'pipe', 'pipe']
+  stdio: ['ignore', 'pipe', 'pipe'],
 });
 
 child.stdout.on('data', (d) => process.stdout.write(String(d)));
