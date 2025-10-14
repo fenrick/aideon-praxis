@@ -1,0 +1,31 @@
+appId: com.aideon.praxis
+productName: Aideon Praxis
+asar: true
+directories:
+  output: dist/pack
+files:
+  - 'package.json'
+  - from: dist
+    to: .
+    filter:
+      - '**/*'
+extraResources:
+  - from: extra/worker
+    to: worker
+extraMetadata:
+  main: main.js
+mac:
+  target:
+    - dmg
+  category: public.app-category.developer-tools
+  artifactName: '${productName}-${version}-${arch}.${ext}'
+win:
+  target:
+    - nsis
+  artifactName: '${productName}-${version}-${arch}.${ext}'
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Development
+  artifactName: '${productName}-${version}-${arch}.${ext}'
