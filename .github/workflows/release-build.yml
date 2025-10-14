@@ -2,7 +2,7 @@ name: Release Build (Dry-Run)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:

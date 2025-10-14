@@ -1,6 +1,6 @@
 name: Feature request
 description: Suggest an idea
-labels: ["type/feature"]
+labels: ['type/feature']
 body:
   - type: textarea
     id: problem
@@ -14,4 +14,3 @@ body:
     id: rationale
     attributes:
       label: Rationale / trade-offs
-
