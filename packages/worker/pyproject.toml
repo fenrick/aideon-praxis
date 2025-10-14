@@ -19,7 +19,22 @@ line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP"]
+select = [
+  # Base
+  "E", "F", "I",
+  # Bugbear and upgrades
+  "B", "UP",
+  # Comprehensions & simplify
+  "C4", "SIM",
+  # Security (Bandit-like)
+  "S",
+  # Pylint conventions subset
+  "PL",
+  # Naming
+  "N",
+  # Commented code
+  "ERA",
+]
 ignore = []
 
 [tool.pytest.ini_options]
