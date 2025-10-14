@@ -11,7 +11,7 @@ export default defineConfig([
     clean: false,
     dts: false,
     external: ['electron'],
-    outExtension: () => ({ js: '.js' })
+    outExtension: () => ({ js: '.js' }),
   },
   {
     entry: { preload: 'src/preload.ts' },
@@ -23,6 +23,6 @@ export default defineConfig([
     clean: false,
     dts: false,
     external: ['electron'],
-    outExtension: () => ({ js: '.js' })
+    outExtension: () => ({ js: '.js' }),
   },
 ]);
