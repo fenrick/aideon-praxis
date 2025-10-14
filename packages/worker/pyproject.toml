@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aideon-worker"
+version = "0.1.0"
+description = "Aideon Praxis Python worker sidecar (RPC only)"
+requires-python = ">=3.11"
+dependencies = []
+license = { file = "LICENSE" }
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = []
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
