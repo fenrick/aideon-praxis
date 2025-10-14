@@ -1,0 +1,69 @@
+name: Release Build (Dry-Run)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  app:
+    name: App Package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: corepack enable || true
+      - run: yarn install --frozen-lockfile || npm ci
+      - name: Build worker binary (PyInstaller)
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pyinstaller -F -n aideon-worker -p packages/worker/src packages/worker/src/aideon_worker/cli.py
+          mkdir -p packages/app/extra/worker
+          if [[ "$RUNNER_OS" == "Windows" ]]; then cp dist/aideon-worker.exe packages/app/extra/worker/; else cp dist/aideon-worker packages/app/extra/worker/; fi
+      - run: yarn workspace @aideon/app build
+      - name: Package (no publish)
+        run: npx electron-builder --projectDir packages/app -c packages/app/electron-builder.yml --publish=never
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ runner.os }}
+          path: packages/app/dist/pack/**
+
+  worker:
+    name: Worker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build ruff black pytest
+      - name: Lint
+        run: ruff check packages/worker
+      - name: Format check
+        run: black --check packages/worker
+      - name: Tests
+        run: pytest -q packages/worker
+      - name: Build distributions
+        working-directory: packages/worker
+        run: python -m build
+      - name: Upload dists
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-dists
+          path: packages/worker/dist/*
