@@ -21,13 +21,7 @@ function run(cmd, args, opts = {}) {
 run('python3', ['-m', 'pip', 'install', '--user', '--quiet', 'pyinstaller']);
 
 // Build single-file worker binary
-run('python3', [
-  '-m', 'PyInstaller',
-  '-F',
-  '-n', 'aideon-worker',
-  '-p', pyPath,
-  src,
-]);
+run('python3', ['-m', 'PyInstaller', '-F', '-n', 'aideon-worker', '-p', pyPath, src]);
 
 // Copy into app extra resources
 const appExtra = path.join(repo, 'packages/app/extra/worker');
@@ -40,4 +34,3 @@ if (!fs.existsSync(built)) {
 }
 fs.copyFileSync(built, path.join(appExtra, artifact));
 console.log('Worker binary embedded at', path.join(appExtra, artifact));
-
