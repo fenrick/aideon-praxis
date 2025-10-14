@@ -4,20 +4,23 @@
  */
 export interface GraphAdapter {
   /** Fetches the graph state as-of a timestamp and optional scenario. */
-  stateAt(params: { asOf: string; scenario?: string; confidence?: number }): Promise<unknown>;
+  stateAt(parameters: { asOf: string; scenario?: string; confidence?: number }): Promise<unknown>;
   /** Computes a diff between two plateaus or dates. */
-  diff(params: { from: string; to: string; scope?: unknown }): Promise<unknown>;
+  diff(parameters: { from: string; to: string; scope?: unknown }): Promise<unknown>;
 }
 
 /** StorageAdapter abstracts snapshot persistence without leaking backend specifics. */
 export interface StorageAdapter {
-  getSnapshot(ref: string): Promise<ArrayBuffer>;
-  putSnapshot(ref: string, bytes: ArrayBuffer): Promise<void>;
+  getSnapshot(reference: string): Promise<ArrayBuffer>;
+  putSnapshot(reference: string, bytesData: ArrayBuffer): Promise<void>;
 }
 
 /** WorkerClient runs analytics jobs in the Python sidecar via RPC. */
 export interface WorkerClient {
-  runJob<TArgs extends object, TResult>(type: string, args: TArgs): Promise<TResult>;
+  runJob<TArguments extends object, TResult>(
+    jobType: string,
+    jobArguments: TArguments,
+  ): Promise<TResult>;
 }
 
-export type {}; // placeholder for concrete job types
+// placeholder for concrete job types
