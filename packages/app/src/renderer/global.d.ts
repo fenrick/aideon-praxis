@@ -3,5 +3,3 @@ declare global {
     aideon: { version: string };
   }
 }
-export {};
-

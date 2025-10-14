@@ -26,31 +26,33 @@ const createWindow = async () => {
   try {
     const { spawn } = await import('node:child_process');
     let workerCmd: string;
-    let workerArgs: string[] = [];
-    let workerOpts: any = { stdio: ['pipe', 'pipe', 'inherit'] };
+    let workerArguments: string[] = [];
+    const workerOptions: { stdio: ['pipe', 'pipe', 'inherit']; env?: NodeJS.ProcessEnv } = {
+      stdio: ['pipe', 'pipe', 'inherit'],
+    };
 
     if (app.isPackaged) {
       const binName = process.platform === 'win32' ? 'aideon-worker.exe' : 'aideon-worker';
       const workerPath = path.join(process.resourcesPath, 'worker', binName);
       workerCmd = workerPath;
-      workerArgs = [];
+      workerArguments = [];
     } else {
       workerCmd = 'python3';
-      workerArgs = ['-m', 'aideon_worker.cli'];
-      workerOpts.env = {
+      workerArguments = ['-m', 'aideon_worker.cli'];
+      workerOptions.env = {
         ...process.env,
         PYTHONPATH: path.join(process.cwd(), '..', 'worker', 'src'),
       };
     }
 
-    const worker = spawn(workerCmd, workerArgs, workerOpts);
+    const worker = spawn(workerCmd, workerArguments, workerOptions);
     worker.stdout?.on('data', (buf: Buffer) => {
       const line = buf.toString().trim();
       if (line) console.log('[worker]', line);
     });
     worker.stdin?.write('ping\n');
-  } catch (err) {
-    console.error('Failed to start worker:', err);
+  } catch (error) {
+    console.error('Failed to start worker:', error);
   }
 };
 
