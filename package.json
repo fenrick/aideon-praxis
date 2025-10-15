@@ -18,6 +18,7 @@
     "format": "prettier -w .",
     "typecheck": "tsc -b --pretty",
     "test": "vitest run --reporter=default",
+    "test:coverage": "vitest run --coverage",
     "release": "semantic-release",
     "commitlint": "commitlint --from=origin/main --to=HEAD",
     "prepare": "husky install",
@@ -30,10 +31,16 @@
     "py:pyright": "pyright -p packages/worker/pyrightconfig.json",
     "py:deadcode": "python3 -m vulture packages/worker/src --min-confidence 80",
     "py:test": "python3 -m pytest -q packages/worker",
-    "ci": "yarn lint && yarn typecheck && yarn test && yarn py:lint && yarn py:typecheck && yarn py:pyright && yarn py:security && yarn py:deadcode && yarn py:test"
+    "py:test:cov": "python3 -m pytest -q packages/worker --cov=packages/worker/src --cov-report=xml:packages/worker/coverage.xml --cov-report=term",
+    "ci": "yarn lint && yarn typecheck && yarn test:coverage && yarn py:lint && yarn py:typecheck && yarn py:pyright && yarn py:security && yarn py:deadcode && yarn py:test:cov"
   },
   "vitest": {
-    "environment": "jsdom"
+    "environment": "jsdom",
+    "coverage": {
+      "provider": "v8",
+      "reports": ["text", "lcov"],
+      "reportOnFailure": true
+    }
   },
   "devDependencies": {
     "husky": "^9.1.6",

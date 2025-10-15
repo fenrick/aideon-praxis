@@ -43,6 +43,7 @@ jobs:
       - run: yarn lint
       - run: yarn typecheck
       - run: yarn test
+      - run: yarn test:coverage
 
       # Python toolchain and checks
       - uses: actions/setup-python@v6
@@ -51,7 +52,7 @@ jobs:
       - name: Install Python tools
         run: |
           python -m pip install --upgrade pip
-          pip install ruff black pytest mypy bandit pyright vulture
+          pip install ruff black pytest pytest-cov mypy bandit pyright vulture
       - name: Python Lint (ruff)
         run: yarn py:lint
       - name: Python Typecheck (mypy + pyright)
@@ -62,8 +63,8 @@ jobs:
         run: yarn py:security
       - name: Python Dead code (vulture)
         run: yarn py:deadcode
-      - name: Python Tests (pytest)
-        run: yarn py:test
+      - name: Python Tests + Coverage (pytest-cov)
+        run: yarn py:test:cov
 
       # SonarCloud analysis (single run for monorepo)
       - name: Setup Java for SonarScanner
