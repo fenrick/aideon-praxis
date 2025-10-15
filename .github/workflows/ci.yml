@@ -131,29 +131,6 @@ jobs:
         with:
           name: coverage
           path: .
-      - name: Probe coverage files (non-blocking)
-        if: ${{ steps.gate.outputs.enabled == 'true' }}
-        continue-on-error: true
-        run: |
-          ls -lah || true
-          # Normalize paths in case the artifact flattened them
-          if [ ! -f coverage/lcov.info ]; then
-            # try common locations or search up to depth 4
-            if [ -f lcov.info ]; then
-              mkdir -p coverage && mv lcov.info coverage/lcov.info || true
-            else
-              FOUND=$(find . -maxdepth 4 -type f -name lcov.info | head -n1)
-              if [ -n "$FOUND" ]; then
-                mkdir -p coverage && cp "$FOUND" coverage/lcov.info || true
-                echo "Found lcov at $FOUND"
-              fi
-            fi
-          fi
-          if [ ! -f packages/worker/coverage.xml ] && [ -f coverage.xml ]; then
-            mkdir -p packages/worker && mv coverage.xml packages/worker/coverage.xml || true
-          fi
-          ls -lah coverage || true
-          ls -lah packages/worker || true
       - name: SonarQube Scan
         if: ${{ steps.gate.outputs.enabled == 'true' }}
         uses: SonarSource/sonarqube-scan-action@v6
