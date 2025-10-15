@@ -1,4 +1,4 @@
-interface AideonApi {
+export interface AideonApi {
   version: string;
   stateAt: (parameters: { asOf: string; scenario?: string; confidence?: number }) => Promise<{
     asOf: string;
@@ -15,5 +15,3 @@ declare global {
   }
   var aideon: AideonApi;
 }
-
-export {};
