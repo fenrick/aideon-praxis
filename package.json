@@ -35,7 +35,6 @@
     "environment": "jsdom"
   },
   "devDependencies": {
-    "pyright": "^1.1.386",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/eslintrc": "^3.1.0",
@@ -59,6 +58,7 @@
     "eslint-plugin-unicorn": "^61.0.2",
     "jsdom": "^27.0.0",
     "prettier": "^3.2.0",
+    "pyright": "^1.1.406",
     "semantic-release": "^24.0.0",
     "typescript": "^5.4.0",
     "typescript-eslint": "^8.5.0",
