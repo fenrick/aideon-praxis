@@ -18,7 +18,13 @@ describe('App component', () => {
   it('renders success path and shows worker JSON', async () => {
     window.aideon = {
       version: 'test',
-      stateAt: async () => ({ asOf: '2025-01-01', scenario: null, confidence: null, nodes: 1, edges: 2 }),
+      stateAt: async () => ({
+        asOf: '2025-01-01',
+        scenario: null,
+        confidence: null,
+        nodes: 1,
+        edges: 2,
+      }),
     };
     render(<App />);
     await waitFor(() => screen.getByText('Worker Connectivity'));

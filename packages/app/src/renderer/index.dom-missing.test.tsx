@@ -6,4 +6,3 @@ describe('renderer bootstrap without root', () => {
     await expect(import('./index')).rejects.toBeTruthy();
   });
 });
-
