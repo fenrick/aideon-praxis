@@ -18,7 +18,7 @@
     "format": "prettier -w .",
     "typecheck": "tsc -b --pretty",
     "test": "vitest run --reporter=default",
-    "test:coverage": "vitest run --coverage --coverage.provider=istanbul --coverage.reporter=lcov --coverage.reporter=html --coverage.reporter=text",
+    "test:coverage": "vitest run --coverage --coverage.provider=istanbul --coverage.reporter=lcov --coverage.reporter=html --coverage.reporter=text --coverage.include=packages/app/src/** --coverage.exclude=**/*.d.ts --coverage.exclude=**/*.test.* --coverage.exclude=scripts/** --coverage.exclude=packages/**/dist/** --coverage.exclude=packages/app/src/version.ts --coverage.exclude=packages/adapters/**",
     "release": "semantic-release",
     "commitlint": "commitlint --from=origin/main --to=HEAD",
     "prepare": "husky install",
