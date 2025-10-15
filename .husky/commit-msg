@@ -6,4 +6,4 @@ case "$GIT_AUTHOR_NAME" in
   dependabot*) exit 0 ;;
 esac
 
-npx --no commitlint --edit "$1"
+npx --yes commitlint --edit "$1"
