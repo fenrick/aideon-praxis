@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["packages/**/*.ts", "packages/**/*.tsx", "scripts/**/*.mjs", "eslint.config.mjs"],
+  "include": ["packages/**/*.ts", "packages/**/*.tsx"],
   "exclude": [
     "**/dist/**",
     "**/build/**",
