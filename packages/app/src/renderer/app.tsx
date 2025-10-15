@@ -32,7 +32,11 @@ const App: React.FC = () => {
     <div style={{ fontFamily: 'system-ui', padding: 16 }}>
       <h1>Aideon Praxis</h1>
       <p>Renderer booted. Bridge version: {version}</p>
-      <p>Follow AGENTS.md: adapters only, no backend specifics here.</p>
+      {import.meta.env.DEV && (
+        <p style={{ opacity: 0.75 }}>
+          Follow AGENTS.md: adapters only, no backend specifics here.
+        </p>
+      )}
       <hr />
       <h2>Worker Connectivity</h2>
       {error && <p style={{ color: 'crimson' }}>Error: {error}</p>}
