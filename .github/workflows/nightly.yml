@@ -17,10 +17,10 @@ jobs:
         with:
           node-version: '20'
       - run: corepack enable || true
-      - run: yarn install --frozen-lockfile || npm ci
-      - run: yarn lint || npm run lint --if-present
-      - run: yarn typecheck || npm run typecheck --if-present
-      - run: yarn test || npm test --if-present
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn typecheck
+      - run: yarn test
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -27,7 +27,7 @@ jobs:
           python-version: '3.11'
       - run: corepack enable || true
       - name: Install dependencies
-        run: yarn install --frozen-lockfile || npm ci
+        run: yarn install --frozen-lockfile
       - name: Build worker binary (PyInstaller)
         run: |
           python -m pip install --upgrade pip
