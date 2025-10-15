@@ -38,7 +38,10 @@
     "environment": "jsdom",
     "coverage": {
       "provider": "v8",
-      "reports": ["text", "lcov"],
+      "reports": [
+        "text",
+        "lcov"
+      ],
       "reportOnFailure": true
     }
   },
