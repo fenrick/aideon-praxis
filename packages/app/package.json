@@ -29,7 +29,7 @@
     "tsup": "^8.0.0",
     "electron-builder": "^24.13.3",
     "concurrently": "^9.0.0",
-    "wait-on": "^7.2.0",
+    "wait-on": "^9.0.1",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "typescript": "^5.4.0"
