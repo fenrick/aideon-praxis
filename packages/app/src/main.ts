@@ -40,6 +40,12 @@ const createWindow = async () => {
   // Spawn worker in background (pipes only, no TCP) and wire a minimal RPC
   try {
     const { spawn } = await import('node:child_process');
+    // Promise that resolves when the worker prints READY
+    let resolveReady: (() => void) | null = null;
+    const ready = new Promise<void>((r) => {
+      resolveReady = r;
+    });
+    let send: ((line: string) => Promise<string>) | null = null;
     let workerCmd: string;
     let workerArguments: string[] = [];
     const workerOptions: { stdio: ['pipe', 'pipe', 'inherit']; env?: NodeJS.ProcessEnv } = {
@@ -63,35 +69,13 @@ const createWindow = async () => {
     const child = spawn(workerCmd, workerArguments, workerOptions);
     const rl = readline.createInterface({ input: child.stdout });
 
-    // Wait for READY banner
-    await new Promise<void>((resolve) => {
-      const onLine = (line: string) => {
-        if (line.trim() === 'READY') {
-          rl.off('line', onLine);
-          resolve();
-        }
-      };
-      rl.on('line', onLine);
-    });
-
-    // Simple serialized request helper: writes a line and resolves next line
-    const send = async (line: string): Promise<string> => {
-      return new Promise<string>((resolve) => {
-        const onLine = (resp: string) => {
-          rl.off('line', onLine);
-          resolve(resp);
-        };
-        rl.on('line', onLine);
-        child.stdin.write(`${line}\n`);
-      });
-    };
-
-    // IPC handler for state_at
+    // IPC handler for state_at (register early; it will await readiness)
     ipcMain.handle(
       'worker:state_at',
       async (_event, arguments_: { asOf: string; scenario?: string; confidence?: number }) => {
+        await ready;
         const payload = JSON.stringify(arguments_);
-        const raw = await send(`state_at ${payload}`);
+        const raw = await (send as (l: string) => Promise<string>)(`state_at ${payload}`);
         return JSON.parse(raw) as {
           asOf: string;
           scenario: string | null;
@@ -101,6 +85,25 @@ const createWindow = async () => {
         };
       },
     );
+
+    // Wait for READY banner and set up serializer
+    rl.on('line', (line: string) => {
+      if (line.trim() === 'READY') {
+        resolveReady?.();
+      }
+    });
+
+    // Simple serialized request helper: writes a line and resolves next line
+    send = async (line: string): Promise<string> => {
+      return new Promise<string>((resolve) => {
+        const onLine = (resp: string) => {
+          rl.off('line', onLine);
+          resolve(resp);
+        };
+        rl.on('line', onLine);
+        child.stdin.write(`${line}\n`);
+      });
+    };
   } catch (error) {
     console.error('Failed to start worker:', error);
   }
