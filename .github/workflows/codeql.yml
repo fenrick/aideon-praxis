@@ -28,7 +28,7 @@ jobs:
         if: matrix.language == 'javascript-typescript'
         with:
           node-version: '20'
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: matrix.language == 'python'
         with:
           python-version: '3.11'
