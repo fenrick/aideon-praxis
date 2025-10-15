@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
+import fs from 'node:fs';
 import readline from 'node:readline';
 
 // Security: disable hardware acceleration by default for baseline.
@@ -19,7 +20,20 @@ const createWindow = async () => {
     },
   });
 
-  await win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  const rendererIndex = path.join(__dirname, 'renderer', 'index.html');
+  // In dev, renderer assets may not be ready when the main process starts.
+  if (!app.isPackaged) {
+    for (let i = 0; i < 40; i += 1) {
+      if (fs.existsSync(rendererIndex)) break;
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
+  try {
+    await win.loadFile(rendererIndex);
+  } catch (error) {
+    console.error('Failed to load renderer HTML:', error);
+  }
 
   // Security: remove menu in production-ish skeleton
   win.removeMenu();
