@@ -24,8 +24,10 @@
     "format:py": "python3 -m black packages/worker",
     "format:py:check": "python3 -m black --check packages/worker",
     "py:lint": "python3 -m ruff check packages/worker",
+    "py:typecheck": "python3 -m mypy packages/worker/src",
+    "py:security": "python3 -m bandit -q -r packages/worker/src -x packages/worker/tests",
     "py:test": "python3 -m pytest -q packages/worker",
-    "ci": "yarn lint && yarn typecheck && yarn test && yarn py:lint && yarn py:test"
+    "ci": "yarn lint && yarn typecheck && yarn test && yarn py:lint && yarn py:typecheck && yarn py:security && yarn py:test"
   },
   "vitest": {
     "environment": "jsdom"
