@@ -109,6 +109,12 @@ jobs:
         with:
           name: coverage
           path: .
+      - name: Verify coverage files
+        run: |
+          ls -lah || true
+          ls -lah coverage || true
+          test -f coverage/lcov.info
+          test -f packages/worker/coverage.xml
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
