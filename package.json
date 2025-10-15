@@ -20,6 +20,7 @@
     "test": "vitest run --reporter=default",
     "release": "semantic-release",
     "commitlint": "commitlint --from=origin/main --to=HEAD",
+    "prepare": "husky install",
     "format:check": "prettier -c .",
     "format:py": "python3 -m black packages/worker",
     "format:py:check": "python3 -m black --check packages/worker",
@@ -35,6 +36,7 @@
     "environment": "jsdom"
   },
   "devDependencies": {
+    "husky": "^9.1.6",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/eslintrc": "^3.1.0",

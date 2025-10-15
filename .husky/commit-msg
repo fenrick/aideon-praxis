@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run commitlint on the commit message
+# Allow Dependabot to bypass locally as well (optional)
+case "$GIT_AUTHOR_NAME" in
+  dependabot*)
+    exit 0
+    ;;
+esac
+
+npx --no -- commitlint --edit "$1"
+
