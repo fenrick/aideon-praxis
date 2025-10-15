@@ -27,7 +27,6 @@ vi.mock('electron', () => ({
   },
 }));
 
-// eslint-disable-next-line import/first
 import './preload';
 
 describe('preload bridge', () => {
