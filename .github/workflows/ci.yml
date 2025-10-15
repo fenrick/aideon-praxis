@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: '20'
@@ -22,6 +24,12 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         uses: wagoid/commitlint-github-action@v6
         continue-on-error: ${{ github.actor == 'dependabot[bot]' || startsWith(github.head_ref || '', 'dependabot/') }}
+        with:
+          configFile: commitlint.config.cjs
+      - name: Commitlint commits on push (non-blocking for Dependabot)
+        if: ${{ github.event_name == 'push' }}
+        uses: wagoid/commitlint-github-action@v6
+        continue-on-error: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name || '', 'dependabot/') }}
         with:
           configFile: commitlint.config.cjs
       - name: Prettier check
@@ -35,6 +43,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
@@ -55,10 +65,10 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
       - run: corepack enable || true
