@@ -8,8 +8,18 @@ import { version } from './version';
  */
 
 // Minimal, typed-safe preload bridge. Extend via adapters/host APIs only.
-interface StateAtArguments { asOf: string; scenario?: string; confidence?: number }
-interface StateAtResult { asOf: string; scenario: string | null; confidence: number | null; nodes: number; edges: number }
+interface StateAtArguments {
+  asOf: string;
+  scenario?: string;
+  confidence?: number;
+}
+interface StateAtResult {
+  asOf: string;
+  scenario: string | null;
+  confidence: number | null;
+  nodes: number;
+  edges: number;
+}
 
 contextBridge.exposeInMainWorld('aideon', {
   version,

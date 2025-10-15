@@ -11,13 +11,14 @@ describe('Renderer App', () => {
     // Global bridge stub for tests
     globalThis.aideon = {
       version: 'test',
-      stateAt: () => Promise.resolve({
-        asOf: '2025-01-01',
-        scenario: null,
-        confidence: null,
-        nodes: 0,
-        edges: 0,
-      }),
+      stateAt: () =>
+        Promise.resolve({
+          asOf: '2025-01-01',
+          scenario: null,
+          confidence: null,
+          nodes: 0,
+          edges: 0,
+        }),
     };
     const div = document.createElement('div');
     div.id = 'root';
