@@ -84,6 +84,7 @@ jobs:
           retention-days: 7
           path: |
             coverage/**
+            **/lcov.info
             packages/worker/coverage.xml
 
   release:
@@ -136,8 +137,17 @@ jobs:
         run: |
           ls -lah || true
           # Normalize paths in case the artifact flattened them
-          if [ ! -f coverage/lcov.info ] && [ -f lcov.info ]; then
-            mkdir -p coverage && mv lcov.info coverage/lcov.info || true
+          if [ ! -f coverage/lcov.info ]; then
+            # try common locations or search up to depth 4
+            if [ -f lcov.info ]; then
+              mkdir -p coverage && mv lcov.info coverage/lcov.info || true
+            else
+              FOUND=$(find . -maxdepth 4 -type f -name lcov.info | head -n1)
+              if [ -n "$FOUND" ]; then
+                mkdir -p coverage && cp "$FOUND" coverage/lcov.info || true
+                echo "Found lcov at $FOUND"
+              fi
+            fi
           fi
           if [ ! -f packages/worker/coverage.xml ] && [ -f coverage.xml ]; then
             mkdir -p packages/worker && mv coverage.xml packages/worker/coverage.xml || true
