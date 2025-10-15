@@ -19,8 +19,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "electron": "31.0.0",
@@ -30,7 +30,7 @@
     "electron-builder": "^24.13.3",
     "concurrently": "^9.0.0",
     "wait-on": "^7.2.0",
-    "@types/react": "^18.2.0",
+    "@types/react": "^19.2.2",
     "@types/react-dom": "^18.2.0",
     "typescript": "^5.4.0"
   }
