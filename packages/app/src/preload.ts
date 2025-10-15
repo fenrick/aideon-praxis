@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 import { version } from './version';
 
 /**
@@ -8,4 +8,12 @@ import { version } from './version';
  */
 
 // Minimal, typed-safe preload bridge. Extend via adapters/host APIs only.
-contextBridge.exposeInMainWorld('aideon', { version });
+type StateAtArgs = { asOf: string; scenario?: string; confidence?: number };
+type StateAtResult = { asOf: string; scenario: string | null; confidence: number | null; nodes: number; edges: number };
+
+contextBridge.exposeInMainWorld('aideon', {
+  version,
+  stateAt: async (args: StateAtArgs): Promise<StateAtResult> => {
+    return ipcRenderer.invoke('worker:state_at', args);
+  },
+});
