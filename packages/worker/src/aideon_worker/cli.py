@@ -19,6 +19,11 @@ from .temporal import StateAtArgs, state_at
 
 
 def main() -> int:
+    """Run the minimal line-based worker protocol loop.
+
+    Reads commands from stdin and writes responses to stdout. Keeps the
+    desktop app local-first with no open TCP ports.
+    """
     print("READY", flush=True)
     for line in sys.stdin:
         msg = line.strip()
