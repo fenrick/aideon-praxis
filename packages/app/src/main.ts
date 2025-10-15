@@ -1,6 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
-import fs from 'node:fs';
 import readline from 'node:readline';
 
 // Security: disable hardware acceleration by default for baseline.
@@ -20,16 +19,8 @@ const createWindow = async () => {
     },
   });
 
-  const rendererIndex = path.join(__dirname, 'renderer', 'index.html');
-  // In dev, renderer assets may not be ready when the main process starts.
-  if (!app.isPackaged) {
-    for (let i = 0; i < 40; i += 1) {
-      if (fs.existsSync(rendererIndex)) break;
-      // eslint-disable-next-line no-await-in-loop
-      await new Promise((r) => setTimeout(r, 250));
-    }
-  }
   try {
+    const rendererIndex = path.join(__dirname, 'renderer', 'index.html');
     await win.loadFile(rendererIndex);
   } catch (error) {
     console.error('Failed to load renderer HTML:', error);
@@ -42,31 +33,12 @@ const createWindow = async () => {
     const { spawn } = await import('node:child_process');
     // Promise that resolves when the worker prints READY
     let resolveReady: (() => void) | null = null;
-    const ready = new Promise<void>((r) => {
-      resolveReady = r;
+    const ready = new Promise<void>((resolve) => {
+      resolveReady = resolve;
     });
     let send: ((line: string) => Promise<string>) | null = null;
-    let workerCmd: string;
-    let workerArguments: string[] = [];
-    const workerOptions: { stdio: ['pipe', 'pipe', 'inherit']; env?: NodeJS.ProcessEnv } = {
-      stdio: ['pipe', 'pipe', 'inherit'],
-    };
-
-    if (app.isPackaged) {
-      const binName = process.platform === 'win32' ? 'aideon-worker.exe' : 'aideon-worker';
-      const workerPath = path.join(process.resourcesPath, 'worker', binName);
-      workerCmd = workerPath;
-      workerArguments = [];
-    } else {
-      workerCmd = 'python3';
-      workerArguments = ['-m', 'aideon_worker.cli'];
-      workerOptions.env = {
-        ...process.env,
-        PYTHONPATH: path.join(process.cwd(), '..', 'worker', 'src'),
-      };
-    }
-
-    const child = spawn(workerCmd, workerArguments, workerOptions);
+    const { cmd, args, options } = getWorkerSpawn();
+    const child = spawn(cmd, args, options);
     const rl = readline.createInterface({ input: child.stdout });
 
     // IPC handler for state_at (register early; it will await readiness)
@@ -94,8 +66,8 @@ const createWindow = async () => {
     });
 
     // Simple serialized request helper: writes a line and resolves next line
-    send = async (line: string): Promise<string> => {
-      return new Promise<string>((resolve) => {
+    send = async (line: string): Promise<string> =>
+      new Promise<string>((resolve) => {
         const onLine = (resp: string) => {
           rl.off('line', onLine);
           resolve(resp);
@@ -103,11 +75,27 @@ const createWindow = async () => {
         rl.on('line', onLine);
         child.stdin.write(`${line}\n`);
       });
-    };
   } catch (error) {
     console.error('Failed to start worker:', error);
   }
 };
+
+function getWorkerSpawn(): {
+  cmd: string;
+  args: string[];
+  options: { stdio: ['pipe', 'pipe', 'inherit']; env?: NodeJS.ProcessEnv };
+} {
+  const options: { stdio: ['pipe', 'pipe', 'inherit']; env?: NodeJS.ProcessEnv } = {
+    stdio: ['pipe', 'pipe', 'inherit'],
+  };
+  if (app.isPackaged) {
+    const binName = process.platform === 'win32' ? 'aideon-worker.exe' : 'aideon-worker';
+    const workerPath = path.join(process.resourcesPath, 'worker', binName);
+    return { cmd: workerPath, args: [], options };
+  }
+  options.env = { ...process.env, PYTHONPATH: path.join(process.cwd(), '..', 'worker', 'src') };
+  return { cmd: 'python3', args: ['-m', 'aideon_worker.cli'], options };
+}
 
 // Electron app init using event to avoid promise chain in CJS
 app.on('ready', () => {
