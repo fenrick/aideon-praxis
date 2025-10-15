@@ -37,7 +37,13 @@ def main() -> int:
             payload = msg[len("state_at ") :]
             try:
                 data = json.loads(payload)
-                res = state_at(StateAtArgs(**data))
+                # Map external camelCase payload to internal snake_case dataclass
+                args = StateAtArgs(
+                    as_of=data.get("asOf"),
+                    scenario=data.get("scenario"),
+                    confidence=data.get("confidence"),
+                )
+                res = state_at(args)
                 print(json.dumps(res), flush=True)
             except Exception as exc:  # noqa: BLE001
                 print(json.dumps({"error": str(exc)}), flush=True)
