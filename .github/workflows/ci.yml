@@ -18,9 +18,10 @@ jobs:
       - run: corepack enable || true
       - run: yarn --version || npm --version
       - run: yarn install --frozen-lockfile || npm ci
-      - name: Commitlint PR title
+      - name: Commitlint PR title (non-blocking for Dependabot)
         if: ${{ github.event_name == 'pull_request' }}
         uses: wagoid/commitlint-github-action@v6
+        continue-on-error: ${{ github.actor == 'dependabot[bot]' || startsWith(github.head_ref || '', 'dependabot/') }}
         with:
           configFile: commitlint.config.cjs
       - name: Prettier check
