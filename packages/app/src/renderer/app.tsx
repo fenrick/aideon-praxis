@@ -18,8 +18,8 @@ const App: React.FC = () => {
       try {
         const result = await api.stateAt({ asOf: '2025-01-01' });
         if (!cancelled) setStateAt(result);
-      } catch (e) {
-        if (!cancelled) setError(String(e));
+      } catch (error_) {
+        if (!cancelled) setError(String(error_));
       }
     };
     void run();
