@@ -62,3 +62,7 @@ scripts/gh_bootstrap.sh
 packages/app/extra/worker/*
 !packages/app/extra/worker/.gitkeep
 aideon-worker.spec
+.coverage
+# Python coverage report
+packages/worker/coverage.xml
+coverage.xml
