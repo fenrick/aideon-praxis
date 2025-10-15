@@ -21,7 +21,7 @@ class StateAtArgs:
         confidence: Optional confidence weight for scenario application.
     """
 
-    asOf: str
+    asOf: str  # noqa: N815 - external API uses camelCase
     scenario: str | None = None
     confidence: float | None = None
 
@@ -33,7 +33,6 @@ def state_at(args: StateAtArgs) -> dict[str, Any]:
     exists to validate RPC wiring and UI contract. Replace the payload
     with real snapshot lookups and scenario overlays as the model lands.
     """
-
     return {
         "asOf": args.asOf,
         "scenario": args.scenario,
