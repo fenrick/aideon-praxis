@@ -21,7 +21,7 @@ class StateAtArgs:
         confidence: Optional confidence weight for scenario application.
     """
 
-    asOf: str  # noqa: N815 - external API uses camelCase
+    as_of: str
     scenario: str | None = None
     confidence: float | None = None
 
@@ -34,7 +34,7 @@ def state_at(args: StateAtArgs) -> dict[str, Any]:
     with real snapshot lookups and scenario overlays as the model lands.
     """
     return {
-        "asOf": args.asOf,
+        "asOf": args.as_of,
         "scenario": args.scenario,
         "confidence": args.confidence,
         "nodes": 0,
