@@ -7,7 +7,7 @@ describe('renderer bootstrap', () => {
     document.body.innerHTML = '<div id="root"></div>';
     // minimal bridge for render path
     // @ts-expect-error test shim
-    window.aideon = {
+    globalThis.aideon = {
       version: 'test',
       stateAt: async () => ({
         asOf: '2025-01-01',
@@ -19,7 +19,7 @@ describe('renderer bootstrap', () => {
     };
   });
   it('mounts into #root', async () => {
-    const root = document.getElementById('root');
+    const root = document.querySelector('#root');
     expect(root).toBeTruthy();
     await import('./index');
   });

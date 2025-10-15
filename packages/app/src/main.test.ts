@@ -2,23 +2,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Capture registered event handlers for the mocked Electron app
-const { events } = vi.hoisted(() => ({ events: {} as Record<string, Function[]> }));
+type Listener = (...arguments_: unknown[]) => void;
+const { events } = vi.hoisted(() => ({ events: new Map<string, Listener[]>() }));
 
 vi.mock('electron', () => {
   class BrowserWindowMock {
-    public loadFile = vi.fn(async () => undefined);
+    public loadFile = vi.fn(async () => {});
     public removeMenu = vi.fn();
     static getAllWindows() {
       return [];
     }
-    constructor(_opts: any) {}
   }
   const app = {
     isPackaged: false,
     disableHardwareAcceleration: vi.fn(),
-    on: vi.fn((name: string, cb: Function) => {
-      events[name] ||= [];
-      events[name].push(cb);
+    on: vi.fn((name: string, callback: Listener) => {
+      const list = events.get(name) ?? [];
+      list.push(callback);
+      events.set(name, list);
     }),
     quit: vi.fn(),
   };
@@ -35,16 +36,27 @@ vi.mock('node:child_process', () => ({
 }));
 
 // Provide a controllable readline interface that emits 'line' events
-import { EventEmitter } from 'node:events';
-const rlEmitter = new EventEmitter();
+class RLMock {
+  private handlers: ((s: string) => void)[] = [];
+  on(event: string, handler: (s: string) => void) {
+    if (event === 'line') this.handlers.push(handler);
+  }
+  off(event: string, handler: (s: string) => void) {
+    if (event === 'line') this.handlers = this.handlers.filter((h) => h !== handler);
+  }
+  emitLine(s: string) {
+    for (const h of this.handlers) h(s);
+  }
+}
+const rlEmitter = new RLMock();
 vi.mock('node:readline', () => ({
-  default: { createInterface: vi.fn(() => rlEmitter as any) },
-  createInterface: vi.fn(() => rlEmitter as any),
+  default: { createInterface: vi.fn(() => rlEmitter as unknown as any) },
+  createInterface: vi.fn(() => rlEmitter as unknown as any),
 }));
 
 // Import after mocks in place
 import * as electron from 'electron';
-// eslint-disable-next-line import/first
+
 import './main';
 
 describe('main process wiring', () => {
@@ -53,8 +65,8 @@ describe('main process wiring', () => {
   });
 
   it('boots without throwing on ready', async () => {
-    for (const cb of events['ready'] || []) cb();
-    rlEmitter.emit('line', 'READY');
+    for (const callback of events.get('ready') ?? []) callback();
+    rlEmitter.emitLine('READY');
     // no assertions — absence of error is success for wiring smoke
     expect(true).toBe(true);
   });
@@ -65,37 +77,37 @@ describe('main process wiring', () => {
     (electron.BrowserWindow as any).prototype.loadFile = vi.fn(async () => {
       throw new Error('fail');
     });
-    for (const cb of events['ready'] || []) cb();
-    rlEmitter.emit('line', 'READY');
+    for (const callback of events.get('ready') ?? []) callback();
+    rlEmitter.emitLine('READY');
     expect(true).toBe(true);
   });
 
   it('quit on window-all-closed for non-darwin', () => {
     const original = Object.getOwnPropertyDescriptor(process, 'platform');
     Object.defineProperty(process, 'platform', { value: 'linux' });
-    for (const cb of events['window-all-closed'] || []) cb();
+    for (const callback of events.get('window-all-closed') ?? []) callback();
     expect((electron.app as any).quit).toHaveBeenCalled();
     if (original) Object.defineProperty(process, 'platform', original);
   });
 
   it('activate event triggers without windows', () => {
-    for (const cb of events['activate'] || []) cb();
+    for (const callback of events.get('activate') ?? []) callback();
     expect(true).toBe(true);
   });
 
   it('dev vs packaged spawn branches execute without error', () => {
     // dev (default)
-    for (const cb of events['ready'] || []) cb();
+    for (const callback of events.get('ready') ?? []) callback();
     // packaged branch
     (electron.app as any).isPackaged = true;
-    for (const cb of events['ready'] || []) cb();
+    for (const callback of events.get('ready') ?? []) callback();
     (electron.app as any).isPackaged = false;
     expect(true).toBe(true);
   });
 
   it.skip('IPC handler resolves state_at via worker line protocol', async () => {
     // trigger init
-    for (const cb of events['ready'] || []) cb();
+    for (const callback of events.ready || []) callback();
     // allow async init to register handler
     await new Promise((r) => setTimeout(r, 0));
     // get registered handler

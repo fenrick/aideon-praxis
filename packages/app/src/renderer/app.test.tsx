@@ -6,7 +6,7 @@ import App from './app';
 
 declare global {
   interface Window {
-    aideon: { version: string; stateAt: (args: { asOf: string }) => Promise<any> };
+    aideon: { version: string; stateAt: (arguments_: { asOf: string }) => Promise<any> };
   }
 }
 
@@ -16,7 +16,7 @@ describe('App component', () => {
   });
 
   it('renders success path and shows worker JSON', async () => {
-    window.aideon = {
+    globalThis.aideon = {
       version: 'test',
       stateAt: async () => ({
         asOf: '2025-01-01',
@@ -33,7 +33,7 @@ describe('App component', () => {
   });
 
   it('renders error path when stateAt throws', async () => {
-    window.aideon = {
+    globalThis.aideon = {
       version: 'test',
       stateAt: async () => {
         throw new Error('boom');
