@@ -1650,10 +1650,10 @@
   dependencies:
     undici-types "~7.14.0"
 
-"@types/node@^20.9.0":
-  version "20.19.21"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.19.21.tgz#6e5378e04993c40395473b13baf94a09875157b8"
-  integrity sha512-CsGG2P3I5y48RPMfprQGfy4JPRZ6csfC3ltBZSRItG3ngggmNY/qs2uZKp4p9VbrpqNNSMzUZNFZKzgOGnd/VA==
+"@types/node@^22.7.7":
+  version "22.18.10"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.18.10.tgz#37f0ac8d2ec41af7bba06f162c85ff409e4e3420"
+  integrity sha512-anNG/V/Efn/YZY4pRzbACnKxNKoBng2VTFydVu8RRs5hQjikP8CQfaeAV59VFSCzKNp90mXiVXW2QzV56rwMrg==
   dependencies:
     undici-types "~6.21.0"
 
@@ -3136,13 +3136,13 @@ electron-to-chromium@^1.5.227:
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.5.237.tgz#eacf61cef3f6345d0069ab427585c5a04d7084f0"
   integrity sha512-icUt1NvfhGLar5lSWH3tHNzablaA5js3HVHacQimfP8ViEBOQv+L7DKEuHdbTZ0SKCO1ogTJTIL1Gwk9S6Qvcg==
 
-electron@31.0.0:
-  version "31.0.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-31.0.0.tgz#2841ac33c7ebd676a131a206077db244220fd6ae"
-  integrity sha512-yJMhwu5NVqor7h5mt65uKtBsjSAD7NiRwNCigK8xAlJMaP0X2FKipEzQocOzusy7E0dny4gkTgOTATy+ucDtjw==
+electron@38.2.2:
+  version "38.2.2"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-38.2.2.tgz#117a516fa2215604e35a60f3cc2543f3f5404a16"
+  integrity sha512-OXSaVNXDlonXDjMRsFNQo1j5tzTKwKXh5/m46IjAFccBcZJZMISI+EjSI07oexIuhvKM8AZLuFuihVn4YjWWrA==
   dependencies:
     "@electron/get" "^2.0.0"
-    "@types/node" "^20.9.0"
+    "@types/node" "^22.7.7"
     extract-zip "^2.0.1"
 
 emoji-regex@^8.0.0:
