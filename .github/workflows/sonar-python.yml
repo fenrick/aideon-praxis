@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: SonarCloud Scan (worker)
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
