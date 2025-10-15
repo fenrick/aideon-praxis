@@ -83,7 +83,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
           path: |
-            coverage/lcov.info
+            coverage/**
             packages/worker/coverage.xml
 
   release:
@@ -134,7 +134,21 @@ jobs:
         if: ${{ steps.gate.outputs.enabled == 'true' }}
         run: |
           ls -lah || true
+          # Normalize paths in case the artifact flattened them
+          if [ ! -f coverage/lcov.info ]; then
+            if [ -f lcov.info ]; then
+              mkdir -p coverage
+              mv lcov.info coverage/lcov.info
+            fi
+          fi
+          if [ ! -f packages/worker/coverage.xml ]; then
+            if [ -f coverage.xml ]; then
+              mkdir -p packages/worker
+              mv coverage.xml packages/worker/coverage.xml
+            fi
+          fi
           ls -lah coverage || true
+          ls -lah packages/worker || true
           test -f coverage/lcov.info
           test -f packages/worker/coverage.xml
       - name: SonarQube Scan
