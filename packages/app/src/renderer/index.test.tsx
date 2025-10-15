@@ -8,7 +8,16 @@ import App from './app';
 describe('Renderer App', () => {
   beforeAll(() => {
     // Expose bridge for test
-    globalThis.aideon = { version: 'test' };
+    globalThis.aideon = {
+      version: 'test',
+      stateAt: async () => ({
+        asOf: '2025-01-01',
+        scenario: null,
+        confidence: null,
+        nodes: 0,
+        edges: 0,
+      }),
+    };
     const div = document.createElement('div');
     div.id = 'root';
     document.body.append(div);

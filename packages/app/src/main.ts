@@ -1,5 +1,6 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
+import readline from 'node:readline';
 
 // Security: disable hardware acceleration by default for baseline.
 // This file is the Electron host process entry. It must not contain
@@ -22,7 +23,7 @@ const createWindow = async () => {
 
   // Security: remove menu in production-ish skeleton
   win.removeMenu();
-  // Spawn worker in background (pipes only, no TCP)
+  // Spawn worker in background (pipes only, no TCP) and wire a minimal RPC
   try {
     const { spawn } = await import('node:child_process');
     let workerCmd: string;
@@ -45,12 +46,42 @@ const createWindow = async () => {
       };
     }
 
-    const worker = spawn(workerCmd, workerArguments, workerOptions);
-    worker.stdout.on('data', (buf: Buffer) => {
-      const line = buf.toString().trim();
-      if (line) console.log('[worker]', line);
+    const child = spawn(workerCmd, workerArguments, workerOptions);
+    const rl = readline.createInterface({ input: child.stdout });
+
+    // Wait for READY banner
+    await new Promise<void>((resolve) => {
+      const onLine = (line: string) => {
+        if (line.trim() === 'READY') {
+          rl.off('line', onLine);
+          resolve();
+        }
+      };
+      rl.on('line', onLine);
     });
-    worker.stdin.write('ping\n');
+
+    // Simple serialized request helper: writes a line and resolves next line
+    const send = async (line: string): Promise<string> => {
+      return new Promise<string>((resolve) => {
+        const onLine = (resp: string) => {
+          rl.off('line', onLine);
+          resolve(resp);
+        };
+        rl.on('line', onLine);
+        child.stdin.write(`${line}\n`);
+      });
+    };
+
+    // IPC handler for state_at
+    ipcMain.handle('worker:state_at', async (_evt, args: { asOf: string; scenario?: string; confidence?: number }) => {
+      const payload = JSON.stringify(args);
+      const raw = await send(`state_at ${payload}`);
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return { error: 'invalid-json', raw };
+      }
+    });
   } catch (error) {
     console.error('Failed to start worker:', error);
   }
