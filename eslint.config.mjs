@@ -25,9 +25,9 @@ export default defineConfig(
   js.configs.recommended,
 
   // TypeScript: parser + recommended rules (scoped to TS files only)
-  ...tseslint.configs.strictTypeChecked.map((c) => ({ ...c, files: ['**/*.{ts,tsx}'] })),
-  ...tseslint.configs.stylisticTypeChecked.map((c) => ({ ...c, files: ['**/*.{ts,tsx}'] })),
-  ...tseslint.configs.recommendedTypeChecked.map((c) => ({ ...c, files: ['**/*.{ts,tsx}'] })),
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
+  ...tseslint.configs.recommendedTypeChecked,
 
   // Base language options for JS/MJS
   {
@@ -72,7 +72,6 @@ export default defineConfig(
         projectService: true,
         project: ['./tsconfig.eslint.json'],
         tsconfigRootDir: import.meta.dirname,
-        allowDefaultProject: ['src/stories/**/*'],
       },
     },
     rules: {
