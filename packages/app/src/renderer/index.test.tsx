@@ -8,6 +8,7 @@ import App from './app';
 describe('Renderer App', () => {
   beforeAll(() => {
     // Expose bridge for test
+    // Global bridge stub for tests
     globalThis.aideon = {
       version: 'test',
       stateAt: async () => ({
