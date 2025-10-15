@@ -8,7 +8,7 @@ import App from './app';
 describe('Renderer App', () => {
   beforeAll(() => {
     // Expose bridge for test
-    window.aideon = { version: 'test' };
+    globalThis.aideon = { version: 'test' };
     const div = document.createElement('div');
     div.id = 'root';
     document.body.append(div);
