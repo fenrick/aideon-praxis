@@ -5,7 +5,9 @@ const { getExposed, setExposed } = vi.hoisted(() => {
   let exposed: any = null;
   return {
     getExposed: () => exposed,
-    setExposed: (v: any) => { exposed = v; },
+    setExposed: (v: any) => {
+      exposed = v;
+    },
   };
 });
 vi.mock('electron', () => ({
@@ -14,9 +16,15 @@ vi.mock('electron', () => ({
       if (key === 'aideon') setExposed(value);
     }),
   },
-  ipcRenderer: { invoke: vi.fn(async () => ({
-    asOf: '2025-01-01', scenario: null, confidence: null, nodes: 0, edges: 0,
-  })) },
+  ipcRenderer: {
+    invoke: vi.fn(async () => ({
+      asOf: '2025-01-01',
+      scenario: null,
+      confidence: null,
+      nodes: 0,
+      edges: 0,
+    })),
+  },
 }));
 
 // eslint-disable-next-line import/first

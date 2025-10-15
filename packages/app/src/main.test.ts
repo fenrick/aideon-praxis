@@ -8,7 +8,9 @@ vi.mock('electron', () => {
   class BrowserWindowMock {
     public loadFile = vi.fn(async () => undefined);
     public removeMenu = vi.fn();
-    static getAllWindows() { return []; }
+    static getAllWindows() {
+      return [];
+    }
     constructor(_opts: any) {}
   }
   const app = {
@@ -103,7 +105,13 @@ describe('main process wiring', () => {
     // signal worker ready
     rlEmitter.emit('line', 'READY');
     const p = handler({}, { asOf: '2025-01-01' });
-    const payload = JSON.stringify({ asOf: '2025-01-01', scenario: null, confidence: null, nodes: 0, edges: 0 });
+    const payload = JSON.stringify({
+      asOf: '2025-01-01',
+      scenario: null,
+      confidence: null,
+      nodes: 0,
+      edges: 0,
+    });
     // respond from worker
     rlEmitter.emit('line', payload);
     const res = await p;
