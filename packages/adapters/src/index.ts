@@ -17,10 +17,7 @@ export interface StorageAdapter {
 
 /** WorkerClient runs analytics jobs in the Python sidecar via RPC. */
 export interface WorkerClient {
-  runJob<TArguments extends object, TResult>(
-    jobType: string,
-    jobArguments: TArguments,
-  ): Promise<TResult>;
+  runJob<TResult>(jobType: string, jobArguments: unknown): Promise<TResult>;
 }
 
 // placeholder for concrete job types
