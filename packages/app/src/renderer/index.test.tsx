@@ -11,7 +11,7 @@ describe('Renderer App', () => {
     // Global bridge stub for tests
     globalThis.aideon = {
       version: 'test',
-      stateAt: async () => ({
+      stateAt: () => Promise.resolve({
         asOf: '2025-01-01',
         scenario: null,
         confidence: null,

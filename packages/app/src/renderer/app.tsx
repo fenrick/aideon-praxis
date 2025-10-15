@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
 const App: React.FC = () => {
-  const version = (typeof aideon !== 'undefined' ? aideon.version : 'dev');
+  const api = (globalThis as unknown as Window).aideon;
+  const version = api.version;
   const [stateAt, setStateAt] = useState<null | {
     asOf: string;
     scenario: string | null;
@@ -15,10 +16,8 @@ const App: React.FC = () => {
     let cancelled = false;
     const run = async () => {
       try {
-        if (typeof aideon !== 'undefined' && aideon.stateAt) {
-          const result = await aideon.stateAt({ asOf: '2025-01-01' });
-          if (!cancelled) setStateAt(result);
-        }
+        const result = await api.stateAt({ asOf: '2025-01-01' });
+        if (!cancelled) setStateAt(result);
       } catch (e) {
         if (!cancelled) setError(String(e));
       }

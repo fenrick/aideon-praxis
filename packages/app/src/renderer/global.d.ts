@@ -15,3 +15,5 @@ declare global {
   }
   var aideon: AideonApi;
 }
+
+export {};
