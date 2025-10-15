@@ -7,19 +7,23 @@ on:
     branches: [main]
 
 jobs:
-  js:
-    name: JS Lint + Typecheck + Tests
+  ci:
+    name: Lint • Typecheck • Test • Sonar
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      # Node toolchain
       - uses: actions/setup-node@v6
         with:
           node-version: '20'
       - run: corepack enable || true
       - run: yarn --version
       - run: yarn install --frozen-lockfile
+
+      # Commit message linting — non-blocking for Dependabot
       - name: Commitlint PR title (non-blocking for Dependabot)
         if: ${{ github.event_name == 'pull_request' }}
         uses: wagoid/commitlint-github-action@v6
@@ -32,36 +36,50 @@ jobs:
         continue-on-error: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name || '', 'dependabot/') }}
         with:
           configFile: commitlint.config.cjs
+
+      # JS/TS checks
       - name: Prettier check
         run: yarn format:check
       - run: yarn lint
       - run: yarn typecheck
       - run: yarn test
 
-  python:
-    name: Python Lint + Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
+      # Python toolchain and checks
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - name: Install tools
+      - name: Install Python tools
         run: |
           python -m pip install --upgrade pip
-          pip install ruff black pytest
-      - name: Lint (ruff)
-        run: ruff check packages/worker || true
-      - name: Format check (black)
-        run: black --check packages/worker || true
-      - name: Tests
-        run: pytest -q packages/worker || true
+          pip install ruff black pytest mypy bandit pyright vulture
+      - name: Python Lint (ruff)
+        run: yarn py:lint
+      - name: Python Typecheck (mypy + pyright)
+        run: |
+          yarn py:typecheck
+          yarn py:pyright
+      - name: Python Security (bandit)
+        run: yarn py:security
+      - name: Python Dead code (vulture)
+        run: yarn py:deadcode
+      - name: Python Tests (pytest)
+        run: yarn py:test
+
+      # SonarCloud analysis (single run for monorepo)
+      - name: Setup Java for SonarScanner
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   release:
     name: Semantic Release
-    needs: [js, python]
+    needs: [ci]
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
