@@ -46,17 +46,29 @@ const createWindow = async () => {
     }
 
     const worker = spawn(workerCmd, workerArguments, workerOptions);
-    worker.stdout?.on('data', (buf: Buffer) => {
-      const line = buf.toString().trim();
-      if (line) console.log('[worker]', line);
-    });
-    worker.stdin?.write('ping\n');
+    if (worker.stdout) {
+      worker.stdout.on('data', (buf: Buffer) => {
+        const line = buf.toString().trim();
+        if (line) console.log('[worker]', line);
+      });
+    }
+    if (worker.stdin) {
+      worker.stdin.write('ping\n');
+    }
   } catch (error) {
     console.error('Failed to start worker:', error);
   }
 };
 
-app.whenReady().then(createWindow);
+// Electron app init (avoid promise chains in CJS; no top-level await)
+void (async () => {
+  try {
+    await app.whenReady();
+    await createWindow();
+  } catch (err) {
+    console.error('Failed to initialize app:', err);
+  }
+})();
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

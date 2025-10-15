@@ -3,12 +3,12 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import '../renderer/global.d.ts';
 
-import App from './App';
+import App from './app';
 
 describe('Renderer App', () => {
   beforeAll(() => {
     // Expose bridge for test
-    (globalThis as any).window = { aideon: { version: 'test' } } as any;
+    window.aideon = { version: 'test' };
     const div = document.createElement('div');
     div.id = 'root';
     document.body.append(div);
