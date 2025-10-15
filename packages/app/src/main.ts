@@ -73,15 +73,20 @@ const createWindow = async () => {
     };
 
     // IPC handler for state_at
-    ipcMain.handle('worker:state_at', async (_evt, args: { asOf: string; scenario?: string; confidence?: number }) => {
-      const payload = JSON.stringify(args);
-      const raw = await send(`state_at ${payload}`);
-      try {
-        return JSON.parse(raw);
-      } catch (e) {
-        return { error: 'invalid-json', raw };
-      }
-    });
+    ipcMain.handle(
+      'worker:state_at',
+      async (_event, arguments_: { asOf: string; scenario?: string; confidence?: number }) => {
+        const payload = JSON.stringify(arguments_);
+        const raw = await send(`state_at ${payload}`);
+        return JSON.parse(raw) as {
+          asOf: string;
+          scenario: string | null;
+          confidence: number | null;
+          nodes: number;
+          edges: number;
+        };
+      },
+    );
   } catch (error) {
     console.error('Failed to start worker:', error);
   }
