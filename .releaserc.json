@@ -1,7 +1,10 @@
 {
   "branches": ["main", { "name": "nightly", "channel": "nightly", "prerelease": "nightly" }],
   "plugins": [
-    ["@semantic-release/commit-analyzer"],
+    [
+      "@semantic-release/commit-analyzer",
+      { "preset": "conventionalcommits", "presetConfig": { "preMajor": true } }
+    ],
     ["@semantic-release/release-notes-generator"],
     ["@semantic-release/changelog", { "changelogFile": "CHANGELOG.md" }],
     [
