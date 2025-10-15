@@ -1,13 +1,9 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-# Run commitlint on the commit message
+# Run commitlint on the commit message (Husky v10 style)
 # Allow Dependabot to bypass locally as well (optional)
+# If no commit message file was provided, skip (e.g., unusual tooling)
+[ -z "$1" ] && exit 0
 case "$GIT_AUTHOR_NAME" in
-  dependabot*)
-    exit 0
-    ;;
+  dependabot*) exit 0 ;;
 esac
 
-npx --no -- commitlint --edit "$1"
-
+npx --no commitlint --edit "$1"
