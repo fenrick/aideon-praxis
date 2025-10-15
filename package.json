@@ -26,13 +26,16 @@
     "py:lint": "python3 -m ruff check -q --config packages/worker/pyproject.toml packages/worker",
     "py:typecheck": "python3 -m mypy --config-file packages/worker/pyproject.toml packages/worker/src",
     "py:security": "python3 -m bandit -q -r packages/worker/src -x packages/worker/tests",
+    "py:pyright": "pyright -p packages/worker/pyrightconfig.json",
+    "py:deadcode": "python3 -m vulture packages/worker/src --min-confidence 80",
     "py:test": "python3 -m pytest -q packages/worker",
-    "ci": "yarn lint && yarn typecheck && yarn test && yarn py:lint && yarn py:typecheck && yarn py:security && yarn py:test"
+    "ci": "yarn lint && yarn typecheck && yarn test && yarn py:lint && yarn py:typecheck && yarn py:pyright && yarn py:security && yarn py:deadcode && yarn py:test"
   },
   "vitest": {
     "environment": "jsdom"
   },
   "devDependencies": {
+    "pyright": "^1.1.386",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/eslintrc": "^3.1.0",
