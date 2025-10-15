@@ -2,9 +2,14 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   checks:
