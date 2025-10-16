@@ -9,13 +9,14 @@ describe('renderer bootstrap', () => {
     // @ts-expect-error test shim: inject minimal preload bridge
     globalThis.aideon = {
       version: 'test',
-      stateAt: () => Promise.resolve({
-        asOf: '2025-01-01',
-        scenario: null,
-        confidence: null,
-        nodes: 0,
-        edges: 0,
-      }),
+      stateAt: () =>
+        Promise.resolve({
+          asOf: '2025-01-01',
+          scenario: null,
+          confidence: null,
+          nodes: 0,
+          edges: 0,
+        }),
     };
   });
   it('mounts into #root', async () => {

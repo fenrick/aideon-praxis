@@ -24,7 +24,7 @@ export default defineConfig(
   // Base JS rules roughly equivalent to the “core” checks Sonar also relies on
   js.configs.recommended,
 
-  // TypeScript: parser + recommended rules (scoped to TS files only)
+  // TypeScript: typed configs
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   ...tseslint.configs.recommendedTypeChecked,
@@ -64,12 +64,13 @@ export default defineConfig(
     },
   },
 
+  // TS parser + generic rules
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        projectService: true,
+        projectService: false,
         project: ['./tsconfig.eslint.json'],
         tsconfigRootDir: import.meta.dirname,
       },
@@ -83,8 +84,24 @@ export default defineConfig(
   // Test files: relax unsafe + ergonomics rules that are noisy in mocks
   {
     files: ['**/*.test.{ts,tsx}', '**/tests/**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        projectService: false,
+        project: ['./tsconfig.eslint.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
       '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/await-thenable': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/restrict-plus-operands': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/prefer-readonly': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',

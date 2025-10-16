@@ -74,8 +74,9 @@ describe('main process wiring', () => {
   it('handles renderer load error without crashing', () => {
     // Make future BrowserWindow instances fail loadFile to exercise catch path
     // @ts-expect-error test override: patch mock BrowserWindow.loadFile to throw
-    (electron.BrowserWindow as unknown as { prototype: { loadFile: () => Promise<never> } }).prototype.loadFile =
-      vi.fn(() => Promise.reject(new Error('fail')));
+    (
+      electron.BrowserWindow as unknown as { prototype: { loadFile: () => Promise<never> } }
+    ).prototype.loadFile = vi.fn(() => Promise.reject(new Error('fail')));
     for (const callback of events.get('ready') ?? []) callback();
     rlEmitter.emitLine('READY');
     expect(true).toBe(true);
@@ -113,7 +114,10 @@ describe('main process wiring', () => {
     // get registered handler
     const calls = (electron.ipcMain.handle as unknown as { mock: { calls: unknown[] } }).mock.calls;
     expect(calls.length).toBeGreaterThan(0);
-    const handler = calls[0][1] as (event: unknown, args: { asOf: string }) => Promise<{ asOf: string }>;
+    const handler = calls[0][1] as (
+      event: unknown,
+      arguments_: { asOf: string },
+    ) => Promise<{ asOf: string }>;
     // signal worker ready
     rlEmitter.emit('line', 'READY');
     const p = handler({}, { asOf: '2025-01-01' });
@@ -126,8 +130,8 @@ describe('main process wiring', () => {
     });
     // respond from worker
     rlEmitter.emit('line', payload);
-    const res = await p;
-    expect(res.asOf).toBe('2025-01-01');
+    const result = await p;
+    expect(result.asOf).toBe('2025-01-01');
   });
 
   it('getWorkerSpawn returns python command in dev', () => {
