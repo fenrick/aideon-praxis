@@ -7,7 +7,7 @@ const { events } = vi.hoisted(() => ({ events: new Map<string, Listener[]>() }))
 
 vi.mock('electron', () => {
   class BrowserWindowMock {
-    public loadFile = vi.fn(async () => {});
+    public loadFile = vi.fn(() => Promise.resolve());
     public removeMenu = vi.fn();
     static getAllWindows() {
       return [];
@@ -64,19 +64,18 @@ describe('main process wiring', () => {
     vi.clearAllMocks();
   });
 
-  it('boots without throwing on ready', async () => {
+  it('boots without throwing on ready', () => {
     for (const callback of events.get('ready') ?? []) callback();
     rlEmitter.emitLine('READY');
     // no assertions — absence of error is success for wiring smoke
     expect(true).toBe(true);
   });
 
-  it('handles renderer load error without crashing', async () => {
+  it('handles renderer load error without crashing', () => {
     // Make future BrowserWindow instances fail loadFile to exercise catch path
-    // @ts-expect-error test override
-    (electron.BrowserWindow as any).prototype.loadFile = vi.fn(async () => {
-      throw new Error('fail');
-    });
+    // @ts-expect-error test override: patch mock BrowserWindow.loadFile to throw
+    (electron.BrowserWindow as unknown as { prototype: { loadFile: () => Promise<never> } }).prototype.loadFile =
+      vi.fn(() => Promise.reject(new Error('fail')));
     for (const callback of events.get('ready') ?? []) callback();
     rlEmitter.emitLine('READY');
     expect(true).toBe(true);
@@ -86,7 +85,8 @@ describe('main process wiring', () => {
     const original = Object.getOwnPropertyDescriptor(process, 'platform');
     Object.defineProperty(process, 'platform', { value: 'linux' });
     for (const callback of events.get('window-all-closed') ?? []) callback();
-    expect((electron.app as any).quit).toHaveBeenCalled();
+    const appMock = electron.app as unknown as { quit: () => void };
+    expect(appMock.quit).toHaveBeenCalled();
     if (original) Object.defineProperty(process, 'platform', original);
   });
 
@@ -99,21 +99,21 @@ describe('main process wiring', () => {
     // dev (default)
     for (const callback of events.get('ready') ?? []) callback();
     // packaged branch
-    (electron.app as any).isPackaged = true;
+    (electron.app as unknown as { isPackaged: boolean }).isPackaged = true;
     for (const callback of events.get('ready') ?? []) callback();
-    (electron.app as any).isPackaged = false;
+    (electron.app as unknown as { isPackaged: boolean }).isPackaged = false;
     expect(true).toBe(true);
   });
 
   it.skip('IPC handler resolves state_at via worker line protocol', async () => {
     // trigger init
-    for (const callback of events.ready || []) callback();
+    for (const callback of events.get('ready') ?? []) callback();
     // allow async init to register handler
-    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     // get registered handler
-    const calls = (electron.ipcMain.handle as any).mock.calls;
+    const calls = (electron.ipcMain.handle as unknown as { mock: { calls: unknown[] } }).mock.calls;
     expect(calls.length).toBeGreaterThan(0);
-    const handler = calls[0][1] as (e: any, a: any) => Promise<any>;
+    const handler = calls[0][1] as (event: unknown, args: { asOf: string }) => Promise<{ asOf: string }>;
     // signal worker ready
     rlEmitter.emit('line', 'READY');
     const p = handler({}, { asOf: '2025-01-01' });
@@ -130,9 +130,9 @@ describe('main process wiring', () => {
     expect(res.asOf).toBe('2025-01-01');
   });
 
-  it('getWorkerSpawn returns python command in dev', async () => {
+  it('getWorkerSpawn returns python command in dev', () => {
     // App is not packaged in this test; ensure command path
-    const isPackaged = (electron.app as any).isPackaged;
+    const isPackaged = (electron.app as unknown as { isPackaged: boolean }).isPackaged;
     expect(isPackaged).toBe(false);
   });
 });
