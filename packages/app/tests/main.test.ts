@@ -57,7 +57,7 @@ vi.mock('node:readline', () => ({
 // Import after mocks in place
 import * as electron from 'electron';
 
-import './main';
+import '../src/main';
 
 describe('main process wiring', () => {
   beforeEach(() => {
