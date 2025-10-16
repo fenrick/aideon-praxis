@@ -2,11 +2,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import App from './app';
+import App from '../../src/renderer/app';
 
+type WorkerState = {
+  asOf: string;
+  scenario: string | null;
+  confidence: number | null;
+  nodes: number;
+  edges: number;
+};
 declare global {
   interface Window {
-    aideon: { version: string; stateAt: (arguments_: { asOf: string }) => Promise<any> };
+    aideon: { version: string; stateAt: (arguments_: { asOf: string }) => Promise<WorkerState> };
   }
 }
 
@@ -18,7 +25,7 @@ describe('App component', () => {
   it('renders success path and shows worker JSON', async () => {
     globalThis.aideon = {
       version: 'test',
-      stateAt: async () => ({
+      stateAt: () => Promise.resolve({
         asOf: '2025-01-01',
         scenario: null,
         confidence: null,
@@ -35,9 +42,7 @@ describe('App component', () => {
   it('renders error path when stateAt throws', async () => {
     globalThis.aideon = {
       version: 'test',
-      stateAt: async () => {
-        throw new Error('boom');
-      },
+      stateAt: () => Promise.reject(new Error('boom')),
     };
     render(<App />);
     await waitFor(() => screen.getByText('Worker Connectivity'));

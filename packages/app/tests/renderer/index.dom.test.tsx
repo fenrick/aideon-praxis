@@ -1,15 +1,15 @@
 /* @vitest-environment jsdom */
 import { describe, it, expect, beforeEach } from 'vitest';
-import './global.d.ts';
+import '../../src/renderer/global.d.ts';
 
 describe('renderer bootstrap', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="root"></div>';
     // minimal bridge for render path
-    // @ts-expect-error test shim
+    // @ts-expect-error test shim: inject minimal preload bridge
     globalThis.aideon = {
       version: 'test',
-      stateAt: async () => ({
+      stateAt: () => Promise.resolve({
         asOf: '2025-01-01',
         scenario: null,
         confidence: null,
@@ -21,6 +21,6 @@ describe('renderer bootstrap', () => {
   it('mounts into #root', async () => {
     const root = document.querySelector('#root');
     expect(root).toBeTruthy();
-    await import('./index');
+    await import('../../src/renderer/index');
   });
 });

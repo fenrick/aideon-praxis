@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
-import '../renderer/global.d.ts';
+import '../../src/renderer/global.d.ts';
 
-import App from './app';
+import App from '../../src/renderer/app';
 
 describe('Renderer App', () => {
   beforeAll(() => {

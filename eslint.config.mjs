@@ -79,4 +79,20 @@ export default defineConfig(
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
+
+  // Test files: relax unsafe + ergonomics rules that are noisy in mocks
+  {
+    files: ['**/*.test.{ts,tsx}', '**/tests/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'unicorn/consistent-function-scoping': 'off',
+      'promise/param-names': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+    },
+  },
 );
