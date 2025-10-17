@@ -58,10 +58,17 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             packages/worker/pyproject.toml
+            packages/worker/requirements-dev.lock
       - name: Install Python tools
         run: |
           python -m pip install --upgrade pip
-          pip install ruff black pytest pytest-cov mypy bandit pyright vulture
+          if [ -f packages/worker/requirements-dev.lock ]; then
+            echo "Installing Python tools from lockfile";
+            pip install -r packages/worker/requirements-dev.lock;
+          else
+            echo "Lockfile not found; installing pinned toolchain";
+            pip install ruff black pytest pytest-cov mypy bandit pyright vulture;
+          fi
       - name: Python Lint (ruff)
         run: yarn py:lint
       - name: Python Typecheck (mypy + pyright)

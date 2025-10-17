@@ -34,6 +34,12 @@
     "py:deadcode": "python3 -m vulture packages/worker/src --min-confidence 80",
     "py:test": "python3 -m pytest -q packages/worker",
     "py:test:cov": "python3 -m pytest -q packages/worker --cov=packages/worker/src --cov-report=xml:packages/worker/coverage.xml --cov-report=term",
+    "py:uv:sync": "bash -lc 'cd packages/worker && uv sync --all-groups'",
+    "py:uv:test": "bash -lc 'cd packages/worker && uv run -m pytest -q'",
+    "py:uv:lint": "bash -lc 'cd packages/worker && uv run -m ruff check -q .'",
+    "py:uv:format:check": "bash -lc 'cd packages/worker && uv run -m black --check .'",
+    "py:uv:typecheck": "bash -lc 'cd packages/worker && uv run -m mypy --config-file pyproject.toml src'",
+    "py:uv:lock": "bash -lc 'cd packages/worker && uv lock && uv export --format requirements-txt --frozen > requirements-dev.lock'",
     "ci": "yarn lint && yarn typecheck && yarn test:coverage && yarn py:lint && yarn py:typecheck && yarn py:pyright && yarn py:security && yarn py:deadcode && yarn py:test:cov"
   },
   "vitest": {

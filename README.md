@@ -24,6 +24,8 @@ Getting started
 - Dev (no HTTP server): `yarn workspace @aideon/app dev` (watches Vite build and tsup and launches Electron).
 - Python tests: `pytest -q packages/worker`.
 
+See docs/commands.md for the full list of yarn commands used across JS/TS and the Python worker.
+
 Packaging
 
 - Local packaging (unsigned): `yarn workspace @aideon/app dist`.
@@ -109,11 +111,31 @@ cd <repo>
 yarn install
 ```
 
-#### (Optional) set up Python worker venv
+#### (Optional) Python worker via uv (recommended)
+
+Use uv as the local Python manager for the worker. It respects the existing
+PEP 621 `pyproject.toml` and keeps CI on plain `pip`.
+
+```bash
+# one‑time: install uv (see https://docs.astral.sh/uv/)
+# macOS: brew install uv
+
+# create a project venv (repo‑root `.venv`) and sync deps
+uv venv .venv
+cd packages/worker
+uv sync --all-groups  # installs dev tools from [project.optional-dependencies].dev
+
+# run checks via uv
+uv run -m pytest -q
+uv run -m ruff check .
+uv run -m black --check .
+```
+
+If you prefer plain `pip`, you can install the dev tools directly:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r packages/worker/requirements.txt
+pip install -e "packages/worker[dev]"
 ```
 
 ### 2) Run the app (dev)
