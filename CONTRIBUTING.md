@@ -29,8 +29,22 @@ Milestones (M0–M6) track staged delivery (see `ROADMAP.md`).
 ### Install
 
 yarn install
+
+#### Python worker (choose one)
+
+Option A — uv (recommended for local dev)
+
+```bash
+uv venv .venv
+cd packages/worker && uv sync --all-groups
+```
+
+Option B — pip (portable fallback)
+
+```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r packages/worker/requirements.txt
+pip install -e "packages/worker[dev]"
+```
 
 ### Run
 
@@ -52,9 +66,16 @@ yarn typecheck
 
 #### Python
 
+See docs/commands.md for the full list of yarn commands.
+
 ```bash
-pytest -q packages/worker
-ruff check packages/worker
+# pip / system python
+yarn py:test
+yarn py:lint
+
+# uv (local)
+yarn py:uv:test
+yarn py:uv:lint
 ```
 
 > We gate CI on lint + unit tests for both TS and Python.
