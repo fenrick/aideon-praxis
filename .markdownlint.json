@@ -1,6 +1,7 @@
 {
   "default": true,
   "ignores": [
+    "CHANGELOG.md",
     "node_modules/",
     "coverage/",
     "dist/",
