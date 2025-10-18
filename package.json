@@ -32,7 +32,7 @@
     "py:pyright": "pyright -p packages/worker/pyrightconfig.json",
     "py:deadcode": "scripts/uvpy vulture packages/worker/src --min-confidence 80",
     "py:test": "scripts/uvpy pytest -q packages/worker",
-    "py:test:cov": "scripts/uvpy pytest -q packages/worker --cov=packages/worker/src --cov-report=xml:packages/worker/coverage.xml --cov-report=term",
+    "py:test:cov": "scripts/uvpy pytest -q packages/worker --cov-branch --cov=packages/worker/src --cov-report=xml:packages/worker/coverage.xml --cov-report=term",
     "py:sync": "bash -lc 'cd packages/worker && uv sync --python 3.13 --extra dev'",
     "py:lock": "uv lock --group dev",
     "ci": "yarn lint && yarn typecheck && yarn test:coverage && yarn py:lint && yarn py:typecheck && yarn py:pyright && yarn py:sec && yarn py:test:cov",
