@@ -169,7 +169,11 @@ function ensureLabel(name) {
 }
 
 function createOrUpdateIssue(item, existingNumber) {
-  const labelsArg = item.Labels ? item.Labels.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const labelsArg = item.Labels
+    ? item.Labels.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
   const milestone = item.Milestone?.trim() || undefined;
   if (milestone) ensureMilestone(milestone);
 
@@ -248,12 +252,15 @@ for (const [k, v] of Object.entries(idx)) {
   }
 }
 
-const items = rows.slice(1).map((r) => ({
-  Title: r[idx.Title]?.trim() || '',
-  Body: r[idx.Body]?.trim() || '',
-  Labels: r[idx.Labels]?.trim() || '',
-  Milestone: r[idx.Milestone]?.trim() || '',
-})).filter((x) => x.Title);
+const items = rows
+  .slice(1)
+  .map((r) => ({
+    Title: r[idx.Title]?.trim() || '',
+    Body: r[idx.Body]?.trim() || '',
+    Labels: r[idx.Labels]?.trim() || '',
+    Milestone: r[idx.Milestone]?.trim() || '',
+  }))
+  .filter((x) => x.Title);
 
 const map = loadMap();
 
@@ -287,7 +294,13 @@ for (const [ms, list] of milestoneBuckets) {
       '---',
       `title: ${it.Title.replace(/:/g, '-')}`,
       `milestone: ${it.Milestone}`,
-      `labels: ${JSON.stringify(it.Labels ? it.Labels.split(',').map((s) => s.trim()).filter(Boolean) : [])}`,
+      `labels: ${JSON.stringify(
+        it.Labels
+          ? it.Labels.split(',')
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [],
+      )}`,
       `github: ${rec.number || ''}`,
       '---',
       '',

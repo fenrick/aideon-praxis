@@ -17,7 +17,9 @@ import { spawnSync } from 'node:child_process';
 const REPO = process.env.AIDEON_GH_REPO || 'fenrick/aideon-praxis';
 const PARENT = Number(process.argv[2] || 0);
 if (!PARENT) {
-  console.error('usage: node scripts/issues-split.mjs <parent-issue-number> --file tasks.txt | --items "A" "B"');
+  console.error(
+    'usage: node scripts/issues-split.mjs <parent-issue-number> --file tasks.txt | --items "A" "B"',
+  );
   process.exit(2);
 }
 const args = process.argv.slice(3);
@@ -32,15 +34,29 @@ const ITEMS = args.includes('--items') ? args.slice(args.indexOf('--items') + 1)
 
 function sh(cmd, argv, input) {
   const res = spawnSync(cmd, argv, { encoding: 'utf8', input });
-  if (res.status !== 0) throw new Error(`${cmd} ${argv.join(' ')} failed: ${res.stderr || res.stdout}`);
+  if (res.status !== 0)
+    throw new Error(`${cmd} ${argv.join(' ')} failed: ${res.stderr || res.stdout}`);
   return res.stdout.trim();
 }
-function gh(argv, input) { return sh('gh', argv, input); }
-function yarn(argv) { try { return sh('yarn', ['run', '-T', ...argv]); } catch { return ''; } }
+function gh(argv, input) {
+  return sh('gh', argv, input);
+}
+function yarn(argv) {
+  try {
+    return sh('yarn', ['run', '-T', ...argv]);
+  } catch {
+    return '';
+  }
+}
 
 function readTasks() {
-  if (FILE) return fs.readFileSync(FILE, 'utf8').split(/\r?\n/).map((s)=>s.trim()).filter(Boolean);
-  if (ITEMS) return ITEMS.filter((s)=>s && s !== '--');
+  if (FILE)
+    return fs
+      .readFileSync(FILE, 'utf8')
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  if (ITEMS) return ITEMS.filter((s) => s && s !== '--');
   return [];
 }
 
@@ -50,13 +66,25 @@ function getParent() {
 }
 
 function ensureLabel(name) {
-  try { gh(['api', `repos/${REPO}/labels/${encodeURIComponent(name)}`]); }
-  catch { gh(['api', `repos/${REPO}/labels`, '-X', 'POST', '-f', `name=${name}`, '-f', 'color=888888']); }
+  try {
+    gh(['api', `repos/${REPO}/labels/${encodeURIComponent(name)}`]);
+  } catch {
+    gh(['api', `repos/${REPO}/labels`, '-X', 'POST', '-f', `name=${name}`, '-f', 'color=888888']);
+  }
 }
 
 const parent = getParent();
-const inherit = (prefix) => (parent.labels||[]).map((l)=> typeof l === 'string'? l : l.name).filter((n)=> n.startsWith(prefix));
-const inheritLabels = [LABEL, STATUS_LABEL, ...inherit('priority/'), ...inherit('area/'), ...inherit('module/')];
+const inherit = (prefix) =>
+  (parent.labels || [])
+    .map((l) => (typeof l === 'string' ? l : l.name))
+    .filter((n) => n.startsWith(prefix));
+const inheritLabels = [
+  LABEL,
+  STATUS_LABEL,
+  ...inherit('priority/'),
+  ...inherit('area/'),
+  ...inherit('module/'),
+];
 inheritLabels.forEach(ensureLabel);
 
 const milestone = parent.milestone?.title ? parent.milestone.title : null;
@@ -79,24 +107,35 @@ for (const title of tasks) {
   const num = Number(m[1]);
   created.push({ num, title, url });
   // Add to project if configured (best-effort)
-  try { yarn(['issues:project', '--only', String(num)]); } catch {}
+  try {
+    yarn(['issues:project', '--only', String(num)]);
+  } catch {}
 }
 
 // Update parent body with checklist
 const origBody = parent.body || '';
 const hdr = '## Subtasks';
-const checklist = created.map((c)=>`- [ ] ${c.title} (#${c.num})`).join('\n');
+const checklist = created.map((c) => `- [ ] ${c.title} (#${c.num})`).join('\n');
 let newBody;
 if (origBody.includes(hdr)) {
-  newBody = origBody.replace(new RegExp(`${hdr}[\s\S]*?$`,'m'), `${hdr}\n\n${checklist}`);
+  newBody = origBody.replace(new RegExp(`${hdr}[\s\S]*?$`, 'm'), `${hdr}\n\n${checklist}`);
 } else {
   newBody = `${origBody}\n\n${hdr}\n\n${checklist}\n`;
 }
 gh(['issue', 'edit', String(PARENT), '-R', REPO, '--body', newBody]);
-gh(['issue', 'comment', String(PARENT), '-R', REPO, '--body', `Created ${created.length} linked sub-issue(s) and updated checklist.`]);
+gh([
+  'issue',
+  'comment',
+  String(PARENT),
+  '-R',
+  REPO,
+  '--body',
+  `Created ${created.length} linked sub-issue(s) and updated checklist.`,
+]);
 
 // Mirror docs
-try { yarn(['issues:mirror']); } catch {}
+try {
+  yarn(['issues:mirror']);
+} catch {}
 
 console.log(`Created ${created.length} sub-issue(s).`);
-

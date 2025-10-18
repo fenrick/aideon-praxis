@@ -36,8 +36,12 @@ function sh(cmd, args, opts = {}) {
   return res.stdout.trim();
 }
 
-function gh(args) { return sh('gh', args); }
-function git(args) { return sh('git', args); }
+function gh(args) {
+  return sh('gh', args);
+}
+function git(args) {
+  return sh('git', args);
+}
 
 // Ensure label exists (best-effort)
 try {
@@ -53,7 +57,15 @@ try {
   const who = gh(['api', 'user']);
   const login = JSON.parse(who).login;
   gh(['issue', 'edit', num, '-R', REPO, '--add-label', LABEL, '--add-assignee', login]);
-  gh(['issue', 'comment', num, '-R', REPO, '--body', 'Starting work: marking in progress and creating a branch.']);
+  gh([
+    'issue',
+    'comment',
+    num,
+    '-R',
+    REPO,
+    '--body',
+    'Starting work: marking in progress and creating a branch.',
+  ]);
 } catch (e) {
   console.error(e.message);
   process.exit(2);
@@ -84,7 +96,9 @@ try {
   if (existsSync('package.json')) {
     sh('yarn', ['run', '-T', 'issues:mirror']);
     // Update project status if configured
-    try { sh('yarn', ['run', '-T', 'issues:project', '--only', String(num)]); } catch {}
+    try {
+      sh('yarn', ['run', '-T', 'issues:project', '--only', String(num)]);
+    } catch {}
   }
 } catch {}
 

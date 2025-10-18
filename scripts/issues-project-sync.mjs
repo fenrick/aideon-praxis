@@ -26,7 +26,9 @@ const PROJECT_OWNER = process.env.AIDEON_GH_PROJECT_OWNER || OWNER;
 const PROJECT_NUMBER = Number(process.env.AIDEON_GH_PROJECT_NUMBER || '0');
 const STATUS_FIELD = process.env.AIDEON_GH_STATUS_FIELD || 'Status';
 let STATUS_MAP = {};
-try { STATUS_MAP = JSON.parse(process.env.AIDEON_GH_STATUS_MAP || '{}'); } catch {}
+try {
+  STATUS_MAP = JSON.parse(process.env.AIDEON_GH_STATUS_MAP || '{}');
+} catch {}
 
 function gh(args, input) {
   const res = spawnSync('gh', args, { encoding: 'utf8', input });
@@ -45,8 +47,12 @@ function getProject() {
   const qOrg = `query{ organization(login:"${PROJECT_OWNER}"){ projectV2(number:${PROJECT_NUMBER}){ id title fields(first:50){ nodes{ __typename ... on ProjectV2FieldCommon { id name } ... on ProjectV2SingleSelectField { id name options { id name } } } } } } }`;
   let data = gql(qUser);
   let proj = data.user?.projectV2;
-  if (!proj) { data = gql(qOrg); proj = data.organization?.projectV2; }
-  if (!proj) throw new Error(`Project not found for owner=${PROJECT_OWNER} number=${PROJECT_NUMBER}`);
+  if (!proj) {
+    data = gql(qOrg);
+    proj = data.organization?.projectV2;
+  }
+  if (!proj)
+    throw new Error(`Project not found for owner=${PROJECT_OWNER} number=${PROJECT_NUMBER}`);
   return proj;
 }
 
@@ -79,7 +85,9 @@ function labelsToStatus(labels) {
 }
 
 function findField(proj, name) {
-  return proj.fields.nodes.find((n) => n.name === name && n.__typename === 'ProjectV2SingleSelectField');
+  return proj.fields.nodes.find(
+    (n) => n.name === name && n.__typename === 'ProjectV2SingleSelectField',
+  );
 }
 
 function findOption(field, name) {
@@ -87,7 +95,9 @@ function findOption(field, name) {
 }
 
 function listIssues() {
-  let page = 1; const per = 100; const acc = [];
+  let page = 1;
+  const per = 100;
+  const acc = [];
   for (;;) {
     const out = gh(['api', `repos/${OWNER}/${NAME}/issues?state=all&per_page=${per}&page=${page}`]);
     const arr = JSON.parse(out);
@@ -110,18 +120,26 @@ try {
     const issue = getIssue(n);
     const inProject = issue.projectItems.nodes.find((pi) => pi.project.id === proj.id);
     if (!inProject) {
-      if (DRY) { console.log(`[dry] add issue #${n} to project`); }
-      else addItem(proj.id, issue.id);
+      if (DRY) {
+        console.log(`[dry] add issue #${n} to project`);
+      } else addItem(proj.id, issue.id);
     }
     // re-fetch to get item id (in case it was added now)
     const issue2 = getIssue(n);
     const item = issue2.projectItems.nodes.find((pi) => pi.project.id === proj.id);
-    if (!item) { console.warn(`[warn] no project item for #${n}`); continue; }
+    if (!item) {
+      console.warn(`[warn] no project item for #${n}`);
+      continue;
+    }
     const targetStatus = labelsToStatus(issue2.labels.nodes || []);
     const opt = findOption(statusField, targetStatus);
-    if (!opt) { console.warn(`[warn] missing option '${targetStatus}' in field '${STATUS_FIELD}'`); continue; }
-    if (DRY) { console.log(`[dry] set #${n} → ${targetStatus}`); }
-    else setStatus(proj.id, item.id, statusField.id, opt.id);
+    if (!opt) {
+      console.warn(`[warn] missing option '${targetStatus}' in field '${STATUS_FIELD}'`);
+      continue;
+    }
+    if (DRY) {
+      console.log(`[dry] set #${n} → ${targetStatus}`);
+    } else setStatus(proj.id, item.id, statusField.id, opt.id);
   }
   console.log(`issues-project-sync: processed ${numbers.length} issue(s).`);
 } catch (e) {

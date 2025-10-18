@@ -27,7 +27,11 @@ function gh(args) {
 }
 
 function readSnap() {
-  try { return JSON.parse(fs.readFileSync(SNAP, 'utf8')); } catch { return { prs: [] }; }
+  try {
+    return JSON.parse(fs.readFileSync(SNAP, 'utf8'));
+  } catch {
+    return { prs: [] };
+  }
 }
 
 function saveSnap(s) {
@@ -36,17 +40,38 @@ function saveSnap(s) {
 }
 
 function isoDaysAgo(n) {
-  const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString();
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString();
 }
 
 function listPRs() {
   const since = isoDaysAgo(DAYS);
-  const out = gh(['pr', 'list', '-R', REPO, '--state', 'all', '--search', `updated:>=${since}`, '--json', 'number,url,state,title,updatedAt']);
+  const out = gh([
+    'pr',
+    'list',
+    '-R',
+    REPO,
+    '--state',
+    'all',
+    '--search',
+    `updated:>=${since}`,
+    '--json',
+    'number,url,state,title,updatedAt',
+  ]);
   return JSON.parse(out);
 }
 
 function prIssues(prNumber) {
-  const out = gh(['pr', 'view', String(prNumber), '-R', REPO, '--json', 'number,url,state,closingIssuesReferences']);
+  const out = gh([
+    'pr',
+    'view',
+    String(prNumber),
+    '-R',
+    REPO,
+    '--json',
+    'number,url,state,closingIssuesReferences',
+  ]);
   const j = JSON.parse(out);
   return j.closingIssuesReferences?.map((i) => i.number) || [];
 }
@@ -75,4 +100,3 @@ try {
   console.error(`[issues-linkify] ${e.message}`);
   process.exit(2);
 }
-

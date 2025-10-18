@@ -57,12 +57,29 @@ for (const l of LABELS) {
   try {
     gh(['api', `repos/${REPO}/labels/${encodeURIComponent(l.name)}`]);
     // exists → update color/description to keep consistent
-    gh(['api', `repos/${REPO}/labels/${encodeURIComponent(l.name)}`, '-X', 'PATCH', '-f', `color=${l.color}`, ...(l.description ? ['-f', `description=${l.description}`] : [])]);
+    gh([
+      'api',
+      `repos/${REPO}/labels/${encodeURIComponent(l.name)}`,
+      '-X',
+      'PATCH',
+      '-f',
+      `color=${l.color}`,
+      ...(l.description ? ['-f', `description=${l.description}`] : []),
+    ]);
     console.log(`updated: ${l.name}`);
   } catch {
-    gh(['api', `repos/${REPO}/labels`, '-X', 'POST', '-f', `name=${l.name}`, '-f', `color=${l.color}`, ...(l.description ? ['-f', `description=${l.description}`] : [])]);
+    gh([
+      'api',
+      `repos/${REPO}/labels`,
+      '-X',
+      'POST',
+      '-f',
+      `name=${l.name}`,
+      '-f',
+      `color=${l.color}`,
+      ...(l.description ? ['-f', `description=${l.description}`] : []),
+    ]);
     console.log(`created: ${l.name}`);
   }
 }
 console.log('labels-bootstrap: done');
-

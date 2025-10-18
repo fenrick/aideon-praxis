@@ -110,7 +110,6 @@ When finishing work:
 - Pre‑commit: fast; runs formatters/linters only (no network).
 - Pre‑push: runs `issues:mirror:check` and blocks if the local mirror is out‑of‑date vs GitHub.
 
-
 Not allowed without ADR:
 
 - Meta‑model changes, RPC protocol changes, security posture changes, opening network ports, sending

@@ -32,9 +32,14 @@ function gql(q) {
 }
 
 function listOpenIssues() {
-  let page = 1; const per = 100; const acc = [];
+  let page = 1;
+  const per = 100;
+  const acc = [];
   for (;;) {
-    const out = gh(['api', `repos/${OWNER}/${NAME}/issues?state=open&per_page=${per}&page=${page}`]);
+    const out = gh([
+      'api',
+      `repos/${OWNER}/${NAME}/issues?state=open&per_page=${per}&page=${page}`,
+    ]);
     const arr = JSON.parse(out).filter((x) => !x.pull_request);
     if (!arr.length) break;
     acc.push(...arr);
@@ -48,7 +53,12 @@ function getProjectId() {
   if (!POWNER || !PNUMBER) return null;
   const qUser = `query{ user(login:"${POWNER}"){ projectV2(number:${PNUMBER}){ id title } } }`;
   const qOrg = `query{ organization(login:"${POWNER}"){ projectV2(number:${PNUMBER}){ id title } } }`;
-  let d = gql(qUser); let proj = d.user?.projectV2; if (!proj) { d = gql(qOrg); proj = d.organization?.projectV2; }
+  let d = gql(qUser);
+  let proj = d.user?.projectV2;
+  if (!proj) {
+    d = gql(qOrg);
+    proj = d.organization?.projectV2;
+  }
   return proj?.id || null;
 }
 
@@ -59,8 +69,13 @@ function getItemStatus(itemId) {
 }
 
 function closeIssue(num, reason) {
-  if (DRY) { console.log(`[dry] close #${num} (${reason})`); return; }
-  try { gh(['issue', 'edit', String(num), '-R', REPO, '--add-label', 'status/done']); } catch {}
+  if (DRY) {
+    console.log(`[dry] close #${num} (${reason})`);
+    return;
+  }
+  try {
+    gh(['issue', 'edit', String(num), '-R', REPO, '--add-label', 'status/done']);
+  } catch {}
   gh(['issue', 'close', String(num), '-R', REPO, '--comment', `Closing as Done (${reason}).`]);
 }
 
@@ -86,4 +101,3 @@ try {
   console.error(`[issues-close-done] ${e.message}`);
   process.exit(2);
 }
-

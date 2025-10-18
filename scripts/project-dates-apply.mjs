@@ -48,7 +48,9 @@ function sh(cmd, args) {
   if (r.status !== 0) throw new Error(`${cmd} ${args.join(' ')} failed: ${r.stderr || r.stdout}`);
   return r.stdout.trim();
 }
-function gh(args) { return sh('gh', args); }
+function gh(args) {
+  return sh('gh', args);
+}
 
 function listFields() {
   const out = gh(['project', 'field-list', String(NUMBER), '--owner', OWNER, '--format', 'json']);
@@ -61,9 +63,21 @@ function ensureField(name) {
   const found = fields.find((f) => f.name === name);
   if (found) return found.id;
   try {
-    const out = gh(['project', 'field-create', String(NUMBER), '--owner', OWNER, '--name', name, '--data-type', 'DATE', '--format', 'json']);
+    const out = gh([
+      'project',
+      'field-create',
+      String(NUMBER),
+      '--owner',
+      OWNER,
+      '--name',
+      name,
+      '--data-type',
+      'DATE',
+      '--format',
+      'json',
+    ]);
     const j = JSON.parse(out);
-    return (j.id || j.node_id || j.field?.id);
+    return j.id || j.node_id || j.field?.id;
   } catch (e) {
     // Likely already exists; list again and return
     const fields2 = listFields();
@@ -73,8 +87,14 @@ function ensureField(name) {
   }
 }
 
-function dateOnly(iso) { return (iso || '').slice(0, 10); }
-function minusDays(iso, days) { const d = new Date(iso); d.setUTCDate(d.getUTCDate() - days); return dateOnly(d.toISOString()); }
+function dateOnly(iso) {
+  return (iso || '').slice(0, 10);
+}
+function minusDays(iso, days) {
+  const d = new Date(iso);
+  d.setUTCDate(d.getUTCDate() - days);
+  return dateOnly(d.toISOString());
+}
 
 function getProject() {
   const out = gh(['project', 'view', String(NUMBER), '--owner', OWNER, '--format', 'json']);
@@ -85,7 +105,9 @@ function getProject() {
 function listItems() {
   const out = gh(['project', 'item-list', String(NUMBER), '--owner', OWNER, '--format', 'json']);
   const j = JSON.parse(out);
-  return (j.items || j).filter((it) => it.content && String(it.content.type).toLowerCase() === 'issue');
+  return (j.items || j).filter(
+    (it) => it.content && String(it.content.type).toLowerCase() === 'issue',
+  );
 }
 
 function getIssueMeta(repoFullName, number) {
@@ -95,8 +117,22 @@ function getIssueMeta(repoFullName, number) {
 }
 
 function setDate(projectId, itemId, fieldId, date) {
-  if (DRY) { console.log(`[dry] set ${itemId} field ${fieldId} -> ${date}`); return; }
-  gh(['project', 'item-edit', '--id', itemId, '--project-id', projectId, '--field-id', fieldId, '--date', date]);
+  if (DRY) {
+    console.log(`[dry] set ${itemId} field ${fieldId} -> ${date}`);
+    return;
+  }
+  gh([
+    'project',
+    'item-edit',
+    '--id',
+    itemId,
+    '--project-id',
+    projectId,
+    '--field-id',
+    fieldId,
+    '--date',
+    date,
+  ]);
 }
 
 function fieldIdByName(fields, name) {
@@ -104,7 +140,9 @@ function fieldIdByName(fields, name) {
   return f?.id || null;
 }
 
-function hasDateValue(val) { return !!val && /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(val); }
+function hasDateValue(val) {
+  return !!val && /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(val);
+}
 
 try {
   const proj = getProject();
@@ -139,35 +177,62 @@ try {
     const closed = meta.closed_at ? dateOnly(meta.closed_at) : null;
     const due = it.milestone?.dueOn ? dateOnly(it.milestone.dueOn) : null;
     // Current values if present
-    const values = it.fieldValues || it.fieldValueByName ? {
-      planned: it.fieldValues?.find?.((v)=>v.field?.name==='Planned Start')?.date || it.fieldValueByName?.planned,
-      target: it.fieldValues?.find?.((v)=>v.field?.name==='Target Ship')?.date || it.fieldValueByName?.target,
-      freeze: it.fieldValues?.find?.((v)=>v.field?.name==='Code Freeze')?.date || it.fieldValueByName?.freeze,
-      docs: it.fieldValues?.find?.((v)=>v.field?.name==='Docs/UX Freeze')?.date || it.fieldValueByName?.docs,
-      review: it.fieldValues?.find?.((v)=>v.field?.name==='Review/Go-NoGo')?.date || it.fieldValueByName?.review,
-      actual: it.fieldValues?.find?.((v)=>v.field?.name==='Actual Ship')?.date || it.fieldValueByName?.actual,
-    } : {};
+    const values =
+      it.fieldValues || it.fieldValueByName
+        ? {
+            planned:
+              it.fieldValues?.find?.((v) => v.field?.name === 'Planned Start')?.date ||
+              it.fieldValueByName?.planned,
+            target:
+              it.fieldValues?.find?.((v) => v.field?.name === 'Target Ship')?.date ||
+              it.fieldValueByName?.target,
+            freeze:
+              it.fieldValues?.find?.((v) => v.field?.name === 'Code Freeze')?.date ||
+              it.fieldValueByName?.freeze,
+            docs:
+              it.fieldValues?.find?.((v) => v.field?.name === 'Docs/UX Freeze')?.date ||
+              it.fieldValueByName?.docs,
+            review:
+              it.fieldValues?.find?.((v) => v.field?.name === 'Review/Go-NoGo')?.date ||
+              it.fieldValueByName?.review,
+            actual:
+              it.fieldValues?.find?.((v) => v.field?.name === 'Actual Ship')?.date ||
+              it.fieldValueByName?.actual,
+          }
+        : {};
 
     // Planned Start
     if ((FORCE || !hasDateValue(values.planned)) && created) {
-      setDate(projectId, id, ids.planned, created); updated++;
+      setDate(projectId, id, ids.planned, created);
+      updated++;
     }
     // Target Ship
     if ((FORCE || !hasDateValue(values.target)) && due) {
-      setDate(projectId, id, ids.target, due); updated++;
+      setDate(projectId, id, ids.target, due);
+      updated++;
     }
     // Freeze dates depend on target
     if (due) {
       const cf = minusDays(due, FREEZE_DAYS);
       const df = minusDays(due, DOCS_FREEZE_DAYS);
       const rv = minusDays(due, REVIEW_DAYS);
-      if (FORCE || !hasDateValue(values.freeze)) { setDate(projectId, id, ids.freeze, cf); updated++; }
-      if (FORCE || !hasDateValue(values.docs)) { setDate(projectId, id, ids.docs, df); updated++; }
-      if (FORCE || !hasDateValue(values.review)) { setDate(projectId, id, ids.review, rv); updated++; }
+      if (FORCE || !hasDateValue(values.freeze)) {
+        setDate(projectId, id, ids.freeze, cf);
+        updated++;
+      }
+      if (FORCE || !hasDateValue(values.docs)) {
+        setDate(projectId, id, ids.docs, df);
+        updated++;
+      }
+      if (FORCE || !hasDateValue(values.review)) {
+        setDate(projectId, id, ids.review, rv);
+        updated++;
+      }
     }
     // Actual Ship
     if (closed && (FORCE || !hasDateValue(values.actual))) {
-      setDate(projectId, id, ids.actual, closed); updated++;
+      setDate(projectId, id, ids.actual, closed);
+      updated++;
     }
   }
   console.log(`project-dates-apply: updated ${updated} field values.`);

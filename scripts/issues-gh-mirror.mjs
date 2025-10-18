@@ -39,7 +39,11 @@ function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
 }
 function readJSON(p, fallback) {
-  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return fallback; }
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch {
+    return fallback;
+  }
 }
 function writeFileIfChanged(p, content) {
   const cur = fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
@@ -73,7 +77,9 @@ function listMilestones() {
 
 function listIssuesForMilestone(msNumber) {
   const state = INCLUDE_CLOSED ? 'all' : 'open';
-  let page = 1; const per = 100; const items = [];
+  let page = 1;
+  const per = 100;
+  const items = [];
   for (;;) {
     const out = gh([
       'api',
@@ -89,7 +95,9 @@ function listIssuesForMilestone(msNumber) {
 
 function listIssuesNoMilestone() {
   const state = INCLUDE_CLOSED ? 'all' : 'open';
-  let page = 1; const per = 100; const items = [];
+  let page = 1;
+  const per = 100;
+  const items = [];
   for (;;) {
     const out = gh([
       'api',
@@ -104,7 +112,8 @@ function listIssuesNoMilestone() {
 }
 
 function frontMatter(issue, milestoneTitle) {
-  const labels = issue.labels?.map((l) => (typeof l === 'string' ? l : l.name)).filter(Boolean) || [];
+  const labels =
+    issue.labels?.map((l) => (typeof l === 'string' ? l : l.name)).filter(Boolean) || [];
   const lines = [
     '---',
     `title: ${issue.title.replace(/:/g, '-')}`,
@@ -130,7 +139,9 @@ function writeIssueMarkdown(issue, milestoneTitle, index) {
 }
 
 function snapshotFromIssues(issues) {
-  return issues.map((i) => ({ number: i.number, updated_at: i.updated_at, state: i.state })).sort((a, b) => a.number - b.number);
+  return issues
+    .map((i) => ({ number: i.number, updated_at: i.updated_at, state: i.state }))
+    .sort((a, b) => a.number - b.number);
 }
 
 function flatIssues(milestones, noMsIssues) {
@@ -142,7 +153,11 @@ function flatIssues(milestones, noMsIssues) {
 
 // Main
 try {
-  const milestones = listMilestones().map((m) => ({ number: m.number, title: m.title, issues: [] }));
+  const milestones = listMilestones().map((m) => ({
+    number: m.number,
+    title: m.title,
+    issues: [],
+  }));
   for (const ms of milestones) {
     ms.issues = listIssuesForMilestone(ms.number);
   }
@@ -154,7 +169,14 @@ try {
 
   if (CHECK) {
     const sameLength = newSnap.length === oldSnap.length;
-    const same = sameLength && newSnap.every((x, i) => x.number === oldSnap[i].number && x.updated_at === oldSnap[i].updated_at && x.state === oldSnap[i].state);
+    const same =
+      sameLength &&
+      newSnap.every(
+        (x, i) =>
+          x.number === oldSnap[i].number &&
+          x.updated_at === oldSnap[i].updated_at &&
+          x.state === oldSnap[i].state,
+      );
     if (same) {
       console.log('issues-gh-mirror: OK — local docs are current with GitHub');
       process.exit(0);
@@ -188,4 +210,3 @@ try {
   console.error(`[issues-gh-mirror] ${e.message}`);
   process.exit(2);
 }
-

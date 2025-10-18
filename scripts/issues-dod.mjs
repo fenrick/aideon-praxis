@@ -10,7 +10,9 @@ import 'dotenv/config';
 import { spawnSync } from 'node:child_process';
 
 const REPO = process.env.AIDEON_GH_REPO || 'fenrick/aideon-praxis';
-const TARGET_LABEL = process.argv.includes('--label') ? process.argv[process.argv.indexOf('--label') + 1] : 'status/in-progress';
+const TARGET_LABEL = process.argv.includes('--label')
+  ? process.argv[process.argv.indexOf('--label') + 1]
+  : 'status/in-progress';
 const DRY = process.argv.includes('--dry-run');
 
 function gh(args, input) {
@@ -20,9 +22,14 @@ function gh(args, input) {
 }
 
 function listInProgress() {
-  let page = 1; const per = 100; const items = [];
+  let page = 1;
+  const per = 100;
+  const items = [];
   for (;;) {
-    const out = gh(['api', `repos/${REPO}/issues?state=open&labels=${encodeURIComponent(TARGET_LABEL)}&per_page=${per}&page=${page}`]);
+    const out = gh([
+      'api',
+      `repos/${REPO}/issues?state=open&labels=${encodeURIComponent(TARGET_LABEL)}&per_page=${per}&page=${page}`,
+    ]);
     const arr = JSON.parse(out);
     items.push(...arr.filter((x) => !x.pull_request));
     if (arr.length < per) break;
@@ -49,7 +56,15 @@ try {
         console.log(`[dry] would append DoD to #${it.number}`);
       } else {
         gh(['issue', 'edit', String(it.number), '-R', REPO, '--body', newBody]);
-        gh(['issue', 'comment', String(it.number), '-R', REPO, '--body', 'Added Definition of Done checklist and set expectations.']);
+        gh([
+          'issue',
+          'comment',
+          String(it.number),
+          '-R',
+          REPO,
+          '--body',
+          'Added Definition of Done checklist and set expectations.',
+        ]);
       }
     }
   }
@@ -58,4 +73,3 @@ try {
   console.error(`[issues-dod] ${e.message}`);
   process.exit(2);
 }
-
