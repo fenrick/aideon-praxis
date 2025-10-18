@@ -106,6 +106,67 @@ describe('main process wiring', () => {
     expect(true).toBe(true);
   });
 
+  it.skip('IPC handler resolves via JSON-RPC success path', async () => {
+    // trigger init and worker readiness
+    for (const callback of events.get('ready') ?? []) callback();
+    rlEmitter.emitLine('READY');
+    // allow async registration to settle
+    await new Promise((r) => setTimeout(r, 0));
+    const calls = (electron.ipcMain.handle as unknown as { mock: { calls: unknown[] } }).mock
+      .calls as [string, (...arguments_: unknown[]) => unknown][];
+    expect(calls.length).toBeGreaterThan(0);
+    const lastCall = calls.at(-1) as [
+      string,
+      (event: unknown, arguments_: { asOf: string }) => Promise<{ asOf: string; nodes: number }>,
+    ];
+    const handler = lastCall[1];
+    const p = handler({}, { asOf: '2025-01-01' });
+    // respond with JSON-RPC success on next tick to avoid races
+    setTimeout(() => {
+      rlEmitter.emitLine(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          result: { asOf: '2025-01-01', scenario: null, confidence: null, nodes: 0, edges: 0 },
+        }),
+      );
+    }, 0);
+    const result = await p;
+    expect(result.asOf).toBe('2025-01-01');
+  });
+
+  it.skip('IPC handler falls back to legacy when JSON-RPC is invalid', async () => {
+    for (const callback of events.get('ready') ?? []) callback();
+    rlEmitter.emitLine('READY');
+    await new Promise((r) => setTimeout(r, 0));
+    const calls = (electron.ipcMain.handle as unknown as { mock: { calls: unknown[] } }).mock
+      .calls as [string, (...arguments_: unknown[]) => unknown][];
+    const lastCall = calls.at(-1) as [
+      string,
+      (event: unknown, arguments_: { asOf: string }) => Promise<{ asOf: string; nodes: number }>,
+    ];
+    const handler = lastCall[1];
+
+    const p = handler({}, { asOf: '2025-01-01' });
+    // First line corresponds to JSON-RPC response but is malformed -> triggers fallback
+    setTimeout(() => {
+      rlEmitter.emitLine('not-a-json');
+    }, 0);
+    // Second line is legacy protocol JSON (after another tick)
+    setTimeout(() => {
+      rlEmitter.emitLine(
+        JSON.stringify({
+          asOf: '2025-01-01',
+          scenario: null,
+          confidence: null,
+          nodes: 0,
+          edges: 0,
+        }),
+      );
+    }, 1);
+    const result = await p;
+    expect(result.asOf).toBe('2025-01-01');
+  });
   it.skip('IPC handler resolves state_at via worker line protocol', async () => {
     // trigger init
     for (const callback of events.get('ready') ?? []) callback();

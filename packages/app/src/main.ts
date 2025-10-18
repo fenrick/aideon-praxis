@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import readline from 'node:readline';
+import { parseJsonRpcStateAt, type StateAtResult } from './rpc';
 
 // Security: disable hardware acceleration by default for baseline.
 // This file is the Electron host process entry. It must not contain
@@ -55,32 +56,15 @@ const createWindow = async () => {
           params: arguments_,
         };
         const raw = await (sendLine as (l: string) => Promise<string>)(JSON.stringify(rpc));
-        let object: any;
-        try {
-          object = JSON.parse(raw);
-          if (object?.jsonrpc === '2.0') {
-            if ('result' in object)
-              return object.result as unknown as {
-                asOf: string;
-                scenario: string | null;
-                confidence: number | null;
-                nodes: number;
-                edges: number;
-              };
-            if ('error' in object) throw new Error(object.error?.message || 'Worker error');
-          }
-        } catch {}
+        const parsed = parseJsonRpcStateAt(raw);
+        if (parsed.kind === 'success') return parsed.result;
+        if (parsed.kind === 'error') throw new Error(parsed.message);
+        // else: fall back
         // Legacy fallback
         const legacyRaw = await (sendLine as (l: string) => Promise<string>)(
           `state_at ${JSON.stringify(arguments_)}`,
         );
-        return JSON.parse(legacyRaw) as {
-          asOf: string;
-          scenario: string | null;
-          confidence: number | null;
-          nodes: number;
-          edges: number;
-        };
+        return JSON.parse(legacyRaw) as StateAtResult;
       },
     );
 
