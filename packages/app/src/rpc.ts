@@ -26,7 +26,7 @@ export type ParsedStateAt =
 const isJsonRpcEnvelope = (x: unknown): x is { jsonrpc: string } =>
   typeof x === 'object' && x !== null && 'jsonrpc' in (x as Record<string, unknown>);
 
-const isJsonRpcSuccess = <T,>(x: unknown): x is JsonRpcSuccess<T> => {
+const isJsonRpcSuccess = <T>(x: unknown): x is JsonRpcSuccess<T> => {
   if (!isJsonRpcEnvelope(x)) return false;
   const o = x as Record<string, unknown>;
   return o.jsonrpc === '2.0' && 'result' in o;
@@ -49,4 +49,3 @@ export function parseJsonRpcStateAt(raw: string): ParsedStateAt {
   if (isJsonRpcError(parsed)) return { kind: 'error', message: parsed.error.message };
   return { kind: 'other' };
 }
-
