@@ -2,8 +2,9 @@
 
 ## Summary
 
-The Electron/Node host owns UI, OS integration, local persistence, and **secure IPC**.
-The Python worker is a long-lived sidecar providing graph analytics/ML and heavy computations (time-slicing, topology, TCO).
+The Electron/Node host owns UI, OS integration, local persistence, and **secure IPC**. The Python
+worker is a long-lived sidecar providing graph analytics/ML and heavy computations (time-slicing,
+topology, TCO).
 
 ## RPC Boundary
 
@@ -45,6 +46,7 @@ The Python worker is a long-lived sidecar providing graph analytics/ML and heavy
 
 ## Security Notes
 
-- Evaluate `Temporal.StateAt` and `Temporal.Diff` in a sandbox context; log invocations (who/when/what) for audit.
+- Evaluate `Temporal.StateAt` and `Temporal.Diff` in a sandbox context; log invocations
+  (who/when/what) for audit.
 - Enforce PII redaction at host boundary for all exports/results (deny-by-default with allowlists).
 - Apply strict least-privilege FS and process permissions for UDS/pipe locations.

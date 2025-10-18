@@ -1,11 +1,12 @@
 # AGENTS.md
 
-Guide for AI coding assistants (e.g., Claude, GPT/Codex) contributing to the Aideon Praxis repository.
+Guide for AI coding assistants (e.g., Claude, GPT/Codex) contributing to the Aideon Praxis
+repository.
 
 ## Purpose
 
-Set clear guardrails and output conventions so AI agents make **safe, incremental, reviewable** changes that
-respect our **time‑first, graph‑native** architecture and security posture.
+Set clear guardrails and output conventions so AI agents make **safe, incremental, reviewable**
+changes that respect our **time‑first, graph‑native** architecture and security posture.
 
 ## Who this is for
 
@@ -14,17 +15,24 @@ respect our **time‑first, graph‑native** architecture and security posture.
 
 ## Core principles (do not break)
 
-- **Time‑first digital twin:** `state_at()`, snapshots, scenarios, Plan Events, plateaus/gaps are authoritative.
+- **Time‑first digital twin:** `state_at()`, snapshots, scenarios, Plan Events, plateaus/gaps are
+  authoritative.
 - **Local‑first, cloud‑ready:** Desktop works offline; server mode is a config switch, not a fork.
-- **Strict boundaries:** Renderer ↔ Host via preload IPC; Host ↔ Worker via pipes/UDS RPC. No DB‑specific logic in the renderer.
-- **Security by default:** No renderer HTTP; no open TCP ports in desktop mode; PII redaction on exports; least privilege.
-- **Adapters, not entanglement:** Graph, Storage, Worker are interface‑driven. Backends swap without UI change.
+- **Strict boundaries:** Renderer ↔ Host via preload IPC; Host ↔ Worker via pipes/UDS RPC. No
+  DB‑specific logic in the renderer.
+- **Security by default:** No renderer HTTP; no open TCP ports in desktop mode; PII redaction on
+  exports; least privilege.
+- **Adapters, not entanglement:** Graph, Storage, Worker are interface‑driven. Backends swap without
+  UI change.
 
 ## Repository boundaries (monorepo)
 
-- `packages/app` — Electron host (Node) + React UI (renderer). Preload exposes a minimal, typed bridge.
-- `packages/adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
-- `packages/worker` — Python 3.11 sidecar (analytics/ML, time‑slicing, topology, TCO). RPC server only.
+- `packages/app` — Electron host (Node) + React UI (renderer). Preload exposes a minimal, typed
+  bridge.
+- `packages/adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend
+  specifics in UI.
+- `packages/worker` — Python 3.11 sidecar (analytics/ML, time‑slicing, topology, TCO). RPC server
+  only.
 - `packages/docs` — C4 diagrams, meta‑model, viewpoints, ADRs.
 
 Never cross these boundaries with imports or side‑effects.
@@ -33,13 +41,16 @@ Never cross these boundaries with imports or side‑effects.
 
 - Scaffolding modules, views, adapters, or worker jobs inside the correct package.
 - Implementing time‑slicing UI (AS‑OF slider), Plan Event handling, plateau/diff exports.
-- Analytics in the worker (shortest path, centrality, impact, topology deltas) with tests and metrics.
-- Connectors via Continuum scheduler (e.g., CMDB), CSV wizard features, PII redaction, encryption‑at‑rest.
+- Analytics in the worker (shortest path, centrality, impact, topology deltas) with tests and
+  metrics.
+- Connectors via Continuum scheduler (e.g., CMDB), CSV wizard features, PII redaction,
+  encryption‑at‑rest.
 - Docs: README, CONTRIBUTING, ROADMAP, Architecture‑Boundary, ADRs, C4 diagrams‑as‑code.
 
 Not allowed without ADR:
 
-- Meta‑model changes, RPC protocol changes, security posture changes, opening network ports, sending data to external LLMs.
+- Meta‑model changes, RPC protocol changes, security posture changes, opening network ports, sending
+  data to external LLMs.
 
 ## Output contract (must follow in every proposal/PR)
 
@@ -71,15 +82,16 @@ Provide your response in the following sections, in this order. Keep explanation
 
 - Trade‑offs, alternatives rejected, follow‑ups (issues to file).
 
-If you need input, first emit a **short PLAN with questions**; otherwise proceed with sensible defaults consistent
-with this guide.
+If you need input, first emit a **short PLAN with questions**; otherwise proceed with sensible
+defaults consistent with this guide.
 
 ## Coding standards
 
 ### TypeScript / React (packages/app, packages/adapters)
 
 - Node 20+, React 18. Strict TS config; ESLint + Prettier.
-- Electron renderer **no NodeIntegration**; `contextIsolation: true`; strict CSP; preload exposes typed methods only.
+- Electron renderer **no NodeIntegration**; `contextIsolation: true`; strict CSP; preload exposes
+  typed methods only.
 - Never embed backend‑specific queries in renderer; call adapters or host APIs.
 
 ### Python (packages/worker)
@@ -122,7 +134,8 @@ with this guide.
 - No renderer HTTP; renderer ↔ host via IPC only.
 - Desktop mode: no open TCP ports; localhost APIs are host‑bound and read‑only.
 - PII: deny‑by‑default on exports/APIs; redaction checked in tests where applicable.
-- Do not call external LLMs or telemetry endpoints; if necessary, stub behind host with explicit allowlist.
+- Do not call external LLMs or telemetry endpoints; if necessary, stub behind host with explicit
+  allowlist.
 
 ## Performance & SLO gates
 
@@ -154,7 +167,8 @@ Changes that could affect these must include a note in CHECKS and, when possible
   - `yarn py:lint:fix` (Ruff with `--fix`)
 - Optional checks (non‑writing):
   - `yarn format:check` and `yarn format:py:check`
-- Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and deterministic.
+- Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and
+  deterministic.
 
 ## Versioning & migrations
 
