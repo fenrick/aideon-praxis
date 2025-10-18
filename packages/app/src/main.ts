@@ -1,22 +1,11 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
-import readline from 'node:readline';
-import { parseJsonRpcStateAt, type StateAtResult } from './rpc';
+import { type StateAtResult } from './rpc';
 import http from 'node:http';
 import os from 'node:os';
 
-interface MinimalChild {
-  stdin: { write: (s: string) => void };
-}
-
-function awaitWorkerReady(reader: readline.Interface): Promise<void> {
-  return new Promise<void>((resolve) => {
-    const onLine = (line: string) => {
-      if (line.trim() === 'READY') resolve();
-    };
-    reader.on('line', onLine);
-  });
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/consistent-type-definitions
+type MinimalChild = { on: (event: string, handler: (...arguments_: any[]) => void) => void };
 
 async function httpStateAtOverUds(
   udsPath: string,
@@ -52,6 +41,24 @@ async function httpStateAtOverUds(
   return JSON.parse(json) as StateAtResult;
 }
 
+async function waitForServerReady(udsPath: string, timeoutMs = 3000): Promise<void> {
+  const started = Date.now();
+  // Poll a lightweight request until it succeeds or times out
+  // Using a known valid asOf date; server validates type only
+  const tryOnce = async () => {
+    try {
+      await httpStateAtOverUds(udsPath, { asOf: '1970-01-01' });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  while (Date.now() - started < timeoutMs) {
+    if (await tryOnce()) return;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+}
+
 // Security: disable hardware acceleration by default for baseline.
 // This file is the Electron host process entry. It must not contain
 // any renderer logic or backend-specific adapters. Renderer communicates
@@ -78,67 +85,30 @@ const createWindow = async () => {
 
   // Security: remove menu in production-ish skeleton
   win.removeMenu();
-  // Spawn worker in background (pipes only, no TCP) and wire a minimal RPC
+  // Spawn worker server (UDS HTTP only; no TCP) and wire IPC handler
   try {
     const { spawn } = await import('node:child_process');
-    // Promise that resolves when the worker prints READY
     let ready: Promise<void> = Promise.resolve();
-    let sendLine: ((line: string) => Promise<string>) | null = null;
-    let nextId = 1;
-    const useServer = process.env.AIDEON_USE_UV_SERVER === '1';
     const udsPath = path.join(os.tmpdir(), `aideon-worker-${String(process.pid)}.sock`);
-
-    // httpStateAtOverUds defined at module scope
-    const makeSendLine =
-      (rl: readline.Interface, child: MinimalChild): ((line: string) => Promise<string>) =>
-      async (line: string) =>
-        new Promise<string>((resolve) => {
-          rl.once('line', resolve);
-          child.stdin.write(`${line}\n`);
-        });
 
     // IPC handler for state_at (register early; it will await readiness)
     ipcMain.handle(
       'worker:state_at',
       async (_event, arguments_: { asOf: string; scenario?: string; confidence?: number }) => {
         await ready;
-        if (useServer) return httpStateAtOverUds(udsPath, arguments_);
-        // Prefer JSON-RPC 2.0. Fallback to legacy if needed.
-        const rpc = {
-          jsonrpc: '2.0',
-          id: nextId++,
-          method: 'temporal.state_at.v1',
-          params: arguments_,
-        };
-        const raw = await (sendLine as (l: string) => Promise<string>)(JSON.stringify(rpc));
-        const parsed = parseJsonRpcStateAt(raw);
-        if (parsed.kind === 'success') return parsed.result;
-        if (parsed.kind === 'error') throw new Error(parsed.message);
-        // else: fall back
-        // Legacy fallback
-        const legacyRaw = await (sendLine as (l: string) => Promise<string>)(
-          `state_at ${JSON.stringify(arguments_)}`,
-        );
-        return JSON.parse(legacyRaw) as StateAtResult;
+        return httpStateAtOverUds(udsPath, arguments_);
       },
     );
 
     const spawnWorker = () => {
       const { cmd, args, options } = getWorkerSpawn();
-      if (useServer) {
-        // Inject UDS path for server mode
-        args.push('--uds', udsPath);
-      }
-      const child = spawn(cmd, args, options);
-      if (useServer) {
-        // Server mode: assume readiness is handled by HTTP health; don't wire readline
-        ready = Promise.resolve();
-      } else {
-        const rl = readline.createInterface({ input: child.stdout });
-        ready = awaitWorkerReady(rl);
-        // Simple serialized request helper for legacy modes
-        sendLine = makeSendLine(rl, child);
-      }
+      // Inject UDS path for server mode
+      args.push('--uds', udsPath);
+      const child = spawn(cmd, args, options) as unknown as MinimalChild;
+      // Wait for HTTP health over UDS to succeed (ignore failures and let handler retry)
+      ready = waitForServerReady(udsPath).catch(() => {
+        /* noop */
+      });
       child.on('exit', () => {
         // Attempt a fast respawn; existing callers still await `ready`
         spawnWorker();
@@ -163,12 +133,12 @@ function getWorkerSpawn(): {
   if (app.isPackaged) {
     const binName = process.platform === 'win32' ? 'aideon-worker.exe' : 'aideon-worker';
     const workerPath = path.join(process.resourcesPath, 'worker', binName);
-    return { cmd: workerPath, args: [], options };
+    return { cmd: workerPath, args: ['--server'], options };
   }
-  // Dev: prefer `uv run -q -m aideon_worker.cli` if available, fallback to python3 -m
+  // Dev: prefer `uv run -q -m aideon_worker.server` if available
   options.env = { ...process.env, PYTHONPATH: path.join(process.cwd(), '..', 'worker', 'src') };
   const uvPath = process.env.UV ?? 'uv';
-  return { cmd: uvPath, args: ['run', '-q', '-m', 'aideon_worker.cli'], options };
+  return { cmd: uvPath, args: ['run', '-q', '-m', 'aideon_worker.server'], options };
 }
 
 // Electron app init using event to avoid promise chain in CJS

@@ -36,37 +36,23 @@ vi.mock('node:child_process', () => ({
   })),
 }));
 
-// Provide a controllable readline interface that emits 'line' events
-class RLMock {
-  private handlers: ((s: string) => void)[] = [];
-  on(event: string, handler: (s: string) => void) {
-    if (event === 'line') this.handlers.push(handler);
-  }
-  once(event: string, handler: (s: string) => void) {
-    if (event !== 'line') return;
-    const wrapper = (s: string) => {
-      this.off('line', wrapper);
-      handler(s);
-    };
-    this.on('line', wrapper);
-  }
-  off(event: string, handler: (s: string) => void) {
-    if (event === 'line') this.handlers = this.handlers.filter((h) => h !== handler);
-  }
-  emitLine(s: string) {
-    for (const h of this.handlers) h(s);
-  }
-}
-const rlEmitter = new RLMock();
-vi.mock('node:readline', () => ({
-  default: { createInterface: vi.fn(() => rlEmitter as unknown as any) },
-  createInterface: vi.fn(() => rlEmitter as unknown as any),
-}));
+// No readline piping in server-only mode
+vi.mock('node:readline', () => ({ default: {}, createInterface: vi.fn() }));
+
+// Mock http request for server-mode calls when needed
+const { httpRequestMock } = vi.hoisted(() => ({ httpRequestMock: vi.fn() }));
+vi.mock('node:http', async () => {
+  return {
+    default: { request: httpRequestMock },
+    request: httpRequestMock,
+  } as unknown as Record<string, unknown>;
+});
 
 // Import after mocks in place
 import * as electron from 'electron';
 
-process.env.AIDEON_USE_UV_SERVER = '0';
+// Server-only mode
+process.env.AIDEON_USE_UV_SERVER = '1';
 import '../src/main';
 
 describe('main process wiring', () => {
@@ -77,7 +63,6 @@ describe('main process wiring', () => {
   it('boots without throwing on ready', async () => {
     for (const callback of events.get('ready') ?? []) callback();
     await new Promise((r) => setTimeout(r, 0));
-    rlEmitter.emitLine('READY');
     // no assertions — absence of error is success for wiring smoke
     expect(true).toBe(true);
   });
@@ -89,7 +74,7 @@ describe('main process wiring', () => {
       electron.BrowserWindow as unknown as { prototype: { loadFile: () => Promise<never> } }
     ).prototype.loadFile = vi.fn(() => Promise.reject(new Error('fail')));
     for (const callback of events.get('ready') ?? []) callback();
-    rlEmitter.emitLine('READY');
+    // server-only: no READY line
     expect(true).toBe(true);
   });
 
@@ -117,70 +102,55 @@ describe('main process wiring', () => {
     expect(true).toBe(true);
   });
 
-  it('IPC handler resolves via JSON-RPC success path', async () => {
-    // trigger init and worker readiness
+  it('IPC handler resolves via HTTP-over-UDS', async () => {
+    // trigger init
     for (const callback of events.get('ready') ?? []) callback();
-    // wait for async module import and readline registration
-    await new Promise((r) => setTimeout(r, 0));
-    rlEmitter.emitLine('READY');
-    // allow async registration to settle further
+    // allow async registration to settle
     await new Promise((r) => setTimeout(r, 0));
     const calls = (electron.ipcMain.handle as unknown as { mock: { calls: unknown[] } }).mock
       .calls as [string, (...arguments_: unknown[]) => unknown][];
     expect(calls.length).toBeGreaterThan(0);
-    const lastCall = calls.at(-1) as [
+    const [, handler] = calls.at(-1) as [
       string,
-      (event: unknown, arguments_: { asOf: string }) => Promise<{ asOf: string; nodes: number }>,
+      (event: unknown, a: { asOf: string }) => Promise<{ asOf: string; nodes: number }>,
     ];
-    const handler = lastCall[1];
-    const p = handler({}, { asOf: '2025-01-01' });
-    // respond with JSON-RPC success on next tick to avoid races
-    setTimeout(() => {
-      rlEmitter.emitLine(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          result: { asOf: '2025-01-01', scenario: null, confidence: null, nodes: 0, edges: 0 },
-        }),
-      );
-    }, 0);
-    const result = await p;
+    // mock http client for this test
+    httpRequestMock.mockImplementation((_options: unknown, callback: (response: any) => void) => {
+      const dataHandlers: ((c?: unknown) => void)[] = [];
+      const endHandlers: (() => void)[] = [];
+      const response = {
+        on(event: 'data' | 'end', function_: (c?: unknown) => void) {
+          if (event === 'data') dataHandlers.push(function_);
+          else endHandlers.push(function_ as () => void);
+        },
+        emit(event: 'data' | 'end', payload?: unknown) {
+          if (event === 'data') for (const function_ of dataHandlers) function_(payload);
+          else for (const function_ of endHandlers) function_();
+        },
+      } as const;
+      setTimeout(() => {
+        callback(response);
+        response.emit(
+          'data',
+          Buffer.from(
+            JSON.stringify({
+              asOf: '2025-01-01',
+              scenario: null,
+              confidence: null,
+              nodes: 0,
+              edges: 0,
+            }),
+          ),
+        );
+        response.emit('end');
+      }, 0);
+      return { on: vi.fn(), end: vi.fn() };
+    });
+    const result = await handler({}, { asOf: '2025-01-01' });
     expect(result.asOf).toBe('2025-01-01');
   });
 
-  it('IPC handler falls back to legacy when JSON-RPC is invalid', async () => {
-    for (const callback of events.get('ready') ?? []) callback();
-    await new Promise((r) => setTimeout(r, 0));
-    rlEmitter.emitLine('READY');
-    await new Promise((r) => setTimeout(r, 0));
-    const calls = (electron.ipcMain.handle as unknown as { mock: { calls: unknown[] } }).mock
-      .calls as [string, (...arguments_: unknown[]) => unknown][];
-    const lastCall = calls.at(-1) as [
-      string,
-      (event: unknown, arguments_: { asOf: string }) => Promise<{ asOf: string; nodes: number }>,
-    ];
-    const handler = lastCall[1];
-
-    const p = handler({}, { asOf: '2025-01-01' });
-    // First line corresponds to JSON-RPC response but is malformed -> triggers fallback
-    setTimeout(() => {
-      rlEmitter.emitLine('not-a-json');
-    }, 0);
-    // Second line is legacy protocol JSON (after another tick)
-    setTimeout(() => {
-      rlEmitter.emitLine(
-        JSON.stringify({
-          asOf: '2025-01-01',
-          scenario: null,
-          confidence: null,
-          nodes: 0,
-          edges: 0,
-        }),
-      );
-    }, 1);
-    const result = await p;
-    expect(result.asOf).toBe('2025-01-01');
-  });
+  // No legacy fallback in server-only mode
   it.skip('IPC handler resolves state_at via worker line protocol', async () => {
     // trigger init
     for (const callback of events.get('ready') ?? []) callback();
@@ -194,17 +164,11 @@ describe('main process wiring', () => {
       arguments_: { asOf: string },
     ) => Promise<{ asOf: string }>;
     // signal worker ready
-    rlEmitter.emit('line', 'READY');
+    // server-only: not applicable
     const p = handler({}, { asOf: '2025-01-01' });
-    const payload = JSON.stringify({
-      asOf: '2025-01-01',
-      scenario: null,
-      confidence: null,
-      nodes: 0,
-      edges: 0,
-    });
+    // no-op
     // respond from worker
-    rlEmitter.emit('line', payload);
+    // server-only: not applicable
     const result = await p;
     expect(result.asOf).toBe('2025-01-01');
   });
