@@ -29,10 +29,13 @@ jobs:
           cache-dependency-path: |
             packages/worker/pyproject.toml
             packages/worker/requirements-dev.lock
-      - run: corepack enable || true
+      - name: Enable Corepack (non-fatal)
+        run: corepack enable
+        continue-on-error: true
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Build worker binary (PyInstaller)
+        shell: bash
         run: |
           python -m pip install --upgrade pip
           if [ -f packages/worker/requirements-dev.lock ]; then
@@ -54,10 +57,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
+        shell: bash
         run: |
           VERSION=${{ github.event.release.tag_name }}
           npx electron-builder --projectDir packages/app \
-            -c packages/app/electron-builder.yml \
+            -c electron-builder.yml \
             -c.extraMetadata.version=${VERSION} \
             --publish always
 

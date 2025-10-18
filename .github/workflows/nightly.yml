@@ -7,17 +7,38 @@ on:
 
 jobs:
   nightly:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: nightly
+          # Checkout the default release branch; we'll create/switch to 'nightly' below.
+          ref: main
           fetch-depth: 0
+      - name: Ensure 'nightly' branch exists and checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin +refs/heads/*:refs/remotes/origin/* --prune
+          if git show-ref --verify --quiet refs/remotes/origin/nightly; then
+            echo "Nightly branch exists on origin."
+          else
+            echo "Creating 'nightly' branch from origin/main and pushing to origin..."
+            git switch -c nightly origin/main
+            git push -u origin nightly
+          fi
+          echo "Switching to local 'nightly' branch..."
+          git switch nightly
+          echo "On branch: $(git rev-parse --abbrev-ref HEAD)"
       - uses: actions/setup-node@v6
         with:
           node-version: '20'
       - run: corepack enable || true
       - run: yarn install --frozen-lockfile
+      - name: Markdownlint
+        run: npx --yes markdownlint-cli@0.42.0 --config .markdownlint.json \
+          --ignore node_modules --ignore coverage --ignore "packages/**/dist" --ignore dist "**/*.md"
       - run: yarn lint
       - run: yarn typecheck
       - run: yarn test
