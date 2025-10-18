@@ -68,6 +68,7 @@ jobs:
         run: yarn py:lint
       - name: Python Typecheck (mypy + pyright)
         run: |
+          yarn py:sync
           yarn py:typecheck
           yarn py:pyright
       - name: Python Security (bandit)
