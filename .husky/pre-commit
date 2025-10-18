@@ -6,12 +6,12 @@
 
 # TypeScript/JS/MD
 if command -v yarn >/dev/null 2>&1; then
-  yarn -s format || true
-  yarn -s lint:fix || true
+  yarn run -T format || true
+  yarn run -T lint:fix || true
 fi
 
 # Python worker (optional if Python present)
 if command -v python3 >/dev/null 2>&1; then
-  yarn -s format:py || true
-  yarn -s py:lint:fix || true
+  yarn run -T format:py || true
+  yarn run -T py:lint:fix || true
 fi
