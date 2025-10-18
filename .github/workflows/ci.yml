@@ -27,11 +27,12 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-          cache: 'yarn'
-          cache-dependency-path: 'yarn.lock'
-      - run: corepack enable || true
-      - run: yarn --version
-      - run: yarn install --frozen-lockfile
+      - name: Enable Corepack and Yarn 4
+        run: |
+          corepack enable || true
+          corepack prepare yarn@4.10.3 --activate || true
+          yarn --version
+      - run: yarn install --immutable
 
       # Commit message linting — non-blocking for Dependabot
       - name: Commitlint PR title (non-blocking for Dependabot)
