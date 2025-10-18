@@ -64,8 +64,9 @@ describe('main process wiring', () => {
     vi.clearAllMocks();
   });
 
-  it('boots without throwing on ready', () => {
+  it('boots without throwing on ready', async () => {
     for (const callback of events.get('ready') ?? []) callback();
+    await new Promise((r) => setTimeout(r, 0));
     rlEmitter.emitLine('READY');
     // no assertions — absence of error is success for wiring smoke
     expect(true).toBe(true);
@@ -106,11 +107,13 @@ describe('main process wiring', () => {
     expect(true).toBe(true);
   });
 
-  it.skip('IPC handler resolves via JSON-RPC success path', async () => {
+  it('IPC handler resolves via JSON-RPC success path', async () => {
     // trigger init and worker readiness
     for (const callback of events.get('ready') ?? []) callback();
+    // wait for async module import and readline registration
+    await new Promise((r) => setTimeout(r, 0));
     rlEmitter.emitLine('READY');
-    // allow async registration to settle
+    // allow async registration to settle further
     await new Promise((r) => setTimeout(r, 0));
     const calls = (electron.ipcMain.handle as unknown as { mock: { calls: unknown[] } }).mock
       .calls as [string, (...arguments_: unknown[]) => unknown][];
@@ -135,8 +138,9 @@ describe('main process wiring', () => {
     expect(result.asOf).toBe('2025-01-01');
   });
 
-  it.skip('IPC handler falls back to legacy when JSON-RPC is invalid', async () => {
+  it('IPC handler falls back to legacy when JSON-RPC is invalid', async () => {
     for (const callback of events.get('ready') ?? []) callback();
+    await new Promise((r) => setTimeout(r, 0));
     rlEmitter.emitLine('READY');
     await new Promise((r) => setTimeout(r, 0));
     const calls = (electron.ipcMain.handle as unknown as { mock: { calls: unknown[] } }).mock
