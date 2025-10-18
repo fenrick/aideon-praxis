@@ -89,6 +89,8 @@ jobs:
           corepack enable || true
           corepack prepare yarn@4.10.3 --activate || true
           yarn --version
+      - name: Install JS dependencies
+        run: yarn install --immutable
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
