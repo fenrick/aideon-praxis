@@ -13,8 +13,5 @@ if command -v yarn >/dev/null 2>&1; then
   yarn run -T lint || exit 1
 fi
 
-# Python worker — check only, do not modify files
-if command -v python3 >/dev/null 2>&1; then
-  yarn run -T format:py:check || exit 1
-  yarn run -T py:lint || exit 1
-fi
+# Python worker — check only, via uv (skips if uv missing)
+yarn run -T py:uv:format:check || exit 1
