@@ -41,14 +41,38 @@ async function httpStateAtOverUds(
   return JSON.parse(json) as StateAtResult;
 }
 
+async function httpHealthOverUds(udsPath: string): Promise<{ status: string }> {
+  const optionsHttp: http.RequestOptions = {
+    socketPath: udsPath,
+    path: `/health`,
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  };
+  const json = await new Promise<string>((resolve, reject) => {
+    const request = http.request(optionsHttp, (response) => {
+      const chunks: Buffer[] = [];
+      response.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+      response.on('end', () => {
+        resolve(Buffer.concat(chunks).toString('utf8'));
+      });
+    });
+    request.on('error', (error) => {
+      reject(error);
+    });
+    request.end();
+  });
+  return JSON.parse(json) as { status: string };
+}
+
 async function waitForServerReady(udsPath: string, timeoutMs = 3000): Promise<void> {
   const started = Date.now();
   // Poll a lightweight request until it succeeds or times out
-  // Using a known valid asOf date; server validates type only
   const tryOnce = async () => {
     try {
-      await httpStateAtOverUds(udsPath, { asOf: '1970-01-01' });
-      return true;
+      const result = await httpHealthOverUds(udsPath);
+      return result.status === 'ok';
     } catch {
       return false;
     }
