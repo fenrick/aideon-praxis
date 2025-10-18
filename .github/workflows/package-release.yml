@@ -29,9 +29,11 @@ jobs:
           cache-dependency-path: |
             packages/worker/pyproject.toml
             packages/worker/requirements-dev.lock
-      - name: Enable Corepack (non-fatal)
-        run: corepack enable
-        continue-on-error: true
+      - name: Enable Corepack and Yarn 4
+        run: |
+          corepack enable || true
+          corepack prepare yarn@4.10.3 --activate || true
+          yarn --version
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Build worker binary (PyInstaller)
@@ -44,6 +46,8 @@ jobs:
               && pip install -r requirements-dev.lock \
               && pip install -e .[dev]
             );
+            # Ensure PyInstaller present (not in dev extras)
+            pip install pyinstaller;
           else
             pip install ruff black pytest pyinstaller;
           fi
@@ -76,6 +80,15 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Enable Corepack (non-fatal)
+        run: |
+          corepack enable || true
+          corepack prepare yarn@4.10.3 --activate || true
+          yarn --version
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
@@ -92,6 +105,8 @@ jobs:
               && pip install -r requirements-dev.lock \
               && pip install -e .[dev]
             );
+            # Ensure build backend available
+            pip install build;
           else
             pip install build ruff black pytest;
           fi
