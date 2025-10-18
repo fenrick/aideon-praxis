@@ -14,8 +14,34 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Mapping
+from typing import Any
 
 from .temporal import StateAtArgs, state_at
+
+
+def _parse_state_at_params(params: Mapping[str, Any]) -> StateAtArgs:
+    """Validate and map external camelCase params to `StateAtArgs`.
+
+    Returns a fully-typed `StateAtArgs` or raises `ValueError` on invalid input.
+    """
+    as_of_val = params.get("asOf")
+    if not isinstance(as_of_val, str) or not as_of_val:
+        raise ValueError("Invalid params: 'asOf' (str) is required")
+
+    scenario_val = params.get("scenario")
+    if scenario_val is not None and not isinstance(scenario_val, str):
+        raise ValueError("Invalid params: 'scenario' must be a string if provided")
+
+    confidence_val = params.get("confidence")
+    if confidence_val is not None and not isinstance(confidence_val, (int, float)):
+        raise ValueError("Invalid params: 'confidence' must be a number if provided")
+
+    return StateAtArgs(
+        as_of=as_of_val,
+        scenario=scenario_val,
+        confidence=float(confidence_val) if confidence_val is not None else None,
+    )
 
 
 def _jsonrpc_handle(msg: str) -> str | None:
@@ -39,17 +65,14 @@ def _jsonrpc_handle(msg: str) -> str | None:
 
     req_id = data.get("id")
     method = data.get("method")
-    params = data.get("params") or {}
+    raw_params = data.get("params") or {}
+    params: dict[str, Any] = raw_params if isinstance(raw_params, dict) else {}
 
     try:
         if method == "ping":
             return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": "pong"})
         if method == "state_at":
-            args = StateAtArgs(
-                as_of=params.get("asOf"),
-                scenario=params.get("scenario"),
-                confidence=params.get("confidence"),
-            )
+            args = _parse_state_at_params(params)
             res = state_at(args)
             return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": res})
         # Method not found
@@ -96,12 +119,9 @@ def main() -> int:
             payload = msg[len("state_at ") :]
             try:
                 data = json.loads(payload)
-                # Map external camelCase payload to internal snake_case dataclass
-                args = StateAtArgs(
-                    as_of=data.get("asOf"),
-                    scenario=data.get("scenario"),
-                    confidence=data.get("confidence"),
-                )
+                # Map and validate
+                mapping: dict[str, Any] = data if isinstance(data, dict) else {}
+                args = _parse_state_at_params(mapping)
                 res = state_at(args)
                 print(json.dumps(res), flush=True)
             except Exception as exc:  # noqa: BLE001
