@@ -1,6 +1,7 @@
 # Contributing to Aideon Praxis
 
-Thanks for your interest in contributing! This guide explains how we work, how to set up your environment, and what we expect in issues and pull requests.
+Thanks for your interest in contributing! This guide explains how we work, how to set up your environment, and
+what we expect in issues and pull requests.
 
 ## Values
 
@@ -122,7 +123,8 @@ scripts/ # gh_bootstrap.sh and helpers
 
 ## Architecture decisions (ADR)
 
-When a change affects the **RPC boundary**, **adapters**, **time semantics** (`state_at`, plateaus, gaps), or **security posture**, add/update an ADR:
+When a change affects the **RPC boundary**, **adapters**, **time semantics** (`state_at`, plateaus, gaps), or
+**security posture**, add/update an ADR:
 
 - Folder: `docs/adrs/NNN-short-title.md`
 - Template: Context → Decision → Consequences → Alternatives

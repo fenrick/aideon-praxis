@@ -5,12 +5,14 @@ This document describes how the codebase implements the guardrails in `AGENTS.md
 ## Layers
 
 - App (Electron host + React renderer)
-  - Host entry: `packages/app/src/main.ts` (CommonJS). Security hardened: `contextIsolation: true`, `nodeIntegration: false`, CSP in renderer.
+  - Host entry: `packages/app/src/main.ts` (CommonJS). Security hardened: `contextIsolation: true`,
+    `nodeIntegration: false`, CSP in renderer.
   - Preload bridge: `packages/app/src/preload.ts` exposes a minimal, typed API (`window.aideon.version`). No backend logic.
   - Renderer: `packages/app/src/renderer/*` uses only the preload bridge and adapters.
 
 - Adapters (TypeScript interfaces)
-  - `packages/adapters/src/index.ts` defines `GraphAdapter`, `StorageAdapter`, and `WorkerClient` interfaces. No backend specifics.
+  - `packages/adapters/src/index.ts` defines `GraphAdapter`, `StorageAdapter`, and `WorkerClient` interfaces.
+    No backend specifics.
 
 - Worker (Python sidecar)
   - Module: `packages/worker/src/aideon_worker/*` with `Temporal.StateAt` stub.

@@ -1,7 +1,8 @@
 # Aideon Praxis — Staged Implementation Roadmap
 
 **Date:** 2025-10-14
-**Goal:** Deliver a local-first, graph-native EA platform (Electron + Python worker) that treats **time as a first-class dimension** (bitemporal + Plan Events), with a clean path to server mode.
+**Goal:** Deliver a local-first, graph-native EA platform (Electron + Python worker) that treats **time as a
+first-class dimension** (bitemporal + Plan Events), with a clean path to server mode.
 
 ## Guiding Principles
 

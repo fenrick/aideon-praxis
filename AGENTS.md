@@ -4,7 +4,8 @@ Guide for AI coding assistants (e.g., Claude, GPT/Codex) contributing to the Aid
 
 ## Purpose
 
-Set clear guardrails and output conventions so AI agents make **safe, incremental, reviewable** changes that respect our **time‑first, graph‑native** architecture and security posture.
+Set clear guardrails and output conventions so AI agents make **safe, incremental, reviewable** changes that
+respect our **time‑first, graph‑native** architecture and security posture.
 
 ## Who this is for
 
@@ -70,7 +71,8 @@ Provide your response in the following sections, in this order. Keep explanation
 
 - Trade‑offs, alternatives rejected, follow‑ups (issues to file).
 
-If you need input, first emit a **short PLAN with questions**; otherwise proceed with sensible defaults consistent with this guide.
+If you need input, first emit a **short PLAN with questions**; otherwise proceed with sensible defaults consistent
+with this guide.
 
 ## Coding standards
 
