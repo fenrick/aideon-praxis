@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
-import { type StateAtResult } from './rpc';
+import { type StateAtResult } from './types';
 import http from 'node:http';
 import os from 'node:os';
 
