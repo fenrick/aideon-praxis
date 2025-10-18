@@ -31,7 +31,7 @@ changes that respect our **time‑first, graph‑native** architecture and secur
   bridge.
 - `packages/adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend
   specifics in UI.
-- `packages/worker` — Python 3.11 sidecar (analytics/ML, time‑slicing, topology, TCO). RPC server
+- `packages/worker` — Python 3.13 sidecar (analytics/ML, time‑slicing, topology, TCO). RPC server
   only.
 - `packages/docs` — C4 diagrams, meta‑model, viewpoints, ADRs.
 
@@ -89,14 +89,16 @@ defaults consistent with this guide.
 
 ### TypeScript / React (packages/app, packages/adapters)
 
-- Node 20+, React 18. Strict TS config; ESLint + Prettier.
+– Node 24, React 18. Strict TS config; ESLint + Prettier.
+
 - Electron renderer **no NodeIntegration**; `contextIsolation: true`; strict CSP; preload exposes
   typed methods only.
 - Never embed backend‑specific queries in renderer; call adapters or host APIs.
 
 ### Python (packages/worker)
 
-- Python 3.11, type hints everywhere, `ruff` + `black` style.
+– Python 3.13, type hints everywhere, `ruff` + `black` style.
+
 - Pure worker process: RPC server over pipes/UDS, no open TCP ports in desktop mode.
 - Use pandas/pyarrow for Arrow payloads when large; avoid heavy deps unless needed.
 

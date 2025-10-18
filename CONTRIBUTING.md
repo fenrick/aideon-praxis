@@ -24,7 +24,7 @@ track staged delivery (see `ROADMAP.md`).
 
 ### Prerequisites
 
-- Node.js ≥ 20, Yarn ≥ 4 (or v1), Python ≥ 3.11
+- Node.js 24, Yarn ≥ 4 (or v1), Python 3.13
 - Optional: Graphviz for diagram exports
 
 ### Install
