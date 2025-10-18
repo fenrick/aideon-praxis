@@ -150,6 +150,9 @@ defaults consistent with this guide.
 
 ## Coding standards
 
+For the authoritative coding standards (quality gates, coverage targets,
+tooling, and CI rules), see `docs/CODING_STANDARDS.md`.
+
 ### TypeScript / React (packages/app, packages/adapters)
 
 – Node 24, React 18. Strict TS config; ESLint + Prettier.

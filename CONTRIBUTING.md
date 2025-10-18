@@ -85,7 +85,7 @@ Quality gates
 - Verify locally:
   - App: `yarn test:coverage`
   - Worker: `yarn py:test:cov` (branch coverage enabled)
-    See AGENTS.md for Coding Standards and CI expectations.
+- See `docs/CODING_STANDARDS.md` for full coding standards and CI rules.
 
 ### Python dev quick start
 
