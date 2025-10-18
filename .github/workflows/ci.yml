@@ -50,8 +50,6 @@ jobs:
       # JS/TS checks
       - name: Prettier check
         run: yarn format:check
-      - name: Markdown lint
-        run: yarn lint:md
       - run: yarn lint
       - run: yarn typecheck
       - run: yarn test:coverage

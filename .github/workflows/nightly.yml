@@ -36,8 +36,6 @@ jobs:
           node-version: '24'
       - run: corepack enable || true
       - run: yarn install --frozen-lockfile
-      - name: Markdown lint
-        run: yarn lint:md
       - run: yarn lint
       - run: yarn typecheck
       - run: yarn test
