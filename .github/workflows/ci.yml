@@ -51,8 +51,7 @@ jobs:
       - name: Prettier check
         run: yarn format:check
       - name: Markdownlint
-        run: npx --yes markdownlint-cli@0.42.0 --config .markdownlint.json \
-          --ignore-path .markdownlintignore "**/*.md"
+        run: npx --yes markdownlint-cli@0.42.0 --config .markdownlint.json "**/*.md"
       - run: yarn lint
       - run: yarn typecheck
       - run: yarn test:coverage
