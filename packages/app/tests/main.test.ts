@@ -32,6 +32,7 @@ vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({
     stdin: { write: vi.fn() },
     stdout: {},
+    on: vi.fn(),
   })),
 }));
 
@@ -40,6 +41,14 @@ class RLMock {
   private handlers: ((s: string) => void)[] = [];
   on(event: string, handler: (s: string) => void) {
     if (event === 'line') this.handlers.push(handler);
+  }
+  once(event: string, handler: (s: string) => void) {
+    if (event !== 'line') return;
+    const wrapper = (s: string) => {
+      this.off('line', wrapper);
+      handler(s);
+    };
+    this.on('line', wrapper);
   }
   off(event: string, handler: (s: string) => void) {
     if (event === 'line') this.handlers = this.handlers.filter((h) => h !== handler);
@@ -57,6 +66,7 @@ vi.mock('node:readline', () => ({
 // Import after mocks in place
 import * as electron from 'electron';
 
+process.env.AIDEON_USE_UV_SERVER = '0';
 import '../src/main';
 
 describe('main process wiring', () => {
