@@ -36,7 +36,8 @@ const createWindow = async () => {
     const ready = new Promise<void>((resolve) => {
       resolveReady = resolve;
     });
-    let send: ((line: string) => Promise<string>) | null = null;
+    let sendLine: ((line: string) => Promise<string>) | null = null;
+    let nextId = 1;
     const { cmd, args, options } = getWorkerSpawn();
     const child = spawn(cmd, args, options);
     const rl = readline.createInterface({ input: child.stdout });
@@ -46,9 +47,31 @@ const createWindow = async () => {
       'worker:state_at',
       async (_event, arguments_: { asOf: string; scenario?: string; confidence?: number }) => {
         await ready;
-        const payload = JSON.stringify(arguments_);
-        const raw = await (send as (l: string) => Promise<string>)(`state_at ${payload}`);
-        return JSON.parse(raw) as {
+        // Prefer JSON-RPC 2.0. Fallback to legacy if needed.
+        const rpc = {
+          jsonrpc: '2.0',
+          id: nextId++,
+          method: 'state_at',
+          params: arguments_,
+        };
+        const raw = await (sendLine as (l: string) => Promise<string>)(JSON.stringify(rpc));
+        let obj: any;
+        try {
+          obj = JSON.parse(raw);
+          if (obj && obj.jsonrpc === '2.0') {
+            if ('result' in obj) return obj.result as unknown as {
+              asOf: string;
+              scenario: string | null;
+              confidence: number | null;
+              nodes: number;
+              edges: number;
+            };
+            if ('error' in obj) throw new Error(obj.error?.message || 'Worker error');
+          }
+        } catch {}
+        // Legacy fallback
+        const legacyRaw = await (sendLine as (l: string) => Promise<string>)(`state_at ${JSON.stringify(arguments_)}`);
+        return JSON.parse(legacyRaw) as {
           asOf: string;
           scenario: string | null;
           confidence: number | null;
@@ -66,7 +89,7 @@ const createWindow = async () => {
     });
 
     // Simple serialized request helper: writes a line and resolves next line
-    send = async (line: string): Promise<string> =>
+    sendLine = async (line: string): Promise<string> =>
       new Promise<string>((resolve) => {
         const onLine = (resp: string) => {
           rl.off('line', onLine);

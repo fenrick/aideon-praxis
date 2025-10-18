@@ -18,6 +18,40 @@ import sys
 from .temporal import StateAtArgs, state_at
 
 
+def _jsonrpc_handle(msg: str) -> str | None:
+    """Handle a single JSON-RPC 2.0 message; return a JSON string or None.
+
+    Accepts one JSON object per line. Unknown or invalid messages return an error.
+    """
+    try:
+        data = json.loads(msg)
+    except Exception as exc:  # noqa: BLE001
+        return json.dumps({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error", "data": str(exc)}, "id": None})
+
+    if not isinstance(data, dict) or data.get("jsonrpc") != "2.0":
+        return None  # not JSON-RPC; let legacy handlers try
+
+    req_id = data.get("id")
+    method = data.get("method")
+    params = data.get("params") or {}
+
+    try:
+        if method == "ping":
+            return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": "pong"})
+        if method == "state_at":
+            args = StateAtArgs(
+                as_of=params.get("asOf"),
+                scenario=params.get("scenario"),
+                confidence=params.get("confidence"),
+            )
+            res = state_at(args)
+            return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": res})
+        # Method not found
+        return json.dumps({"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": "Method not found"}})
+    except Exception as exc:  # noqa: BLE001
+        return json.dumps({"jsonrpc": "2.0", "id": req_id, "error": {"code": -32000, "message": "Internal error", "data": str(exc)}})
+
+
 def main() -> int:
     """Run the minimal line-based worker protocol loop.
 
@@ -29,6 +63,13 @@ def main() -> int:
         msg = line.strip()
         if not msg:
             continue
+        # Prefer JSON-RPC if line starts with '{'
+        if msg.startswith("{"):
+            out = _jsonrpc_handle(msg)
+            if out is not None:
+                print(out, flush=True)
+                continue
+
         if msg == "ping":
             print("pong", flush=True)
             continue
