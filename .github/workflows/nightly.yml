@@ -38,7 +38,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - name: Markdownlint
         run: npx --yes markdownlint-cli@0.42.0 --config .markdownlint.json \
-          --ignore node_modules --ignore coverage --ignore "packages/**/dist" --ignore dist "**/*.md"
+          --ignore-path .markdownlintignore "**/*.md"
       - run: yarn lint
       - run: yarn typecheck
       - run: yarn test
