@@ -158,6 +158,12 @@ defaults consistent with this guide.
   typed methods only.
 - Never embed backend‑specific queries in renderer; call adapters or host APIs.
 
+Lint/Format discipline
+
+- Do not disable lint rules in code (no inline `eslint-disable`, `ts-ignore`, etc.).
+- Refactor code to satisfy linters and static analysis rather than suppressing warnings.
+- Use check-only hooks locally; CI enforces the same rules.
+
 ### Python (packages/worker)
 
 – Python 3.13, type hints everywhere, `ruff` + `black` style.

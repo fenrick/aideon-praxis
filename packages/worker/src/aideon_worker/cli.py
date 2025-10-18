@@ -76,9 +76,9 @@ def _jsonrpc_handle(msg: str) -> str | None:
 
     out: dict[str, object]
     try:
-        if method == "ping":
+        if method in ("ping", "ping.v1"):
             out = {"jsonrpc": "2.0", "id": req_id, "result": "pong"}
-        elif method == "state_at":
+        elif method in ("state_at", "temporal.state_at.v1"):
             args = _parse_state_at_params(params)
             res = state_at(args)
             out = {"jsonrpc": "2.0", "id": req_id, "result": cast(object, res)}

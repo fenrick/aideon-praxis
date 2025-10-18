@@ -2,6 +2,53 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import readline from 'node:readline';
 import { parseJsonRpcStateAt, type StateAtResult } from './rpc';
+import http from 'node:http';
+import os from 'node:os';
+
+interface MinimalChild { stdin: { write: (s: string) => void } }
+
+function awaitWorkerReady(reader: readline.Interface): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const onLine = (line: string) => {
+      if (line.trim() === 'READY') resolve();
+    };
+    reader.on('line', onLine);
+  });
+}
+
+async function httpStateAtOverUds(
+  udsPath: string,
+  arguments_: { asOf: string; scenario?: string; confidence?: number },
+): Promise<StateAtResult> {
+  const query = new URLSearchParams({ as_of: arguments_.asOf });
+  if (typeof arguments_.scenario === 'string') query.set('scenario', arguments_.scenario);
+  if (arguments_.confidence !== undefined) query.set('confidence', String(arguments_.confidence));
+  const optionsHttp: http.RequestOptions = {
+    socketPath: udsPath,
+    path: `/api/v1/state_at?${query.toString()}`,
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  };
+  const onHttpResponse = (response: http.IncomingMessage, resolve: (s: string) => void) => {
+    const chunks: Buffer[] = [];
+    response.on('data', (chunk: Buffer) => {
+      chunks.push(chunk);
+    });
+    response.on('end', () => {
+      resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+  };
+  const json = await new Promise<string>((resolve, reject) => {
+    const request = http.request(optionsHttp, (response) => {
+      onHttpResponse(response, resolve);
+    });
+    request.on('error', (error) => {
+      reject(error);
+    });
+    request.end();
+  });
+  return JSON.parse(json) as StateAtResult;
+}
 
 // Security: disable hardware acceleration by default for baseline.
 // This file is the Electron host process entry. It must not contain
@@ -33,26 +80,57 @@ const createWindow = async () => {
   try {
     const { spawn } = await import('node:child_process');
     // Promise that resolves when the worker prints READY
-    let resolveReady: (() => void) | null = null;
-    const ready = new Promise<void>((resolve) => {
-      resolveReady = resolve;
-    });
+    let ready: Promise<void> = Promise.resolve();
     let sendLine: ((line: string) => Promise<string>) | null = null;
     let nextId = 1;
-    const { cmd, args, options } = getWorkerSpawn();
-    const child = spawn(cmd, args, options);
-    const rl = readline.createInterface({ input: child.stdout });
+    const useServer = process.env.AIDEON_USE_UV_SERVER !== '0';
+    const udsPath = path.join(os.tmpdir(), `aideon-worker-${String(process.pid)}.sock`);
+
+    // httpStateAtOverUds defined at module scope
+    const makeSendLine = (
+      rl: readline.Interface,
+      child: MinimalChild,
+    ): ((line: string) => Promise<string>) =>
+      async (line: string) =>
+        new Promise<string>((resolve) => {
+          rl.once('line', resolve);
+          child.stdin.write(`${line}\n`);
+        });
+
+    const spawnWorker = () => {
+      const { cmd, args, options } = getWorkerSpawn();
+      if (useServer) {
+        // Inject UDS path for server mode
+        args.push('--uds', udsPath);
+      }
+      const child = spawn(cmd, args, options);
+      if (useServer) {
+        // Server mode: assume readiness is handled by HTTP health; don't wire readline
+        ready = Promise.resolve();
+      } else {
+        const rl = readline.createInterface({ input: child.stdout });
+        ready = awaitWorkerReady(rl);
+        // Simple serialized request helper for legacy modes
+        sendLine = makeSendLine(rl, child);
+      }
+      child.on('exit', () => {
+        // Attempt a fast respawn; existing callers still await `ready`
+        spawnWorker();
+      });
+    };
+    spawnWorker();
 
     // IPC handler for state_at (register early; it will await readiness)
     ipcMain.handle(
       'worker:state_at',
       async (_event, arguments_: { asOf: string; scenario?: string; confidence?: number }) => {
         await ready;
+        if (useServer) return httpStateAtOverUds(udsPath, arguments_);
         // Prefer JSON-RPC 2.0. Fallback to legacy if needed.
         const rpc = {
           jsonrpc: '2.0',
           id: nextId++,
-          method: 'state_at',
+          method: 'temporal.state_at.v1',
           params: arguments_,
         };
         const raw = await (sendLine as (l: string) => Promise<string>)(JSON.stringify(rpc));
@@ -68,23 +146,7 @@ const createWindow = async () => {
       },
     );
 
-    // Wait for READY banner and set up serializer
-    rl.on('line', (line: string) => {
-      if (line.trim() === 'READY') {
-        resolveReady?.();
-      }
-    });
-
-    // Simple serialized request helper: writes a line and resolves next line
-    sendLine = async (line: string): Promise<string> =>
-      new Promise<string>((resolve) => {
-        const onLine = (resp: string) => {
-          rl.off('line', onLine);
-          resolve(resp);
-        };
-        rl.on('line', onLine);
-        child.stdin.write(`${line}\n`);
-      });
+    // spawnWorker above wires READY and sendLine
   } catch (error) {
     console.error('Failed to start worker:', error);
   }
@@ -103,8 +165,10 @@ function getWorkerSpawn(): {
     const workerPath = path.join(process.resourcesPath, 'worker', binName);
     return { cmd: workerPath, args: [], options };
   }
+  // Dev: prefer `uv run -q -m aideon_worker.cli` if available, fallback to python3 -m
   options.env = { ...process.env, PYTHONPATH: path.join(process.cwd(), '..', 'worker', 'src') };
-  return { cmd: 'python3', args: ['-m', 'aideon_worker.cli'], options };
+  const uvPath = process.env.UV ?? 'uv';
+  return { cmd: uvPath, args: ['run', '-q', '-m', 'aideon_worker.cli'], options };
 }
 
 // Electron app init using event to avoid promise chain in CJS
