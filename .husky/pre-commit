@@ -1,20 +1,20 @@
 #!/usr/bin/env sh
 
 # Husky v10 style: no sourcing shim; keep fast/deterministic.
-# Auto-run formatters and fixers but do not block commits locally.
-# CI enforces clean lint/format via `yarn ci`.
+# Check formatting/lint only (no writes). Block commit when checks fail.
+# CI also enforces via `yarn ci`.
 
 # Keep pre-commit fast and deterministic; no network calls here.
 # For GitHub issues mirror enforcement, see .husky/pre-push.
 
-# TypeScript/JS/MD
+# TypeScript/JS/MD — check only, do not modify files
 if command -v yarn >/dev/null 2>&1; then
-  yarn run -T format || true
-  yarn run -T lint:fix || true
+  yarn run -T format:check || exit 1
+  yarn run -T lint || exit 1
 fi
 
-# Python worker (optional if Python present)
+# Python worker — check only, do not modify files
 if command -v python3 >/dev/null 2>&1; then
-  yarn run -T format:py || true
-  yarn run -T py:lint:fix || true
+  yarn run -T format:py:check || exit 1
+  yarn run -T py:lint || exit 1
 fi
