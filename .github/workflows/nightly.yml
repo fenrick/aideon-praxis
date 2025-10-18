@@ -33,7 +33,7 @@ jobs:
           echo "On branch: $(git rev-parse --abbrev-ref HEAD)"
       - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24.8.0'
       - run: corepack enable || true
       - run: yarn install --frozen-lockfile
       - name: Markdownlint

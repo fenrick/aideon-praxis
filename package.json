@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=24.8.0"
   },
   "scripts": {
     "build": "tsc -b --pretty false || true && yarn workspace @aideon/app build",
