@@ -60,7 +60,7 @@ jobs:
           if [[ "$RUNNER_OS" == "Windows" ]]; then cp dist/aideon-worker.exe packages/app/extra/worker/; else cp dist/aideon-worker packages/app/extra/worker/; fi
       - run: yarn workspace @aideon/app build
       - name: Package (no publish)
-        run: npx electron-builder --projectDir packages/app -c electron-builder.yml --publish=never
+        run: yarn workspace @aideon/app exec electron-builder --projectDir packages/app -c electron-builder.yml --publish=never
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:

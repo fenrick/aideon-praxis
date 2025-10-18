@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           VERSION=${{ github.event.release.tag_name }}
-          npx electron-builder --projectDir packages/app \
+          yarn workspace @aideon/app exec electron-builder --projectDir packages/app \
             -c electron-builder.yml \
             -c.extraMetadata.version=${VERSION} \
             --publish always
