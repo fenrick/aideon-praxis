@@ -95,3 +95,16 @@ def test_jsonrpc_parse_error():
     resp = json.loads(outputs[1])
     assert resp["jsonrpc"] == "2.0" and resp["id"] is None
     assert resp["error"]["code"] == ERR_PARSE_ERROR
+
+
+def test_jsonrpc_notifications_are_silent():
+    # Notifications: requests without an 'id' MUST NOT elicit a response
+    outputs = run_cli_lines(
+        [
+            '{"jsonrpc":"2.0","method":"ping"}',
+            '{"jsonrpc":"2.0","method":"state_at","params":{"asOf":"2025-01-01"}}',
+            '{"jsonrpc":"2.0","method":"unknown"}',
+        ]
+    )
+    # Only the initial READY line should be printed
+    assert outputs == ["READY"]

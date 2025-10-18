@@ -66,6 +66,9 @@ def _jsonrpc_handle(msg: str) -> str | None:
     data: dict[str, Any] = cast(dict[str, Any], data_raw)
     if data.get("jsonrpc") != "2.0":
         return None
+    # JSON-RPC notifications are requests without an 'id' member.
+    # Per spec, servers MUST NOT reply to notifications.
+    has_id: bool = "id" in data
     req_id: object = data.get("id")
     method_raw: object = data.get("method")
     method: str | None = method_raw if isinstance(method_raw, str) else None
@@ -73,6 +76,19 @@ def _jsonrpc_handle(msg: str) -> str | None:
     params: dict[str, Any] = (
         cast(dict[str, Any], raw_params) if isinstance(raw_params, dict) else {}
     )
+
+    # Notification: execute if applicable but do not return a response
+    if not has_id:
+        try:
+            if method in ("ping", "ping.v1"):
+                _ = "pong"  # no-op; ensure symmetric behavior
+            elif method in ("state_at", "temporal.state_at.v1"):
+                args = _parse_state_at_params(params)
+                _ = state_at(args)
+            # Unknown method or any errors are intentionally silent for notifications
+        except Exception as exc:  # noqa: BLE001
+            _ = str(exc)
+        return None
 
     out: dict[str, object]
     try:
@@ -119,7 +135,10 @@ def main() -> int:
             out = _jsonrpc_handle(msg)
             if out is not None:
                 print(out, flush=True)
-                continue
+            # Do not fall back to legacy handlers for JSON-shaped input
+            # This avoids emitting responses for JSON-RPC notifications
+            # and keeps behavior strict for the JSON-RPC path.
+            continue
 
         if msg == "ping":
             print("pong", flush=True)
