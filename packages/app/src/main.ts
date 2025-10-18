@@ -55,22 +55,25 @@ const createWindow = async () => {
           params: arguments_,
         };
         const raw = await (sendLine as (l: string) => Promise<string>)(JSON.stringify(rpc));
-        let obj: any;
+        let object: any;
         try {
-          obj = JSON.parse(raw);
-          if (obj && obj.jsonrpc === '2.0') {
-            if ('result' in obj) return obj.result as unknown as {
-              asOf: string;
-              scenario: string | null;
-              confidence: number | null;
-              nodes: number;
-              edges: number;
-            };
-            if ('error' in obj) throw new Error(obj.error?.message || 'Worker error');
+          object = JSON.parse(raw);
+          if (object?.jsonrpc === '2.0') {
+            if ('result' in object)
+              return object.result as unknown as {
+                asOf: string;
+                scenario: string | null;
+                confidence: number | null;
+                nodes: number;
+                edges: number;
+              };
+            if ('error' in object) throw new Error(object.error?.message || 'Worker error');
           }
         } catch {}
         // Legacy fallback
-        const legacyRaw = await (sendLine as (l: string) => Promise<string>)(`state_at ${JSON.stringify(arguments_)}`);
+        const legacyRaw = await (sendLine as (l: string) => Promise<string>)(
+          `state_at ${JSON.stringify(arguments_)}`,
+        );
         return JSON.parse(legacyRaw) as {
           asOf: string;
           scenario: string | null;

@@ -26,7 +26,13 @@ def _jsonrpc_handle(msg: str) -> str | None:
     try:
         data = json.loads(msg)
     except Exception as exc:  # noqa: BLE001
-        return json.dumps({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error", "data": str(exc)}, "id": None})
+        return json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "error": {"code": -32700, "message": "Parse error", "data": str(exc)},
+                "id": None,
+            }
+        )
 
     if not isinstance(data, dict) or data.get("jsonrpc") != "2.0":
         return None  # not JSON-RPC; let legacy handlers try
@@ -47,9 +53,21 @@ def _jsonrpc_handle(msg: str) -> str | None:
             res = state_at(args)
             return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": res})
         # Method not found
-        return json.dumps({"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": "Method not found"}})
+        return json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "error": {"code": -32601, "message": "Method not found"},
+            }
+        )
     except Exception as exc:  # noqa: BLE001
-        return json.dumps({"jsonrpc": "2.0", "id": req_id, "error": {"code": -32000, "message": "Internal error", "data": str(exc)}})
+        return json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "error": {"code": -32000, "message": "Internal error", "data": str(exc)},
+            }
+        )
 
 
 def main() -> int:
