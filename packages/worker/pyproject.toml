@@ -22,6 +22,7 @@ dev = [
   "fastapi==0.115.0",
   "pydantic==2.9.2",
   "uvicorn==0.30.6",
+  "httpx==0.27.2",
 ]
 
 [tool.black]
@@ -58,8 +59,8 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 # Allow test-style asserts and missing docstrings in tests; support both repo-root and pkg-root runs
-"packages/worker/tests/**" = ["D100", "D103", "S101"]
-"tests/**" = ["D100", "D103", "S101"]
+"packages/worker/tests/**" = ["D100", "D103", "S101", "PLR2004"]
+"tests/**" = ["D100", "D103", "S101", "PLR2004"]
 
 [tool.mypy]
 python_version = "3.13"
