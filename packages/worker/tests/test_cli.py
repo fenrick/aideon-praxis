@@ -35,3 +35,19 @@ def test_cli_unknown_and_invalid_json():
     # Invalid JSON handled gracefully
     out2 = run_cli_lines(["state_at not-a-json"])
     assert out2[-1].startswith("{") and "error" in out2[-1]
+
+
+def test_jsonrpc_ping_and_state_at():
+    outputs = run_cli_lines([
+        '{"jsonrpc":"2.0","id":1,"method":"ping"}',
+        '{"jsonrpc":"2.0","id":2,"method":"state_at","params":{"asOf":"2025-01-01"}}',
+    ])
+    assert outputs[0] == "READY"
+    # JSON-RPC ping
+    pong = json.loads(outputs[1])
+    assert pong["jsonrpc"] == "2.0" and pong["id"] == 1 and pong["result"] == "pong"
+    # JSON-RPC state_at
+    resp = json.loads(outputs[2])
+    assert resp["jsonrpc"] == "2.0" and resp["id"] == 2
+    result = resp["result"]
+    assert result["asOf"] == "2025-01-01" and result["nodes"] == 0 and result["edges"] == 0
