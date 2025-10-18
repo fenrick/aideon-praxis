@@ -27,9 +27,12 @@ jobs:
           cache-dependency-path: |
             packages/worker/pyproject.toml
             packages/worker/requirements-dev.lock
-      - run: corepack enable || true
+      - name: Enable Corepack (non-fatal)
+        run: corepack enable
+        continue-on-error: true
       - run: yarn install --frozen-lockfile
       - name: Build worker binary (PyInstaller)
+        shell: bash
         run: |
           python -m pip install --upgrade pip
           if [ -f packages/worker/requirements-dev.lock ]; then
@@ -46,7 +49,7 @@ jobs:
           if [[ "$RUNNER_OS" == "Windows" ]]; then cp dist/aideon-worker.exe packages/app/extra/worker/; else cp dist/aideon-worker packages/app/extra/worker/; fi
       - run: yarn workspace @aideon/app build
       - name: Package (no publish)
-        run: npx electron-builder --projectDir packages/app -c packages/app/electron-builder.yml --publish=never
+        run: npx electron-builder --projectDir packages/app -c electron-builder.yml --publish=never
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:

@@ -48,25 +48,25 @@ Provide your response in the following sections, in this order. Keep explanation
 
 - Bulleted list of files to create/modify, with one‑line reasons.
 
-2. PATCH
+1. PATCH
 
 - Unified diff (unidiff) from repo root with correct paths. Only include changed hunks.
 
-3. TESTS
+1. TESTS
 
 - What tests you add/modify, how to run them, and expected assertions.
 
-4. RUN
+1. RUN
 
 - Commands to build/test/lint locally (TS + Python). Include any data generation steps.
 
-5. CHECKS
+1. CHECKS
 
 - Security: confirm no renderer HTTP, no new network ports, PII redaction respected.
 - Boundaries: confirm no backend logic in renderer; worker uses RPC only.
 - Performance: note expected impact; reference SLOs if relevant.
 
-6. NOTES
+1. NOTES
 
 - Trade‑offs, alternatives rejected, follow‑ups (issues to file).
 
