@@ -6,7 +6,10 @@
   "license": "MIT",
   "type": "commonjs",
   "description": "Aideon Praxis Electron host",
-  "author": "Aideon Praxis contributors",
+  "author": {
+    "name": "Aideon Praxis contributors",
+    "email": "201621+fenrick@users.noreply.github.com"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/<owner>/<repo>.git"
