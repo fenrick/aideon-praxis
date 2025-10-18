@@ -6,7 +6,7 @@ Packages:
 
 - `packages/app` — Electron host + React renderer (secure defaults, preload IPC only).
 - `packages/adapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
-- `packages/worker` — Python 3.11 sidecar (RPC-only). Includes minimal Temporal.StateAt stub.
+- `packages/worker` — Python 3.13 sidecar (RPC-only). Includes minimal Temporal.StateAt stub.
 
 Tooling:
 
@@ -18,7 +18,7 @@ See `CONTRIBUTING.md` and `AGENTS.md` for contribution rules and boundaries.
 
 Getting started
 
-- Prereqs: Node 20+, Python 3.11.
+- Prereqs: Node 24, Python 3.13.
 - Install deps: `yarn install` (or `npm install`).
 - Build once: `yarn build` (renderer assets to `packages/app/dist/renderer`, main+preload to
   `packages/app/dist`).
@@ -110,9 +110,9 @@ Import via GitHub Issues → Import → CSV ├─ .markdownlint.json # (optiona
 
 ### Prerequisites
 
-- **Node.js** ≥ 20 (LTS recommended)
+- **Node.js** 24
 - **Yarn** ≥ 4 (Berry) or Classic (v1) — project uses `yarn` scripts
-- **Python** ≥ 3.11 (for the worker)
+- **Python** 3.13 (for the worker)
 - **Graphviz** (for some diagram tools, optional)
 
 ### 1) Clone and bootstrap

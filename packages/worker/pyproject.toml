@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "aideon-worker"
 version = "0.1.0"
 description = "Aideon Praxis Python worker sidecar (RPC only)"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = []
 license = { file = "LICENSE" }
 
@@ -23,11 +23,11 @@ dev = [
 
 [tool.black]
 line-length = 100
-target-version = ["py311"]
+target-version = ["py313"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = [
@@ -59,7 +59,7 @@ convention = "google"
 "tests/**" = ["D100", "D103", "S101"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 packages = ["aideon_worker"]
 strict = true
 warn_unused_configs = true
