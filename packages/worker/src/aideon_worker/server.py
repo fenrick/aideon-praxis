@@ -36,6 +36,18 @@ class StateAtResponse(BaseModel):
 app = FastAPI(title="Aideon Praxis Worker RPC", version="0.1.0")
 
 
+class HealthResponse(BaseModel):
+    """Simple readiness/health response."""
+
+    status: str = "ok"
+
+
+@app.get("/health", response_model=HealthResponse)
+async def health() -> HealthResponse:  # pragma: no cover - trivial
+    """Return health status for readiness checks."""
+    return HealthResponse()
+
+
 @app.on_event("startup")
 async def on_startup() -> None:  # pragma: no cover - simple banner
     """Log a simple readiness banner to stdout."""
