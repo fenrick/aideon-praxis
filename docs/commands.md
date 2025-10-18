@@ -54,4 +54,4 @@ yarn py:sync
 - Verify locally:
   - App (JS/TS): `yarn test:coverage`
   - Worker (Python): `yarn py:test:cov` (includes branch coverage)
-    See AGENTS.md → Coding Standards for more.
+    See `docs/CODING_STANDARDS.md` for the full standards and CI rules.
