@@ -1,5 +1,25 @@
 {
   "default": true,
+  "ignores": [
+    "node_modules/",
+    "coverage/",
+    "dist/",
+    "packages/**/dist/",
+    "build/",
+    ".git/",
+    ".husky/",
+    ".yarn/",
+    ".mypy_cache/",
+    ".ruff_cache/",
+    ".venv/",
+    "venv/",
+    "docs/**/generated/",
+    "yarn.lock",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "**/.cache/",
+    ".markdownlintignore"
+  ],
   "MD013": {
     "line_length": 120,
     "heading_line_length": 120,
