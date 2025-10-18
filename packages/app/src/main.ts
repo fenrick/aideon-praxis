@@ -83,6 +83,9 @@ async function waitForServerReady(udsPath: string, timeoutMs = 3000): Promise<vo
   }
 }
 
+// Test-only export to exercise internal helpers without spawning processes
+export const __test__ = { httpHealthOverUds, waitForServerReady } as const;
+
 // Security: disable hardware acceleration by default for baseline.
 // This file is the Electron host process entry. It must not contain
 // any renderer logic or backend-specific adapters. Renderer communicates

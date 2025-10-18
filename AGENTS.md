@@ -166,9 +166,10 @@ Lint/Format discipline
 
 ### Code quality
 
-- Coverage targets: at least 80% overall and 80% on new code.
-- Sonar: `sonar.new_code.referenceBranch=main` configured; CI waits for Quality Gate.
+- Coverage targets (Node/TS and Python): Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code; overall should trend upward.
+- Sonar: `sonar.new_code.referenceBranch=main` configured; CI waits for the Sonar Quality Gate before merging.
 - Keep code paths single and explicit (server-only worker over UDS) to reduce maintenance cost.
+  - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime.
 
 ### Python (packages/worker)
 
@@ -233,6 +234,7 @@ Changes that could affect these must include a note in CHECKS and, when possible
 
 - Lint + tests pass for TS and Python on macOS/Windows/Linux.
 - For large algorithms, mark perf tests as optional but runnable locally; capture metrics in logs.
+- Coverage gates: verify Node/TS via `yarn test:coverage` and Python via `yarn py:test:cov` (branch coverage enabled). Sonar Quality Gate must pass.
 
 ## Commit Hygiene (run before every commit)
 
