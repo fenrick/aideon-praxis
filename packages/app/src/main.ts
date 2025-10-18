@@ -114,6 +114,7 @@ const createWindow = async () => {
     const { spawn } = await import('node:child_process');
     let ready: Promise<void> = Promise.resolve();
     const udsPath = path.join(os.tmpdir(), `aideon-worker-${String(process.pid)}.sock`);
+    const isTest = process.env.VITEST_WORKER_ID !== undefined || process.env.NODE_ENV === 'test';
 
     // IPC handler for state_at (register early; it will await readiness)
     ipcMain.handle(
@@ -138,7 +139,7 @@ const createWindow = async () => {
         spawnWorker();
       });
     };
-    spawnWorker();
+    if (!isTest) spawnWorker();
 
     // spawnWorker above wires READY and sendLine
   } catch (error) {
