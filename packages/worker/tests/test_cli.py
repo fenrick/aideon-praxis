@@ -51,9 +51,7 @@ def test_jsonrpc_ping_and_state_at():
     assert outputs[0] == "READY"
     # JSON-RPC ping
     pong = json.loads(outputs[1])
-    assert (
-        pong["jsonrpc"] == "2.0" and pong["id"] == JSONRPC_PING_ID and pong["result"] == "pong"
-    )
+    assert pong["jsonrpc"] == "2.0" and pong["id"] == JSONRPC_PING_ID and pong["result"] == "pong"
     # JSON-RPC state_at
     resp = json.loads(outputs[2])
     assert resp["jsonrpc"] == "2.0" and resp["id"] == JSONRPC_STATE_ID
