@@ -38,10 +38,12 @@ def test_cli_unknown_and_invalid_json():
 
 
 def test_jsonrpc_ping_and_state_at():
-    outputs = run_cli_lines([
-        '{"jsonrpc":"2.0","id":1,"method":"ping"}',
-        '{"jsonrpc":"2.0","id":2,"method":"state_at","params":{"asOf":"2025-01-01"}}',
-    ])
+    outputs = run_cli_lines(
+        [
+            '{"jsonrpc":"2.0","id":1,"method":"ping"}',
+            '{"jsonrpc":"2.0","id":2,"method":"state_at","params":{"asOf":"2025-01-01"}}',
+        ]
+    )
     assert outputs[0] == "READY"
     # JSON-RPC ping
     pong = json.loads(outputs[1])
