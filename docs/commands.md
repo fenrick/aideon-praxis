@@ -48,3 +48,10 @@ yarn py:sync
 - The dev Electron app spawns the Python worker via `python3 -m aideon_worker.cli` using
   `PYTHONPATH`; a venv is recommended but not required.
 - Packaged apps embed the worker binary; no Python/venv is required on end-user systems.
+  Quality & Coverage
+
+- Targets: Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code.
+- Verify locally:
+  - App (JS/TS): `yarn test:coverage`
+  - Worker (Python): `yarn py:test:cov` (includes branch coverage)
+    See AGENTS.md → Coding Standards for more.

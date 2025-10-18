@@ -55,7 +55,7 @@ pip install -e "packages/worker[dev]"
 yarn dev
 ```
 
-### Test & lint
+### Test, Lint & Coverage
 
 #### TS/JS
 
@@ -79,7 +79,13 @@ yarn py:test
 yarn py:lint
 ```
 
-> We gate CI on lint + unit tests for both TS and Python.
+Quality gates
+
+- Coverage targets apply to both codebases: Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code.
+- Verify locally:
+  - App: `yarn test:coverage`
+  - Worker: `yarn py:test:cov` (branch coverage enabled)
+    See AGENTS.md for Coding Standards and CI expectations.
 
 ### Python dev quick start
 
