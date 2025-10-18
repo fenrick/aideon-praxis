@@ -75,16 +75,16 @@ yarn py:test
 yarn py:lint
 
 # uv (local)
-yarn py:uv:test
-yarn py:uv:lint
+yarn py:test
+yarn py:lint
 ```
 
 > We gate CI on lint + unit tests for both TS and Python.
 
 ### Python dev quick start
 
-1. Install Python 3.13 and uv.
-2. Run `yarn py:uv:sync` once (creates a local venv under `.venv`).
+1. Install Python 3.13/3.14 and uv.
+2. Run `yarn py:sync` once (creates a local venv under `.venv`).
 3. Before committing: `yarn format:check` (check-only; hooks run the same).
 4. To apply formatting across TS+Py: `yarn format`.
 5. To run exactly what CI runs: `yarn ci`.

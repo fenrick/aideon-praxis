@@ -65,13 +65,13 @@ jobs:
       - name: Sync Python toolchain (uv)
         run: uv sync --all-groups
       - name: Python Lint (ruff + black --check via uv)
-        run: yarn py:uv:lint
+        run: yarn py:lint
       - name: Python Typecheck (mypy + pyright)
         run: |
-          yarn py:uv:typecheck
+          yarn py:typecheck
           yarn py:pyright
       - name: Python Security (bandit)
-        run: yarn py:uv:sec
+        run: yarn py:sec
       - name: Python Dead code (vulture)
         run: yarn py:deadcode
       - name: Python Tests + Coverage (pytest-cov)
