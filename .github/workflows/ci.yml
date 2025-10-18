@@ -33,7 +33,6 @@ jobs:
           corepack prepare yarn@4.10.3 --activate || true
           yarn --version
       - run: yarn install --immutable
-
       # Commit message linting — non-blocking for Dependabot
       - name: Commitlint PR title (non-blocking for Dependabot)
         if: ${{ github.event_name == 'pull_request' }}
