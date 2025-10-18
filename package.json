@@ -25,6 +25,7 @@
     "commitlint": "commitlint --from=origin/main --to=HEAD",
     "prepare": "husky install",
     "format:check": "prettier -c .",
+    "lint:md": "markdownlint --config .markdownlint.json --ignore-path .markdownlintignore \"**/*.md\"",
     "format:py": "python3 -m black packages/worker",
     "format:py:check": "python3 -m black --check packages/worker",
     "py:lint": "python3 -m ruff check -q --config packages/worker/pyproject.toml packages/worker",
@@ -67,6 +68,8 @@
     }
   },
   "devDependencies": {
+    "markdownlint-cli": "^0.42.0",
+    "7zip-bin": "^6.0.1",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/eslintrc": "^3.1.0",
@@ -101,5 +104,8 @@
     "typescript": "^5.4.0",
     "typescript-eslint": "^8.5.0",
     "vitest": "^3.2.4"
+  },
+  "resolutions": {
+    "7zip-bin": "^6.0.1"
   }
 }
