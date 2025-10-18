@@ -1,4 +1,5 @@
 # Aideon Praxis
+
 <!-- markdownlint-disable MD013 -->
 
 The intelligent companion that turns design intent into action over time.
