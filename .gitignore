@@ -66,3 +66,5 @@ aideon-worker.spec
 # Python coverage report
 packages/worker/coverage.xml
 coverage.xml
+/docs/issues
+/.aideon

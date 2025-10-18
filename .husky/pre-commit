@@ -4,6 +4,9 @@
 # Auto-run formatters and fixers but do not block commits locally.
 # CI enforces clean lint/format via `yarn ci`.
 
+# Keep pre-commit fast and deterministic; no network calls here.
+# For GitHub issues mirror enforcement, see .husky/pre-push.
+
 # TypeScript/JS/MD
 if command -v yarn >/dev/null 2>&1; then
   yarn run -T format || true

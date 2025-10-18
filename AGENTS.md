@@ -47,6 +47,70 @@ Never cross these boundaries with imports or side‑effects.
   encryption‑at‑rest.
 - Docs: README, CONTRIBUTING, ROADMAP, Architecture‑Boundary, ADRs, C4 diagrams‑as‑code.
 
+## Issue & Project Tracking (GitHub is master)
+
+- Source of truth is GitHub issues and a Projects v2 board. Local Markdown under `docs/issues/` is a mirror only.
+- Use the provided CLI helpers (backed by `gh`) to keep tracking tight:
+  - `yarn issues:start <#>`: assign yourself, add `status/in-progress`, create local branch `issue-#/slug`, sync to Project, mirror docs.
+  - `yarn issues:split <parent#> --items "Subtask A" "Subtask B"` (or `--file tasks.txt`): creates linked secondary issues, updates parent checklist, syncs/mirrors.
+  - `yarn issues:project` (or `:dry`): ensure all repo issues are on the configured Project and set its `Status` from labels per `.env` mapping.
+  - `yarn issues:dod`: ensures a “Definition of Done” section exists on all `status/in-progress` issues.
+  - `yarn issues:linkify`: comments on issues with links to recent PRs.
+  - `yarn issues:backfill [--since YYYY-MM-DD] [--close]`: comments on issues referenced in commits on `main`; with `--close` will close issues referenced by Fixes/Closes/Resolves.
+  - `yarn issues:mirror`: refresh local docs/issues from GitHub; pre‑push enforces freshness via `issues:mirror:check`.
+
+### Environment
+
+Copy `.env.example` to `.env` and set:
+
+- `AIDEON_GH_REPO=owner/repo`
+- `AIDEON_GH_PROJECT_OWNER=<org_or_user>`
+- `AIDEON_GH_PROJECT_NUMBER=<number>`
+- `AIDEON_GH_STATUS_FIELD=Status`
+- `AIDEON_GH_STATUS_MAP={"status/todo":"Todo","status/in-progress":"In Progress","status/blocked":"Blocked","status/done":"Done"}`
+
+Token scopes required: `repo`, `project`, `read:project`, and `read:org` if the project is under an organization. Token may be stored in `.env` (not committed). The `.aideon/` local cache and mirrors are ignored via `.gitignore`.
+
+### Definition of Done (DoD)
+
+For any item labeled `status/in-progress`, ensure the issue body contains this section (added via `yarn issues:dod`):
+
+- CI: lint, typecheck, unit tests updated
+- Docs: user & dev docs updated (README/ADR/CHANGELOG)
+- Security: renderer IPC boundaries respected; no new ports
+- Performance: SLO notes or benches if applicable
+- UX: matches GitHub‑inspired style (light/dark)
+- Packaging: macOS build verified (DMG/ZIP)
+- Tracking: PRs linked; Project Status updated; local mirror refreshed
+
+When finishing work:
+
+- Check off each DoD item in the issue body.
+- Add/confirm `status/done` label; ensure the Project Status reflects completion via `yarn issues:project`.
+- If closed by PR merge (Fixes/Closes #N), verify the issue is closed; otherwise close with a comment referencing the commit.
+
+### Breaking Down Large Work
+
+- If an issue is larger than a single PR or small set of commits, create linked secondary issues:
+  - Use `yarn issues:split <parent#> --items ...` to generate child issues.
+  - Keep the parent issue as the coordination umbrella with a checklist linking to child issues.
+  - Each child issue should reference the parent (`Parent: #<parent>`), inherit priority/area/module labels, and target the same milestone.
+  - Each child should progress through `status/todo` → `status/in-progress` → `status/done` with PRs linked.
+
+### Keeping Issues Aligned With Code
+
+- On branch/PR creation: include `Fixes #<issue>` when appropriate so merges close issues automatically.
+- For existing work already on `main`, backfill tracking:
+  - `yarn issues:backfill --since <date>` to comment on referenced issues with commit details, optionally `--close` to close items resolved by commits.
+  - `yarn issues:linkify` to ensure PRs are referenced from issues.
+- After any merges to `main`: run `yarn issues:mirror` to update local docs. Pre‑push will block if mirror is stale.
+
+### Hooks & Hygiene
+
+- Pre‑commit: fast; runs formatters/linters only (no network).
+- Pre‑push: runs `issues:mirror:check` and blocks if the local mirror is out‑of‑date vs GitHub.
+
+
 Not allowed without ADR:
 
 - Meta‑model changes, RPC protocol changes, security posture changes, opening network ports, sending
