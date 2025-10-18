@@ -1,7 +1,7 @@
 # Contributing to Aideon Praxis
 
-Thanks for your interest in contributing! This guide explains how we work, how to set up your environment, and
-what we expect in issues and pull requests.
+Thanks for your interest in contributing! This guide explains how we work, how to set up your
+environment, and what we expect in issues and pull requests.
 
 ## Values
 
@@ -17,8 +17,8 @@ what we expect in issues and pull requests.
 - **Docs:** fix typos, improve examples, add diagrams/captions.
 - **Code:** pick a labeled issue, discuss approach, then open a PR.
 
-Labels to look for: `good first issue`, `priority/P1`, `area/*`, `module/*`.
-Milestones (M0–M6) track staged delivery (see `ROADMAP.md`).
+Labels to look for: `good first issue`, `priority/P1`, `area/*`, `module/*`. Milestones (M0–M6)
+track staged delivery (see `ROADMAP.md`).
 
 ## Development setup
 
@@ -83,11 +83,9 @@ yarn py:uv:lint
 
 ## Repository structure
 
-packages/app # Electron host + React UI
-packages/adapters # GraphAdapter, StorageAdapter, WorkerClient (TS)
-packages/worker # Python worker (analytics/ML, RPC server)
-packages/docs # C4 diagrams, meta-model documentation
-scripts/ # gh_bootstrap.sh and helpers
+packages/app # Electron host + React UI packages/adapters # GraphAdapter, StorageAdapter,
+WorkerClient (TS) packages/worker # Python worker (analytics/ML, RPC server) packages/docs # C4
+diagrams, meta-model documentation scripts/ # gh_bootstrap.sh and helpers
 
 - **Adapters are contracts.** Do not leak backend specifics into the renderer.
 - **Worker is long-lived.** No open TCP ports in desktop mode; pipes/UDS only.
@@ -97,7 +95,8 @@ scripts/ # gh_bootstrap.sh and helpers
 ### Branching
 
 - `main`: protected, always releasable.
-- Feature branches: `feat/<short-name>`; fixes: `fix/<short-name>`; chores/docs: `chore/<short-name>`, `docs/<short-name>`.
+- Feature branches: `feat/<short-name>`; fixes: `fix/<short-name>`; chores/docs:
+  `chore/<short-name>`, `docs/<short-name>`.
 
 ### Conventional Commits
 
@@ -123,8 +122,8 @@ scripts/ # gh_bootstrap.sh and helpers
 
 ## Architecture decisions (ADR)
 
-When a change affects the **RPC boundary**, **adapters**, **time semantics** (`state_at`, plateaus, gaps), or
-**security posture**, add/update an ADR:
+When a change affects the **RPC boundary**, **adapters**, **time semantics** (`state_at`, plateaus,
+gaps), or **security posture**, add/update an ADR:
 
 - Folder: `docs/adrs/NNN-short-title.md`
 - Template: Context → Decision → Consequences → Alternatives
