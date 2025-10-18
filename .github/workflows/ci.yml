@@ -69,7 +69,11 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f packages/worker/requirements-dev.lock ]; then
             echo "Installing Python tools from lockfile";
-            (cd packages/worker && pip install -r requirements-dev.lock);
+            (
+              cd packages/worker \
+              && pip install -r requirements-dev.lock \
+              && pip install -e .[dev]
+            );
           else
             echo "Lockfile not found; installing pinned toolchain";
             pip install ruff black pytest pytest-cov mypy bandit pyright vulture;
