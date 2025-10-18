@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import sys
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
 from .temporal import StateAtArgs, state_at
 
@@ -50,7 +50,7 @@ def _jsonrpc_handle(msg: str) -> str | None:
     Accepts one JSON object per line. Unknown or invalid messages return an error.
     """
     try:
-        data = json.loads(msg)
+        data_raw = json.loads(msg)
     except Exception as exc:  # noqa: BLE001
         return json.dumps(
             {
@@ -60,37 +60,40 @@ def _jsonrpc_handle(msg: str) -> str | None:
             }
         )
 
-    if not isinstance(data, dict) or data.get("jsonrpc") != "2.0":
+    if not isinstance(data_raw, dict):
         return None  # not JSON-RPC; let legacy handlers try
 
-    req_id = data.get("id")
-    method = data.get("method")
-    raw_params = data.get("params") or {}
-    params: dict[str, Any] = raw_params if isinstance(raw_params, dict) else {}
+    data: dict[str, Any] = cast(dict[str, Any], data_raw)
+    if data.get("jsonrpc") != "2.0":
+        return None
+    req_id: int | str | None = cast(int | str | None, data.get("id"))
+    method: str | None = cast(str | None, data.get("method"))
+    raw_params: object = data.get("params") or {}
+    params: dict[str, Any] = (
+        cast(dict[str, Any], raw_params) if isinstance(raw_params, dict) else {}
+    )
 
+    out: dict[str, object]
     try:
         if method == "ping":
-            return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": "pong"})
-        if method == "state_at":
+            out = {"jsonrpc": "2.0", "id": req_id, "result": "pong"}
+        elif method == "state_at":
             args = _parse_state_at_params(params)
             res = state_at(args)
-            return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": res})
-        # Method not found
-        return json.dumps(
-            {
+            out = {"jsonrpc": "2.0", "id": req_id, "result": cast(object, res)}
+        else:
+            out = {
                 "jsonrpc": "2.0",
                 "id": req_id,
                 "error": {"code": -32601, "message": "Method not found"},
             }
-        )
     except Exception as exc:  # noqa: BLE001
-        return json.dumps(
-            {
-                "jsonrpc": "2.0",
-                "id": req_id,
-                "error": {"code": -32000, "message": "Internal error", "data": str(exc)},
-            }
-        )
+        out = {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32000, "message": "Internal error", "data": str(exc)},
+        }
+    return json.dumps(out)
 
 
 def main() -> int:
@@ -118,9 +121,11 @@ def main() -> int:
         if msg.startswith("state_at "):
             payload = msg[len("state_at ") :]
             try:
-                data = json.loads(payload)
+                data_raw = json.loads(payload)
                 # Map and validate
-                mapping: dict[str, Any] = data if isinstance(data, dict) else {}
+                mapping: dict[str, Any] = (
+                    cast(dict[str, Any], data_raw) if isinstance(data_raw, dict) else {}
+                )
                 args = _parse_state_at_params(mapping)
                 res = state_at(args)
                 print(json.dumps(res), flush=True)
