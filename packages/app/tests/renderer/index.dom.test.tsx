@@ -1,5 +1,7 @@
 /* @vitest-environment jsdom */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, beforeEach, expect } from 'vitest';
+import { createRoot } from 'react-dom/client';
+import App from '../../src/renderer/app';
 import '../../src/renderer/global.d.ts';
 
 describe('renderer bootstrap', () => {
@@ -20,8 +22,14 @@ describe('renderer bootstrap', () => {
     };
   });
   it('mounts into #root', async () => {
-    const root = document.querySelector('#root');
-    expect(root).toBeTruthy();
-    await import('../../src/renderer/index');
+    const container = document.querySelector('#root');
+    if (!container) throw new Error('Root not found');
+    const root = createRoot(container);
+    root.render(<App />);
+    // Let effects flush, then unmount to avoid jsdom teardown errors
+    await new Promise((r) => setTimeout(r, 0));
+    root.unmount();
+    // Basic assertion on the container identity
+    expect((container as HTMLElement).id).toBe('root');
   });
 });

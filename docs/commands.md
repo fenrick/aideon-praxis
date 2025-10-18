@@ -15,40 +15,23 @@ worker tasks. Use these for local dev and CI to keep things consistent across la
 - `yarn format` — Prettier write.
 - `yarn format:check` — Prettier check.
 
-## Python Worker (pip-based)
+## Python Worker (uv-based)
 
-- `yarn format:py` — Black write on `packages/worker`.
-- `yarn format:py:check` — Black check.
-- `yarn py:lint` — Ruff lint.
-- `yarn py:lint:fix` — Ruff with `--fix`.
-- `yarn py:typecheck` — Mypy (PEP 621 config in `pyproject.toml`).
-- `yarn py:pyright` — Pyright type checking (TS-like analyzer).
-- `yarn py:security` — Bandit scan (skip tests).
+- `yarn py:sync` — Sync venv with uv (installs dev group).
+- `yarn py:lint` — Ruff + Black (check-only).
+- `yarn py:format` — Ruff --fix + Black write.
+- `yarn py:typecheck` — Mypy (PEP 621 config in `packages/worker/pyproject.toml`).
+- `yarn py:pyright` — Pyright static checks.
+- `yarn py:sec` — Bandit scan (skip tests).
 - `yarn py:deadcode` — Vulture dead code.
 - `yarn py:test` — Pytest for the worker.
 - `yarn py:test:cov` — Pytest with coverage XML at `packages/worker/coverage.xml`.
 
-Installation for pip path:
-
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e "packages/worker[dev]"
-```
-
-## Python Worker (uv-based local flow)
-
-- `yarn py:uv:sync` — Sync venv with `uv` (installs dev group).
-- `yarn py:uv:test` — Run pytest via `uv run`.
-- `yarn py:uv:lint` — Ruff via `uv run`.
-- `yarn py:uv:format:check` — Black check via `uv run`.
-- `yarn py:uv:typecheck` — Mypy via `uv run`.
-- `yarn py:uv:lock` — Refresh lock and export `requirements-dev.lock` for CI.
-
-Installation for uv path:
+Quick start:
 
 ```bash
 uv venv .venv
-cd packages/worker && uv sync --all-groups
+yarn py:sync
 ```
 
 ## Packaging

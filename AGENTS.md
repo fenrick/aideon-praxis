@@ -158,6 +158,18 @@ defaults consistent with this guide.
   typed methods only.
 - Never embed backend‑specific queries in renderer; call adapters or host APIs.
 
+Lint/Format discipline
+
+- Do not disable lint rules in code (no inline `eslint-disable`, `ts-ignore`, etc.).
+- Refactor code to satisfy linters and static analysis rather than suppressing warnings.
+- Use check-only hooks locally; CI enforces the same rules.
+
+### Code quality
+
+- Coverage targets: at least 80% overall and 80% on new code.
+- Sonar: `sonar.new_code.referenceBranch=main` configured; CI waits for Quality Gate.
+- Keep code paths single and explicit (server-only worker over UDS) to reduce maintenance cost.
+
 ### Python (packages/worker)
 
 – Python 3.13, type hints everywhere, `ruff` + `black` style.
@@ -228,8 +240,8 @@ Changes that could affect these must include a note in CHECKS and, when possible
   - `yarn format` (writes with Prettier)
   - `yarn lint --fix` or `yarn lint:fix` (applies ESLint fixes)
 - Format and fix Python worker code:
-  - `yarn format:py` (Black write mode)
-  - `yarn py:lint:fix` (Ruff with `--fix`)
+  - `yarn py:format` (Ruff --fix + Black write)
+  - `yarn py:lint` (check-only)
 - Optional checks (non‑writing):
   - `yarn format:check` and `yarn format:py:check`
 - Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and

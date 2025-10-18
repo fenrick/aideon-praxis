@@ -1,0 +1,23 @@
+## Root tool configuration only; not a Python package
+## Tooling supports Python 3.13 and 3.14 (set in individual tools)
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+lint.select = ["E","F","I","B","UP","SIM","PYI"]
+lint.ignore = []
+lint.fixable = ["ALL"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unused_ignores = true
+disallow_any_generics = true
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["packages/worker/tests"]

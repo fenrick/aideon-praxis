@@ -35,3 +35,63 @@ def test_cli_unknown_and_invalid_json():
     # Invalid JSON handled gracefully
     out2 = run_cli_lines(["state_at not-a-json"])
     assert out2[-1].startswith("{") and "error" in out2[-1]
+
+
+JSONRPC_PING_ID = 1
+JSONRPC_STATE_ID = 2
+JSONRPC_NOT_FOUND_ID = 3
+JSONRPC_INVALID_PARAMS_ID = 4
+ERR_METHOD_NOT_FOUND = -32601
+ERR_INVALID_PARAMS = -32602
+ERR_PARSE_ERROR = -32700
+
+
+def test_jsonrpc_ping_and_state_at():
+    outputs = run_cli_lines(
+        [
+            f'{{"jsonrpc":"2.0","id":{JSONRPC_PING_ID},"method":"ping"}}',
+            f'{{"jsonrpc":"2.0","id":{JSONRPC_STATE_ID},"method":"state_at","params":{{"asOf":"2025-01-01"}}}}',
+        ]
+    )
+    assert outputs[0] == "READY"
+    # JSON-RPC ping
+    pong = json.loads(outputs[1])
+    assert pong["jsonrpc"] == "2.0" and pong["id"] == JSONRPC_PING_ID and pong["result"] == "pong"
+    # JSON-RPC state_at
+    resp = json.loads(outputs[2])
+    assert resp["jsonrpc"] == "2.0" and resp["id"] == JSONRPC_STATE_ID
+    result = resp["result"]
+    assert result["asOf"] == "2025-01-01" and result["nodes"] == 0 and result["edges"] == 0
+
+
+def test_jsonrpc_method_not_found():
+    outputs = run_cli_lines(
+        [
+            f'{{"jsonrpc":"2.0","id":{JSONRPC_NOT_FOUND_ID},"method":"unknown_method"}}',
+        ]
+    )
+    assert outputs[0] == "READY"
+    resp = json.loads(outputs[1])
+    assert resp["jsonrpc"] == "2.0" and resp["id"] == JSONRPC_NOT_FOUND_ID
+    assert resp["error"]["code"] == ERR_METHOD_NOT_FOUND
+
+
+def test_jsonrpc_invalid_params_missing_asof():
+    outputs = run_cli_lines(
+        [
+            f'{{"jsonrpc":"2.0","id":{JSONRPC_INVALID_PARAMS_ID},"method":"state_at","params":{{}}}}',
+        ]
+    )
+    assert outputs[0] == "READY"
+    resp = json.loads(outputs[1])
+    assert resp["jsonrpc"] == "2.0" and resp["id"] == JSONRPC_INVALID_PARAMS_ID
+    assert resp["error"]["code"] == ERR_INVALID_PARAMS
+
+
+def test_jsonrpc_parse_error():
+    # send malformed JSON as JSON-RPC
+    outputs = run_cli_lines(['{"jsonrpc"'])
+    assert outputs[0] == "READY"
+    resp = json.loads(outputs[1])
+    assert resp["jsonrpc"] == "2.0" and resp["id"] is None
+    assert resp["error"]["code"] == ERR_PARSE_ERROR

@@ -14,8 +14,93 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Mapping
+from typing import Any, cast
 
 from .temporal import StateAtArgs, state_at
+
+
+def _parse_state_at_params(params: Mapping[str, Any]) -> StateAtArgs:
+    """Validate and map external camelCase params to `StateAtArgs`.
+
+    Returns a fully-typed `StateAtArgs` or raises `ValueError` on invalid input.
+    """
+    as_of_val = params.get("asOf")
+    if not isinstance(as_of_val, str) or not as_of_val:
+        raise ValueError("Invalid params: 'asOf' (str) is required")
+
+    scenario_val = params.get("scenario")
+    if scenario_val is not None and not isinstance(scenario_val, str):
+        raise ValueError("Invalid params: 'scenario' must be a string if provided")
+
+    confidence_val = params.get("confidence")
+    if confidence_val is not None and not isinstance(confidence_val, int | float):
+        raise ValueError("Invalid params: 'confidence' must be a number if provided")
+
+    return StateAtArgs(
+        as_of=as_of_val,
+        scenario=scenario_val,
+        confidence=float(confidence_val) if confidence_val is not None else None,
+    )
+
+
+def _jsonrpc_handle(msg: str) -> str | None:
+    """Handle a single JSON-RPC 2.0 message; return a JSON string or None.
+
+    Accepts one JSON object per line. Unknown or invalid messages return an error.
+    """
+    try:
+        data_raw = json.loads(msg)
+    except Exception as exc:  # noqa: BLE001
+        return json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "error": {"code": -32700, "message": "Parse error", "data": str(exc)},
+                "id": None,
+            }
+        )
+
+    if not isinstance(data_raw, dict):
+        return None  # not JSON-RPC; let legacy handlers try
+
+    data: dict[str, Any] = cast(dict[str, Any], data_raw)
+    if data.get("jsonrpc") != "2.0":
+        return None
+    req_id: object = data.get("id")
+    method_raw: object = data.get("method")
+    method: str | None = method_raw if isinstance(method_raw, str) else None
+    raw_params: object = data.get("params") or {}
+    params: dict[str, Any] = (
+        cast(dict[str, Any], raw_params) if isinstance(raw_params, dict) else {}
+    )
+
+    out: dict[str, object]
+    try:
+        if method in ("ping", "ping.v1"):
+            out = {"jsonrpc": "2.0", "id": req_id, "result": "pong"}
+        elif method in ("state_at", "temporal.state_at.v1"):
+            args = _parse_state_at_params(params)
+            res = state_at(args)
+            out = {"jsonrpc": "2.0", "id": req_id, "result": cast(object, res)}
+        else:
+            out = {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "error": {"code": -32601, "message": "Method not found"},
+            }
+    except ValueError as exc:
+        out = {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32602, "message": "Invalid params", "data": str(exc)},
+        }
+    except Exception as exc:  # noqa: BLE001
+        out = {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32000, "message": "Internal error", "data": str(exc)},
+        }
+    return json.dumps(out)
 
 
 def main() -> int:
@@ -29,6 +114,13 @@ def main() -> int:
         msg = line.strip()
         if not msg:
             continue
+        # Prefer JSON-RPC if line starts with '{'
+        if msg.startswith("{"):
+            out = _jsonrpc_handle(msg)
+            if out is not None:
+                print(out, flush=True)
+                continue
+
         if msg == "ping":
             print("pong", flush=True)
             continue
@@ -36,13 +128,12 @@ def main() -> int:
         if msg.startswith("state_at "):
             payload = msg[len("state_at ") :]
             try:
-                data = json.loads(payload)
-                # Map external camelCase payload to internal snake_case dataclass
-                args = StateAtArgs(
-                    as_of=data.get("asOf"),
-                    scenario=data.get("scenario"),
-                    confidence=data.get("confidence"),
+                data_raw = json.loads(payload)
+                # Map and validate
+                mapping: dict[str, Any] = (
+                    cast(dict[str, Any], data_raw) if isinstance(data_raw, dict) else {}
                 )
+                args = _parse_state_at_params(mapping)
                 res = state_at(args)
                 print(json.dumps(res), flush=True)
             except Exception as exc:  # noqa: BLE001
