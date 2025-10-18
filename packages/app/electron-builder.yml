@@ -26,6 +26,6 @@ win:
 linux:
   target:
     - AppImage
-    - deb
+    - flatpak
   category: Development
   artifactName: '${productName}-${version}-${arch}.${ext}'

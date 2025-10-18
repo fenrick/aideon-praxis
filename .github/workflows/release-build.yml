@@ -20,6 +20,11 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - name: Install Flatpak tooling (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder xz-utils
       - name: Enable Corepack and Yarn 4
         run: |
           corepack enable || true
