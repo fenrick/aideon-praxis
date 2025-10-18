@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import asyncio
 import sys
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 import uvicorn
@@ -33,7 +35,17 @@ class StateAtResponse(BaseModel):
     edges: int
 
 
-app = FastAPI(title="Aideon Praxis Worker RPC", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:  # pragma: no cover - simple banner
+    """Startup/shutdown hooks.
+
+    Prints a simple readiness marker on startup.
+    """
+    print("READY", flush=True)
+    yield
+
+
+app = FastAPI(title="Aideon Praxis Worker RPC", version="0.1.0", lifespan=lifespan)
 
 
 class HealthResponse(BaseModel):
@@ -48,10 +60,7 @@ async def health() -> HealthResponse:  # pragma: no cover - trivial
     return HealthResponse()
 
 
-@app.on_event("startup")
-async def on_startup() -> None:  # pragma: no cover - simple banner
-    """Log a simple readiness banner to stdout."""
-    print("READY", flush=True)
+# Startup banner handled in lifespan above
 
 
 @app.get("/api/v1/state_at", response_model=StateAtResponse)
