@@ -1,0 +1,20 @@
+# Ignore generated or third-party directories
+node_modules/
+coverage/
+dist/
+packages/**/dist/
+build/
+.git/
+.husky/
+.yarn/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+docs/**/generated/
+
+# Ignore lockfiles and artifacts
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+**/.cache/
