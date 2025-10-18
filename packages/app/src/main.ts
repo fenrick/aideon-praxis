@@ -5,7 +5,9 @@ import { parseJsonRpcStateAt, type StateAtResult } from './rpc';
 import http from 'node:http';
 import os from 'node:os';
 
-interface MinimalChild { stdin: { write: (s: string) => void } }
+interface MinimalChild {
+  stdin: { write: (s: string) => void };
+}
 
 function awaitWorkerReady(reader: readline.Interface): Promise<void> {
   return new Promise<void>((resolve) => {
@@ -83,42 +85,17 @@ const createWindow = async () => {
     let ready: Promise<void> = Promise.resolve();
     let sendLine: ((line: string) => Promise<string>) | null = null;
     let nextId = 1;
-    const useServer = process.env.AIDEON_USE_UV_SERVER !== '0';
+    const useServer = process.env.AIDEON_USE_UV_SERVER === '1';
     const udsPath = path.join(os.tmpdir(), `aideon-worker-${String(process.pid)}.sock`);
 
     // httpStateAtOverUds defined at module scope
-    const makeSendLine = (
-      rl: readline.Interface,
-      child: MinimalChild,
-    ): ((line: string) => Promise<string>) =>
+    const makeSendLine =
+      (rl: readline.Interface, child: MinimalChild): ((line: string) => Promise<string>) =>
       async (line: string) =>
         new Promise<string>((resolve) => {
           rl.once('line', resolve);
           child.stdin.write(`${line}\n`);
         });
-
-    const spawnWorker = () => {
-      const { cmd, args, options } = getWorkerSpawn();
-      if (useServer) {
-        // Inject UDS path for server mode
-        args.push('--uds', udsPath);
-      }
-      const child = spawn(cmd, args, options);
-      if (useServer) {
-        // Server mode: assume readiness is handled by HTTP health; don't wire readline
-        ready = Promise.resolve();
-      } else {
-        const rl = readline.createInterface({ input: child.stdout });
-        ready = awaitWorkerReady(rl);
-        // Simple serialized request helper for legacy modes
-        sendLine = makeSendLine(rl, child);
-      }
-      child.on('exit', () => {
-        // Attempt a fast respawn; existing callers still await `ready`
-        spawnWorker();
-      });
-    };
-    spawnWorker();
 
     // IPC handler for state_at (register early; it will await readiness)
     ipcMain.handle(
@@ -145,6 +122,29 @@ const createWindow = async () => {
         return JSON.parse(legacyRaw) as StateAtResult;
       },
     );
+
+    const spawnWorker = () => {
+      const { cmd, args, options } = getWorkerSpawn();
+      if (useServer) {
+        // Inject UDS path for server mode
+        args.push('--uds', udsPath);
+      }
+      const child = spawn(cmd, args, options);
+      if (useServer) {
+        // Server mode: assume readiness is handled by HTTP health; don't wire readline
+        ready = Promise.resolve();
+      } else {
+        const rl = readline.createInterface({ input: child.stdout });
+        ready = awaitWorkerReady(rl);
+        // Simple serialized request helper for legacy modes
+        sendLine = makeSendLine(rl, child);
+      }
+      child.on('exit', () => {
+        // Attempt a fast respawn; existing callers still await `ready`
+        spawnWorker();
+      });
+    };
+    spawnWorker();
 
     // spawnWorker above wires READY and sendLine
   } catch (error) {

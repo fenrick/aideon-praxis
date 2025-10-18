@@ -1,18 +1,5 @@
-[project]
-name = "aideon-praxis"
-requires-python = ">=3.13,<3.15"
-
-[project.optional-dependencies]
-dev = [
-  "black==24.10.0",
-  "ruff==0.6.9",
-  "pytest==8.3.3",
-  "pytest-cov==5.0.0",
-  "mypy==1.11.2",
-  "types-requests==2.32.0.20240914",
-  "bandit==1.7.9",
-  "vulture==2.11"
-]
+## Root tool configuration only; not a Python package
+## Tooling supports Python 3.13 and 3.14 (set in individual tools)
 
 [tool.black]
 line-length = 100

@@ -34,7 +34,7 @@ def _parse_state_at_params(params: Mapping[str, Any]) -> StateAtArgs:
         raise ValueError("Invalid params: 'scenario' must be a string if provided")
 
     confidence_val = params.get("confidence")
-    if confidence_val is not None and not isinstance(confidence_val, (int, float)):
+    if confidence_val is not None and not isinstance(confidence_val, int | float):
         raise ValueError("Invalid params: 'confidence' must be a number if provided")
 
     return StateAtArgs(

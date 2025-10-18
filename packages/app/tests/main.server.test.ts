@@ -1,4 +1,6 @@
 /* @vitest-environment node */
+// Force server mode for this test file
+process.env.AIDEON_USE_UV_SERVER = '1';
 import { describe, it, expect, vi } from 'vitest';
 
 type Listener = (...arguments_: unknown[]) => void;
@@ -50,6 +52,8 @@ describe('main process server mode', () => {
   it('calls FastAPI over UDS and returns JSON', async () => {
     // Start app
     for (const callback of events.get('ready') ?? []) callback();
+    // Allow main.ts to register ipcMain handlers
+    await new Promise((resolve) => setTimeout(resolve, 0));
     // Wire http request to return a JSON body
     httpRequestMock.mockImplementation((_options: unknown, callback: (response: any) => void) => {
       const dataHandlers: ((c?: unknown) => void)[] = [];
@@ -66,9 +70,18 @@ describe('main process server mode', () => {
       } as const;
       setTimeout(() => {
         callback(response);
-        response.emit('data', Buffer.from(JSON.stringify({
-          asOf: '2025-01-01', scenario: null, confidence: null, nodes: 0, edges: 0,
-        })));
+        response.emit(
+          'data',
+          Buffer.from(
+            JSON.stringify({
+              asOf: '2025-01-01',
+              scenario: null,
+              confidence: null,
+              nodes: 0,
+              edges: 0,
+            }),
+          ),
+        );
         response.emit('end');
       }, 0);
       return { on: vi.fn(), end: vi.fn() };
@@ -77,7 +90,10 @@ describe('main process server mode', () => {
     // Get handler and invoke
     const calls = (electron.ipcMain.handle as unknown as { mock: { calls: unknown[] } }).mock
       .calls as [string, (...arguments_: unknown[]) => unknown][];
-    const [, handler] = calls.at(-1) as [string, (event: unknown, a: { asOf: string }) => Promise<any>];
+    const [, handler] = calls.at(-1) as [
+      string,
+      (event: unknown, a: { asOf: string }) => Promise<any>,
+    ];
     const result = await handler({}, { asOf: '2025-01-01' });
     expect(result.asOf).toBe('2025-01-01');
   });

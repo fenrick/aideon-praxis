@@ -3,19 +3,18 @@ repos:
     hooks:
       - id: ruff-check
         name: ruff (check)
-        entry: scripts/uvpy -m ruff check .
+        entry: scripts/uvpy ruff check .
         language: system
         pass_filenames: false
 
       - id: black-check
         name: black (check)
-        entry: scripts/uvpy -m black --check .
+        entry: scripts/uvpy black --check .
         language: system
         pass_filenames: false
 
       - id: mypy
         name: mypy (type-check)
-        entry: scripts/uvpy -m mypy --config-file packages/worker/pyproject.toml packages/worker/src
+        entry: scripts/uvpy mypy --config-file packages/worker/pyproject.toml packages/worker/src
         language: system
         pass_filenames: false
-
