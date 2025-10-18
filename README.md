@@ -30,17 +30,21 @@ Packaging
 
 - Local packaging (unsigned): `yarn workspace @aideon/app dist`.
   - Outputs installers to `packages/app/dist/pack/` for macOS (DMG), Windows (NSIS), and Linux (AppImage/DEB).
-  - The Python worker binary is embedded inside the app package (resources/worker) when the CI step builds it with PyInstaller. Local packaging embeds the worker if `packages/app/extra/worker/aideon-worker[.exe]` exists.
-- CI packaging: when a GitHub Release is published (including nightly channel), the `Package Artifacts` workflow builds on macOS, Windows, and Linux and uploads assets to the release using the repo token.
+- The Python worker binary is embedded inside the app package (resources/worker) when the CI step builds it with
+  PyInstaller. Local packaging embeds the worker if `packages/app/extra/worker/aideon-worker[.exe]` exists.
+- CI packaging: when a GitHub Release is published (including nightly channel), the `Package Artifacts` workflow
+  builds on macOS, Windows, and Linux and uploads assets to the release using the repo token.
   - Each OS job builds the worker as a standalone binary (PyInstaller) and embeds it in the Electron package via `extraResources`.
-- Code signing/notarization: not configured by default. Provide signing credentials as environment secrets if needed later. Builds remain unsigned for local/CI unless configured.
+- Code signing/notarization: not configured by default. Provide signing credentials as environment secrets if
+  needed later. Builds remain unsigned for local/CI unless configured.
 
 Commit conventions and releases
 
 - Use Conventional Commits (e.g., `feat(app): add AS-OF slider`).
 - Lint commit messages locally: `yarn commitlint`.
 - CI enforces PR title style and runs semantic-release on `main` to generate changelog and GitHub releases.
-- Version injection: during release, CI writes `packages/app/src/version.ts` and `packages/worker/.../_version.py` with the computed version so binaries embed an immutable version. Local dev uses `0.0.0-dev`.
+- Version injection: during release, CI writes `packages/app/src/version.ts` and `packages/worker/.../_version.py`
+  with the computed version so binaries embed an immutable version. Local dev uses `0.0.0-dev`.
 - Nightly builds: push a `nightly` branch. CI publishes prereleases like `x.y.z-nightly.YYYYMMDD`, channel `nightly`.
 
 Security posture
@@ -54,7 +58,10 @@ License
 
 The intelligent companion that turns **design intent into action over time**.
 
-Aideon Praxis is a **graph-native, local-first Enterprise Architecture (EA) platform** with a **time-first meta-model**. It builds a **digital twin of the enterprise**, supports **bitemporal state** (valid & record time), **scenario branches**, **Plan Events** for future projections, and a Python worker for **heavy analytics and ML**. Designed for desktop (Electron + React) with a clean path to server/cloud mode.
+Aideon Praxis is a **graph-native, local-first Enterprise Architecture (EA) platform** with a **time-first
+meta-model**. It builds a **digital twin of the enterprise**, supports **bitemporal state** (valid & record time),
+**scenario branches**, **Plan Events** for future projections, and a Python worker for **heavy analytics and ML**.
+Designed for desktop (Electron + React) with a clean path to server/cloud mode.
 
 - **Graph-native:** Rich many-to-many relationships across Strategy → Capability → Service/Process → App/API → Tech/Cloud.
 - **Time-first:** Snapshots, scenarios, **`state_at()`** time slicing, plateaus/gaps, and date-driven colour narratives.

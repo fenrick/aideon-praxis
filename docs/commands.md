@@ -1,6 +1,7 @@
 # Yarn Command Guide
 
-This guide lists the common yarn scripts for Aideon Praxis and how they map to JS/TS and Python worker tasks. Use these for local dev and CI to keep things consistent across layers.
+This guide lists the common yarn scripts for Aideon Praxis and how they map to JS/TS and Python worker tasks.
+Use these for local dev and CI to keep things consistent across layers.
 
 ## JS/TS (app + adapters)
 
@@ -61,5 +62,6 @@ cd packages/worker && uv sync --all-groups
 
 ## Notes
 
-- The dev Electron app spawns the Python worker via `python3 -m aideon_worker.cli` using `PYTHONPATH`; a venv is recommended but not required.
+- The dev Electron app spawns the Python worker via `python3 -m aideon_worker.cli` using `PYTHONPATH`; a venv is
+  recommended but not required.
 - Packaged apps embed the worker binary; no Python/venv is required on end-user systems.
