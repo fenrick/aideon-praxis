@@ -234,16 +234,17 @@ Changes that could affect these must include a note in CHECKS and, when possible
 - Lint + tests pass for TS and Python on macOS/Windows/Linux.
 - For large algorithms, mark perf tests as optional but runnable locally; capture metrics in logs.
 
-## Commit hygiene (run before every commit)
+## Commit Hygiene (run before every commit)
 
 - Format and fix TypeScript/JS/MD via Prettier and ESLint:
   - `yarn format` (writes with Prettier)
   - `yarn lint --fix` or `yarn lint:fix` (applies ESLint fixes)
-- Format and fix Python worker code:
+- Python (worker):
   - `yarn py:format` (Ruff --fix + Black write)
   - `yarn py:lint` (check-only)
+  - `yarn py:typecheck` and `yarn py:pyright` (both must pass)
 - Optional checks (non‑writing):
-  - `yarn format:check` and `yarn format:py:check`
+  - `yarn format:check` (JS/TS/MD) and `yarn py:test`
 - Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and
   deterministic.
 
