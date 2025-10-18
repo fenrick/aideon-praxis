@@ -66,8 +66,9 @@ def _jsonrpc_handle(msg: str) -> str | None:
     data: dict[str, Any] = cast(dict[str, Any], data_raw)
     if data.get("jsonrpc") != "2.0":
         return None
-    req_id: int | str | None = cast(int | str | None, data.get("id"))
-    method: str | None = cast(str | None, data.get("method"))
+    req_id: object = data.get("id")
+    method_raw: object = data.get("method")
+    method: str | None = method_raw if isinstance(method_raw, str) else None
     raw_params: object = data.get("params") or {}
     params: dict[str, Any] = (
         cast(dict[str, Any], raw_params) if isinstance(raw_params, dict) else {}
@@ -87,6 +88,12 @@ def _jsonrpc_handle(msg: str) -> str | None:
                 "id": req_id,
                 "error": {"code": -32601, "message": "Method not found"},
             }
+    except ValueError as exc:
+        out = {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32602, "message": "Invalid params", "data": str(exc)},
+        }
     except Exception as exc:  # noqa: BLE001
         out = {
             "jsonrpc": "2.0",
