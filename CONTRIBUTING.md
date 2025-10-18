@@ -81,6 +81,16 @@ yarn py:uv:lint
 
 > We gate CI on lint + unit tests for both TS and Python.
 
+### Python dev quick start
+
+1. Install Python 3.13 and uv.
+2. Run `yarn py:uv:sync` once (creates a local venv under `.venv`).
+3. Before committing: `yarn format:check` (check-only; hooks run the same).
+4. To apply formatting across TS+Py: `yarn format`.
+5. To run exactly what CI runs: `yarn ci`.
+
+Why uv? All tools run through `scripts/uvpy` → `uv run`, so no global Python packages are needed and versions are locked by `uv`.
+
 ## Repository structure
 
 packages/app # Electron host + React UI packages/adapters # GraphAdapter, StorageAdapter,
