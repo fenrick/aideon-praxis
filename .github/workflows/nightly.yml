@@ -44,3 +44,11 @@ jobs:
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Python tools (dev)
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f packages/worker/requirements-dev.lock ]; then
+            echo "Installing Python tools from lockfile";
+            (cd packages/worker && pip install -r requirements-dev.lock);
+          fi
