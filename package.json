@@ -20,7 +20,7 @@
     "format": "prettier -w . && yarn py:format",
     "typecheck": "tsc -b --pretty",
     "test": "vitest run --reporter=default",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage.enabled=true --coverage.provider=istanbul --coverage.reporter=lcov --coverage.reporter=html --coverage.reporter=text",
     "release": "semantic-release",
     "commitlint": "commitlint --from=origin/main --to=HEAD",
     "prepare": "husky install",
@@ -58,7 +58,7 @@
   "vitest": {
     "environment": "jsdom",
     "coverage": {
-      "provider": "v8",
+      "provider": "istanbul",
       "reporter": [
         "text",
         "lcov",
