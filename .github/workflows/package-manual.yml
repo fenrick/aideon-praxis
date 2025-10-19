@@ -1,0 +1,27 @@
+name: Package (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish artifacts to GitHub Releases'
+        required: false
+        type: boolean
+        default: false
+      os-matrix:
+        description: 'JSON array of OS runners'
+        required: false
+        type: string
+        default: '["ubuntu-latest","macos-latest","windows-latest"]'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Package App and Worker
+    uses: fenrick/aideon-praxis/.github/workflows/reusable-release.yml@main
+    with:
+      publish: ${{ inputs.publish }}
+      os-matrix: ${{ inputs.os-matrix }}
+

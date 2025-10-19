@@ -1,0 +1,181 @@
+name: Reusable Release
+
+on:
+  workflow_call:
+    inputs:
+      publish:
+        description: 'Publish artifacts to GitHub Releases (electron-builder)'
+        required: false
+        type: boolean
+        default: false
+      os-matrix:
+        description: 'JSON array of OS runners'
+        required: false
+        type: string
+        default: '["ubuntu-latest","macos-latest","windows-latest"]'
+
+env:
+  NODE_VERSION: '24'
+  PYTHON_VERSION: '3.13'
+  YARN_VERSION: '4.10.3'
+
+permissions:
+  contents: write
+
+jobs:
+  build_worker:
+    name: Build Worker (PyInstaller)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable Corepack
+        run: corepack enable || true
+
+      - name: Prepare Yarn ${{ env.YARN_VERSION }}
+        run: corepack prepare yarn@${{ env.YARN_VERSION }} --activate || true
+
+      - name: Cache Yarn
+        uses: actions/cache@v4
+        with:
+          path: |
+            .yarn/cache
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+
+      - name: Install JS dependencies
+        run: yarn install --immutable
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: latest
+
+      - name: Cache uv and virtualenvs
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            packages/worker/.venv
+            ~/.cache/uv
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-
+
+      - name: Python Sync (uv)
+        run: yarn py:sync
+
+      - name: Python Lint (ruff+black --check)
+        run: yarn py:lint
+
+      - name: Python Tests
+        run: yarn py:test
+
+      - name: Build worker binary (PyInstaller via uvx)
+        run: uvx pyinstaller -F -n aideon-worker -p packages/worker/src packages/worker/src/aideon_worker/cli.py
+
+      - name: Upload worker binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-binary
+          path: |
+            dist/aideon-worker*
+
+  package_app:
+    name: Package App (${{ matrix.os }})
+    needs: build_worker
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs['os-matrix']) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable Corepack
+        run: corepack enable || true
+
+      - name: Prepare Yarn ${{ env.YARN_VERSION }}
+        run: corepack prepare yarn@${{ env.YARN_VERSION }} --activate || true
+
+      - name: Cache Yarn
+        uses: actions/cache@v4
+        with:
+          path: |
+            .yarn/cache
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+
+      - name: Install JS dependencies
+        run: yarn install --immutable
+
+      - name: JS Format Check
+        run: yarn format:check
+
+      - name: JS Lint
+        run: yarn lint
+
+      - name: JS Typecheck
+        run: yarn typecheck
+
+      - name: JS Tests
+        run: yarn test
+
+      - name: Download worker binary
+        uses: actions/download-artifact@v5
+        with:
+          name: worker-binary
+          path: dist
+
+      - name: Stage worker binary into app
+        shell: bash
+        run: |
+          mkdir -p packages/app/extra/worker
+          if [[ "$RUNNER_OS" == "Windows" ]]; then cp dist/aideon-worker.exe packages/app/extra/worker/; else cp dist/aideon-worker packages/app/extra/worker/; fi
+
+      - name: Build app code
+        run: yarn workspace @aideon/app build
+
+      - name: Package app
+        if: ${{ !inputs.publish }}
+        run: yarn workspace @aideon/app exec electron-builder -c electron-builder.yml --publish=never
+
+      - name: Upload installers
+        if: ${{ !inputs.publish }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ runner.os }}
+          path: packages/app/dist/pack/**
+
+      - name: Package and publish app
+        if: ${{ inputs.publish }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
+        run: yarn workspace @aideon/app exec electron-builder -c electron-builder.yml --publish always
