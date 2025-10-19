@@ -27,11 +27,12 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Enable Corepack and Yarn 4
-        run: |
-          corepack enable || true
-          corepack prepare yarn@4.10.3 --activate || true
-          yarn --version
+      - name: Enable Corepack
+        run: corepack enable || true
+      - name: Prepare Yarn 4
+        run: corepack prepare yarn@4.10.3 --activate || true
+      - name: Yarn version
+        run: yarn --version
       - name: Cache Yarn (Yarn 4 local cache)
         uses: actions/cache@v4
         with:
@@ -85,11 +86,12 @@ jobs:
         run: uv sync --all-groups
       - name: Python Lint (ruff + black --check via uv)
         run: yarn py:lint
-      - name: Python Typecheck (mypy + pyright)
-        run: |
-          yarn py:sync
-          yarn py:typecheck
-          yarn py:pyright
+      - name: Python Sync (uv)
+        run: yarn py:sync
+      - name: Python Typecheck (mypy)
+        run: yarn py:typecheck
+      - name: Python Typecheck (pyright)
+        run: yarn py:pyright
       - name: Python Security (bandit)
         run: yarn py:sec
       - name: Python Dead code (vulture)
