@@ -176,7 +176,9 @@ function getWorkerSpawn(): {
   // Dev: prefer `uv run -q -m aideon_worker.server` if available
   options.env = { ...process.env, PYTHONPATH: path.join(process.cwd(), '..', 'worker', 'src') };
   const uvPath = process.env.UV ?? 'uv';
-  return { cmd: uvPath, args: ['run', '-q', '-m', 'aideon_worker.server'], options };
+  // Ensure required dev deps are available when running server module directly
+  const withDeps = ['--with', 'uvicorn', '--with', 'fastapi', '--with', 'pydantic'];
+  return { cmd: uvPath, args: ['run', '-q', ...withDeps, '-m', 'aideon_worker.server'], options };
 }
 
 // Electron app init using event to avoid promise chain in CJS
