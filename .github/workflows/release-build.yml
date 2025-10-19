@@ -25,11 +25,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends flatpak flatpak-builder xz-utils
-      - name: Enable Corepack and Yarn 4
-        run: |
-          corepack enable || true
-          corepack prepare yarn@4.10.3 --activate || true
-          yarn --version
+      - name: Enable Corepack
+        run: corepack enable || true
+      - name: Prepare Yarn 4
+        run: corepack prepare yarn@4.10.3 --activate || true
+      - name: Yarn version
+        run: yarn --version
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
@@ -41,26 +42,25 @@ jobs:
         run: corepack enable
         continue-on-error: true
       - run: yarn install --frozen-lockfile
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+      - name: Install worker dev tools (locked)
+        if: ${{ hashFiles('packages/worker/requirements-dev.lock') != '' }}
+        run: |
+          cd packages/worker
+          pip install -r requirements-dev.lock
+          pip install -e .[dev]
+      - name: Ensure PyInstaller
+        run: pip install pyinstaller
+      - name: Python Lint (ruff+black --check)
+        run: yarn py:lint
+      - name: Python Tests
+        run: yarn py:test
       - name: Build worker binary (PyInstaller)
+        run: pyinstaller -F -n aideon-worker -p packages/worker/src packages/worker/src/aideon_worker/cli.py
+      - name: Stage worker binary into app
         shell: bash
         run: |
-          python -m pip install --upgrade pip
-          if [ -f packages/worker/requirements-dev.lock ]; then
-            (
-              cd packages/worker \
-              && pip install -r requirements-dev.lock \
-              && pip install -e .[dev]
-            );
-            # Ensure PyInstaller present (not in dev extras)
-            pip install pyinstaller;
-          else
-            pip install ruff black pytest pyinstaller;
-          fi
-          # quick alignment: lint and test worker using yarn wrappers
-          yarn py:lint
-          yarn format:py:check
-          yarn py:test
-          pyinstaller -F -n aideon-worker -p packages/worker/src packages/worker/src/aideon_worker/cli.py
           mkdir -p packages/app/extra/worker
           if [[ "$RUNNER_OS" == "Windows" ]]; then cp dist/aideon-worker.exe packages/app/extra/worker/; else cp dist/aideon-worker packages/app/extra/worker/; fi
       - run: yarn workspace @aideon/app build
@@ -81,10 +81,11 @@ jobs:
         with:
           node-version: '24'
       - name: Enable Corepack (non-fatal)
-        run: |
-          corepack enable || true
-          corepack prepare yarn@4.10.3 --activate || true
-          yarn --version
+        run: corepack enable || true
+      - name: Prepare Yarn 4
+        run: corepack prepare yarn@4.10.3 --activate || true
+      - name: Yarn version
+        run: yarn --version
       - name: Install JS dependencies
         run: yarn install --immutable
       - uses: actions/setup-python@v5
@@ -94,23 +95,20 @@ jobs:
           cache-dependency-path: |
             packages/worker/pyproject.toml
             packages/worker/requirements-dev.lock
-      - name: Install tools and run checks
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+      - name: Install worker dev tools (locked)
+        if: ${{ hashFiles('packages/worker/requirements-dev.lock') != '' }}
         run: |
-          python -m pip install --upgrade pip
-          if [ -f packages/worker/requirements-dev.lock ]; then
-            (
-              cd packages/worker \
-              && pip install -r requirements-dev.lock \
-              && pip install -e .[dev]
-            );
-            # Ensure build backend available
-            pip install build;
-          else
-            pip install build ruff black pytest;
-          fi
-          yarn py:lint
-          yarn format:py:check
-          yarn py:test
+          cd packages/worker
+          pip install -r requirements-dev.lock
+          pip install -e .[dev]
+      - name: Ensure build backend
+        run: pip install build
+      - name: Python Lint (ruff+black --check)
+        run: yarn py:lint
+      - name: Python Tests
+        run: yarn py:test
       - name: Build distributions
         working-directory: packages/worker
         run: python -m build
