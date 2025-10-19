@@ -57,6 +57,9 @@
   },
   "vitest": {
     "environment": "jsdom",
+    "setupFiles": [
+      "packages/app/tests/setup.ts"
+    ],
     "coverage": {
       "provider": "istanbul",
       "reporter": [
