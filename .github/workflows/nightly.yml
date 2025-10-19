@@ -34,8 +34,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: corepack enable || true
-      - run: yarn install --frozen-lockfile
+      - name: Enable Corepack
+        run: corepack enable || true
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
       - run: yarn lint
       - run: yarn typecheck
       - run: yarn test
@@ -53,10 +55,10 @@ jobs:
           fi
       - name: Python Lint (ruff)
         run: yarn py:lint
-      - name: Python Typecheck (mypy + pyright)
-        run: |
-          yarn py:typecheck
-          yarn py:pyright
+      - name: Python Typecheck (mypy)
+        run: yarn py:typecheck
+      - name: Python Typecheck (pyright)
+        run: yarn py:pyright
       - name: Python Security (bandit)
         run: yarn py:security
       - name: Python Dead code (vulture)
