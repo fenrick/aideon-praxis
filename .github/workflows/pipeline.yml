@@ -1,0 +1,182 @@
+name: Pipeline
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      runSonar:
+        description: 'Run SonarCloud analysis'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '24'
+  PYTHON_VERSION: '3.13'
+  YARN_VERSION: '4.10.3'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  js_checks:
+    name: JS/TS Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable Corepack
+        run: corepack enable || true
+
+      - name: Prepare Yarn ${{ env.YARN_VERSION }}
+        run: corepack prepare yarn@${{ env.YARN_VERSION }} --activate || true
+
+      - name: Yarn version
+        run: yarn --version
+
+      - name: Cache Yarn
+        uses: actions/cache@v4
+        with:
+          path: |
+            .yarn/cache
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+
+      - name: Install JS dependencies
+        run: yarn install --immutable
+
+      - name: JS Format Check
+        run: yarn format:check
+
+      - name: JS Lint
+        run: yarn lint
+
+      - name: JS Typecheck
+        run: yarn typecheck
+
+      - name: JS Tests + Coverage
+        run: yarn test:coverage
+
+      - name: Upload TS coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-ts
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            coverage/lcov.info
+
+  py_checks:
+    name: Python Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: latest
+
+      - name: Cache uv and virtualenvs
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            packages/worker/.venv
+            ~/.cache/uv
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-
+
+      - name: Python Sync (uv)
+        run: uv sync --all-groups
+
+      - name: Python Lint (ruff+black --check)
+        run: yarn py:lint
+
+      - name: Python Typecheck (mypy)
+        run: yarn py:typecheck
+
+      - name: Python Typecheck (pyright)
+        run: yarn py:pyright
+
+      - name: Python Security (bandit)
+        run: yarn py:sec
+
+      - name: Python Dead code (vulture)
+        run: yarn py:deadcode
+
+      - name: Python Tests + Coverage (pytest-cov)
+        run: yarn py:test:cov
+
+      - name: Upload Python coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-py
+          if-no-files-found: warn
+          retention-days: 7
+          path: packages/worker/coverage.xml
+
+  sonar:
+    name: SonarQube Analysis
+    needs: [js_checks, py_checks]
+    runs-on: ubuntu-latest
+    if: >-
+      ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.runSonar))
+          && (env.SONAR_TOKEN != '') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage TS
+        uses: actions/download-artifact@v5
+        with:
+          name: coverage-ts
+          path: coverage
+
+      - name: Download coverage PY
+        uses: actions/download-artifact@v5
+        with:
+          name: coverage-py
+          path: packages/worker
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL != '' && secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+
+      - name: Sonar Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+        with:
+          scanMetadataReportFile: .scannerwork/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

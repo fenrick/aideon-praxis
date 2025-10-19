@@ -1,0 +1,17 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Publish Release
+    uses: fenrick/aideon-praxis/.github/workflows/reusable-release.yml@main
+    with:
+      publish: true
+      os-matrix: '["ubuntu-latest","macos-latest","windows-latest"]'
+
