@@ -44,79 +44,74 @@ def _parse_state_at_params(params: Mapping[str, Any]) -> StateAtArgs:
     )
 
 
+def _jsonrpc_error(code: int, message: str, req_id: object, data: str | None = None) -> str:
+    payload: dict[str, Any] = {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "error": {"code": code, "message": message},
+    }
+    if data is not None:
+        payload["error"]["data"] = data
+    return json.dumps(payload)
+
+
+def _jsonrpc_dispatch(method: str | None, params: dict[str, Any]) -> object:
+    if method in ("ping", "ping.v1"):
+        return "pong"
+    if method in ("state_at", "temporal.state_at.v1"):
+        args = _parse_state_at_params(params)
+        return cast(object, state_at(args))
+    raise KeyError("Method not found")
+
+
 def _jsonrpc_handle(msg: str) -> str | None:
     """Handle a single JSON-RPC 2.0 message; return a JSON string or None.
 
     Accepts one JSON object per line. Unknown or invalid messages return an error.
     """
+    response: dict[str, Any] | None = None
     try:
         data_raw = json.loads(msg)
     except Exception as exc:  # noqa: BLE001
-        return json.dumps(
-            {
-                "jsonrpc": "2.0",
-                "error": {"code": -32700, "message": "Parse error", "data": str(exc)},
-                "id": None,
-            }
-        )
+        response = json.loads(_jsonrpc_error(-32700, "Parse error", None, str(exc)))
+        data_raw = None
 
-    if not isinstance(data_raw, dict):
-        return None  # not JSON-RPC; let legacy handlers try
+    if isinstance(data_raw, dict):
+        data: dict[str, Any] = cast(dict[str, Any], data_raw)
+        if data.get("jsonrpc") == "2.0":
+            has_id = "id" in data
+            req_id: object = data.get("id")
+            method_raw: object = data.get("method")
+            method: str | None = method_raw if isinstance(method_raw, str) else None
+            raw_params: object = data.get("params") or {}
+            params: dict[str, Any] = (
+                cast(dict[str, Any], raw_params) if isinstance(raw_params, dict) else {}
+            )
 
-    data: dict[str, Any] = cast(dict[str, Any], data_raw)
-    if data.get("jsonrpc") != "2.0":
-        return None
-    # JSON-RPC notifications are requests without an 'id' member.
-    # Per spec, servers MUST NOT reply to notifications.
-    has_id: bool = "id" in data
-    req_id: object = data.get("id")
-    method_raw: object = data.get("method")
-    method: str | None = method_raw if isinstance(method_raw, str) else None
-    raw_params: object = data.get("params") or {}
-    params: dict[str, Any] = (
-        cast(dict[str, Any], raw_params) if isinstance(raw_params, dict) else {}
-    )
-
-    # Notification: execute if applicable but do not return a response
-    if not has_id:
-        try:
-            if method in ("ping", "ping.v1"):
-                _ = "pong"  # no-op; ensure symmetric behavior
-            elif method in ("state_at", "temporal.state_at.v1"):
-                args = _parse_state_at_params(params)
-                _ = state_at(args)
-            # Unknown method or any errors are intentionally silent for notifications
-        except Exception as exc:  # noqa: BLE001
-            _ = str(exc)
-        return None
-
-    out: dict[str, object]
-    try:
-        if method in ("ping", "ping.v1"):
-            out = {"jsonrpc": "2.0", "id": req_id, "result": "pong"}
-        elif method in ("state_at", "temporal.state_at.v1"):
-            args = _parse_state_at_params(params)
-            res = state_at(args)
-            out = {"jsonrpc": "2.0", "id": req_id, "result": cast(object, res)}
+            if not has_id:  # Notification: never reply
+                try:
+                    _ = _jsonrpc_dispatch(method, params)
+                except Exception as exc:  # noqa: BLE001
+                    _ = str(exc)
+                response = None
+            else:
+                try:
+                    result = _jsonrpc_dispatch(method, params)
+                    response = {"jsonrpc": "2.0", "id": req_id, "result": result}
+                except ValueError as exc:
+                    response = json.loads(
+                        _jsonrpc_error(-32602, "Invalid params", req_id, str(exc))
+                    )
+                except KeyError:
+                    response = json.loads(_jsonrpc_error(-32601, "Method not found", req_id))
+                except Exception as exc:  # noqa: BLE001
+                    response = json.loads(
+                        _jsonrpc_error(-32000, "Internal error", req_id, str(exc))
+                    )
         else:
-            out = {
-                "jsonrpc": "2.0",
-                "id": req_id,
-                "error": {"code": -32601, "message": "Method not found"},
-            }
-    except ValueError as exc:
-        out = {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "error": {"code": -32602, "message": "Invalid params", "data": str(exc)},
-        }
-    except Exception as exc:  # noqa: BLE001
-        out = {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "error": {"code": -32000, "message": "Internal error", "data": str(exc)},
-        }
-    return json.dumps(out)
+            response = None
+    # else: not a dict (e.g., list) -> legacy handlers can try
+    return None if response is None else json.dumps(response)
 
 
 def main() -> int:
