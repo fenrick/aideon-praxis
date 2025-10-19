@@ -77,9 +77,12 @@ def _parse_jsonrpc(msg: str) -> dict[str, Any] | None | str:
         data_raw = json.loads(msg)
     except Exception as exc:  # noqa: BLE001
         return str(exc)
-    if not isinstance(data_raw, dict) or data_raw.get("jsonrpc") != "2.0":
+    if not isinstance(data_raw, dict):
         return None
-    return cast(dict[str, Any], data_raw)
+    data_dict: dict[str, Any] = cast(dict[str, Any], data_raw)
+    if data_dict.get("jsonrpc") != "2.0":
+        return None
+    return data_dict
 
 
 def _extract_request(data: dict[str, Any]) -> _RpcRequest:
