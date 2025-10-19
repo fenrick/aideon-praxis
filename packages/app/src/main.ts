@@ -20,7 +20,11 @@ async function httpStateAtOverUds(
     method: 'GET',
     headers: { Accept: 'application/json' },
   };
-  const onHttpResponse = (response: http.IncomingMessage, resolve: (s: string) => void) => {
+  const onHttpResponse = (
+    response: http.IncomingMessage,
+    resolve: (s: string) => void,
+    reject: (error: unknown) => void,
+  ) => {
     const chunks: Buffer[] = [];
     response.on('data', (chunk: Buffer) => {
       chunks.push(chunk);
@@ -28,13 +32,16 @@ async function httpStateAtOverUds(
     response.on('end', () => {
       resolve(Buffer.concat(chunks).toString('utf8'));
     });
+    response.on('error', (error: unknown) => {
+      reject(error instanceof Error ? error : new Error(String(error)));
+    });
   };
   const json = await new Promise<string>((resolve, reject) => {
     const request = http.request(optionsHttp, (response) => {
-      onHttpResponse(response, resolve);
+      onHttpResponse(response, resolve, reject);
     });
     request.on('error', (error) => {
-      reject(error);
+      reject(error instanceof Error ? error : new Error(String(error)));
     });
     request.end();
   });
@@ -57,9 +64,12 @@ async function httpHealthOverUds(udsPath: string): Promise<{ status: string }> {
       response.on('end', () => {
         resolve(Buffer.concat(chunks).toString('utf8'));
       });
+      response.on('error', (error: unknown) => {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      });
     });
     request.on('error', (error) => {
-      reject(error);
+      reject(error instanceof Error ? error : new Error(String(error)));
     });
     request.end();
   });
