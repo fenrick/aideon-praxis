@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import sys
 from collections.abc import Mapping
-from typing import Any, cast
+from typing import Any, NamedTuple, cast
 
 from .temporal import StateAtArgs, state_at
 
@@ -64,96 +64,100 @@ def _jsonrpc_dispatch(method: str | None, params: dict[str, Any]) -> object:
     raise KeyError("Method not found")
 
 
-def _jsonrpc_handle(msg: str) -> str | None:
-    """Handle a single JSON-RPC 2.0 message; return a JSON string or None.
+class _RpcRequest(NamedTuple):
+    has_id: bool
+    req_id: object
+    method: str | None
+    params: dict[str, Any]
 
-    Accepts one JSON object per line. Unknown or invalid messages return an error.
-    """
-    response: dict[str, Any] | None = None
+
+def _parse_jsonrpc(msg: str) -> dict[str, Any] | None | str:
+    """Parse JSON; return dict for JSON-RPC 2.0, None for not-JSON-RPC, or error string."""
     try:
         data_raw = json.loads(msg)
     except Exception as exc:  # noqa: BLE001
-        response = json.loads(_jsonrpc_error(-32700, "Parse error", None, str(exc)))
-        data_raw = None
+        return str(exc)
+    if not isinstance(data_raw, dict) or data_raw.get("jsonrpc") != "2.0":
+        return None
+    return cast(dict[str, Any], data_raw)
 
-    if isinstance(data_raw, dict):
-        data: dict[str, Any] = cast(dict[str, Any], data_raw)
-        if data.get("jsonrpc") == "2.0":
-            has_id = "id" in data
-            req_id: object = data.get("id")
-            method_raw: object = data.get("method")
-            method: str | None = method_raw if isinstance(method_raw, str) else None
-            raw_params: object = data.get("params") or {}
-            params: dict[str, Any] = (
-                cast(dict[str, Any], raw_params) if isinstance(raw_params, dict) else {}
+
+def _extract_request(data: dict[str, Any]) -> _RpcRequest:
+    has_id = "id" in data
+    req_id: object = data.get("id")
+    method = data.get("method") if isinstance(data.get("method"), str) else None
+    raw_params: object = data.get("params") or {}
+    params = cast(dict[str, Any], raw_params) if isinstance(raw_params, dict) else {}
+    return _RpcRequest(has_id=has_id, req_id=req_id, method=method, params=params)
+
+
+def _handle_notification(method: str | None, params: dict[str, Any]) -> None:
+    try:
+        _ = _jsonrpc_dispatch(method, params)
+    except Exception as exc:  # noqa: BLE001
+        _ = str(exc)
+
+
+def _handle_request(method: str | None, params: dict[str, Any], req_id: object) -> str:
+    try:
+        result = _jsonrpc_dispatch(method, params)
+        return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": result})
+    except ValueError as exc:
+        return _jsonrpc_error(-32602, "Invalid params", req_id, str(exc))
+    except KeyError:
+        return _jsonrpc_error(-32601, "Method not found", req_id)
+    except Exception as exc:  # noqa: BLE001
+        return _jsonrpc_error(-32000, "Internal error", req_id, str(exc))
+
+
+def _jsonrpc_handle(msg: str) -> str | None:
+    """Handle a single JSON-RPC 2.0 message; return a JSON string or None."""
+    parsed = _parse_jsonrpc(msg)
+    if isinstance(parsed, str):  # parse error
+        return _jsonrpc_error(-32700, "Parse error", None, parsed)
+    if parsed is None:  # not JSON-RPC or wrong version
+        return None
+    req = _extract_request(parsed)
+    if not req.has_id:  # Notification: never reply
+        _handle_notification(req.method, req.params)
+        return None
+    return _handle_request(req.method, req.params, req.req_id)
+
+
+def _handle_legacy(msg: str) -> str | None:
+    if msg == "ping":
+        return "pong"
+    if msg.startswith("state_at "):
+        payload = msg[len("state_at ") :]
+        try:
+            data_raw = json.loads(payload)
+            mapping: dict[str, Any] = (
+                cast(dict[str, Any], data_raw) if isinstance(data_raw, dict) else {}
             )
-
-            if not has_id:  # Notification: never reply
-                try:
-                    _ = _jsonrpc_dispatch(method, params)
-                except Exception as exc:  # noqa: BLE001
-                    _ = str(exc)
-                response = None
-            else:
-                try:
-                    result = _jsonrpc_dispatch(method, params)
-                    response = {"jsonrpc": "2.0", "id": req_id, "result": result}
-                except ValueError as exc:
-                    response = json.loads(
-                        _jsonrpc_error(-32602, "Invalid params", req_id, str(exc))
-                    )
-                except KeyError:
-                    response = json.loads(_jsonrpc_error(-32601, "Method not found", req_id))
-                except Exception as exc:  # noqa: BLE001
-                    response = json.loads(
-                        _jsonrpc_error(-32000, "Internal error", req_id, str(exc))
-                    )
-        else:
-            response = None
-    # else: not a dict (e.g., list) -> legacy handlers can try
-    return None if response is None else json.dumps(response)
+            args = _parse_state_at_params(mapping)
+            res = state_at(args)
+            return json.dumps(res)
+        except Exception as exc:  # noqa: BLE001
+            return json.dumps({"error": str(exc)})
+    return json.dumps({"error": "unknown command"})
 
 
 def main() -> int:
-    """Run the minimal line-based worker protocol loop.
-
-    Reads commands from stdin and writes responses to stdout. Keeps the
-    desktop app local-first with no open TCP ports.
-    """
+    """Run the minimal line-based worker protocol loop."""
     print("READY", flush=True)
     for line in sys.stdin:
         msg = line.strip()
         if not msg:
             continue
-        # Prefer JSON-RPC if line starts with '{'
         if msg.startswith("{"):
             out = _jsonrpc_handle(msg)
             if out is not None:
                 print(out, flush=True)
-            # Do not fall back to legacy handlers for JSON-shaped input
-            # This avoids emitting responses for JSON-RPC notifications
-            # and keeps behavior strict for the JSON-RPC path.
+            # Never fall back to legacy for JSON-shaped input
             continue
-
-        if msg == "ping":
-            print("pong", flush=True)
-            continue
-        # naive protocol: "state_at {json}"
-        if msg.startswith("state_at "):
-            payload = msg[len("state_at ") :]
-            try:
-                data_raw = json.loads(payload)
-                # Map and validate
-                mapping: dict[str, Any] = (
-                    cast(dict[str, Any], data_raw) if isinstance(data_raw, dict) else {}
-                )
-                args = _parse_state_at_params(mapping)
-                res = state_at(args)
-                print(json.dumps(res), flush=True)
-            except Exception as exc:  # noqa: BLE001
-                print(json.dumps({"error": str(exc)}), flush=True)
-            continue
-        print(json.dumps({"error": "unknown command"}), flush=True)
+        out = _handle_legacy(msg)
+        if out is not None:
+            print(out, flush=True)
     return 0
 
 
