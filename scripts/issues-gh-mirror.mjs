@@ -8,8 +8,8 @@
 
  Flags:
    --repo owner/repo     Defaults to env AIDEON_GH_REPO or fenrick/aideon-praxis
-   --include-closed      Include closed issues (default: true)
-   --exclude-closed      Only open issues
+   --include-closed      Include closed issues (default: false)
+   --exclude-closed      Only open issues (default)
    --dry-run             Do not write files; print summary
 
  Notes:
@@ -33,7 +33,7 @@ const getArg = (name, fallback) => {
 const REPO = getArg('--repo', process.env.AIDEON_GH_REPO || 'fenrick/aideon-praxis');
 const CHECK = args.has('--check');
 const DRY = args.has('--dry-run');
-const INCLUDE_CLOSED = args.has('--exclude-closed') ? false : true;
+const INCLUDE_CLOSED = args.has('--include-closed');
 
 function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
@@ -111,6 +111,23 @@ function listIssuesNoMilestone() {
   return items;
 }
 
+function listComments(issueNumber) {
+  let page = 1;
+  const per = 100;
+  const items = [];
+  for (;;) {
+    const out = gh([
+      'api',
+      `repos/${REPO}/issues/${issueNumber}/comments?per_page=${per}&page=${page}`,
+    ]);
+    const arr = JSON.parse(out);
+    items.push(...arr);
+    if (arr.length < per) break;
+    page++;
+  }
+  return items;
+}
+
 function frontMatter(issue, milestoneTitle) {
   const labels =
     issue.labels?.map((l) => (typeof l === 'string' ? l : l.name)).filter(Boolean) || [];
@@ -134,8 +151,25 @@ function writeIssueMarkdown(issue, milestoneTitle, index) {
   ensureDir(dir);
   const slug = `${String(index).padStart(3, '0')}-${toSlug(issue.title)}`;
   const file = path.join(dir, `${slug}.md`);
-  const body = `${frontMatter(issue, milestoneTitle)}${issue.body || ''}\n`;
-  return writeFileIfChanged(file, body);
+  const fm = frontMatter(issue, milestoneTitle);
+  const issueBody = issue.body || '';
+  // Fetch and render comments (if any)
+  const comments = listComments(issue.number);
+  let commentsSection = '';
+  if (comments.length > 0) {
+    const lines = ['\n', '## Comments', ''];
+    for (const c of comments) {
+      const author = c.user?.login || 'unknown';
+      const when = (c.created_at || '').slice(0, 10);
+      lines.push(`- ${author} on ${when}`);
+      lines.push('');
+      lines.push(c.body || '');
+      lines.push('');
+    }
+    commentsSection = lines.join('\n');
+  }
+  const content = `${fm}${issueBody}\n${commentsSection}`;
+  return writeFileIfChanged(file, content);
 }
 
 function snapshotFromIssues(issues) {
@@ -148,7 +182,8 @@ function flatIssues(milestones, noMsIssues) {
   const all = [];
   for (const ms of milestones) all.push(...ms.issues);
   all.push(...noMsIssues);
-  return all;
+  // Filter out PRs (GitHub returns PRs in the issues API) and, by default, closed issues
+  return all.filter((i) => !i.pull_request);
 }
 
 // Main
