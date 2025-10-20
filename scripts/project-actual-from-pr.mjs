@@ -42,12 +42,28 @@ function gql(query) {
 }
 
 function projectId() {
-  const out = gh(['project', 'view', String(PROJECT_NUMBER), '--owner', PROJECT_OWNER, '--format', 'json']);
+  const out = gh([
+    'project',
+    'view',
+    String(PROJECT_NUMBER),
+    '--owner',
+    PROJECT_OWNER,
+    '--format',
+    'json',
+  ]);
   return JSON.parse(out).id;
 }
 
 function fieldIdByName(name) {
-  const out = gh(['project', 'field-list', String(PROJECT_NUMBER), '--owner', PROJECT_OWNER, '--format', 'json']);
+  const out = gh([
+    'project',
+    'field-list',
+    String(PROJECT_NUMBER),
+    '--owner',
+    PROJECT_OWNER,
+    '--format',
+    'json',
+  ]);
   const j = JSON.parse(out);
   const f = (j.fields || j).find((x) => x.name === name);
   return f?.id || null;
@@ -116,4 +132,3 @@ try {
   console.error(`[project-actual-from-pr] ${e.message}`);
   process.exit(2);
 }
-
