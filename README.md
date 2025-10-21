@@ -14,17 +14,18 @@ Tooling:
 - Python `ruff` + `black` + `pytest` configured via `pyproject.toml`.
 - GitHub Actions CI runs JS lint/typecheck and Python lint/tests.
 
-See `CONTRIBUTING.md` and `AGENTS.md` for contribution rules and boundaries.
+See `CONTRIBUTING.md` and `AGENTS.md` for contribution rules and boundaries. For a walkthrough of
+local setup (Node 24, Yarn 4, Python 3.13 via uv) and offline tips, see `docs/getting-started.md`.
 
 Getting started
 
 - Prereqs: Node 24, Python 3.13.
-- Install deps: `yarn install` (or `npm install`).
+- Enable Corepack then install deps: `corepack enable && yarn install`.
 - Build once: `yarn build` (renderer assets to `packages/app/dist/renderer`, main+preload to
   `packages/app/dist`).
 - Dev (no HTTP server): `yarn workspace @aideon/app dev` (watches Vite build and tsup and launches
   Electron).
-- Python tests: `pytest -q packages/worker`.
+- Python tests: `pytest -q packages/worker` (or `yarn py:test`).
 
 See docs/commands.md for the full list of yarn commands used across JS/TS and the Python worker.
 
