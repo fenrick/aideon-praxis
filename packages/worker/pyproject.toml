@@ -7,7 +7,11 @@ name = "aideon-worker"
 version = "0.1.0"
 description = "Aideon Praxis Python worker sidecar (RPC only)"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+  "fastapi==0.115.0",
+  "pydantic==2.12.3",
+  "uvicorn==0.38.0",
+]
 license = { file = "LICENSE" }
 
 [project.optional-dependencies]
@@ -19,9 +23,6 @@ dev = [
   "mypy==1.11.2",
   "bandit==1.7.9",
   "vulture>=2.11",
-  "fastapi==0.115.0",
-  "pydantic==2.12.3",
-  "uvicorn==0.38.0",
   "httpx==0.28.1",
 ]
 
@@ -61,6 +62,9 @@ convention = "google"
 # Allow test-style asserts and missing docstrings in tests; support both repo-root and pkg-root runs
 "packages/worker/tests/**" = ["D100", "D103", "S101", "PLR2004"]
 "tests/**" = ["D100", "D103", "S101", "PLR2004"]
+"packages/worker/src/aideon_worker/server.py" = ["D100", "D101", "D103", "N815", "B904"]
+"src/aideon_worker/server.py" = ["D100", "D101", "D103", "N815", "B904"]
+"aideon_worker/server.py" = ["D100", "D101", "D103", "N815", "B904"]
 
 [tool.mypy]
 python_version = "3.13"

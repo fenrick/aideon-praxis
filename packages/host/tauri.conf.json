@@ -4,20 +4,21 @@
   "version": "0.1.0",
   "identifier": "com.aideon.praxis",
   "build": {
-    "beforeDevCommand": "yarn workspace @aideon/app dev",
-    "beforeBuildCommand": "yarn workspace @aideon/app build",
+    "beforeBuildCommand": "yarn node:build",
     "devUrl": "http://localhost:5173",
     "frontendDist": "packages/app/dist/renderer"
   },
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Aideon Praxis",
         "width": 800,
         "height": 600,
         "resizable": true
       }
     ],
+    "withGlobalTauri": true,
     "security": {
       "csp": null
     }

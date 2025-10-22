@@ -1,104 +1,83 @@
-"""FastAPI server entrypoint for the worker (UDS only).
-
-Exposes versioned HTTP endpoints for desktop mode over Unix domain sockets.
-No TCP ports are opened in desktop mode.
-"""
-
 from __future__ import annotations
 
 import asyncio
-import sys
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+import logging
+import os
+import pathlib
 from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, Query
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 
 from .temporal import StateAtArgs, state_at
 
+log = logging.getLogger("aideon.worker")
+
+
+class StateAtRequest(BaseModel):
+    asOf: str = Field(..., description="ISO date string for the time-slice")
+    scenario: str | None = None
+    confidence: float | None = None
+
 
 class StateAtResponse(BaseModel):
-    """HTTP response model for Temporal.StateAt.
-
-    Uses camelCase field aliases for JSON compatibility while keeping
-    snake_case attribute names in Python.
-    """
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    as_of: str = Field(alias="asOf", serialization_alias="asOf")
+    asOf: str
     scenario: str | None
     confidence: float | None
     nodes: int
     edges: int
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:  # pragma: no cover - simple banner
-    """Startup/shutdown hooks.
-
-    Prints a simple readiness marker on startup.
-    """
-    print("READY", flush=True)
-    yield
+app = FastAPI(title="Aideon Worker", version="0.1.0")
 
 
-app = FastAPI(title="Aideon Praxis Worker RPC", version="0.1.0", lifespan=lifespan)
+@app.on_event("startup")
+async def _on_startup() -> None:
+    log.info("worker: starting up")
 
 
-class HealthResponse(BaseModel):
-    """Simple readiness/health response."""
-
-    status: str = "ok"
-
-
-@app.get("/health", response_model=HealthResponse)
-async def health() -> HealthResponse:  # pragma: no cover - trivial
-    """Return health status for readiness checks."""
-    return HealthResponse()
+@app.on_event("shutdown")
+async def _on_shutdown() -> None:
+    log.info("worker: shutting down")
 
 
-# Startup banner handled in lifespan above
+@app.get("/ping")
+async def ping() -> dict[str, str]:
+    log.debug("worker: ping")
+    return {"status": "pong"}
 
 
-@app.get("/api/v1/state_at", response_model=StateAtResponse)
-async def http_state_at(
-    as_of: str = Query(..., alias="as_of"),
-    scenario: str | None = Query(None),
-    confidence: float | None = Query(None),
-) -> dict[str, Any]:
-    """Handle the Temporal.StateAt query over HTTP.
-
-    Parameters mirror the worker CLI/JSON-RPC API.
-    """
-    args = StateAtArgs(as_of=as_of, scenario=scenario, confidence=confidence)
-    return state_at(args)
-
-
-def main(argv: list[str] | None = None) -> int:
-    """Run the Uvicorn server bound to a UDS path.
-
-    Expects `--uds <path>` in argv. Returns non-zero on errors.
-    """
-    argv = argv or sys.argv[1:]
-    # very small args parser: --uds <path>
-    uds_path: str | None = None
-    if "--uds" in argv:
-        idx = argv.index("--uds")
-        if idx + 1 < len(argv):
-            uds_path = argv[idx + 1]
-    if not uds_path:
-        print("--uds <path> is required", file=sys.stderr)
-        return 2
-
-    config = uvicorn.Config(app=app, uds=uds_path, log_level="error")
-    server = uvicorn.Server(config)
+@app.post("/state_at", response_model=StateAtResponse)
+async def state_at_route(body: StateAtRequest) -> Any:
+    log.info("worker: state_at request asOf=%s scenario=%s", body.asOf, body.scenario)
     try:
-        asyncio.run(server.serve())
-    except KeyboardInterrupt:  # pragma: no cover
-        return 130
+        args = StateAtArgs(as_of=body.asOf, scenario=body.scenario, confidence=body.confidence)
+        result = state_at(args)
+        log.info("worker: state_at result nodes=%s edges=%s", result["nodes"], result["edges"])
+        return result
+    except Exception as exc:  # noqa: BLE001
+        log.exception("worker: state_at failed: %s", exc)
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+def _ensure_parent(path: pathlib.Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def run_uds(sock_path: str) -> None:
+    """Run uvicorn binding to a Unix domain socket (desktop mode)."""
+    _ensure_parent(pathlib.Path(sock_path))
+    log.info("worker: binding UDS %s", sock_path)
+    config = uvicorn.Config(app, uds=sock_path, log_config=None, access_log=False)
+    server = uvicorn.Server(config)
+    asyncio.run(server.serve())
+
+
+def main() -> int:  # pragma: no cover - tiny wrapper
+    logging.basicConfig(level=os.environ.get("AIDEON_WORKER_LOG", "INFO"))
+    sock = os.environ.get("AIDEON_WORKER_SOCK", os.path.join(".aideon", "worker.sock"))
+    run_uds(sock)
     return 0
 
 

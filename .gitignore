@@ -68,6 +68,7 @@ packages/worker/coverage.xml
 coverage.xml
 /docs/issues
 /.aideon
+/.aideon/worker.sock
 docs/schedule/*.json
 /docs/schedule
  

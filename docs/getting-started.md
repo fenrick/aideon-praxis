@@ -63,15 +63,16 @@ gh auth status -h github.com
 
 ## 2) Run in development
 
-Keep logs clear and separate by using two terminals.
+Keep logs clear and separate by using two terminals. The host process will spawn the Python
+worker over a Unix domain socket (desktop mode only, no TCP ports). Tauri injects a logging
+plugin so host logs appear in the DevTools console in addition to the terminal.
 
 ```bash
 # Terminal A — UI (Vite)
 yarn workspace @aideon/app dev
 
-# Terminal B — Host (Tauri)
-cd packages/host
-yarn dlx @tauri-apps/cli@latest dev
+# Terminal B — Host (Tauri). From repo root:
+yarn tauri:dev
 
 # Optional: tests/lint in a third terminal
 yarn test && yarn lint && yarn typecheck
@@ -81,7 +82,22 @@ yarn py:test && yarn py:lint
 What to expect:
 
 - A Tauri window serving the Vite UI at http://localhost:5173.
-- Desktop mode opens no TCP ports by default; the worker handshake will use UDS/pipes when enabled.
+- Desktop mode opens no TCP ports by default; the worker talks to the host via UDS.
+- DevTools Console will show renderer logs (console) and host logs (tauri-plugin-log).
+- If you see a port conflict on 5173, stop any previous Vite and retry.
+
+### Worker endpoints (FastAPI over UDS)
+
+- `GET /ping` — readiness check
+- `POST /state_at` — body: `{ asOf, scenario?, confidence? }` → returns `{ asOf, scenario, confidence, nodes, edges }`
+
+You can test locally (UDS) with curl:
+
+```bash
+curl --unix-socket .aideon/worker.sock http://localhost/ping
+curl --unix-socket .aideon/worker.sock -H 'content-type: application/json' \
+  -d '{"asOf":"2025-01-01"}' http://localhost/state_at
+```
 
 ## 3) Working with issues (optional)
 
