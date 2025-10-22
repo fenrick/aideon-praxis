@@ -258,47 +258,48 @@ jobs:
           fetch-depth: 0
 
       - name: Download TS coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: coverage-ts
-          path: .
+          path: coverage
 
       - name: Download Python coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: coverage-py
-          path: .
+          path: packages/worker
 
       - name: Download Rust coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: coverage-rs
-          path: .
+          path: packages/host/coverage
 
       - name: Normalize coverage paths
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p coverage packages/worker packages/host/coverage
-          # TS coverage
+          # TS coverage (downloaded directly to coverage/)
           if [[ -f coverage/lcov.info ]]; then
-            echo "TS coverage already at coverage/lcov.info"
-          elif [[ -f lcov.info ]]; then
-            mv lcov.info coverage/lcov.info
+            echo "TS coverage at coverage/lcov.info"
           elif [[ -f coverage-ts/lcov.info ]]; then
             mv coverage-ts/lcov.info coverage/lcov.info
           elif [[ -f coverage-ts/coverage/lcov.info ]]; then
             mv coverage-ts/coverage/lcov.info coverage/lcov.info
+          elif [[ -f lcov.info ]]; then
+            mv lcov.info coverage/lcov.info
           else
             echo "[warn] TS coverage lcov.info not found after artifact download" >&2
           fi
-          # Python coverage
+
+          # Python coverage (downloaded directly to packages/worker/)
           if [[ -f packages/worker/coverage.xml ]]; then
-            echo "Py coverage already at packages/worker/coverage.xml"
-          elif [[ -f coverage.xml ]]; then
-            mv coverage.xml packages/worker/coverage.xml
+            echo "Py coverage at packages/worker/coverage.xml"
           elif [[ -f coverage-py/coverage.xml ]]; then
             mv coverage-py/coverage.xml packages/worker/coverage.xml
+          elif [[ -f coverage.xml ]]; then
+            mv coverage.xml packages/worker/coverage.xml
           elif [[ -f coverage-py/packages/worker/coverage.xml ]]; then
             mv coverage-py/packages/worker/coverage.xml packages/worker/coverage.xml
           else
@@ -316,61 +317,15 @@ jobs:
           elif [[ -f coverage-rs/lcov.info ]]; then
             mv coverage-rs/lcov.info packages/host/coverage/lcov.info
           elif [[ -f coverage-rs/packages/host/coverage/lcov.info ]]; then
-            mkdir -p packages/host/coverage
             mv coverage-rs/packages/host/coverage/lcov.info packages/host/coverage/lcov.info
           else
             echo "[warn] Rust coverage lcov.info not found after artifact download" >&2
           fi
 
-          # Convert LCOV to Sonar Generic Coverage XML, with path normalization
-          if [[ -f packages/host/coverage/lcov.info ]]; then
-            awk '
-              BEGIN {
-                print "<coverage version=\"1\">";
-                in_file=0;
-              }
-              /^SF:/ {
-                # Close previous file if open
-                if (in_file==1) {
-                  print "</file>";
-                  in_file=0;
-                }
-                path=$0; sub(/^SF:/, "", path);
-                # Normalize runner path to /github/workspace or to repo-relative
-                if (path ~ /\/home\/runner\/work\/[^/]+\/[^/]+\//) {
-                  sub(/\/home\/runner\/work\/[^/]+\/[^/]+\//, "/github/workspace/", path);
-                }
-                # Strip leading /github/workspace/ to make it repo-relative
-                sub(/^\/github\/workspace\//, "", path);
-                print "<file path=\"" path "\">";
-                in_file=1;
-              }
-              /^DA:/ {
-                split($0, a, ":");
-                split(a[2], b, ",");
-                line=b[1]; hits=b[2];
-                covered=(hits>0?"true":"false");
-                print "<lineToCover lineNumber=\"" line "\" covered=\"" covered "\"/>";
-              }
-              /^end_of_record/ {
-                if (in_file==1) {
-                  print "</file>";
-                  in_file=0;
-                }
-              }
-              END {
-                if (in_file==1) print "</file>";
-                print "</coverage>";
-              }
-            ' packages/host/coverage/lcov.info > packages/host/coverage/sonar-generic-coverage.xml
-            echo "Rust generic coverage written: packages/host/coverage/sonar-generic-coverage.xml"
-          else
-            # Ensure Sonar doesn't fail if Rust coverage is absent (e.g., no tests)
-            echo '<coverage version="1"></coverage>' > packages/host/coverage/sonar-generic-coverage.xml
-            echo "[warn] Rust lcov missing; emitted empty generic coverage to satisfy Sonar"
-          fi
+          # No Rust XML conversion required; Sonar ingests LCOV directly via sonar.rust.lcov.reportPaths
           ls -l coverage || true
           ls -l packages/worker || true
+          ls -l packages/host/coverage || true
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
