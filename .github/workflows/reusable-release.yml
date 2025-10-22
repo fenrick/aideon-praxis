@@ -37,10 +37,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup Yarn Berry
-        uses: bgotink/setup-yarn-berry@v3
-        with:
-          version: ${{ env.YARN_VERSION }}
+      - name: Enable Corepack and Yarn ${{ env.YARN_VERSION }}
+        run: |
+          corepack enable
+          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
 
       - name: Cache Yarn
         uses: actions/cache@v4
@@ -114,10 +114,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup Yarn Berry
-        uses: bgotink/setup-yarn-berry@v3
-        with:
-          version: ${{ env.YARN_VERSION }}
+      - name: Enable Corepack and Yarn ${{ env.YARN_VERSION }}
+        run: |
+          corepack enable
+          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
 
       - name: Cache Yarn
         uses: actions/cache@v4
