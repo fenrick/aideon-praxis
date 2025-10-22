@@ -148,16 +148,16 @@ jobs:
         run: yarn install --immutable
 
       - name: JS Format Check
-        run: yarn format:check
+        run: yarn node:format:check
 
       - name: JS Lint
-        run: yarn lint
+        run: yarn node:lint
 
       - name: JS Typecheck
-        run: yarn typecheck
+        run: yarn node:typecheck
 
       - name: JS Tests + Coverage
-        run: yarn test:coverage
+        run: yarn node:test:coverage
 
       - name: Upload TS coverage
         uses: actions/upload-artifact@v4
@@ -225,22 +225,43 @@ jobs:
         run: yarn py:sync
 
       - name: Python Lint (ruff+black --check)
-        run: yarn py:lint
+        run: yarn worker:lint
 
       - name: Python Typecheck (mypy)
-        run: yarn py:typecheck
+        run: yarn worker:typecheck
 
       - name: Python Typecheck (pyright)
-        run: yarn py:pyright
+        run: yarn worker:pyright
 
       - name: Python Security (bandit)
-        run: yarn py:sec
+        run: yarn worker:sec
 
       - name: Python Dead code (vulture)
-        run: yarn py:deadcode
+        run: yarn worker:deadcode
 
       - name: Python Tests + Coverage (pytest-cov)
-        run: yarn py:test:cov
+        run: yarn worker:test:cov
+
+      - name: Worker UDS Smoke (ping + state_at)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .aideon/worker.sock || true
+          # Start worker in background
+          (AIDEON_WORKER_LOG=INFO yarn worker:serve >/tmp/worker.log 2>&1 &)
+          # Wait for readiness
+          for i in {1..100}; do
+            if curl --unix-socket .aideon/worker.sock -sS http://localhost/ping | grep -q '"pong"'; then
+              break
+            fi
+            sleep 0.1
+          done
+          echo "Ping OK"
+          # Verify state_at endpoint
+          curl --unix-socket .aideon/worker.sock -sS -H 'content-type: application/json' \
+            -d '{"asOf":"2025-01-01"}' http://localhost/state_at | tee /tmp/state_at.json
+          jq -e '.asOf=="2025-01-01" and .nodes==0 and .edges==0' /tmp/state_at.json >/dev/null
+          echo "state_at OK"
 
       - name: Upload Python coverage
         uses: actions/upload-artifact@v4

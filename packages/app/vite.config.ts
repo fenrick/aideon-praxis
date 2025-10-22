@@ -7,6 +7,10 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   root: path.resolve(__dirname, 'src/renderer'),
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
   build: {
     outDir: path.resolve(__dirname, 'dist/renderer'),
     emptyOutDir: true,

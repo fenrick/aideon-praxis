@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { logInfo, logError } from '../host/logger';
 
 const App: React.FC = () => {
-  const api = (globalThis as unknown as Window).aideon;
-  const version = api.version;
+  const version =
+    (globalThis as unknown as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
   const [stateAt, setStateAt] = useState<null | {
     asOf: string;
     scenario: string | null;
@@ -16,9 +17,28 @@ const App: React.FC = () => {
     let cancelled = false;
     const run = async () => {
       try {
-        const result = await api.stateAt({ asOf: '2025-01-01' });
+        logInfo('renderer: App mounting, querying stateAt');
+        interface Bridge {
+          stateAt: (arguments_: {
+            asOf: string;
+            scenario?: string;
+            confidence?: number;
+          }) => Promise<{
+            asOf: string;
+            scenario: string | null;
+            confidence: number | null;
+            nodes: number;
+            edges: number;
+          }>;
+        }
+        const bridge = (globalThis as unknown as { aideon?: Bridge }).aideon;
+        if (!bridge || typeof bridge.stateAt !== 'function')
+          throw new Error('Bridge not available');
+        const result = await bridge.stateAt({ asOf: '2025-01-01' });
         if (!cancelled) setStateAt(result);
+        if (!cancelled) logInfo('renderer: stateAt received');
       } catch (error_) {
+        logError('renderer: stateAt failed', error_);
         if (!cancelled) setError(String(error_));
       }
     };
