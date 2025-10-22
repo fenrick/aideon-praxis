@@ -83,13 +83,20 @@ jobs:
           mkdir -p coverage
           cargo llvm-cov --lcov --output-path coverage/lcov.info --all-targets
 
+      - name: Clippy JSON report (for Sonar import)
+        working-directory: packages/host
+        run: |
+          # Generate Clippy JSON without -D warnings (warnings already denied above)
+          cargo clippy --message-format=json -q > coverage/clippy.json || true
+
       - name: Upload Rust coverage
         uses: actions/upload-artifact@v4
         with:
           name: coverage-rs
           if-no-files-found: warn
           retention-days: 7
-          path: packages/host/coverage/lcov.info
+          path: |
+            packages/host/coverage
 
       - name: Cache RustSec advisory DB
         uses: actions/cache@v4
