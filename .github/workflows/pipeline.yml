@@ -26,6 +26,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  rust_checks:
+    name: Rust Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust (stable, fmt+clippy)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo & Target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            packages/host/target
+          key: ${{ runner.os }}-rust-${{ hashFiles('packages/host/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+
+      - name: Cargo fmt (check)
+        working-directory: packages/host
+        run: cargo fmt --all --check
+
+      - name: Cargo clippy (deny warnings)
+        working-directory: packages/host
+        run: cargo clippy --all-targets -- -D warnings
+
   js_checks:
     name: JS/TS Checks
     runs-on: ubuntu-latest
