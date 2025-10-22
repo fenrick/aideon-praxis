@@ -258,6 +258,89 @@ def main(argv: list[str]) -> int:
     ap_dod = sub.add_parser("dod", help="ensure Definition of Done on in-progress issues")
     ap_dod.set_defaults(func=cmd_dod)
 
+    # Linkify: ensure issues referenced in PR bodies have a comment with the PR link
+    def cmd_linkify(ns: argparse.Namespace) -> int:
+        repo = repo_slug()
+        prs = gh_json(
+            [
+                "pr",
+                "list",
+                "--repo",
+                repo,
+                "--state",
+                "open",
+                "--json",
+                "number,title,body,updatedAt",
+            ]
+        )
+        count = 0
+        for pr in prs:
+            body = pr.get("body") or ""
+            num = pr.get("number")
+            matches = set(map(int, re.findall(r"#(\d+)", body)))
+            for issue_number in matches:
+                url = f"https://github.com/{repo}/pull/{num}"
+                comment = f"Linked PR: #{num} — {url}"
+                run(
+                    [
+                        "gh",
+                        "issue",
+                        "comment",
+                        str(issue_number),
+                        "--repo",
+                        repo,
+                        "--body",
+                        comment,
+                    ],
+                    check=False,
+                )
+                count += 1
+        print(f"[issues] linkified {count} references from PRs")
+        return 0
+
+    ap_linkify = sub.add_parser("linkify", help="comment on issues with links to recent PRs")
+    ap_linkify.set_defaults(func=cmd_linkify)
+
+    # Backfill: comment on issues referenced in commits since a date; optionally close on Fixes/Closes/Resolves
+    def cmd_backfill(ns: argparse.Namespace) -> int:
+        repo = repo_slug()
+        since = ns.since
+        log = run(["git", "log", f"--since={since}", "--pretty=%H %s"]).stdout.splitlines()
+        count = 0
+        for line in log:
+            mnums = set(map(int, re.findall(r"#(\d+)", line)))
+            sha = line.split(" ", 1)[0]
+            for issue_number in mnums:
+                url = f"https://github.com/{repo}/commit/{sha}"
+                comment = f"Referenced by commit {sha}: {url}"
+                run(
+                    [
+                        "gh",
+                        "issue",
+                        "comment",
+                        str(issue_number),
+                        "--repo",
+                        repo,
+                        "--body",
+                        comment,
+                    ],
+                    check=False,
+                )
+                if ns.close and re.search(r"\b(Fixes|Closes|Resolves)\b", line, re.IGNORECASE):
+                    run(["gh", "issue", "close", str(issue_number), "--repo", repo], check=False)
+                count += 1
+        print(f"[issues] backfilled {count} references since {since}")
+        return 0
+
+    ap_backfill = sub.add_parser(
+        "backfill", help="comment on issues referenced in commits; optionally close"
+    )
+    ap_backfill.add_argument("--since", required=True, help="ISO date (YYYY-MM-DD)")
+    ap_backfill.add_argument(
+        "--close", action="store_true", help="close issues on Fixes/Closes/Resolves"
+    )
+    ap_backfill.set_defaults(func=cmd_backfill)
+
     ns = ap.parse_args(argv)
     return ns.func(ns)
 
