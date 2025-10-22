@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.aideon.praxis",
   "build": {
-    "beforeDevCommand": "",
-    "beforeBuildCommand": "",
+    "beforeDevCommand": "yarn workspace @aideon/app dev",
+    "beforeBuildCommand": "yarn workspace @aideon/app build",
     "devUrl": "http://localhost:5173",
     "frontendDist": "packages/app/dist/renderer"
   },
@@ -13,15 +13,25 @@
     "windows": [
       {
         "title": "Aideon Praxis",
-        "width": 1200,
-        "height": 800,
+        "width": 800,
+        "height": 600,
         "resizable": true
       }
-    ]
+    ],
+    "security": {
+      "csp": null
+    }
   },
   "bundle": {
-    "active": false,
-    "icon": []
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   },
   "plugins": {}
 }

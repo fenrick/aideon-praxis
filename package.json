@@ -57,7 +57,11 @@
     "build:tauri": "yarn workspace @aideon/app build && yarn dlx @tauri-apps/cli@latest build -C packages/host",
     "milestones:dates": "node scripts/milestones-set-dates.mjs",
     "project:dates": "node scripts/project-dates-apply.mjs",
-    "labels:bootstrap": "node scripts/labels-bootstrap.mjs"
+    "labels:bootstrap": "node scripts/labels-bootstrap.mjs",
+    "host:dev": "bash -lc 'cd packages/host && yarn dlx @tauri-apps/cli@latest dev'",
+    "host:build": "bash -lc 'cd packages/host && yarn dlx @tauri-apps/cli@latest build'",
+    "tauri:dev": "yarn --cwd packages/host tauri dev",
+    "tauri:build": "yarn --cwd packages/host tauri build"
   },
   "vitest": {
     "environment": "jsdom",
@@ -86,6 +90,7 @@
     }
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/eslintrc": "^3.1.0",
