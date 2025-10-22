@@ -73,3 +73,7 @@ docs/schedule/*.json
  
 # Rust build artifacts
 target/
+packages/host/target/
+packages/host/**/.fingerprint/
+packages/host/.cargo/
+packages/host/**/Cargo.lock.bk
