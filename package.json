@@ -18,6 +18,7 @@
     "worker:bundle": "node scripts/build-worker-binary.mjs",
     "package": "yarn worker:bundle && yarn workspace @aideon/app dist",
     "dev": "yarn workspace @aideon/app dev",
+    "dev:tauri": "concurrently -k \"yarn workspace @aideon/app dev:vite\" \"yarn dlx @tauri-apps/cli@latest dev -C packages/host\"",
     "lint": "node node_modules/eslint/bin/eslint.js --max-warnings=10 \"packages/**/{src,tests}/**/*.{ts,tsx,js}\"",
     "lint:fix": "node node_modules/eslint/bin/eslint.js --max-warnings=10 \"packages/**/{src,tests}/**/*.{ts,tsx,js}\" --fix",
     "format": "prettier -w . && yarn py:format",
@@ -54,6 +55,7 @@
     "issues:backfill": "node scripts/issues-commits-backfill.mjs",
     "issues:close-done": "node scripts/issues-close-done.mjs",
     "issues:heuristic": "node scripts/issues-heuristic-backfill.mjs",
+    "build:tauri": "yarn workspace @aideon/app build && yarn dlx @tauri-apps/cli@latest build -C packages/host",
     "milestones:dates": "node scripts/milestones-set-dates.mjs",
     "project:dates": "node scripts/project-dates-apply.mjs",
     "labels:bootstrap": "node scripts/labels-bootstrap.mjs"

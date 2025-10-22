@@ -16,6 +16,7 @@
   },
   "scripts": {
     "dev": "concurrently -k \"vite build --watch\" \"tsup --watch\" \"wait-on dist/renderer/index.html && electron .\"",
+    "dev:vite": "vite",
     "build": "tsup && vite build",
     "dist": "yarn build && electron-builder -c electron-builder.yml",
     "lint": "eslint .",
