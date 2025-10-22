@@ -11,6 +11,20 @@ export class TauriNotAvailableError extends Error {
   }
 }
 
+function getGlobalTauri():
+  | { invoke<T>(cmd: string, payload?: Record<string, unknown>): Promise<T> }
+  | undefined {
+  const g = globalThis as unknown as {
+    __TAURI__?: { invoke<T>(c: string, p?: Record<string, unknown>): Promise<T> };
+  };
+  const api = g.__TAURI__;
+  return api && typeof api.invoke === 'function' ? api : undefined;
+}
+
+function hasTauri(): boolean {
+  return Boolean(getGlobalTauri());
+}
+
 export function tauriInvoke<T = unknown>(
   cmd: string,
   payload?: Record<string, unknown>,
@@ -22,13 +36,10 @@ export function tauriInvoke<T = unknown>(
     .catch((error: unknown) => {
       logError(`renderer: tauriInvoke primary path failed for ${cmd}`, error);
       // Fallback to global __TAURI__ if the API package isn’t available or not in Tauri.
-      const g = globalThis as unknown as {
-        __TAURI__?: { invoke<T>(c: string, p?: Record<string, unknown>): Promise<T> };
-      };
-      const api = g.__TAURI__;
+      const api = getGlobalTauri();
       if (api && typeof api.invoke === 'function') return api.invoke<T>(cmd, payload ?? {});
       throw new TauriNotAvailableError();
     });
 }
 
-export const __test__ = {} as const;
+export const __test__ = { hasTauri } as const;

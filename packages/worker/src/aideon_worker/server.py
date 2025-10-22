@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import pathlib
+from contextlib import asynccontextmanager
 from typing import Any
 
 import uvicorn
@@ -29,17 +30,16 @@ class StateAtResponse(BaseModel):
     edges: int
 
 
-app = FastAPI(title="Aideon Worker", version="0.1.0")
-
-
-@app.on_event("startup")
-async def _on_startup() -> None:
+@asynccontextmanager
+async def _lifespan(_: FastAPI):  # pragma: no cover - trivial hooks
     log.info("worker: starting up")
+    try:
+        yield
+    finally:
+        log.info("worker: shutting down")
 
 
-@app.on_event("shutdown")
-async def _on_shutdown() -> None:
-    log.info("worker: shutting down")
+app = FastAPI(title="Aideon Worker", version="0.1.0", lifespan=_lifespan)
 
 
 @app.get("/ping")
