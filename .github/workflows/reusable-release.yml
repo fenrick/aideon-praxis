@@ -77,16 +77,16 @@ jobs:
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-
 
       - name: Python Sync (uv)
-        run: yarn py:sync
+        run: yarn worker:sync
 
       - name: Python Lint (ruff+black --check)
-        run: yarn py:lint
+        run: yarn worker:lint
 
       - name: Python Tests
-        run: yarn py:test
+        run: yarn worker:test
 
       - name: Build worker binary (PyInstaller via uvx)
-        run: uvx pyinstaller -F -n aideon-worker -p packages/worker/src packages/worker/src/aideon_worker/cli.py
+        run: uvx pyinstaller -F -n aideon-worker -p packages/worker/src packages/worker/src/aideon_worker/server.py
 
       - name: Upload worker binary
         uses: actions/upload-artifact@v4
@@ -133,16 +133,16 @@ jobs:
         run: yarn install --immutable
 
       - name: JS Format Check
-        run: yarn format:check
+        run: yarn node:format:check
 
       - name: JS Lint
-        run: yarn lint
+        run: yarn node:lint
 
       - name: JS Typecheck
-        run: yarn typecheck
+        run: yarn node:typecheck
 
       - name: JS Tests
-        run: yarn test
+        run: yarn node:test
 
       - name: Download worker binary
         uses: actions/download-artifact@v5
