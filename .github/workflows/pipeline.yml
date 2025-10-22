@@ -29,6 +29,7 @@ jobs:
   rust_checks:
     name: Rust Checks
     runs-on: ubuntu-latest
+    # Minimal Rust gating (fmt/clippy) for packages/host only; no Tauri build yet.
     steps:
       - name: Checkout
         uses: actions/checkout@v5
