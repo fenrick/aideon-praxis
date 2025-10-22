@@ -70,3 +70,6 @@ coverage.xml
 /.aideon
 docs/schedule/*.json
 /docs/schedule
+ 
+# Rust build artifacts
+target/

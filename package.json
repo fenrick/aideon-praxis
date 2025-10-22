@@ -12,6 +12,8 @@
   },
   "scripts": {
     "preflight": "node tools/preflight.mjs",
+    "rust:fmt": "cargo fmt --all --check",
+    "rust:lint": "cargo clippy --manifest-path packages/host/Cargo.toml --all-targets -- -D warnings",
     "build": "tsc -b --pretty false || true && yarn workspace @aideon/app build",
     "worker:bundle": "node scripts/build-worker-binary.mjs",
     "package": "yarn worker:bundle && yarn workspace @aideon/app dist",
