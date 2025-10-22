@@ -160,6 +160,104 @@ def main(argv: list[str]) -> int:
     ap_mirror.add_argument("--check", action="store_true", help="check if mirror is stale")
     ap_mirror.set_defaults(func=cmd_mirror)
 
+    # Split: create child issues from items or a file and update parent checklist
+    def cmd_split(ns: argparse.Namespace) -> int:
+        repo = repo_slug()
+        parent = str(ns.parent)
+        items: list[str] = []
+        if ns.items:
+            items.extend(ns.items)
+        if ns.file:
+            fp = Path(ns.file)
+            items.extend([ln.strip() for ln in fp.read_text().splitlines() if ln.strip()])
+        if not items:
+            print("[issues] no items provided", file=sys.stderr)
+            return 1
+        created: list[tuple[int, str]] = []
+        for title in items:
+            out = run(
+                [
+                    "gh",
+                    "issue",
+                    "create",
+                    "--repo",
+                    repo,
+                    "--title",
+                    title,
+                    "--body",
+                    f"Parent: #{parent}",
+                    "--label",
+                    "status/todo",
+                    "--label",
+                    "type/task",
+                ],
+                check=True,
+            )
+            m = re.search(r"/issues/(\d+)$", (out.stdout or out.stderr))
+            if not m:
+                print(f"[issues] created: {out.stdout.strip()}")
+                continue
+            num = int(m.group(1))
+            created.append((num, title))
+        # Update parent body with a checklist
+        meta = gh_json(["issue", "view", parent, "--repo", repo, "--json", "body"])
+        body = meta.get("body") or ""
+        checklist = "\n".join([f"- [ ] #{n} {t}" for n, t in created])
+        new_body = (
+            body + ("\n\n### Subtasks\n" if "### Subtasks" not in body else "\n") + checklist + "\n"
+        )
+        run(["gh", "issue", "edit", parent, "--repo", repo, "--body", new_body], check=True)
+        print(f"[issues] created {len(created)} subtasks under #{parent}")
+        return 0
+
+    ap_split = sub.add_parser("split", help="create child issues and update parent checklist")
+    ap_split.add_argument("parent", type=int)
+    ap_split.add_argument("--items", nargs="*", help="child issue titles")
+    ap_split.add_argument("--file", help="file with one title per line")
+    ap_split.set_defaults(func=cmd_split)
+
+    # DoD: ensure a Definition of Done section exists
+    DOD = (
+        "\n\n### Definition of Done\n"
+        "- CI: lint, typecheck, unit tests updated\n"
+        "- Docs: user & dev docs updated (README/ADR/CHANGELOG)\n"
+        "- Security: renderer IPC boundaries respected; no new ports\n"
+        "- Performance: SLO notes or benches if applicable\n"
+        "- UX: matches GitHub-inspired style (light/dark)\n"
+        "- Packaging: macOS build verified (DMG/ZIP)\n"
+        "- Tracking: PRs linked; Project Status updated; local mirror refreshed\n"
+    )
+
+    def cmd_dod(ns: argparse.Namespace) -> int:
+        repo = repo_slug()
+        issues = gh_json(
+            [
+                "issue",
+                "list",
+                "--repo",
+                repo,
+                "--label",
+                "status/in-progress",
+                "--state",
+                "open",
+                "--json",
+                "number,body",
+            ]
+        )
+        changed = 0
+        for it in issues:
+            n = str(it["number"])
+            body = it.get("body") or ""
+            if "### Definition of Done" in body:
+                continue
+            run(["gh", "issue", "edit", n, "--repo", repo, "--body", body + DOD], check=True)
+            changed += 1
+        print(f"[issues] ensured DoD on {changed} issues")
+        return 0
+
+    ap_dod = sub.add_parser("dod", help="ensure Definition of Done on in-progress issues")
+    ap_dod.set_defaults(func=cmd_dod)
+
     ns = ap.parse_args(argv)
     return ns.func(ns)
 

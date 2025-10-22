@@ -3,26 +3,21 @@
 import { tauriInvoke } from '../host/tauri-invoke';
 import { logInfo, logDebug, logError } from '../host/logger';
 
-declare global {
-  interface Window {
-    aideon?: {
-      version: string;
-      stateAt: (arguments_: { asOf: string; scenario?: string; confidence?: number }) => Promise<{
-        asOf: string;
-        scenario: string | null;
-        confidence: number | null;
-        nodes: number;
-        edges: number;
-      }>;
-    };
-  }
-}
-
 // Only define when not already supplied by a preload (Electron) or other bridge
 if ((globalThis as { aideon?: unknown }).aideon === undefined) {
   // Always install a bridge object; methods will throw if Tauri isn't available yet.
   logInfo('renderer: installing tauri-shim bridge');
-  (globalThis as Window).aideon = {
+  interface AideonApi {
+    version: string;
+    stateAt: (arguments_: { asOf: string; scenario?: string; confidence?: number }) => Promise<{
+      asOf: string;
+      scenario: string | null;
+      confidence: number | null;
+      nodes: number;
+      edges: number;
+    }>;
+  }
+  (globalThis as unknown as { aideon: AideonApi }).aideon = {
     version: 'tauri-shim',
     stateAt: async (arguments_) => {
       logDebug(`renderer: invoking temporal_state_at asOf=${arguments_.asOf}`);

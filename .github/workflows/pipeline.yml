@@ -222,7 +222,7 @@ jobs:
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-
 
       - name: Python Sync (uv) — worker venv
-        run: yarn py:sync
+        run: yarn worker:sync
 
       - name: Python Lint (ruff+black --check)
         run: yarn worker:lint
