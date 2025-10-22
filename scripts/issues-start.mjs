@@ -52,11 +52,20 @@ try {
   } catch {}
 }
 
-// Assign to current user and add label
+// Assign to current user, add new status label, and remove conflicting ones
 try {
   const who = gh(['api', 'user']);
   const login = JSON.parse(who).login;
   gh(['issue', 'edit', num, '-R', REPO, '--add-label', LABEL, '--add-assignee', login]);
+  // Remove older status labels to keep a single status/* at a time
+  const statusLabels = ['status/todo', 'status/blocked', 'status/done', 'status/in-progress'];
+  for (const l of statusLabels) {
+    if (l !== LABEL) {
+      try {
+        gh(['issue', 'edit', num, '-R', REPO, '--remove-label', l]);
+      } catch {}
+    }
+  }
   gh([
     'issue',
     'comment',
@@ -64,7 +73,7 @@ try {
     '-R',
     REPO,
     '--body',
-    'Starting work: marking in progress and creating a branch.',
+    'Starting work: marking in progress, cleaning old status labels, and creating a branch.',
   ]);
 } catch (e) {
   console.error(e.message);
