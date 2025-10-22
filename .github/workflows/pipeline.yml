@@ -132,8 +132,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-
 
-      - name: Python Sync (uv)
-        run: uv sync --all-groups
+      - name: Python Sync (uv) — worker venv
+        run: yarn py:sync
 
       - name: Python Lint (ruff+black --check)
         run: yarn py:lint
