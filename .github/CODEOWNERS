@@ -1,16 +1,5 @@
-# Default owners
-* @fenrick
+# Code owners for directories
 
-# UI (React/Vite)
-/packages/app/** @fenrick
-/packages/ui/** @fenrick
-
-# Host (Tauri/Rust)
-/packages/host/** @fenrick
-
-# Worker (Python sidecar)
-/packages/worker/** @fenrick
-
-# CI and tooling
-/.github/** @fenrick
-/tools/** @fenrick
+/packages/app/ @fenrick
+/packages/host/ @fenrick
+/packages/worker/ @fenrick
