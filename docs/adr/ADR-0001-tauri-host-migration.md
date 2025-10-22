@@ -1,6 +1,6 @@
 ## ADR-0001: Migrate Electron/Node host to Tauri (Rust)
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2025-10-22
 - Issue: #95
 
@@ -42,6 +42,18 @@ behind a Compute Facade. Packaging/signing handled via Tauri.
 6. Worker packaging scaffold (PyInstaller) as Tauri external bin
 7. Capabilities/CSP manifest and security notes
 8. Progressive CI: build+test per-platform; packaging later
+
+### Verification & Rollout Gates
+
+- CI green on each incremental PR (lint, typecheck, unit tests; Sonar pass). No renderer HTTP; no open ports.
+- Host smoke test (READY + `state_at`) scaffolding exists and remains skipped until host↔worker wiring lands; not a gate for ADR acceptance.
+- Security review for capabilities/CSP before enabling host features.
+
+### Links
+
+- Parent: #95
+- PR (groundwork): #106 (docs, preflight, Rust CI, LCOV normalization)
+- Sub‑issues: #96, #97, #98, #99, #100, #101, #102, #104
 
 ### Alternatives Considered
 
