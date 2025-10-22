@@ -216,6 +216,10 @@ jobs:
           else
             echo "[warn] Python coverage coverage.xml not found after artifact download" >&2
           fi
+          # Rewrite Cobertura <source> to container mount so Sonar resolves paths cleanly
+          if [[ -f packages/worker/coverage.xml ]]; then
+            sed -i -E 's#<source>.*packages/worker/src</source>#<source>/github/workspace/packages/worker/src</source>#' packages/worker/coverage.xml || true
+          fi
           ls -l coverage || true
           ls -l packages/worker || true
 
