@@ -4,8 +4,8 @@ import asyncio
 import logging
 import os
 import pathlib
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -31,10 +31,10 @@ class StateAtResponse(BaseModel):
 
 
 @asynccontextmanager
-async def _lifespan(_: FastAPI):  # pragma: no cover - trivial hooks
+async def _lifespan(_: FastAPI) -> AsyncIterator[None]:  # pragma: no cover - trivial hooks
     log.info("worker: starting up")
     try:
-        yield
+        yield None
     finally:
         log.info("worker: shutting down")
 
@@ -49,13 +49,13 @@ async def ping() -> dict[str, str]:
 
 
 @app.post("/state_at", response_model=StateAtResponse)
-async def state_at_route(body: StateAtRequest) -> Any:
+async def state_at_route(body: StateAtRequest) -> StateAtResponse:
     log.info("worker: state_at request asOf=%s scenario=%s", body.asOf, body.scenario)
     try:
         args = StateAtArgs(as_of=body.asOf, scenario=body.scenario, confidence=body.confidence)
         result = state_at(args)
         log.info("worker: state_at result nodes=%s edges=%s", result["nodes"], result["edges"])
-        return result
+        return StateAtResponse.model_validate(result)
     except Exception as exc:  # noqa: BLE001
         log.exception("worker: state_at failed: %s", exc)
         raise HTTPException(status_code=400, detail=str(exc))
