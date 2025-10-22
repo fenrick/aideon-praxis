@@ -39,7 +39,7 @@ jobs:
       - name: Install Rust (stable, fmt+clippy)
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt, clippy
+          components: rustfmt, clippy, llvm-tools-preview
 
       - name: Cache Cargo & Target
         uses: actions/cache@v4
@@ -52,6 +52,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-rust-
 
+      - name: Generate lockfile (for audit & caching)
+        working-directory: packages/host
+        run: cargo generate-lockfile
+
       - name: Cargo fmt (check)
         working-directory: packages/host
         run: cargo fmt --all --check
@@ -59,6 +63,42 @@ jobs:
       - name: Cargo clippy (deny warnings)
         working-directory: packages/host
         run: cargo clippy --all-targets -- -D warnings
+
+      - name: Cargo check (typecheck)
+        working-directory: packages/host
+        run: cargo check --all-targets --all-features
+
+      - name: Cargo test
+        working-directory: packages/host
+        run: cargo test --all --quiet
+
+      - name: Install cargo-llvm-cov
+        run: |
+          curl -Ls https://raw.githubusercontent.com/taiki-e/cargo-llvm-cov/v0.6.10/install.sh | bash -s -- --locked
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Rust coverage (LCOV)
+        working-directory: packages/host
+        run: |
+          mkdir -p coverage
+          cargo llvm-cov --lcov --output-path coverage/lcov.info --all-targets
+
+      - name: Upload Rust coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-rs
+          if-no-files-found: warn
+          retention-days: 7
+          path: packages/host/coverage/lcov.info
+
+      - name: Install cargo-audit
+        run: |
+          cargo install --locked cargo-audit || echo "cargo-audit already installed"
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cargo audit (advisories)
+        working-directory: packages/host
+        run: cargo audit -D warnings || (echo "[warn] cargo-audit failed; see advisories" && exit 1)
 
   js_checks:
     name: JS/TS Checks
