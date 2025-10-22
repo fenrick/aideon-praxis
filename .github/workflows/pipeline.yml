@@ -2,7 +2,6 @@ name: Pipeline
 
 on:
   push:
-    branches: ['**']
   pull_request:
   schedule:
     - cron: '0 3 * * *'
@@ -41,10 +40,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup Yarn Berry
-        uses: bgotink/setup-yarn-berry@v3
-        with:
-          version: ${{ env.YARN_VERSION }}
+      - name: Enable Corepack and Yarn ${{ env.YARN_VERSION }}
+        run: |
+          corepack enable
+          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
 
       - name: Cache Yarn
         uses: actions/cache@v4
@@ -89,10 +88,33 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable Corepack and Yarn ${{ env.YARN_VERSION }}
+        run: |
+          corepack enable
+          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
+
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache Yarn
+        uses: actions/cache@v4
+        with:
+          path: |
+            .yarn/cache
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+
+      - name: Install JS dependencies (for Yarn run state)
+        run: yarn install --immutable
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -110,8 +132,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-
 
-      - name: Python Sync (uv)
-        run: uv sync --all-groups
+      - name: Python Sync (uv) — worker venv
+        run: yarn py:sync
 
       - name: Python Lint (ruff+black --check)
         run: yarn py:lint
@@ -140,39 +162,33 @@ jobs:
           path: packages/worker/coverage.xml
 
   sonar:
-    name: SonarQube Analysis
-    needs: [js_checks, py_checks]
+    name: SonarCloud
     runs-on: ubuntu-latest
-    if: >-
-      ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.runSonar))
-          && (env.SONAR_TOKEN != '') }}
+    needs: [js_checks, py_checks]
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.runSonar == true)
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Download coverage TS
-        uses: actions/download-artifact@v5
+      - name: Download TS coverage
+        uses: actions/download-artifact@v4
         with:
           name: coverage-ts
-          path: coverage
+          path: .
 
-      - name: Download coverage PY
-        uses: actions/download-artifact@v5
+      - name: Download Python coverage
+        uses: actions/download-artifact@v4
         with:
           name: coverage-py
-          path: packages/worker
+          path: .
 
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL != '' && secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-
-      - name: Sonar Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
-        with:
-          scanMetadataReportFile: .scannerwork/report-task.txt
-        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
