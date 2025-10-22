@@ -48,7 +48,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             packages/host/target
-          key: ${{ runner.os }}-rust-${{ hashFiles('packages/host/Cargo.lock') }}
+          key: ${{ runner.os }}-rust-${{ hashFiles('packages/host/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-rust-
 
@@ -73,9 +73,9 @@ jobs:
         run: cargo test --all --quiet
 
       - name: Install cargo-llvm-cov
-        run: |
-          curl -Ls https://raw.githubusercontent.com/taiki-e/cargo-llvm-cov/v0.6.10/install.sh | bash -s -- --locked
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
 
       - name: Rust coverage (LCOV)
         working-directory: packages/host
