@@ -11,6 +11,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "preflight": "node tools/preflight.mjs",
     "build": "tsc -b --pretty false || true && yarn workspace @aideon/app build",
     "worker:bundle": "node scripts/build-worker-binary.mjs",
     "package": "yarn worker:bundle && yarn workspace @aideon/app dist",

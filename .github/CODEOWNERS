@@ -1,3 +1,16 @@
-# Repository code owners
-# Update to your actual GitHub org/team handles when available.
-* @fenrick/maintainers @jolyon
+# Default owners
+* @fenrick
+
+# UI (React/Vite)
+/packages/app/** @fenrick
+/packages/ui/** @fenrick
+
+# Host (Tauri/Rust)
+/packages/host/** @fenrick
+
+# Worker (Python sidecar)
+/packages/worker/** @fenrick
+
+# CI and tooling
+/.github/** @fenrick
+/tools/** @fenrick

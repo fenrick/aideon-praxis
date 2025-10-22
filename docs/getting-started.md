@@ -11,12 +11,14 @@ WSL2 or native shells (PowerShell or Git Bash).
 - Python 3.13
 - uv (Python package/dependency manager)
 - GitHub CLI (`gh`) — required for the issues/project helpers
+- Rust (via `rustup`) — required for the Tauri host migration work (#95)
+- Tauri CLI (`@tauri-apps/cli`) — only if working on the Rust host
 
 Recommended installs:
 
-- macOS: `brew install node uv gh`
+- macOS: `brew install node uv gh rustup-init` (then run `rustup-init`)
 - Linux: use your package manager or see upstream instructions for
-  Node 24, uv, and GitHub CLI.
+  Node 24, uv, GitHub CLI, and Rust via rustup.
 
 ## 1) Clone and bootstrap
 
@@ -32,6 +34,10 @@ yarn install
 
 # (Optional but recommended) Create and sync a project venv with uv
 yarn py:sync  # wraps: uv sync --python 3.13 --extra dev
+
+# (Host work only) Ensure Rust and Tauri CLI are available
+rustup default stable || true
+yarn dlx @tauri-apps/cli -v || true
 ```
 
 Create your `.env` from the example and set the GitHub repo and token
@@ -58,7 +64,9 @@ gh auth status -h github.com
 ## 2) Run in development
 
 ```bash
-# TypeScript build + Electron dev (no renderer HTTP)
+# TypeScript build + current desktop dev
+# Today this launches the Electron host; during #95 we will add
+# an alternate `host (Tauri)` dev path.
 yarn dev
 
 # In another terminal, run tests/lint as needed
@@ -105,3 +113,5 @@ yarn issues:mirror
 - TypeScript types missing: run `yarn install` again; ensure Node 24 is
   active and Corepack is enabled (`corepack enable`).
 - Python tool versions drift: re-run `yarn py:sync` to refresh the venv.
+- Rust not found: install via rustup: `curl https://sh.rustup.rs -sSf | sh`,
+  then `rustup default stable`.
