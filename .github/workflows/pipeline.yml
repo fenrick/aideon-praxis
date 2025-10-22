@@ -293,6 +293,32 @@ jobs:
             echo "[warn] TS coverage lcov.info not found after artifact download" >&2
           fi
 
+          # Normalize/Filter TS LCOV: keep only project sources and repo-relative paths
+          if [[ -f coverage/lcov.info ]]; then
+            awk '
+              function normalize(p) {
+                gsub(/\\r$/, "", p);
+                # strip runner absolute prefix -> repo root
+                sub(/\/home\/runner\/work\/[^/]+\/[^/]+\//, "", p);
+                sub(/^\/github\/workspace\//, "", p);
+                return p;
+              }
+              /^SF:/ {
+                path=$0; sub(/^SF:/, "", path);
+                npath=normalize(path);
+                keep=(npath ~ /^(packages\/app\/src|packages\/adapters\/src)\/.*\.(ts|tsx|js|jsx)$/);
+                if (keep) {
+                  print "SF:" npath;
+                  in_file=1;
+                } else {
+                  in_file=0;
+                }
+                next;
+              }
+              { if (in_file==1) print $0 }
+            ' coverage/lcov.info > coverage/lcov.filtered && mv coverage/lcov.filtered coverage/lcov.info
+          fi
+
           # Python coverage (downloaded directly to packages/worker/)
           if [[ -f packages/worker/coverage.xml ]]; then
             echo "Py coverage at packages/worker/coverage.xml"
@@ -320,6 +346,13 @@ jobs:
             mv coverage-rs/packages/host/coverage/lcov.info packages/host/coverage/lcov.info
           else
             echo "[warn] Rust coverage lcov.info not found after artifact download" >&2
+          fi
+
+          # Normalize Rust LCOV paths to repo-relative to help Sonar resolve files
+          if [[ -f packages/host/coverage/lcov.info ]]; then
+            sed -E 's#^(SF:)/home/runner/work/[^/]+/[^/]+/#+\1#; s#^(SF:)/github/workspace/#+\1#' \
+              packages/host/coverage/lcov.info > packages/host/coverage/lcov.norm && \
+              mv packages/host/coverage/lcov.norm packages/host/coverage/lcov.info
           fi
 
           # No Rust XML conversion required; Sonar ingests LCOV directly via sonar.rust.lcov.reportPaths
