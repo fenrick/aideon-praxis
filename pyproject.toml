@@ -12,6 +12,9 @@ lint.select = ["E","F","I","B","UP","SIM","PYI"]
 lint.ignore = []
 lint.fixable = ["ALL"]
 
+[tool.ruff.lint.per-file-ignores]
+"scripts/issues.py" = ["I001", "E501", "E741"]
+
 [tool.mypy]
 python_version = "3.13"
 strict = true
