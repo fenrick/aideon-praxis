@@ -187,6 +187,38 @@ jobs:
           name: coverage-py
           path: .
 
+      - name: Normalize coverage paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p coverage packages/worker
+          # TS coverage
+          if [[ -f coverage/lcov.info ]]; then
+            echo "TS coverage already at coverage/lcov.info"
+          elif [[ -f lcov.info ]]; then
+            mv lcov.info coverage/lcov.info
+          elif [[ -f coverage-ts/lcov.info ]]; then
+            mv coverage-ts/lcov.info coverage/lcov.info
+          elif [[ -f coverage-ts/coverage/lcov.info ]]; then
+            mv coverage-ts/coverage/lcov.info coverage/lcov.info
+          else
+            echo "[warn] TS coverage lcov.info not found after artifact download" >&2
+          fi
+          # Python coverage
+          if [[ -f packages/worker/coverage.xml ]]; then
+            echo "Py coverage already at packages/worker/coverage.xml"
+          elif [[ -f coverage.xml ]]; then
+            mv coverage.xml packages/worker/coverage.xml
+          elif [[ -f coverage-py/coverage.xml ]]; then
+            mv coverage-py/coverage.xml packages/worker/coverage.xml
+          elif [[ -f coverage-py/packages/worker/coverage.xml ]]; then
+            mv coverage-py/packages/worker/coverage.xml packages/worker/coverage.xml
+          else
+            echo "[warn] Python coverage coverage.xml not found after artifact download" >&2
+          fi
+          ls -l coverage || true
+          ls -l packages/worker || true
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
