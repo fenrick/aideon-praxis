@@ -31,7 +31,6 @@ async fn temporal_state_at(
 
 fn main() {
     Builder::default()
-        .plugin(tauri::plugin::Builder::new("aideon").build())
         .invoke_handler(tauri::generate_handler![temporal_state_at])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");
