@@ -22,8 +22,5 @@
   "bundle": {
     "active": false
   },
-  "plugins": {},
-  "security": {
-    "capabilities": []
-  }
+  "plugins": {}
 }
