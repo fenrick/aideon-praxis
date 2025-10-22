@@ -103,6 +103,19 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Cache Yarn
+        uses: actions/cache@v4
+        with:
+          path: |
+            .yarn/cache
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+
+      - name: Install JS dependencies (for Yarn run state)
+        run: yarn install --immutable
+
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
