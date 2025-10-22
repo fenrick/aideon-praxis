@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/v2/schema.json",
+  "productName": "Aideon Praxis",
+  "version": "0.1.0",
+  "identifier": "com.aideon.praxis",
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "frontendDist": "packages/app/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Aideon Praxis",
+        "width": 1200,
+        "height": 800,
+        "resizable": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": false
+  },
+  "plugins": {},
+  "security": {
+    "capabilities": []
+  }
+}
