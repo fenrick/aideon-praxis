@@ -63,23 +63,25 @@ gh auth status -h github.com
 
 ## 2) Run in development
 
-```bash
-# TypeScript build + current desktop dev
-# Today this launches the Electron host; during #95 we will add
-# an alternate `host (Tauri)` dev path.
-yarn dev
+Keep logs clear and separate by using two terminals.
 
-# In another terminal, run tests/lint as needed
+```bash
+# Terminal A — UI (Vite)
+yarn workspace @aideon/app dev
+
+# Terminal B — Host (Tauri)
+cd packages/host
+yarn dlx @tauri-apps/cli@latest dev
+
+# Optional: tests/lint in a third terminal
 yarn test && yarn lint && yarn typecheck
 yarn py:test && yarn py:lint
 ```
 
 What to expect:
 
-- Desktop app launches with secure defaults (`contextIsolation: true`, no
-  `nodeIntegration`).
-- Desktop mode opens no TCP ports; the Python worker communicates via
-  UDS/pipes.
+- A Tauri window serving the Vite UI at http://localhost:5173.
+- Desktop mode opens no TCP ports by default; the worker handshake will use UDS/pipes when enabled.
 
 ## 3) Working with issues (optional)
 
