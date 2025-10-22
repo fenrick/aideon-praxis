@@ -2,10 +2,10 @@
   "name": "@aideon/app",
   "version": "0.1.0",
   "private": true,
-  "main": "dist/main.js",
+  "main": "",
   "license": "MIT",
-  "type": "commonjs",
-  "description": "Aideon Praxis Electron host",
+  "type": "module",
+  "description": "Aideon Praxis React UI (Tauri host)",
   "author": {
     "name": "Aideon Praxis contributors",
     "email": "201621+fenrick@users.noreply.github.com"
@@ -15,10 +15,8 @@
     "url": "https://github.com/<owner>/<repo>.git"
   },
   "scripts": {
-    "dev": "concurrently -k \"vite build --watch\" \"tsup --watch\" \"wait-on dist/renderer/index.html && electron .\"",
-    "dev:vite": "vite",
-    "build": "tsup && vite build",
-    "dist": "yarn build && electron-builder -c electron-builder.yml",
+    "dev": "vite",
+    "build": "vite build",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -31,11 +29,7 @@
     "@types/react-dom": "^19.2.1",
     "@vitejs/plugin-react": "^5.0.4",
     "concurrently": "^9.0.0",
-    "electron": "38.3.0",
-    "electron-builder": "^24.13.3",
-    "tsup": "^8.0.0",
     "typescript": "^5.4.0",
-    "vite": "7.1.11",
-    "wait-on": "9.0.1"
+    "vite": "7.1.11"
   }
 }
