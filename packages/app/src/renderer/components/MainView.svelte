@@ -1,13 +1,15 @@
 <script lang="ts">
-  export let version: string;
-  export let stateAt: {
-    asOf: string;
-    scenario: string | null;
-    confidence: number | null;
-    nodes: number;
-    edges: number;
-  } | null;
-  export let errorMsg: string | null;
+  const { version, stateAt, errorMsg } = $props<{
+    version: string;
+    stateAt: {
+      asOf: string;
+      scenario: string | null;
+      confidence: number | null;
+      nodes: number;
+      edges: number;
+    } | null;
+    errorMsg: string | null;
+  }>();
 </script>
 
 <div style="padding: 16px;">

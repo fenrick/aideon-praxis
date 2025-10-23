@@ -7,6 +7,9 @@ export interface AideonApi {
     nodes: number;
     edges: number;
   }>;
+  openSettings: () => Promise<void>;
+  openAbout: () => Promise<void>;
+  openStatus: () => Promise<void>;
 }
 
 declare global {

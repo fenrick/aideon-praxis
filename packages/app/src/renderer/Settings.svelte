@@ -1,14 +1,18 @@
 <script lang="ts">
+  // Appearance settings panel. Stores the chosen mode in localStorage and
+  // toggles a class on <body> so CSS can respond without any backend coupling.
   import './theme.css';
   type ThemeMode = 'system' | 'light' | 'dark';
   let mode: ThemeMode = (localStorage.getItem('themeMode') as ThemeMode) || 'system';
 
+  // Apply the chosen theme by updating body classes. System mode leaves it unset.
   function apply(mode_: ThemeMode) {
     document.body.classList.remove('theme-light', 'theme-dark');
     if (mode_ === 'light') document.body.classList.add('theme-light');
     else if (mode_ === 'dark') document.body.classList.add('theme-dark');
   }
 
+  // Persist the preference and apply immediately.
   function setMode(next: ThemeMode) {
     mode = next;
     localStorage.setItem('themeMode', mode);

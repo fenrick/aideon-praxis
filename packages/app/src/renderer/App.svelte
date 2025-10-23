@@ -1,13 +1,17 @@
 <script lang="ts">
+  // Main renderer surface. All backend access goes through a minimal bridge
+  // attached at window.aideon and exposed via preload/Tauri.
+  // No backend‑specific logic or HTTP calls are allowed in the renderer.
   import { onMount } from 'svelte';
-  import Titlebar from './Titlebar.svelte';
+  // Use native window decorations; custom titlebars are disabled for main.
   import './theme.css';
   import { info, error } from '@tauri-apps/plugin-log';
-  import { tauriInvoke } from '../tauri-invoke';
-  import { Window } from '@tauri-apps/api/window';
-  import SplashOverlay from './components/SplashOverlay.svelte';
+  // no Tauri calls from main during splash-based init
   import MainView from './components/MainView.svelte';
   import AboutPanel from './components/AboutPanel.svelte';
+  import Toolbar from './components/Toolbar.svelte';
+  import StatusBar from './components/StatusBar.svelte';
+  import Sidebar from './components/Sidebar.svelte';
 
   type WorkerState = {
     asOf: string;
@@ -19,29 +23,16 @@
 
   let version =
     (globalThis as unknown as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
-  let stateAt: WorkerState | null = null;
-  let error_: string | null = null;
-  let showSplash = true;
-  let seconds = 0;
-  let view: 'main' | 'about' = 'main';
-  const lines: string[] = [
-    'Reticulating splines…',
-    'Weaving twin orbits…',
-    'Replaying future states…',
-    'Cooling hot paths…',
-    'Aligning decision matrices…',
-    'Seeding knowledge graph…',
-    'Collapsing branches to present…',
-    'Normalising capability models…',
-    'Hardening isolation layer…',
-    'Bootstrapping sidecar…',
-    'Calibrating maturity plateaus…',
-    'Scheduling time-dimension renders…',
-  ];
-  let loadIx = 0;
-  $: loadline = lines[loadIx % lines.length];
+  let stateAt: WorkerState | null = $state(null);
+  let error_: string | null = $state(null);
+  let seconds = $state(0); // simple uptime indicator
+  let view: 'main' | 'about' = $state('main');
+  let showSidebar = $state(true);
+  let selectedId: string | null = $state(null);
+  // previously used for overlay messages; retained as comment for future
+  // reserved for future splash/internal rotation in main window
 
-  let platform: 'mac' | 'win' | 'linux' | 'other' = 'other';
+  let platform: 'mac' | 'win' | 'linux' | 'other' = $state('other');
   onMount(async () => {
     // Detect platform without @tauri-apps/api dependency to keep bundling simple
     const ua = navigator.userAgent;
@@ -66,27 +57,12 @@
     }
     info('renderer: App.svelte mounting, starting init');
     const timer = setInterval(() => (seconds += 1), 1000);
-    const rotator = setInterval(() => (loadIx += 1), 900);
     try {
-      // front-end heavy setup simulation
-      await new Promise((r) => setTimeout(r, 3000));
-      await tauriInvoke('set_complete', { task: 'frontend' });
-      // wait for backend readiness
-      for (;;) {
-        try {
-          const s = await tauriInvoke<{ frontend: boolean; backend: boolean }>('get_setup_state');
-          if (s.backend) break;
-        } catch {}
-        await new Promise((r) => setTimeout(r, 250));
-      }
-      showSplash = false;
-      try {
-        Window.getCurrent().show();
-      } catch {}
-      const bridge = (
+      // With dedicated splash window, no frontend gating needed here
+      const _bridge = (
         globalThis as unknown as {
           aideon?: {
-            stateAt: (args: {
+            stateAt: (_args: {
               asOf: string;
               scenario?: string;
               confidence?: number;
@@ -94,33 +70,75 @@
           };
         }
       ).aideon;
-      if (!bridge || typeof bridge.stateAt !== 'function') throw new Error('Bridge not available');
-      const result = await bridge.stateAt({ asOf: '2025-01-01' });
+      if (!_bridge || typeof _bridge.stateAt !== 'function')
+        throw new Error('Bridge not available');
+      // Request a trivial time‑slice to validate the bridge wiring.
+      const result = await _bridge.stateAt({ asOf: '2025-01-01' });
       stateAt = result;
       info('renderer: init complete; stateAt received');
-    } catch (e) {
-      error('renderer: stateAt failed', e);
-      error_ = String(e);
+    } catch (error__) {
+      error('renderer: stateAt failed', error__);
+      error_ = String(error__);
     }
     clearInterval(timer);
-    clearInterval(rotator);
+    // no splash timers in main window
   });
+  function onSelect(e: unknown) {
+    const ev = e as { detail: { id: string } };
+    selectedId = ev.detail.id;
+  }
 </script>
 
-{#if platform !== 'win'}
-  <Titlebar title="Aideon Praxis" {platform} />
-{/if}
-<nav style="position:absolute; right:12px; top:8px; z-index:10; display:flex; gap:12px;">
-  <button on:click={() => (view = 'main')}>Main</button>
-  <button on:click={() => (view = 'about')}>About</button>
-</nav>
+<!-- Native titlebars are used across platforms for the main window. -->
+<div class="frame">
+  <div class="row-top">
+    <Toolbar
+      sidebarActive={showSidebar}
+      onToggleSidebar={() => (showSidebar = !showSidebar)}
+      onOpenSettings={() => (globalThis as any).aideon.openSettings()}
+      onOpenAbout={() => (globalThis as any).aideon.openAbout()}
+      onOpenStatus={() => (globalThis as any).aideon.openStatus()}
+    />
+  </div>
+  <div class="row-main">
+    {#if showSidebar}
+      <Sidebar
+        on:select={onSelect}
+        items={[
+          {
+            id: 'catalogues',
+            label: 'Catalogues',
+            children: [
+              { id: 'applications', label: 'Applications' },
+              { id: 'data', label: 'Data' },
+            ],
+          },
+          { id: 'metamodel', label: 'Meta-model' },
+          { id: 'visualisations', label: 'Visualisations' },
+        ]}
+      />
+    {/if}
+    <div class="content">
+      {#if view === 'about'}
+        <AboutPanel />
+      {:else}
+        <MainView {version} {stateAt} errorMsg={error_} />
+        {#if selectedId}
+          <div class="selection">Selected: {selectedId}</div>
+        {/if}
+      {/if}
+    </div>
+  </div>
+  <div class="row-bottom">
+    <StatusBar connected={!!stateAt && !error_} message={error_ ?? undefined} />
+  </div>
+</div>
 
 {#if view === 'about'}
   <AboutPanel />
 {:else}
   <MainView {version} {stateAt} errorMsg={error_} />
 {/if}
-<SplashOverlay visible={showSplash} {seconds} line={loadline} />
 
 <style>
   :global(:root) {
@@ -128,5 +146,30 @@
     --teal: #22e3d0;
     --vio: #7c5cff;
     --sun: #ff6a3d;
+  }
+  .frame {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100%;
+  }
+  .row-top {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .row-main {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    min-height: 0;
+  }
+  .content {
+    min-width: 0;
+    overflow: auto;
+    padding: 8px;
+  }
+  .row-bottom {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .selection {
+    margin-top: 8px;
+    opacity: 0.7;
   }
 </style>
