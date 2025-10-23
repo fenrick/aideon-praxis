@@ -79,3 +79,4 @@ packages/host/**/.fingerprint/
 packages/host/.cargo/
 packages/host/**/Cargo.lock.bk
 packages/host/gen/
+/packages/host/binaries

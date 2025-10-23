@@ -42,7 +42,10 @@
     "issues:dod": "python3 scripts/issues.py dod",
     "issues:linkify": "python3 scripts/issues.py linkify",
     "issues:backfill": "python3 scripts/issues.py backfill",
-    "ci": "yarn node:lint && yarn node:typecheck && yarn node:test:coverage && yarn worker:lint && yarn worker:typecheck && yarn worker:pyright && yarn worker:sec && yarn worker:test:cov",
+    "host:fmt": "cargo fmt --manifest-path packages/host/Cargo.toml --all -- --check",
+    "host:lint": "cargo clippy --manifest-path packages/host/Cargo.toml --all-targets -- -D warnings",
+    "host:check": "cargo check --manifest-path packages/host/Cargo.toml",
+    "ci": "yarn node:lint && yarn node:typecheck && yarn node:test && yarn host:fmt && yarn host:lint && yarn host:check && yarn worker:lint && yarn worker:typecheck && yarn worker:pyright && yarn worker:sec && yarn worker:test:cov",
     "release": "semantic-release",
     "commitlint": "commitlint --from=origin/main --to=HEAD",
     "prepare": "husky install"

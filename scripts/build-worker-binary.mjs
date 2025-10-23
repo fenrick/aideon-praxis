@@ -34,3 +34,9 @@ if (!fs.existsSync(built)) {
 }
 fs.copyFileSync(built, path.join(appExtra, artifact));
 console.log('Worker binary embedded at', path.join(appExtra, artifact));
+
+// Also copy to Tauri sidecar location so bundler can pick it up
+const tauriSidecarDir = path.join(repo, 'packages/host', 'binaries');
+fs.mkdirSync(tauriSidecarDir, { recursive: true });
+fs.copyFileSync(built, path.join(tauriSidecarDir, artifact));
+console.log('Worker sidecar staged at', path.join(tauriSidecarDir, artifact));

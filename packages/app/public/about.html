@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About Aideon Praxis</title>
+    <style>
+      @font-face {
+        font-family: 'Atomic Age Local';
+        src: url('/assets/AtomicAge-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      :root {
+        --ink: #0b1220;
+        --teal: #22e3d0;
+        --vio: #7c5cff;
+        --sun: #ff6a3d;
+        --ui:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Roboto, Ubuntu,
+          Cantarell, 'Noto Sans', Arial, sans-serif;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #061428;
+        color: #e6f0ff;
+        font-family: var(--ui);
+      }
+      .wrap {
+        height: 100%;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+      }
+      .card {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 24px 28px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      }
+      .mark {
+        width: 96px;
+        height: 96px;
+        border-radius: 20px;
+        object-fit: cover;
+      }
+      .title {
+        margin: 0;
+        font-family: 'Atomic Age Local', var(--ui);
+        font-size: 42px;
+        letter-spacing: 0.012em;
+        background: linear-gradient(90deg, var(--teal), var(--vio), var(--sun));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 14px rgba(11, 18, 32, 0.35);
+      }
+      .meta {
+        opacity: 0.8;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <img class="mark" src="/assets/app-icon.png" alt="Aideon Praxis" />
+        <div>
+          <h1 class="title">Aideon&nbsp;Praxis</h1>
+          <div class="meta">Twin‑orbit decision tooling · © Aideon</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
