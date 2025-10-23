@@ -64,6 +64,14 @@ jobs:
         working-directory: packages/host
         run: cargo generate-lockfile
 
+      - name: Create Linux placeholder sidecar (externalBin)
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          mkdir -p packages/host/binaries
+          touch packages/host/binaries/aideon-worker-x86_64-unknown-linux-gnu
+          chmod +x packages/host/binaries/aideon-worker-x86_64-unknown-linux-gnu
+
       - name: Cargo fmt (check)
         working-directory: packages/host
         run: cargo fmt --all --check
