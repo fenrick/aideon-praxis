@@ -22,16 +22,42 @@
   <h2 style="margin:0 0 12px 0;">Appearance</h2>
   <fieldset style="border: none; padding: 0;">
     <legend style="margin-bottom: 8px;">Theme</legend>
-    <label><input type="radio" name="mode" value="system" bind:group={mode} on:change={() => setMode('system')} /> System</label>
-    <label style="margin-left:12px"><input type="radio" name="mode" value="light" bind:group={mode} on:change={() => setMode('light')} /> Light</label>
-    <label style="margin-left:12px"><input type="radio" name="mode" value="dark" bind:group={mode} on:change={() => setMode('dark')} /> Dark</label>
+    <label
+      ><input
+        type="radio"
+        name="mode"
+        value="system"
+        bind:group={mode}
+        on:change={() => setMode('system')}
+      /> System</label
+    >
+    <label style="margin-left:12px"
+      ><input
+        type="radio"
+        name="mode"
+        value="light"
+        bind:group={mode}
+        on:change={() => setMode('light')}
+      /> Light</label
+    >
+    <label style="margin-left:12px"
+      ><input
+        type="radio"
+        name="mode"
+        value="dark"
+        bind:group={mode}
+        on:change={() => setMode('dark')}
+      /> Dark</label
+    >
   </fieldset>
-  <p style="opacity:0.75; margin-top:12px;">Accent color follows system (AccentColor).
-  </p>
+  <p style="opacity:0.75; margin-top:12px;">Accent color follows system (AccentColor).</p>
 </div>
 
 <style>
-  :global(.theme-light) { color-scheme: light; }
-  :global(.theme-dark) { color-scheme: dark; }
+  :global(.theme-light) {
+    color-scheme: light;
+  }
+  :global(.theme-dark) {
+    color-scheme: dark;
+  }
 </style>
-

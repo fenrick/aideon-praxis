@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { tauriInvoke } from '../src/host/tauri-invoke';
 
 vi.mock('@tauri-apps/api/core', () => ({

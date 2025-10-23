@@ -17,9 +17,9 @@
    - Stores snapshot at `.aideon/issues-gh-snapshot.json` (numbers + updated_at).
 */
 
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 
 const ROOT = process.cwd();
 const OUT_DIR = path.join(ROOT, 'docs', 'issues');

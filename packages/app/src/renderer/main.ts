@@ -1,6 +1,6 @@
-import App from './App.svelte';
 import { invoke } from '@tauri-apps/api/core';
 import { debug, info } from '@tauri-apps/plugin-log';
+import App from './App.svelte';
 
 const container = document.querySelector('#root');
 if (!container) {

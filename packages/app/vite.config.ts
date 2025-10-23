@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import path from 'node:path';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   // Use relative paths so file:// loads work inside Electron without a dev server
