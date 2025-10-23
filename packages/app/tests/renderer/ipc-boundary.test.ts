@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 // Renderer ↔ Host boundary test: ensure renderer imports are safe.
 // - Forbid importing Node built-ins and `electron` from the renderer.

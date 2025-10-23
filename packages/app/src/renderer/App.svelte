@@ -118,7 +118,7 @@
 {#if view === 'about'}
   <AboutPanel />
 {:else}
-  <MainView {version} stateAt={stateAt} errorMsg={error_} />
+  <MainView {version} {stateAt} errorMsg={error_} />
 {/if}
 <SplashOverlay visible={showSplash} {seconds} line={loadline} />
 

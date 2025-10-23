@@ -20,9 +20,12 @@
   {#if errorMsg}
     <p style="color: crimson;">Error: {errorMsg}</p>
   {:else if stateAt}
-    <pre style="background: #0f172a0d; padding: 12px; border-radius: 6px;">{JSON.stringify(stateAt, null, 2)}</pre>
+    <pre style="background: #0f172a0d; padding: 12px; border-radius: 6px;">{JSON.stringify(
+        stateAt,
+        null,
+        2,
+      )}</pre>
   {:else}
     <p>Querying worker…</p>
   {/if}
 </div>
-

@@ -1,13 +1,15 @@
 // ESLint v9 flat config (pure flat presets, no compat, TS type-checked)
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
 import importPlugin from 'eslint-plugin-import';
+import prettier from 'eslint-plugin-prettier';
 import promise from 'eslint-plugin-promise';
 import regexp from 'eslint-plugin-regexp';
-import unicorn from 'eslint-plugin-unicorn';
-import sonarjs from 'eslint-plugin-sonarjs';
 import security from 'eslint-plugin-security';
+import sonarjs from 'eslint-plugin-sonarjs';
+import svelte from 'eslint-plugin-svelte';
+import unicorn from 'eslint-plugin-unicorn';
 import { defineConfig, globalIgnores } from 'eslint/config';
+import tseslint from 'typescript-eslint';
 
 export default defineConfig(
   // Global ignores first so they short‑circuit for all subsequent configs
@@ -44,6 +46,8 @@ export default defineConfig(
   regexp.configs['flat/recommended'],
   unicorn.configs.recommended,
   sonarjs.configs.recommended,
+  // Svelte support
+  ...svelte.configs['flat/recommended'],
 
   // Security hygiene rules (note: NOT equivalent to Sonar’s taint analysis)
   security.configs.recommended,
@@ -61,7 +65,10 @@ export default defineConfig(
       'import/no-unresolved': 'off', // leave to TS when using path aliases
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+      // Prettier as an ESLint rule (keeps formatting surfaced in editors/CI)
+      'prettier/prettier': 'error',
     },
+    plugins: { prettier },
   },
 
   // TS parser + generic rules
@@ -78,6 +85,26 @@ export default defineConfig(
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
+    },
+  },
+
+  // Svelte files
+  {
+    files: ['**/*.svelte'],
+    languageOptions: {
+      parser: svelte.parser,
+      parserOptions: {
+        svelteFeatures: { experimentalGenerics: true },
+        // Let the Svelte parser use TS parser for <script lang="ts">
+        parser: tseslint.parser,
+        projectService: false,
+        tsconfigRootDir: import.meta.dirname,
+        project: ['./tsconfig.eslint.json'],
+        extraFileExtensions: ['.svelte'],
+      },
+    },
+    rules: {
+      // Svelte plugin recommended already included; add any project preferences here
     },
   },
 

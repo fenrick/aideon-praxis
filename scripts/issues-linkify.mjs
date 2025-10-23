@@ -9,10 +9,10 @@
 
  Usage: node scripts/issues-linkify.mjs [--days 14] [--dry-run]
 */
-import fs from 'node:fs';
-import path from 'node:path';
 import 'dotenv/config';
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const REPO = process.env.AIDEON_GH_REPO || 'fenrick/aideon-praxis';
 const SNAP = path.join(process.cwd(), '.aideon', 'linked-prs.json');

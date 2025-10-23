@@ -1,7 +1,7 @@
 // Define a minimal window.aideon when running under Tauri so the UI can boot
 // without Electron preload. This keeps renderer free of backend specifics.
 import { invoke } from '@tauri-apps/api/core';
-import { debug, info, error } from '@tauri-apps/plugin-log';
+import { debug, error, info } from '@tauri-apps/plugin-log';
 
 // Only define when not already supplied by a preload (Electron) or other bridge
 if ((globalThis as { aideon?: unknown }).aideon === undefined) {
