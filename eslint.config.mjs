@@ -110,6 +110,8 @@ export default defineConfig(
       'unicorn/consistent-function-scoping': 'off',
       'promise/param-names': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      // This specific test walks the renderer tree; non-literal fs args are expected
+      'security/detect-non-literal-fs-filename': 'off',
     },
   },
 );

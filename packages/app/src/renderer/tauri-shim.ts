@@ -1,12 +1,12 @@
 // Define a minimal window.aideon when running under Tauri so the UI can boot
 // without Electron preload. This keeps renderer free of backend specifics.
-import { tauriInvoke } from '../host/tauri-invoke';
-import { logInfo, logDebug, logError } from '../host/logger';
+import { invoke } from '@tauri-apps/api/core';
+import { debug, info, error } from '@tauri-apps/plugin-log';
 
 // Only define when not already supplied by a preload (Electron) or other bridge
 if ((globalThis as { aideon?: unknown }).aideon === undefined) {
   // Always install a bridge object; methods will throw if Tauri isn't available yet.
-  logInfo('renderer: installing tauri-shim bridge');
+  void info('renderer: installing tauri-shim bridge');
   interface AideonApi {
     version: string;
     stateAt: (arguments_: { asOf: string; scenario?: string; confidence?: number }) => Promise<{
@@ -20,8 +20,8 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
   (globalThis as unknown as { aideon: AideonApi }).aideon = {
     version: 'tauri-shim',
     stateAt: async (arguments_) => {
-      logDebug(`renderer: invoking temporal_state_at asOf=${arguments_.asOf}`);
-      const result = await tauriInvoke<{
+      void debug('renderer: invoking temporal_state_at asOf=${arguments_.asOf}');
+      const result = await invoke<{
         asOf: string;
         scenario: string | null;
         confidence: number | null;
@@ -33,9 +33,9 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
         asOf: arguments_.asOf,
         scenario: arguments_.scenario ?? null,
         confidence: arguments_.confidence ?? null,
-      }).catch((error: unknown) => {
-        logError('renderer: invoke temporal_state_at failed', error);
-        throw error;
+      }).catch((error_: unknown) => {
+        void error('renderer: invoke temporal_state_at failed${error_.message}');
+        throw error_;
       });
       return result;
     },

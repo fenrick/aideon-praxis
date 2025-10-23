@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import path from 'node:path';
 
 export default defineConfig({
   // Use relative paths so file:// loads work inside Electron without a dev server
   base: './',
-  plugins: [react()],
+  plugins: [svelte()],
   root: path.resolve(__dirname, 'src/renderer'),
+  publicDir: path.resolve(__dirname, 'public'),
   server: {
     port: 5173,
     strictPort: true,
