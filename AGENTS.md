@@ -123,10 +123,6 @@ Provide your response in the following sections, in this order. Keep explanation
 
 - Bulleted list of files to create/modify, with one‑line reasons.
 
-1. PATCH
-
-- Unified diff (unidiff) from repo root with correct paths. Only include changed hunks.
-
 1. TESTS
 
 - What tests you add/modify, how to run them, and expected assertions.
