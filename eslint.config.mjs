@@ -1,7 +1,8 @@
 // ESLint v9 flat config (pure flat presets, no compat, TS type-checked)
 import js from '@eslint/js';
+import tsParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
-import prettier from 'eslint-plugin-prettier';
+import prettier from 'eslint-plugin-prettier/recommended';
 import promise from 'eslint-plugin-promise';
 import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
@@ -9,7 +10,15 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import svelte from 'eslint-plugin-svelte';
 import unicorn from 'eslint-plugin-unicorn';
 import { defineConfig, globalIgnores } from 'eslint/config';
+import svelteParser from 'svelte-eslint-parser';
 import tseslint from 'typescript-eslint';
+
+// Constrain TS typed configs to only TS files in this repo
+const typedTsConfigs = [
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
+  ...tseslint.configs.recommendedTypeChecked,
+].map((cfg) => ({ ...cfg, files: ['**/*.{ts,tsx}'] }));
 
 export default defineConfig(
   // Global ignores first so they short‑circuit for all subsequent configs
@@ -26,10 +35,7 @@ export default defineConfig(
   // Base JS rules roughly equivalent to the “core” checks Sonar also relies on
   js.configs.recommended,
 
-  // TypeScript: typed configs
-  ...tseslint.configs.strictTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked,
-  ...tseslint.configs.recommendedTypeChecked,
+  // TypeScript: avoid applying typed configs globally; handled per-file below
 
   // Base language options for JS/MJS
   {
@@ -48,9 +54,13 @@ export default defineConfig(
   sonarjs.configs.recommended,
   // Svelte support
   ...svelte.configs['flat/recommended'],
+  prettier,
 
   // Security hygiene rules (note: NOT equivalent to Sonar’s taint analysis)
   security.configs.recommended,
+
+  // Apply TS typed configs only to TS files
+  ...typedTsConfigs,
 
   // Project-specific tweaks
   {
@@ -63,12 +73,7 @@ export default defineConfig(
       'unicorn/no-null': 'off', // often too strict
       'unicorn/prefer-module': 'off', // off if you still use CommonJS
       'import/no-unresolved': 'off', // leave to TS when using path aliases
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-      // Prettier as an ESLint rule (keeps formatting surfaced in editors/CI)
-      'prettier/prettier': 'error',
     },
-    plugins: { prettier },
   },
 
   // TS parser + generic rules
@@ -85,6 +90,8 @@ export default defineConfig(
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
   },
 
@@ -92,19 +99,37 @@ export default defineConfig(
   {
     files: ['**/*.svelte'],
     languageOptions: {
-      parser: svelte.parser,
+      parser: svelteParser,
       parserOptions: {
-        svelteFeatures: { experimentalGenerics: true },
-        // Let the Svelte parser use TS parser for <script lang="ts">
-        parser: tseslint.parser,
-        projectService: false,
-        tsconfigRootDir: import.meta.dirname,
-        project: ['./tsconfig.eslint.json'],
-        extraFileExtensions: ['.svelte'],
+        parser: tsParser,
+      },
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        navigator: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        localStorage: 'readonly',
       },
     },
     rules: {
-      // Svelte plugin recommended already included; add any project preferences here
+      'svelte/no-target-blank': 'error',
+      'svelte/no-at-debug-tags': 'error',
+      'svelte/no-reactive-functions': 'error',
+      'svelte/no-reactive-literals': 'error',
+      // UI ergonomics: tone down noisy cross-env rules for .svelte
+      'unicorn/filename-case': 'off',
+      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/prefer-query-selector': 'off',
+      'unicorn/prefer-top-level-await': 'off',
+      'sonarjs/cognitive-complexity': 'off',
+      'sonarjs/no-nested-conditional': 'off',
+      'sonarjs/pseudo-random': 'off',
+      'no-empty': 'off',
+      'promise/param-names': 'off',
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
 

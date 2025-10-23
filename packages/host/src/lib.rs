@@ -137,6 +137,15 @@ pub fn run() {
     // Design: execute setup asynchronously so the windows can be constructed
     // early and the splashscreen remains responsive.
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .clear_targets()
+                .target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::Stdout,
+                ))
+                .level(tauri_plugin_log::log::LevelFilter::Info)
+                .build(),
+        )
         // Register a `State` to be managed by Tauri
         // We need write access to it so we wrap it in a `Mutex`
         .manage(Mutex::new(SetupState {
@@ -169,11 +178,6 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .plugin(
-            tauri_plugin_log::Builder::default()
-                .level(log::LevelFilter::Info)
-                .build(),
-        )
         .plugin(tauri_plugin_shell::init())
         // One invoke_handler listing all commands to avoid conflicts
         .invoke_handler(tauri::generate_handler![
@@ -182,6 +186,7 @@ pub fn run() {
             temporal_state_at,
             open_about,
             open_settings,
+            open_status,
             get_setup_state
         ])
         .run(tauri::generate_context!())
@@ -221,22 +226,30 @@ fn build_menu(app: &tauri::App) -> Result<(), String> {
 }
 
 fn create_windows(app: &tauri::App) -> Result<(), String> {
-    // Main window
-    let mut main = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+    // Splash window (shown during initialisation)
+    WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("splash.html".into()))
+        .title("Aideon Praxis — Loading")
+        .resizable(false)
+        .decorations(false)
+        .inner_size(520.0, 320.0)
+        .center()
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    // Main window (hidden until setup completes)
+    let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
         .title("Aideon Praxis")
         .visible(false)
         .inner_size(1060.0, 720.0)
         .center();
 
-    #[cfg(target_os = "macos")]
+    // Use native decorations for the main window across platforms.
+    #[cfg(target_os = "windows")]
+    let main_w = main.build().map_err(|e| e.to_string())?;
+    #[cfg(not(target_os = "windows"))]
     {
-        main = main.decorations(false);
+        let _ = main.build().map_err(|e| e.to_string())?;
     }
-    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
-    {
-        main = main.decorations(false);
-    }
-    let _main_w = main.build().map_err(|e| e.to_string())?;
 
     #[cfg(target_os = "windows")]
     {
@@ -287,8 +300,14 @@ async fn set_complete(
     // Lock the state without write access
     let mut state_lock = state.lock().unwrap();
     match task.as_str() {
-        "frontend" => state_lock.frontend_task = true,
-        "backend" => state_lock.backend_task = true,
+        "frontend" => {
+            info!("host: set_complete(frontend)");
+            state_lock.frontend_task = true
+        }
+        "backend" => {
+            info!("host: set_complete(backend)");
+            state_lock.backend_task = true
+        }
         other => {
             warn!("host: set_complete called with invalid task '{}'", other);
             return Err("invalid task".into());
@@ -296,10 +315,17 @@ async fn set_complete(
     }
     // Check if both tasks are completed
     if state_lock.backend_task && state_lock.frontend_task {
+        info!("host: setup complete; closing splash and showing main window");
+        // Close splash, then show main window
+        if let Some(splash) = app.get_webview_window("splash") {
+            let _ = splash.close();
+        }
+        // Show main window (idempotent)
         if let Some(main_window) = app.get_webview_window("main") {
             if let Err(e) = main_window.show() {
                 warn!("host: failed showing main window: {}", e);
             }
+            let _ = main_window.set_focus();
         } else {
             warn!("host: main window not found when completing setup");
         }
@@ -335,9 +361,9 @@ async fn setup(app: AppHandle) -> Result<(), ()> {
     init_temporal(&app).await.map_err(|_| ())?;
 
     // Fake performing some heavy action for 3 seconds
-    println!("Performing really heavy backend setup task...");
+    info!("Performing really heavy backend setup task...");
     sleep(StdDuration::from_secs(3)).await;
-    println!("Backend setup task completed!");
+    info!("Backend setup task completed!");
 
     // Set the backend task as being completed
     set_complete(
@@ -492,6 +518,24 @@ fn open_about(app: AppHandle) -> Result<(), String> {
         .title("About Aideon Praxis")
         .resizable(false)
         .inner_size(420.0, 300.0)
+        .center()
+        .build()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+/// Open or focus a compact Status window rendered from a static HTML page.
+#[tauri::command]
+fn open_status(app: AppHandle) -> Result<(), String> {
+    if let Some(win) = app.get_webview_window("status") {
+        let _ = win.set_focus();
+        return Ok(());
+    }
+    WebviewWindowBuilder::new(&app, "status", WebviewUrl::App("status.html".into()))
+        .title("Status")
+        .resizable(false)
+        .always_on_top(true)
+        .inner_size(360.0, 140.0)
         .center()
         .build()
         .map(|_| ())

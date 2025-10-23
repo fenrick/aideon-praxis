@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@fluentui/web-components": "^2.0.0",
+    "@iconify/svelte": "^5.0.0",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-log": "^2.0.0",
     "svelte": "^5.0.0"

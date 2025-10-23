@@ -80,6 +80,8 @@ function isForbidden(spec: string): boolean {
   if (spec.startsWith('aideon_worker')) return true;
   // Allow Svelte core imports and Tauri client APIs
   if (spec === 'svelte' || spec.startsWith('svelte/')) return false;
+  // UI-only icon library is allowed in renderer (no backend logic)
+  if (spec === '@iconify/svelte') return false;
   if (spec === '@tauri-apps/api/core' || spec === '@tauri-apps/plugin-log') return false;
   if (spec === '@tauri-apps/api/os' || spec === '@tauri-apps/api/window') return false;
   if (spec.startsWith('./') || spec.startsWith('../')) return false;

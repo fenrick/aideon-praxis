@@ -23,6 +23,7 @@ __metadata:
   resolution: "@aideon/app@workspace:packages/app"
   dependencies:
     "@fluentui/web-components": "npm:^2.0.0"
+    "@iconify/svelte": "npm:^5.0.0"
     "@sveltejs/vite-plugin-svelte": "npm:^4.0.0"
     "@tauri-apps/api": "npm:^2.0.0"
     "@tauri-apps/plugin-log": "npm:^2.0.0"
@@ -860,6 +861,24 @@ __metadata:
   version: 0.4.3
   resolution: "@humanwhocodes/retry@npm:0.4.3"
   checksum: 10c0/3775bb30087d4440b3f7406d5a057777d90e4b9f435af488a4923ef249e93615fb78565a85f173a186a076c7706a81d0d57d563a2624e4de2c5c9c66c486ce42
+  languageName: node
+  linkType: hard
+
+"@iconify/svelte@npm:^5.0.0":
+  version: 5.0.2
+  resolution: "@iconify/svelte@npm:5.0.2"
+  dependencies:
+    "@iconify/types": "npm:^2.0.0"
+  peerDependencies:
+    svelte: ">4.0.0"
+  checksum: 10c0/98766b8ba9c714aa0c54b0cccb0238899fbf1c2aa40847c02412b62ec8bd2609736058974e1b521b59bf2899afb68a3ae0dfcd4b57dc2faa5bed50d4fc429f59
+  languageName: node
+  linkType: hard
+
+"@iconify/types@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@iconify/types@npm:2.0.0"
+  checksum: 10c0/65a3be43500c7ccacf360e136d00e1717f050b7b91da644e94370256ac66f582d59212bdb30d00788aab4fc078262e91c95b805d1808d654b72f6d2072a7e4b2
   languageName: node
   linkType: hard
 

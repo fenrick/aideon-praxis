@@ -16,11 +16,14 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
       nodes: number;
       edges: number;
     }>;
+    openSettings: () => Promise<void>;
+    openAbout: () => Promise<void>;
+    openStatus: () => Promise<void>;
   }
   (globalThis as unknown as { aideon: AideonApi }).aideon = {
     version: 'tauri-shim',
     stateAt: async (arguments_) => {
-      void debug('renderer: invoking temporal_state_at asOf=${arguments_.asOf}');
+      void debug(`renderer: invoking temporal_state_at asOf=${arguments_.asOf}`);
       const result = await invoke<{
         asOf: string;
         scenario: string | null;
@@ -34,10 +37,36 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
         scenario: arguments_.scenario ?? null,
         confidence: arguments_.confidence ?? null,
       }).catch((error_: unknown) => {
-        void error('renderer: invoke temporal_state_at failed${error_.message}');
+        const maybe = error_ as { message?: string } | undefined;
+        const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
+        void error(`renderer: invoke temporal_state_at failed: ${message}`);
         throw error_;
       });
       return result;
+    },
+    openSettings: async () => {
+      await invoke('open_settings').catch((error_: unknown) => {
+        const maybe = error_ as { message?: string } | undefined;
+        const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
+        void error(`renderer: invoke open_settings failed: ${message}`);
+        throw error_;
+      });
+    },
+    openAbout: async () => {
+      await invoke('open_about').catch((error_: unknown) => {
+        const maybe = error_ as { message?: string } | undefined;
+        const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
+        void error(`renderer: invoke open_about failed: ${message}`);
+        throw error_;
+      });
+    },
+    openStatus: async () => {
+      await invoke('open_status').catch((error_: unknown) => {
+        const maybe = error_ as { message?: string } | undefined;
+        const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
+        void error(`renderer: invoke open_status failed: ${message}`);
+        throw error_;
+      });
     },
   };
 }
