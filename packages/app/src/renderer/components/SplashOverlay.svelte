@@ -1,6 +1,5 @@
 <script lang="ts">
   export let visible = true;
-  export let seconds = 0;
   export let line = 'Starting…';
 </script>
 
@@ -35,4 +34,3 @@
           animation:scan 1.8s cubic-bezier(.4,0,.2,1) infinite; border-radius:999px }
   @keyframes scan{ 0%{transform:translateX(-100%)} 100%{transform:translateX(400%)} }
 </style>
-
