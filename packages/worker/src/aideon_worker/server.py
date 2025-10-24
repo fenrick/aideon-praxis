@@ -34,6 +34,7 @@ class StateAtRequest(BaseModel):
 
     Field names follow the public API contract used by the host and renderer.
     """
+
     asOf: str = Field(..., description="ISO date string for the time-slice")
     scenario: str | None = None
     confidence: float | None = None
@@ -45,6 +46,7 @@ class StateAtResponse(BaseModel):
     Mirrors :class:`StateAtRequest` and includes simple graph stats used by the
     UI while the full model lands.
     """
+
     asOf: str
     scenario: str | None
     confidence: float | None
