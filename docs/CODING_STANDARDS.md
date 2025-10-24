@@ -13,7 +13,7 @@ boundaries across the Aideon Praxis monorepo.
 
 - Modules & Layers
   - Renderer (React): UI only; never accesses local process APIs directly.
-  - Main (Electron host): IPC bridge + local orchestration; no backend logic.
+  - Main (Tauri host): IPC commands + local orchestration; no backend logic in renderer.
   - Worker (Python): analytics/ML/time‑slicing; exposes versioned HTTP over UDS.
 - Contracts between layers
   - Renderer ↔ Main: typed preload bridge only.
