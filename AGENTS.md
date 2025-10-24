@@ -236,15 +236,11 @@ Changes that could affect these must include a note in CHECKS and, when possible
 
 ## Commit Hygiene (run before every commit)
 
-- Format and fix TypeScript/JS/MD via Prettier and ESLint:
-  - `yarn format` (writes with Prettier)
-  - `yarn lint --fix` or `yarn lint:fix` (applies ESLint fixes)
-- Python (worker):
-  - `yarn py:format` (Ruff --fix + Black write)
-  - `yarn py:lint` (check-only)
-  - `yarn py:typecheck` and `yarn py:pyright` (both must pass)
-- Optional checks (non‑writing):
-  - `yarn format:check` (JS/TS/MD) and `yarn py:test`
+- Ensure that code will pass the GitHub CI checks with:
+  - `yarn ci`
+  - this will check TypeScript/JS/Svelte; then Rust; then Python
+  - executing formatting, linting, static analysis checks and then tests
+  - it needs to be clean before any commits.
 - Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and
   deterministic.
 

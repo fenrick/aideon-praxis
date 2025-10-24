@@ -1,1 +1,3 @@
-export default class Noop {}
+const noop = () => {};
+
+export default noop;

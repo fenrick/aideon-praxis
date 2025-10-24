@@ -20,5 +20,12 @@ function render(): void {
   `;
 }
 
-void info('status: window loaded');
 render();
+
+try {
+  await info('status: window loaded');
+} catch (error_: unknown) {
+  if (import.meta.env.DEV) {
+    console.warn('status: failed to log load message', error_);
+  }
+}
