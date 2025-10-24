@@ -3,10 +3,20 @@
 import { invoke } from '@tauri-apps/api/core';
 import { debug, error, info } from '@tauri-apps/plugin-log';
 
+type Logger = (message: string) => Promise<void>;
+
+const logSafely = (logger: Logger, message: string) => {
+  logger(message).catch((loggingError: unknown) => {
+    if (import.meta.env.DEV) {
+      console.warn('renderer: log fallback', loggingError);
+    }
+  });
+};
+
 // Only define when not already supplied by a preload (Electron) or other bridge
 if ((globalThis as { aideon?: unknown }).aideon === undefined) {
   // Always install a bridge object; methods will throw if Tauri isn't available yet.
-  void info('renderer: installing tauri-shim bridge');
+  logSafely(info, 'renderer: installing tauri-shim bridge');
   interface AideonApi {
     version: string;
     stateAt: (arguments_: { asOf: string; scenario?: string; confidence?: number }) => Promise<{
@@ -23,7 +33,7 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
   (globalThis as unknown as { aideon: AideonApi }).aideon = {
     version: 'tauri-shim',
     stateAt: async (arguments_) => {
-      void debug(`renderer: invoking temporal_state_at asOf=${arguments_.asOf}`);
+      logSafely(debug, `renderer: invoking temporal_state_at asOf=${arguments_.asOf}`);
       const result = await invoke<{
         asOf: string;
         scenario: string | null;
@@ -39,7 +49,7 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
       }).catch((error_: unknown) => {
         const maybe = error_ as { message?: string } | undefined;
         const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
-        void error(`renderer: invoke temporal_state_at failed: ${message}`);
+        logSafely(error, `renderer: invoke temporal_state_at failed: ${message}`);
         throw error_;
       });
       return result;
@@ -48,7 +58,7 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
       await invoke('open_settings').catch((error_: unknown) => {
         const maybe = error_ as { message?: string } | undefined;
         const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
-        void error(`renderer: invoke open_settings failed: ${message}`);
+        logSafely(error, `renderer: invoke open_settings failed: ${message}`);
         throw error_;
       });
     },
@@ -56,7 +66,7 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
       await invoke('open_about').catch((error_: unknown) => {
         const maybe = error_ as { message?: string } | undefined;
         const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
-        void error(`renderer: invoke open_about failed: ${message}`);
+        logSafely(error, `renderer: invoke open_about failed: ${message}`);
         throw error_;
       });
     },
@@ -64,7 +74,7 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
       await invoke('open_status').catch((error_: unknown) => {
         const maybe = error_ as { message?: string } | undefined;
         const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
-        void error(`renderer: invoke open_status failed: ${message}`);
+        logSafely(error, `renderer: invoke open_status failed: ${message}`);
         throw error_;
       });
     },

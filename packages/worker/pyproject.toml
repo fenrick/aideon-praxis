@@ -25,6 +25,9 @@ dev = [
   "vulture>=2.11",
   "httpx==0.28.1",
 ]
+bundle = [
+  "pyinstaller==6.11.0",
+]
 
 [tool.black]
 line-length = 100
