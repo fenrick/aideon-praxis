@@ -165,6 +165,9 @@ pub fn run() {
                 "preferences" => {
                     let _ = open_settings(app.clone());
                 }
+                "help.about" => {
+                    let _ = open_about(app.clone());
+                }
                 _ => {}
             });
 
@@ -206,6 +209,49 @@ fn build_menu(app: &tauri::App) -> Result<(), String> {
         app_sub.append(&prefs).map_err(|e| e.to_string())?;
         app_sub.append(&quit).map_err(|e| e.to_string())?;
         menu.append(&app_sub).map_err(|e| e.to_string())?;
+
+        // Edit menu (standard items)
+        let edit = Submenu::new(app, "Edit", true).map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::undo(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::redo(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::cut(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::copy(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::paste(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::select_all(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        menu.append(&edit).map_err(|e| e.to_string())?;
+
+        // Window menu
+        let window_m = Submenu::new(app, "Window", true).map_err(|e| e.to_string())?;
+        window_m
+            .append(&PredefinedMenuItem::minimize(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        window_m
+            .append(&PredefinedMenuItem::fullscreen(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        // macOS-specific window/application visibility
+        window_m
+            .append(&PredefinedMenuItem::hide(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        window_m
+            .append(&PredefinedMenuItem::hide_others(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        window_m
+            .append(&PredefinedMenuItem::show_all(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        window_m
+            .append(&PredefinedMenuItem::close_window(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        menu.append(&window_m).map_err(|e| e.to_string())?;
+
+        // Help menu (About appears under app menu on macOS so omit here)
+        let help = Submenu::new(app, "Help", true).map_err(|e| e.to_string())?;
+        menu.append(&help).map_err(|e| e.to_string())?;
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -220,6 +266,43 @@ fn build_menu(app: &tauri::App) -> Result<(), String> {
             MenuItem::new(app, "preferences", true, None::<&str>).map_err(|e| e.to_string())?;
         settings.append(&prefs).map_err(|e| e.to_string())?;
         menu.append(&settings).map_err(|e| e.to_string())?;
+
+        // Edit menu (standard items)
+        let edit = Submenu::new(app, "Edit", false).map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::undo(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::redo(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::cut(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::copy(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::paste(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        edit.append(&PredefinedMenuItem::select_all(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        menu.append(&edit).map_err(|e| e.to_string())?;
+
+        // Window menu (subset on non-macOS)
+        let window_m = Submenu::new(app, "Window", false).map_err(|e| e.to_string())?;
+        window_m
+            .append(&PredefinedMenuItem::minimize(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        // maximize/fullscreen availability may vary; include fullscreen toggle
+        window_m
+            .append(&PredefinedMenuItem::fullscreen(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        window_m
+            .append(&PredefinedMenuItem::close_window(app, None).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        menu.append(&window_m).map_err(|e| e.to_string())?;
+
+        // Help menu with About
+        let help = Submenu::new(app, "Help", false).map_err(|e| e.to_string())?;
+        let about_open =
+            MenuItem::new(app, "help.about", true, Some("About")).map_err(|e| e.to_string())?;
+        help.append(&about_open).map_err(|e| e.to_string())?;
+        menu.append(&help).map_err(|e| e.to_string())?;
     }
     app.set_menu(menu).map_err(|e| e.to_string())?;
     Ok(())
