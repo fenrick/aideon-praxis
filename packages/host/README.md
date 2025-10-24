@@ -1,11 +1,7 @@
-## aideon-host (stub)
+## aideon-host (Tauri)
 
-Minimal Rust crate scaffolded for the future Tauri host (#95).
+Rust crate for the Tauri desktop host.
 
-- No Tauri dependency yet (keeps CI fast and portable).
-- Used only for `cargo fmt` and `cargo clippy` gating.
-
-Next steps (tracked under #95):
-
-- Add Tauri and capabilities manifest once CI scaffolding is stable.
-- Introduce a typed IPC facade to the Python worker via UDS/Pipes.
+- Uses Tauri v2 with capabilities and typed commands.
+- Communicates with the Python worker over Unix domain sockets (desktop mode; no TCP ports).
+- See `tauri.conf.json` and `capabilities/` for windows and permissions.

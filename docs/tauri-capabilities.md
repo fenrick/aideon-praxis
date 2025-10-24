@@ -1,8 +1,9 @@
-# Tauri Capabilities (Skeleton)
+# Tauri Capabilities
 
 Parent: #95
 
-This document outlines the initial capability model for migrating the Electron host to a Tauri-based host. It is a planning skeleton only; capabilities are not yet enforced.
+This document outlines the capability model for the Tauri-based desktop host. Capabilities are
+enforced in dev and packaged builds via Tauri’s permissions manifest and per-window capability files.
 
 ## Goals
 

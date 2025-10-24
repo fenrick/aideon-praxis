@@ -27,8 +27,7 @@ changes that respect our **time‑first, graph‑native** architecture and secur
 
 ## Repository boundaries (monorepo)
 
-- `packages/app` — Electron host (Node) + React UI (renderer). Preload exposes a minimal, typed
-  bridge.
+- `packages/app` — Tauri host (Rust) + Svelte UI (renderer). Typed `invoke` bridge; strict capabilities.
 - `packages/adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend
   specifics in UI.
 - `packages/worker` — Python 3.13 sidecar (analytics/ML, time‑slicing, topology, TCO). RPC server
@@ -153,8 +152,8 @@ tooling, and CI rules), see `docs/CODING_STANDARDS.md`.
 
 – Node 24, React 18. Strict TS config; ESLint + Prettier.
 
-- Electron renderer **no NodeIntegration**; `contextIsolation: true`; strict CSP; preload exposes
-  typed methods only.
+- Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict
+  plugin access. The host exposes typed commands only.
 - Never embed backend‑specific queries in renderer; call adapters or host APIs.
 
 Lint/Format discipline

@@ -4,7 +4,7 @@ This is a draft monorepo scaffold following the guardrails in `AGENTS.md`.
 
 Packages:
 
-- `packages/app` — Electron host + React renderer (secure defaults, preload IPC only).
+- `packages/app` — Tauri host (Rust) + Svelte renderer (secure defaults, typed IPC only).
 - `packages/adapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
 - `packages/worker` — Python 3.13 sidecar (RPC-only). Includes minimal Temporal.StateAt stub.
 
@@ -23,8 +23,7 @@ Getting started
 - Enable Corepack then install deps: `corepack enable && yarn install`.
 - Build once: `yarn build` (renderer assets to `packages/app/dist/renderer`, main+preload to
   `packages/app/dist`).
-- Dev (no HTTP server): `yarn workspace @aideon/app dev` (watches Vite build and tsup and launches
-  Electron).
+- Dev (no HTTP server): `yarn tauri:dev` (watches Vite + Tauri and launches the desktop app).
 - Python tests: `pytest -q packages/worker` (or `yarn py:test`).
 
 See docs/commands.md for the full list of yarn commands used across JS/TS and the Python worker.
@@ -40,8 +39,8 @@ Packaging
 - CI packaging: when a GitHub Release is published (including nightly channel), the
   `Package Artifacts` workflow builds on macOS, Windows, and Linux and uploads assets to the release
   using the repo token.
-- Each OS job builds the worker as a standalone binary (PyInstaller) and embeds it in the Electron
-  package via `extraResources`.
+- Each OS job builds the worker as a standalone binary (PyInstaller) and embeds it in the Tauri app
+  as an external binary.
 - Code signing/notarization: not configured by default. Provide signing credentials as environment
   secrets if needed later. Builds remain unsigned for local/CI unless configured.
 
@@ -60,7 +59,8 @@ Commit conventions and releases
 Security posture
 
 - No renderer HTTP in dev: we use Vite build in watch mode (no dev server) and load files from disk.
-- Electron: `contextIsolation: true`, `nodeIntegration: false`; CSP present in renderer HTML.
+- Tauri: strict capabilities; no raw HTTP from renderer; CSP enforced by Tauri. Renderer sandboxed
+  with `contextIsolation: true` and no Node.js integration.
 
 License
 
@@ -71,7 +71,7 @@ The intelligent companion that turns **design intent into action over time**.
 Aideon Praxis is a **graph-native, local-first Enterprise Architecture (EA) platform** with a
 **time-first meta-model**. It builds a **digital twin of the enterprise**, supports **bitemporal
 state** (valid & record time), **scenario branches**, **Plan Events** for future projections, and a
-Python worker for **heavy analytics and ML**. Designed for desktop (Electron + React) with a clean
+Python worker for **heavy analytics and ML**. Designed for desktop (Tauri + Svelte) with a clean
 path to server/cloud mode.
 
 - **Graph-native:** Rich many-to-many relationships across Strategy → Capability → Service/Process →
@@ -100,7 +100,7 @@ published under `docs/c4/`.
 
 ## Repository layout (monorepo)
 
-. ├─ packages/ │ ├─ app/ # Electron host + React renderer (Praxis + Chrona) │ ├─ adapters/ #
+. ├─ packages/ │ ├─ app/ # Tauri host (Rust) + Svelte renderer (Praxis + Chrona) │ ├─ adapters/ #
 GraphAdapter, StorageAdapter, WorkerClient (TS) │ ├─ worker/ # Python worker (Metis) + algorithms +
 RPC server │ └─ docs/ # C4 diagrams, meta-model, viewpoint docs ├─ scripts/ │ └─ gh_bootstrap.sh #
 Labels, milestones, import issues.csv ├─ ROADMAP.md ├─ Architecture-Boundary.md ├─ issues.csv #
