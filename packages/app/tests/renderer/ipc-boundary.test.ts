@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 // Renderer ↔ Host boundary test: ensure renderer imports are safe.
 // - Forbid importing Node built-ins and `electron` from the renderer.
-// - Allow React libs and relative imports only.
+// - Allow Svelte libs, @tauri-apps/api/core, @tauri-apps/plugin-log, and relative imports only.
 
 const RENDERER_DIR = path.join(__dirname, '..', '..', 'src', 'renderer');
 
@@ -15,7 +15,7 @@ function walk(directory: string): string[] {
     const p = path.join(directory, name);
     const stats = statSync(p);
     if (stats.isDirectory()) files.push(...walk(p));
-    else if (name.endsWith('.ts') || name.endsWith('.tsx')) files.push(p);
+    else if (name.endsWith('.ts') || name.endsWith('.svelte')) files.push(p);
   }
   return files;
 }
@@ -78,8 +78,12 @@ function isForbidden(spec: string): boolean {
   if (spec.startsWith('node:')) return true;
   if (NODE_BUILTINS.has(spec)) return true;
   if (spec.startsWith('aideon_worker')) return true;
-  // Allow react libs and relative imports only
-  if (spec === 'react' || spec.startsWith('react-dom')) return false;
+  // Allow Svelte core imports and Tauri client APIs
+  if (spec === 'svelte' || spec.startsWith('svelte/')) return false;
+  // UI-only icon library is allowed in renderer (no backend logic)
+  if (spec === '@iconify/svelte') return false;
+  if (spec === '@tauri-apps/api/core' || spec === '@tauri-apps/plugin-log') return false;
+  if (spec === '@tauri-apps/api/os' || spec === '@tauri-apps/api/window') return false;
   if (spec.startsWith('./') || spec.startsWith('../')) return false;
   // Block any other bare module specifiers to keep surface minimal
   return true;

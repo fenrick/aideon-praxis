@@ -27,8 +27,7 @@ changes that respect our **time‑first, graph‑native** architecture and secur
 
 ## Repository boundaries (monorepo)
 
-- `packages/app` — Electron host (Node) + React UI (renderer). Preload exposes a minimal, typed
-  bridge.
+- `packages/app` — Tauri host (Rust) + Svelte UI (renderer). Typed `invoke` bridge; strict capabilities.
 - `packages/adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend
   specifics in UI.
 - `packages/worker` — Python 3.13 sidecar (analytics/ML, time‑slicing, topology, TCO). RPC server
@@ -123,10 +122,6 @@ Provide your response in the following sections, in this order. Keep explanation
 
 - Bulleted list of files to create/modify, with one‑line reasons.
 
-1. PATCH
-
-- Unified diff (unidiff) from repo root with correct paths. Only include changed hunks.
-
 1. TESTS
 
 - What tests you add/modify, how to run them, and expected assertions.
@@ -157,8 +152,8 @@ tooling, and CI rules), see `docs/CODING_STANDARDS.md`.
 
 – Node 24, React 18. Strict TS config; ESLint + Prettier.
 
-- Electron renderer **no NodeIntegration**; `contextIsolation: true`; strict CSP; preload exposes
-  typed methods only.
+- Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict
+  plugin access. The host exposes typed commands only.
 - Never embed backend‑specific queries in renderer; call adapters or host APIs.
 
 Lint/Format discipline
@@ -241,15 +236,11 @@ Changes that could affect these must include a note in CHECKS and, when possible
 
 ## Commit Hygiene (run before every commit)
 
-- Format and fix TypeScript/JS/MD via Prettier and ESLint:
-  - `yarn format` (writes with Prettier)
-  - `yarn lint --fix` or `yarn lint:fix` (applies ESLint fixes)
-- Python (worker):
-  - `yarn py:format` (Ruff --fix + Black write)
-  - `yarn py:lint` (check-only)
-  - `yarn py:typecheck` and `yarn py:pyright` (both must pass)
-- Optional checks (non‑writing):
-  - `yarn format:check` (JS/TS/MD) and `yarn py:test`
+- Ensure that code will pass the GitHub CI checks with:
+  - `yarn ci`
+  - this will check TypeScript/JS/Svelte; then Rust; then Python
+  - executing formatting, linting, static analysis checks and then tests
+  - it needs to be clean before any commits.
 - Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and
   deterministic.
 

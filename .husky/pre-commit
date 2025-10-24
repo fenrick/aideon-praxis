@@ -9,9 +9,9 @@
 
 # TypeScript/JS/MD — check only, do not modify files
 if command -v yarn >/dev/null 2>&1; then
-  yarn run -T format:check || exit 1
-  yarn run -T lint || exit 1
+  yarn run -T node:format:check || exit 1
+  yarn run -T node:lint || exit 1
 fi
 
 # Python worker — check only, via uv (skips if uv missing)
-yarn run -T py:lint || exit 1
+yarn run -T worker:lint || exit 1

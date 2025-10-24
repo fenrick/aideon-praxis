@@ -5,7 +5,7 @@ worker tasks. Use these for local dev and CI to keep things consistent across la
 
 ## JS/TS (app + adapters)
 
-- `yarn dev` — Run Electron app in dev mode (no renderer HTTP server).
+- `yarn tauri:dev` — Run Tauri app in dev mode (no renderer HTTP server).
 - `yarn build` — Build app (renderer + main/preload bundles).
 - `yarn lint` — ESLint on TS/JS sources.
 - `yarn lint:fix` — ESLint with `--fix`.
@@ -37,7 +37,7 @@ yarn py:sync
 ## Packaging
 
 - `yarn worker:bundle` — Builds the Python worker binary (PyInstaller) used in packaged apps.
-- `yarn package` — Bundles worker, then packages Electron app with electron-builder.
+- `yarn tauri:build` — Builds the Tauri app; CI also bundles the worker as an external binary.
 
 ## CI Aggregate
 
@@ -45,8 +45,7 @@ yarn py:sync
 
 ## Notes
 
-- The dev Electron app spawns the Python worker via `python3 -m aideon_worker.cli` using
-  `PYTHONPATH`; a venv is recommended but not required.
+- The dev app spawns the Python worker via `yarn worker:serve` (uv-managed venv).
 - Packaged apps embed the worker binary; no Python/venv is required on end-user systems.
   Quality & Coverage
 

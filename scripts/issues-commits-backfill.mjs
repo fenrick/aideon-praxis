@@ -14,9 +14,9 @@
    AIDEON_GH_REPO=owner/repo (default fenrick/aideon-praxis)
 */
 import 'dotenv/config';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 
 const REPO = process.env.AIDEON_GH_REPO || 'fenrick/aideon-praxis';
 const args = process.argv.slice(2);

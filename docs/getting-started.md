@@ -11,12 +11,14 @@ WSL2 or native shells (PowerShell or Git Bash).
 - Python 3.13
 - uv (Python package/dependency manager)
 - GitHub CLI (`gh`) — required for the issues/project helpers
+- Rust (via `rustup`) — required for the Tauri host migration work (#95)
+- Tauri CLI (`@tauri-apps/cli`) — only if working on the Rust host
 
 Recommended installs:
 
-- macOS: `brew install node uv gh`
+- macOS: `brew install node uv gh rustup-init` (then run `rustup-init`)
 - Linux: use your package manager or see upstream instructions for
-  Node 24, uv, and GitHub CLI.
+  Node 24, uv, GitHub CLI, and Rust via rustup.
 
 ## 1) Clone and bootstrap
 
@@ -32,6 +34,10 @@ yarn install
 
 # (Optional but recommended) Create and sync a project venv with uv
 yarn py:sync  # wraps: uv sync --python 3.13 --extra dev
+
+# (Host work only) Ensure Rust and Tauri CLI are available
+rustup default stable || true
+yarn dlx @tauri-apps/cli -v || true
 ```
 
 Create your `.env` from the example and set the GitHub repo and token
@@ -57,21 +63,41 @@ gh auth status -h github.com
 
 ## 2) Run in development
 
-```bash
-# TypeScript build + Electron dev (no renderer HTTP)
-yarn dev
+Keep logs clear and separate by using two terminals. The host process will spawn the Python
+worker over a Unix domain socket (desktop mode only, no TCP ports). Tauri injects a logging
+plugin so host logs appear in the DevTools console in addition to the terminal.
 
-# In another terminal, run tests/lint as needed
+```bash
+# Terminal A — UI (Vite)
+yarn workspace @aideon/app dev
+
+# Terminal B — Host (Tauri). From repo root:
+yarn tauri:dev
+
+# Optional: tests/lint in a third terminal
 yarn test && yarn lint && yarn typecheck
 yarn py:test && yarn py:lint
 ```
 
 What to expect:
 
-- Desktop app launches with secure defaults (`contextIsolation: true`, no
-  `nodeIntegration`).
-- Desktop mode opens no TCP ports; the Python worker communicates via
-  UDS/pipes.
+- A Tauri window serving the Vite UI at http://localhost:5173.
+- Desktop mode opens no TCP ports by default; the worker talks to the host via UDS.
+- DevTools Console will show renderer logs (console) and host logs (tauri-plugin-log).
+- If you see a port conflict on 5173, stop any previous Vite and retry.
+
+### Worker endpoints (FastAPI over UDS)
+
+- `GET /ping` — readiness check
+- `POST /state_at` — body: `{ asOf, scenario?, confidence? }` → returns `{ asOf, scenario, confidence, nodes, edges }`
+
+You can test locally (UDS) with curl:
+
+```bash
+curl --unix-socket .aideon/worker.sock http://localhost/ping
+curl --unix-socket .aideon/worker.sock -H 'content-type: application/json' \
+  -d '{"asOf":"2025-01-01"}' http://localhost/state_at
+```
 
 ## 3) Working with issues (optional)
 
@@ -105,3 +131,5 @@ yarn issues:mirror
 - TypeScript types missing: run `yarn install` again; ensure Node 24 is
   active and Corepack is enabled (`corepack enable`).
 - Python tool versions drift: re-run `yarn py:sync` to refresh the venv.
+- Rust not found: install via rustup: `curl https://sh.rustup.rs -sSf | sh`,
+  then `rustup default stable`.

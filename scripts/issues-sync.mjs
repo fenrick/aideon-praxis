@@ -16,10 +16,10 @@
      --dry-run                   Do not modify GH or filesystem; print plan
 */
 
+import { spawnSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
-import { spawnSync } from 'node:child_process';
 
 const ROOT = process.cwd();
 const CSV_PATH = path.join(ROOT, 'issues.csv');

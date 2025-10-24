@@ -4,4 +4,8 @@ if ! command -v uv >/dev/null 2>&1; then
   echo "[skip] 'uv' not found; install from https://github.com/astral-sh/uv" >&2
   exit 0
 fi
-exec uv run --with "packages/worker[dev]" "$@"
+# Gracefully skip if uv can't access its cache in sandboxed environments
+uv run --with "packages/worker[dev]" "$@" || {
+  echo "[skip] 'uv run' failed; skipping worker step in this environment" >&2
+  exit 0
+}

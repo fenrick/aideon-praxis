@@ -11,8 +11,8 @@
    AIDEON_GH_PROJECT_OWNER / AIDEON_GH_PROJECT_NUMBER (optional; project sync runs if set)
 */
 import 'dotenv/config';
-import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 
 const REPO = process.env.AIDEON_GH_REPO || 'fenrick/aideon-praxis';
 const PARENT = Number(process.argv[2] || 0);

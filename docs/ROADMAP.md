@@ -1,12 +1,12 @@
 # Aideon Praxis — Staged Implementation Roadmap
 
-**Date:** 2025-10-14 **Goal:** Deliver a local-first, graph-native EA platform (Electron + Python
+**Date:** 2025-10-14 **Goal:** Deliver a local-first, graph-native EA platform (Tauri + Python
 worker) that treats **time as a first-class dimension** (bitemporal + Plan Events), with a clean
 path to server mode.
 
 ## Guiding Principles
 
-- Clear separation: Electron/Node shell & OS integration; Python worker for analytics/ML via RPC.
+- Clear separation: Tauri/Rust host & OS integration; Python worker for analytics/ML via RPC.
 - Swap-friendly adapters: Graph, Storage, RPC are interfaces with reference impls.
 - Security by default: hardened IPC, PII redaction, least privilege.
 - Cloud-ready: Same components run local or remote by configuration.
@@ -19,7 +19,7 @@ path to server mode.
 #### Outcomes
 
 - Monorepo, CI for TS/Python, pre-commit, CODEOWNERS.
-- Electron security baseline (contextIsolation, no remote, strict CSP).
+- Tauri capabilities baseline (no renderer HTTP, strict CSP, least-privilege plugins).
 - ADRs for RPC and adapter boundaries.
 - Interfaces: `GraphAdapter`, `StorageAdapter`, `WorkerClient`.
 

@@ -1,9 +1,9 @@
-# Architecture Boundary — Electron Host ↔ Python Worker
+# Architecture Boundary — Tauri Host ↔ Python Worker
 
 ## Summary
 
-The Electron/Node host owns UI, OS integration, local persistence, and **secure IPC**. The Python
-worker is a long-lived sidecar providing graph analytics/ML and heavy computations (time-slicing,
+The Tauri (Rust) host owns UI orchestration, OS integration, local persistence, and **secure IPC**.
+The Python worker is a long-lived sidecar providing graph analytics/ML and heavy computations (time-slicing,
 topology, TCO).
 
 ## RPC Boundary

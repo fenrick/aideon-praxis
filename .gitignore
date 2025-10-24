@@ -68,5 +68,15 @@ packages/worker/coverage.xml
 coverage.xml
 /docs/issues
 /.aideon
+/.aideon/worker.sock
 docs/schedule/*.json
 /docs/schedule
+ 
+# Rust build artifacts
+target/
+packages/host/target/
+packages/host/**/.fingerprint/
+packages/host/.cargo/
+packages/host/**/Cargo.lock.bk
+packages/host/gen/
+/packages/host/binaries

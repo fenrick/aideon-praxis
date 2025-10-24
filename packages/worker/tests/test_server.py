@@ -1,62 +1,29 @@
-from typing import Any
+from __future__ import annotations
 
-from fastapi.testclient import TestClient
+import asyncio
+import logging
 
-from aideon_worker.server import app, main
+import httpx
 
-
-def client() -> TestClient:
-    return TestClient(app)
-
-
-def test_health_ok() -> None:
-    with client() as c:
-        resp = c.get("/health")
-        assert resp.status_code == 200
-        assert resp.json() == {"status": "ok"}
+from aideon_worker.server import app
 
 
-def test_state_at_ok() -> None:
-    with client() as c:
-        resp = c.get("/api/v1/state_at", params={"as_of": "2025-01-01"})
-        assert resp.status_code == 200
-        data: dict[str, Any] = resp.json()
-        # Response uses camelCase alias
-        assert data["asOf"] == "2025-01-01"
-        assert data["nodes"] == 0 and data["edges"] == 0
+def test_ping_and_state_at(caplog: logging.LogCaptureFixture) -> None:
+    async def _run() -> None:
+        caplog.set_level(logging.INFO)
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            r1 = await client.get("/ping")
+            assert r1.status_code == 200 and r1.json()["status"] == "pong"
 
+            r2 = await client.post("/state_at", json={"asOf": "2025-01-01"})
+            assert r2.status_code == 200
+            body = r2.json()
+            assert body["asOf"] == "2025-01-01" and body["nodes"] == 0 and body["edges"] == 0
 
-def test_state_at_missing_asof_returns_422() -> None:
-    with client() as c:
-        resp = c.get("/api/v1/state_at")
-        assert resp.status_code == 422
+    asyncio.run(_run())
 
-
-def test_state_at_invalid_confidence_returns_422() -> None:
-    with client() as c:
-        resp = c.get(
-            "/api/v1/state_at",
-            params={"as_of": "2025-01-01", "confidence": "not-a-number"},
-        )
-        assert resp.status_code == 422
-
-
-def test_main_requires_uds_path() -> None:
-    # Running without --uds should exit with code 2 and print error
-    assert main([]) == 2
-
-
-def test_main_runs_with_uds_and_exits_zero(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    called = {"ran": False}
-
-    def fake_run(coro):  # type: ignore[no-untyped-def]
-        called["ran"] = True
-
-    # Patch asyncio.run so we don't actually start a server
-    import aideon_worker.server as srv
-
-    monkeypatch.setattr(srv.asyncio, "run", fake_run)  # type: ignore[arg-type]
-    # Provide a dummy UDS path; server won't actually bind due to fake_run
-    # Use a harmless path; server won't bind because run() is patched
-    code = main(["--uds", ".aideon-test.sock"])
-    assert code == 0 and called["ran"] is True
+    # Check that some informative logs were emitted
+    messages = "\n".join(rec.message for rec in caplog.records)
+    assert "state_at request" in messages
+    assert "state_at result" in messages

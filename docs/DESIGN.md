@@ -14,7 +14,7 @@ multiple processes, and data entities link to many applications—all these many
 are first-class in the graph.
 
 At a high level, the architecture consists of a **graph database (property-graph by default)**, a
-local Electron application layer, and a modular integration layer. **Semantic validation/reasoning
+local Tauri application layer, and a modular integration layer. **Semantic validation/reasoning
 is optional and runs out-of-process in the Python worker.** **Versioning is snapshot‑based:** the
 product creates immutable snapshots that capture the complete state of the graph at a point in time.
 You can time‑travel (play forward/backward) by replaying snapshots and change sets, compare any two
@@ -482,7 +482,7 @@ temporal tags. This prevents a rebuild when moving to cluster/server mode.
 
 ### Desktop Application Layer
 
-The UI runs in Electron (Chromium renderer) with a hardened preload boundary; the host process is
+The UI runs in a Tauri webview with a hardened capabilities boundary; the host process is
 Node.js. Heavy analytics and ML execute in a long‑lived **Python worker** started and supervised by
 the host. Communication uses a local named pipe/domain socket (no open TCP ports) with a per‑launch
 token. The host exposes local **REST and GraphQL** endpoints (bound to localhost) for automation/BI;
@@ -505,7 +505,7 @@ This section defines the canonical C4 views for the platform. We manage these as
 
 ### C4‑1 System Context (who/what interacts with the product)
 
-- **Primary system:** EA Desktop (Electron) + Python Worker + Graph DB (local) OR EA Server
+- **Primary system:** EA Desktop (Tauri) + Python Worker + Graph DB (local) OR EA Server
   (remote) + Desktop/Web client.
 - **Primary actors:** Architects/Designers, Exec Viewers, Data Engineers/Integrators.
 - **External systems:** CMDB (e.g., ServiceNow), Cloud Provider APIs, BI tools, SSO/IdP (OIDC),
@@ -513,7 +513,7 @@ This section defines the canonical C4 views for the platform. We manage these as
 
 ### C4‑2 Containers (major runtime containers)
 
-- **Desktop Host (Electron Main/Preload)** — IPC, security, local APIs.
+- **Desktop Host (Tauri Host)** — IPC, security, local APIs.
 - **Renderer (React UI)** — Modelling UI, viewpoints, editor canvas.
 - **Python Worker (Sidecar)** — Graph analytics/ML via RPC (pipes/UDS).
 - **Graph Database** — Property‑graph store (adapter behind `GraphAdapter`).
@@ -541,8 +541,8 @@ This section defines the canonical C4 views for the platform. We manage these as
 workspace "Aideon Praxis" {
   model {
     user = person "Architect" "Designs and analyses EA models"
-    desktop = softwareSystem "EA Desktop" "Electron app + Python worker" {
-      container main    "Electron Host" "Node.js" "IPC, adapters, local APIs"
+    desktop = softwareSystem "EA Desktop" "Tauri app + Python worker" {
+      container main    "Tauri Host" "Rust" "IPC, adapters, local APIs"
       container ui      "Renderer" "React" "Modelling UI & viewpoints"
       container worker  "Python Worker" "Python" "Analytics/ML over RPC"
       container db      "Graph DB" "Property‑graph" "Nodes/edges + snapshots"
@@ -566,7 +566,7 @@ workspace "Aideon Praxis" {
 !include C4_Context.puml
 !include C4_Container.puml
 Person(User, "Architect")
-System(Desktop, "EA Desktop", "Electron + Python worker")
+System(Desktop, "EA Desktop", "Tauri + Python worker")
 System_Ext(CMDB, "CMDB")
 System_Ext(BI, "BI Tool")
 Rel(User, Desktop, "Uses")
@@ -578,7 +578,7 @@ Rel(Desktop, BI, "Local read APIs")
 
 ```mermaid
 graph TD
-  A[Electron Host] --> B[Renderer]
+  A[Tauri Host] --> B[Renderer]
   A --> C[Python Worker]
   C --> D[Graph DB]
   A --> E[Local REST/GraphQL (read)]
@@ -829,7 +829,7 @@ auth.
 
 The platform will offer tailored interfaces for different **user personas**, recognising that an
 Enterprise Architect has different needs from a C-level executive or a data engineer. All interfaces
-are accessible through the Electron desktop app (and in the future via web UI for a cloud
+are accessible through the Tauri desktop app (and in the future via web UI for a cloud
 deployment). Still, the experience will adapt based on the user's role or selected mode.
 
 ### Business Architects & Service Designers
@@ -950,7 +950,7 @@ the meta‑model. Viewpoints are projections; no duplicate truth.
 **Export & interchange:**
 
 - **Visuals:** Export diagrams and graph views to **SVG** (vector, accessible), **PNG** (bitmap),
-  and **PDF** (via Electron’s print pipeline). Batch export from CLI for docs.
+  and **PDF** (via Tauri print pipeline or native OS dialogs). Batch export from CLI for docs.
 - **Graph data:** Export/import **GraphML**, **CSV edge/node lists**, and **JSON**
   (schema‑versioned). Large extracts use **Apache Arrow** for columnar streams.
 - **Text diagrams (optional):** Generate **Mermaid**/PlantUML snippets for docs.
@@ -1188,7 +1188,7 @@ coordinated with reality and integrate with enterprise processes.
   plugin architecture.
 - **Scheduled Syncs and Data Refresh:** Automation will handle regular data synchronisation. If
   connectors are set up (e.g. daily import from ServiceNow), an embedded scheduler (could use Node’s
-  cron or an Electron background process) will run these jobs. It might fetch new data, reconcile
+  cron or a Tauri-hosted background task) will run these jobs. It might fetch new data, reconcile
   with the graph (add/update/remove nodes as needed), and log the sync results. The user can
   configure frequency and scope. For cloud readiness, we ensure these tasks can also run as
   cloud-scheduled jobs.
@@ -1338,7 +1338,7 @@ environment.
 
 ### M0 Foundations (Weeks 1–2)
 
-- Repo scaffolding; CI; Electron security baseline; ADRs for RPC & adapters.
+- Repo scaffolding; CI; Tauri security/capabilities baseline; ADRs for RPC & adapters.
 - Deliverables: `docs/c4/` initial System Context + Container (DSL + SVG/PNG/PDF).
 - Acceptance: app shell launches; CI builds diagrams on push.
 
@@ -1391,7 +1391,7 @@ environment.
 The solution is designed to be **flexible in deployment**, starting with a standalone desktop
 application and evolving towards cloud or enterprise deployments as needed.
 
-**On-Device (Local) Deployment:** The primary deployment is an Electron-based **desktop app**
+**On-Device (Local) Deployment:** The primary deployment is a Tauri-based **desktop app**
 available for Windows, Mac, and Linux. This app bundles everything needed: the UI, application
 logic, and the graph database. Installation is via a simple installer or even a portable package –
 ensuring a low-friction setup for users. The local deployment means users can run the EA platform
@@ -1415,7 +1415,7 @@ and the Node.js layer could be used as another container behind an API gateway. 
 we would support deployment on popular cloud platforms (Azure, AWS, GCP) using virtual machines or
 Kubernetes. For instance, an organisation could run the EA platform on an internal server so that
 multiple architects collaborate in real-time on the same graph (introducing multi-user editing with
-concurrency control). In this scenario, the Electron app can act as a client (pointing to the remote
+concurrency control). In this scenario, the Tauri app can act as a client (pointing to the remote
 server), or we could provide a pure web client (hosted via a web server).
 
 **Scalability:** In cloud mode, we ensure the graph database can be scaled or clustered to scale to
@@ -1425,7 +1425,7 @@ single moderate server could serve an enterprise’s architects and stakeholders
 **Containerization and DevOps:** The app will also be in container form (especially for server
 mode). We can provide a Docker Compose file to spin up the graph DB and the application API
 together. This makes deploying in various environments or running a quick trial instance easy.
-Upgrades to the platform can be delivered by updating the Electron app (for desktop) or deploying
+Upgrades to the platform can be delivered by updating the Tauri app (for desktop) or deploying
 new containers (for server). Data migration between versions will be handled via either
 backward-compatible schema evolution (the graph model can be versioned or migrated with scripts as
 needed).
@@ -1439,7 +1439,7 @@ routed to their organisation’s dataset.
 **Integration with Developer Tools:** We could also offer the platform as a library or SDK for those
 who want to embed or extend it. For example, the core could be packaged as a Node module that others
 can include in scripts or extend functionality. This is less about deployment and more about
-flexibility. Still, it means a power user could embed our engine in an existing Electron app or run
+flexibility. Still, it means a power user could embed our engine in an existing Tauri app or run
 the logic headless on a server for automation tasks.
 
 **Starting Small, Growing Big:** Initially, the expectation is a **single-user desktop scenario** –
@@ -1489,7 +1489,8 @@ stays relevant as business design frameworks evolve.
 - **Plugin Architecture:** We plan to introduce a plugin system for the platform, especially for
   importers, exporters, and custom analytics. Third-party developers or internal power users could
   develop a module (e.g. a plugin to connect to a specific proprietary system, or a new
-  visualisation type) and drop it into the platform. The Electron app could load plugins (Node
+  visualisation type) and drop it into the platform. The Tauri app could load plugins (capability-
+  gated)
   packages or Web plugins) that can extend menus or API endpoints. This modular approach fosters an
   ecosystem around the platform and allows customisation without bloating the core.
 - **Enhanced Visualisations and VR/AR:** As data gets more complex, we might integrate advanced
@@ -1538,7 +1539,7 @@ stays relevant as business design frameworks evolve.
 
 In conclusion, this architectural design sets a strong foundation for a **next-generation EA
 platform** that is graph-native, intelligent, and user-friendly. It speaks the language of business
-architecture. By using an open, modular technology stack (graph databases, Electron, APIs) and
+architecture. By using an open, modular technology stack (graph databases, Tauri, APIs) and
 layering on modern AI and automation, it provides immediate value in mapping complex enterprise
 relationships and is poised to grow and adapt. It is a low-footprint solution – affordable and not
 over-engineered – but does not compromise on **graph fidelity** or analytical power. This balance of
