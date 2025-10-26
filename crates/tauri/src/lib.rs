@@ -2,14 +2,16 @@
 //!
 //! Responsibilities:
 //! - Show a splashscreen while performing host/worker setup.
-//! - Spawn and health-check the Python worker over Unix Domain Socket (UDS).
+//! - Initialize the Rust temporal engine used by the renderer to exercise the
+//!   time APIs.
 //! - Expose minimal, typed Tauri commands used by the renderer (no backend
 //!   logic in the renderer).
-//! - Keep boundaries strict: renderer ↔ host via IPC; host ↔ worker via UDS.
+//! - Keep boundaries strict: renderer ↔ host via IPC; host ↔ worker modules via
+//!   typed adapters.
 //!
 //! Notes:
-//! - Desktop mode opens no TCP ports; the worker is reachable only through a
-//!   filesystem socket path stored in [`worker::WorkerState`].
+//! - Desktop mode opens no TCP ports; execution happens in-process via Rust
+//!   crates and can later swap to remote adapters without touching the UI.
 //! - We prefer simple, testable helpers over complex setup flows to align with
 //!   the splashscreen guide and keep startup deterministic.
 //!
@@ -18,11 +20,8 @@
 //!   conflicts when adding features like the splashscreen handler.
 //! - Inject shared state via `tauri::State` instead of repeated `AppHandle`
 //!   lookups to make commands easier to test and reason about.
-//! - Prefer Unix Domain Sockets over TCP for the worker in desktop mode to
-//!   preserve the "no open ports" security posture and simplify firewalling.
-//! - Poll worker readiness via `/ping` with a short timeout to fail fast during
-//!   startup; keep the timeout conservative (5s) so the splashscreen doesn't
-//!   appear stuck.
+//! - Keep engines behind simple structs (`WorkerState`) so we can later inject
+//!   adapters (local vs remote) without revisiting command bindings.
 
 mod menu;
 mod setup;
@@ -32,10 +31,12 @@ mod worker;
 
 use std::sync::Mutex;
 
+pub use core_data::temporal::{StateAtArgs, StateAtResult};
+
 use tauri::async_runtime::spawn;
 
 use crate::menu::build_menu;
-use crate::setup::{get_setup_state, run_backend_setup, set_complete, SetupState};
+use crate::setup::{SetupState, get_setup_state, run_backend_setup, set_complete};
 use crate::temporal::temporal_state_at;
 use crate::windows::{create_windows, open_about, open_settings, open_status};
 
@@ -89,7 +90,6 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             set_complete,

@@ -3,7 +3,7 @@ use log::warn;
 use tauri::{App, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, Wry};
 
 pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
-    WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("splash.html".into()))
+    WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("splash/index.html".into()))
         .title("Aideon Praxis — Loading")
         .resizable(false)
         .decorations(false)
@@ -42,14 +42,18 @@ pub fn open_settings(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("settings.html".into()))
-        .title("Preferences")
-        .resizable(false)
-        .inner_size(520.0, 440.0)
-        .center()
-        .build()
-        .map(|_| ())
-        .map_err(to_string)
+    WebviewWindowBuilder::new(
+        &app,
+        "settings",
+        WebviewUrl::App("settings/index.html".into()),
+    )
+    .title("Preferences")
+    .resizable(false)
+    .inner_size(520.0, 440.0)
+    .center()
+    .build()
+    .map(|_| ())
+    .map_err(to_string)
 }
 
 #[tauri::command]
@@ -59,7 +63,7 @@ pub fn open_about(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "about", WebviewUrl::App("about.html".into()))
+    WebviewWindowBuilder::new(&app, "about", WebviewUrl::App("about/index.html".into()))
         .title("About Aideon Praxis")
         .resizable(false)
         .inner_size(420.0, 300.0)
@@ -76,7 +80,7 @@ pub fn open_status(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "status", WebviewUrl::App("status.html".into()))
+    WebviewWindowBuilder::new(&app, "status", WebviewUrl::App("status/index.html".into()))
         .title("Status")
         .resizable(false)
         .always_on_top(true)
