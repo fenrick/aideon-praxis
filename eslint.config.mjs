@@ -28,8 +28,9 @@ export default defineConfig(
       'dist/**',
       'build/**',
       'coverage/**',
-      '**/.yarn/**',
+      '**/.pnpm/**',
       '**/out/**',
+      '**/.svelte-kit/**',
     ]),
   ],
   // Base JS rules roughly equivalent to the “core” checks Sonar also relies on
