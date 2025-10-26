@@ -22,6 +22,9 @@ snapshots, and branch into scenarios. This design borrows from distributed VCSs 
 “snapshots, not diffs” model) while remaining database‑agnostic and safe for local‑first use and
 future multi‑user/server mode.
 
+See `docs/tauri-client-server-pivot.md` for the detailed client/server pivot plan that keeps the
+Svelte renderer stable while switching between local and remote adapters.
+
 This platform is designed for **many-to-many relationships and graph queries** from the ground up.
 Unlike traditional EA tools built on rigid hierarchies, this graph-native approach allows, for
 instance, an application to link to multiple business services, supported by multiple capabilities
@@ -514,7 +517,7 @@ This section defines the canonical C4 views for the platform. We manage these as
 ### C4‑2 Containers (major runtime containers)
 
 - **Desktop Host (Tauri Host)** — IPC, security, local APIs.
-- **Renderer (React UI)** — Modelling UI, viewpoints, editor canvas.
+- **Renderer (SvelteKit UI)** — Modelling UI, viewpoints, editor canvas.
 - **Python Worker (Sidecar)** — Graph analytics/ML via RPC (pipes/UDS).
 - **Graph Database** — Property‑graph store (adapter behind `GraphAdapter`).
 - **Connectors/Scheduler** — Import jobs, sync, notifications.
@@ -543,7 +546,7 @@ workspace "Aideon Praxis" {
     user = person "Architect" "Designs and analyses EA models"
     desktop = softwareSystem "EA Desktop" "Tauri app + Python worker" {
       container main    "Tauri Host" "Rust" "IPC, adapters, local APIs"
-      container ui      "Renderer" "React" "Modelling UI & viewpoints"
+      container ui      "Renderer" "SvelteKit" "Modelling UI & viewpoints"
       container worker  "Python Worker" "Python" "Analytics/ML over RPC"
       container db      "Graph DB" "Property‑graph" "Nodes/edges + snapshots"
     }

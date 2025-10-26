@@ -3,21 +3,21 @@
 This is the single source of truth for code quality, testing, tooling, and
 boundaries across the Aideon Praxis monorepo.
 
-- Stacks: Node 24 (TS/React), Python 3.13/3.14 (worker)
-- Monorepo: Yarn 4 workspaces; uv is the single source of truth for Python
-  tooling
-- Runtime posture: server‑only worker over UDS HTTP; no JSON‑RPC in the app;
-  no renderer HTTP
+- Stacks: Node 24 (TS/SvelteKit), Rust 2024 (host + engines)
+- Monorepo: pnpm workspaces; Cargo workspace for Rust crates
+- Runtime posture: typed adapters over IPC; no renderer HTTP and no open TCP
+  ports in desktop mode
 
 ## Architecture & Boundaries
 
 - Modules & Layers
-  - Renderer (React): UI only; never accesses local process APIs directly.
+- Renderer (SvelteKit): UI only; never accesses local process APIs directly.
   - Main (Tauri host): IPC commands + local orchestration; no backend logic in renderer.
-  - Worker (Python): analytics/ML/time‑slicing; exposes versioned HTTP over UDS.
+  - Engines (Rust crates): analytics/time/graph orchestration behind typed traits; host injects
+    the appropriate adapter (local or remote).
 - Contracts between layers
   - Renderer ↔ Main: typed preload bridge only.
-  - Main ↔ Worker: versioned HTTP API over UDS.
+- Main ↔ Engines: trait-bound adapters (local today; remote adapters follow the same contract).
   - Shared types encouraged in TS via dedicated package when needed; avoid
     circular deps. For cross‑language payloads, use OpenAPI (JSON Schema) as the
     source of truth.
@@ -30,17 +30,17 @@ boundaries across the Aideon Praxis monorepo.
 
 ## Tooling & Performance at Scale
 
-- Caching: enable dependency and build caches in CI for Yarn and uv.
+- Caching: enable dependency and build caches in CI for pnpm and Cargo.
 - Incrementality:
   - TypeScript: use projectReferences and/or path aliases for workspace packages.
   - Tests: prefer package‑scoped test runs; use changed‑files filters when
     practical.
-- Parallelism: run JS/TS and Python checks in parallel CI jobs where possible.
+- Parallelism: run JS/TS and Rust checks in parallel CI jobs where possible.
 - Slow tests: quarantine and track with an issue; do not disable gates.
 
 ## Quality Gates
 
-- Coverage targets (Node/TS and Python) on new/changed code:
+- Coverage targets (Node/TS and Rust) on new/changed code:
   - Lines ≥ 80%
   - Branches ≥ 80%
   - Functions ≥ 80%
@@ -52,10 +52,10 @@ boundaries across the Aideon Praxis monorepo.
   - New code is measured against `main` (see `sonar.new_code.referenceBranch`)
   - CI waits for Sonar Quality Gate; failing the gate blocks merges
 
-## TypeScript / React
+## TypeScript / Svelte
 
-- Tooling: ESLint + Prettier; Vitest for unit tests
-- Environment: Node 24, Yarn 4; strict TS config
+- Tooling: ESLint + Prettier; Vitest for unit tests; Svelte compiler checks
+- Environment: Node 24, pnpm 9; strict TS config
 - Rules
   - No inline rule suppressions (no `eslint-disable`, `ts-ignore`, etc.).
     If absolutely necessary, require an issue reference and a TODO explaining
@@ -63,10 +63,10 @@ boundaries across the Aideon Praxis monorepo.
   - No backend‑specific logic in the renderer; IPC only via preload bridge
   - Sanitise/validate data that crosses the preload boundary; avoid leaking
     privileged data into renderer state
-  - Keep code paths single and explicit; the app speaks to the worker over UDS
-    HTTP only
+- Keep code paths single and explicit; the app speaks to the host over typed
+  IPC commands, and the host selects the appropriate engine adapter
 - Coverage
-  - Run: `yarn test:coverage`
+  - Run: `pnpm run node:test:coverage`
   - Add targeted, focused tests; it is acceptable to export clearly named
     test‑only helpers (e.g., `__test__`) to improve branch coverage when it does
     not affect runtime
@@ -74,40 +74,30 @@ boundaries across the Aideon Praxis monorepo.
   - Prefer TS projectReferences and/or path aliases for shared packages
   - Avoid deep imports across package boundaries; publish explicit entrypoints
 
-## Python (Worker)
+## Rust (Host & Engine Crates)
 
-- Tooling: uv, Ruff + Black, Mypy (strict), Pyright
-- Environment: Python 3.13 or 3.14
-- Commands (via `scripts/uvpy`)
-  - `yarn py:lint` — Ruff + Black check
-  - `yarn py:format` — Ruff --fix + Black write
-  - `yarn py:typecheck` — Mypy strict
-  - `yarn py:pyright` — Pyright strict
-  - `yarn py:test:cov` — Pytest with branch coverage (`--cov-branch`)
+- Tooling: Cargo (`cargo fmt`, `cargo clippy`, `cargo test`)
+- Environment: Rust stable (rustup manages toolchain + components)
+- Commands
+  - `pnpm run host:format` / `host:format:check` — `cargo fmt`
+  - `pnpm run host:lint` — `cargo clippy --all-targets -- -D warnings`
+  - `pnpm run host:check` — `cargo check` across the workspace
+  - `cargo test --all --all-targets` — unit/integration tests for host and
+    engine crates
 - Rules
-  - Server exposes versioned HTTP endpoints over UDS; no open TCP ports in
-    desktop mode
-  - Prefer fast, deterministic unit tests; patch event loops or inject doubles
-    to cover branches without opening sockets
-- Interface & Headers
-  - Include `X-API-Version` and `X-Request-Id` in responses; accept
-    `X-Client-Version` in requests for diagnostics
-  - Define error codes and payload shapes in OpenAPI; avoid ad‑hoc strings
-- Cloud/server mode (if enabled by ADR)
-  - TLS required; authentication/authorization required
-  - Document limits/timeouts and retry/backoff policies for outbound calls
-- Integration tests
-  - Add a minimal integration test suite for UDS HTTP on CI‑supported OSes when
-    practical; keep unit tests the main guardrail
+  - Engines expose typed traits; keep adapters thin and deterministic
+  - No open TCP ports in desktop mode; remote adapters must stay behind the
+    same trait boundaries
+  - Prefer fast, deterministic tests; add integration tests when touching IPC
+    layers or async flows
 
 ## Commit Hygiene
 
 Run these locally before every commit (CI enforces the same):
 
-- App: `yarn format` → `yarn lint:fix` → `yarn typecheck` → `yarn test:coverage`
-- Worker: `yarn py:format` → `yarn py:lint` → `yarn py:typecheck` →
-  `yarn py:pyright` → `yarn py:test:cov`
-- Coverage gates must be met on new/changed code in both app and worker
+- App: `pnpm run node:format` → `pnpm run node:lint:fix` → `pnpm run node:typecheck` → `pnpm run node:test:coverage`
+- Host/engines: `pnpm run host:format` → `pnpm run host:lint` → `pnpm run host:check` → `cargo test --all --all-targets`
+- Coverage gates must be met on new/changed code in both app and Rust crates
 - No rule suppressions; refactor to satisfy linters and analyzers
 - Conventional Commits are required; use `feat|fix|chore|ci|docs|test|refactor|perf|style`
 - Pre‑commit hooks should run only on changed files; use `--no-verify` only with
@@ -115,21 +105,21 @@ Run these locally before every commit (CI enforces the same):
 
 ## CI & Sonar
 
-- CI uses Yarn 4 and uv; Pyright runs after `yarn py:sync` to ensure the worker
-  venv is present
-- Sonar analyzes both Node/TS and Python; coverage reports are uploaded from
-  Vitest (lcov) and Pytest (XML). CI waits for the Sonar Quality Gate
+- CI uses pnpm 9 and Cargo; ensure `rustfmt` and `clippy` components are
+  installed in the build environment
+- Sonar analyzes both Node/TS and Rust; coverage reports are uploaded from
+  Vitest (lcov) and Rust coverage tooling (lcov). CI waits for the Sonar Quality Gate
 - Fail‑fast ordering in CI: lint/type before unit tests; heavier jobs (coverage,
   integration) after quick gates pass
-- Cache Yarn/uv artifacts; prefer parallel jobs for app/worker
+- Cache pnpm/Cargo artifacts; prefer parallel jobs for app and host/engine checks
 
 ## Security & Boundaries
 
 - No renderer HTTP; renderer ↔ host via IPC only
-- Desktop: no open TCP ports; UDS HTTP between host and worker
+- Desktop: no open TCP ports; host ↔ engine adapters stay in-process and typed
 - PII: redact by default on exports/APIs; add tests where applicable
-- Dependencies: review regularly; avoid unvetted libraries; lock through Yarn
-  and uv; prefer pinned dev‑tool versions
+- Dependencies: review regularly; avoid unvetted libraries; lock through pnpm
+  and Cargo; prefer pinned dev‑tool versions
 - Secrets: never hard‑code; provide via env/config; CI scans for secrets
 - Threat modeling: required for new public interfaces or boundary changes
 

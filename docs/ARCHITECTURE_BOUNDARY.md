@@ -1,14 +1,16 @@
-# Architecture Boundary — Tauri Host ↔ Python Worker
+# Architecture Boundary — Tauri Host ↔ Rust Engine
 
 ## Summary
 
 The Tauri (Rust) host owns UI orchestration, OS integration, local persistence, and **secure IPC**.
-The Python worker is a long-lived sidecar providing graph analytics/ML and heavy computations (time-slicing,
-topology, TCO).
+The Rust engine crates provide graph analytics/ML and heavy computations (time-slicing, topology, TCO)
+behind typed traits. Desktop mode uses in-process adapters; remote/server adapters must keep the same
+contracts.
 
 ## RPC Boundary
 
-- **Transport:** Named pipe (Windows), Unix domain socket (macOS/Linux), or stdio.
+- **Transport:** In-process (desktop mode). Remote/server adapters will reuse the same schema over
+  pipes/UDS or HTTP/2 when enabled.
 - **Auth:** Random per-launch capability token; deadlines; backpressure; per-job timeouts.
 - **Schema:** Protobuf (recommended) or versioned JSON schema.
 
@@ -36,12 +38,13 @@ topology, TCO).
 
 ## Process Lifecycle
 
-- Host supervises worker: start, healthcheck, restart-on-crash, graceful shutdown.
-- One worker per app session; caches warmed on demand; no open TCP ports in desktop mode.
+- Host initializes engine adapters during startup and keeps them in-process for desktop mode.
+- Remote adapters (future) must expose health endpoints and stay supervisor-friendly.
+- No open TCP ports in desktop mode; all work is local via typed traits.
 
 ## Cloud/Server Transition
 
-- Worker and graph move to remote endpoints (mTLS) via config, reusing the same schemas.
+- Swap the local engine adapters for remote clients (mTLS) via config while keeping DTOs stable.
 - Desktop becomes a thin client; scheduling and connectors run server-side.
 
 ## Security Notes

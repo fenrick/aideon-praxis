@@ -24,35 +24,19 @@ track staged delivery (see `ROADMAP.md`).
 
 ### Prerequisites
 
-- Node.js 24, Yarn ≥ 4 (or v1), Python 3.13
+- Node.js 24, pnpm ≥ 9 (via Corepack), Rust (stable toolchain)
 - Optional: Graphviz for diagram exports
 
 ### Install
 
-yarn install
-
-#### Python worker (choose one)
-
-Option A — uv (recommended for local dev)
-
-```bash
-uv venv .venv
-cd packages/worker && uv sync --all-groups
-```
-
-Option B — pip (portable fallback)
-
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e "packages/worker[dev]"
-```
+pnpm install
 
 ### Run
 
 #### Electron + renderer
 
 ```bash
-yarn dev
+pnpm run dev
 ```
 
 ### Test, Lint & Coverage
@@ -60,51 +44,38 @@ yarn dev
 #### TS/JS
 
 ```bash
-yarn test
-yarn lint
-yarn typecheck
+pnpm run test
+pnpm run lint
+pnpm run typecheck
 ```
 
-#### Python
-
-See docs/commands.md for the full list of yarn commands.
+#### Rust
 
 ```bash
-# pip / system python
-yarn py:test
-yarn py:lint
-
-# uv (local)
-yarn py:test
-yarn py:lint
+cargo fmt --all --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test --all --all-targets
 ```
 
 Quality gates
 
 - Coverage targets apply to both codebases: Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code.
 - Verify locally:
-  - App: `yarn test:coverage`
-  - Worker: `yarn py:test:cov` (branch coverage enabled)
+  - App: `pnpm run node:test:coverage`
+  - Rust crates: `cargo test --all --all-targets` (use coverage tooling when available)
 - See `docs/CODING_STANDARDS.md` for full coding standards and CI rules.
-
-### Python dev quick start
-
-1. Install Python 3.13/3.14 and uv.
-2. Run `yarn py:sync` once (creates a local venv under `.venv`).
-3. Before committing: `yarn format:check` (check-only; hooks run the same).
-4. To apply formatting across TS+Py: `yarn format`.
-5. To run exactly what CI runs: `yarn ci`.
-
-Why uv? All tools run through `scripts/uvpy` → `uv run`, so no global Python packages are needed and versions are locked by `uv`.
 
 ## Repository structure
 
-packages/app # Electron host + React UI packages/adapters # GraphAdapter, StorageAdapter,
-WorkerClient (TS) packages/worker # Python worker (analytics/ML, RPC server) packages/docs # C4
-diagrams, meta-model documentation scripts/ # gh_bootstrap.sh and helpers
+- `app/desktop` — Svelte renderer bundle consumed by the Tauri host.
+- `crates/tauri` — Rust desktop host (Tauri) and IPC surface.
+- `crates/{praxis,chrona,metis,continuum,core_data}` — domain crates for graph/time/analytics orchestration.
+- `app/adapters` — Shared TypeScript adapters (renderer ↔ host contracts).
+- `docs/` — Architecture content, ADRs, C4 diagrams.
+- `scripts/` — Tooling helpers (issues automation, release utilities, etc.).
 
 - **Adapters are contracts.** Do not leak backend specifics into the renderer.
-- **Worker is long-lived.** No open TCP ports in desktop mode; pipes/UDS only.
+- **Worker traits stay typed.** No open TCP ports in desktop mode; remote adapters must preserve the same command surface.
 
 ## Branching, commits, PRs
 
@@ -117,8 +88,8 @@ diagrams, meta-model documentation scripts/ # gh_bootstrap.sh and helpers
 ### Conventional Commits
 
 - `feat: add PlanEvent confidence filter`
-- `fix(worker): handle Arrow payload >50MB`
-- `chore(ci): cache pip and yarn`
+- `fix(chrona): handle Arrow payload >50MB`
+- `chore(ci): cache pip and pnpm`
 - `docs(c4): update system context`
 
 ### Pull Requests
@@ -131,7 +102,7 @@ diagrams, meta-model documentation scripts/ # gh_bootstrap.sh and helpers
 
 ### PR checklist
 
-- [ ] Lint & tests pass (TS + Python)
+- [ ] Lint & tests pass (TS + Rust)
 - [ ] No heading-level jumps in docs (markdownlint clean)
 - [ ] Security considerations noted (IPC/PII if relevant)
 - [ ] ADR added/updated for boundary or protocol decisions
@@ -158,7 +129,7 @@ Use labels (`type/*`, `area/*`, `module/*`, `priority/*`) and assign the **miles
 ## Code style
 
 - **TypeScript:** ESLint + Prettier, strict TS config.
-- **Python:** Ruff + Black defaults; keep imports sorted.
+- **Docs & scripting:** When touching Python tooling in `scripts/`, follow Ruff + Black defaults; keep imports sorted.
 - **Docs:** markdownlint (see `.markdownlint.json` if present).
 
 ## Security
