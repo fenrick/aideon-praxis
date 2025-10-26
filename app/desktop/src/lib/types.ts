@@ -31,3 +31,22 @@ export interface StateAtResult {
   /** Count of edges present in the time‑slice. */
   edges: number;
 }
+
+/**
+ * Typed surface exposed on `window.aideon` for renderer ↔ host IPC.
+ *
+ * This matches the Tauri shim and any preload bridges so that UI code remains
+ * agnostic of the runtime (desktop vs. future server mode).
+ */
+export interface AideonApi {
+  /** Current bridge version identifier. */
+  version: string;
+  /** Invoke the temporal `state_at` command. */
+  stateAt(arguments_: StateAtArguments): Promise<StateAtResult>;
+  /** Open the settings window. */
+  openSettings(): Promise<void>;
+  /** Open the about window. */
+  openAbout(): Promise<void>;
+  /** Open the status window. */
+  openStatus(): Promise<void>;
+}

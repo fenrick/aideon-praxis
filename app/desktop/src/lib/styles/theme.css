@@ -10,7 +10,7 @@
 
 html,
 body,
-#root {
+#svelte {
   height: 100%;
   margin: 0;
 }
@@ -37,14 +37,14 @@ body,
 /* Local fonts (Atomic Age for splash/about titles; Geist Mono for loading text) */
 @font-face {
   font-family: 'Atomic Age Local';
-  src: url('/assets/AtomicAge-Regular.ttf') format('truetype');
+  src: url('/AtomicAge-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Geist Mono Local';
-  src: url('/assets/GeistMono-VariableFont_wght.ttf') format('truetype');
+  src: url('/GeistMono-VariableFont_wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;

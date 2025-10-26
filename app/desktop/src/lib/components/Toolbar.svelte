@@ -2,7 +2,7 @@
   // Platform-aware toolbar. On Windows we render Fluent buttons; on macOS we
   // keep a lightweight style (future: Puppertino). Others default to shadcn-like
   // styles backed by our Tailwind/theme.css.
-  import IconButton from '../../ui/IconButton.svelte';
+  import IconButton from '$lib/ui/IconButton.svelte';
   const {
     onOpenSettings,
     onOpenAbout,

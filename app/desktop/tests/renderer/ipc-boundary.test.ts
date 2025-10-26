@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 // - Forbid importing Node built-ins and `electron` from the renderer.
 // - Allow Svelte libs, @tauri-apps/api/core, @tauri-apps/plugin-log, and relative imports only.
 
-const RENDERER_DIR = path.join(__dirname, '..', '..', 'src', 'renderer');
+const RENDERER_DIR = path.join(__dirname, '..', '..', 'src');
 
 function walk(directory: string): string[] {
   const names = readdirSync(directory);
@@ -83,6 +83,8 @@ function isForbidden(spec: string): boolean {
   // UI-only icon library is allowed in renderer (no backend logic)
   if (spec === '@iconify/svelte') return false;
   if (spec === '@tauri-apps/api/core' || spec === '@tauri-apps/plugin-log') return false;
+  if (spec === '@fluentui/web-components') return false;
+  if (spec.startsWith('$lib/')) return false;
   if (spec === '@tauri-apps/api/os' || spec === '@tauri-apps/api/window') return false;
   if (spec.startsWith('./') || spec.startsWith('../')) return false;
   // Block any other bare module specifiers to keep surface minimal

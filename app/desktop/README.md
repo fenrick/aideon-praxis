@@ -1,8 +1,8 @@
-# @aideon/app — Desktop UI
+# @aideon/app — Desktop UI (SvelteKit)
 
-Electron host + Svelte renderer for Aideon Praxis. The renderer talks to the
-host over a minimal, typed IPC bridge exposed by preload or Tauri. No backend
-logic or HTTP calls live in the renderer.
+SvelteKit SPA bundle for the Aideon Praxis desktop app. The renderer talks to
+the Tauri host over a minimal, typed IPC bridge. No backend logic or HTTP calls
+live in the renderer.
 
 Key points
 
@@ -13,9 +13,9 @@ Key points
 
 Scripts
 
-- `yarn dev` — watch build and run Electron with splash+main windows.
-- `yarn build` — typecheck + bundle (Vite/tsup); outputs to `dist/`.
-- `yarn test` — unit tests (renderer/adapters).
+- `pnpm --filter @aideon/app dev` — `svelte-kit dev` with static adapter fallback.
+- `pnpm --filter @aideon/app build` — `svelte-kit build` (adapter-static to `dist/renderer`).
+- `pnpm --filter @aideon/app test` — unit tests (renderer/adapters).
 
 Testing notes
 
@@ -25,7 +25,7 @@ Testing notes
 Security
 
 - No renderer HTTP. Host/worker run locally; desktop mode opens no TCP ports.
-- IPC bridge is minimal and typed; see `packages/host/src/lib.rs`.
+- IPC bridge is minimal and typed; see `crates/tauri/src/lib.rs`.
 
 UI
 
