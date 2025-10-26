@@ -20,7 +20,3 @@ python_version = "3.13"
 strict = true
 warn_unused_ignores = true
 disallow_any_generics = true
-
-[tool.pytest.ini_options]
-addopts = "-q"
-testpaths = ["packages/worker/tests"]
