@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/tauri",
+  "crates/praxis",
+  "crates/chrona",
+  "crates/metis",
+  "crates/continuum",
+  "crates/core_data"
+]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+
+[workspace.dependencies]
+# Shared dependencies can be declared here when the crates start sharing code.

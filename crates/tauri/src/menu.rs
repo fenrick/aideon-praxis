@@ -1,6 +1,6 @@
 use tauri::{
-  menu::{Menu, MenuItem, PredefinedMenuItem, Submenu}, App,
-  Wry,
+    App, Wry,
+    menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
 };
 
 pub fn build_menu(app: &App<Wry>) -> Result<(), String> {
@@ -72,9 +72,9 @@ fn append_window_items(
 
 #[cfg(target_os = "macos")]
 mod mac {
-  use super::*;
+    use super::*;
 
-  pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>) -> Result<(), String> {
+    pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>) -> Result<(), String> {
         let app_sub = Submenu::new(app, "Aideon Praxis", true).map_err(to_string)?;
         app_sub
             .append(&PredefinedMenuItem::about(app, None, None).map_err(to_string)?)
@@ -104,9 +104,9 @@ mod mac {
 
 #[cfg(not(target_os = "macos"))]
 mod desktop {
-  use super::*;
+    use super::*;
 
-  pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>) -> Result<(), String> {
+    pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>) -> Result<(), String> {
         let file = Submenu::new(app, "File", false).map_err(to_string)?;
         file.append(&MenuItem::new(app, "file.quit", true, None::<&str>).map_err(to_string)?)
             .map_err(to_string)?;

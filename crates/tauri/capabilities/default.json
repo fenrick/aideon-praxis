@@ -10,9 +10,6 @@
     "core:webview:default",
     "core:event:default",
     "log:default",
-    "opener:default",
-    { "identifier": "shell:default" },
-    "shell:allow-spawn",
-    "shell:allow-execute"
+    "opener:default"
   ]
 }
