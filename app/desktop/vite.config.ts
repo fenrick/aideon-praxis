@@ -1,4 +1,6 @@
 import { sveltekit } from '@sveltejs/kit/vite';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { ViteDevServer } from 'vite';
 import { defineConfig } from 'vite';
 
 const host = process.env.TAURI_DEV_HOST;
@@ -14,8 +16,8 @@ function windowAliasPlugin() {
 
   return {
     name: 'aideon-window-alias',
-    configureServer(server) {
-      server.middlewares.use((req, _res, next) => {
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use((req: IncomingMessage, _res: ServerResponse, next: () => void) => {
         const url = req.url;
         if (!url) {
           next();
