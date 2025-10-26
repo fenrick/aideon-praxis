@@ -8,12 +8,12 @@ Interfaces
 
 - `GraphAdapter` — read‑only time‑sliced graph access: `stateAt`, `diff`.
 - `StorageAdapter` — snapshot persistence (get/put by reference).
-- `WorkerClient` — generic job runner for the Python sidecar.
+- `WorkerClient` — generic job runner for the Rust engine adapters (local or remote).
 
 Usage
 
 - UI code depends only on these interfaces. Concrete adapters live in separate
-  packages/modules and are injected at the app boundary.
+  app modules and are injected at the renderer boundary.
 
 Testing
 
