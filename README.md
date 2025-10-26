@@ -4,55 +4,51 @@ This is a draft monorepo scaffold following the guardrails in `AGENTS.md`.
 
 Packages:
 
-- `packages/app` — Tauri host (Rust) + Svelte renderer (secure defaults, typed IPC only).
-- `packages/adapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
-- `packages/worker` — Python 3.13 sidecar (RPC-only). Includes minimal Temporal.StateAt stub.
+- `app/desktop` — Svelte renderer bundle consumed by the Tauri host.
+- `crates/tauri` — Tauri desktop host (Rust) with typed IPC surface.
+- `crates/{praxis, chrona, metis, continuum, core_data}` — Rust crates for the graph model, time
+  engine, analytics, orchestration, and shared DTOs respectively.
+- `app/adapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
 
 Tooling:
 
-- Yarn/NPM workspaces, ESLint + Prettier, strict TypeScript base config.
-- Python `ruff` + `black` + `pytest` configured via `pyproject.toml`.
-- GitHub Actions CI runs JS lint/typecheck and Python lint/tests.
+- pnpm workspaces, ESLint + Prettier, strict TypeScript base config.
+- Rust workspace managed via Cargo (`cargo fmt`, `cargo clippy`, `cargo test`).
+- GitHub Actions CI runs JS lint/typecheck and Rust lint/tests.
 
 See `CONTRIBUTING.md` and `AGENTS.md` for contribution rules and boundaries. For a walkthrough of
-local setup (Node 24, Yarn 4, Python 3.13 via uv) and offline tips, see `docs/getting-started.md`.
+local setup (Node 24, pnpm 9, Rust stable via rustup) and offline tips, see
+`docs/getting-started.md`.
 
 Getting started
 
-- Prereqs: Node 24, Python 3.13.
-- Enable Corepack then install deps: `corepack enable && yarn install`.
-- Build once: `yarn build` (renderer assets to `packages/app/dist/renderer`, main+preload to
-  `packages/app/dist`).
-- Dev (no HTTP server): `yarn tauri:dev` (watches Vite + Tauri and launches the desktop app).
-- Python tests: `pytest -q packages/worker` (or `yarn py:test`).
+- Prereqs: Node 24, Rust stable toolchain.
+- Enable Corepack then install deps: `corepack enable && pnpm install`.
+- Build once: `pnpm run build` (renderer assets to `app/desktop/dist/renderer`, main+preload to
+  `app/desktop/dist`).
+- Dev (no HTTP server): `pnpm tauri dev` (watches Vite + Tauri and launches the desktop app).
 
-See docs/commands.md for the full list of yarn commands used across JS/TS and the Python worker.
+See docs/commands.md for the full list of pnpm commands used across JS/TS and the Rust workspace.
 
 Packaging
 
-- Local packaging (unsigned): `yarn workspace @aideon/app dist`.
-- Outputs installers to `packages/app/dist/pack/` for macOS (DMG), Windows (NSIS), and Linux
+- Local packaging (unsigned): `pnpm --filter @aideon/app run dist`.
+- Outputs installers to `app/desktop/dist/pack/` for macOS (DMG), Windows (NSIS), and Linux
   (AppImage/DEB).
-- The Python worker binary is embedded inside the app package (resources/worker) when the CI step
-  builds it with PyInstaller. Local packaging embeds the worker if
-  `packages/app/extra/worker/aideon-worker[.exe]` exists.
 - CI packaging: when a GitHub Release is published (including nightly channel), the
   `Package Artifacts` workflow builds on macOS, Windows, and Linux and uploads assets to the release
   using the repo token.
-- Each OS job builds the worker as a standalone binary (PyInstaller) and embeds it in the Tauri app
-  as an external binary.
 - Code signing/notarization: not configured by default. Provide signing credentials as environment
   secrets if needed later. Builds remain unsigned for local/CI unless configured.
 
 Commit conventions and releases
 
 - Use Conventional Commits (e.g., `feat(app): add AS-OF slider`).
-- Lint commit messages locally: `yarn commitlint`.
+- Lint commit messages locally: `pnpm run commitlint`.
 - CI enforces PR title style and runs semantic-release on `main` to generate changelog and GitHub
   releases.
-- Version injection: during release, CI writes `packages/app/src/version.ts` and
-  `packages/worker/.../_version.py` with the computed version so binaries embed an immutable
-  version. Local dev uses `0.0.0-dev`.
+- Version injection: during release, CI writes `app/desktop/src/version.ts` with the computed
+  version so binaries embed an immutable version. Local dev uses `0.0.0-dev`.
 - Nightly builds: push a `nightly` branch. CI publishes prereleases like `x.y.z-nightly.YYYYMMDD`,
   channel `nightly`.
 
@@ -71,15 +67,15 @@ The intelligent companion that turns **design intent into action over time**.
 Aideon Praxis is a **graph-native, local-first Enterprise Architecture (EA) platform** with a
 **time-first meta-model**. It builds a **digital twin of the enterprise**, supports **bitemporal
 state** (valid & record time), **scenario branches**, **Plan Events** for future projections, and a
-Python worker for **heavy analytics and ML**. Designed for desktop (Tauri + Svelte) with a clean
+Rust engine for **heavy analytics and ML**. Designed for desktop (Tauri + Svelte) with a clean
 path to server/cloud mode.
 
 - **Graph-native:** Rich many-to-many relationships across Strategy → Capability → Service/Process →
   App/API → Tech/Cloud.
 - **Time-first:** Snapshots, scenarios, **`state_at()`** time slicing, plateaus/gaps, and
   date-driven colour narratives.
-- **Python worker:** Long-lived sidecar for topology, impact, centrality, TCO, and large payloads
-  (Arrow).
+- **Rust engine:** In-process adapters for topology, impact, centrality, TCO, and large payloads
+  (Arrow-ready).
 - **Local-first, cloud-ready:** Private, offline desktop app that can switch to a remote
   graph/worker by config.
 - **Open formats:** JSON/CSV/GraphML/Arrow; diagram exports SVG/PNG/PDF.
@@ -100,20 +96,31 @@ published under `docs/c4/`.
 
 ## Repository layout (monorepo)
 
-. ├─ packages/ │ ├─ app/ # Tauri host (Rust) + Svelte renderer (Praxis + Chrona) │ ├─ adapters/ #
-GraphAdapter, StorageAdapter, WorkerClient (TS) │ ├─ worker/ # Python worker (Metis) + algorithms +
-RPC server │ └─ docs/ # C4 diagrams, meta-model, viewpoint docs ├─ scripts/ │ └─ gh_bootstrap.sh #
-Labels, milestones, import issues.csv ├─ ROADMAP.md ├─ Architecture-Boundary.md ├─ issues.csv #
-Import via GitHub Issues → Import → CSV ├─ .markdownlint.json # (optional) markdown lint config └─
-...
+```
+.
+├─ app/
+│  ├─ desktop/          # Svelte renderer bundle (Praxis + Chrona UI)
+│  └─ adapters/         # TypeScript adapters bridging renderer ↔ host
+├─ crates/
+│  ├─ tauri/            # Desktop host (Rust + Tauri)
+│  ├─ praxis/           # Graph model crate (placeholder)
+│  ├─ chrona/           # Time engine crate (placeholder)
+│  ├─ metis/            # Analytics crate (placeholder)
+│  └─ continuum/        # Orchestration/API crate (placeholder)
+├─ docs/                # C4 diagrams, meta-model, viewpoints, ADRs
+├─ scripts/             # Tooling, CI helpers, project automation
+├─ Architecture-Boundary.md
+├─ ROADMAP.md
+└─ ...
+```
 
 ## Quick start (local development)
 
 ### Prerequisites
 
 - **Node.js** 24
-- **Yarn** ≥ 4 (Berry) or Classic (v1) — project uses `yarn` scripts
-- **Python** 3.13 (for the worker)
+- **pnpm** ≥ 9 (via Corepack)
+- **Rust** (stable toolchain with `rustfmt` + `clippy` components)
 - **Graphviz** (for some diagram tools, optional)
 
 ### 1) Clone and bootstrap
@@ -126,40 +133,13 @@ cd <repo>
 #### Install JS/TS deps
 
 ```bash
-yarn install
-```
-
-#### (Optional) Python worker via uv (recommended)
-
-Use uv as the local Python manager for the worker. It respects the existing PEP 621 `pyproject.toml`
-and keeps CI on plain `pip`.
-
-```bash
-# one‑time: install uv (see https://docs.astral.sh/uv/)
-# macOS: brew install uv
-
-# create a project venv (repo‑root `.venv`) and sync deps
-uv venv .venv
-cd packages/worker
-uv sync --all-groups  # installs dev tools from [project.optional-dependencies].dev
-
-# run checks via uv
-uv run -m pytest -q
-uv run -m ruff check .
-uv run -m black --check .
-```
-
-If you prefer plain `pip`, you can install the dev tools directly:
-
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e "packages/worker[dev]"
+pnpm install
 ```
 
 ### 2) Run the app (dev)
 
 ```bash
-yarn dev
+pnpm run dev
 ```
 
 ### 3) Tests and lint
@@ -167,17 +147,9 @@ yarn dev
 #### TypeScript
 
 ```bash
-yarn test
-yarn lint
-yarn typecheck
-```
-
-#### Python
-
-```bash
-pytest -q packages/worker
-ruff check packages/worker
-black --check packages/worker  # or: yarn format:py:check
+pnpm run test
+pnpm run lint
+pnpm run typecheck
 ```
 
 ## Core capabilities

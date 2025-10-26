@@ -27,12 +27,12 @@ changes that respect our **time‑first, graph‑native** architecture and secur
 
 ## Repository boundaries (monorepo)
 
-- `packages/app` — Tauri host (Rust) + Svelte UI (renderer). Typed `invoke` bridge; strict capabilities.
-- `packages/adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend
-  specifics in UI.
-- `packages/worker` — Python 3.13 sidecar (analytics/ML, time‑slicing, topology, TCO). RPC server
-  only.
-- `packages/docs` — C4 diagrams, meta‑model, viewpoints, ADRs.
+- `app/desktop` — Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only).
+- `app/adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
+- `crates/tauri` — Tauri host (Rust) exposing the typed command/event surface.
+- `crates/{praxis,chrona,metis,continuum,core_data}` — Rust domain crates (graph, time, analytics,
+  orchestration, shared data) scoped to host/worker logic.
+- `docs/` — C4 diagrams, meta‑model, viewpoints, ADRs.
 
 Never cross these boundaries with imports or side‑effects.
 
@@ -40,8 +40,7 @@ Never cross these boundaries with imports or side‑effects.
 
 - Scaffolding modules, views, adapters, or worker jobs inside the correct package.
 - Implementing time‑slicing UI (AS‑OF slider), Plan Event handling, plateau/diff exports.
-- Analytics in the worker (shortest path, centrality, impact, topology deltas) with tests and
-  metrics.
+- Analytics in the Rust worker crates (Chrona/Metis) with tests and metrics.
 - Connectors via Continuum scheduler (e.g., CMDB), CSV wizard features, PII redaction,
   encryption‑at‑rest.
 - Docs: README, CONTRIBUTING, ROADMAP, Architecture‑Boundary, ADRs, C4 diagrams‑as‑code.
@@ -50,13 +49,13 @@ Never cross these boundaries with imports or side‑effects.
 
 - Source of truth is GitHub issues and a Projects v2 board. Local Markdown under `docs/issues/` is a mirror only.
 - Use the provided CLI helpers (backed by `gh`) to keep tracking tight:
-  - `yarn issues:start <#>`: assign yourself, add `status/in-progress`, create local branch `issue-#/slug`, sync to Project, mirror docs.
-  - `yarn issues:split <parent#> --items "Subtask A" "Subtask B"` (or `--file tasks.txt`): creates linked secondary issues, updates parent checklist, syncs/mirrors.
-  - `yarn issues:project` (or `:dry`): ensure all repo issues are on the configured Project and set its `Status` from labels per `.env` mapping.
-  - `yarn issues:dod`: ensures a “Definition of Done” section exists on all `status/in-progress` issues.
-  - `yarn issues:linkify`: comments on issues with links to recent PRs.
-  - `yarn issues:backfill [--since YYYY-MM-DD] [--close]`: comments on issues referenced in commits on `main`; with `--close` will close issues referenced by Fixes/Closes/Resolves.
-  - `yarn issues:mirror`: refresh local docs/issues from GitHub; pre‑push enforces freshness via `issues:mirror:check`.
+  - `pnpm run issues:start <#>`: assign yourself, add `status/in-progress`, create local branch `issue-#/slug`, sync to Project, mirror docs.
+  - `pnpm run issues:split <parent#> --items "Subtask A" "Subtask B"` (or `--file tasks.txt`): creates linked secondary issues, updates parent checklist, syncs/mirrors.
+  - `pnpm run issues:project` (or `:dry`): ensure all repo issues are on the configured Project and set its `Status` from labels per `.env` mapping.
+  - `pnpm run issues:dod`: ensures a “Definition of Done” section exists on all `status/in-progress` issues.
+  - `pnpm run issues:linkify`: comments on issues with links to recent PRs.
+  - `pnpm run issues:backfill [--since YYYY-MM-DD] [--close]`: comments on issues referenced in commits on `main`; with `--close` will close issues referenced by Fixes/Closes/Resolves.
+  - `pnpm run issues:mirror`: refresh local docs/issues from GitHub; pre‑push enforces freshness via `issues:mirror:check`.
 
 ### Environment
 
@@ -72,7 +71,7 @@ Token scopes required: `repo`, `project`, `read:project`, and `read:org` if the 
 
 ### Definition of Done (DoD)
 
-For any item labeled `status/in-progress`, ensure the issue body contains this section (added via `yarn issues:dod`):
+For any item labeled `status/in-progress`, ensure the issue body contains this section (added via `pnpm run issues:dod`):
 
 - CI: lint, typecheck, unit tests updated
 - Docs: user & dev docs updated (README/ADR/CHANGELOG)
@@ -85,13 +84,13 @@ For any item labeled `status/in-progress`, ensure the issue body contains this s
 When finishing work:
 
 - Check off each DoD item in the issue body.
-- Add/confirm `status/done` label; ensure the Project Status reflects completion via `yarn issues:project`.
+- Add/confirm `status/done` label; ensure the Project Status reflects completion via `pnpm run issues:project`.
 - If closed by PR merge (Fixes/Closes #N), verify the issue is closed; otherwise close with a comment referencing the commit.
 
 ### Breaking Down Large Work
 
 - If an issue is larger than a single PR or small set of commits, create linked secondary issues:
-  - Use `yarn issues:split <parent#> --items ...` to generate child issues.
+  - Use `pnpm run issues:split <parent#> --items ...` to generate child issues.
   - Keep the parent issue as the coordination umbrella with a checklist linking to child issues.
   - Each child issue should reference the parent (`Parent: #<parent>`), inherit priority/area/module labels, and target the same milestone.
   - Each child should progress through `status/todo` → `status/in-progress` → `status/done` with PRs linked.
@@ -100,9 +99,9 @@ When finishing work:
 
 - On branch/PR creation: include `Fixes #<issue>` when appropriate so merges close issues automatically.
 - For existing work already on `main`, backfill tracking:
-  - `yarn issues:backfill --since <date>` to comment on referenced issues with commit details, optionally `--close` to close items resolved by commits.
-  - `yarn issues:linkify` to ensure PRs are referenced from issues.
-- After any merges to `main`: run `yarn issues:mirror` to update local docs. Pre‑push will block if mirror is stale.
+  - `pnpm run issues:backfill --since <date>` to comment on referenced issues with commit details, optionally `--close` to close items resolved by commits.
+  - `pnpm run issues:linkify` to ensure PRs are referenced from issues.
+- After any merges to `main`: run `pnpm run issues:mirror` to update local docs. Pre‑push will block if mirror is stale.
 
 ### Hooks & Hygiene
 
@@ -128,7 +127,7 @@ Provide your response in the following sections, in this order. Keep explanation
 
 1. RUN
 
-- Commands to build/test/lint locally (TS + Python). Include any data generation steps.
+- Commands to build/test/lint locally (TS + Rust). Include any data generation steps.
 
 1. CHECKS
 
@@ -148,7 +147,7 @@ defaults consistent with this guide.
 For the authoritative coding standards (quality gates, coverage targets,
 tooling, and CI rules), see `docs/CODING_STANDARDS.md`.
 
-### TypeScript / React (packages/app, packages/adapters)
+### TypeScript / React (app/desktop, app/adapters)
 
 – Node 24, React 18. Strict TS config; ESLint + Prettier.
 
@@ -164,17 +163,17 @@ Lint/Format discipline
 
 ### Code quality
 
-- Coverage targets (Node/TS and Python): Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code; overall should trend upward.
+- Coverage targets (Node/TS and Rust): Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code; overall should trend upward.
 - Sonar: `sonar.new_code.referenceBranch=main` configured; CI waits for the Sonar Quality Gate before merging.
 - Keep code paths single and explicit (server-only worker over UDS) to reduce maintenance cost.
   - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime.
 
-### Python (packages/worker)
+### Rust worker crates (crates/chrona, crates/metis, crates/praxis, crates/continuum)
 
-– Python 3.13, type hints everywhere, `ruff` + `black` style.
+– Rust 2024 edition, `cargo fmt` + `cargo clippy --all-targets --all-features` clean.
 
-- Pure worker process: RPC server over pipes/UDS, no open TCP ports in desktop mode.
-- Use pandas/pyarrow for Arrow payloads when large; avoid heavy deps unless needed.
+- Keep execution logic behind traits so adapters can swap local vs remote implementations.
+- Prefer streaming-friendly payloads (Arrow/bytes) over large JSON blobs when adding new APIs.
 
 ### Docs
 
@@ -224,21 +223,24 @@ Changes that could affect these must include a note in CHECKS and, when possible
 ## Testing guidance
 
 - TS: unit tests for adapters, preload bridges, UI state; avoid DOM‑heavy tests unless needed.
-- Python: unit tests for algorithms and RPC handlers; deterministic seeds for graph gens.
+- Rust: unit tests/integration tests for host and domain crates (chrona/metis/praxis);
+  deterministic seeds for graph generators.
 - Golden datasets: provide small synthetic graphs for 5k/50k nodes to assert performance envelopes.
 - Add tests for PII redaction and role filtering where functions touch exports.
 
 ## CI expectations
 
-- Lint + tests pass for TS and Python on macOS/Windows/Linux.
+- Lint + tests pass for TS and Rust on macOS/Windows/Linux.
 - For large algorithms, mark perf tests as optional but runnable locally; capture metrics in logs.
-- Coverage gates: verify Node/TS via `yarn test:coverage` and Python via `yarn py:test:cov` (branch coverage enabled). Sonar Quality Gate must pass.
+- Coverage gates: verify Node/TS via `pnpm run node:test:coverage` and Rust via
+  `cargo test --all --all-targets` with coverage tooling when touching engine logic. Sonar Quality
+  Gate must pass.
 
 ## Commit Hygiene (run before every commit)
 
 - Ensure that code will pass the GitHub CI checks with:
-  - `yarn ci`
-  - this will check TypeScript/JS/Svelte; then Rust; then Python
+- `pnpm run ci`
+- this will check TypeScript/JS/Svelte and then Rust targets
   - executing formatting, linting, static analysis checks and then tests
   - it needs to be clean before any commits.
 - Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and
@@ -267,9 +269,9 @@ Changes that could affect these must include a note in CHECKS and, when possible
 
 PLAN
 
-- Create packages/worker/jobs/topology_delta.py to compute centrality deltas.
-- Expose `Temporal.TopologyDelta` in RPC server and WorkerClient.
-- Add UI action behind feature flag to request topology delta and display summary.
+- Add `Temporal.TopologyDelta` trait to `crates/metis` with empty stub.
+- Wire Tauri command to call the new trait via `WorkerState` adapter.
+- Extend Svelte store to request topology delta and render placeholder counts.
 
 PATCH
 
@@ -277,12 +279,12 @@ PATCH
 
 TESTS
 
-- New unit tests for topology_delta; fixtures for small and medium graphs.
+- New unit tests for topology_delta stub in `crates/metis`; Vitest store smoke tests.
 
 RUN
 
-- yarn test && yarn lint && yarn typecheck
-- pytest -q packages/worker && ruff check packages/worker
+- pnpm run test && pnpm run lint && pnpm run typecheck
+- cargo test --all --all-targets
 
 CHECKS
 

@@ -25,7 +25,7 @@ path to server mode.
 
 #### Acceptance
 
-- `yarn test` and `pytest` green on macOS/Windows/Linux.
+- `pnpm run node:test` and `pytest` green on macOS/Windows/Linux.
 - App shell launches with secured preload.
 - ADRs merged.
 
@@ -33,7 +33,7 @@ path to server mode.
 
 #### Outcomes
 
-- React renderer, preload API, in-memory GraphAdapter + file store (JSON/SQLite).
+- SvelteKit renderer, preload API, in-memory GraphAdapter + file store (JSON/SQLite).
 - CSV import wizard v1 with mapping and de-dupe.
 - Viewpoints: Capability Map, Service Portfolio, Motivation.
 - Opt-in encryption-at-rest.
