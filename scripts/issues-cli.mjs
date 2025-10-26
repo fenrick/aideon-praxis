@@ -17,7 +17,7 @@ const map = new Map([
 ]);
 
 if (!map.has(sub)) {
-  console.error(`Usage: yarn issues <${Array.from(map.keys()).join('|')}> [args...]`);
+  console.error(`Usage: pnpm run issues <${Array.from(map.keys()).join('|')}> [args...]`);
   process.exit(1);
 }
 

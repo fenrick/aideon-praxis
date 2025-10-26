@@ -17,7 +17,7 @@ on:
 env:
   NODE_VERSION: '24'
   PYTHON_VERSION: '3.13'
-  YARN_VERSION: '4.10.3'
+  PNPM_VERSION: '9.12.0'
 
 permissions:
   contents: write
@@ -37,23 +37,25 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Enable Corepack and Yarn ${{ env.YARN_VERSION }}
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
+      - name: Setup pnpm ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
-      - name: Cache Yarn
+      - name: Get pnpm store directory
+        id: pnpm-store-worker
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
         uses: actions/cache@v4
         with:
-          path: |
-            .yarn/cache
-            .yarn/install-state.gz
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('yarn.lock') }}
+          path: ${{ steps.pnpm-store-worker.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-
 
       - name: Install JS dependencies
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
@@ -77,13 +79,13 @@ jobs:
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-
 
       - name: Python Sync (uv)
-        run: yarn worker:sync
+        run: pnpm run worker:sync
 
       - name: Python Lint (ruff+black --check)
-        run: yarn worker:lint
+        run: pnpm run worker:lint
 
       - name: Python Tests
-        run: yarn worker:test
+        run: pnpm run worker:test
 
       - name: Build worker binary (PyInstaller via uvx)
         run: uvx pyinstaller -F -n aideon-worker -p packages/worker/src packages/worker/src/aideon_worker/server.py
@@ -114,35 +116,37 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Enable Corepack and Yarn ${{ env.YARN_VERSION }}
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
+      - name: Setup pnpm ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
-      - name: Cache Yarn
+      - name: Get pnpm store directory
+        id: pnpm-store-app
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
         uses: actions/cache@v4
         with:
-          path: |
-            .yarn/cache
-            .yarn/install-state.gz
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('yarn.lock') }}
+          path: ${{ steps.pnpm-store-app.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-
 
       - name: Install JS dependencies
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: JS Format Check
-        run: yarn node:format:check
+        run: pnpm run node:format:check
 
       - name: JS Lint
-        run: yarn node:lint
+        run: pnpm run node:lint
 
       - name: JS Typecheck
-        run: yarn node:typecheck
+        run: pnpm run node:typecheck
 
       - name: JS Tests
-        run: yarn node:test
+        run: pnpm run node:test
 
       - name: Download worker binary
         uses: actions/download-artifact@v5
@@ -153,22 +157,22 @@ jobs:
       - name: Stage worker binary into app
         shell: bash
         run: |
-          mkdir -p packages/app/extra/worker
-          if [[ "$RUNNER_OS" == "Windows" ]]; then cp dist/aideon-worker.exe packages/app/extra/worker/; else cp dist/aideon-worker packages/app/extra/worker/; fi
+          mkdir -p app/desktop/extra/worker
+          if [[ "$RUNNER_OS" == "Windows" ]]; then cp dist/aideon-worker.exe app/desktop/extra/worker/; else cp dist/aideon-worker app/desktop/extra/worker/; fi
 
       - name: Build app code
-        run: yarn workspace @aideon/app build
+        run: pnpm --filter @aideon/app build
 
       - name: Package app
         if: ${{ !inputs.publish }}
-        run: yarn workspace @aideon/app exec electron-builder -c electron-builder.yml --publish=never
+        run: pnpm --filter @aideon/app exec electron-builder -c electron-builder.yml --publish=never
 
       - name: Upload installers
         if: ${{ !inputs.publish }}
         uses: actions/upload-artifact@v4
         with:
           name: app-${{ runner.os }}
-          path: packages/app/dist/pack/**
+          path: app/desktop/dist/pack/**
 
       - name: Package and publish app
         if: ${{ inputs.publish }}
@@ -176,4 +180,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
-        run: yarn workspace @aideon/app exec electron-builder -c electron-builder.yml --publish always
+        run: pnpm --filter @aideon/app exec electron-builder -c electron-builder.yml --publish always

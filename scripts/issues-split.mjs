@@ -41,9 +41,9 @@ function sh(cmd, argv, input) {
 function gh(argv, input) {
   return sh('gh', argv, input);
 }
-function yarn(argv) {
+function pnpm(argv) {
   try {
-    return sh('yarn', ['run', '-T', ...argv]);
+    return sh('pnpm', ['run', ...argv]);
   } catch {
     return '';
   }
@@ -108,7 +108,7 @@ for (const title of tasks) {
   created.push({ num, title, url });
   // Add to project if configured (best-effort)
   try {
-    yarn(['issues:project', '--only', String(num)]);
+    pnpm(['issues:project', '--only', String(num)]);
   } catch {}
 }
 
@@ -135,7 +135,7 @@ gh([
 
 // Mirror docs
 try {
-  yarn(['issues:mirror']);
+  pnpm(['issues:mirror']);
 } catch {}
 
 console.log(`Created ${created.length} sub-issue(s).`);

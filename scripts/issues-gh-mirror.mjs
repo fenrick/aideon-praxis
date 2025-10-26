@@ -216,7 +216,7 @@ try {
       console.log('issues-gh-mirror: OK — local docs are current with GitHub');
       process.exit(0);
     }
-    console.error('issues-gh-mirror: GitHub changed — run `yarn issues:mirror`');
+    console.error('issues-gh-mirror: GitHub changed — run `pnpm run issues:mirror`');
     process.exit(1);
   }
 

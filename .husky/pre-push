@@ -8,12 +8,11 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 0
 fi
 
-if command -v yarn >/dev/null 2>&1; then
-  yarn run -T issues:mirror:check || {
-    echo "[pre-push] GitHub issues changed. Run 'yarn issues:mirror' and commit docs/issues updates." >&2
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm run issues:mirror:check || {
+    echo "[pre-push] GitHub issues changed. Run 'pnpm run issues:mirror' and commit docs/issues updates." >&2
     exit 1
   }
 fi
 
 exit 0
-

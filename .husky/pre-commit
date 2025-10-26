@@ -2,16 +2,16 @@
 
 # Husky v10 style: no sourcing shim; keep fast/deterministic.
 # Check formatting/lint only (no writes). Block commit when checks fail.
-# CI also enforces via `yarn ci`.
+# CI also enforces via `pnpm run ci`.
 
 # Keep pre-commit fast and deterministic; no network calls here.
 # For GitHub issues mirror enforcement, see .husky/pre-push.
 
 # TypeScript/JS/MD — check only, do not modify files
-if command -v yarn >/dev/null 2>&1; then
-  yarn run -T node:format:check || exit 1
-  yarn run -T node:lint || exit 1
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm run node:format:check || exit 1
+  pnpm run node:lint || exit 1
 fi
 
 # Python worker — check only, via uv (skips if uv missing)
-yarn run -T worker:lint || exit 1
+pnpm run worker:lint || exit 1

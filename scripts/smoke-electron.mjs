@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const appDir = path.resolve(__dirname, '..', 'packages/app');
+const appDir = path.resolve(__dirname, '..', 'app/desktop');
 
 const electronBin = path.resolve(__dirname, '..', 'node_modules/.bin/electron');
 const child = spawn(electronBin, ['.'], {
