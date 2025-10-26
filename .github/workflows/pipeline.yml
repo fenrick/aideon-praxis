@@ -16,7 +16,7 @@ on:
 env:
   NODE_VERSION: '24'
   PYTHON_VERSION: '3.13'
-  YARN_VERSION: '4.10.3'
+  PNPM_VERSION: '9.12.0'
 
 permissions:
   contents: read
@@ -29,7 +29,7 @@ jobs:
   rust_checks:
     name: Rust Checks
     runs-on: ubuntu-latest
-    # Minimal Rust gating (fmt/clippy) for packages/host only; no Tauri build yet.
+    # Minimal Rust gating (fmt/clippy) for crates/tauri only; no Tauri build yet.
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -55,37 +55,37 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            packages/host/target
-          key: ${{ runner.os }}-rust-${{ hashFiles('packages/host/Cargo.toml') }}
+            crates/tauri/target
+          key: ${{ runner.os }}-rust-${{ hashFiles('crates/tauri/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-rust-
 
       - name: Generate lockfile (for audit & caching)
-        working-directory: packages/host
+        working-directory: crates/tauri
         run: cargo generate-lockfile
 
       - name: Create Linux placeholder sidecar (externalBin)
         if: runner.os == 'Linux'
         run: |
           set -euo pipefail
-          mkdir -p packages/host/binaries
-          touch packages/host/binaries/aideon-worker-x86_64-unknown-linux-gnu
-          chmod +x packages/host/binaries/aideon-worker-x86_64-unknown-linux-gnu
+          mkdir -p crates/tauri/binaries
+          touch crates/tauri/binaries/aideon-worker-x86_64-unknown-linux-gnu
+          chmod +x crates/tauri/binaries/aideon-worker-x86_64-unknown-linux-gnu
 
       - name: Cargo fmt (check)
-        working-directory: packages/host
+        working-directory: crates/tauri
         run: cargo fmt --all --check
 
       - name: Cargo clippy (deny warnings)
-        working-directory: packages/host
+        working-directory: crates/tauri
         run: cargo clippy --all-targets -- -D warnings
 
       - name: Cargo check (typecheck)
-        working-directory: packages/host
+        working-directory: crates/tauri
         run: cargo check --all-targets --all-features
 
       - name: Cargo test
-        working-directory: packages/host
+        working-directory: crates/tauri
         run: cargo test --all --quiet
 
       - name: Install cargo-llvm-cov
@@ -94,13 +94,13 @@ jobs:
           tool: cargo-llvm-cov
 
       - name: Rust coverage (LCOV)
-        working-directory: packages/host
+        working-directory: crates/tauri
         run: |
           mkdir -p coverage
           cargo llvm-cov --lcov --output-path coverage/lcov.info --all-targets
 
       - name: Clippy JSON report (for Sonar import)
-        working-directory: packages/host
+        working-directory: crates/tauri
         run: |
           # Generate Clippy JSON without -D warnings (warnings already denied above)
           cargo clippy --message-format=json -q > coverage/clippy.json || true
@@ -112,7 +112,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
           path: |
-            packages/host/coverage
+            crates/tauri/coverage
 
       - name: Cache RustSec advisory DB
         uses: actions/cache@v4
@@ -128,7 +128,7 @@ jobs:
           tool: cargo-audit
 
       - name: Cargo audit (advisories)
-        working-directory: packages/host
+        working-directory: crates/tauri
         run: |
           # Do not fail the pipeline on third-party advisory noise yet; surface as warnings
           cargo audit -D warnings || echo "[warn] cargo-audit failed; see advisories"
@@ -147,35 +147,37 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Enable Corepack and Yarn ${{ env.YARN_VERSION }}
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
+      - name: Setup pnpm ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
-      - name: Cache Yarn
+      - name: Get pnpm store directory
+        id: pnpm-store
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
         uses: actions/cache@v4
         with:
-          path: |
-            .yarn/cache
-            .yarn/install-state.gz
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('yarn.lock') }}
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-
 
       - name: Install JS dependencies
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: JS Format Check
-        run: yarn node:format:check
+        run: pnpm run node:format:check
 
       - name: JS Lint
-        run: yarn node:lint
+        run: pnpm run node:lint
 
       - name: JS Typecheck
-        run: yarn node:typecheck
+        run: pnpm run node:typecheck
 
       - name: JS Tests + Coverage
-        run: yarn node:test:coverage
+        run: pnpm run node:test:coverage
 
       - name: Upload TS coverage
         uses: actions/upload-artifact@v4
@@ -200,28 +202,30 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Enable Corepack and Yarn ${{ env.YARN_VERSION }}
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
+      - name: Setup pnpm ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Cache Yarn
+      - name: Get pnpm store directory
+        id: pnpm-store-py
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
         uses: actions/cache@v4
         with:
-          path: |
-            .yarn/cache
-            .yarn/install-state.gz
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('yarn.lock') }}
+          path: ${{ steps.pnpm-store-py.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-
 
-      - name: Install JS dependencies (for Yarn run state)
-        run: yarn install --immutable
+      - name: Install JS dependencies (for pnpm run state)
+        run: pnpm install --frozen-lockfile
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -240,25 +244,25 @@ jobs:
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-
 
       - name: Python Sync (uv) — worker venv
-        run: yarn worker:sync
+        run: pnpm run worker:sync
 
       - name: Python Lint (ruff+black --check)
-        run: yarn worker:lint
+        run: pnpm run worker:lint
 
       - name: Python Typecheck (mypy)
-        run: yarn worker:typecheck
+        run: pnpm run worker:typecheck
 
       - name: Python Typecheck (pyright)
-        run: yarn worker:pyright
+        run: pnpm run worker:pyright
 
       - name: Python Security (bandit)
-        run: yarn worker:sec
+        run: pnpm run worker:sec
 
       - name: Python Dead code (vulture)
-        run: yarn worker:deadcode
+        run: pnpm run worker:deadcode
 
       - name: Python Tests + Coverage (pytest-cov)
-        run: yarn worker:test:cov
+        run: pnpm run worker:test:cov
 
       - name: Worker UDS Smoke (ping + state_at)
         shell: bash
@@ -266,7 +270,7 @@ jobs:
           set -euo pipefail
           rm -f .aideon/worker.sock || true
           # Start worker in background
-          (AIDEON_WORKER_LOG=INFO yarn worker:serve >/tmp/worker.log 2>&1 &)
+          (AIDEON_WORKER_LOG=INFO pnpm run worker:serve >/tmp/worker.log 2>&1 &)
           # Wait for readiness
           for i in {1..100}; do
             if curl --unix-socket .aideon/worker.sock -sS http://localhost/ping | grep -q '"pong"'; then
@@ -319,13 +323,13 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: coverage-rs
-          path: packages/host/coverage
+          path: crates/tauri/coverage
 
       - name: Normalize coverage paths
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p coverage packages/worker packages/host/coverage
+          mkdir -p coverage packages/worker crates/tauri/coverage
           # TS coverage (downloaded directly to coverage/)
           if [[ -f coverage/lcov.info ]]; then
             echo "TS coverage at coverage/lcov.info"
@@ -352,7 +356,7 @@ jobs:
               /^SF:/ {
                 path=$0; sub(/^SF:/, "", path);
                 npath=normalize(path);
-                keep=(npath ~ /^(packages\/app\/src|packages\/adapters\/src)\/.*\.(ts|tsx|js|jsx)$/);
+                keep=(npath ~ /^(app\/desktop\/src|packages\/adapters\/src)\/.*\.(ts|tsx|js|jsx)$/);
                 if (keep) {
                   print "SF:" npath;
                   in_file=1;
@@ -384,27 +388,27 @@ jobs:
 
           # Rust coverage (LCOV -> Generic Coverage XML)
           # Locate the LCOV file from the artifact
-          if [[ -f packages/host/coverage/lcov.info ]]; then
-            echo "Rust lcov at packages/host/coverage/lcov.info"
+          if [[ -f crates/tauri/coverage/lcov.info ]]; then
+            echo "Rust lcov at crates/tauri/coverage/lcov.info"
           elif [[ -f coverage-rs/lcov.info ]]; then
-            mv coverage-rs/lcov.info packages/host/coverage/lcov.info
-          elif [[ -f coverage-rs/packages/host/coverage/lcov.info ]]; then
-            mv coverage-rs/packages/host/coverage/lcov.info packages/host/coverage/lcov.info
+            mv coverage-rs/lcov.info crates/tauri/coverage/lcov.info
+          elif [[ -f coverage-rs/crates/tauri/coverage/lcov.info ]]; then
+            mv coverage-rs/crates/tauri/coverage/lcov.info crates/tauri/coverage/lcov.info
           else
             echo "[warn] Rust coverage lcov.info not found after artifact download" >&2
           fi
 
           # Normalize Rust LCOV paths to repo-relative to help Sonar resolve files
-          if [[ -f packages/host/coverage/lcov.info ]]; then
+          if [[ -f crates/tauri/coverage/lcov.info ]]; then
             sed -E 's#^(SF:)/home/runner/work/[^/]+/[^/]+/#+\1#; s#^(SF:)/github/workspace/#+\1#' \
-              packages/host/coverage/lcov.info > packages/host/coverage/lcov.norm && \
-              mv packages/host/coverage/lcov.norm packages/host/coverage/lcov.info
+              crates/tauri/coverage/lcov.info > crates/tauri/coverage/lcov.norm && \
+              mv crates/tauri/coverage/lcov.norm crates/tauri/coverage/lcov.info
           fi
 
           # No Rust XML conversion required; Sonar ingests LCOV directly via sonar.rust.lcov.reportPaths
           ls -l coverage || true
           ls -l packages/worker || true
-          ls -l packages/host/coverage || true
+          ls -l crates/tauri/coverage || true
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2

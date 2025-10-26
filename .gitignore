@@ -18,12 +18,7 @@ build/
 
 # Yarn / npm
 .pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+.pnpm-debug.log
 package-lock.json
 
 # Env
@@ -74,9 +69,10 @@ docs/schedule/*.json
  
 # Rust build artifacts
 target/
-packages/host/target/
-packages/host/**/.fingerprint/
-packages/host/.cargo/
-packages/host/**/Cargo.lock.bk
-packages/host/gen/
-/packages/host/binaries
+crates/tauri/target/
+crates/tauri/**/.fingerprint/
+crates/tauri/.cargo/
+crates/tauri/**/Cargo.lock.bk
+crates/tauri/gen/
+/crates/tauri/binaries
+/app/desktop/.svelte-kit

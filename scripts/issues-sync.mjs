@@ -269,7 +269,7 @@ if (CHECK_ONLY) {
     console.log('issues-sync: OK — CSV already synced');
     process.exit(0);
   }
-  console.error('issues-sync: CSV changed — run `yarn issues:sync`');
+  console.error('issues-sync: CSV changed — run `pnpm run issues:sync`');
   process.exit(1);
 }
 

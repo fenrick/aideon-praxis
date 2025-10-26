@@ -137,9 +137,9 @@ function score(subjectTokens, titleTokens) {
 function pathTags(files) {
   const tags = new Set();
   for (const f of files) {
-    if (f.startsWith('packages/worker')) tags.add('module/metis');
-    if (f.startsWith('packages/app')) tags.add('module/praxis');
-    if (f.startsWith('packages/adapters')) tags.add('module/praxis');
+    if (f.startsWith('crates/metis') || f.startsWith('crates/chrona')) tags.add('module/metis');
+    if (f.startsWith('app/desktop')) tags.add('module/praxis');
+    if (f.startsWith('app/adapters')) tags.add('module/praxis');
     if (f.startsWith('docs/')) tags.add('type/docs');
     if (f.includes('electron') || f.includes('preload') || f.includes('renderer'))
       tags.add('area/ui');

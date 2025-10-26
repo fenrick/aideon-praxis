@@ -103,10 +103,10 @@ if (!NO_BRANCH) {
 // Refresh local mirror (non-fatal if scripts missing)
 try {
   if (existsSync('package.json')) {
-    sh('yarn', ['run', '-T', 'issues:mirror']);
+    sh('pnpm', ['run', 'issues:mirror']);
     // Update project status if configured
     try {
-      sh('yarn', ['run', '-T', 'issues:project', '--only', String(num)]);
+      sh('pnpm', ['run', 'issues:project', '--only', String(num)]);
     } catch {}
   }
 } catch {}
