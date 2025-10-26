@@ -2,7 +2,7 @@
 </script>
 
 <div class="about">
-  <img class="mark" src="/assets/app-icon.png" alt="Aideon Praxis" />
+  <img class="mark" src="%sveltekit.assets%/app-icon.png" alt="Aideon Praxis" />
   <div class="col">
     <h1 class="title">Aideon&nbsp;Praxis</h1>
     <div class="meta">Twin‑orbit decision tooling · © Aideon</div>

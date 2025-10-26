@@ -2,12 +2,24 @@
 // without Electron preload. This keeps renderer free of backend specifics.
 import { invoke } from '@tauri-apps/api/core';
 import { debug, error, info } from '@tauri-apps/plugin-log';
+import type { AideonApi, StateAtArguments, StateAtResult } from './types';
 
 type Logger = (message: string) => Promise<void>;
 
 const logSafely = (logger: Logger, message: string) => {
   logger(message).catch((loggingError: unknown) => {
-    if (import.meta.env.DEV) {
+    let isDevelopment = false;
+    const developmentOverride = (globalThis as { __AIDEON_DEV__?: boolean }).__AIDEON_DEV__;
+    if (developmentOverride === undefined) {
+      const metaEnvironment = (import.meta as { env?: { DEV?: unknown } }).env;
+      const developmentFlag = metaEnvironment?.DEV;
+      if (developmentFlag === true || developmentFlag === 'true') {
+        isDevelopment = true;
+      }
+    } else {
+      isDevelopment = developmentOverride;
+    }
+    if (isDevelopment) {
       console.warn('renderer: log fallback', loggingError);
     }
   });
@@ -17,30 +29,11 @@ const logSafely = (logger: Logger, message: string) => {
 if ((globalThis as { aideon?: unknown }).aideon === undefined) {
   // Always install a bridge object; methods will throw if Tauri isn't available yet.
   logSafely(info, 'renderer: installing tauri-shim bridge');
-  interface AideonApi {
-    version: string;
-    stateAt: (arguments_: { asOf: string; scenario?: string; confidence?: number }) => Promise<{
-      asOf: string;
-      scenario: string | null;
-      confidence: number | null;
-      nodes: number;
-      edges: number;
-    }>;
-    openSettings: () => Promise<void>;
-    openAbout: () => Promise<void>;
-    openStatus: () => Promise<void>;
-  }
   (globalThis as unknown as { aideon: AideonApi }).aideon = {
     version: 'tauri-shim',
-    stateAt: async (arguments_) => {
+    stateAt: async (arguments_: StateAtArguments) => {
       logSafely(debug, `renderer: invoking temporal_state_at asOf=${arguments_.asOf}`);
-      const result = await invoke<{
-        asOf: string;
-        scenario: string | null;
-        confidence: number | null;
-        nodes: number;
-        edges: number;
-      }>('temporal_state_at', {
+      const result = await invoke<StateAtResult>('temporal_state_at', {
         // Send both naming conventions for host compatibility
         as_of: arguments_.asOf,
         asOf: arguments_.asOf,

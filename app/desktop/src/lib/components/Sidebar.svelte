@@ -15,7 +15,7 @@
 
 <aside class="sidebar" aria-label="Sidebar Tree">
   <ul class="tree" role="tree">
-    {#each items as n}
+    {#each items as n (n)}
       <li role="treeitem" aria-expanded={!!(expanded.get(n.id) ?? false)} aria-selected="false">
         {#if n.children?.length}
           <button class="twisty" onclick={() => toggle(n.id)} aria-label="Expand/Collapse"
@@ -27,7 +27,7 @@
         <button class="node" onclick={() => select(n.id)}>{n.label}</button>
         {#if n.children && (expanded.get(n.id) ?? false)}
           <ul class="tree" role="group">
-            {#each n.children as c}
+            {#each n.children as c (c)}
               <li>
                 <span class="twisty" style="opacity:.2">•</span>
                 <button class="node" onclick={() => select(c.id)}>{c.label}</button>
