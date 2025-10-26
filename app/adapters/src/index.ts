@@ -15,7 +15,7 @@ export interface StorageAdapter {
   putSnapshot(reference: string, bytesData: ArrayBuffer): Promise<void>;
 }
 
-/** WorkerClient runs analytics jobs in the Python sidecar via RPC. */
+/** WorkerClient runs analytics jobs via the Rust engine adapters (local or remote). */
 export interface WorkerClient {
   runJob<TResult>(jobType: string, jobArguments: unknown): Promise<TResult>;
 }
