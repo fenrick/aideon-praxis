@@ -18,7 +18,10 @@ async function main() {
         await mkdir(targetDir, { recursive: true });
         await writeFile(target, html);
       } catch (error) {
-        if ((error instanceof Error && 'code' in error && error.code === 'ENOENT') || error?.code === 'ENOENT') {
+        if (
+          (error instanceof Error && 'code' in error && error.code === 'ENOENT') ||
+          error?.code === 'ENOENT'
+        ) {
           return;
         }
         throw error;
