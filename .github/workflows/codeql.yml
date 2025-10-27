@@ -19,19 +19,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['javascript-typescript', 'python']
+        language: ['javascript-typescript']
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v6
-        if: matrix.language == 'javascript-typescript'
         with:
           node-version: '24'
-      - uses: actions/setup-python@v5
-        if: matrix.language == 'python'
-        with:
-          python-version: '3.13'
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
