@@ -4,7 +4,8 @@
 //! crate, reinforcing the boundary guidance spelled out in `AGENTS.md`.
 
 use core_data::temporal::{StateAtArgs, StateAtResult};
-use log::{debug, info};
+use log::{debug, error, info};
+use std::panic::AssertUnwindSafe;
 use std::time::Instant;
 use tauri::State;
 
@@ -29,14 +30,26 @@ pub async fn temporal_state_at(
     let worker_state = state.inner();
 
     let args = StateAtArgs::new(as_of, scenario, confidence);
+    let args_clone = args.clone();
     let started = Instant::now();
-    let output = worker_state.engine().state_at(args);
+    let engine = worker_state.engine();
+    let output = match std::panic::catch_unwind(AssertUnwindSafe(|| engine.state_at(args))) {
+        Ok(result) => result,
+        Err(panic) => {
+            error!("host: temporal_state_at panic: {:?}", panic);
+            return Err("worker panic during state_at".into());
+        }
+    };
     let elapsed = started.elapsed();
     info!(
         "host: temporal_state_at ok nodes={} edges={} elapsed_ms={}",
         output.nodes,
         output.edges,
         elapsed.as_millis()
+    );
+    debug!(
+        "host: temporal_state_at completed as_of={} scenario={:?} confidence={:?}",
+        args_clone.as_of, args_clone.scenario, args_clone.confidence
     );
     Ok(output)
 }

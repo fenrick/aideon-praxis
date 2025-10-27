@@ -1,7 +1,15 @@
 <!-- Status bar indicator that reflects the worker connection health.
      Keeps the UI readonly; all state comes via typed props so the host retains control. -->
 <script lang="ts">
+  import { debug, info, logSafely } from '$lib/logging';
   const { connected, message } = $props<{ connected: boolean; message?: string }>();
+  $effect(() => {
+    const suffix = message ? ` message=${message}` : '';
+    logSafely(
+      connected ? info : debug,
+      `renderer: statusbar state connected=${connected}${suffix}`,
+    );
+  });
 </script>
 
 <div class="statusbar" data-connected={connected}>

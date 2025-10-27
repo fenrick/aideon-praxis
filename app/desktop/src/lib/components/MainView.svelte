@@ -2,6 +2,7 @@
      status so the desktop host can surface debugging hints inline. Leveraging
      typed `$props` follows the Svelte TypeScript guidance for explicit inputs. -->
 <script lang="ts">
+  import { debug, error as logError, info as logInfo, logSafely } from '$lib/logging';
   const { version, stateAt, errorMsg } = $props<{
     version: string;
     stateAt: {
@@ -13,6 +14,24 @@
     } | null;
     errorMsg: string | null;
   }>();
+  $effect(() => {
+    logSafely(debug, `renderer: main view version=${version}`);
+  });
+  $effect(() => {
+    if (!stateAt) {
+      return;
+    }
+    logSafely(
+      logInfo,
+      `renderer: main view displaying stateAt asOf=${stateAt.asOf} nodes=${stateAt.nodes} edges=${stateAt.edges}`,
+    );
+  });
+  $effect(() => {
+    if (!errorMsg) {
+      return;
+    }
+    logSafely(logError, `renderer: main view error=${errorMsg}`);
+  });
 </script>
 
 <div style="padding: 16px;">

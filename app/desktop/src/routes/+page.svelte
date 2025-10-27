@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { info, error, debug } from '@tauri-apps/plugin-log';
+  import { debug, error, info, logSafely } from '$lib/logging';
   import AboutPanel from '$lib/components/AboutPanel.svelte';
   import MainView from '$lib/components/MainView.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
@@ -39,12 +39,12 @@
       }
     }
 
-    info('renderer: main window mounting');
-    info('renderer: starting initialization timer tick');
+    logSafely(info, 'renderer: main window mounting');
+    logSafely(info, 'renderer: starting initialization timer tick');
     const timer = setInterval(() => {
       seconds += 1;
       if (seconds % 5 === 0) {
-        debug(`renderer: initialization heartbeat second=${seconds}`);
+        logSafely(debug, `renderer: initialization heartbeat second=${seconds}`);
       }
     }, 1000);
     try {
@@ -67,22 +67,22 @@
       const counts = stateAt
         ? ` nodes=${stateAt.nodes} edges=${stateAt.edges}`
         : ' nodes=0 edges=0';
-      info(`renderer: stateAt received${counts}`);
+      logSafely(info, `renderer: stateAt received${counts}`);
     } catch (error__) {
       const message =
         error__ instanceof Error ? error__.message : typeof error__ === 'string' ? error__ : '';
       const suffix = message ? ` — ${message}` : '';
-      error(`renderer: stateAt failed${suffix}`);
+      logSafely(error, `renderer: stateAt failed${suffix}`);
       error_ = message || String(error__);
     } finally {
       clearInterval(timer);
-      info('renderer: initialization timer cleared');
+      logSafely(info, 'renderer: initialization timer cleared');
     }
   });
 
   function onSelect(event: { detail: { id: string } }) {
     selectedId = event.detail.id;
-    debug(`renderer: sidebar selection id=${selectedId}`);
+    logSafely(debug, `renderer: sidebar selection id=${selectedId}`);
   }
 </script>
 
