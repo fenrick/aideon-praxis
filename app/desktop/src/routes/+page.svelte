@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { info, error } from '@tauri-apps/plugin-log';
+  import { info, error, debug } from '@tauri-apps/plugin-log';
   import AboutPanel from '$lib/components/AboutPanel.svelte';
   import MainView from '$lib/components/MainView.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
@@ -40,7 +40,13 @@
     }
 
     info('renderer: main window mounting');
-    const timer = setInterval(() => (seconds += 1), 1000);
+    info('renderer: starting initialization timer tick');
+    const timer = setInterval(() => {
+      seconds += 1;
+      if (seconds % 5 === 0) {
+        debug(`renderer: initialization heartbeat second=${seconds}`);
+      }
+    }, 1000);
     try {
       const bridge = (
         globalThis as unknown as {
@@ -53,11 +59,15 @@
           };
         }
       ).aideon;
-      if (!bridge || typeof bridge.stateAt !== 'function') {
-        throw new Error('Bridge not available');
+      const stateAtFn = bridge?.stateAt;
+      if (typeof stateAtFn !== 'function') {
+        throw new TypeError('Bridge not available');
       }
-      stateAt = await bridge.stateAt({ asOf: '2025-01-01' });
-      info('renderer: init complete; stateAt received');
+      stateAt = await stateAtFn({ asOf: '2025-01-01' });
+      const counts = stateAt
+        ? ` nodes=${stateAt.nodes} edges=${stateAt.edges}`
+        : ' nodes=0 edges=0';
+      info(`renderer: stateAt received${counts}`);
     } catch (error__) {
       const message =
         error__ instanceof Error ? error__.message : typeof error__ === 'string' ? error__ : '';
@@ -66,11 +76,13 @@
       error_ = message || String(error__);
     } finally {
       clearInterval(timer);
+      info('renderer: initialization timer cleared');
     }
   });
 
   function onSelect(event: { detail: { id: string } }) {
     selectedId = event.detail.id;
+    debug(`renderer: sidebar selection id=${selectedId}`);
   }
 </script>
 

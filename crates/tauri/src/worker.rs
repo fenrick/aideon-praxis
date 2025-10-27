@@ -4,6 +4,7 @@
 //! handlers can access it without leaking internal mutability.
 
 use chrona::TemporalEngine;
+use log::{debug, info};
 use tauri::{AppHandle, Manager, Wry};
 
 /// Shared application state giving command handlers access to the temporal engine.
@@ -14,6 +15,7 @@ pub struct WorkerState {
 impl WorkerState {
     /// Create a new worker state wrapper around the provided engine instance.
     pub fn new(engine: TemporalEngine) -> Self {
+        debug!("host: WorkerState constructed");
         Self { engine }
     }
 
@@ -27,5 +29,6 @@ impl WorkerState {
 pub async fn init_temporal(app: &AppHandle<Wry>) -> Result<(), String> {
     let engine = TemporalEngine::new();
     app.manage(WorkerState::new(engine));
+    info!("host: temporal engine registered with application state");
     Ok(())
 }
