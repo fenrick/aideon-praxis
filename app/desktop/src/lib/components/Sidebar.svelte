@@ -1,8 +1,15 @@
+<script module lang="ts">
+  export type SidebarTreeNode = {
+    id: string;
+    label: string;
+    children?: SidebarTreeNode[];
+  };
+</script>
+
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   // Minimal tree sidebar. Emits `select` events with an id.
-  type Node = { id: string; label: string; children?: Node[] };
-  const { items = [] } = $props<{ items?: Node[] }>();
+  const { items = [] } = $props<{ items?: SidebarTreeNode[] }>();
   const dispatch = createEventDispatcher<{ select: { id: string } }>();
   // `$state` rune keeps ancestry toggles reactive per the Svelte reactivity guidance,
   // avoiding an external store for this scoped component state.
