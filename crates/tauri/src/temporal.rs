@@ -4,7 +4,8 @@
 //! crate, reinforcing the boundary guidance spelled out in `AGENTS.md`.
 
 use core_data::temporal::{StateAtArgs, StateAtResult};
-use log::info;
+use log::{debug, info};
+use std::time::Instant;
 use tauri::State;
 
 use crate::worker::WorkerState;
@@ -20,17 +21,22 @@ pub async fn temporal_state_at(
     scenario: Option<String>,
     confidence: Option<f64>,
 ) -> Result<StateAtResult, String> {
-    info!(
-        "host: temporal_state_at as_of={} scenario={:?}",
-        as_of, scenario
+    info!("host: temporal_state_at received");
+    debug!(
+        "host: temporal_state_at params as_of={} scenario={:?} confidence={:?}",
+        as_of, scenario, confidence
     );
     let worker_state = state.inner();
 
     let args = StateAtArgs::new(as_of, scenario, confidence);
+    let started = Instant::now();
     let output = worker_state.engine().state_at(args);
+    let elapsed = started.elapsed();
     info!(
-        "host: temporal_state_at ok nodes={} edges={}",
-        output.nodes, output.edges
+        "host: temporal_state_at ok nodes={} edges={} elapsed_ms={}",
+        output.nodes,
+        output.edges,
+        elapsed.as_millis()
     );
     Ok(output)
 }

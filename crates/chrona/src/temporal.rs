@@ -5,6 +5,7 @@
 //! eases the migration toward a fully Rust-based host/worker story.
 
 use core_data::temporal::{StateAtArgs, StateAtResult};
+use log::{debug, trace};
 
 /// Primary entry point for temporal queries.
 #[derive(Clone, Debug, Default)]
@@ -24,6 +25,11 @@ impl TemporalEngine {
             scenario,
             confidence,
         } = args;
+        debug!(
+            "chrona: state_at invoked as_of={} scenario={:?} confidence={:?}",
+            as_of, scenario, confidence
+        );
+        trace!("chrona: returning empty graph placeholder");
         StateAtResult::empty(as_of, scenario, confidence)
     }
 }
