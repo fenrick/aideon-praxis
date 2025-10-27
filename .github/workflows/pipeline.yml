@@ -202,13 +202,13 @@ jobs:
           fetch-depth: 0
 
       - name: Download TS coverage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: coverage-ts
           path: coverage
 
       - name: Download Rust coverage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: coverage-rs
           path: crates/tauri/coverage
