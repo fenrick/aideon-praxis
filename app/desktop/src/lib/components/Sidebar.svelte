@@ -4,6 +4,8 @@
   type Node = { id: string; label: string; children?: Node[] };
   const { items = [] } = $props<{ items?: Node[] }>();
   const dispatch = createEventDispatcher<{ select: { id: string } }>();
+  // `$state` rune keeps ancestry toggles reactive per the Svelte reactivity guidance,
+  // avoiding an external store for this scoped component state.
   let expanded = $state(new Map<string, boolean>());
   function toggle(id: string) {
     expanded.set(id, !(expanded.get(id) ?? false));

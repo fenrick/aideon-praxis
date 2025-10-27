@@ -1,3 +1,6 @@
+<!-- Main shell content shown after renderer boot. Mirrors the worker handshake
+     status so the desktop host can surface debugging hints inline. Leveraging
+     typed `$props` follows the Svelte TypeScript guidance for explicit inputs. -->
 <script lang="ts">
   const { version, stateAt, errorMsg } = $props<{
     version: string;

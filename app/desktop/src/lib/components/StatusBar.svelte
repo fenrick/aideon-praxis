@@ -1,3 +1,5 @@
+<!-- Status bar indicator that reflects the worker connection health.
+     Keeps the UI readonly; all state comes via typed props so the host retains control. -->
 <script lang="ts">
   const { connected, message } = $props<{ connected: boolean; message?: string }>();
 </script>
