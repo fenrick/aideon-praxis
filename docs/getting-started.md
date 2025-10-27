@@ -7,7 +7,7 @@ WSL2 or native shells (PowerShell or Git Bash).
 ## Prerequisites
 
 - Node.js 24
-- pnpm 9 via Corepack (`corepack enable`)
+- pnpm 10 via Corepack (`corepack enable`)
 - GitHub CLI (`gh`) — required for the issues/project helpers
 - Rust (via `rustup`) — required for the Tauri host migration work (#95)
 - Tauri CLI (`@tauri-apps/cli`) — only if working on the Rust host
@@ -26,7 +26,7 @@ cd aideon-praxis
 
 # Enable pnpm via Corepack
 corepack enable
-corepack prepare pnpm@9.12.0 --activate
+corepack prepare pnpm@10.19.0 --activate
 
 # Install JS/TS deps
 pnpm install
