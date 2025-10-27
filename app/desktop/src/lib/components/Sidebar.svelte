@@ -1,13 +1,7 @@
-<script module lang="ts">
-  export type SidebarTreeNode = {
-    id: string;
-    label: string;
-    children?: SidebarTreeNode[];
-  };
-</script>
-
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { debug, logSafely } from '$lib/logging';
+  import type { SidebarTreeNode } from './sidebar.types';
   // Minimal tree sidebar. Emits `select` events with an id.
   const { items = [] } = $props<{ items?: SidebarTreeNode[] }>();
   const dispatch = createEventDispatcher<{ select: { id: string } }>();
@@ -15,9 +9,12 @@
   // avoiding an external store for this scoped component state.
   let expanded = $state(new Map<string, boolean>());
   function toggle(id: string) {
-    expanded.set(id, !(expanded.get(id) ?? false));
+    const next = !(expanded.get(id) ?? false);
+    expanded.set(id, next);
+    logSafely(debug, `renderer: sidebar toggle id=${id} expanded=${next}`);
   }
   function select(id: string) {
+    logSafely(debug, `renderer: sidebar select id=${id}`);
     dispatch('select', { id });
   }
 </script>

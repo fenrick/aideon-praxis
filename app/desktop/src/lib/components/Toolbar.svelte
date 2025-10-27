@@ -3,6 +3,7 @@
   // keep a lightweight style (future: Puppertino). Others default to shadcn-like
   // styles backed by our Tailwind/theme.css.
   import IconButton from '$lib/ui/IconButton.svelte';
+  import { debug, info, logSafely } from '$lib/logging';
   const {
     onOpenSettings,
     onOpenAbout,
@@ -16,6 +17,26 @@
     onToggleSidebar: () => void;
     sidebarActive?: boolean;
   }>();
+
+  function handleToggleSidebar() {
+    logSafely(debug, `renderer: toolbar toggle sidebar requested active=${!sidebarActive}`);
+    onToggleSidebar();
+  }
+
+  function handleOpenStatus() {
+    logSafely(info, 'renderer: toolbar open status');
+    onOpenStatus();
+  }
+
+  function handleOpenSettings() {
+    logSafely(info, 'renderer: toolbar open settings');
+    onOpenSettings();
+  }
+
+  function handleOpenAbout() {
+    logSafely(info, 'renderer: toolbar open about');
+    onOpenAbout();
+  }
 </script>
 
 <div class="toolbar" role="toolbar" aria-label="Main toolbar">
@@ -25,7 +46,7 @@
       iconFilled="fluent:panel-left-24-filled"
       title="Toggle Sidebar"
       active={sidebarActive}
-      onClick={onToggleSidebar}
+      onClick={handleToggleSidebar}
     />
   </div>
   <div class="group" aria-label="Inspect & Status">
@@ -33,7 +54,7 @@
       iconRegular="fluent:task-list-24-regular"
       iconFilled="fluent:task-list-24-filled"
       title="Status"
-      onClick={onOpenStatus}
+      onClick={handleOpenStatus}
     />
   </div>
   <div class="group" aria-label="Application">
@@ -41,13 +62,13 @@
       iconRegular="fluent:settings-24-regular"
       iconFilled="fluent:settings-24-filled"
       title="Settings"
-      onClick={onOpenSettings}
+      onClick={handleOpenSettings}
     />
     <IconButton
       iconRegular="fluent:info-24-regular"
       iconFilled="fluent:info-24-filled"
       title="About"
-      onClick={onOpenAbout}
+      onClick={handleOpenAbout}
     />
   </div>
 </div>

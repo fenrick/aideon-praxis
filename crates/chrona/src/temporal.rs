@@ -14,6 +14,7 @@ pub struct TemporalEngine;
 impl TemporalEngine {
     /// Construct a new temporal engine instance.
     pub fn new() -> Self {
+        debug!("chrona: TemporalEngine created");
         Self
     }
 

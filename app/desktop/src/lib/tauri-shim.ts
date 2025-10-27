@@ -1,29 +1,6 @@
-// Define a minimal window.aideon when running under Tauri so the UI can boot
-// without Electron preload. This keeps renderer free of backend specifics.
 import { invoke } from '@tauri-apps/api/core';
-import { debug, error, info } from '@tauri-apps/plugin-log';
+import { debug, error, info, logSafely } from './logging';
 import type { AideonApi, StateAtArguments, StateAtResult } from './types';
-
-type Logger = (message: string) => Promise<void>;
-
-const logSafely = (logger: Logger, message: string) => {
-  logger(message).catch((loggingError: unknown) => {
-    let isDevelopment = false;
-    const developmentOverride = (globalThis as { __AIDEON_DEV__?: boolean }).__AIDEON_DEV__;
-    if (developmentOverride === undefined) {
-      const metaEnvironment = (import.meta as { env?: { DEV?: unknown } }).env;
-      const developmentFlag = metaEnvironment?.DEV;
-      if (developmentFlag === true || developmentFlag === 'true') {
-        isDevelopment = true;
-      }
-    } else {
-      isDevelopment = developmentOverride;
-    }
-    if (isDevelopment) {
-      console.warn('renderer: log fallback', loggingError);
-    }
-  });
-};
 
 // Only define when not already supplied by a preload (Electron) or other bridge
 if ((globalThis as { aideon?: unknown }).aideon === undefined) {
