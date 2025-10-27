@@ -1,3 +1,5 @@
+<!-- Small toggleable icon button abstraction shared by toolbar sections.
+     Keeps icon selection declarative; the active flag switches filled/regular glyphs. -->
 <script lang="ts">
   import Icon from '@iconify/svelte';
   const {
