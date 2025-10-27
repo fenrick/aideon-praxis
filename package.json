@@ -39,8 +39,7 @@
     "host:ci": "pnpm run host:clean && pnpm run host:fix && pnpm run host:lint && pnpm run host:check && pnpm run host:format",
     "ci": "pnpm run node:ci && pnpm run host:ci",
     "release": "semantic-release",
-    "commitlint": "commitlint --from=origin/main --to=HEAD",
-    "prepare": "husky install"
+    "commitlint": "commitlint --from=origin/main --to=HEAD"
   },
   "vitest": {
     "environment": "jsdom",
@@ -102,7 +101,6 @@
     "eslint-plugin-sonarjs": "^3.0.5",
     "eslint-plugin-svelte": "^3.12.5",
     "eslint-plugin-unicorn": "^62.0.0",
-    "husky": "^9.1.7",
     "jsdom": "^27.0.1",
     "prettier": "^3.6.2",
     "prettier-plugin-organize-imports": "^4.3.0",
