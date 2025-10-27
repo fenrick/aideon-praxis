@@ -3,7 +3,7 @@ use log::warn;
 use tauri::{App, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, Wry};
 
 pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
-    WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("splash/index.html".into()))
+    WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("splash/".into()))
         .title("Aideon Praxis — Loading")
         .resizable(false)
         .decorations(false)
