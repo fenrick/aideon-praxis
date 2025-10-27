@@ -19,7 +19,7 @@ dev = [
   "mypy==1.11.2",
   "bandit==1.7.9",
   "vulture>=2.11",
-  "fastapi==0.115.0",
+  "fastapi==0.120.0",
   "pydantic==2.12.3",
   "uvicorn==0.38.0",
   "httpx==0.28.1",
