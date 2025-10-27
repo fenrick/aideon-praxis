@@ -20,7 +20,7 @@
     "node:lint:fix": "eslint --max-warnings=10 \"app/**/src/**/*.{ts,tsx,js,svelte}\" --fix",
     "node:format": "prettier -w .",
     "node:format:check": "prettier -c .",
-    "node:typecheck": "tsc -b --pretty",
+    "node:typecheck": "pnpm --filter @aideon/app run check && tsc -b --pretty",
     "node:ci": "pnpm run node:lint:fix && pnpm run node:typecheck && pnpm run node:test && pnpm run node:format",
     "tauri": "tauri",
     "issues": "python3 scripts/issues.py",

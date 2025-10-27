@@ -13,7 +13,7 @@
   let stateAt: StateAtResult | null = $state(null);
   let error_: string | null = $state(null);
   let seconds = $state(0);
-  let view: 'main' | 'about' = $state('main');
+  let view = $state<'main' | 'about'>('main');
   let showSidebar = $state(true);
   let selectedId: string | null = $state(null);
   let platform: 'mac' | 'win' | 'linux' | 'other' = $state('other');
@@ -59,8 +59,11 @@
       stateAt = await bridge.stateAt({ asOf: '2025-01-01' });
       info('renderer: init complete; stateAt received');
     } catch (error__) {
-      error('renderer: stateAt failed', error__);
-      error_ = String(error__);
+      const message =
+        error__ instanceof Error ? error__.message : typeof error__ === 'string' ? error__ : '';
+      const suffix = message ? ` — ${message}` : '';
+      error(`renderer: stateAt failed${suffix}`);
+      error_ = message || String(error__);
     } finally {
       clearInterval(timer);
     }
