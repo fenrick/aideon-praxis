@@ -45,7 +45,7 @@ pub fn open_settings(app: AppHandle<Wry>) -> Result<(), String> {
     WebviewWindowBuilder::new(
         &app,
         "settings",
-        WebviewUrl::App("settings/index.html".into()),
+        WebviewUrl::App("settings/".into()),
     )
     .title("Preferences")
     .resizable(false)
@@ -63,7 +63,7 @@ pub fn open_about(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "about", WebviewUrl::App("about/index.html".into()))
+    WebviewWindowBuilder::new(&app, "about", WebviewUrl::App("about/".into()))
         .title("About Aideon Praxis")
         .resizable(false)
         .inner_size(420.0, 300.0)
@@ -80,7 +80,7 @@ pub fn open_status(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "status", WebviewUrl::App("status/index.html".into()))
+    WebviewWindowBuilder::new(&app, "status", WebviewUrl::App("status/".into()))
         .title("Status")
         .resizable(false)
         .always_on_top(true)
