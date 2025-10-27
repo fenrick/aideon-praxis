@@ -18,16 +18,16 @@ path to server mode.
 
 #### Outcomes
 
-- Monorepo, CI for TS/Python, pre-commit, CODEOWNERS.
+- Monorepo, CI for TS and Rust, CODEOWNERS.
 - Tauri capabilities baseline (no renderer HTTP, strict CSP, least-privilege plugins).
 - ADRs for RPC and adapter boundaries.
 - Interfaces: `GraphAdapter`, `StorageAdapter`, `WorkerClient`.
 
 #### Acceptance
 
-- `pnpm run node:test` and `pytest` green on macOS/Windows/Linux.
-- App shell launches with secured preload.
-- ADRs merged.
+- `pnpm run node:test` green on macOS/Windows/Linux; Rust host `cargo fmt/clippy/check/test` clean.
+- App shell launches with secured preload/IPC bridge; no renderer HTTP.
+- ADRs merged (RPC and adapter boundaries).
 
 ### M1 — Local App MVP (Weeks 3–6)
 
