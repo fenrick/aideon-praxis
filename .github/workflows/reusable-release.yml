@@ -16,90 +16,14 @@ on:
 
 env:
   NODE_VERSION: '24'
-  PYTHON_VERSION: '3.13'
   PNPM_VERSION: '10.19.0'
 
 permissions:
   contents: write
 
 jobs:
-  build_worker:
-    name: Build Worker (PyInstaller)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm ${{ env.PNPM_VERSION }}
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Get pnpm store directory
-        id: pnpm-store-worker
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-store-worker.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-
-
-      - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Setup Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: latest
-
-      - name: Cache uv and virtualenvs
-        uses: actions/cache@v4
-        with:
-          path: |
-            .venv
-            packages/worker/.venv
-            ~/.cache/uv
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-uv-${{ env.PYTHON_VERSION }}-
-
-      - name: Python Sync (uv)
-        run: pnpm run worker:sync
-
-      - name: Python Lint (ruff+black --check)
-        run: pnpm run worker:lint
-
-      - name: Python Tests
-        run: pnpm run worker:test
-
-      - name: Build worker binary (PyInstaller via uvx)
-        run: uvx pyinstaller -F -n aideon-worker -p packages/worker/src packages/worker/src/aideon_worker/server.py
-
-      - name: Upload worker binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: worker-binary
-          path: |
-            dist/aideon-worker*
-
   package_app:
     name: Package App (${{ matrix.os }})
-    needs: build_worker
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -147,18 +71,6 @@ jobs:
 
       - name: JS Tests
         run: pnpm run node:test
-
-      - name: Download worker binary
-        uses: actions/download-artifact@v5
-        with:
-          name: worker-binary
-          path: dist
-
-      - name: Stage worker binary into app
-        shell: bash
-        run: |
-          mkdir -p app/desktop/extra/worker
-          if [[ "$RUNNER_OS" == "Windows" ]]; then cp dist/aideon-worker.exe app/desktop/extra/worker/; else cp dist/aideon-worker app/desktop/extra/worker/; fi
 
       - name: Build app code
         run: pnpm --filter @aideon/app build
