@@ -124,6 +124,9 @@ importers:
       svelte:
         specifier: ^5.42.2
         version: 5.42.2
+      svelte-eslint-parser:
+        specifier: ^1.4.0
+        version: 1.4.0(svelte@5.42.2)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
