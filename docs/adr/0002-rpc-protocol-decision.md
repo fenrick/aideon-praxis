@@ -36,6 +36,9 @@ Adopt JSON‑RPC 2.0 over pipes/UDS in desktop mode with these constraints:
 - Framing: one JSON object per line (UTF‑8; newline terminated).
 - Envelope: `{ "jsonrpc":"2.0", "id": <num|string>, "method": <string>, "params": <object> }`.
 - Errors: standard JSON‑RPC error object `{ code, message, data? }`.
+- Notifications: requests without an `id` are accepted for fire‑and‑forget semantics and are
+  intentionally silent (no response). Notifications must never be used for state‑changing
+  operations in desktop mode.
 - Versioning: `method` names are stable; breaking changes require new method name.
 - Auth: per‑launch token (future); desktop mode trusts same‑process spawn for now.
 
