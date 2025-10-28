@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
   const {
     name,
     id,
@@ -17,38 +18,26 @@
   let internal = $state(checked);
   $effect(() => (internal = checked));
   function onChange(e: any) {
-    internal = Boolean(e.currentTarget?.checked);
+    const next = Boolean((e.currentTarget as any)?.checked ?? !internal);
+    internal = next;
     dispatch('change', internal ? value : null);
   }
+  let platform = $state(getResolvedUiTheme());
+  onMount(() => onUiThemeChange((t) => (platform = t)));
 </script>
 
-<label class="radio">
-  <input type="radio" {id} {name} {value} checked={internal} onchange={onChange} />
-  <span class="dot" aria-hidden="true"></span>
-  <span class="txt">{label}</span>
-</label>
+{#if platform === 'win'}
+  <fluent-radio {name} {id} checked={internal} onchange={onChange}>{label}</fluent-radio>
+{:else if platform === 'mac'}
+  <label class="p-form-radio-cont">
+    <input type="radio" {id} {name} {value} checked={internal} onchange={onChange} />
+    <span>{label}</span>
+  </label>
+{:else}
+  <label class="inline-flex items-center gap-2">
+    <input type="radio" {id} {name} {value} checked={internal} onchange={onChange} />
+    <span>{label}</span>
+  </label>
+{/if}
 
-<style>
-  .radio {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-  input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .dot {
-    width: 16px;
-    height: 16px;
-    border: 1px solid var(--color-border);
-    border-radius: 50%;
-    background: var(--color-bg);
-    display: inline-block;
-  }
-  :global(input:checked) + .dot {
-    box-shadow: inset 0 0 0 4px var(--color-accent);
-    border-color: var(--color-accent);
-  }
-</style>
+<style></style>

@@ -1,15 +1,16 @@
 <script lang="ts">
-  const { title } = $props<{ title?: string }>();
+  import type { Snippet } from 'svelte';
+  let { title, children, end } = $props<{
+    title?: string;
+    children?: Snippet;
+    end?: Snippet;
+  }>();
 </script>
 
 <div class="toolbar" role="toolbar" aria-label={title ?? 'Toolbar'}>
-  <div class="group">
-    <slot />
-  </div>
+  <div class="group">{@render children?.()}</div>
   <div class="spacer"></div>
-  <div class="group end">
-    <slot name="end" />
-  </div>
+  <div class="group end">{@render end?.()}</div>
 </div>
 
 <style>

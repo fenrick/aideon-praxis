@@ -1,80 +1,69 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
+  import type { Snippet } from 'svelte';
   type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
   type Size = 'sm' | 'md' | 'lg';
-  const {
+  let {
     variant = 'secondary',
     size = 'md',
     disabled = false,
     type = 'button',
+    children,
+    end,
+    badge,
+    onClick,
   } = $props<{
     variant?: Variant;
     size?: Size;
     disabled?: boolean;
     type?: 'button' | 'submit' | 'reset';
+    children?: Snippet;
+    end?: Snippet;
+    badge?: Snippet;
+    onClick?: () => void;
   }>();
+  let platform = $state(getResolvedUiTheme());
+  onMount(() => onUiThemeChange((t) => (platform = t)));
+
+  function fluentAppearance(v: Variant): 'accent' | 'neutral' | 'outline' | 'stealth' {
+    if (v === 'primary') return 'accent';
+    if (v === 'ghost') return 'stealth';
+    if (v === 'secondary') return 'neutral';
+    return 'accent';
+  }
+  function macClasses(v: Variant) {
+    return `p-btn ${v === 'primary' ? 'p-prim-col' : v === 'ghost' ? 'p-btn-outline' : v === 'danger' ? 'p-btn-destructive' : ''}`.trim();
+  }
+  function neutralClasses(v: Variant, s: Size) {
+    const base = v === 'primary' ? 'btn-neutral-primary' : 'btn-neutral';
+    const sz = s === 'sm' ? 'tw-sm' : s === 'lg' ? 'tw-lg' : '';
+    return `${base} ${sz}`.trim();
+  }
 </script>
 
-<button class={'btn ' + variant + ' ' + size} {disabled} {type}>
-  <span class="content"><slot /></span>
-  <slot name="end"></slot>
-  <slot name="badge"></slot>
-  <span class="focus-ring"></span>
-</button>
+{#if platform === 'win'}
+  <fluent-button
+    role="button"
+    tabindex="0"
+    appearance={fluentAppearance(variant)}
+    {disabled}
+    onclick={onClick}
+    onkeydown={(ev: unknown) => {
+      const key = (ev as any)?.key;
+      if (key === 'Enter' || key === ' ') onClick?.();
+    }}
+  >
+    {@render children?.()}{@render end?.()}{@render badge?.()}
+  </fluent-button>
+{:else if platform === 'mac'}
+  <button class={macClasses(variant)} {disabled} {type} onclick={onClick}>
+    {@render children?.()}{@render end?.()}{@render badge?.()}
+  </button>
+{:else}
+  <button class={neutralClasses(variant, size)} {disabled} {type} onclick={onClick}>
+    {@render children?.()}{@render end?.()}{@render badge?.()}
+  </button>
+{/if}
 
-<style>
-  .btn {
-    --h: 32px;
-    height: var(--h);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    border-radius: var(--radius-1);
-    border: 1px solid var(--color-border);
-    background: var(--color-bg);
-    color: var(--color-text);
-    padding: 0 var(--space-3);
-    box-shadow: none;
-  }
-  .btn.sm {
-    --h: 28px;
-    padding: 0 var(--space-2);
-  }
-  .btn.lg {
-    --h: 40px;
-    padding: 0 var(--space-4);
-  }
-
-  .btn.primary {
-    background: var(--color-accent);
-    border-color: color-mix(in srgb, var(--color-accent) 60%, var(--color-border));
-    color: #fff;
-  }
-  .btn.danger {
-    background: color-mix(in srgb, var(--color-danger) 90%, #0000);
-    border-color: color-mix(in srgb, var(--color-danger) 60%, var(--color-border));
-    color: #fff;
-  }
-  .btn.ghost {
-    background: transparent;
-  }
-  .btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .btn:focus-visible {
-    outline: none;
-    position: relative;
-  }
-  .btn .focus-ring {
-    pointer-events: none;
-    position: absolute;
-    inset: -3px;
-    border-radius: calc(var(--radius-1) + 2px);
-    border: 2px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
-    opacity: 0;
-  }
-  .btn:focus-visible .focus-ring {
-    opacity: 1;
-  }
-</style>
+<style></style>

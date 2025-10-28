@@ -1,13 +1,18 @@
 <script lang="ts">
-  const {
+  import type { Snippet } from 'svelte';
+  let {
     open = false,
     title = '',
     onClose,
-  } = $props<{
+    children,
+    footer,
+  }: {
     open?: boolean;
     title?: string;
     onClose?: () => void;
-  }>();
+    children?: Snippet;
+    footer?: Snippet;
+  } = $props();
 
   function requestClose() {
     try {
@@ -44,12 +49,8 @@
         <h3>{title}</h3>
         <button class="close" aria-label="Close" onclick={requestClose}>×</button>
       </header>
-      <section class="body">
-        <slot />
-      </section>
-      <footer class="footer">
-        <slot name="footer" />
-      </footer>
+      <section class="body">{@render children?.()}</section>
+      <footer class="footer">{@render footer?.()}</footer>
     </div>
   </div>
 {/if}

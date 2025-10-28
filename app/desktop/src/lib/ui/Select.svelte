@@ -1,6 +1,7 @@
 <script lang="ts">
   import Field from './Field.svelte';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
   const {
     id,
     label,
@@ -25,24 +26,32 @@
     internal = e.currentTarget?.value ?? '';
     dispatch('change', internal);
   }
+  let platform = $state(getResolvedUiTheme());
+  onMount(() => onUiThemeChange((t) => (platform = t)));
 </script>
 
 <Field {label} {help} {error} {required} forId={id}>
-  <select {id} class="select" bind:value={internal} onchange={onChange}>
-    {#each options as opt (opt.value)}
-      <option value={opt.value}>{opt.label}</option>
-    {/each}
-  </select>
+  {#if platform === 'win'}
+    <fluent-select {id} value={internal} onchange={onChange}>
+      {#each options as opt (opt.value)}
+        <option value={opt.value}>{opt.label}</option>
+      {/each}
+    </fluent-select>
+  {:else if platform === 'mac'}
+    <div class="p-form-select">
+      <select {id} bind:value={internal} onchange={onChange}>
+        {#each options as opt (opt.value)}
+          <option value={opt.value}>{opt.label}</option>
+        {/each}
+      </select>
+    </div>
+  {:else}
+    <select {id} class="tw-select" bind:value={internal} onchange={onChange}>
+      {#each options as opt (opt.value)}
+        <option value={opt.value}>{opt.label}</option>
+      {/each}
+    </select>
+  {/if}
 </Field>
 
-<style>
-  .select {
-    height: 32px;
-    width: 100%;
-    border-radius: var(--radius-1);
-    border: 1px solid var(--color-border);
-    background: var(--color-bg);
-    color: var(--color-text);
-    padding: 0 var(--space-3);
-  }
-</style>
+<style></style>

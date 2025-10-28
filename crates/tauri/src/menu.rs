@@ -81,7 +81,11 @@ fn append_window_items(
 mod mac {
     use super::*;
 
-    pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>, ids: &mut super::MenuIds) -> Result<(), String> {
+    pub(super) fn install(
+        app: &App<Wry>,
+        menu: &Menu<Wry>,
+        ids: &mut super::MenuIds,
+    ) -> Result<(), String> {
         let app_sub = Submenu::new(app, "Aideon Praxis", true).map_err(to_string)?;
         app_sub
             .append(&PredefinedMenuItem::about(app, None, None).map_err(to_string)?)
@@ -120,7 +124,11 @@ mod mac {
 mod desktop {
     use super::*;
 
-    pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>, ids: &mut super::MenuIds) -> Result<(), String> {
+    pub(super) fn install(
+        app: &App<Wry>,
+        menu: &Menu<Wry>,
+        ids: &mut super::MenuIds,
+    ) -> Result<(), String> {
         let file = Submenu::new(app, "File", false).map_err(to_string)?;
         file.append(&MenuItem::new(app, "file.quit", true, None::<&str>).map_err(to_string)?)
             .map_err(to_string)?;

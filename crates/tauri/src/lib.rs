@@ -33,9 +33,9 @@ use std::sync::Mutex;
 
 pub use core_data::temporal::{StateAtArgs, StateAtResult};
 
-use tauri::{async_runtime::spawn, Manager};
+use tauri::{Manager, async_runtime::spawn};
 
-use crate::menu::{build_menu, MenuIds};
+use crate::menu::{MenuIds, build_menu};
 use crate::setup::{SetupState, get_setup_state, run_backend_setup, set_complete};
 use crate::temporal::temporal_state_at;
 use crate::windows::{create_windows, open_about, open_settings, open_status, open_styleguide};

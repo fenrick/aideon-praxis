@@ -1,47 +1,32 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
   const { id, label, checked = false } = $props<{ id: string; label: string; checked?: boolean }>();
   const dispatch = createEventDispatcher<{ change: boolean }>();
   let internal = $state(checked);
   $effect(() => (internal = checked));
   function onChange(e: any) {
-    internal = Boolean(e.currentTarget?.checked);
+    // For custom elements or inputs, prefer target.checked
+    const next = (e.currentTarget as any)?.checked ?? !internal;
+    internal = Boolean(next);
     dispatch('change', internal);
   }
+  let platform = $state(getResolvedUiTheme());
+  onMount(() => onUiThemeChange((t) => (platform = t)));
 </script>
 
-<label class="chk">
-  <input {id} type="checkbox" bind:checked={internal} onchange={onChange} />
-  <span class="box" aria-hidden="true"></span>
-  <span class="txt">{label}</span>
-  <span class="focus-ring"></span>
-</label>
+{#if platform === 'win'}
+  <fluent-checkbox {id} checked={internal} onchange={onChange}>{label}</fluent-checkbox>
+{:else if platform === 'mac'}
+  <label class="p-form-checkbox-cont">
+    <input {id} type="checkbox" checked={internal} onchange={onChange} />
+    <span>{label}</span>
+  </label>
+{:else}
+  <label class="inline-flex items-center gap-2">
+    <input {id} type="checkbox" class="tw-checkbox" checked={internal} onchange={onChange} />
+    <span>{label}</span>
+  </label>
+{/if}
 
-<style>
-  .chk {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    position: relative;
-  }
-  input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .box {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    border: 1px solid var(--color-border);
-    background: var(--color-bg);
-    display: inline-block;
-  }
-  :global(input:checked) + .box {
-    background: var(--color-accent);
-    border-color: var(--color-accent);
-  }
-  .txt {
-    color: var(--color-text);
-  }
-</style>
+<style></style>
