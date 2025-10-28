@@ -1,0 +1,45 @@
+:root {
+  /* Typography */
+  --font-ui:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Roboto, Ubuntu, Cantarell,
+    'Noto Sans', Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+
+  /* Colors (light) */
+  --color-bg: #ffffff;
+  --color-surface: #f6f8fa;
+  --color-border: #d0d7de;
+  --color-text: #24292f;
+  --color-muted: #57606a;
+  --color-accent: #0a7cff;
+  --color-danger: #d1242f;
+  --color-success: #1a7f37;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --radius-1: 6px;
+  --radius-2: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0b0f19;
+    --color-surface: #0f172a;
+    --color-border: #1f2a44;
+    --color-text: #e6edf3;
+    --color-muted: #9aa7b2;
+    --color-accent: #3b82f6;
+    --color-danger: #f87171;
+    --color-success: #34d399;
+  }
+}
