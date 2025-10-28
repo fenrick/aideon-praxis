@@ -5,7 +5,7 @@
   "identifier": "com.aideon.praxis",
   "build": {
     "beforeDevCommand": "pnpm --filter @aideon/app run dev",
-    "beforeBuildCommand": "pnpm --filter @aideon/app run node:build",
+    "beforeBuildCommand": "pnpm  --filter @aideon/app run node:build",
     "devUrl": "http://localhost:1420",
     "frontendDist": "../../app/desktop/build"
   },

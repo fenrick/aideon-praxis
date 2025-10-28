@@ -1,6 +1,6 @@
 <script lang="ts">
   const { text = '' } = $props<{ text?: string }>();
-  let open = false;
+  let open = $state(false);
 </script>
 
 <span

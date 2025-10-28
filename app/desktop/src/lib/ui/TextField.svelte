@@ -22,7 +22,7 @@
   }>();
 
   const dispatch = createEventDispatcher<{ change: string }>();
-  let internal = value;
+  let internal = $state(value);
   $effect(() => (internal = value));
   function onInput(e: any) {
     internal = e.currentTarget?.value ?? '';

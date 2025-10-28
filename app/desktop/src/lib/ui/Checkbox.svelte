@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   const { id, label, checked = false } = $props<{ id: string; label: string; checked?: boolean }>();
   const dispatch = createEventDispatcher<{ change: boolean }>();
-  let internal = checked;
+  let internal = $state(checked);
   $effect(() => (internal = checked));
   function onChange(e: any) {
     internal = Boolean(e.currentTarget?.checked);

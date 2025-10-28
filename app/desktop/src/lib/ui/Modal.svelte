@@ -15,7 +15,7 @@
     } catch {}
   }
 
-  let dialogEl: any | null = null;
+  let dialogEl = $state<any | null>(null);
 
   // Basic focus trap when modal opens
   $effect.pre(() => {

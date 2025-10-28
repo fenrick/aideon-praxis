@@ -14,7 +14,7 @@
     checked?: boolean;
   }>();
   const dispatch = createEventDispatcher<{ change: string | null }>();
-  let internal = checked;
+  let internal = $state(checked);
   $effect(() => (internal = checked));
   function onChange(e: any) {
     internal = Boolean(e.currentTarget?.checked);

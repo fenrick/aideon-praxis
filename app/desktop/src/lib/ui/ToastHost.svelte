@@ -1,6 +1,6 @@
 <script lang="ts">
   import { dismiss, subscribe, type ToastItem } from './toast';
-  let list: ToastItem[] = [];
+  let list = $state<ToastItem[]>([]);
   $effect(() => subscribe((items) => (list = items)));
 </script>
 
@@ -10,7 +10,7 @@
       {t.text}
     </button>
   {/each}
-  <slot></slot>
+  <slot />
 </div>
 
 <style>

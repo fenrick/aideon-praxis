@@ -4,7 +4,7 @@
   import Components from './components.svelte';
   const platforms = ['auto', 'mac', 'win', 'linux'] as const;
   type Platform = (typeof platforms)[number];
-  let platform: Platform = 'auto';
+  let platform = $state<Platform>('auto');
   $effect.pre(() => {
     const saved = localStorage.getItem('aideon.platform') as Platform | null;
     platform = saved ?? 'auto';
