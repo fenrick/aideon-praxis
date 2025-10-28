@@ -33,9 +33,9 @@ use std::sync::Mutex;
 
 pub use core_data::temporal::{StateAtArgs, StateAtResult};
 
-use tauri::async_runtime::spawn;
+use tauri::{async_runtime::spawn, Manager};
 
-use crate::menu::build_menu;
+use crate::menu::{build_menu, MenuIds};
 use crate::setup::{SetupState, get_setup_state, run_backend_setup, set_complete};
 use crate::temporal::temporal_state_at;
 use crate::windows::{create_windows, open_about, open_settings, open_status, open_styleguide};
@@ -80,15 +80,21 @@ pub fn run() {
                     log::info!("menu: help.about");
                     let _ = open_about(app.clone());
                 }
-                "debug.styleguide" => {
-                    log::info!("menu: open styleguide");
-                    let _ = open_styleguide(app.clone());
-                }
                 "file.quit" => {
                     log::info!("menu: file.quit");
                     app.exit(0);
                 }
                 _ => {}
+            });
+
+            // Fallback dispatch by discovered IDs (platforms may remap IDs)
+            app.on_menu_event(|app, event| {
+                let ids = app.state::<MenuIds>();
+                let ev = event.id().as_ref();
+                if ev == ids.styleguide {
+                    log::info!("menu: open styleguide via resolved id");
+                    let _ = open_styleguide(app.clone());
+                }
             });
 
             create_windows(app)?;
