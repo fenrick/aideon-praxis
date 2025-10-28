@@ -89,6 +89,7 @@ pub fn open_status(app: AppHandle<Wry>) -> Result<(), String> {
 
 #[tauri::command]
 pub fn open_styleguide(app: AppHandle<Wry>) -> Result<(), String> {
+    log::info!("host: open_styleguide requested");
     if let Some(window) = app.get_webview_window("styleguide") {
         let _ = window.set_focus();
         return Ok(());
