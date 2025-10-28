@@ -38,7 +38,7 @@ use tauri::async_runtime::spawn;
 use crate::menu::build_menu;
 use crate::setup::{SetupState, get_setup_state, run_backend_setup, set_complete};
 use crate::temporal::temporal_state_at;
-use crate::windows::{create_windows, open_about, open_settings, open_status};
+use crate::windows::{create_windows, open_about, open_settings, open_status, open_styleguide};
 
 /// Simple sample command used by tests and smoke checks.
 #[tauri::command]
@@ -72,6 +72,9 @@ pub fn run() {
                 "help.about" => {
                     let _ = open_about(app.clone());
                 }
+                "debug.styleguide" => {
+                    let _ = open_styleguide(app.clone());
+                }
                 "file.quit" => {
                     app.exit(0);
                 }
@@ -97,6 +100,7 @@ pub fn run() {
             open_about,
             open_settings,
             open_status,
+            open_styleguide,
             get_setup_state
         ])
         .run(tauri::generate_context!())
