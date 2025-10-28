@@ -62,20 +62,30 @@ pub fn run() {
         .setup(|app| {
             build_menu(app)?;
 
+            app.on_menu_event(|_app, event| {
+                log::info!("menu: event id={:?}", event.id());
+            });
+
+            // Specific actions
             app.on_menu_event(|app, event| match event.id().as_ref() {
                 "about" => {
+                    log::info!("menu: open about");
                     let _ = open_about(app.clone());
                 }
                 "preferences" => {
+                    log::info!("menu: open settings");
                     let _ = open_settings(app.clone());
                 }
                 "help.about" => {
+                    log::info!("menu: help.about");
                     let _ = open_about(app.clone());
                 }
                 "debug.styleguide" => {
+                    log::info!("menu: open styleguide");
                     let _ = open_styleguide(app.clone());
                 }
                 "file.quit" => {
+                    log::info!("menu: file.quit");
                     app.exit(0);
                 }
                 _ => {}

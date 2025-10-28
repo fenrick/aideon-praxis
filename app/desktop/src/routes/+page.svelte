@@ -28,6 +28,7 @@
           ? 'linux'
           : 'other';
     document.body.classList.add(`platform-${platform}`);
+    document.documentElement.classList.add(`platform-${platform}`);
     if (platform === 'win') {
       try {
         const { fluentButton, provideFluentDesignSystem } = await import(
@@ -59,7 +60,17 @@
           };
         }
       ).aideon;
-      const stateAtFn = bridge?.stateAt;
+      let stateAtFn = bridge?.stateAt;
+      if (typeof stateAtFn !== 'function') {
+        logSafely(debug, 'renderer: aideon bridge missing; importing tauri-shim');
+        await import('$lib/tauri-shim');
+        const reBridge = (
+          globalThis as unknown as {
+            aideon?: { stateAt?: typeof stateAtFn };
+          }
+        ).aideon;
+        stateAtFn = reBridge?.stateAt as unknown as typeof stateAtFn;
+      }
       if (typeof stateAtFn !== 'function') {
         throw new TypeError('Bridge not available');
       }
