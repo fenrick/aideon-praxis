@@ -87,6 +87,23 @@ pub fn open_status(app: AppHandle<Wry>) -> Result<(), String> {
         .map_err(to_string)
 }
 
+#[tauri::command]
+pub fn open_styleguide(app: AppHandle<Wry>) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("styleguide") {
+        let _ = window.set_focus();
+        return Ok(());
+    }
+
+    WebviewWindowBuilder::new(&app, "styleguide", WebviewUrl::App("styleguide/".into()))
+        .title("UI Style Guide")
+        .resizable(true)
+        .inner_size(900.0, 700.0)
+        .center()
+        .build()
+        .map(|_| ())
+        .map_err(to_string)
+}
+
 fn to_string<E: std::fmt::Display>(error: E) -> String {
     error.to_string()
 }

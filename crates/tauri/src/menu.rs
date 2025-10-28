@@ -98,6 +98,12 @@ mod mac {
         let help = Submenu::new(app, "Help", true).map_err(to_string)?;
         menu.append(&help).map_err(to_string)?;
 
+        let debug = Submenu::new(app, "Debug", true).map_err(to_string)?;
+        debug
+            .append(&MenuItem::new(app, "debug.styleguide", true, Some("UI Style Guide")).map_err(to_string)?)
+            .map_err(to_string)?;
+        menu.append(&debug).map_err(to_string)?;
+
         Ok(())
     }
 }
@@ -130,6 +136,12 @@ mod desktop {
         help.append(&MenuItem::new(app, "help.about", true, Some("About")).map_err(to_string)?)
             .map_err(to_string)?;
         menu.append(&help).map_err(to_string)?;
+
+        let debug = Submenu::new(app, "Debug", false).map_err(to_string)?;
+        debug
+            .append(&MenuItem::new(app, "debug.styleguide", true, Some("UI Style Guide")).map_err(to_string)?)
+            .map_err(to_string)?;
+        menu.append(&debug).map_err(to_string)?;
 
         Ok(())
     }
