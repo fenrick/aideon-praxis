@@ -1,22 +1,29 @@
 use tauri::{
-    App, Wry,
+    App, Manager, Wry,
     menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
 };
 
+#[derive(Clone, Debug, Default)]
+pub struct MenuIds {
+    pub styleguide: String,
+}
+
 pub fn build_menu(app: &App<Wry>) -> Result<(), String> {
     let menu = Menu::new(app).map_err(to_string)?;
+    let mut ids = MenuIds::default();
 
     #[cfg(target_os = "macos")]
     {
-        mac::install(app, &menu)?;
+        mac::install(app, &menu, &mut ids)?;
     }
 
     #[cfg(not(target_os = "macos"))]
     {
-        desktop::install(app, &menu)?;
+        desktop::install(app, &menu, &mut ids)?;
     }
 
     app.set_menu(menu).map_err(to_string)?;
+    app.manage(ids);
     Ok(())
 }
 
@@ -74,7 +81,7 @@ fn append_window_items(
 mod mac {
     use super::*;
 
-    pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>) -> Result<(), String> {
+    pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>, ids: &mut super::MenuIds) -> Result<(), String> {
         let app_sub = Submenu::new(app, "Aideon Praxis", true).map_err(to_string)?;
         app_sub
             .append(&PredefinedMenuItem::about(app, None, None).map_err(to_string)?)
@@ -99,9 +106,10 @@ mod mac {
         menu.append(&help).map_err(to_string)?;
 
         let debug = Submenu::new(app, "Debug", true).map_err(to_string)?;
-        debug
-            .append(&MenuItem::new(app, "debug.styleguide", true, Some("UI Style Guide")).map_err(to_string)?)
+        let style_item = MenuItem::new(app, "debug_styleguide", true, Some("UI Style Guide"))
             .map_err(to_string)?;
+        ids.styleguide = style_item.id().as_ref().to_string();
+        debug.append(&style_item).map_err(to_string)?;
         menu.append(&debug).map_err(to_string)?;
 
         Ok(())
@@ -112,7 +120,7 @@ mod mac {
 mod desktop {
     use super::*;
 
-    pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>) -> Result<(), String> {
+    pub(super) fn install(app: &App<Wry>, menu: &Menu<Wry>, ids: &mut super::MenuIds) -> Result<(), String> {
         let file = Submenu::new(app, "File", false).map_err(to_string)?;
         file.append(&MenuItem::new(app, "file.quit", true, None::<&str>).map_err(to_string)?)
             .map_err(to_string)?;
@@ -138,9 +146,10 @@ mod desktop {
         menu.append(&help).map_err(to_string)?;
 
         let debug = Submenu::new(app, "Debug", false).map_err(to_string)?;
-        debug
-            .append(&MenuItem::new(app, "debug.styleguide", true, Some("UI Style Guide")).map_err(to_string)?)
+        let style_item = MenuItem::new(app, "debug_styleguide", true, Some("UI Style Guide"))
             .map_err(to_string)?;
+        ids.styleguide = style_item.id().as_ref().to_string();
+        debug.append(&style_item).map_err(to_string)?;
         menu.append(&debug).map_err(to_string)?;
 
         Ok(())
