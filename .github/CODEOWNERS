@@ -1,5 +1,13 @@
-# Code owners for directories
+# Code owners for monorepo directories
 
-/packages/app/ @fenrick
-/packages/host/ @fenrick
-/packages/worker/ @fenrick
+# UI (renderer) and adapters
+/app/ @fenrick
+
+# Rust crates (host and domain)
+/crates/ @fenrick
+
+# Docs (ADRs, C4, roadmap)
+/docs/ @fenrick
+
+# Catch-all
+* @fenrick

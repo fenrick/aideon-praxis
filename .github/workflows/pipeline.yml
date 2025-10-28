@@ -285,3 +285,59 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  docs_diagrams:
+    name: Docs — C4 Diagrams
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz unzip
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Download Structurizr CLI
+        run: |
+          mkdir -p .tools/structurizr-cli
+          curl -sSL -o .tools/structurizr-cli/structurizr-cli.zip \
+            https://github.com/structurizr/cli/releases/download/v4462/structurizr-cli.zip
+          unzip -q -o .tools/structurizr-cli/structurizr-cli.zip -d .tools/structurizr-cli
+          mv .tools/structurizr-cli/structurizr-cli-*.jar .tools/structurizr-cli/structurizr-cli.jar
+
+      - name: Download PlantUML
+        run: |
+          mkdir -p .tools/plantuml
+          curl -sSL -o .tools/plantuml/plantuml.jar \
+            https://github.com/plantuml/plantuml/releases/download/v1.2024.6/plantuml-1.2024.6.jar
+
+      - name: Export PlantUML from DSL
+        run: |
+          mkdir -p docs/c4/out/plantuml docs/c4/out/png
+          java -jar .tools/structurizr-cli/structurizr-cli.jar export \
+            -workspace docs/c4/workspace.dsl \
+            -format plantuml \
+            -output docs/c4/out/plantuml
+
+      - name: Render PNG from PlantUML
+        run: |
+          java -Djava.awt.headless=true -jar .tools/plantuml/plantuml.jar \
+            -tpng docs/c4/out/plantuml/*.puml -o docs/c4/out/png
+
+      - name: Upload C4 artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: c4-diagrams
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            docs/c4/out
