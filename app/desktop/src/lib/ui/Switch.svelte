@@ -6,7 +6,7 @@
     label,
   } = $props<{ id: string; checked?: boolean; label?: string }>();
   const dispatch = createEventDispatcher<{ change: boolean }>();
-  let internal = checked;
+  let internal = $state(checked);
   $effect(() => (internal = checked));
   function onChange(e: any) {
     internal = Boolean(e.currentTarget?.checked);

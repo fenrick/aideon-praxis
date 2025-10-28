@@ -3,8 +3,8 @@
     direction?: 'horizontal' | 'vertical';
     initial?: number;
   }>();
-  let pos = initial;
-  let dragging = false;
+  let pos = $state(initial);
+  let dragging = $state(false);
   function startDrag(_e: any) {
     dragging = true;
     (document as any).addEventListener('mousemove', onDrag);
@@ -27,8 +27,19 @@
   <div
     class="divider"
     role="separator"
+    tabindex="0"
+    aria-label="Resize pane"
     aria-orientation={direction === 'horizontal' ? 'vertical' : 'horizontal'}
     onmousedown={startDrag}
+    onkeydown={(e) => {
+      if (direction === 'horizontal') {
+        if (e.key === 'ArrowLeft') pos = Math.max(80, pos - 10);
+        if (e.key === 'ArrowRight') pos = pos + 10;
+      } else {
+        if (e.key === 'ArrowUp') pos = Math.max(80, pos - 10);
+        if (e.key === 'ArrowDown') pos = pos + 10;
+      }
+    }}
   ></div>
   <div class="b">
     <slot name="b" />

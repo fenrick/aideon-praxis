@@ -2,8 +2,7 @@
 
 :root {
   color-scheme: light dark;
-  --accent: var(--color-accent);
-  accent-color: var(--accent);
+  accent-color: var(--color-accent);
   font-family: var(--font-ui);
 }
 
@@ -15,14 +14,15 @@ body,
 }
 
 /* Platform scoping */
+/* Use platform-specific accent samples for clear visual diffs in dev */
 :root.platform-mac {
-  --accent: AccentColor;
+  --color-accent: #0a84ff;
 }
 :root.platform-win {
-  --accent: AccentColor;
+  --color-accent: #0078d4;
 }
 :root.platform-linux {
-  --accent: AccentColor;
+  --color-accent: #16a34a;
 }
 
 /* Titlebar drag behavior helpers */

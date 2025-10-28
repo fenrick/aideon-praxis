@@ -100,13 +100,7 @@
     height: 100%;
     object-fit: cover;
   }
-  .mark {
-    position: absolute;
-    left: 33%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(36vw, 640px);
-  }
+  /* removed unused .mark */
   .right {
     position: absolute;
     right: 5vw;

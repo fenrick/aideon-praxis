@@ -1,15 +1,18 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   export type TabItem = { id: string; title: string; dirty?: boolean };
   const {
     tabs = [],
     activeId,
     onSelect,
     onClose,
+    after,
   } = $props<{
     tabs?: TabItem[];
     activeId: string | null;
     onSelect: (_id: string) => void;
     onClose?: (_id: string) => void;
+    after?: Snippet;
   }>();
 </script>
 
@@ -24,12 +27,22 @@
     >
       <span class="label">{t.title}{t.dirty ? '*' : ''}</span>
       {#if onClose}
-        <span class="spacer" />
-        <span class="close" onclick={(e) => (e.stopPropagation(), onClose?.(t.id))}>×</span>
+        <span class="spacer"></span>
+        <span
+          class="close"
+          role="button"
+          tabindex="0"
+          aria-label="Close tab"
+          onclick={(e) => (e.stopPropagation(), onClose?.(t.id))}
+          onkeydown={(e) =>
+            (e.key === 'Enter' || e.key === ' ') && (e.stopPropagation(), onClose?.(t.id))}
+        >
+          ×
+        </span>
       {/if}
     </button>
   {/each}
-  <slot name="after" />
+  {@render after?.()}
   <div class="fill"></div>
 </div>
 

@@ -15,7 +15,7 @@
 </script>
 
 <button class={'btn ' + variant + ' ' + size} {disabled} {type}>
-  <span class="content"><slot></slot></span>
+  <span class="content"><slot /></span>
   <slot name="end"></slot>
   <slot name="badge"></slot>
   <span class="focus-ring"></span>
