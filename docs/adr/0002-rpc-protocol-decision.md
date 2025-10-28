@@ -1,8 +1,8 @@
 # ADR-0002: RPC Protocol for Desktop Mode
 
-Status: Proposed
+Status: Accepted
 
-Date: 2025-10-18
+Date: 2025-10-28
 
 ## Context
 

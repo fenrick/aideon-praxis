@@ -42,18 +42,14 @@ pub fn open_settings(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(
-        &app,
-        "settings",
-        WebviewUrl::App("settings/".into()),
-    )
-    .title("Preferences")
-    .resizable(false)
-    .inner_size(520.0, 440.0)
-    .center()
-    .build()
-    .map(|_| ())
-    .map_err(to_string)
+    WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("settings/".into()))
+        .title("Preferences")
+        .resizable(false)
+        .inner_size(520.0, 440.0)
+        .center()
+        .build()
+        .map(|_| ())
+        .map_err(to_string)
 }
 
 #[tauri::command]
