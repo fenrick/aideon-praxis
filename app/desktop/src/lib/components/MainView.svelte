@@ -34,22 +34,35 @@
   });
 </script>
 
-<div style="padding: 16px;">
+<div class="main">
   <div style="display: flex; align-items: center; justify-content: space-between;">
     <h1 style="margin: 0;">Aideon Praxis</h1>
   </div>
-  <p>Renderer booted. Bridge version: {version}</p>
+  <p class="muted">Renderer booted. Bridge version: {version}</p>
   <hr />
   <h2>Worker Connectivity</h2>
   {#if errorMsg}
     <p style="color: crimson;">Error: {errorMsg}</p>
   {:else if stateAt}
-    <pre style="background: #0f172a0d; padding: 12px; border-radius: 6px;">{JSON.stringify(
-        stateAt,
-        null,
-        2,
-      )}</pre>
+    <pre class="mono">{JSON.stringify(stateAt, null, 2)}</pre>
   {:else}
-    <p>Querying worker…</p>
+    <p class="muted">Querying worker…</p>
   {/if}
 </div>
+
+<style>
+  .main {
+    padding: var(--space-4);
+    color: var(--color-text);
+  }
+  .muted {
+    color: var(--color-muted);
+  }
+  .mono {
+    background: var(--color-surface);
+    padding: var(--space-3);
+    border-radius: var(--radius-1);
+    border: 1px solid var(--color-border);
+    font-family: var(--font-mono);
+  }
+</style>
