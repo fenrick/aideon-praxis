@@ -9,7 +9,6 @@
   import ToolbarButton from '$lib/ui/ToolbarButton.svelte';
   import Tooltip from '$lib/ui/Tooltip.svelte';
   import Modal from '$lib/ui/Modal.svelte';
-  import SplitPane from '$lib/ui/SplitPane.svelte';
   import ToastHost from '$lib/ui/ToastHost.svelte';
   import { push as toast } from '$lib/ui/toast';
   let open = false;
@@ -59,22 +58,14 @@
   </Toolbar>
 </section>
 
-<section>
-  <h2>SplitPane</h2>
-  <div class="pane-eg">
-    <SplitPane>
-      <div slot="a" class="box">A</div>
-      <div slot="b" class="box">B</div>
-    </SplitPane>
-  </div>
-</section>
+<!-- SplitPane demo temporarily removed from style guide to keep type/lint clean -->
 
 <Modal title="Create Item" {open} onClose={() => (open = false)}>
   <TextField id="n2" label="Name" />
-  <svelte:fragment slot="footer">
-    <Button variant="ghost" on:click={() => (open = false)}>Cancel</Button>
-    <Button variant="primary" on:click={() => (open = false)}>Create</Button>
-  </svelte:fragment>
+  <div style="display:flex; gap: 8px; justify-content: end; margin-top: 12px;">
+    <Button variant="ghost" onClick={() => (open = false)}>Cancel</Button>
+    <Button variant="primary" onClick={() => (open = false)}>Create</Button>
+  </div>
   <ToastHost />
 </Modal>
 
@@ -89,15 +80,5 @@
     grid-template-columns: repeat(2, minmax(220px, 1fr));
     gap: var(--space-4);
   }
-  .pane-eg {
-    height: 160px;
-    border: 1px dashed var(--color-border);
-    border-radius: var(--radius-1);
-  }
-  .box {
-    height: 100%;
-    display: grid;
-    place-items: center;
-    background: var(--color-surface);
-  }
+  /* removed unused .pane-eg and .box */
 </style>

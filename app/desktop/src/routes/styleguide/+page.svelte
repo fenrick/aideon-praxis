@@ -2,39 +2,22 @@
   import '../../lib/styles/theme.css';
   import Tokens from './tokens.svelte';
   import Components from './components.svelte';
-  const platforms = ['auto', 'mac', 'win', 'linux'] as const;
+  import OSPreview from './OSPreview.svelte';
+  import { initUiTheme, setUiTheme } from '$lib/theme/platform';
+  import { onMount } from 'svelte';
+  const platforms = ['auto', 'mac', 'win', 'neutral'] as const;
   type Platform = (typeof platforms)[number];
   let platform = $state<Platform>('auto');
   $effect.pre(() => {
-    const saved = localStorage.getItem('aideon.platform') as Platform | null;
-    platform = saved ?? 'auto';
-    applyPlatform();
+    const saved = (localStorage.getItem('aideon.platform') as Platform | null) ?? 'auto';
+    platform = saved;
   });
-  function applyPlatform() {
-    const root = document.documentElement;
-    root.classList.remove('platform-mac', 'platform-win', 'platform-linux');
-    switch (platform) {
-      case 'mac': {
-        root.classList.add('platform-mac');
-        break;
-      }
-      case 'win': {
-        root.classList.add('platform-win');
-        break;
-      }
-      case 'linux': {
-        {
-          root.classList.add('platform-linux');
-          // No default
-        }
-        break;
-      }
-    }
-  }
-  function onPlatformChange(value: Platform) {
+  onMount(() => {
+    void initUiTheme();
+  });
+  async function onPlatformChange(value: Platform) {
     platform = value;
-    localStorage.setItem('aideon.platform', platform);
-    applyPlatform();
+    await setUiTheme(platform);
   }
 </script>
 
@@ -55,6 +38,7 @@
     {/each}
   </div>
   <Tokens />
+  <OSPreview />
   <Components />
 </div>
 

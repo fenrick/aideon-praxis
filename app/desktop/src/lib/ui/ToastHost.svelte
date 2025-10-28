@@ -1,5 +1,7 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import { dismiss, subscribe, type ToastItem } from './toast';
+  let { children } = $props<{ children?: Snippet }>();
   let list = $state<ToastItem[]>([]);
   $effect(() => subscribe((items) => (list = items)));
 </script>
@@ -10,7 +12,7 @@
       {t.text}
     </button>
   {/each}
-  <slot />
+  {@render children?.()}
 </div>
 
 <style>

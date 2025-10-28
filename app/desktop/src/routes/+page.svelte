@@ -16,29 +16,10 @@
   let view = $state<'main' | 'about'>('main');
   let showSidebar = $state(true);
   let selectedId: string | null = $state(null);
-  let platform: 'mac' | 'win' | 'linux' | 'other' = $state('other');
+  import { initUiTheme } from '$lib/theme/platform';
 
   onMount(async () => {
-    const ua = navigator.userAgent;
-    platform = /Macintosh|Mac OS X/.test(ua)
-      ? 'mac'
-      : /Windows/.test(ua)
-        ? 'win'
-        : /Linux/.test(ua)
-          ? 'linux'
-          : 'other';
-    document.body.classList.add(`platform-${platform}`);
-    document.documentElement.classList.add(`platform-${platform}`);
-    if (platform === 'win') {
-      try {
-        const { fluentButton, provideFluentDesignSystem } = await import(
-          '@fluentui/web-components'
-        );
-        provideFluentDesignSystem().register(fluentButton());
-      } catch {
-        /* noop: Fluent registration best-effort */
-      }
-    }
+    await initUiTheme();
 
     logSafely(info, 'renderer: main window mounting');
     logSafely(info, 'renderer: starting initialization timer tick');

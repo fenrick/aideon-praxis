@@ -20,7 +20,7 @@ Status: Draft (implements M0 baseline; informs M1 scope)
 
 - Windows-first: Fluent UI Web Components (FAST) for in-content widgets.
 - macOS-first: keep native menus + minimalist custom title area; prefer system fonts and restrained controls; Puppertino is acceptable for in-content CSS where needed.
-- Neutral: headless primitives + our tokens; Shoelace is acceptable when we need accessible, styled web components.
+- Neutral: shadcn-svelte style using Tailwind utilities. Tailwind is not loaded globally; it is injected only when Neutral is selected in the Style Guide.
 
 We will not lock into a single third-party kit; we compose small wrappers where needed.
 
@@ -56,5 +56,5 @@ We will not lock into a single third-party kit; we compose small wrappers where 
 - Switching the Style Guide platform toggle updates `--color-accent` live; Primary buttons, Switches and focus rings visibly change.
 - Menus are native on all three OSes.
 - Lint/typecheck/tests pass; no “non reactive update” warnings.
+- Selecting Windows registers Fluent 2 components; selecting macOS injects Puppertino CSS; selecting Neutral injects Tailwind CSS and removes other injected styles.
 - Slot deprecation: tolerated in M0; plan a follow-up to migrate to Svelte 5 snippets in M1.
-

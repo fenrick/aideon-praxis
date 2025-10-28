@@ -1,0 +1,18 @@
+/* Neutral theme CSS (loaded on demand)
+   - Tailwind layers only, compiled by PostCSS during build
+   - Keep this file unimported globally; the theme manager injects it when Neutral is selected
+*/
+@import 'tailwindcss';
+
+@theme {
+  /* optional design tokens for shadcn-like look */
+  --color-primary: oklch(0.57 0.21 264);
+}
+
+/* Example component presets used in style guide */
+.btn-neutral {
+  @apply inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-900 shadow-sm hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800;
+}
+.btn-neutral-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none disabled:opacity-50;
+}

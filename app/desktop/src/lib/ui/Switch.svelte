@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
   const {
     id,
     checked = false,
@@ -9,52 +10,33 @@
   let internal = $state(checked);
   $effect(() => (internal = checked));
   function onChange(e: any) {
-    internal = Boolean(e.currentTarget?.checked);
+    const next = (e.currentTarget as any)?.checked ?? !internal;
+    internal = Boolean(next);
     dispatch('change', internal);
   }
+  let platform = $state(getResolvedUiTheme());
+  onMount(() => onUiThemeChange((t) => (platform = t)));
 </script>
 
-<label class="switch">
-  <input {id} type="checkbox" role="switch" bind:checked={internal} onchange={onChange} />
-  <span class="track"><span class="thumb"></span></span>
-  {#if label}<span class="txt">{label}</span>{/if}
-</label>
+{#if platform === 'win'}
+  <fluent-switch {id} checked={internal} onchange={onChange}>{label}</fluent-switch>
+{:else if platform === 'mac'}
+  <label class="p-form-checkbox-cont">
+    <input {id} type="checkbox" role="switch" checked={internal} onchange={onChange} />
+    <span>{label}</span>
+  </label>
+{:else}
+  <label class="inline-flex items-center gap-2">
+    <input
+      {id}
+      type="checkbox"
+      role="switch"
+      class="tw-checkbox"
+      checked={internal}
+      onchange={onChange}
+    />
+    <span>{label}</span>
+  </label>
+{/if}
 
-<style>
-  .switch {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-  input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .track {
-    width: 36px;
-    height: 20px;
-    border-radius: 10px;
-    background: var(--color-border);
-    display: inline-flex;
-    align-items: center;
-    padding: 2px;
-    transition: background 0.15s ease;
-  }
-  .thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--color-bg);
-    transform: translateX(0);
-    transition: transform 0.15s ease;
-    box-shadow: var(--shadow-1);
-  }
-  :global(input:checked) + .track {
-    background: var(--color-accent);
-  }
-  :global(input:checked) + .track .thumb {
-    transform: translateX(16px);
-    background: #fff;
-  }
-</style>
+<style></style>

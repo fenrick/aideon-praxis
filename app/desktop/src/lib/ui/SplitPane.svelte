@@ -1,7 +1,17 @@
 <script lang="ts">
-  const { direction = 'horizontal', initial = 280 } = $props<{
+  import type { Snippet } from 'svelte';
+  let {
+    direction = 'horizontal',
+    initial = 280,
+    a,
+    b,
+    children,
+  } = $props<{
     direction?: 'horizontal' | 'vertical';
     initial?: number;
+    a?: Snippet;
+    b?: Snippet;
+    children?: Snippet;
   }>();
   let pos = $state(initial);
   let dragging = $state(false);
@@ -22,14 +32,12 @@
 
 <div class={'split ' + direction}>
   <div class="a" style={direction === 'horizontal' ? `width:${pos}px` : `height:${pos}px`}>
-    <slot name="a" />
+    {@render a?.()}
   </div>
-  <div
+  <button
     class="divider"
-    role="separator"
-    tabindex="0"
+    type="button"
     aria-label="Resize pane"
-    aria-orientation={direction === 'horizontal' ? 'vertical' : 'horizontal'}
     onmousedown={startDrag}
     onkeydown={(e) => {
       if (direction === 'horizontal') {
@@ -40,11 +48,9 @@
         if (e.key === 'ArrowDown') pos = pos + 10;
       }
     }}
-  ></div>
-  <div class="b">
-    <slot name="b" />
-  </div>
-  <slot></slot>
+  ></button>
+  <div class="b">{@render b?.()}</div>
+  {@render children?.()}
   <span class="outline"></span>
   <span class="shadow"></span>
   <span class="bg"></span>
