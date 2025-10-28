@@ -13,7 +13,7 @@
   }>();
 </script>
 
-<nav class="tabs" role="tablist">
+<div class="tabs" role="tablist" aria-label="Documents">
   {#each tabs as t (t.id)}
     <button
       role="tab"
@@ -30,8 +30,8 @@
     </button>
   {/each}
   <slot name="after" />
-  <div class="fill" />
-</nav>
+  <div class="fill"></div>
+</div>
 
 <style>
   .tabs {

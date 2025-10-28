@@ -103,8 +103,11 @@
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    padding: 0 8px;
+    padding: 0 var(--space-2);
     user-select: none;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
   }
   .center {
     text-align: center;
