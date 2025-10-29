@@ -1,6 +1,18 @@
-export { debug, error, info } from '@tauri-apps/plugin-log';
+import {
+  debug as pluginDebug,
+  error as pluginError,
+  info as pluginInfo,
+} from '@tauri-apps/plugin-log';
 
 export type Logger = (message: string) => Promise<void>;
+
+// Provide typed wrappers to satisfy strict ESLint rules and avoid "any" leakage
+export const debug: Logger = (message: string) =>
+  (pluginDebug as (m: string) => Promise<void>)(message);
+export const error: Logger = (message: string) =>
+  (pluginError as (m: string) => Promise<void>)(message);
+export const info: Logger = (message: string) =>
+  (pluginInfo as (m: string) => Promise<void>)(message);
 
 const isDevelopment = () => {
   const override = (globalThis as { __AIDEON_DEV__?: boolean }).__AIDEON_DEV__;
