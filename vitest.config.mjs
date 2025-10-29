@@ -1,6 +1,6 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import { defineConfig } from 'vitest/config';
 import path from 'node:path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
@@ -10,10 +10,7 @@ export default defineConfig({
         __dirname,
         'app/desktop/tests/stubs/fluentui.web-components.ts',
       ),
-      '@tauri-apps/api/core': path.resolve(
-        __dirname,
-        'app/desktop/tests/stubs/tauri-api-core.ts',
-      ),
+      '@tauri-apps/api/core': path.resolve(__dirname, 'app/desktop/tests/stubs/tauri-api-core.ts'),
       '@tauri-apps/plugin-log': path.resolve(
         __dirname,
         'app/desktop/tests/stubs/tauri-plugin-log.ts',
