@@ -5,4 +5,3 @@ export const provideFluentDesignSystem = () => ({
 export const fluentButton = () => ({});
 export const fluentTextField = () => ({});
 export const fluentSelect = () => ({});
-
