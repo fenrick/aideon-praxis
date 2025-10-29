@@ -72,7 +72,7 @@ Quality gates
 - `crates/{praxis,chrona,metis,continuum,core_data}` — domain crates for graph/time/analytics orchestration.
 - `app/adapters` — Shared TypeScript adapters (renderer ↔ host contracts).
 - `docs/` — Architecture content, ADRs, C4 diagrams.
-- `scripts/` — Tooling helpers (issues automation, release utilities, etc.).
+- `scripts/` — Minimal tooling entrypoints (issues.py). Legacy node scripts removed.
 
 - **Adapters are contracts.** Do not leak backend specifics into the renderer.
 - **Worker traits stay typed.** No open TCP ports in desktop mode; remote adapters must preserve the same command surface.
