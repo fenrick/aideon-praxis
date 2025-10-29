@@ -10,7 +10,7 @@
 <div class="toolbar" role="toolbar" aria-label={title ?? 'Toolbar'}>
   <div class="group">{@render children?.()}</div>
   <div class="spacer"></div>
-  <div class="group end">{@render end?.()}</div>
+  <div class="end group">{@render end?.()}</div>
 </div>
 
 <style>

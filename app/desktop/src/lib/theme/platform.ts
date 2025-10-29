@@ -10,9 +10,10 @@ export type UiTheme = 'auto' | 'win' | 'mac' | 'neutral' | 'linux';
 let current: UiTheme = 'auto';
 let resolvedCurrent: UiTheme = 'neutral';
 let fluentReady = false;
-const injectedLinks: Record<string, HTMLLinkElement | null> = {
-  puppertino: null,
-  neutral: null,
+type InjectKey = 'puppertino' | 'neutral';
+const injectedLinks = {
+  puppertino: null as HTMLLinkElement | null,
+  neutral: null as HTMLLinkElement | null,
 };
 
 function detectPlatform(): UiTheme {
@@ -31,13 +32,20 @@ function setRootPlatformClass(theme: UiTheme) {
   if (theme === 'linux') root.classList.add('platform-linux');
 }
 
+interface FluentModule {
+  provideFluentDesignSystem: () => { register: (...arguments_: unknown[]) => unknown };
+  fluentButton: () => unknown;
+  fluentTextField: () => unknown;
+  fluentSelect: () => unknown;
+}
+
 async function ensureFluentRegistered() {
   if (fluentReady) return;
   try {
-    const { provideFluentDesignSystem, fluentButton, fluentTextField, fluentSelect } = await import(
-      '@fluentui/web-components'
-    );
-    provideFluentDesignSystem().register(fluentButton(), fluentTextField(), fluentSelect());
+    const module_ = (await import('@fluentui/web-components')) as unknown as FluentModule;
+    module_
+      .provideFluentDesignSystem()
+      .register(module_.fluentButton(), module_.fluentTextField(), module_.fluentSelect());
     fluentReady = true;
   } catch (error) {
     // Best-effort; keep app running without throwing
@@ -46,27 +54,35 @@ async function ensureFluentRegistered() {
   }
 }
 
-function injectStylesheet(id: keyof typeof injectedLinks, href: string) {
+function getLink(id: InjectKey): HTMLLinkElement | null {
+  return id === 'puppertino' ? injectedLinks.puppertino : injectedLinks.neutral;
+}
+function setLink(id: InjectKey, element: HTMLLinkElement | null): void {
+  if (id === 'puppertino') injectedLinks.puppertino = element;
+  else injectedLinks.neutral = element;
+}
+
+function injectStylesheet(id: InjectKey, href: string) {
   // Remove if already injected with a different href
-  const previous = injectedLinks[id];
+  const previous = getLink(id);
   if (previous?.href.endsWith(href)) return; // already correct
   if (previous) {
     previous.remove();
-    injectedLinks[id] = null;
+    setLink(id, null);
   }
   const link = document.createElement('link');
   link.id = `aideon-${id}-css`;
   link.rel = 'stylesheet';
   link.href = href;
   document.head.append(link);
-  injectedLinks[id] = link;
+  setLink(id, link);
 }
 
-function removeStylesheet(id: keyof typeof injectedLinks) {
-  const element = injectedLinks[id];
+function removeStylesheet(id: InjectKey) {
+  const element = getLink(id);
   if (element) {
     element.remove();
-    injectedLinks[id] = null;
+    setLink(id, null);
   }
 }
 
@@ -96,8 +112,8 @@ export async function setUiTheme(theme: UiTheme) {
     case 'neutral': {
       removeStylesheet('puppertino');
       // Tailwind bundle compiled from src/lib/styles/neutral.css
-      const module_ = await import('../styles/neutral.css?url');
-      const href = (module_ as { default: string }).default;
+      const module_ = (await import('../styles/neutral.css?url')) as { default: string };
+      const href: string = module_.default;
       injectStylesheet('neutral', href);
 
       break;
