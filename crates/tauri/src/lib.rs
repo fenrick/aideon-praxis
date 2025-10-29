@@ -37,7 +37,7 @@ pub use core_data::temporal::{StateAtArgs, StateAtResult};
 use tauri::{Manager, async_runtime::spawn};
 
 use crate::menu::{MenuIds, build_menu};
-use crate::scene::canvas_scene;
+use crate::scene::{canvas_save_layout, canvas_scene};
 use crate::setup::{SetupState, get_setup_state, run_backend_setup, set_complete};
 use crate::temporal::temporal_state_at;
 use crate::windows::{create_windows, open_about, open_settings, open_status, open_styleguide};
@@ -116,6 +116,7 @@ pub fn run() {
             set_complete,
             temporal_state_at,
             canvas_scene,
+            canvas_save_layout,
             open_about,
             open_settings,
             open_status,
