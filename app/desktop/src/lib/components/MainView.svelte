@@ -73,7 +73,7 @@
     <pre class="mono">{JSON.stringify(currentStateAt, null, 2)}</pre>
     <h2 style="margin-top: 1rem;">Canvas (M1 preview)</h2>
     <p class="muted">Pan with drag, zoom with wheel, Shift‑drag marquee. Double‑click reset.</p>
-    <Scene />
+    <Scene asOf={currentStateAt.asOf} />
   {:else}
     <p class="muted">Querying worker…</p>
   {/if}

@@ -115,6 +115,8 @@
     dragging = { active: false, ids: [], startX: 0, startY: 0, base: [] };
   }
 
+  const { asOf } = $props<{ asOf?: string | null }>();
+
   function zoomIn() {
     if (!vp || !sceneEl) return;
     const rect = sceneEl.getBoundingClientRect();
@@ -191,7 +193,7 @@
             if (k === 'Enter' || k === ' ') onShapeClick(e as any, s.id);
           }}
           class={`shape ${getSelection().has(s.id) ? 'selected' : ''}`}
-          style={`left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px;`}
+          style={`left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px;z-index:${(s as any).z ?? 0};`}
         >
           <svelte:component
             this={getShape(s.typeId)!.component as any}
@@ -210,13 +212,37 @@
     {/if}
   </Canvas>
   {#if getGridEnabled()}
-    <div class="grid-overlay"></div>
+    <div
+      class="grid-overlay"
+      style={`background-size: ${getGridSpacing()}px ${getGridSpacing()}px;`}
+    ></div>
   {/if}
   <div class="controls">
     <button onclick={zoomOut} title="Zoom out">−</button>
     <button onclick={zoom100} title="Actual size">100%</button>
     <button onclick={zoomIn} title="Zoom in">+</button>
     <button onclick={zoomFit} title="Fit to content">Fit</button>
+    <button
+      onclick={() => {
+        import('./shape-store')
+          .then((m) => m.relayout({ algorithm: 'org.eclipse.elk.rectpacking', spacing: getGridSpacing() }))
+          .catch(() => {});
+      }}
+      title="Relayout"
+    >
+      Relayout
+    </button>
+    <button
+      onclick={() => {
+        const date = asOf ?? new Date().toISOString().slice(0, 10);
+        import('./shape-store')
+          .then((m) => m.saveLayout(date))
+          .catch(() => {});
+      }}
+      title="Save layout"
+    >
+      Save
+    </button>
     <label class="grid-toggle"
       ><input
         type="checkbox"
@@ -224,6 +250,19 @@
         onchange={(e) => setGridEnabled((e.currentTarget as any).checked)}
       /> Grid</label
     >
+    <label class="grid-toggle"
+      >Spacing <input
+        type="number"
+        min="2"
+        value={getGridSpacing()}
+        onchange={(e) => {
+          const v = Number((e.currentTarget as any).value);
+          import('./shape-store')
+            .then((m) => m.setGridSpacing(v))
+            .catch(() => {});
+        }}
+      />
+    </label>
     <span class="zoom">{Math.round((vp?.scale ?? 1) * 100)}%</span>
   </div>
 </div>
@@ -246,6 +285,15 @@
     border: 1px dashed #3b82f6;
     background: rgba(59, 130, 246, 0.1);
     pointer-events: none;
+  }
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
   }
   .controls {
     position: absolute;

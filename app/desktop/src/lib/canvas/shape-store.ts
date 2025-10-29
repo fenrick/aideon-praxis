@@ -2,6 +2,17 @@
 import { getShape, registerShape } from '../registries/shape-registry';
 import { tauriInvoke } from '../tauri-invoke';
 import Rect from './Rect.svelte';
+import { layoutShapesWithElk, type LayoutOptions } from './layout/elk';
+
+interface HostSceneItem {
+  id: string;
+  typeId: string;
+  x?: number;
+  y?: number;
+  w: number;
+  h: number;
+  label?: string;
+}
 
 export interface ShapeInstance {
   id: string;
@@ -10,6 +21,8 @@ export interface ShapeInstance {
   y: number;
   w: number;
   h: number;
+  z?: number;
+  groupId?: string;
   props?: Record<string, unknown>;
 }
 
@@ -118,29 +131,28 @@ export function initDefaultShapes() {
     };
     registerShape(definition);
   }
-  // Fetch demo scene from host (Rust); if it fails, fall back to inline defaults.
+  // Fetch demo scene from host (Rust). Respect existing positions; only ELK when missing.
   if (shapes.length === 0) {
     void (async () => {
       try {
-        const scene: {
-          id: string;
-          typeId: string;
-          x: number;
-          y: number;
-          w: number;
-          h: number;
-          label?: string;
-        }[] = await tauriInvoke('canvas_scene');
+        const scene = await tauriInvoke('canvas_scene');
         if (Array.isArray(scene) && scene.length > 0) {
-          shapes = scene.map((s) => ({
+          const base = scene.map((s: HostSceneItem) => ({
             id: s.id,
             typeId: s.typeId,
-            x: s.x,
-            y: s.y,
+            x: typeof s.x === 'number' ? s.x : 0,
+            y: typeof s.y === 'number' ? s.y : 0,
             w: s.w,
             h: s.h,
             props: s.label ? { label: s.label } : {},
           }));
+          const needLayout = base.every((n) => n.x === 0 && n.y === 0);
+          shapes = needLayout
+            ? await layoutShapesWithElk(base, {
+                algorithm: 'org.eclipse.elk.rectpacking',
+                spacing: 24,
+              })
+            : base;
           emit();
           return;
         }
@@ -158,28 +170,68 @@ export function initDefaultShapes() {
 
 export async function reloadScene(asOf: string) {
   try {
-    const scene: {
-      id: string;
-      typeId: string;
-      x: number;
-      y: number;
-      w: number;
-      h: number;
-      label?: string;
-    }[] = await tauriInvoke('canvas_scene', { asOf: asOf });
+    const scene = await tauriInvoke('canvas_scene', { asOf: asOf });
     if (Array.isArray(scene)) {
-      shapes = scene.map((s) => ({
+      const base = scene.map((s: HostSceneItem) => ({
         id: s.id,
         typeId: s.typeId,
-        x: s.x,
-        y: s.y,
+        x: typeof s.x === 'number' ? s.x : 0,
+        y: typeof s.y === 'number' ? s.y : 0,
         w: s.w,
         h: s.h,
         props: s.label ? { label: s.label } : {},
       }));
+      const needLayout = base.every((n) => n.x === 0 && n.y === 0);
+      shapes = needLayout
+        ? await layoutShapesWithElk(base, { algorithm: 'org.eclipse.elk.rectpacking', spacing: 24 })
+        : base;
       emit();
     }
   } catch {
     // ignore; keep existing
+  }
+}
+
+/**
+ * Run the selected ELK algorithm on the current shapes and replace their positions.
+ *
+ * We do not implicitly save after relayout; saving is a separate, explicit action
+ * so that users can preview and choose to persist or discard the new layout.
+ */
+export async function relayout(options: LayoutOptions = {}) {
+  const out = await layoutShapesWithElk(shapes, options);
+  setShapes(out);
+}
+
+/**
+ * Save the current canvas geometry for a specific asOf (and optional scenario) and document id.
+ * The payload includes z-index and grouping so future features (group move, z-order tools) have
+ * a stable protocol from day one. Edges/groups arrays are included and will be populated as the
+ * UI gains editing for them.
+ */
+export async function saveLayout(asOf: string, scenario?: string, documentId = 'default') {
+  const nodes = shapes.map((s) => ({
+    id: s.id,
+    typeId: s.typeId,
+    x: s.x,
+    y: s.y,
+    w: s.w,
+    h: s.h,
+    z: s.z ?? 0,
+    groupId: s.groupId,
+    label: typeof s.props?.label === 'string' ? s.props.label : undefined,
+  }));
+  const payload = {
+    docId: documentId,
+    asOf,
+    scenario,
+    nodes,
+    edges: [] as unknown[],
+    groups: [] as unknown[],
+  };
+  try {
+    await tauriInvoke('canvas_save_layout', { payload } as Record<string, unknown>);
+  } catch {
+    // ignore for now; a proper toast/log could be added
   }
 }

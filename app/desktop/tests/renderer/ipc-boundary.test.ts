@@ -86,6 +86,8 @@ function isForbidden(spec: string): boolean {
   if (spec === '@fluentui/web-components') return false;
   if (spec.startsWith('$lib/')) return false;
   if (spec === '@tauri-apps/api/os' || spec === '@tauri-apps/api/window') return false;
+  // Allow ELK layout engine in renderer (UI-only auto-layout)
+  if (spec === 'elkjs/lib/elk.bundled.js') return false;
   if (spec.startsWith('./') || spec.startsWith('../')) return false;
   // Block any other bare module specifiers to keep surface minimal
   return true;
