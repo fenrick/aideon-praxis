@@ -38,4 +38,3 @@ describe('canvas viewport math', () => {
     expect(vp).toMatchObject({ x: 0, y: 0, scale: 1 });
   });
 });
-

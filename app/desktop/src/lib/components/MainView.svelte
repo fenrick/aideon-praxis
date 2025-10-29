@@ -15,13 +15,7 @@
     } | null;
     errorMsg: string | null;
   }>();
-  let currentStateAt: {
-    asOf: string;
-    scenario: string | null;
-    confidence: number | null;
-    nodes: number;
-    edges: number;
-  } | null = stateAt;
+  let currentStateAt = $state(stateAt);
   $effect(() => {
     logSafely(debug, `renderer: main view version=${version}`);
   });
@@ -58,7 +52,7 @@
         id="asof"
         type="date"
         value={currentStateAt.asOf}
-        on:change={async (e) => {
+        onchange={async (e) => {
           const target = e.currentTarget as any;
           const val = target.value;
           if (!val) return;

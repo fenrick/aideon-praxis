@@ -19,20 +19,20 @@
   import { fitToBounds, reset, type Viewport } from './viewport';
 
   let _tick = 0;
-  let vp: Viewport | null = null;
-  let rootEl = null;
+  let vp = $state<Viewport | null>(null);
+  let sceneEl: HTMLDivElement | null = null;
 
   initDefaultShapes();
   const unsubscribe = subscribe(() => (_tick = (_tick + 1) & 0xff));
   $effect(() => unsubscribe());
 
-  let marquee: { active: boolean; x: number; y: number; w: number; h: number } = {
+  let marquee = $state<{ active: boolean; x: number; y: number; w: number; h: number }>({
     active: false,
     x: 0,
     y: 0,
     w: 0,
     h: 0,
-  };
+  });
 
   let dragging: {
     active: boolean;
@@ -42,16 +42,18 @@
     base: ReturnType<typeof getShapes>;
   } = { active: false, ids: [], startX: 0, startY: 0, base: [] };
 
-  function onBackgroundDown(e) {
-    if (e.shiftKey) {
-      marquee = { active: true, x: e.clientX, y: e.clientY, w: 0, h: 0 };
+  function onBackgroundDown(e: CustomEvent<PointerEvent>) {
+    const ev = e.detail;
+    if (ev.shiftKey) {
+      marquee = { active: true, x: ev.clientX, y: ev.clientY, w: 0, h: 0 };
     } else {
       clearSelection();
     }
   }
-  function onBackgroundMove(e) {
+  function onBackgroundMove(e: CustomEvent<PointerEvent>) {
+    const ev = e.detail;
     if (!marquee.active) return;
-    marquee = { ...marquee, w: e.clientX - marquee.x, h: e.clientY - marquee.y };
+    marquee = { ...marquee, w: ev.clientX - marquee.x, h: ev.clientY - marquee.y };
   }
   function onBackgroundUp() {
     if (!marquee.active) return;
@@ -60,8 +62,8 @@
     const w = Math.abs(marquee.w);
     const h = Math.abs(marquee.h);
     // Convert from client space to canvas local coordinates considering viewport
-    if (!vp || !rootEl) return;
-    const rect = rootEl.getBoundingClientRect();
+    if (!vp || !sceneEl) return;
+    const rect = sceneEl.getBoundingClientRect();
     const local = {
       x: (x - rect.left - vp.x) / vp.scale,
       y: (y - rect.top - vp.y) / vp.scale,
@@ -72,13 +74,13 @@
     marquee = { active: false, x: 0, y: 0, w: 0, h: 0 };
   }
 
-  function onShapeClick(e, id: string) {
+  function onShapeClick(e: MouseEvent, id: string) {
     e.stopPropagation();
     if (e.shiftKey) toggleSelect(id);
     else selectOnly(id);
   }
 
-  function onShapePointerDown(e, id: string) {
+  function onShapePointerDown(e: PointerEvent, id: string) {
     e.stopPropagation();
     const sel = getSelection();
     const ids = sel.has(id) ? [...sel] : [id];
@@ -90,8 +92,8 @@
       base: getShapes().map((s) => ({ ...s })),
     };
   }
-  function onRootPointerMove(e) {
-    if (!dragging.active || !vp || !rootEl) return;
+  function onRootPointerMove(e: PointerEvent) {
+    if (!dragging.active || !vp || !sceneEl) return;
     const dx = (e.clientX - dragging.startX) / vp.scale;
     const dy = (e.clientY - dragging.startY) / vp.scale;
     const snap = getGridEnabled();
@@ -114,8 +116,8 @@
   }
 
   function zoomIn() {
-    if (!vp || !rootEl) return;
-    const rect = rootEl.getBoundingClientRect();
+    if (!vp || !sceneEl) return;
+    const rect = sceneEl.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     vp.scale = Math.min(vp.maxScale, vp.scale * 1.1);
@@ -127,8 +129,8 @@
     };
   }
   function zoomOut() {
-    if (!vp || !rootEl) return;
-    const rect = rootEl.getBoundingClientRect();
+    if (!vp || !sceneEl) return;
+    const rect = sceneEl.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     const factor = 1 / 1.1;
@@ -146,13 +148,13 @@
     vp = reset(vp);
   }
   function zoomFit() {
-    if (!vp || !rootEl) return;
+    if (!vp || !sceneEl) return;
     const b = boundsOf(getShapes());
-    const rect = rootEl.getBoundingClientRect();
+    const rect = sceneEl.getBoundingClientRect();
     vp = fitToBounds(vp, { width: rect.width, height: rect.height }, b, 40);
   }
 
-  function onKeydown(e) {
+  function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       clearSelection();
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -164,13 +166,14 @@
 
 <div
   class="scene"
+  role="application"
   tabindex="0"
-  on:keydown={onKeydown}
-  on:pointermove={onRootPointerMove}
-  on:pointerup={onRootPointerUp}
+  bind:this={sceneEl}
+  onkeydown={onKeydown}
+  onpointermove={onRootPointerMove}
+  onpointerup={onRootPointerUp}
 >
   <Canvas
-    bind:this={rootEl}
     bind:vp
     on:backgrounddown={onBackgroundDown}
     on:backgroundmove={onBackgroundMove}
@@ -179,8 +182,14 @@
     {#each getShapes() as s (s.id)}
       {#if getShape(s.typeId)}
         <div
-          on:pointerdown={(e) => onShapePointerDown(e, s.id)}
-          on:click={(e) => onShapeClick(e, s.id)}
+          role="button"
+          tabindex="0"
+          onpointerdown={(e) => onShapePointerDown(e, s.id)}
+          onclick={(e) => onShapeClick(e as any, s.id)}
+          onkeydown={(e) => {
+            const k = (e as KeyboardEvent).key;
+            if (k === 'Enter' || k === ' ') onShapeClick(e as any, s.id);
+          }}
           class={`shape ${getSelection().has(s.id) ? 'selected' : ''}`}
           style={`left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px;`}
         >
@@ -197,22 +206,22 @@
       <div
         class="marquee"
         style={`left:${Math.min(marquee.x, marquee.x + marquee.w)}px;top:${Math.min(marquee.y, marquee.y + marquee.h)}px;width:${Math.abs(marquee.w)}px;height:${Math.abs(marquee.h)}px;`}
-      />
+      ></div>
     {/if}
   </Canvas>
   {#if getGridEnabled()}
-    <div class="grid-overlay" />
+    <div class="grid-overlay"></div>
   {/if}
   <div class="controls">
-    <button on:click={zoomOut} title="Zoom out">−</button>
-    <button on:click={zoom100} title="Actual size">100%</button>
-    <button on:click={zoomIn} title="Zoom in">+</button>
-    <button on:click={zoomFit} title="Fit to content">Fit</button>
+    <button onclick={zoomOut} title="Zoom out">−</button>
+    <button onclick={zoom100} title="Actual size">100%</button>
+    <button onclick={zoomIn} title="Zoom in">+</button>
+    <button onclick={zoomFit} title="Fit to content">Fit</button>
     <label class="grid-toggle"
       ><input
         type="checkbox"
         checked={getGridEnabled()}
-        on:change={(e) => setGridEnabled((e.currentTarget as any).checked)}
+        onchange={(e) => setGridEnabled((e.currentTarget as any).checked)}
       /> Grid</label
     >
     <span class="zoom">{Math.round((vp?.scale ?? 1) * 100)}%</span>
