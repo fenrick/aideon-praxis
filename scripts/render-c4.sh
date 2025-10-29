@@ -12,12 +12,16 @@ PLANTUML_JAR="$ROOT_DIR/.tools/plantuml/plantuml.jar"
 if [[ ! -f "$CLI_JAR" ]]; then
   echo "[render-c4] Downloading Structurizr CLI…"
   mkdir -p "$ROOT_DIR/.tools/structurizr-cli"
-  CLI_ZIP="$ROOT_DIR/.tools/structurizr-cli/structurizr-cli.zip"
+  TMP_ZIP="$(mktemp -t structurizr-cli.XXXXXX.zip)"
+  # Ensure temporary ZIP is removed even on failure
+  cleanup() { rm -f "$TMP_ZIP"; }
+  trap cleanup EXIT
   # Use GitHub's latest release redirect to avoid pinned stale versions
-  curl -fSLo "$CLI_ZIP" \
+  curl -fSL -o "$TMP_ZIP" \
     https://github.com/structurizr/cli/releases/latest/download/structurizr-cli.zip
-  unzip -q -o "$CLI_ZIP" -d "$ROOT_DIR/.tools/structurizr-cli"
+  unzip -q -o "$TMP_ZIP" -d "$ROOT_DIR/.tools/structurizr-cli"
   mv "$ROOT_DIR/.tools/structurizr-cli"/structurizr-cli-*.jar "$CLI_JAR"
+  cleanup && trap - EXIT
 fi
 
 if [[ ! -f "$PLANTUML_JAR" ]]; then
