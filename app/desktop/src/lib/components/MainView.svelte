@@ -3,6 +3,7 @@
      typed `$props` follows the Svelte TypeScript guidance for explicit inputs. -->
 <script lang="ts">
   import { debug, error as logError, info as logInfo, logSafely } from '$lib/logging';
+  import Canvas from '$lib/canvas/Canvas.svelte';
   const { version, stateAt, errorMsg } = $props<{
     version: string;
     stateAt: {
@@ -45,6 +46,21 @@
     <p style="color: crimson;">Error: {errorMsg}</p>
   {:else if stateAt}
     <pre class="mono">{JSON.stringify(stateAt, null, 2)}</pre>
+    <h2 style="margin-top: 1rem;">Canvas (M1 preview)</h2>
+    <p class="muted">Pan with drag, zoom with wheel, double‑click to reset.</p>
+    <Canvas>
+      <!-- Simple demo content -->
+      <div
+        style="position:absolute; left:200px; top:200px; width:200px; height:120px; background:#2563eb; color:white; display:flex; align-items:center; justify-content:center; border-radius:8px;"
+      >
+        Node A
+      </div>
+      <div
+        style="position:absolute; left:600px; top:480px; width:220px; height:140px; background:#059669; color:white; display:flex; align-items:center; justify-content:center; border-radius:8px;"
+      >
+        Node B
+      </div>
+    </Canvas>
   {:else}
     <p class="muted">Querying worker…</p>
   {/if}
