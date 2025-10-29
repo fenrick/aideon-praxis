@@ -180,7 +180,7 @@ We work in M0–M6 stages with clear acceptance criteria. See: ROADMAP.md
 To create labels, milestones, and import issues:
 
 ```bash
-scripts/gh_bootstrap.sh <owner>/<repo>
+Use the Issues CLI helpers via `pnpm run issues:*` (see AGENTS.md).
 ```
 
 then in GitHub UI: Issues → Import → CSV (upload issues.csv)
