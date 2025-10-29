@@ -76,3 +76,4 @@ crates/tauri/**/Cargo.lock.bk
 crates/tauri/gen/
 /crates/tauri/binaries
 /app/desktop/.svelte-kit
+.tools/
