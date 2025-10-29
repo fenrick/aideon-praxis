@@ -26,7 +26,7 @@ Option A — Use Structurizr CLI + PlantUML directly
 Option B — Use Docker
 
 - `docker run --rm -v "$PWD":/work ghcr.io/structurizr/cli:latest \
- export -workspace /work/docs/c4/workspace.dsl -format plantuml -output /work/docs/c4/out/plantuml`
+export -workspace /work/docs/c4/workspace.dsl -format plantuml -output /work/docs/c4/out/plantuml`
 - Then render PNGs via PlantUML container or local tools.
 
 Outputs are written under `docs/c4/out/plantuml` and `docs/c4/out/png` (gitignored).
