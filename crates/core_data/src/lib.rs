@@ -5,3 +5,6 @@
 pub mod temporal;
 
 pub use temporal::{StateAtArgs, StateAtResult};
+
+/// Canvas/scene DTOs used by the renderer to draw a default scene.
+pub mod canvas;
