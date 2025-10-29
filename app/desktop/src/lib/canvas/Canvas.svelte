@@ -3,7 +3,7 @@
 
   const { width = 2000, height = 1200 } = $props<{ width?: number; height?: number }>();
 
-  let vp: Viewport = createViewport({}, { minScale: 0.25, maxScale: 4 });
+  export let vp: Viewport = createViewport({}, { minScale: 0.25, maxScale: 4 });
   let root = null;
   let dragging = false;
   let lastX = 0;
@@ -41,15 +41,34 @@
   function onDoubleClick() {
     vp = reset(vp);
   }
+  // Non-typed event forwarding for background pointer interactions
+  function forward(type: string, e: unknown) {
+    const ev = e as any;
+    if (ev.currentTarget === ev.target) dispatchEvent(type, ev);
+  }
+  function dispatchEvent(type: string, detail: unknown) {
+    const CE = (globalThis as any).CustomEvent;
+    const event = new CE(type, { detail, bubbles: true });
+    root && (root as any).dispatchEvent(event);
+  }
 </script>
 
 <div
   bind:this={root}
   class="canvas-root"
   on:wheel={onWheel}
-  on:pointerdown={onPointerDown}
-  on:pointermove={onPointerMove}
-  on:pointerup={onPointerUp}
+  on:pointerdown={(e) => {
+    onPointerDown(e);
+    forward('backgrounddown', e);
+  }}
+  on:pointermove={(e) => {
+    onPointerMove(e);
+    forward('backgroundmove', e);
+  }}
+  on:pointerup={(e) => {
+    onPointerUp(e);
+    forward('backgroundup', e);
+  }}
   on:dblclick={onDoubleClick}
   role="region"
   aria-label="Canvas"

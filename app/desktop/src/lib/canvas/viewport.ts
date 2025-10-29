@@ -47,3 +47,19 @@ export function zoomAt(
 export function reset(vp: Viewport): Viewport {
   return { ...vp, x: 0, y: 0, scale: 1 };
 }
+
+export function fitToBounds(
+  vp: Viewport,
+  container: { width: number; height: number },
+  bounds: { x: number; y: number; w: number; h: number },
+  padding = 40,
+): Viewport {
+  if (bounds.w <= 0 || bounds.h <= 0) return reset(vp);
+  const scaleX = (container.width - padding * 2) / bounds.w;
+  const scaleY = (container.height - padding * 2) / bounds.h;
+  const nextScale = clamp(Math.min(scaleX, scaleY), vp.minScale, vp.maxScale);
+  // Position so that bounds.x/y end up at padding
+  const nx = padding - bounds.x * nextScale;
+  const ny = padding - bounds.y * nextScale;
+  return { ...vp, x: nx, y: ny, scale: nextScale };
+}
