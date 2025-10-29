@@ -18,6 +18,8 @@ export type Selection = Set<string>;
 let shapes: ShapeInstance[] = [];
 let selection: Selection = new Set();
 const listeners = new Set<() => void>();
+let gridEnabled = false;
+let gridSpacing = 20;
 
 export function subscribe(listener: () => void): () => void {
   listeners.add(listener);
@@ -33,6 +35,20 @@ export function getShapes() {
 }
 export function getSelection() {
   return selection;
+}
+export function getGridEnabled() {
+  return gridEnabled;
+}
+export function getGridSpacing() {
+  return gridSpacing;
+}
+export function setGridEnabled(enabled: boolean) {
+  gridEnabled = enabled;
+  emit();
+}
+export function setGridSpacing(spacing: number) {
+  gridSpacing = Math.max(2, Math.floor(spacing));
+  emit();
 }
 export function setShapes(next: ShapeInstance[]) {
   shapes = next;
@@ -60,6 +76,13 @@ export function selectWithin(box: { x: number; y: number; w: number; h: number }
     if (intersects(box, s)) next.add(s.id);
   }
   selection = next;
+  emit();
+}
+
+export function removeSelected() {
+  if (selection.size === 0) return;
+  shapes = shapes.filter((s) => !selection.has(s.id));
+  selection = new Set();
   emit();
 }
 
@@ -130,5 +153,33 @@ export function initDefaultShapes() {
       ];
       emit();
     })();
+  }
+}
+
+export async function reloadScene(asOf: string) {
+  try {
+    const scene: {
+      id: string;
+      typeId: string;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      label?: string;
+    }[] = await tauriInvoke('canvas_scene', { asOf: asOf });
+    if (Array.isArray(scene)) {
+      shapes = scene.map((s) => ({
+        id: s.id,
+        typeId: s.typeId,
+        x: s.x,
+        y: s.y,
+        w: s.w,
+        h: s.h,
+        props: s.label ? { label: s.label } : {},
+      }));
+      emit();
+    }
+  } catch {
+    // ignore; keep existing
   }
 }

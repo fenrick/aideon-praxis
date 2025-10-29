@@ -4,11 +4,15 @@
   import {
     boundsOf,
     clearSelection,
+    getGridEnabled,
+    getGridSpacing,
     getSelection,
     getShapes,
     initDefaultShapes,
+    removeSelected,
     selectOnly,
     selectWithin,
+    setGridEnabled,
     subscribe,
     toggleSelect,
   } from './shape-store';
@@ -29,6 +33,14 @@
     w: 0,
     h: 0,
   };
+
+  let dragging: {
+    active: boolean;
+    ids: string[];
+    startX: number;
+    startY: number;
+    base: ReturnType<typeof getShapes>;
+  } = { active: false, ids: [], startX: 0, startY: 0, base: [] };
 
   function onBackgroundDown(e) {
     if (e.shiftKey) {
@@ -64,6 +76,41 @@
     e.stopPropagation();
     if (e.shiftKey) toggleSelect(id);
     else selectOnly(id);
+  }
+
+  function onShapePointerDown(e, id: string) {
+    e.stopPropagation();
+    const sel = getSelection();
+    const ids = sel.has(id) ? [...sel] : [id];
+    dragging = {
+      active: true,
+      ids,
+      startX: e.clientX,
+      startY: e.clientY,
+      base: getShapes().map((s) => ({ ...s })),
+    };
+  }
+  function onRootPointerMove(e) {
+    if (!dragging.active || !vp || !rootEl) return;
+    const dx = (e.clientX - dragging.startX) / vp.scale;
+    const dy = (e.clientY - dragging.startY) / vp.scale;
+    const snap = getGridEnabled();
+    const gs = getGridSpacing();
+    const moved = dragging.base.map((s) => {
+      if (!dragging.ids.includes(s.id)) return s;
+      let nx = s.x + dx;
+      let ny = s.y + dy;
+      if (snap) {
+        nx = Math.round(nx / gs) * gs;
+        ny = Math.round(ny / gs) * gs;
+      }
+      return { ...s, x: nx, y: ny };
+    });
+    // Overwrite shapes in store (defer to next microtask)
+    import('./shape-store').then((mod) => mod.setShapes(moved)).catch(() => {});
+  }
+  function onRootPointerUp() {
+    dragging = { active: false, ids: [], startX: 0, startY: 0, base: [] };
   }
 
   function zoomIn() {
@@ -104,9 +151,24 @@
     const rect = rootEl.getBoundingClientRect();
     vp = fitToBounds(vp, { width: rect.width, height: rect.height }, b, 40);
   }
+
+  function onKeydown(e) {
+    if (e.key === 'Escape') {
+      clearSelection();
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      removeSelected();
+      e.preventDefault();
+    }
+  }
 </script>
 
-<div class="scene">
+<div
+  class="scene"
+  tabindex="0"
+  on:keydown={onKeydown}
+  on:pointermove={onRootPointerMove}
+  on:pointerup={onRootPointerUp}
+>
   <Canvas
     bind:this={rootEl}
     bind:vp
@@ -117,6 +179,7 @@
     {#each getShapes() as s (s.id)}
       {#if getShape(s.typeId)}
         <div
+          on:pointerdown={(e) => onShapePointerDown(e, s.id)}
           on:click={(e) => onShapeClick(e, s.id)}
           class={`shape ${getSelection().has(s.id) ? 'selected' : ''}`}
           style={`left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px;`}
@@ -137,17 +200,29 @@
       />
     {/if}
   </Canvas>
+  {#if getGridEnabled()}
+    <div class="grid-overlay" />
+  {/if}
   <div class="controls">
     <button on:click={zoomOut} title="Zoom out">−</button>
     <button on:click={zoom100} title="Actual size">100%</button>
     <button on:click={zoomIn} title="Zoom in">+</button>
     <button on:click={zoomFit} title="Fit to content">Fit</button>
+    <label class="grid-toggle"
+      ><input
+        type="checkbox"
+        checked={getGridEnabled()}
+        on:change={(e) => setGridEnabled((e.currentTarget as any).checked)}
+      /> Grid</label
+    >
+    <span class="zoom">{Math.round((vp?.scale ?? 1) * 100)}%</span>
   </div>
 </div>
 
 <style>
   .scene {
     position: relative;
+    outline: none;
   }
   .shape {
     position: absolute;
@@ -179,5 +254,24 @@
     border-radius: 6px;
     padding: 2px 8px;
     cursor: pointer;
+  }
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .grid-toggle {
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .zoom {
+    color: white;
+    margin-left: 4px;
   }
 </style>
