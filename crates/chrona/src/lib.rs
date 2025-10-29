@@ -5,6 +5,7 @@
 //! worker stub so the renderer contract remains unchanged while we grow the
 //! Rust engine.
 
+pub mod scene;
 pub mod temporal;
 
 pub use temporal::TemporalEngine;

@@ -1,5 +1,6 @@
 // Use relative path to keep ESLint TS type resolution happy (no Vite alias)
 import { getShape, registerShape } from '../registries/shape-registry';
+import { tauriInvoke } from '../tauri-invoke';
 import Rect from './Rect.svelte';
 
 export interface ShapeInstance {
@@ -94,10 +95,40 @@ export function initDefaultShapes() {
     };
     registerShape(definition);
   }
+  // Fetch demo scene from host (Rust); if it fails, fall back to inline defaults.
   if (shapes.length === 0) {
-    shapes = [
-      { id: 's1', typeId: 'rect', x: 200, y: 200, w: 200, h: 120, props: { label: 'Node A' } },
-      { id: 's2', typeId: 'rect', x: 600, y: 480, w: 220, h: 140, props: { label: 'Node B' } },
-    ];
+    void (async () => {
+      try {
+        const scene: {
+          id: string;
+          typeId: string;
+          x: number;
+          y: number;
+          w: number;
+          h: number;
+          label?: string;
+        }[] = await tauriInvoke('canvas_scene');
+        if (Array.isArray(scene) && scene.length > 0) {
+          shapes = scene.map((s) => ({
+            id: s.id,
+            typeId: s.typeId,
+            x: s.x,
+            y: s.y,
+            w: s.w,
+            h: s.h,
+            props: s.label ? { label: s.label } : {},
+          }));
+          emit();
+          return;
+        }
+      } catch {
+        // ignore and fall back
+      }
+      shapes = [
+        { id: 's1', typeId: 'rect', x: 200, y: 200, w: 200, h: 120, props: { label: 'Node A' } },
+        { id: 's2', typeId: 'rect', x: 600, y: 480, w: 220, h: 140, props: { label: 'Node B' } },
+      ];
+      emit();
+    })();
   }
 }
