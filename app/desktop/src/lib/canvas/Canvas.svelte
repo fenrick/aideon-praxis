@@ -1,15 +1,21 @@
 <script lang="ts">
   import { createViewport, pan, reset, zoomAt, type Viewport } from './viewport';
 
-  const { width = 2000, height = 1200 } = $props<{ width?: number; height?: number }>();
-
-  export let vp: Viewport = createViewport({}, { minScale: 0.25, maxScale: 4 });
-  let root = null;
+  let {
+    width = 2000,
+    height = 1200,
+    vp = $bindable(createViewport({}, { minScale: 0.25, maxScale: 4 })),
+  } = $props<{
+    width?: number;
+    height?: number;
+    vp?: Viewport | null;
+  }>();
+  let root: HTMLDivElement | null = null;
   let dragging = false;
   let lastX = 0;
   let lastY = 0;
 
-  function onWheel(event) {
+  function onWheel(event: WheelEvent) {
     if (!root) return;
     event.preventDefault();
     const factor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
@@ -17,14 +23,14 @@
     vp = zoomAt(vp, factor, event.clientX, event.clientY, { left: rect.left, top: rect.top });
   }
 
-  function onPointerDown(event) {
+  function onPointerDown(event: PointerEvent) {
     dragging = true;
     lastX = event.clientX;
     lastY = event.clientY;
     const t = event.target as { setPointerCapture?: (_: number) => void };
     if (t && typeof t.setPointerCapture === 'function') t.setPointerCapture(event.pointerId);
   }
-  function onPointerMove(event) {
+  function onPointerMove(event: PointerEvent) {
     if (!dragging) return;
     const dx = event.clientX - lastX;
     const dy = event.clientY - lastY;
@@ -32,7 +38,7 @@
     lastY = event.clientY;
     vp = pan(vp, dx, dy);
   }
-  function onPointerUp(event) {
+  function onPointerUp(event: PointerEvent) {
     dragging = false;
     const t = event.target as { releasePointerCapture?: (_: number) => void };
     if (t && typeof t.releasePointerCapture === 'function')
@@ -56,20 +62,20 @@
 <div
   bind:this={root}
   class="canvas-root"
-  on:wheel={onWheel}
-  on:pointerdown={(e) => {
+  onwheel={onWheel}
+  onpointerdown={(e) => {
     onPointerDown(e);
     forward('backgrounddown', e);
   }}
-  on:pointermove={(e) => {
+  onpointermove={(e) => {
     onPointerMove(e);
     forward('backgroundmove', e);
   }}
-  on:pointerup={(e) => {
+  onpointerup={(e) => {
     onPointerUp(e);
     forward('backgroundup', e);
   }}
-  on:dblclick={onDoubleClick}
+  ondblclick={onDoubleClick}
   role="region"
   aria-label="Canvas"
 >

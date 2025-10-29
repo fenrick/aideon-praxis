@@ -116,6 +116,8 @@ export default defineConfig(
       },
     },
     rules: {
+      // Type names like HTMLDivElement shouldn't be flagged as undefined in TS blocks
+      'no-undef': 'off',
       'svelte/no-target-blank': 'error',
       'svelte/no-at-debug-tags': 'error',
       'svelte/no-reactive-functions': 'error',
