@@ -12,9 +12,11 @@ PLANTUML_JAR="$ROOT_DIR/.tools/plantuml/plantuml.jar"
 if [[ ! -f "$CLI_JAR" ]]; then
   echo "[render-c4] Downloading Structurizr CLI…"
   mkdir -p "$ROOT_DIR/.tools/structurizr-cli"
-  curl -sSL -o "$ROOT_DIR/.tools/structurizr-cli/structurizr-cli.zip" \
-    https://github.com/structurizr/cli/releases/download/v4462/structurizr-cli.zip
-  unzip -q -o "$ROOT_DIR/.tools/structurizr-cli/structurizr-cli.zip" -d "$ROOT_DIR/.tools/structurizr-cli"
+  CLI_ZIP="$ROOT_DIR/.tools/structurizr-cli/structurizr-cli.zip"
+  # Use GitHub's latest release redirect to avoid pinned stale versions
+  curl -fSLo "$CLI_ZIP" \
+    https://github.com/structurizr/cli/releases/latest/download/structurizr-cli.zip
+  unzip -q -o "$CLI_ZIP" -d "$ROOT_DIR/.tools/structurizr-cli"
   mv "$ROOT_DIR/.tools/structurizr-cli"/structurizr-cli-*.jar "$CLI_JAR"
 fi
 
@@ -34,4 +36,3 @@ echo "[render-c4] Render PNG from PlantUML…"
 java -Djava.awt.headless=true -jar "$PLANTUML_JAR" -tpng "$OUT_PLANTUML"/*.puml -o "$OUT_PNG"
 
 echo "[render-c4] Done. See $OUT_PNG"
-
