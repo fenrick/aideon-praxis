@@ -37,6 +37,94 @@ pub struct StateAtResult {
     pub edges: u64,
 }
 
+/// Time-graph domain types for in-memory temporal store.
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NodeRef {
+    pub id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EdgeRef {
+    pub source: String,
+    pub target: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ChangeSet {
+    #[serde(default)]
+    pub add_nodes: Vec<NodeRef>,
+    #[serde(default)]
+    pub remove_nodes: Vec<NodeRef>,
+    #[serde(default)]
+    pub add_edges: Vec<EdgeRef>,
+    #[serde(default)]
+    pub remove_edges: Vec<EdgeRef>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommitSummary {
+    pub id: String,
+    pub branch: String,
+    pub as_of: String,
+    pub parent_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BranchInfo {
+    pub name: String,
+    pub head: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DiffPatch {
+    #[serde(default)]
+    pub added_nodes: Vec<NodeRef>,
+    #[serde(default)]
+    pub removed_nodes: Vec<NodeRef>,
+    #[serde(default)]
+    pub added_edges: Vec<EdgeRef>,
+    #[serde(default)]
+    pub removed_edges: Vec<EdgeRef>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommitChangesRequest {
+    pub branch: String,
+    pub as_of: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    pub changes: ChangeSet,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommitChangesResponse {
+    pub id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListCommitsResponse {
+    pub commits: Vec<CommitSummary>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateBranchRequest {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+}
+
 impl StateAtResult {
     /// Construct a new result with explicit graph counts.
     pub fn new(

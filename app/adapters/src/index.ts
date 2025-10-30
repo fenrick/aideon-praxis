@@ -21,3 +21,20 @@ export interface WorkerClient {
 }
 
 // placeholder for concrete job types
+
+/** Mutable graph adapter extends read-only with commit/branch ops for dev. */
+export interface MutableGraphAdapter extends GraphAdapter {
+  commit(parameters: {
+    branch: string;
+    asOf: string;
+    message?: string;
+    addNodes?: string[];
+    removeNodes?: string[];
+    addEdges?: { source: string; target: string }[];
+    removeEdges?: { source: string; target: string }[];
+  }): Promise<{ id: string }>;
+  listCommits(parameters: {
+    branch: string;
+  }): Promise<{ id: string; branch: string; asOf: string; parentId?: string; message?: string }[]>;
+  createBranch(parameters: { name: string; from?: string }): Promise<void>;
+}
