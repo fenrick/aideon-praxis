@@ -21,7 +21,7 @@
     "node:format": "prettier -w .",
     "node:format:check": "prettier -c .",
     "node:typecheck": "pnpm --filter @aideon/app run check && tsc -b --pretty",
-    "node:ci": "pnpm run node:lint:fix && pnpm run node:typecheck && pnpm run node:test && pnpm run node:format",
+    "node:ci": "pnpm run node:lint:fix && pnpm run node:typecheck && pnpm run node:test:coverage && pnpm run node:format",
     "tauri": "tauri",
     "issues": "python3 scripts/issues.py",
     "issues:mirror:check": "python3 scripts/issues.py mirror --check",
