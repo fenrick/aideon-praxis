@@ -26,6 +26,7 @@ chrona = { path = "../chrona" }
 core_data = { path = "../core_data" }
 serde_json = "1"
 dirs = "6"
+continuum = { path = "../continuum" }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 window-vibrancy = { version = "0.4" }

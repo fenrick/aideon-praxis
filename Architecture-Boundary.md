@@ -5,16 +5,15 @@ boundaries are enforced.
 
 ## Layers
 
-- Renderer (Svelte front end)
-  - Entry: `app/desktop/src/main.ts`. Security hardened: `contextIsolation: true`,
-    `nodeIntegration: false`, strict CSP.
-  - Preload bridge: `app/desktop/src/preload.ts` exposes a minimal, typed API (`window.aideon.*`).
-    No backend logic inside the renderer bundle.
-  - View layer code lives under `app/desktop/src/renderer/*` and talks only to adapters.
+- Renderer (SvelteKit front end)
+  - Built with SvelteKit; the Tauri host serves the built assets.
+  - No Node integration; strict CSP enforced by Tauri (see `crates/tauri/tauri.conf.json`).
+  - A minimal bridge lives at `globalThis.aideon` (installed by `src/lib/tauri-shim.ts`) and calls Tauri commands. No backend logic in renderer.
+  - UI code lives under `app/desktop/src/lib/**` and talks only to adapters/host via IPC.
 
 - Host (Tauri)
-  - Rust entrypoint: `crates/tauri/src/main.rs` with command definitions in `crates/tauri/src/temporal.rs` etc.
-  - Typed IPC only; capabilities and command scopes enforced by `crates/tauri/tauri.conf.json`.
+  - Rust entrypoint: `crates/tauri/src/lib.rs` creates windows at runtime and binds typed commands.
+  - Security: capabilities and CSP configured in `crates/tauri/tauri.conf.json`. No open TCP ports in desktop mode.
 
 - Adapters (TypeScript interfaces)
   - `app/adapters/src/index.ts` defines `GraphAdapter`, `StorageAdapter`, and `WorkerClient`
@@ -41,10 +40,9 @@ boundaries are enforced.
 
 ## Time‑first design
 
-- `Temporal.StateAt` stub exists (`chrona::TemporalEngine::state_at`).
-- Adapters expose `stateAt()` and `diff()` signatures.
-- Future jobs (shortest path, centrality, impact) belong in the Rust engine crates with tests and
-  SLO notes.
+- `Temporal.StateAt` implemented as a stub in `chrona::TemporalEngine::state_at` and surfaced via `temporal_state_at` command.
+- Canvas persists layout snapshots per `asOf` (and optional scenario) via `canvas_save_layout`; persistence boundary provided by `continuum::SnapshotStore` (file-backed in desktop mode).
+- Future jobs (shortest path, centrality, impact) belong in the Rust engine crates with tests and SLO notes.
 
 ## Compliance checklist
 

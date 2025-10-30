@@ -33,6 +33,7 @@ name = "aideon-host"
 version = "0.0.0"
 dependencies = [
  "chrona",
+ "continuum",
  "core_data",
  "dirs",
  "log",
