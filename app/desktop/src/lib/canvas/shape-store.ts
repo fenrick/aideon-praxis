@@ -121,6 +121,24 @@ export function boundsOf(items: { x: number; y: number; w: number; h: number }[]
   return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
 }
 
+function hostSceneToShapes(scene: HostSceneItem[]): ShapeInstance[] {
+  return scene.map((s) => ({
+    id: s.id,
+    typeId: s.typeId,
+    x: typeof s.x === 'number' ? s.x : 0,
+    y: typeof s.y === 'number' ? s.y : 0,
+    w: s.w,
+    h: s.h,
+    props: s.label ? { label: s.label } : {},
+  }));
+}
+
+async function layoutIfNeeded(base: ShapeInstance[]): Promise<ShapeInstance[]> {
+  const need = base.every((n) => n.x === 0 && n.y === 0);
+  if (!need) return base;
+  return layoutShapesWithElk(base, { algorithm: 'org.eclipse.elk.rectpacking', spacing: 24 });
+}
+
 export function initDefaultShapes() {
   // Register a simple rectangle if not present
   if (!getShape('rect')) {
@@ -137,22 +155,8 @@ export function initDefaultShapes() {
       try {
         const scene = await tauriInvoke('canvas_scene');
         if (Array.isArray(scene) && scene.length > 0) {
-          const base = scene.map((s: HostSceneItem) => ({
-            id: s.id,
-            typeId: s.typeId,
-            x: typeof s.x === 'number' ? s.x : 0,
-            y: typeof s.y === 'number' ? s.y : 0,
-            w: s.w,
-            h: s.h,
-            props: s.label ? { label: s.label } : {},
-          }));
-          const needLayout = base.every((n) => n.x === 0 && n.y === 0);
-          shapes = needLayout
-            ? await layoutShapesWithElk(base, {
-                algorithm: 'org.eclipse.elk.rectpacking',
-                spacing: 24,
-              })
-            : base;
+          const base = hostSceneToShapes(scene as HostSceneItem[]);
+          shapes = await layoutIfNeeded(base);
           emit();
           return;
         }
@@ -172,19 +176,8 @@ export async function reloadScene(asOf: string) {
   try {
     const scene = await tauriInvoke('canvas_scene', { asOf: asOf });
     if (Array.isArray(scene)) {
-      const base = scene.map((s: HostSceneItem) => ({
-        id: s.id,
-        typeId: s.typeId,
-        x: typeof s.x === 'number' ? s.x : 0,
-        y: typeof s.y === 'number' ? s.y : 0,
-        w: s.w,
-        h: s.h,
-        props: s.label ? { label: s.label } : {},
-      }));
-      const needLayout = base.every((n) => n.x === 0 && n.y === 0);
-      shapes = needLayout
-        ? await layoutShapesWithElk(base, { algorithm: 'org.eclipse.elk.rectpacking', spacing: 24 })
-        : base;
+      const base = hostSceneToShapes(scene as HostSceneItem[]);
+      shapes = await layoutIfNeeded(base);
       emit();
     }
   } catch {
