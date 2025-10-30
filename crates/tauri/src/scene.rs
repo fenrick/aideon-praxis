@@ -1,9 +1,9 @@
 //! Host IPC commands for scene/canvas data.
 
 use chrona::scene::generate_demo_scene;
+use continuum::{FileSnapshotStore, SnapshotStore};
 use core_data::canvas::{CanvasLayoutSaveRequest, CanvasShape};
 use log::info;
-use std::{fs, path::PathBuf};
 
 /// Return a raw scene for the canvas. The renderer performs layout when needed.
 #[tauri::command]
@@ -16,15 +16,8 @@ pub async fn canvas_scene(as_of: Option<String>) -> Result<Vec<CanvasShape>, Str
 }
 
 /// Resolve the on-disk path used to persist a canvas layout snapshot for a document and asOf.
-fn canvas_store_path(doc_id: &str, as_of: &str) -> Result<PathBuf, String> {
-    // Store under OS data dir, namespaced by app id
-    let base = dirs::data_dir().ok_or_else(|| "no data dir".to_string())?;
-    let path = base
-        .join("AideonPraxis")
-        .join("canvas")
-        .join(doc_id)
-        .join(format!("layout-{}.json", as_of));
-    Ok(path)
+fn canvas_store_key(doc_id: &str, as_of: &str) -> String {
+    format!("canvas/{}/layout-{}.json", doc_id, as_of)
 }
 
 /// Persist a canvas layout snapshot (geometry, z-order, grouping) for a document and asOf.
@@ -38,12 +31,23 @@ pub async fn canvas_save_layout(payload: CanvasLayoutSaveRequest) -> Result<(), 
         payload.edges.len(),
         payload.groups.len()
     );
-    let path = canvas_store_path(&payload.doc_id, &payload.as_of)?;
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("create_dir_all failed: {e}"))?;
-    }
+    let base = dirs::data_dir()
+        .ok_or_else(|| "no data dir".to_string())?
+        .join("AideonPraxis");
+    let store = FileSnapshotStore::new(base.clone());
+    let key = canvas_store_key(&payload.doc_id, &payload.as_of);
     let json = serde_json::to_vec_pretty(&payload).map_err(|e| format!("serialize failed: {e}"))?;
-    fs::write(&path, json).map_err(|e| format!("write failed: {e}"))?;
-    info!("host: canvas_save_layout wrote {}", path.display());
+    store.put(&key, &json)?;
+    info!("host: canvas_save_layout wrote {}/{}", base.display(), key);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::canvas_store_key;
+    #[test]
+    fn store_key_is_stable() {
+        let key = canvas_store_key("doc1", "2025-01-01");
+        assert_eq!(key, "canvas/doc1/layout-2025-01-01.json");
+    }
 }
