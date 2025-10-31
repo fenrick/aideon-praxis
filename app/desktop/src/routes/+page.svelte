@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { debug, error, info, logSafely } from '$lib/logging';
   import AboutPanel from '$lib/components/AboutPanel.svelte';
   import MainView from '$lib/components/MainView.svelte';
@@ -19,6 +19,36 @@
   let showSidebar = $state(true);
   let selectedId: string | null = $state(null);
   import { initUiTheme } from '$lib/theme/platform';
+
+  let healthTimer: ReturnType<typeof setInterval> | null = null;
+
+  async function refreshHealth(bridge: AideonApi) {
+    if (typeof bridge.workerHealth !== 'function') {
+      healthError = 'Worker health unavailable';
+      workerHealth = null;
+      logSafely(debug, 'renderer: workerHealth bridge method missing');
+      return;
+    }
+    try {
+      const snapshot = await bridge.workerHealth();
+      workerHealth = snapshot;
+      healthError = null;
+      logSafely(
+        info,
+        `renderer: worker health ok=${snapshot.ok} timestamp=${snapshot.timestampMs}`,
+      );
+    } catch (error__) {
+      const message =
+        error__ instanceof Error
+          ? error__.message
+          : typeof error__ === 'string'
+            ? error__
+            : 'worker health failed';
+      healthError = message;
+      workerHealth = null;
+      logSafely(error, `renderer: worker_health failed — ${message}`);
+    }
+  }
 
   onMount(async () => {
     await initUiTheme();
@@ -47,26 +77,11 @@
         : ' nodes=0 edges=0';
       logSafely(info, `renderer: stateAt received${counts}`);
 
+      await refreshHealth(bridge);
       if (typeof bridge.workerHealth === 'function') {
-        try {
-          workerHealth = await bridge.workerHealth();
-          logSafely(
-            info,
-            `renderer: worker health ok=${workerHealth.ok} timestamp=${workerHealth.timestampMs}`,
-          );
-        } catch (error__) {
-          const message =
-            error__ instanceof Error
-              ? error__.message
-              : typeof error__ === 'string'
-                ? error__
-                : 'worker health failed';
-          healthError = message;
-          logSafely(error, `renderer: worker_health failed — ${message}`);
-        }
-      } else {
-        healthError = 'Worker health unavailable';
-        logSafely(debug, 'renderer: workerHealth bridge method missing');
+        healthTimer = setInterval(() => {
+          void refreshHealth(bridge);
+        }, 15_000);
       }
     } catch (error__) {
       const message =
@@ -77,6 +92,12 @@
     } finally {
       clearInterval(timer);
       logSafely(info, 'renderer: initialization timer cleared');
+    }
+  });
+
+  onDestroy(() => {
+    if (healthTimer) {
+      clearInterval(healthTimer);
     }
   });
 
