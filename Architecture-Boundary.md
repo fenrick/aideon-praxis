@@ -32,6 +32,7 @@ boundaries are enforced.
 - Host ↔ Worker: in-process Rust traits today; future remote adapters must preserve the same
   command surface. No open ports in desktop mode.
 - PII: No export code currently; future exports must include redaction tests.
+- Health: Host exposes `worker_health` for status indicators; remote adapters must mirror it.
 
 ## Packaging
 

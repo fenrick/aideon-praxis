@@ -4,7 +4,9 @@
 //! handlers can access it without leaking internal mutability.
 
 use chrona::TemporalEngine;
+use core_data::WorkerHealth;
 use log::{debug, info};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, Wry};
 
 /// Shared application state giving command handlers access to the temporal engine.
@@ -22,6 +24,15 @@ impl WorkerState {
     /// Borrow the underlying temporal engine for read-only operations.
     pub fn engine(&self) -> &TemporalEngine {
         &self.engine
+    }
+
+    /// Produce a lightweight health snapshot for IPC exposure.
+    pub fn health(&self) -> WorkerHealth {
+        let timestamp_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
+        WorkerHealth::healthy(timestamp_ms)
     }
 }
 
