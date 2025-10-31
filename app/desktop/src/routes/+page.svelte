@@ -6,12 +6,14 @@
   import Sidebar from '$lib/components/Sidebar.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
-  import type { StateAtResult } from '$lib/types';
+  import type { AideonApi, StateAtResult, WorkerHealth } from '$lib/types';
 
   let version =
     (globalThis as unknown as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
   let stateAt: StateAtResult | null = $state(null);
   let error_: string | null = $state(null);
+  let workerHealth = $state<WorkerHealth | null>(null);
+  let healthError = $state<string | null>(null);
   let seconds = $state(0);
   let view = $state<'main' | 'about'>('main');
   let showSidebar = $state(true);
@@ -30,36 +32,42 @@
       }
     }, 1000);
     try {
-      const bridge = (
-        globalThis as unknown as {
-          aideon?: {
-            stateAt: (_args: {
-              asOf: string;
-              scenario?: string;
-              confidence?: number;
-            }) => Promise<StateAtResult>;
-          };
-        }
-      ).aideon;
-      let stateAtFn = bridge?.stateAt;
-      if (typeof stateAtFn !== 'function') {
+      let bridge = (globalThis as unknown as { aideon?: AideonApi }).aideon;
+      if (bridge?.stateAt === undefined) {
         logSafely(debug, 'renderer: aideon bridge missing; importing tauri-shim');
         await import('$lib/tauri-shim');
-        const reBridge = (
-          globalThis as unknown as {
-            aideon?: { stateAt?: typeof stateAtFn };
-          }
-        ).aideon;
-        stateAtFn = reBridge?.stateAt as unknown as typeof stateAtFn;
+        bridge = (globalThis as unknown as { aideon?: AideonApi }).aideon;
       }
-      if (typeof stateAtFn !== 'function') {
+      if (!bridge || typeof bridge.stateAt !== 'function') {
         throw new TypeError('Bridge not available');
       }
-      stateAt = await stateAtFn({ asOf: '2025-01-01' });
+      stateAt = await bridge.stateAt({ asOf: '2025-01-01' });
       const counts = stateAt
         ? ` nodes=${stateAt.nodes} edges=${stateAt.edges}`
         : ' nodes=0 edges=0';
       logSafely(info, `renderer: stateAt received${counts}`);
+
+      if (typeof bridge.workerHealth === 'function') {
+        try {
+          workerHealth = await bridge.workerHealth();
+          logSafely(
+            info,
+            `renderer: worker health ok=${workerHealth.ok} timestamp=${workerHealth.timestampMs}`,
+          );
+        } catch (error__) {
+          const message =
+            error__ instanceof Error
+              ? error__.message
+              : typeof error__ === 'string'
+                ? error__
+                : 'worker health failed';
+          healthError = message;
+          logSafely(error, `renderer: worker_health failed — ${message}`);
+        }
+      } else {
+        healthError = 'Worker health unavailable';
+        logSafely(debug, 'renderer: workerHealth bridge method missing');
+      }
     } catch (error__) {
       const message =
         error__ instanceof Error ? error__.message : typeof error__ === 'string' ? error__ : '';
@@ -118,7 +126,10 @@
     </div>
   </div>
   <div class="row-bottom">
-    <StatusBar connected={!!stateAt && !error_} message={error_ ?? undefined} />
+    <StatusBar
+      connected={workerHealth?.ok ?? (!!stateAt && !error_)}
+      message={workerHealth?.message ?? healthError ?? error_ ?? undefined}
+    />
   </div>
 </div>
 

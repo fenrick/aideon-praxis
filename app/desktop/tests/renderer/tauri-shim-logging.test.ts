@@ -32,6 +32,13 @@ describe('tauri-shim logging', () => {
           edges: 0,
         });
       }
+      if (command === 'worker_health') {
+        return Promise.resolve({
+          ok: true,
+          message: null,
+          timestampMs: 123,
+        });
+      }
       return Promise.resolve();
     });
     debug.mockResolvedValue(undefined);
@@ -127,6 +134,18 @@ describe('tauri-shim logging', () => {
     await bridge.openStatus();
     expect(invokeMock).toHaveBeenCalledWith('open_about');
     expect(invokeMock).toHaveBeenCalledWith('open_status');
+  });
+
+  it('returns worker health snapshot via bridge', async () => {
+    await import('../../src/lib/tauri-shim');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bridge = (globalThis as any).aideon as {
+      workerHealth: () => Promise<{ ok: boolean; timestampMs: number }>;
+    };
+    const result = await bridge.workerHealth();
+    expect(result.ok).toBe(true);
+    expect(result.timestampMs).toBe(123);
+    expect(invokeMock).toHaveBeenCalledWith('worker_health');
   });
 
   it('propagates stateAt errors with message inspection', async () => {

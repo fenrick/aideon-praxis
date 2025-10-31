@@ -32,6 +32,16 @@ export interface StateAtResult {
   edges: number;
 }
 
+/** Health snapshot returned by the worker. */
+export interface WorkerHealth {
+  /** Indicates whether the worker is serving requests normally. */
+  ok: boolean;
+  /** Optional human-readable message when degraded. */
+  message: string | null;
+  /** Millisecond timestamp (Unix epoch) when the snapshot was captured. */
+  timestampMs: number;
+}
+
 /**
  * Typed surface exposed on `window.aideon` for renderer ↔ host IPC.
  *
@@ -49,4 +59,6 @@ export interface AideonApi {
   openAbout(): Promise<void>;
   /** Open the status window. */
   openStatus(): Promise<void>;
+  /** Retrieve the current worker health snapshot. */
+  workerHealth(): Promise<WorkerHealth>;
 }
