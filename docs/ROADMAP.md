@@ -31,18 +31,17 @@ path to server mode.
 
 ### M1 — Local App MVP (Weeks 3–6)
 
-#### Outcomes
+#### Outcomes (updated)
 
-- SvelteKit renderer, preload API, in-memory GraphAdapter + file store (JSON/SQLite).
-- CSV import wizard v1 with mapping and de-dupe.
-- Viewpoints: Capability Map, Service Portfolio, Motivation.
-- Opt-in encryption-at-rest.
+- SvelteKit renderer, typed IPC; in-memory time-graph engine (commit/branch/diff) behind Tauri.
+- Canvas with ELK layout, manual placement, save per asOf (JSON snapshots behind a traited store).
+- Reference adapters (TS): dev in-memory adapter and IPC adapter for temporal calls.
+- Pipeline hardening (coverage in CI, CSP checks, Sonar inputs).
 
-#### Acceptance
+#### Acceptance (updated)
 
-- Create/edit entities, save/reopen.
-- Import sample CSV → validated entities.
-- Views render from the same graph model.
+- User can scrub time and switch branches (M1.1), edit graph and undo/redo (M1.2), commit, compare and merge (M1.3).
+- CI: Node + Rust tests green; coverage ≥ 80% new code; CSP/windows test passes.
 
 ### M2 — Python Worker MVP (Weeks 7–10)
 
@@ -121,3 +120,28 @@ path to server mode.
 ## Non-Goals (MVP)
 
 - Full OWL/SHACL reasoning, marketplace plugins, AR/VR, multi-tenant SaaS.
+
+## Immediate Backlog (Prioritised)
+
+1. Prove the pipeline and harden
+
+- Persistence boundary (optional): keep `SnapshotStore` behind a trait; prepare SQLite impl (commits/nodes/edges) to replace file JSON.
+- E2E contract tests: Vitest against mocked Tauri bridge with golden JSON snapshots for `stateAt()` and `commit()`.
+- Coverage in CI: generate LCOV (Vitest) and Rust coverage (grcov); feed Sonar (ensure report paths).
+- Security checks: assert CSP and window permission caps in a prod build test.
+- Release dry run: produce dev artifacts for macOS/Windows/Linux; verify signing path (ad‑hoc certs locally acceptable).
+
+2. Time & Scenarios (M1.1)
+
+- Timebar (playhead/scrubber), commit ticks (tooltip), branch chips (switch), filters, compare toggle, status area for unsaved changes.
+  Acceptance: scrub, hover commit info, switch branches, enter compare in ≤2 clicks.
+
+3. Graph Edit & Inspect (M1.2)
+
+- Canvas affordances (pan/zoom, snap-to-grid, lasso, drag handles to create edges), context actions, inspector panel, keyboard shortcuts.
+  Acceptance: create two nodes, connect, edit labels, undo/redo in ≤30s.
+
+4. Commit, Diff & Merge (M1.3)
+
+- Commit drawer (message, tags, changed list), diff mode (overlay/split, badges, legend), merge flow (pick base/target, conflict tray, preview).
+  Acceptance: create branch, edit, commit, compare to main, complete merge with a conflict.

@@ -33,3 +33,22 @@ UI
   tree, main content area, and bottom status bar.
 - Icons: Iconify Fluent 2 (`@iconify/svelte` v6). Use regular for idle and
   filled for active/toggled; active adopts `--accent` color.
+
+Canvas & Layout (M1)
+
+- Auto‑layout is handled client‑side via elkjs (default: `org.eclipse.elk.rectpacking`).
+- The renderer respects existing positions; “Relayout” is an explicit user action or a first‑time bootstrap when nodes have no geometry.
+- “Save layout” persists geometry per `asOf` to the host. The host writes a JSON snapshot under the OS app data folder. Storage is behind a DTO so it can be swapped later.
+- API/data model (modeled in Rust DTOs) includes nodes, edges, and groups (including nested groups). Rendering currently focuses on nodes; edges/groups are next.
+
+Paths
+
+- ELK wrapper: `src/lib/canvas/layout/elk.ts`
+- Shape store: `src/lib/canvas/shape-store.ts` (`relayout`, `saveLayout`, `reloadScene`)
+- Scene controls: `src/lib/canvas/Scene.svelte` (Relayout/Save buttons)
+
+Dev
+
+- Dev server: `pnpm --filter @aideon/app dev`
+- Typecheck: `pnpm --filter @aideon/app check`
+- Tests: `pnpm --filter @aideon/app test`

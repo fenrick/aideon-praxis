@@ -114,6 +114,13 @@ published under `docs/c4/`.
 └─ ...
 ```
 
+### Canvas (M1) — Layout and Save
+
+- The renderer performs auto‑layout with elkjs (default `org.eclipse.elk.rectpacking`) and respects saved positions by default.
+- Saving is explicit: the canvas writes geometry per `asOf` to the host via a typed command. Persistence is JSON under the OS app data folder for M1 and will be moved behind a StorageAdapter without changing UI APIs.
+- DTOs model nodes, edges, and groups (including nested groups) so we can add editing for edges and grouping while keeping the protocol stable.
+- See `docs/canvas-architecture.md` for details and roadmap (undo/blame via event streams, “now” semantics, and storage pluggability).
+
 ## Quick start (local development)
 
 ### Prerequisites

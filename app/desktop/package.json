@@ -28,7 +28,8 @@
     "@iconify/svelte": "^5.0.2",
     "@tauri-apps/api": "^2.9.0",
     "@tauri-apps/plugin-log": "^2.7.0",
-    "@tauri-apps/plugin-opener": "^2.5.0"
+    "@tauri-apps/plugin-opener": "^2.5.0",
+    "elkjs": "^0.9.3"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.10",

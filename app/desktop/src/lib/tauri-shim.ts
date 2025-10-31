@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { debug, error, info, logSafely } from './logging';
-import type { AideonApi, StateAtArguments, StateAtResult } from './types';
+import type { AideonApi, StateAtArguments, StateAtResult, WorkerHealth } from './types';
 
 function safeInvoke<T>(command: string, arguments_?: Record<string, unknown>): Promise<T> {
   const function_ = invoke as unknown as (c: string, a?: Record<string, unknown>) => Promise<T>;
@@ -58,6 +58,18 @@ if ((globalThis as { aideon?: unknown }).aideon === undefined) {
         const maybe = error_ as { message?: string } | undefined;
         const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
         logSafely(error, `renderer: invoke open_status failed: ${message}`);
+        throw error_;
+      }
+    },
+    workerHealth: async () => {
+      logSafely(debug, 'renderer: invoking worker_health');
+      try {
+        const result = await safeInvoke<WorkerHealth>('worker_health');
+        return result;
+      } catch (error_: unknown) {
+        const maybe = error_ as { message?: string } | undefined;
+        const message = typeof maybe?.message === 'string' ? maybe.message : String(error_);
+        logSafely(error, `renderer: invoke worker_health failed: ${message}`);
         throw error_;
       }
     },

@@ -1,22 +1,54 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { debug, error, info, logSafely } from '$lib/logging';
   import AboutPanel from '$lib/components/AboutPanel.svelte';
   import MainView from '$lib/components/MainView.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
-  import type { StateAtResult } from '$lib/types';
+  import type { AideonApi, StateAtResult, WorkerHealth } from '$lib/types';
 
   let version =
     (globalThis as unknown as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
   let stateAt: StateAtResult | null = $state(null);
   let error_: string | null = $state(null);
+  let workerHealth = $state<WorkerHealth | null>(null);
+  let healthError = $state<string | null>(null);
   let seconds = $state(0);
   let view = $state<'main' | 'about'>('main');
   let showSidebar = $state(true);
   let selectedId: string | null = $state(null);
   import { initUiTheme } from '$lib/theme/platform';
+
+  let healthTimer: ReturnType<typeof setInterval> | null = null;
+
+  async function refreshHealth(bridge: AideonApi) {
+    if (typeof bridge.workerHealth !== 'function') {
+      healthError = 'Worker health unavailable';
+      workerHealth = null;
+      logSafely(debug, 'renderer: workerHealth bridge method missing');
+      return;
+    }
+    try {
+      const snapshot = await bridge.workerHealth();
+      workerHealth = snapshot;
+      healthError = null;
+      logSafely(
+        info,
+        `renderer: worker health ok=${snapshot.ok} timestamp=${snapshot.timestampMs}`,
+      );
+    } catch (error__) {
+      const message =
+        error__ instanceof Error
+          ? error__.message
+          : typeof error__ === 'string'
+            ? error__
+            : 'worker health failed';
+      healthError = message;
+      workerHealth = null;
+      logSafely(error, `renderer: worker_health failed — ${message}`);
+    }
+  }
 
   onMount(async () => {
     await initUiTheme();
@@ -30,36 +62,27 @@
       }
     }, 1000);
     try {
-      const bridge = (
-        globalThis as unknown as {
-          aideon?: {
-            stateAt: (_args: {
-              asOf: string;
-              scenario?: string;
-              confidence?: number;
-            }) => Promise<StateAtResult>;
-          };
-        }
-      ).aideon;
-      let stateAtFn = bridge?.stateAt;
-      if (typeof stateAtFn !== 'function') {
+      let bridge = (globalThis as unknown as { aideon?: AideonApi }).aideon;
+      if (bridge?.stateAt === undefined) {
         logSafely(debug, 'renderer: aideon bridge missing; importing tauri-shim');
         await import('$lib/tauri-shim');
-        const reBridge = (
-          globalThis as unknown as {
-            aideon?: { stateAt?: typeof stateAtFn };
-          }
-        ).aideon;
-        stateAtFn = reBridge?.stateAt as unknown as typeof stateAtFn;
+        bridge = (globalThis as unknown as { aideon?: AideonApi }).aideon;
       }
-      if (typeof stateAtFn !== 'function') {
+      if (!bridge || typeof bridge.stateAt !== 'function') {
         throw new TypeError('Bridge not available');
       }
-      stateAt = await stateAtFn({ asOf: '2025-01-01' });
+      stateAt = await bridge.stateAt({ asOf: '2025-01-01' });
       const counts = stateAt
         ? ` nodes=${stateAt.nodes} edges=${stateAt.edges}`
         : ' nodes=0 edges=0';
       logSafely(info, `renderer: stateAt received${counts}`);
+
+      await refreshHealth(bridge);
+      if (typeof bridge.workerHealth === 'function') {
+        healthTimer = setInterval(() => {
+          void refreshHealth(bridge);
+        }, 15_000);
+      }
     } catch (error__) {
       const message =
         error__ instanceof Error ? error__.message : typeof error__ === 'string' ? error__ : '';
@@ -69,6 +92,12 @@
     } finally {
       clearInterval(timer);
       logSafely(info, 'renderer: initialization timer cleared');
+    }
+  });
+
+  onDestroy(() => {
+    if (healthTimer) {
+      clearInterval(healthTimer);
     }
   });
 
@@ -118,7 +147,10 @@
     </div>
   </div>
   <div class="row-bottom">
-    <StatusBar connected={!!stateAt && !error_} message={error_ ?? undefined} />
+    <StatusBar
+      connected={workerHealth?.ok ?? (!!stateAt && !error_)}
+      message={workerHealth?.message ?? healthError ?? error_ ?? undefined}
+    />
   </div>
 </div>
 
