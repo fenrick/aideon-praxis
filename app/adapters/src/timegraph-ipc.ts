@@ -1,4 +1,12 @@
-import type { MutableGraphAdapter } from './index';
+import { ensureIsoDateTime } from './contracts';
+import type {
+  GraphSnapshotMetrics,
+  MutableGraphAdapter,
+  TemporalDiffParameters,
+  TemporalDiffSnapshot,
+  TemporalStateParameters,
+  TemporalStateSnapshot,
+} from './index';
 
 interface StateAtResp {
   asOf: string;
@@ -22,6 +30,15 @@ interface ListCommitsResp {
   commits: CommitListItem[];
 }
 
+interface DiffSummaryResp {
+  from: string;
+  to: string;
+  nodesAdded: number;
+  nodesRemoved: number;
+  edgesAdded: number;
+  edgesRemoved: number;
+}
+
 async function safeInvoke<T>(command: string, arguments_?: Record<string, unknown>): Promise<T> {
   const module_ = (await import('@tauri-apps/api/core')) as {
     invoke: (c: string, a?: Record<string, unknown>) => Promise<T>;
@@ -30,22 +47,42 @@ async function safeInvoke<T>(command: string, arguments_?: Record<string, unknow
 }
 
 export class IpcTemporalAdapter implements MutableGraphAdapter {
-  async stateAt(parameters: {
-    asOf: string;
-    scenario?: string;
-    confidence?: number;
-  }): Promise<StateAtResp> {
+  async stateAt(parameters: TemporalStateParameters): Promise<TemporalStateSnapshot> {
     const result = await safeInvoke<StateAtResp>('temporal_state_at', {
       asOf: parameters.asOf,
       scenario: parameters.scenario ?? null,
       confidence: parameters.confidence ?? null,
     });
-    return result;
+    const metrics: GraphSnapshotMetrics = {
+      nodeCount: result.nodes,
+      edgeCount: result.edges,
+    };
+    return {
+      asOf: ensureIsoDateTime(result.asOf),
+      scenario: result.scenario ?? undefined,
+      confidence: result.confidence ?? undefined,
+      metrics,
+    };
   }
-  async diff(): Promise<unknown> {
-    // Not implemented at host level yet.
-    await Promise.resolve();
-    return {};
+  async diff(parameters: TemporalDiffParameters): Promise<TemporalDiffSnapshot> {
+    const arguments_: Record<string, unknown> = {
+      from: parameters.from,
+      to: parameters.to,
+    };
+    if (parameters.scope !== undefined) {
+      arguments_.scope = parameters.scope;
+    }
+    const summary = await safeInvoke<DiffSummaryResp>('temporal_diff', arguments_);
+    return {
+      from: summary.from,
+      to: summary.to,
+      metrics: {
+        nodesAdded: summary.nodesAdded,
+        nodesRemoved: summary.nodesRemoved,
+        edgesAdded: summary.edgesAdded,
+        edgesRemoved: summary.edgesRemoved,
+      },
+    };
   }
   async commit(parameters: {
     branch: string;
