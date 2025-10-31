@@ -23,6 +23,7 @@
 //! - Keep engines behind simple structs (`WorkerState`) so we can later inject
 //!   adapters (local vs remote) without revisiting command bindings.
 
+mod health;
 mod menu;
 mod scene;
 mod setup;
@@ -32,10 +33,12 @@ mod worker;
 
 use std::sync::Mutex;
 
+pub use core_data::WorkerHealth;
 pub use core_data::temporal::{DiffArgs, DiffSummary, StateAtArgs, StateAtResult};
 
 use tauri::{Manager, async_runtime::spawn};
 
+use crate::health::worker_health;
 use crate::menu::{MenuIds, build_menu};
 use crate::scene::{canvas_save_layout, canvas_scene};
 use crate::setup::{SetupState, get_setup_state, run_backend_setup, set_complete};
@@ -117,6 +120,7 @@ pub fn run() {
             greet,
             set_complete,
             temporal_state_at,
+            worker_health,
             temporal_diff,
             commit_changes,
             list_commits,
