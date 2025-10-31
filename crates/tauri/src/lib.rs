@@ -32,14 +32,16 @@ mod worker;
 
 use std::sync::Mutex;
 
-pub use core_data::temporal::{StateAtArgs, StateAtResult};
+pub use core_data::temporal::{DiffArgs, DiffSummary, StateAtArgs, StateAtResult};
 
 use tauri::{Manager, async_runtime::spawn};
 
 use crate::menu::{MenuIds, build_menu};
 use crate::scene::{canvas_save_layout, canvas_scene};
 use crate::setup::{SetupState, get_setup_state, run_backend_setup, set_complete};
-use crate::temporal::{commit_changes, create_branch, list_commits, temporal_state_at};
+use crate::temporal::{
+    commit_changes, create_branch, list_commits, temporal_diff, temporal_state_at,
+};
 use crate::windows::{create_windows, open_about, open_settings, open_status, open_styleguide};
 
 /// Simple sample command used by tests and smoke checks.
@@ -115,6 +117,7 @@ pub fn run() {
             greet,
             set_complete,
             temporal_state_at,
+            temporal_diff,
             commit_changes,
             list_commits,
             create_branch,
