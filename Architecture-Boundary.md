@@ -41,6 +41,7 @@ boundaries are enforced.
 ## Time‑first design
 
 - `Temporal.StateAt` implemented as a stub in `chrona::TemporalEngine::state_at` and surfaced via `temporal_state_at` command.
+- `Temporal.Diff` summarised by `chrona::TemporalEngine::diff_summary` and exposed through the `temporal_diff` host command, returning node/edge deltas only.
 - Canvas persists layout snapshots per `asOf` (and optional scenario) via `canvas_save_layout`; persistence boundary provided by `continuum::SnapshotStore` (file-backed in desktop mode).
 - Future jobs (shortest path, centrality, impact) belong in the Rust engine crates with tests and SLO notes.
 
