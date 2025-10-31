@@ -5,8 +5,8 @@
 //! eases the migration toward a fully Rust-based host/worker story.
 
 use core_data::temporal::{
-    BranchInfo, ChangeSet, CommitChangesRequest, CommitSummary, DiffPatch, EdgeRef, NodeRef,
-    StateAtArgs, StateAtResult,
+    BranchInfo, ChangeSet, CommitChangesRequest, CommitSummary, DiffArgs, DiffPatch, DiffSummary,
+    EdgeRef, NodeRef, StateAtArgs, StateAtResult,
 };
 use log::debug;
 use std::collections::{HashMap, HashSet};
@@ -129,28 +129,12 @@ impl TemporalEngine {
     /// Compute a diff between two commits identified by id.
     pub fn diff(&self, a: &str, b: &str) -> DiffPatch {
         let repo = self.inner.lock().expect("lock");
-        let (an, ae) = self.materialize_sets(&repo, Some(a));
-        let (bn, be) = self.materialize_sets(&repo, Some(b));
-        let mut patch = DiffPatch::default();
-        for id in bn.difference(&an) {
-            patch.added_nodes.push(NodeRef { id: id.clone() });
-        }
-        for id in an.difference(&bn) {
-            patch.removed_nodes.push(NodeRef { id: id.clone() });
-        }
-        for e in be.difference(&ae) {
-            patch.added_edges.push(EdgeRef {
-                source: e.0.clone(),
-                target: e.1.clone(),
-            });
-        }
-        for e in ae.difference(&be) {
-            patch.removed_edges.push(EdgeRef {
-                source: e.0.clone(),
-                target: e.1.clone(),
-            });
-        }
-        patch
+        let repo_ref: &Repo = &repo;
+        self.diff_between(
+            repo_ref,
+            self.resolve_reference(repo_ref, a).as_deref(),
+            self.resolve_reference(repo_ref, b).as_deref(),
+        )
     }
 
     fn materialize_counts(&self, repo: &Repo, head: Option<&str>) -> (usize, usize) {
@@ -195,12 +179,76 @@ impl TemporalEngine {
         }
         (nodes, edges)
     }
+
+    fn resolve_reference(&self, repo: &Repo, reference: &str) -> Option<String> {
+        if reference.is_empty() {
+            return None;
+        }
+        if repo.commits.contains_key(reference) {
+            return Some(reference.to_string());
+        }
+        if let Some(branch_head) = repo.branches.get(reference)
+            && !branch_head.is_empty()
+        {
+            return Some(branch_head.clone());
+        }
+        let mut candidate: Option<String> = None;
+        for (id, record) in repo.commits.iter() {
+            if record.as_of == reference {
+                candidate = Some(id.clone());
+            }
+        }
+        candidate
+    }
+
+    fn diff_between(&self, repo: &Repo, from: Option<&str>, to: Option<&str>) -> DiffPatch {
+        let (an, ae) = self.materialize_sets(repo, from);
+        let (bn, be) = self.materialize_sets(repo, to);
+        let mut patch = DiffPatch::default();
+        for id in bn.difference(&an) {
+            patch.added_nodes.push(NodeRef { id: id.clone() });
+        }
+        for id in an.difference(&bn) {
+            patch.removed_nodes.push(NodeRef { id: id.clone() });
+        }
+        for e in be.difference(&ae) {
+            patch.added_edges.push(EdgeRef {
+                source: e.0.clone(),
+                target: e.1.clone(),
+            });
+        }
+        for e in ae.difference(&be) {
+            patch.removed_edges.push(EdgeRef {
+                source: e.0.clone(),
+                target: e.1.clone(),
+            });
+        }
+        patch
+    }
+
+    /// Produce diff counts for UI summary use, resolving plateau/date references.
+    pub fn diff_summary(&self, args: DiffArgs) -> DiffSummary {
+        let DiffArgs { from, to, .. } = args;
+        let repo = self.inner.lock().expect("lock");
+        let repo_ref: &Repo = &repo;
+        let from_resolved = self.resolve_reference(repo_ref, &from);
+        let to_resolved = self.resolve_reference(repo_ref, &to);
+        let patch = self.diff_between(repo_ref, from_resolved.as_deref(), to_resolved.as_deref());
+        DiffSummary::new(
+            from,
+            to,
+            patch.added_nodes.len() as u64,
+            patch.removed_nodes.len() as u64,
+            patch.added_edges.len() as u64,
+            patch.removed_edges.len() as u64,
+        )
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::TemporalEngine;
-    use core_data::temporal::{ChangeSet, CommitChangesRequest, StateAtArgs};
+    use core_data::temporal::{ChangeSet, CommitChangesRequest, DiffArgs, StateAtArgs};
 
     #[test]
     fn commit_and_state_counts_increase() {
@@ -221,5 +269,52 @@ mod tests {
         let result = engine.state_at(args);
         assert_eq!(result.nodes, 1);
         assert_eq!(result.edges, 0);
+    }
+
+    #[test]
+    fn diff_summary_counts_transitions() {
+        let engine = TemporalEngine::new();
+        let first = engine.commit(CommitChangesRequest {
+            branch: "main".into(),
+            as_of: "2025-01-01".into(),
+            message: None,
+            changes: ChangeSet {
+                add_nodes: vec![super::NodeRef { id: "n1".into() }],
+                remove_nodes: vec![],
+                add_edges: vec![],
+                remove_edges: vec![],
+            },
+        });
+        let _second = engine.commit(CommitChangesRequest {
+            branch: "main".into(),
+            as_of: "2025-02-01".into(),
+            message: None,
+            changes: ChangeSet {
+                add_nodes: vec![super::NodeRef { id: "n2".into() }],
+                remove_nodes: vec![],
+                add_edges: vec![super::EdgeRef {
+                    source: "n1".into(),
+                    target: "n2".into(),
+                }],
+                remove_edges: vec![],
+            },
+        });
+
+        let summary = engine.diff_summary(DiffArgs {
+            from: first.clone(),
+            to: "main".into(),
+            scope: None,
+        });
+        assert_eq!(summary.nodes_added, 1);
+        assert_eq!(summary.edges_added, 1);
+        assert_eq!(summary.nodes_removed, 0);
+
+        let date_summary = engine.diff_summary(DiffArgs {
+            from: "2025-01-01".into(),
+            to: "2025-02-01".into(),
+            scope: None,
+        });
+        assert_eq!(date_summary.nodes_added, 1);
+        assert_eq!(date_summary.edges_added, 1);
     }
 }
