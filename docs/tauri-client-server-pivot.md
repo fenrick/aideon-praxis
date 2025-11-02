@@ -10,8 +10,7 @@ Scopes*- and the\*\*Isolation pattern*- so the security posture holds when you a
 
 ## How this helps the transition (renderer stays stable)
 
-**Design seam:\*- treat every UX action as a call to `window.aideon.<usecase>()` → Tauri**Command*- → Rust service\*\*trait*-
-(port). You ship two adapters:
+**Design seam:** treat every UX action as a call through a small TypeScript port (e.g., `app/desktop/src/lib/ports/temporal.ts`) → Tauri **Command** → Rust service **trait** (port). You ship two adapters:
 
 - \*_LocalAdapter (default):_- calls in-process Rust modules (graph/time/analytics).
 - \*_RemoteAdapter (server mode):_- calls your server over HTTP/2 or WebSocket, then returns the same DTOs.
@@ -71,7 +70,7 @@ path to cloud/server mode in M5.
 
 ```bash
 Svelte UI
-  └─ window.aideon.-  (typed)
+  └─ TypeScript port helpers (invoke)
        └─ Tauri Command: Temporal/Analytics/TCO
             ├─ LocalAdapter (default): Rust modules (graph_core, time_engine, analytics)
             └─ RemoteAdapter (server): HTTP/2 or WS client

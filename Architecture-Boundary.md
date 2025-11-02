@@ -8,7 +8,7 @@ boundaries are enforced.
 - Renderer (SvelteKit front end)
   - Built with SvelteKit; the Tauri host serves the built assets.
   - No Node integration; strict CSP enforced by Tauri (see `crates/tauri/tauri.conf.json`).
-  - A minimal bridge lives at `globalThis.aideon` (installed by `src/lib/tauri-shim.ts`) and calls Tauri commands. No backend logic in renderer.
+- Renderer modules call Tauri commands directly via `@tauri-apps/api/core` helpers (see `app/desktop/src/lib/ports`). No backend logic in renderer.
   - UI code lives under `app/desktop/src/lib/**` and talks only to adapters/host via IPC.
 
 - Host (Tauri)
@@ -50,7 +50,7 @@ boundaries are enforced.
 
 - [x] No renderer HTTP
 - [x] No open TCP ports in desktop mode
-- [x] Minimal preload bridge
+- [x] Renderer invokes host commands through typed helper modules (no preload globals)
 - [x] Worker logic executes in-process via Rust engine traits
 - [x] No auxiliary worker binaries embedded
 - [x] Version injection via semantic-release

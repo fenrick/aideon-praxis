@@ -1,15 +1,15 @@
 # @aideon/app — Desktop UI (SvelteKit)
 
 SvelteKit SPA bundle for the Aideon Praxis desktop app. The renderer talks to
-the Tauri host over a minimal, typed IPC bridge. No backend logic or HTTP calls
-live in the renderer.
+the Tauri host via direct `@tauri-apps/api/core` invokes, wrapped in small
+TypeScript helper modules. No backend logic or HTTP calls live in the renderer.
 
 Key points
 
 - Context isolation on; no Node integration in the renderer.
 - Strict CSP; assets are served from disk in dev (no dev server).
-- Renderer invokes host commands (e.g., temporal `state_at`) via a small bridge
-  object attached to `window.aideon`.
+- Renderer invokes host commands (e.g., temporal `state_at`) via helper
+  modules under `src/lib/ports/**` which call `invoke` with typed payloads.
 
 Scripts
 
