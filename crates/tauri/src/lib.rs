@@ -44,7 +44,7 @@ use crate::scene::{canvas_save_layout, canvas_scene};
 use crate::setup::{SetupState, get_setup_state, run_backend_setup, set_complete};
 use crate::temporal::{
     commit_changes, create_branch, list_branches, list_commits, merge_branches, temporal_diff,
-    temporal_state_at,
+    temporal_state_at, topology_delta,
 };
 use crate::windows::{create_windows, open_about, open_settings, open_status, open_styleguide};
 
@@ -123,6 +123,7 @@ pub fn run() {
             temporal_state_at,
             worker_health,
             temporal_diff,
+            topology_delta,
             commit_changes,
             list_commits,
             create_branch,

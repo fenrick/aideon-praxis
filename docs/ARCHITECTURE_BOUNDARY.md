@@ -91,6 +91,7 @@ Add unit tests when touching logic that must enforce these rules.
 
 - `stateAt(target: CommitId | { branch: BranchName, at?: CommitId }) -> SnapshotSummary`
 - `diff(a: CommitRef, b: CommitRef) -> Diff { nodeAdds, nodeMods, nodeDels, edgeAdds, edgeMods, edgeDels }`
+- `topologyDelta(a: CommitRef, b: CommitRef) -> { nodeAdds, nodeDels, edgeAdds, edgeDels }`
 - `listCommits(branch: BranchName, limit?: number, before?: CommitId) -> Commit[]`
 - `listBranches() -> Branch[]`
 

@@ -6,6 +6,7 @@
 use core_data::temporal::{
     BranchInfo, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffSummary,
     ListBranchesResponse, MergeRequest, MergeResponse, StateAtArgs, StateAtResult,
+    TopologyDeltaArgs, TopologyDeltaResult,
 };
 use praxis::{PraxisEngine, PraxisResult};
 
@@ -50,12 +51,19 @@ impl TemporalEngine {
     pub fn merge(&self, request: MergeRequest) -> PraxisResult<MergeResponse> {
         self.inner.merge(request)
     }
+
+    pub fn topology_delta(&self, args: TopologyDeltaArgs) -> PraxisResult<TopologyDeltaResult> {
+        self.inner.topology_delta(args)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::TemporalEngine;
-    use core_data::temporal::{ChangeSet, CommitChangesRequest, CommitRef, StateAtArgs};
+    use core_data::temporal::{
+        ChangeSet, CommitChangesRequest, CommitRef, EdgeTombstone, EdgeVersion, NodeTombstone,
+        NodeVersion, StateAtArgs, TopologyDeltaArgs,
+    };
 
     #[test]
     fn commit_and_state_flow() {
@@ -87,5 +95,94 @@ mod tests {
             .expect("state ok");
         assert_eq!(result.nodes, 1);
         assert_eq!(result.edges, 0);
+    }
+
+    #[test]
+    fn topology_delta_passthrough() {
+        let engine = TemporalEngine::new();
+        let base = engine
+            .commit(CommitChangesRequest {
+                branch: "main".into(),
+                parent: None,
+                author: None,
+                time: None,
+                message: "base".into(),
+                tags: vec![],
+                changes: ChangeSet {
+                    node_creates: vec![NodeVersion {
+                        id: "n1".into(),
+                        r#type: None,
+                        props: None,
+                    }],
+                    ..ChangeSet::default()
+                },
+            })
+            .expect("base commit");
+
+        let expanded = engine
+            .commit(CommitChangesRequest {
+                branch: "main".into(),
+                parent: Some(base.clone()),
+                author: None,
+                time: None,
+                message: "expand".into(),
+                tags: vec![],
+                changes: {
+                    let mut change = ChangeSet::default();
+                    change.node_creates.push(NodeVersion {
+                        id: "n2".into(),
+                        r#type: None,
+                        props: None,
+                    });
+                    change.edge_creates.push(EdgeVersion {
+                        id: None,
+                        from: "n1".into(),
+                        to: "n2".into(),
+                        r#type: None,
+                        directed: Some(true),
+                        props: None,
+                    });
+                    change
+                },
+            })
+            .expect("expanded commit");
+
+        let delta = engine
+            .topology_delta(TopologyDeltaArgs {
+                from: CommitRef::Id(base.clone()),
+                to: CommitRef::Id(expanded.clone()),
+            })
+            .expect("topology delta");
+        assert_eq!(delta.node_adds, 1);
+        assert_eq!(delta.edge_adds, 1);
+
+        let trimmed = engine
+            .commit(CommitChangesRequest {
+                branch: "main".into(),
+                parent: Some(expanded.clone()),
+                author: None,
+                time: None,
+                message: "trim".into(),
+                tags: vec![],
+                changes: {
+                    let mut change = ChangeSet::default();
+                    change.edge_deletes.push(EdgeTombstone {
+                        from: "n1".into(),
+                        to: "n2".into(),
+                    });
+                    change.node_deletes.push(NodeTombstone { id: "n2".into() });
+                    change
+                },
+            })
+            .expect("trim commit");
+
+        let delta_trim = engine
+            .topology_delta(TopologyDeltaArgs {
+                from: CommitRef::Id(expanded),
+                to: CommitRef::Id(trimmed),
+            })
+            .expect("topology delta trim");
+        assert_eq!(delta_trim.node_dels, 1);
+        assert_eq!(delta_trim.edge_dels, 1);
     }
 }
