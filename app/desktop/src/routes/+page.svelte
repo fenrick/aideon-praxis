@@ -1,15 +1,18 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import { invoke } from '@tauri-apps/api/core';
+  import { get } from 'svelte/store';
   import { debug, error, info, logSafely } from '$lib/logging';
   import AboutPanel from '$lib/components/AboutPanel.svelte';
   import MainView from '$lib/components/MainView.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
-  import type { AideonApi, StateAtResult, WorkerHealth } from '$lib/types';
+  import type { StateAtResult, WorkerHealth } from '$lib/types';
+import { timeStore } from '$lib/stores/time';
+import { version as appVersion } from '../version.js';
 
-  let version =
-    (globalThis as unknown as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
+  let version = $state(appVersion);
   let stateAt: StateAtResult | null = $state(null);
   let error_: string | null = $state(null);
   let workerHealth = $state<WorkerHealth | null>(null);
@@ -20,17 +23,16 @@
   let selectedId: string | null = $state(null);
   import { initUiTheme } from '$lib/theme/platform';
 
+  const unsubscribeTime = timeStore.subscribe((value) => {
+    stateAt = value.snapshot;
+    error_ = value.error;
+  });
+
   let healthTimer: ReturnType<typeof setInterval> | null = null;
 
-  async function refreshHealth(bridge: AideonApi) {
-    if (typeof bridge.workerHealth !== 'function') {
-      healthError = 'Worker health unavailable';
-      workerHealth = null;
-      logSafely(debug, 'renderer: workerHealth bridge method missing');
-      return;
-    }
+  async function refreshHealth() {
     try {
-      const snapshot = await bridge.workerHealth();
+      const snapshot = await invoke<WorkerHealth>('worker_health');
       workerHealth = snapshot;
       healthError = null;
       logSafely(
@@ -50,6 +52,20 @@
     }
   }
 
+  async function openWindow(command: 'open_settings' | 'open_about' | 'open_status') {
+    try {
+      await invoke(command);
+    } catch (error__) {
+      const message =
+        error__ instanceof Error
+          ? error__.message
+          : typeof error__ === 'string'
+            ? error__
+            : 'window open failed';
+      logSafely(error, `renderer: ${command} failed — ${message}`);
+    }
+  }
+
   onMount(async () => {
     await initUiTheme();
 
@@ -62,27 +78,17 @@
       }
     }, 1000);
     try {
-      let bridge = (globalThis as unknown as { aideon?: AideonApi }).aideon;
-      if (bridge?.stateAt === undefined) {
-        logSafely(debug, 'renderer: aideon bridge missing; importing tauri-shim');
-        await import('$lib/tauri-shim');
-        bridge = (globalThis as unknown as { aideon?: AideonApi }).aideon;
+      await timeStore.loadBranch('main');
+      const latestSnapshot = get(timeStore).snapshot;
+      if (latestSnapshot) {
+        const counts = ` nodes=${latestSnapshot.nodes} edges=${latestSnapshot.edges}`;
+        logSafely(info, `renderer: stateAt received${counts}`);
       }
-      if (!bridge || typeof bridge.stateAt !== 'function') {
-        throw new TypeError('Bridge not available');
-      }
-      stateAt = await bridge.stateAt({ asOf: '2025-01-01' });
-      const counts = stateAt
-        ? ` nodes=${stateAt.nodes} edges=${stateAt.edges}`
-        : ' nodes=0 edges=0';
-      logSafely(info, `renderer: stateAt received${counts}`);
 
-      await refreshHealth(bridge);
-      if (typeof bridge.workerHealth === 'function') {
-        healthTimer = setInterval(() => {
-          void refreshHealth(bridge);
-        }, 15_000);
-      }
+      await refreshHealth();
+      healthTimer = setInterval(() => {
+        void refreshHealth();
+      }, 15_000);
     } catch (error__) {
       const message =
         error__ instanceof Error ? error__.message : typeof error__ === 'string' ? error__ : '';
@@ -99,6 +105,7 @@
     if (healthTimer) {
       clearInterval(healthTimer);
     }
+    unsubscribeTime();
   });
 
   function onSelect(event: { detail: { id: string } }) {
@@ -112,9 +119,9 @@
     <Toolbar
       sidebarActive={showSidebar}
       onToggleSidebar={() => (showSidebar = !showSidebar)}
-      onOpenSettings={() => (globalThis as any).aideon.openSettings()}
-      onOpenAbout={() => (globalThis as any).aideon.openAbout()}
-      onOpenStatus={() => (globalThis as any).aideon.openStatus()}
+      onOpenSettings={() => void openWindow('open_settings')}
+      onOpenAbout={() => void openWindow('open_about')}
+      onOpenStatus={() => void openWindow('open_status')}
     />
   </div>
   <div class="row-main">
