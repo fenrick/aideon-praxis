@@ -1,8 +1,6 @@
-import { ensureIsoDateTime } from './contracts';
 import type {
   GraphAdapter,
   GraphSnapshotMetrics,
-  IsoDateTime,
   TemporalDiffParameters,
   TemporalDiffSnapshot,
   TemporalStateParameters,
@@ -14,15 +12,15 @@ import type {
  * Not for production use; intended for local demos and tests.
  */
 export class DevelopmentMemoryGraph implements GraphAdapter {
-  private snapshots = new Map<IsoDateTime, GraphSnapshotMetrics>();
+  private snapshots = new Map<string, GraphSnapshotMetrics>();
 
   /**
    * Seeds the in-memory store with metric counts for a timestamp. This helper
    * keeps the class convenient to use in tests and Storybook scenarios.
    */
   put(asOf: string | Date, nodes: number, edges: number) {
-    const iso = ensureIsoDateTime(typeof asOf === 'string' ? asOf : asOf.toISOString());
-    this.snapshots.set(iso, { nodeCount: nodes, edgeCount: edges });
+    const key = typeof asOf === 'string' ? asOf : asOf.toISOString();
+    this.snapshots.set(key, { nodeCount: nodes, edgeCount: edges });
   }
 
   async stateAt(parameters: TemporalStateParameters): Promise<TemporalStateSnapshot> {
@@ -58,10 +56,12 @@ export class DevelopmentMemoryGraph implements GraphAdapter {
           from: parameters.from,
           to: parameters.to,
           metrics: {
-            nodesAdded: Math.max(0, b.nodeCount - a.nodeCount),
-            nodesRemoved: Math.max(0, a.nodeCount - b.nodeCount),
-            edgesAdded: Math.max(0, b.edgeCount - a.edgeCount),
-            edgesRemoved: Math.max(0, a.edgeCount - b.edgeCount),
+            nodeAdds: Math.max(0, b.nodeCount - a.nodeCount),
+            nodeMods: 0,
+            nodeDels: Math.max(0, a.nodeCount - b.nodeCount),
+            edgeAdds: Math.max(0, b.edgeCount - a.edgeCount),
+            edgeMods: 0,
+            edgeDels: Math.max(0, a.edgeCount - b.edgeCount),
           },
         });
       }, 0),
@@ -69,11 +69,6 @@ export class DevelopmentMemoryGraph implements GraphAdapter {
   }
 
   private lookupMetrics(reference: string): GraphSnapshotMetrics | undefined {
-    try {
-      const iso = ensureIsoDateTime(reference);
-      return this.snapshots.get(iso);
-    } catch {
-      return undefined;
-    }
+    return this.snapshots.get(reference);
   }
 }

@@ -72,7 +72,7 @@ export function createTimeStore(port: TemporalPort = temporalPort): TimeStoreAct
       const commits = await adapter.listCommits(branch);
       const selected = commits.at(-1) ?? null;
       const snapshot = selected
-        ? await adapter.stateAt({ asOf: selected.asOf, scenario: branch })
+        ? await adapter.stateAt({ asOf: selected.id, scenario: branch })
         : null;
       store.set({
         branch,
@@ -119,7 +119,7 @@ export function createTimeStore(port: TemporalPort = temporalPort): TimeStoreAct
       return;
     }
     try {
-      const snapshot = await adapter.stateAt({ asOf: commit.asOf, scenario: state.branch });
+      const snapshot = await adapter.stateAt({ asOf: commit.id, scenario: state.branch });
       store.update((current) => ({
         ...current,
         currentCommitId: commitId,

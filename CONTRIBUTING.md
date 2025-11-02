@@ -6,6 +6,7 @@ environment, and what we expect in issues and pull requests.
 ## Values
 
 - **Time-first, graph-native:** keep the meta-model and `state_at()` semantics authoritative.
+- **Commits define time:** follow the standards in `Architecture-Boundary.md#time-&-commit-model-—-authoring-standards` when modelling change history.
 - **Local-first, cloud-ready:** do not break desktop mode; design for a clean switch to server.
 - **Security by default:** safe IPC, PII redaction, least privilege.
 - **Evidence & tests:** measurable SLOs; PRs come with tests/docs.

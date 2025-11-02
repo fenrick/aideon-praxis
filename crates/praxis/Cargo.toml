@@ -6,3 +6,7 @@ authors = ["Aideon Praxis Contributors"]
 license = "MIT"
 
 [dependencies]
+core_data = { path = "../core_data" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"

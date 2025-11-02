@@ -3,7 +3,6 @@ export { ensureIsoDateTime } from './contracts';
 export type {
   ConfidencePercent,
   GraphSnapshotMetrics,
-  IsoDateTime,
   PlanEvent,
   PlanEventEffect,
   PlanEventSource,
@@ -69,15 +68,32 @@ export interface WorkerClient {
 export interface MutableGraphAdapter extends GraphAdapter {
   commit(parameters: {
     branch: string;
-    asOf: string;
-    message?: string;
-    addNodes?: string[];
-    removeNodes?: string[];
-    addEdges?: { source: string; target: string }[];
-    removeEdges?: { source: string; target: string }[];
+    parent?: string;
+    author?: string;
+    message: string;
+    tags?: string[];
+    time?: string;
+    changes: {
+      nodeCreates?: string[];
+      nodeDeletes?: string[];
+      edgeCreates?: { from: string; to: string }[];
+      edgeDeletes?: { from: string; to: string }[];
+    };
   }): Promise<{ id: string }>;
-  listCommits(parameters: {
-    branch: string;
-  }): Promise<{ id: string; branch: string; asOf: string; parentId?: string; message?: string }[]>;
-  createBranch(parameters: { name: string; from?: string }): Promise<void>;
+  listCommits(parameters: { branch: string }): Promise<
+    {
+      id: string;
+      branch: string;
+      parents: string[];
+      author?: string;
+      time?: string;
+      message: string;
+      tags: string[];
+      changeCount: number;
+    }[]
+  >;
+  createBranch(parameters: {
+    name: string;
+    from?: string;
+  }): Promise<{ name: string; head: string | null }>;
 }

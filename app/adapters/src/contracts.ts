@@ -56,7 +56,8 @@ export interface GraphSnapshotMetrics {
 
 /** Parameters accepted by the `stateAt` call. */
 export interface TemporalStateParameters {
-  asOf: IsoDateTime;
+  /** Commit identifier or branch handle; commit ids are preferred. */
+  asOf: string;
   scenario?: ScenarioKey;
   confidence?: ConfidencePercent;
 }
@@ -66,30 +67,26 @@ export interface TemporalStateParameters {
  * immutable to preserve snapshot semantics.
  */
 export interface TemporalStateSnapshot {
-  asOf: IsoDateTime;
+  asOf: string;
   scenario?: ScenarioKey;
   confidence?: ConfidencePercent;
   metrics: GraphSnapshotMetrics;
 }
 
 export interface TemporalDiffParameters {
-  /**
-   * Reference to the baseline snapshot, expressed as a plateau ID or ISO timestamp.
-   */
   from: string;
-  /**
-   * Reference to the comparison snapshot, expressed as a plateau ID or ISO timestamp.
-   */
   to: string;
   scope?: Record<string, unknown>;
 }
 
 /** Simple diff stats for visual roll-ups. */
 export interface TemporalDiffMetrics {
-  nodesAdded: number;
-  nodesRemoved: number;
-  edgesAdded: number;
-  edgesRemoved: number;
+  nodeAdds: number;
+  nodeMods: number;
+  nodeDels: number;
+  edgeAdds: number;
+  edgeMods: number;
+  edgeDels: number;
 }
 
 /** Result of the `diff` call. */

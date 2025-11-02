@@ -3,6 +3,7 @@
      typed `$props` follows the Svelte TypeScript guidance for explicit inputs. -->
 <script lang="ts">
   import { debug, error as logError, info as logInfo, logSafely } from '$lib/logging';
+  import { temporalPort } from '$lib/ports/temporal';
   import Scene from '$lib/canvas/Scene.svelte';
   const { version, stateAt, errorMsg } = $props<{
     version: string;
@@ -47,10 +48,10 @@
     <p style="color: crimson;">Error: {errorMsg}</p>
   {:else if currentStateAt}
     <div class="row asof">
-      <label for="asof">AS‑OF:</label>
+      <label for="asof">Commit:</label>
       <input
         id="asof"
-        type="date"
+        type="text"
         value={currentStateAt.asOf}
         onchange={async (e) => {
           const target = e.currentTarget as any;
@@ -58,8 +59,7 @@
           if (!val) return;
           logSafely(debug, `renderer: asOf change ${val}`);
           try {
-            const bridge = (globalThis as any).aideon as any;
-            const next = await bridge.stateAt({ asOf: val });
+            const next = await temporalPort.stateAt({ asOf: val });
             currentStateAt = next;
             // Reload canvas scene from host for this asOf
             const mod = await import('$lib/canvas/shape-store');

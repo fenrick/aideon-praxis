@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
 
-import { ensureIsoDateTime } from './contracts';
 import type {
   GraphSnapshotMetrics,
   MutableGraphAdapter,
@@ -24,9 +23,12 @@ interface CommitResp {
 interface CommitListItem {
   id: string;
   branch: string;
-  asOf: string;
-  parentId?: string;
-  message?: string;
+  parents: string[];
+  author?: string;
+  time?: string;
+  message: string;
+  tags: string[];
+  change_count: number;
 }
 interface ListCommitsResp {
   commits: CommitListItem[];
@@ -35,10 +37,12 @@ interface ListCommitsResp {
 interface DiffSummaryResp {
   from: string;
   to: string;
-  nodesAdded: number;
-  nodesRemoved: number;
-  edgesAdded: number;
-  edgesRemoved: number;
+  node_adds: number;
+  node_mods: number;
+  node_dels: number;
+  edge_adds: number;
+  edge_mods: number;
+  edge_dels: number;
 }
 
 type InvokeFunction = <T>(command: string, arguments_?: Record<string, unknown>) => Promise<T>;
@@ -49,69 +53,125 @@ const call: InvokeFunction = (command, arguments_) => invoke(command, arguments_
 export class IpcTemporalAdapter implements MutableGraphAdapter {
   async stateAt(parameters: TemporalStateParameters): Promise<TemporalStateSnapshot> {
     const result = await call<StateAtResp>('temporal_state_at', {
-      asOf: parameters.asOf,
-      scenario: parameters.scenario ?? null,
-      confidence: parameters.confidence ?? null,
+      payload: {
+        asOf: parameters.asOf,
+        scenario: parameters.scenario ?? null,
+        confidence: parameters.confidence ?? null,
+      },
     });
     const metrics: GraphSnapshotMetrics = {
       nodeCount: result.nodes,
       edgeCount: result.edges,
     };
     return {
-      asOf: ensureIsoDateTime(result.asOf),
+      asOf: result.asOf,
       scenario: result.scenario ?? undefined,
       confidence: result.confidence ?? undefined,
       metrics,
     };
   }
   async diff(parameters: TemporalDiffParameters): Promise<TemporalDiffSnapshot> {
-    const arguments_: Record<string, unknown> = {
+    const payload: Record<string, unknown> = {
       from: parameters.from,
       to: parameters.to,
     };
     if (parameters.scope !== undefined) {
-      arguments_.scope = parameters.scope;
+      payload.scope = parameters.scope;
     }
-    const summary = await call<DiffSummaryResp>('temporal_diff', arguments_);
+    const summary = await call<DiffSummaryResp>('temporal_diff', { payload });
     return {
       from: summary.from,
       to: summary.to,
       metrics: {
-        nodesAdded: summary.nodesAdded,
-        nodesRemoved: summary.nodesRemoved,
-        edgesAdded: summary.edgesAdded,
-        edgesRemoved: summary.edgesRemoved,
+        nodeAdds: summary.node_adds,
+        nodeMods: summary.node_mods,
+        nodeDels: summary.node_dels,
+        edgeAdds: summary.edge_adds,
+        edgeMods: summary.edge_mods,
+        edgeDels: summary.edge_dels,
       },
     };
   }
   async commit(parameters: {
     branch: string;
-    asOf: string;
-    message?: string;
-    addNodes?: string[];
-    removeNodes?: string[];
-    addEdges?: { source: string; target: string }[];
-    removeEdges?: { source: string; target: string }[];
+    parent?: string;
+    author?: string;
+    message: string;
+    tags?: string[];
+    time?: string;
+    changes: {
+      nodeCreates?: string[];
+      nodeDeletes?: string[];
+      edgeCreates?: { from: string; to: string }[];
+      edgeDeletes?: { from: string; to: string }[];
+    };
   }): Promise<CommitResp> {
+    const changeSet: Record<string, unknown> = {};
+    if (parameters.changes.nodeCreates?.length) {
+      changeSet.nodeCreates = parameters.changes.nodeCreates.map((id) => ({ id }));
+    }
+    if (parameters.changes.nodeDeletes?.length) {
+      changeSet.nodeDeletes = parameters.changes.nodeDeletes.map((id) => ({ id }));
+    }
+    if (parameters.changes.edgeCreates?.length) {
+      changeSet.edgeCreates = parameters.changes.edgeCreates.map((edge) => ({
+        from: edge.from,
+        to: edge.to,
+      }));
+    }
+    if (parameters.changes.edgeDeletes?.length) {
+      changeSet.edgeDeletes = parameters.changes.edgeDeletes.map((edge) => ({
+        from: edge.from,
+        to: edge.to,
+      }));
+    }
     const payload = {
-      branch: parameters.branch,
-      asOf: parameters.asOf,
-      message: parameters.message,
-      changes: {
-        addNodes: (parameters.addNodes ?? []).map((id) => ({ id })),
-        removeNodes: (parameters.removeNodes ?? []).map((id) => ({ id })),
-        addEdges: parameters.addEdges ?? [],
-        removeEdges: parameters.removeEdges ?? [],
+      payload: {
+        branch: parameters.branch,
+        parent: parameters.parent ?? null,
+        author: parameters.author ?? null,
+        message: parameters.message,
+        tags: parameters.tags ?? [],
+        time: parameters.time ?? null,
+        changes: changeSet,
       },
     };
-    const result = await call<CommitResp>('commit_changes', payload as Record<string, unknown>);
+    const result = await call<CommitResp>('commit_changes', payload);
     return result;
   }
-  async listCommits(parameters: { branch: string }): Promise<CommitListItem[]> {
+  async listCommits(parameters: { branch: string }): Promise<
+    {
+      id: string;
+      branch: string;
+      parents: string[];
+      author?: string;
+      time?: string;
+      message: string;
+      tags: string[];
+      changeCount: number;
+    }[]
+  > {
     const result = await call<ListCommitsResp>('list_commits', { branch: parameters.branch });
-    return result.commits;
+    return result.commits.map((commit) => ({
+      id: commit.id,
+      branch: commit.branch,
+      parents: commit.parents,
+      author: commit.author,
+      time: commit.time,
+      message: commit.message,
+      tags: commit.tags,
+      changeCount: commit.change_count,
+    }));
   }
-  async createBranch(parameters: { name: string; from?: string }): Promise<void> {
-    await call('create_branch', { name: parameters.name, from: parameters.from ?? null });
+  async createBranch(parameters: {
+    name: string;
+    from?: string;
+  }): Promise<{ name: string; head: string | null }> {
+    return call<{ name: string; head: string | null }>('create_branch', {
+      payload: {
+        name: parameters.name,
+        from: parameters.from ?? null,
+      },
+    });
   }
 }

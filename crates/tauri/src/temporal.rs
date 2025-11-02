@@ -4,11 +4,12 @@
 //! crate, reinforcing the boundary guidance spelled out in `AGENTS.md`.
 
 use core_data::temporal::{
-    CommitChangesRequest, CommitChangesResponse, DiffArgs, DiffSummary, ListCommitsResponse,
-    StateAtArgs, StateAtResult,
+    BranchInfo, CommitChangesRequest, CommitChangesResponse, CreateBranchRequest, DiffArgs,
+    DiffSummary, ListCommitsResponse, StateAtArgs, StateAtResult,
 };
 use log::{debug, error, info};
-use std::panic::AssertUnwindSafe;
+use praxis::{PraxisError, PraxisErrorCode};
+use serde::Serialize;
 use std::time::Instant;
 use tauri::State;
 
@@ -21,28 +22,15 @@ use crate::worker::WorkerState;
 /// untouched so the transport format stays stable regardless of runtime.
 pub async fn temporal_state_at(
     state: State<'_, WorkerState>,
-    as_of: String,
-    scenario: Option<String>,
-    confidence: Option<f64>,
-) -> Result<StateAtResult, String> {
+    payload: StateAtArgs,
+) -> Result<StateAtResult, HostError> {
     info!("host: temporal_state_at received");
-    debug!(
-        "host: temporal_state_at params as_of={} scenario={:?} confidence={:?}",
-        as_of, scenario, confidence
-    );
+    debug!("host: temporal_state_at payload={:?}", payload);
     let worker_state = state.inner();
 
-    let args = StateAtArgs::new(as_of, scenario, confidence);
-    let args_clone = args.clone();
     let started = Instant::now();
     let engine = worker_state.engine();
-    let output = match std::panic::catch_unwind(AssertUnwindSafe(|| engine.state_at(args))) {
-        Ok(result) => result,
-        Err(panic) => {
-            error!("host: temporal_state_at panic: {:?}", panic);
-            return Err("worker panic during state_at".into());
-        }
-    };
+    let output = engine.state_at(payload.clone()).map_err(host_error)?;
     let elapsed = started.elapsed();
     info!(
         "host: temporal_state_at ok nodes={} edges={} elapsed_ms={}",
@@ -50,10 +38,7 @@ pub async fn temporal_state_at(
         output.edges,
         elapsed.as_millis()
     );
-    debug!(
-        "host: temporal_state_at completed as_of={} scenario={:?} confidence={:?}",
-        args_clone.as_of, args_clone.scenario, args_clone.confidence
-    );
+    debug!("host: temporal_state_at completed result={:?}", output);
     Ok(output)
 }
 
@@ -62,23 +47,24 @@ pub async fn temporal_state_at(
 pub async fn temporal_diff(
     state: State<'_, WorkerState>,
     payload: DiffArgs,
-) -> Result<DiffSummary, String> {
+) -> Result<DiffSummary, HostError> {
     info!("host: temporal_diff received");
     debug!(
-        "host: temporal_diff params from={} to={} scope={:?}",
+        "host: temporal_diff params from={:?} to={:?} scope={:?}",
         payload.from, payload.to, payload.scope
     );
     let engine = state.engine();
-    let args_clone = payload.clone();
-    let summary = engine.diff_summary(payload);
+    let summary = engine.diff_summary(payload.clone()).map_err(host_error)?;
     info!(
-        "host: temporal_diff counts nodes_added={} nodes_removed={} edges_added={} edges_removed={}",
-        summary.nodes_added, summary.nodes_removed, summary.edges_added, summary.edges_removed
+        "host: temporal_diff counts node_adds={} node_mods={} node_dels={} edge_adds={} edge_mods={} edge_dels={}",
+        summary.node_adds,
+        summary.node_mods,
+        summary.node_dels,
+        summary.edge_adds,
+        summary.edge_mods,
+        summary.edge_dels
     );
-    debug!(
-        "host: temporal_diff completed from={} to={}",
-        args_clone.from, args_clone.to
-    );
+    debug!("host: temporal_diff completed summary={:?}", summary);
     Ok(summary)
 }
 
@@ -86,9 +72,9 @@ pub async fn temporal_diff(
 pub async fn commit_changes(
     state: State<'_, WorkerState>,
     payload: CommitChangesRequest,
-) -> Result<CommitChangesResponse, String> {
+) -> Result<CommitChangesResponse, HostError> {
     let engine = state.engine();
-    let id = engine.commit(payload);
+    let id = engine.commit(payload).map_err(host_error)?;
     Ok(CommitChangesResponse { id })
 }
 
@@ -96,19 +82,47 @@ pub async fn commit_changes(
 pub async fn list_commits(
     state: State<'_, WorkerState>,
     branch: String,
-) -> Result<ListCommitsResponse, String> {
+) -> Result<ListCommitsResponse, HostError> {
     let engine = state.engine();
-    let commits = engine.list_commits(branch);
+    let commits = engine.list_commits(branch.clone()).map_err(host_error)?;
+    debug!(
+        "host: list_commits branch={} count={}",
+        branch,
+        commits.len()
+    );
     Ok(ListCommitsResponse { commits })
 }
 
 #[tauri::command]
 pub async fn create_branch(
     state: State<'_, WorkerState>,
-    name: String,
-    from: Option<String>,
-) -> Result<(), String> {
+    payload: CreateBranchRequest,
+) -> Result<BranchInfo, HostError> {
     let engine = state.engine();
-    let _info = engine.create_branch(name, from);
-    Ok(())
+    let info = engine
+        .create_branch(payload.name.clone(), payload.from.clone())
+        .map_err(host_error)?;
+    Ok(info)
+}
+
+#[derive(Debug, Serialize)]
+pub struct HostError {
+    code: &'static str,
+    message: String,
+}
+
+fn host_error(error: PraxisError) -> HostError {
+    let code = match error.code() {
+        PraxisErrorCode::UnknownBranch => "unknown_branch",
+        PraxisErrorCode::UnknownCommit => "unknown_commit",
+        PraxisErrorCode::ConcurrencyConflict => "concurrency_conflict",
+        PraxisErrorCode::ValidationFailed => "validation_failed",
+        PraxisErrorCode::IntegrityViolation => "integrity_violation",
+        PraxisErrorCode::MergeConflict => "merge_conflict",
+    };
+    error!("host: praxis error code={} detail={error}", code);
+    HostError {
+        code,
+        message: error.to_string(),
+    }
 }
