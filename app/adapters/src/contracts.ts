@@ -96,6 +96,24 @@ export interface TemporalDiffSnapshot {
   metrics: TemporalDiffMetrics;
 }
 
+export interface TemporalTopologyDeltaParameters {
+  from: string;
+  to: string;
+}
+
+export interface TemporalTopologyDeltaMetrics {
+  nodeAdds: number;
+  nodeDels: number;
+  edgeAdds: number;
+  edgeDels: number;
+}
+
+export interface TemporalTopologyDeltaSnapshot {
+  from: string;
+  to: string;
+  metrics: TemporalTopologyDeltaMetrics;
+}
+
 /**
  * Minimal Plan Event schema as documented in AGENTS.md. Storage backends
  * can enrich the payload while preserving the core shape.
@@ -151,8 +169,8 @@ export interface WorkerJobMap {
     output: TemporalDiffSnapshot;
   };
   'Temporal.TopologyDelta': {
-    input: { from: IsoDateTime; to: IsoDateTime };
-    output: { added: number; removed: number };
+    input: TemporalTopologyDeltaParameters;
+    output: TemporalTopologyDeltaSnapshot;
   };
   'Finance.TCO': {
     input: {

@@ -20,6 +20,9 @@ import type {
   TemporalMergeConflict,
   TemporalMergeRequest,
   TemporalMergeResult,
+  TemporalTopologyDeltaMetrics,
+  TemporalTopologyDeltaRequest,
+  TemporalTopologyDeltaSnapshot,
 } from '../types.js';
 
 export interface TemporalPort {
@@ -27,6 +30,7 @@ export interface TemporalPort {
   listCommits(branch: string): Promise<TemporalCommitSummary[]>;
   listBranches(): Promise<TemporalBranchSummary[]>;
   diff(parameters: TemporalDiffRequest): Promise<TemporalDiffSnapshot>;
+  topologyDelta(parameters: TemporalTopologyDeltaRequest): Promise<TemporalTopologyDeltaSnapshot>;
   commit(parameters: TemporalCommitRequest): Promise<TemporalCommitResponse>;
   createBranch(parameters: TemporalCreateBranchRequest): Promise<TemporalCreateBranchResponse>;
   merge(parameters: TemporalMergeRequest): Promise<TemporalMergeResult>;
@@ -57,6 +61,15 @@ interface DiffResponsePayload {
   node_dels?: unknown;
   edge_adds?: unknown;
   edge_mods?: unknown;
+  edge_dels?: unknown;
+}
+
+interface TopologyDeltaResponsePayload {
+  from?: unknown;
+  to?: unknown;
+  node_adds?: unknown;
+  node_dels?: unknown;
+  edge_adds?: unknown;
   edge_dels?: unknown;
 }
 
@@ -209,6 +222,15 @@ const toBranchSummary = (payload: BranchResponsePayload): TemporalBranchSummary 
   head: typeof payload.head === 'string' ? payload.head : null,
 });
 
+const toTopologyDeltaMetrics = (
+  payload: TopologyDeltaResponsePayload,
+): TemporalTopologyDeltaMetrics => ({
+  nodeAdds: parseNumber(payload.node_adds),
+  nodeDels: parseNumber(payload.node_dels),
+  edgeAdds: parseNumber(payload.edge_adds),
+  edgeDels: parseNumber(payload.edge_dels),
+});
+
 const toConflicts = (value: unknown): TemporalMergeConflict[] | undefined => {
   if (!Array.isArray(value)) {
     return undefined;
@@ -295,6 +317,27 @@ export function createTemporalPort(call: InvokeFunction = invoke as InvokeFuncti
           to: response.to,
           metrics: toDiffMetrics(response),
         } satisfies TemporalDiffSnapshot;
+      } catch (error) {
+        throw toHostError(error);
+      }
+    },
+    async topologyDelta(
+      parameters: TemporalTopologyDeltaRequest,
+    ): Promise<TemporalTopologyDeltaSnapshot> {
+      const payload: Record<string, unknown> = {
+        from: parameters.from,
+        to: parameters.to,
+      };
+      try {
+        const response = await call<TopologyDeltaResponsePayload>('topology_delta', { payload });
+        if (typeof response.from !== 'string' || typeof response.to !== 'string') {
+          throw new TypeError('Topology delta response missing commit identifiers');
+        }
+        return {
+          from: response.from,
+          to: response.to,
+          metrics: toTopologyDeltaMetrics(response),
+        } satisfies TemporalTopologyDeltaSnapshot;
       } catch (error) {
         throw toHostError(error);
       }

@@ -133,6 +133,24 @@ export interface TemporalDiffSnapshot {
   metrics: TemporalDiffMetrics;
 }
 
+export interface TemporalTopologyDeltaRequest {
+  from: CommitReference;
+  to: CommitReference;
+}
+
+export interface TemporalTopologyDeltaMetrics {
+  nodeAdds: number;
+  nodeDels: number;
+  edgeAdds: number;
+  edgeDels: number;
+}
+
+export interface TemporalTopologyDeltaSnapshot {
+  from: string;
+  to: string;
+  metrics: TemporalTopologyDeltaMetrics;
+}
+
 export interface TemporalDiffMetrics {
   nodeAdds: number;
   nodeMods: number;

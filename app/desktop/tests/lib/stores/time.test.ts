@@ -67,6 +67,16 @@ const createMockPort = (
   const listCommitsMock = vi.fn(async () => commits);
   const stateAtMock = vi.fn(async () => snapshot);
   const diffMock = vi.fn(async () => diff);
+  const topologyDeltaMock = vi.fn(async () => ({
+    from: 'c1',
+    to: 'c2',
+    metrics: {
+      nodeAdds: 0,
+      nodeDels: 0,
+      edgeAdds: 0,
+      edgeDels: 0,
+    },
+  }));
   const commitMock = vi.fn(async () => ({ id: 'c3' }));
   const createBranchMock = vi.fn(async () => ({ name: 'main', head: 'c2' }));
   const mergeMock = vi.fn(async () => mergeOk);
@@ -76,6 +86,7 @@ const createMockPort = (
     listCommits: overrides.listCommits ?? listCommitsMock,
     stateAt: overrides.stateAt ?? stateAtMock,
     diff: overrides.diff ?? diffMock,
+    topologyDelta: overrides.topologyDelta ?? topologyDeltaMock,
     commit: overrides.commit ?? commitMock,
     createBranch: overrides.createBranch ?? createBranchMock,
     merge: overrides.merge ?? mergeMock,
@@ -88,6 +99,7 @@ const createMockPort = (
       listCommits: listCommitsMock,
       stateAt: stateAtMock,
       diff: diffMock,
+      topologyDelta: topologyDeltaMock,
       commit: commitMock,
       createBranch: createBranchMock,
       merge: mergeMock,

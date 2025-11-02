@@ -47,6 +47,16 @@ describe('temporal port', () => {
             edge_mods: 0,
             edge_dels: 0,
           };
+        case 'topology_delta':
+          expect(args).toMatchObject({ payload: { from: 'c1', to: 'c3' } });
+          return {
+            from: 'c1',
+            to: 'c3',
+            node_adds: 2,
+            node_dels: 1,
+            edge_adds: 1,
+            edge_dels: 1,
+          };
         case 'commit_changes':
           expect(args).toMatchObject({
             payload: {
@@ -78,6 +88,7 @@ describe('temporal port', () => {
     const branchList = await port.listBranches();
     expect(branchList[0]?.name).toBe('main');
     await port.diff({ from: 'c1', to: 'c2' });
+    const topology = await port.topologyDelta({ from: 'c1', to: 'c3' });
     const commit = await port.commit({
       branch: 'main',
       message: 'commit',
@@ -92,6 +103,8 @@ describe('temporal port', () => {
     expect(commit.id).toBe('c2');
     expect(branch).toEqual({ name: 'feature/x', head: 'c1' });
     expect(merge.result).toBe('merge-1');
+    expect(topology.metrics.nodeAdds).toBe(2);
+    expect(topology.metrics.edgeDels).toBe(1);
     expect(invokeMock).toHaveBeenCalledWith('create_branch', {
       payload: {
         name: 'feature/x',

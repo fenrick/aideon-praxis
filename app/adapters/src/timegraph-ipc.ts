@@ -7,6 +7,8 @@ import type {
   TemporalDiffSnapshot,
   TemporalStateParameters,
   TemporalStateSnapshot,
+  TemporalTopologyDeltaParameters,
+  TemporalTopologyDeltaSnapshot,
 } from './index';
 
 interface StateAtResp {
@@ -63,6 +65,15 @@ interface ConflictPayload {
   reference?: unknown;
   kind?: unknown;
   message?: unknown;
+}
+
+interface TopologyDeltaResp {
+  from?: unknown;
+  to?: unknown;
+  node_adds?: unknown;
+  node_dels?: unknown;
+  edge_adds?: unknown;
+  edge_dels?: unknown;
 }
 
 type InvokeFunction = <T>(command: string, arguments_?: Record<string, unknown>) => Promise<T>;
@@ -233,6 +244,26 @@ export class IpcTemporalAdapter implements MutableGraphAdapter {
     return {
       result: typeof response.result === 'string' ? response.result : undefined,
       conflicts,
+    };
+  }
+  async topologyDelta(
+    parameters: TemporalTopologyDeltaParameters,
+  ): Promise<TemporalTopologyDeltaSnapshot> {
+    const response = await call<TopologyDeltaResp>('topology_delta', {
+      payload: parameters,
+    });
+    const from = typeof response.from === 'string' ? response.from : '';
+    const to = typeof response.to === 'string' ? response.to : '';
+    const metrics = {
+      nodeAdds: typeof response.node_adds === 'number' ? response.node_adds : 0,
+      nodeDels: typeof response.node_dels === 'number' ? response.node_dels : 0,
+      edgeAdds: typeof response.edge_adds === 'number' ? response.edge_adds : 0,
+      edgeDels: typeof response.edge_dels === 'number' ? response.edge_dels : 0,
+    };
+    return {
+      from,
+      to,
+      metrics,
     };
   }
 }
