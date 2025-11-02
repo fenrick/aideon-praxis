@@ -6,7 +6,10 @@ pub mod health;
 pub mod temporal;
 
 pub use health::WorkerHealth;
-pub use temporal::{StateAtArgs, StateAtResult};
+pub use temporal::{
+    BranchInfo, ListBranchesResponse, MergeConflict, MergeRequest, MergeResponse, StateAtArgs,
+    StateAtResult,
+};
 
 /// Canvas/scene DTOs used by the renderer to draw a default scene.
 pub mod canvas;

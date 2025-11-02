@@ -5,7 +5,8 @@
 
 use core_data::temporal::{
     BranchInfo, CommitChangesRequest, CommitChangesResponse, CreateBranchRequest, DiffArgs,
-    DiffSummary, ListCommitsResponse, StateAtArgs, StateAtResult,
+    DiffSummary, ListBranchesResponse, ListCommitsResponse, MergeRequest, MergeResponse,
+    StateAtArgs, StateAtResult,
 };
 use log::{debug, error, info};
 use praxis::{PraxisError, PraxisErrorCode};
@@ -103,6 +104,23 @@ pub async fn create_branch(
         .create_branch(payload.name.clone(), payload.from.clone())
         .map_err(host_error)?;
     Ok(info)
+}
+
+#[tauri::command]
+pub async fn list_branches(
+    state: State<'_, WorkerState>,
+) -> Result<ListBranchesResponse, HostError> {
+    let engine = state.engine();
+    Ok(engine.list_branches())
+}
+
+#[tauri::command]
+pub async fn merge_branches(
+    state: State<'_, WorkerState>,
+    payload: MergeRequest,
+) -> Result<MergeResponse, HostError> {
+    let engine = state.engine();
+    engine.merge(payload).map_err(host_error)
 }
 
 #[derive(Debug, Serialize)]

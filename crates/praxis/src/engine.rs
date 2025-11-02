@@ -1,9 +1,10 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
 use core_data::temporal::{
-    BranchInfo, ChangeSet, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffSummary,
-    StateAtArgs, StateAtResult,
+    BranchInfo, ChangeSet, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffPatch,
+    DiffSummary, EdgeTombstone, EdgeVersion, MergeConflict, MergeRequest, MergeResponse,
+    NodeTombstone, StateAtArgs, StateAtResult,
 };
 
 use crate::error::{PraxisError, PraxisResult};
@@ -257,15 +258,109 @@ impl PraxisEngine {
         Ok(Arc::clone(&record.snapshot))
     }
 
-    pub fn merge(
-        &self,
-        _source: String,
-        _target: String,
-        _strategy: Option<String>,
-    ) -> PraxisResult<()> {
-        // To-do: implement three-way merge once the conflict resolution UI is ready.
-        Err(PraxisError::MergeConflict {
-            message: "merge engine not implemented".into(),
+    pub fn merge(&self, request: MergeRequest) -> PraxisResult<MergeResponse> {
+        let mut inner = self.lock();
+
+        let source_branch =
+            inner
+                .branches
+                .get(&request.source)
+                .ok_or_else(|| PraxisError::UnknownBranch {
+                    branch: request.source.clone(),
+                })?;
+        let target_branch =
+            inner
+                .branches
+                .get(&request.target)
+                .ok_or_else(|| PraxisError::UnknownBranch {
+                    branch: request.target.clone(),
+                })?;
+
+        let source_head = source_branch
+            .head
+            .clone()
+            .ok_or_else(|| PraxisError::UnknownCommit {
+                commit: request.source.clone(),
+            })?;
+        let target_head = target_branch
+            .head
+            .clone()
+            .ok_or_else(|| PraxisError::UnknownCommit {
+                commit: request.target.clone(),
+            })?;
+
+        let base = find_common_ancestor(&inner, &source_head, &target_head).ok_or_else(|| {
+            PraxisError::MergeConflict {
+                message: "branches do not share a common ancestor".into(),
+            }
+        })?;
+
+        let base_snapshot = inner
+            .commits
+            .get(&base)
+            .map(|record| Arc::clone(&record.snapshot))
+            .unwrap_or_else(|| Arc::new(GraphSnapshot::empty()));
+        let source_snapshot = inner
+            .commits
+            .get(&source_head)
+            .map(|record| Arc::clone(&record.snapshot))
+            .ok_or_else(|| PraxisError::UnknownCommit {
+                commit: source_head.clone(),
+            })?;
+        let target_snapshot = inner
+            .commits
+            .get(&target_head)
+            .map(|record| Arc::clone(&record.snapshot))
+            .ok_or_else(|| PraxisError::UnknownCommit {
+                commit: target_head.clone(),
+            })?;
+
+        let source_patch = base_snapshot.diff(&source_snapshot);
+        let target_patch = base_snapshot.diff(&target_snapshot);
+
+        let conflicts = detect_conflicts(&source_patch, &target_patch);
+        if !conflicts.is_empty() {
+            return Ok(MergeResponse {
+                result: None,
+                conflicts: Some(conflicts),
+            });
+        }
+
+        let changes = build_change_set(target_snapshot.as_ref(), &source_patch);
+        if changes.is_empty() {
+            return Ok(MergeResponse {
+                result: Some(target_head),
+                conflicts: None,
+            });
+        }
+
+        inner.next_commit += 1;
+        let commit_id = format!("{}{}", inner.config.commit_id_prefix, inner.next_commit);
+        let summary = CommitSummary {
+            id: commit_id.clone(),
+            parents: vec![target_head.clone(), source_head.clone()],
+            branch: request.target.clone(),
+            author: None,
+            time: None,
+            message: format!("merge {} -> {}", request.source, request.target),
+            tags: vec!["merge".into()],
+            change_count: change_count(&changes),
+        };
+        let snapshot = Arc::new(target_snapshot.apply(&changes)?);
+
+        inner.commits.insert(
+            commit_id.clone(),
+            CommitRecord {
+                summary: summary.clone(),
+                snapshot: Arc::clone(&snapshot),
+                change_set: changes.clone(),
+            },
+        );
+        inner.branches.entry(request.target).or_default().head = Some(commit_id.clone());
+
+        Ok(MergeResponse {
+            result: Some(commit_id),
+            conflicts: None,
         })
     }
 }
@@ -357,12 +452,178 @@ fn resolve_commit_id(
     }
 }
 
+fn find_common_ancestor(inner: &Inner, a: &str, b: &str) -> Option<String> {
+    let ancestors_a = collect_ancestors(inner, a);
+    let mut queue: VecDeque<String> = VecDeque::new();
+    queue.push_back(b.to_string());
+    let mut visited = HashSet::new();
+    while let Some(id) = queue.pop_front() {
+        if !visited.insert(id.clone()) {
+            continue;
+        }
+        if ancestors_a.contains(&id) {
+            return Some(id);
+        }
+        if let Some(record) = inner.commits.get(&id) {
+            for parent in &record.summary.parents {
+                queue.push_back(parent.clone());
+            }
+        }
+    }
+    None
+}
+
+fn collect_ancestors(inner: &Inner, head: &str) -> HashSet<String> {
+    let mut visited = HashSet::new();
+    let mut queue: VecDeque<String> = VecDeque::new();
+    queue.push_back(head.to_string());
+    while let Some(id) = queue.pop_front() {
+        if !visited.insert(id.clone()) {
+            continue;
+        }
+        if let Some(record) = inner.commits.get(&id) {
+            for parent in &record.summary.parents {
+                queue.push_back(parent.clone());
+            }
+        }
+    }
+    visited
+}
+
+fn detect_conflicts(source: &DiffPatch, target: &DiffPatch) -> Vec<MergeConflict> {
+    let mut conflicts = Vec::new();
+
+    let target_mod_nodes: HashSet<&str> = target
+        .node_mods
+        .iter()
+        .map(|node| node.id.as_str())
+        .collect();
+    let target_del_nodes: HashSet<&str> = target
+        .node_dels
+        .iter()
+        .map(|node| node.id.as_str())
+        .collect();
+    let target_add_nodes: HashSet<&str> = target
+        .node_adds
+        .iter()
+        .map(|node| node.id.as_str())
+        .collect();
+
+    for node in &source.node_mods {
+        if target_mod_nodes.contains(node.id.as_str())
+            || target_del_nodes.contains(node.id.as_str())
+        {
+            conflicts.push(MergeConflict {
+                reference: node.id.clone(),
+                kind: "node".into(),
+                message: "both branches modify or delete the node".into(),
+            });
+        }
+    }
+
+    for node in &source.node_dels {
+        if target_add_nodes.contains(node.id.as_str())
+            || target_mod_nodes.contains(node.id.as_str())
+        {
+            conflicts.push(MergeConflict {
+                reference: node.id.clone(),
+                kind: "node".into(),
+                message: "delete conflicts with target updates".into(),
+            });
+        }
+    }
+
+    let edge_key = |edge: &EdgeVersion| (edge.from.clone(), edge.to.clone());
+    let target_mod_edges: HashSet<(String, String)> =
+        target.edge_mods.iter().map(edge_key).collect();
+    let target_del_edges: HashSet<(String, String)> = target
+        .edge_dels
+        .iter()
+        .map(|edge| (edge.from.clone(), edge.to.clone()))
+        .collect();
+    let target_add_edges: HashSet<(String, String)> =
+        target.edge_adds.iter().map(edge_key).collect();
+
+    for edge in &source.edge_mods {
+        let key = (edge.from.clone(), edge.to.clone());
+        if target_mod_edges.contains(&key) || target_del_edges.contains(&key) {
+            conflicts.push(MergeConflict {
+                reference: format!("{}->{}", edge.from, edge.to),
+                kind: "edge".into(),
+                message: "both branches modify or delete the edge".into(),
+            });
+        }
+    }
+
+    for edge in &source.edge_dels {
+        let key = (edge.from.clone(), edge.to.clone());
+        if target_add_edges.contains(&key) || target_mod_edges.contains(&key) {
+            conflicts.push(MergeConflict {
+                reference: format!("{}->{}", edge.from, edge.to),
+                kind: "edge".into(),
+                message: "delete conflicts with target updates".into(),
+            });
+        }
+    }
+
+    conflicts
+}
+
+fn build_change_set(target_snapshot: &GraphSnapshot, patch: &DiffPatch) -> ChangeSet {
+    let mut changes = ChangeSet::default();
+
+    for node in &patch.node_adds {
+        if !target_snapshot.has_node(&node.id) {
+            changes.node_creates.push(node.clone());
+        }
+    }
+
+    for node in &patch.node_mods {
+        match target_snapshot.node(&node.id) {
+            Some(existing) if existing == node => {}
+            _ => changes.node_updates.push(node.clone()),
+        }
+    }
+
+    for tomb in &patch.node_dels {
+        if target_snapshot.has_node(&tomb.id) {
+            changes.node_deletes.push(NodeTombstone {
+                id: tomb.id.clone(),
+            });
+        }
+    }
+
+    for edge in &patch.edge_adds {
+        if !target_snapshot.has_edge(edge) {
+            changes.edge_creates.push(edge.clone());
+        }
+    }
+
+    for edge in &patch.edge_mods {
+        match target_snapshot.edge(edge) {
+            Some(existing) if existing == edge => {}
+            _ => changes.edge_updates.push(edge.clone()),
+        }
+    }
+
+    for tomb in &patch.edge_dels {
+        if target_snapshot.has_edge_tombstone(tomb) {
+            changes.edge_deletes.push(EdgeTombstone {
+                from: tomb.from.clone(),
+                to: tomb.to.clone(),
+            });
+        }
+    }
+
+    changes
+}
+
 #[cfg(test)]
 mod tests {
     use super::PraxisEngine;
     use core_data::temporal::{
-        ChangeSet, CommitChangesRequest, CommitRef, DiffArgs, EdgeVersion, NodeTombstone,
-        NodeVersion, StateAtArgs,
+        ChangeSet, CommitChangesRequest, CommitRef, DiffArgs, EdgeVersion, MergeRequest,
+        NodeTombstone, NodeVersion, StateAtArgs,
     };
 
     fn make_change_set(node_id: &str) -> ChangeSet {
@@ -545,6 +806,168 @@ mod tests {
         assert!(matches!(
             err,
             Err(super::PraxisError::IntegrityViolation { .. })
+        ));
+    }
+
+    #[test]
+    fn merge_without_conflicts_commits_changes() {
+        let engine = PraxisEngine::new();
+        let base = engine
+            .commit(CommitChangesRequest {
+                branch: "main".into(),
+                parent: None,
+                author: None,
+                time: None,
+                message: "init".into(),
+                tags: vec![],
+                changes: make_change_set("root"),
+            })
+            .unwrap();
+        engine
+            .create_branch("feature".into(), Some(CommitRef::Id(base.clone())))
+            .unwrap();
+        engine
+            .commit(CommitChangesRequest {
+                branch: "feature".into(),
+                parent: Some(base.clone()),
+                author: None,
+                time: None,
+                message: "feat".into(),
+                tags: vec![],
+                changes: make_change_set("feature-node"),
+            })
+            .unwrap();
+        engine
+            .commit(CommitChangesRequest {
+                branch: "main".into(),
+                parent: Some(base.clone()),
+                author: None,
+                time: None,
+                message: "main".into(),
+                tags: vec![],
+                changes: make_change_set("main-node"),
+            })
+            .unwrap();
+
+        let response = engine
+            .merge(MergeRequest {
+                source: "feature".into(),
+                target: "main".into(),
+                strategy: None,
+            })
+            .unwrap();
+
+        assert!(response.conflicts.is_none());
+        let merge_commit = response.result.expect("merge commit");
+        let stats = engine.stats_for_commit(&merge_commit).unwrap();
+        assert_eq!(stats.node_count, 3);
+    }
+
+    #[test]
+    fn merge_reports_conflicts_for_overlapping_updates() {
+        let engine = PraxisEngine::new();
+        let base = engine
+            .commit(CommitChangesRequest {
+                branch: "main".into(),
+                parent: None,
+                author: None,
+                time: None,
+                message: "init".into(),
+                tags: vec![],
+                changes: make_change_set("shared"),
+            })
+            .unwrap();
+        engine
+            .create_branch("feature".into(), Some(CommitRef::Id(base.clone())))
+            .unwrap();
+        engine
+            .commit(CommitChangesRequest {
+                branch: "feature".into(),
+                parent: Some(base.clone()),
+                author: None,
+                time: None,
+                message: "feat change".into(),
+                tags: vec![],
+                changes: ChangeSet {
+                    node_updates: vec![NodeVersion {
+                        id: "shared".into(),
+                        r#type: Some("Feature".into()),
+                        props: None,
+                    }],
+                    ..ChangeSet::default()
+                },
+            })
+            .unwrap();
+        engine
+            .commit(CommitChangesRequest {
+                branch: "main".into(),
+                parent: Some(base),
+                author: None,
+                time: None,
+                message: "main change".into(),
+                tags: vec![],
+                changes: ChangeSet {
+                    node_updates: vec![NodeVersion {
+                        id: "shared".into(),
+                        r#type: Some("Main".into()),
+                        props: None,
+                    }],
+                    ..ChangeSet::default()
+                },
+            })
+            .unwrap();
+
+        let response = engine
+            .merge(MergeRequest {
+                source: "feature".into(),
+                target: "main".into(),
+                strategy: None,
+            })
+            .unwrap();
+        assert!(response.result.is_none());
+        let conflicts = response.conflicts.expect("conflicts");
+        assert!(!conflicts.is_empty());
+        assert_eq!(conflicts[0].kind, "node");
+    }
+
+    #[test]
+    fn merge_errors_when_no_common_ancestor_exists() {
+        let engine = PraxisEngine::new();
+        let main_commit = engine
+            .commit(CommitChangesRequest {
+                branch: "main".into(),
+                parent: None,
+                author: None,
+                time: None,
+                message: "main-root".into(),
+                tags: vec![],
+                changes: make_change_set("main-root"),
+            })
+            .expect("main commit");
+        assert_eq!(main_commit, "c1");
+
+        let feature_commit = engine
+            .commit(CommitChangesRequest {
+                branch: "feature".into(),
+                parent: None,
+                author: None,
+                time: None,
+                message: "feature-root".into(),
+                tags: vec![],
+                changes: make_change_set("feature-root"),
+            })
+            .expect("feature commit");
+        assert_eq!(feature_commit, "c2");
+
+        let merge = engine.merge(MergeRequest {
+            source: "feature".into(),
+            target: "main".into(),
+            strategy: None,
+        });
+
+        assert!(matches!(
+            merge,
+            Err(super::PraxisError::MergeConflict { .. })
         ));
     }
 }

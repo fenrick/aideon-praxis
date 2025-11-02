@@ -202,6 +202,28 @@ impl GraphSnapshot {
         }
         Ok(())
     }
+
+    pub(crate) fn node(&self, id: &str) -> Option<&NodeVersion> {
+        self.nodes.get(id)
+    }
+
+    pub(crate) fn has_node(&self, id: &str) -> bool {
+        self.nodes.contains_key(id)
+    }
+
+    pub(crate) fn edge(&self, edge: &EdgeVersion) -> Option<&EdgeVersion> {
+        self.edges.get(&EdgeKey::new(edge))
+    }
+
+    pub(crate) fn has_edge(&self, edge: &EdgeVersion) -> bool {
+        self.edge(edge).is_some()
+    }
+
+    pub(crate) fn has_edge_tombstone(&self, tombstone: &EdgeTombstone) -> bool {
+        self.edges
+            .keys()
+            .any(|key| key.matches_tombstone(tombstone))
+    }
 }
 
 fn sanitize_node(node: &NodeVersion) -> NodeVersion {
