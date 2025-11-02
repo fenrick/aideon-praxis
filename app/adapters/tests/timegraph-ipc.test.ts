@@ -9,18 +9,22 @@ vi.mock('@tauri-apps/api/core', () => ({
         return Promise.resolve({ commits: [] });
       case 'temporal_diff':
         return Promise.resolve({
-          from: (args as any)?.from ?? 'from',
-          to: (args as any)?.to ?? 'to',
-          nodesAdded: 1,
-          nodesRemoved: 0,
-          edgesAdded: 2,
-          edgesRemoved: 0,
+          from: (args as any)?.payload?.from ?? 'from',
+          to: (args as any)?.payload?.to ?? 'to',
+          node_adds: 1,
+          node_mods: 0,
+          node_dels: 0,
+          edge_adds: 2,
+          edge_mods: 0,
+          edge_dels: 0,
         });
+      case 'create_branch':
+        return Promise.resolve({ name: (args as any)?.payload?.name ?? 'feature/x', head: 'c1' });
       default:
         return Promise.resolve({
-          asOf: (args as any)?.asOf ?? 'x',
-          scenario: (args as any)?.scenario ?? null,
-          confidence: (args as any)?.confidence ?? null,
+          asOf: (args as any)?.payload?.asOf ?? 'x',
+          scenario: (args as any)?.payload?.scenario ?? null,
+          confidence: (args as any)?.payload?.confidence ?? null,
           nodes: 0,
           edges: 0,
         });
@@ -32,21 +36,26 @@ describe('IpcTemporalAdapter', () => {
   it('stateAt/commit/list/create stubs roundtrip', async () => {
     const { IpcTemporalAdapter } = await import('../src/timegraph-ipc');
     const a = new IpcTemporalAdapter();
-    const asOf = '2025-01-01T00:00:00.000Z';
+    const asOf = 'c1';
     const s = await a.stateAt({ asOf });
     expect(s.asOf).toBe(asOf);
     expect(s.metrics.nodeCount).toBe(0);
     expect(s.metrics.edgeCount).toBe(0);
     const diff = await a.diff({
-      from: '2024-12-01T00:00:00.000Z',
+      from: 'c0',
       to: asOf,
     });
-    expect(diff.metrics.nodesAdded).toBe(1);
-    expect(diff.metrics.edgesAdded).toBe(2);
-    const c = await a.commit({ branch: 'main', asOf: '2025-01-01', addNodes: ['n1'] });
+    expect(diff.metrics.nodeAdds).toBe(1);
+    expect(diff.metrics.edgeAdds).toBe(2);
+    const c = await a.commit({
+      branch: 'main',
+      message: 'seed',
+      changes: { nodeCreates: ['n1'] },
+    });
     expect(c.id).toBe('c1');
     const ls = await a.listCommits({ branch: 'main' });
     expect(Array.isArray(ls)).toBe(true);
-    await a.createBranch({ name: 'feature/x', from: 'c1' });
+    const branch = await a.createBranch({ name: 'feature/x', from: 'c1' });
+    expect(branch.head).toBe('c1');
   });
 });

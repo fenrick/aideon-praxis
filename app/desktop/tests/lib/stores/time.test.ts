@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createTimeStore } from '$lib/stores/time';
 
 const snapshot = {
-  asOf: '2025-01-01',
+  asOf: 'c2',
   scenario: 'main',
   confidence: null,
   nodes: 1,
@@ -12,8 +12,26 @@ const snapshot = {
 };
 
 const commits = [
-  { id: 'c1', branch: 'main', asOf: '2025-01-01T00:00:00.000Z' },
-  { id: 'c2', branch: 'main', asOf: '2025-02-01T00:00:00.000Z' },
+  {
+    id: 'c1',
+    branch: 'main',
+    parents: [],
+    author: undefined,
+    time: '2025-01-01T00:00:00.000Z',
+    message: 'init',
+    tags: [],
+    changeCount: 1,
+  },
+  {
+    id: 'c2',
+    branch: 'main',
+    parents: ['c1'],
+    author: undefined,
+    time: '2025-02-01T00:00:00.000Z',
+    message: 'update',
+    tags: [],
+    changeCount: 1,
+  },
 ];
 
 describe('time store', () => {
@@ -24,7 +42,7 @@ describe('time store', () => {
       diff: vi.fn().mockResolvedValue({
         from: 'c1',
         to: 'c2',
-        metrics: { nodesAdded: 1, nodesRemoved: 0, edgesAdded: 0, edgesRemoved: 0 },
+        metrics: { nodeAdds: 1, nodeMods: 0, nodeDels: 0, edgeAdds: 0, edgeMods: 0, edgeDels: 0 },
       }),
       commit: vi.fn().mockResolvedValue({ id: 'c3' }),
       createBranch: vi.fn().mockResolvedValue({ name: 'main', head: 'c2' }),
@@ -48,7 +66,7 @@ describe('time store', () => {
       diff: vi.fn().mockResolvedValue({
         from: 'c1',
         to: 'c2',
-        metrics: { nodesAdded: 2, nodesRemoved: 1, edgesAdded: 0, edgesRemoved: 0 },
+        metrics: { nodeAdds: 2, nodeMods: 1, nodeDels: 0, edgeAdds: 0, edgeMods: 0, edgeDels: 0 },
       }),
       commit: vi.fn().mockResolvedValue({ id: 'c3' }),
       createBranch: vi.fn().mockResolvedValue({ name: 'main', head: 'c2' }),
@@ -60,7 +78,7 @@ describe('time store', () => {
 
     const state = get(store);
     expect(state.isComparing).toBe(true);
-    expect(state.diff?.metrics.nodesAdded).toBe(2);
+    expect(state.diff?.metrics.nodeAdds).toBe(2);
   });
 
   it('clears comparison state', async () => {
@@ -70,7 +88,7 @@ describe('time store', () => {
       diff: vi.fn().mockResolvedValue({
         from: 'c1',
         to: 'c2',
-        metrics: { nodesAdded: 2, nodesRemoved: 0, edgesAdded: 0, edgesRemoved: 0 },
+        metrics: { nodeAdds: 2, nodeMods: 0, nodeDels: 0, edgeAdds: 0, edgeMods: 0, edgeDels: 0 },
       }),
       commit: vi.fn().mockResolvedValue({ id: 'c3' }),
       createBranch: vi.fn().mockResolvedValue({ name: 'main', head: 'c2' }),

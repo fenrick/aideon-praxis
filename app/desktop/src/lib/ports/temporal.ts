@@ -1,13 +1,19 @@
 import { invoke } from '@tauri-apps/api/core';
 
 import type {
+  EdgeTombstone,
+  EdgeVersion,
+  NodeTombstone,
+  NodeVersion,
   StateAtArguments,
   StateAtResult,
+  TemporalChangeSet,
   TemporalCommitRequest,
   TemporalCommitResponse,
   TemporalCommitSummary,
   TemporalCreateBranchRequest,
   TemporalCreateBranchResponse,
+  TemporalDiffMetrics,
   TemporalDiffRequest,
   TemporalDiffSnapshot,
 } from '../types.js';
@@ -23,124 +29,264 @@ export interface TemporalPort {
 type InvokeFunction = <T>(command: string, arguments_?: Record<string, unknown>) => Promise<T>;
 
 interface HostCommitResponse {
-  id?: string;
-  branch?: string;
-  as_of?: string;
-  asOf?: string;
-  parent_id?: string;
-  parentId?: string;
-  message?: string;
+  id?: unknown;
+  parents?: unknown;
+  branch?: unknown;
+  author?: unknown;
+  time?: unknown;
+  message?: unknown;
+  tags?: unknown;
+  change_count?: unknown;
 }
 
 interface ListCommitsResponse {
   commits?: HostCommitResponse[];
 }
 
+interface DiffResponsePayload {
+  from?: unknown;
+  to?: unknown;
+  node_adds?: unknown;
+  node_mods?: unknown;
+  node_dels?: unknown;
+  edge_adds?: unknown;
+  edge_mods?: unknown;
+  edge_dels?: unknown;
+}
+
 interface CommitResponsePayload {
-  id?: string;
+  id?: unknown;
 }
 
 interface BranchResponsePayload {
-  name?: string;
-  head?: string | null;
+  name?: unknown;
+  head?: unknown;
 }
 
-const normaliseAsOf = (value: string): string => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+interface HostErrorPayload {
+  code?: unknown;
+  message?: unknown;
+}
+
+const toStringArray = (input: unknown): string[] =>
+  Array.isArray(input) ? input.filter((value): value is string => typeof value === 'string') : [];
+
+const parseNumber = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 };
 
 const toCommitSummary = (
-  commit: HostCommitResponse,
+  payload: HostCommitResponse,
   fallbackBranch: string,
 ): TemporalCommitSummary => {
-  const id = typeof commit.id === 'string' ? commit.id : '';
-  const branch = typeof commit.branch === 'string' ? commit.branch : fallbackBranch;
-  let rawAsOf: string | undefined;
-  if (typeof commit.asOf === 'string') {
-    rawAsOf = commit.asOf;
-  } else if (typeof commit.as_of === 'string') {
-    rawAsOf = commit.as_of;
+  const id = typeof payload.id === 'string' ? payload.id : '';
+  const parents = toStringArray(payload.parents);
+  const branch = typeof payload.branch === 'string' ? payload.branch : fallbackBranch;
+  const author = typeof payload.author === 'string' ? payload.author : undefined;
+  const time = typeof payload.time === 'string' ? payload.time : undefined;
+  const message = typeof payload.message === 'string' ? payload.message : '';
+  const tags = toStringArray(payload.tags);
+  if (!id) {
+    throw new TypeError('Commit payload missing identifier');
   }
-  if (!id || !rawAsOf) {
-    throw new TypeError('Commit payload missing required fields');
-  }
-  let parentId: string | undefined;
-  if (typeof commit.parentId === 'string') {
-    parentId = commit.parentId;
-  } else if (typeof commit.parent_id === 'string') {
-    parentId = commit.parent_id;
-  }
-  const message = typeof commit.message === 'string' ? commit.message : undefined;
   return {
     id,
+    parents,
     branch,
-    asOf: normaliseAsOf(rawAsOf),
-    parentId,
+    author,
+    time,
     message,
+    tags,
+    changeCount: parseNumber(payload.change_count),
   } satisfies TemporalCommitSummary;
+};
+
+const serialiseNodeVersion = (node: NodeVersion): Record<string, unknown> => {
+  const serialised: Record<string, unknown> = { id: node.id };
+  if (node.type !== undefined) {
+    serialised.type = node.type;
+  }
+  if (node.props !== undefined) {
+    serialised.props = node.props;
+  }
+  return serialised;
+};
+
+const serialiseNodeTombstone = (node: NodeTombstone): Record<string, unknown> => ({
+  id: node.id,
+});
+
+const serialiseEdgeVersion = (edge: EdgeVersion): Record<string, unknown> => {
+  const serialised: Record<string, unknown> = {
+    from: edge.from,
+    to: edge.to,
+  };
+  if (edge.id !== undefined) {
+    serialised.id = edge.id;
+  }
+  if (edge.type !== undefined) {
+    serialised.type = edge.type;
+  }
+  if (edge.directed !== undefined) {
+    serialised.directed = edge.directed;
+  }
+  if (edge.props !== undefined) {
+    serialised.props = edge.props;
+  }
+  return serialised;
+};
+
+const serialiseEdgeTombstone = (edge: EdgeTombstone): Record<string, unknown> => ({
+  from: edge.from,
+  to: edge.to,
+});
+
+const serialiseChangeSet = (changes: TemporalChangeSet | undefined): Record<string, unknown> => {
+  const payload: Record<string, unknown> = {};
+  if (!changes) {
+    return payload;
+  }
+  if (changes.nodeCreates?.length) {
+    payload.nodeCreates = changes.nodeCreates.map((node) => serialiseNodeVersion(node));
+  }
+  if (changes.nodeUpdates?.length) {
+    payload.nodeUpdates = changes.nodeUpdates.map((node) => serialiseNodeVersion(node));
+  }
+  if (changes.nodeDeletes?.length) {
+    payload.nodeDeletes = changes.nodeDeletes.map((node) => serialiseNodeTombstone(node));
+  }
+  if (changes.edgeCreates?.length) {
+    payload.edgeCreates = changes.edgeCreates.map((edge) => serialiseEdgeVersion(edge));
+  }
+  if (changes.edgeUpdates?.length) {
+    payload.edgeUpdates = changes.edgeUpdates.map((edge) => serialiseEdgeVersion(edge));
+  }
+  if (changes.edgeDeletes?.length) {
+    payload.edgeDeletes = changes.edgeDeletes.map((edge) => serialiseEdgeTombstone(edge));
+  }
+  return payload;
+};
+
+const toDiffMetrics = (payload: DiffResponsePayload): TemporalDiffMetrics => ({
+  nodeAdds: parseNumber(payload.node_adds),
+  nodeMods: parseNumber(payload.node_mods),
+  nodeDels: parseNumber(payload.node_dels),
+  edgeAdds: parseNumber(payload.edge_adds),
+  edgeMods: parseNumber(payload.edge_mods),
+  edgeDels: parseNumber(payload.edge_dels),
+});
+
+const toHostError = (error: unknown): Error => {
+  if (typeof error === 'object' && error && 'code' in error && 'message' in error) {
+    const payload = error as HostErrorPayload;
+    const code = typeof payload.code === 'string' ? payload.code : 'unknown_error';
+    const message = typeof payload.message === 'string' ? payload.message : 'Unknown error';
+    return new Error(`${code}: ${message}`);
+  }
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error(String(error));
 };
 
 export function createTemporalPort(call: InvokeFunction = invoke as InvokeFunction): TemporalPort {
   // To-do: extend port to support streaming payloads once the Rust layer emits chunked results.
   return {
-    stateAt(parameters: StateAtArguments): Promise<StateAtResult> {
-      const arguments_: Record<string, unknown> = {
-        as_of: parameters.asOf,
-        scenario: parameters.scenario ?? null,
-        confidence: parameters.confidence ?? null,
+    async stateAt(parameters: StateAtArguments): Promise<StateAtResult> {
+      const payload: Record<string, unknown> = {
+        asOf: parameters.asOf,
       };
-      return call<StateAtResult>('temporal_state_at', arguments_);
+      if (parameters.scenario !== undefined) {
+        payload.scenario = parameters.scenario;
+      }
+      if (parameters.confidence !== undefined) {
+        payload.confidence = parameters.confidence;
+      }
+      try {
+        return await call<StateAtResult>('temporal_state_at', { payload });
+      } catch (error) {
+        throw toHostError(error);
+      }
     },
     async listCommits(branch: string): Promise<TemporalCommitSummary[]> {
-      const response = await call<ListCommitsResponse>('list_commits', { branch });
-      const entries = Array.isArray(response.commits) ? response.commits : [];
-      return entries.map((commit) => toCommitSummary(commit, branch));
+      try {
+        const response = await call<ListCommitsResponse>('list_commits', { branch });
+        const entries = Array.isArray(response.commits) ? response.commits : [];
+        return entries.map((commit) => toCommitSummary(commit, branch));
+      } catch (error) {
+        throw toHostError(error);
+      }
     },
-    diff(parameters: TemporalDiffRequest): Promise<TemporalDiffSnapshot> {
-      const arguments_: Record<string, unknown> = {
+    async diff(parameters: TemporalDiffRequest): Promise<TemporalDiffSnapshot> {
+      const payload: Record<string, unknown> = {
         from: parameters.from,
         to: parameters.to,
       };
       if (parameters.scope !== undefined) {
-        arguments_.scope = parameters.scope;
+        payload.scope = parameters.scope;
       }
-      return call<TemporalDiffSnapshot>('temporal_diff', arguments_);
+      try {
+        const response = await call<DiffResponsePayload>('temporal_diff', { payload });
+        if (typeof response.from !== 'string' || typeof response.to !== 'string') {
+          throw new TypeError('Diff response missing commit identifiers');
+        }
+        return {
+          from: response.from,
+          to: response.to,
+          metrics: toDiffMetrics(response),
+        } satisfies TemporalDiffSnapshot;
+      } catch (error) {
+        throw toHostError(error);
+      }
     },
     async commit(parameters: TemporalCommitRequest): Promise<TemporalCommitResponse> {
-      const payload: Record<string, unknown> = {
-        branch: parameters.branch,
-        as_of: parameters.asOf,
-        message: parameters.message ?? null,
-        changes: {
-          add_nodes: (parameters.addNodes ?? []).map((id) => ({ id })),
-          remove_nodes: (parameters.removeNodes ?? []).map((id) => ({ id })),
-          add_edges: parameters.addEdges ?? [],
-          remove_edges: parameters.removeEdges ?? [],
+      const payload = {
+        payload: {
+          branch: parameters.branch,
+          parent: parameters.parent ?? null,
+          author: parameters.author ?? null,
+          time: parameters.time ?? null,
+          message: parameters.message,
+          tags: parameters.tags ?? [],
+          changes: serialiseChangeSet(parameters.changes),
         },
-      };
-      const response = await call<CommitResponsePayload>('commit_changes', payload);
-      if (typeof response.id !== 'string' || !response.id) {
-        throw new TypeError('Commit payload missing identifier');
+      } satisfies Record<string, unknown>;
+      try {
+        const response = await call<CommitResponsePayload>('commit_changes', payload);
+        if (typeof response.id !== 'string' || !response.id) {
+          throw new TypeError('Commit response missing identifier');
+        }
+        return { id: response.id } satisfies TemporalCommitResponse;
+      } catch (error) {
+        throw toHostError(error);
       }
-      return { id: response.id } satisfies TemporalCommitResponse;
     },
     async createBranch(
       parameters: TemporalCreateBranchRequest,
     ): Promise<TemporalCreateBranchResponse> {
-      const response = await call<BranchResponsePayload>('create_branch', {
-        name: parameters.name,
-        from: parameters.from ?? null,
-      });
-      const name = typeof response.name === 'string' ? response.name : parameters.name;
-      const head =
-        typeof response.head === 'string' || response.head === null
-          ? (response.head ?? null)
-          : null;
-      return {
-        name,
-        head,
-      } satisfies TemporalCreateBranchResponse;
+      try {
+        const response = await call<BranchResponsePayload>('create_branch', {
+          payload: {
+            name: parameters.name,
+            from: parameters.from ?? null,
+          },
+        });
+        const name = typeof response.name === 'string' ? response.name : parameters.name;
+        const head = typeof response.head === 'string' ? response.head : null;
+        return {
+          name,
+          head,
+        } satisfies TemporalCreateBranchResponse;
+      } catch (error) {
+        throw toHostError(error);
+      }
     },
   };
 }

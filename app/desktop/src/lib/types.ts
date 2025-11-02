@@ -5,9 +5,11 @@
  * - `scenario` is an optional branch identifier.
  * - `confidence` optionally weights scenario application when blending.
  */
+export type CommitReference = string | { branch: string; at?: string };
+
 export interface StateAtArguments {
-  /** ISO date string for the time‑slice (e.g., "2025-01-01"). */
-  asOf: string;
+  /** Commit reference or branch handle to materialise. */
+  asOf: CommitReference;
   /** Optional scenario/branch reference. */
   scenario?: string;
   /** Optional confidence in [0,1] when blending scenario effects. */
@@ -42,23 +44,59 @@ export interface WorkerHealth {
   timestampMs: number;
 }
 
+export interface NodeVersion {
+  id: string;
+  type?: string;
+  props?: Record<string, unknown>;
+}
+
+export interface NodeTombstone {
+  id: string;
+}
+
+export interface EdgeVersion {
+  id?: string;
+  from: string;
+  to: string;
+  type?: string;
+  directed?: boolean;
+  props?: Record<string, unknown>;
+}
+
+export interface EdgeTombstone {
+  from: string;
+  to: string;
+}
+
+export interface TemporalChangeSet {
+  nodeCreates?: readonly NodeVersion[];
+  nodeUpdates?: readonly NodeVersion[];
+  nodeDeletes?: readonly NodeTombstone[];
+  edgeCreates?: readonly EdgeVersion[];
+  edgeUpdates?: readonly EdgeVersion[];
+  edgeDeletes?: readonly EdgeTombstone[];
+}
+
 export interface TemporalCommitSummary {
   id: string;
+  parents: readonly string[];
   branch: string;
-  asOf: string;
-  parentId?: string;
-  message?: string;
+  author?: string;
+  time?: string;
+  message: string;
+  tags: readonly string[];
+  changeCount: number;
 }
 
 /** Payload for committing staged graph changes to the host. */
 export interface TemporalCommitRequest {
   branch: string;
-  asOf: string;
-  message?: string;
-  addNodes?: readonly string[];
-  removeNodes?: readonly string[];
-  addEdges?: readonly { source: string; target: string }[];
-  removeEdges?: readonly { source: string; target: string }[];
+  parent?: string;
+  author?: string;
+  time?: string;
+  message: string;
+  tags?: readonly string[];
+  changes: TemporalChangeSet;
 }
 
 /** Response returned by the host when a commit is created. */
@@ -69,7 +107,7 @@ export interface TemporalCommitResponse {
 /** Arguments for creating a new branch within the temporal store. */
 export interface TemporalCreateBranchRequest {
   name: string;
-  from?: string;
+  from?: CommitReference;
 }
 
 /** Host response when a branch is created. */
@@ -79,8 +117,8 @@ export interface TemporalCreateBranchResponse {
 }
 
 export interface TemporalDiffRequest {
-  from: string;
-  to: string;
+  from: CommitReference;
+  to: CommitReference;
   scope?: Record<string, unknown>;
 }
 
@@ -91,10 +129,12 @@ export interface TemporalDiffSnapshot {
 }
 
 export interface TemporalDiffMetrics {
-  nodesAdded: number;
-  nodesRemoved: number;
-  edgesAdded: number;
-  edgesRemoved: number;
+  nodeAdds: number;
+  nodeMods: number;
+  nodeDels: number;
+  edgeAdds: number;
+  edgeMods: number;
+  edgeDels: number;
 }
 
 /**

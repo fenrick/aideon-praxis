@@ -3,46 +3,60 @@ import { describe, expect, it, vi } from 'vitest';
 import { createTemporalPort } from '$lib/ports/temporal';
 
 const snapshot = {
-  asOf: '2025-01-01',
-  scenario: null,
+  asOf: 'c1',
+  scenario: 'main',
   confidence: null,
   nodes: 1,
   edges: 0,
 };
 
-const commits = [{ id: 'c1', branch: 'main', as_of: '2025-01-01' }];
+const commits = [
+  {
+    id: 'c1',
+    branch: 'main',
+    parents: [],
+    message: 'seed',
+    tags: [],
+    change_count: 2,
+  },
+];
 
 describe('temporal port', () => {
   it('delegates to the Tauri invoke API', async () => {
     const invokeMock = vi.fn(async (command: string, args?: Record<string, unknown>) => {
       switch (command) {
         case 'temporal_state_at':
-          expect(args).toMatchObject({ as_of: '2025-01-01' });
+          expect(args).toMatchObject({ payload: { asOf: 'c1' } });
           return snapshot;
         case 'list_commits':
           expect(args).toMatchObject({ branch: 'main' });
           return { commits };
         case 'temporal_diff':
-          expect(args).toMatchObject({ from: 'c1', to: 'c2' });
+          expect(args).toMatchObject({ payload: { from: 'c1', to: 'c2' } });
           return {
             from: 'c1',
             to: 'c2',
-            metrics: { nodesAdded: 1, nodesRemoved: 0, edgesAdded: 0, edgesRemoved: 0 },
+            node_adds: 1,
+            node_mods: 0,
+            node_dels: 0,
+            edge_adds: 0,
+            edge_mods: 0,
+            edge_dels: 0,
           };
         case 'commit_changes':
           expect(args).toMatchObject({
-            branch: 'main',
-            as_of: '2025-02-01',
-            changes: {
-              add_nodes: [{ id: 'n1' }],
-              remove_nodes: [],
-              add_edges: [{ source: 'n1', target: 'n2' }],
-              remove_edges: [],
+            payload: {
+              branch: 'main',
+              message: 'commit',
+              changes: {
+                nodeCreates: [{ id: 'n1' }],
+                edgeCreates: [{ from: 'n1', to: 'n2' }],
+              },
             },
           });
           return { id: 'c2' };
         case 'create_branch':
-          expect(args).toMatchObject({ name: 'feature/x' });
+          expect(args).toMatchObject({ payload: { name: 'feature/x', from: null } });
           return { name: 'feature/x', head: 'c1' };
         default:
           throw new Error(`unexpected command ${command}`);
@@ -51,23 +65,27 @@ describe('temporal port', () => {
 
     const port = createTemporalPort(invokeMock as never);
 
-    await port.stateAt({ asOf: '2025-01-01' });
+    await port.stateAt({ asOf: 'c1' });
     const list = await port.listCommits('main');
-    expect(list[0]?.asOf).toBe('2025-01-01T00:00:00.000Z');
+    expect(list[0]?.id).toBe('c1');
     await port.diff({ from: 'c1', to: 'c2' });
     const commit = await port.commit({
       branch: 'main',
-      asOf: '2025-02-01',
-      addNodes: ['n1'],
-      addEdges: [{ source: 'n1', target: 'n2' }],
+      message: 'commit',
+      changes: {
+        nodeCreates: [{ id: 'n1' }],
+        edgeCreates: [{ from: 'n1', to: 'n2' }],
+      },
     });
     const branch = await port.createBranch({ name: 'feature/x' });
 
     expect(commit.id).toBe('c2');
     expect(branch).toEqual({ name: 'feature/x', head: 'c1' });
     expect(invokeMock).toHaveBeenCalledWith('create_branch', {
-      name: 'feature/x',
-      from: null,
+      payload: {
+        name: 'feature/x',
+        from: null,
+      },
     });
   });
 });

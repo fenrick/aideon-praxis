@@ -27,21 +27,28 @@ describe('adapter contracts', () => {
         const diff: TemporalDiffSnapshot = {
           from: parameters.from,
           to: parameters.to,
-          metrics: { nodesAdded: 0, nodesRemoved: 0, edgesAdded: 0, edgesRemoved: 0 },
+          metrics: {
+            nodeAdds: 0,
+            nodeMods: 0,
+            nodeDels: 0,
+            edgeAdds: 0,
+            edgeMods: 0,
+            edgeDels: 0,
+          },
         };
         return diff;
       },
     };
 
-    const result = await adapter.stateAt({ asOf: '2024-01-01T00:00:00.000Z' });
+    const result = await adapter.stateAt({ asOf: 'c1' });
     expectTypeOf(result).toEqualTypeOf<TemporalStateSnapshot>();
   });
 
   it('maps Worker job payloads to results', () => {
     type DiffJob = Extract<WorkerJobRequest, { type: 'Temporal.Diff' }>;
     const diffPayload: DiffJob['payload'] = {
-      from: '2025-03-01T00:00:00.000Z',
-      to: '2025-04-01T00:00:00.000Z',
+      from: 'c1',
+      to: 'c2',
     };
     expectTypeOf(diffPayload).toEqualTypeOf<TemporalDiffParameters>();
 

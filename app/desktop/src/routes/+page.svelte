@@ -9,8 +9,8 @@
   import StatusBar from '$lib/components/StatusBar.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
   import type { StateAtResult, WorkerHealth } from '$lib/types';
-import { timeStore } from '$lib/stores/time';
-import { version as appVersion } from '../version.js';
+  import { timeStore } from '$lib/stores/time';
+  import { version as appVersion } from '../version.js';
 
   let version = $state(appVersion);
   let stateAt: StateAtResult | null = $state(null);

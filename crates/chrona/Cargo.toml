@@ -8,3 +8,4 @@ license = "MIT"
 [dependencies]
 core_data = { path = "../core_data" }
 log = "0.4"
+praxis = { path = "../praxis" }

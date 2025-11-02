@@ -13,9 +13,9 @@ describe('DevMemoryGraph adapter', () => {
     expect(s1.metrics.edgeCount).toBe(5);
     expect(s1.scenario).toBeUndefined();
     const diff = await dev.diff({ from: jan, to: feb });
-    expect(diff.metrics.nodesAdded).toBe(2);
-    expect(diff.metrics.nodesRemoved).toBe(0);
-    expect(diff.metrics.edgesAdded).toBe(1);
-    expect(diff.metrics.edgesRemoved).toBe(0);
+    expect(diff.metrics.nodeAdds).toBe(2);
+    expect(diff.metrics.nodeDels).toBe(0);
+    expect(diff.metrics.edgeAdds).toBe(1);
+    expect(diff.metrics.edgeDels).toBe(0);
   });
 });

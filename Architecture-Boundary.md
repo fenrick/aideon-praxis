@@ -46,6 +46,143 @@ boundaries are enforced.
 - Canvas persists layout snapshots per `asOf` (and optional scenario) via `canvas_save_layout`; persistence boundary provided by `continuum::SnapshotStore` (file-backed in desktop mode).
 - Future jobs (shortest path, centrality, impact) belong in the Rust engine crates with tests and SLO notes.
 
+## Time & Commit Model — Authoring Standards
+
+> **Principle**: Time is derived from commits. Logical ancestry defines the state of the twin; wall-clock timestamps remain metadata only.
+
+### Core definitions
+
+- **Commit** — Append-only change event with parent(s); introduces a new logical “tick”.
+- **Branch** — Named pointer to a head commit (scenario timeline).
+- **Snapshot** — Materialised graph view for a specific commit.
+- **Node / Edge** — Immutable typed objects; updates yield new versions.
+- **ChangeSet** — `{ nodeCreates | nodeUpdates | nodeDeletes | edgeCreates | edgeUpdates | edgeDeletes }` captured within a commit.
+
+Use the names above across DTOs, structs, and variables.
+
+### Invariants (must hold)
+
+1. Append-only history; corrections arrive as new commits.
+2. Determinism: identical ancestry + ChangeSet ⇒ identical Snapshot.
+3. No dangling edges: every edge’s endpoints exist in the resulting snapshot.
+4. ID stability: IDs are never recycled; deletes use tombstones.
+5. Schema safety: each commit passes validation before persistence.
+6. Branch isolation: changes remain scoped until merge.
+7. Ordering by ancestry, never wall time.
+
+Add unit tests that exercise the invariants when touching relevant code.
+
+### API contracts (host ↔ UI)
+
+**Read**
+
+- `stateAt(target: CommitId | { branch: BranchName, at?: CommitId }) -> SnapshotSummary`
+- `diff(a: CommitRef, b: CommitRef) -> Diff { nodeAdds, nodeMods, nodeDels, edgeAdds, edgeMods, edgeDels }`
+- `listCommits(branch: BranchName, limit?: number, before?: CommitId) -> Commit[]`
+- `listBranches() -> Branch[]`
+
+**Write**
+
+- `commit(changes: ChangeSet, message: string, tags?: string[]) -> CommitId`
+- `createBranch(name: string, from?: CommitRef) -> Branch`
+- `merge(source: BranchName, target: BranchName, strategy?: MergeStrategy) -> { result?: CommitId, conflicts?: ConflictSet }`
+
+Rules: read APIs are pure; write APIs are atomic and never leak storage internals.
+
+### Commit structure (canonical)
+
+```json
+{
+  "id": "c:ad3e…",
+  "parents": ["c:9bf2…"],
+  "branch": "main",
+  "author": "alex",
+  "time": "2025-11-02T11:05:44Z",
+  "message": "feat: add capability and link to system",
+  "tags": ["capability"],
+  "changes": {
+    "nodeCreates": [
+      { "id": "n:cap-1", "type": "Capability", "props": { "title": "Time travel", "owner": "Ops" } }
+    ],
+    "edgeCreates": [
+      {
+        "id": "e:cap1->sys7",
+        "type": "supports",
+        "from": "n:cap-1",
+        "to": "n:sys-7",
+        "directed": true,
+        "props": { "weight": 0.6 }
+      }
+    ]
+  }
+}
+```
+
+Order ChangeSet entries deterministically (by kind → id) and keep ID generation independent of wall time.
+
+### Validation rules
+
+- Enforce schema per element type.
+- Guard edge constraints (`fromType`, `edgeType`, `toType`).
+- Maintain unique keys per type where defined.
+- Ensure referential integrity (parent snapshot + ChangeSet).
+- Reject empty ChangeSets unless explicitly tagged.
+- Cap ChangeSet size (configurable) to keep diffs tractable.
+
+### Diff & merge semantics
+
+- Diff runs on snapshots derived from ancestry.
+- Three-way merge uses `{ base, ours, theirs }` at the structural level.
+- Scalar conflicts default to deterministic last-writer-wins.
+- Collections default to set-union with stable order.
+- Deletes win over updates by default (configurable).
+- Return conflicts explicitly; never drop edits silently.
+
+### Persistence & caching
+
+- Use immutable stores with structural sharing (copy-on-write).
+- Cache snapshots by `SnapshotId = hash(parentSnapshotId + changes)`.
+- Background compaction may collapse history; commit boundaries stay intact.
+
+### Error handling
+
+Emit typed errors (`ValidationError`, `ConflictError`, `IntegrityError`, `ConcurrencyError`) across the host boundary; avoid generic strings.
+
+### UI/UX obligations
+
+- Surface branch + commit ID in chrome.
+- Timebar scrubs commit order, not wall time.
+- “Unsaved changes” reflect working ChangeSet vs head snapshot.
+- Diff legend uses ADD/MOD/DEL consistently.
+- Merge UI surfaces the `ConflictSet` and chosen resolutions.
+
+### Testing requirements
+
+- Unit tests cover success, failure, and edge cases.
+- Property-based checks where feasible (`apply(diff(a,b), snapshot(a)) == snapshot(b)`).
+- Golden tests ensure serialised commits/diffs remain stable.
+- Contract tests assert command DTO schemas.
+
+### Performance guardrails
+
+- Snapshot materialisation ≤ 10 ms for median commits.
+- Diff for ≤ 500 changes ≤ 15 ms.
+- Timebar load for latest 200 commits ≤ 50 ms from cache/index.
+
+### Optional effective time
+
+- Add `valid_from` / `valid_to` when bitemporal semantics are needed.
+- Callers must specify whether they query transaction or effective time.
+
+### Versioning & migration
+
+- Breaking DTO/storage changes bump `engineVersion`, ship migrators, and keep a back-compat window or explicit upgrade error.
+
+### Checklist
+
+- **Do:** commit coherent ChangeSets, branch experiments, treat wall time as display-only.
+- **Don’t:** compute state via `now()`, mutate history, or leak storage internals.
+
 ## Compliance checklist
 
 - [x] No renderer HTTP
