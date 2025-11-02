@@ -20,6 +20,15 @@ vi.mock('@tauri-apps/api/core', () => ({
           edge_mods: 0,
           edge_dels: 0,
         });
+      case 'topology_delta':
+        return Promise.resolve({
+          from: (args as any)?.payload?.from ?? 'from',
+          to: (args as any)?.payload?.to ?? 'to',
+          node_adds: 2,
+          node_dels: 1,
+          edge_adds: 3,
+          edge_dels: 1,
+        });
       case 'create_branch':
         return Promise.resolve({ name: (args as any)?.payload?.name ?? 'feature/x', head: 'c1' });
       case 'merge_branches':
@@ -51,6 +60,9 @@ describe('IpcTemporalAdapter', () => {
     });
     expect(diff.metrics.nodeAdds).toBe(1);
     expect(diff.metrics.edgeAdds).toBe(2);
+    const topology = await a.topologyDelta({ from: 'c0', to: asOf });
+    expect(topology.metrics.nodeAdds).toBe(2);
+    expect(topology.metrics.edgeDels).toBe(1);
     const c = await a.commit({
       branch: 'main',
       message: 'seed',

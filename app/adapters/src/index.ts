@@ -12,6 +12,9 @@ export type {
   TemporalDiffSnapshot,
   TemporalStateParameters,
   TemporalStateSnapshot,
+  TemporalTopologyDeltaMetrics,
+  TemporalTopologyDeltaParameters,
+  TemporalTopologyDeltaSnapshot,
   WorkerJobMap,
   WorkerJobRequest,
   WorkerJobResult,
@@ -22,6 +25,8 @@ import type {
   TemporalDiffSnapshot,
   TemporalStateParameters,
   TemporalStateSnapshot,
+  TemporalTopologyDeltaParameters,
+  TemporalTopologyDeltaSnapshot,
   WorkerJobRequest,
   WorkerJobResult,
 } from './contracts';
@@ -101,4 +106,7 @@ export interface MutableGraphAdapter extends GraphAdapter {
     result?: string;
     conflicts?: { reference: string; kind: string; message: string }[];
   }>;
+  topologyDelta(
+    parameters: TemporalTopologyDeltaParameters,
+  ): Promise<TemporalTopologyDeltaSnapshot>;
 }
