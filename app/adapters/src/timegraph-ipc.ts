@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core';
+
 import { ensureIsoDateTime } from './contracts';
 import type {
   GraphSnapshotMetrics,
@@ -39,16 +41,14 @@ interface DiffSummaryResp {
   edgesRemoved: number;
 }
 
-async function safeInvoke<T>(command: string, arguments_?: Record<string, unknown>): Promise<T> {
-  const module_ = (await import('@tauri-apps/api/core')) as {
-    invoke: (c: string, a?: Record<string, unknown>) => Promise<T>;
-  };
-  return arguments_ ? module_.invoke(command, arguments_) : module_.invoke(command);
-}
+type InvokeFunction = <T>(command: string, arguments_?: Record<string, unknown>) => Promise<T>;
+
+const call: InvokeFunction = (command, arguments_) => invoke(command, arguments_);
+// To-do: introduce streaming support when temporal_diff grows beyond summary metrics.
 
 export class IpcTemporalAdapter implements MutableGraphAdapter {
   async stateAt(parameters: TemporalStateParameters): Promise<TemporalStateSnapshot> {
-    const result = await safeInvoke<StateAtResp>('temporal_state_at', {
+    const result = await call<StateAtResp>('temporal_state_at', {
       asOf: parameters.asOf,
       scenario: parameters.scenario ?? null,
       confidence: parameters.confidence ?? null,
@@ -72,7 +72,7 @@ export class IpcTemporalAdapter implements MutableGraphAdapter {
     if (parameters.scope !== undefined) {
       arguments_.scope = parameters.scope;
     }
-    const summary = await safeInvoke<DiffSummaryResp>('temporal_diff', arguments_);
+    const summary = await call<DiffSummaryResp>('temporal_diff', arguments_);
     return {
       from: summary.from,
       to: summary.to,
@@ -104,17 +104,14 @@ export class IpcTemporalAdapter implements MutableGraphAdapter {
         removeEdges: parameters.removeEdges ?? [],
       },
     };
-    const result = await safeInvoke<CommitResp>(
-      'commit_changes',
-      payload as Record<string, unknown>,
-    );
+    const result = await call<CommitResp>('commit_changes', payload as Record<string, unknown>);
     return result;
   }
   async listCommits(parameters: { branch: string }): Promise<CommitListItem[]> {
-    const result = await safeInvoke<ListCommitsResp>('list_commits', { branch: parameters.branch });
+    const result = await call<ListCommitsResp>('list_commits', { branch: parameters.branch });
     return result.commits;
   }
   async createBranch(parameters: { name: string; from?: string }): Promise<void> {
-    await safeInvoke('create_branch', { name: parameters.name, from: parameters.from ?? null });
+    await call('create_branch', { name: parameters.name, from: parameters.from ?? null });
   }
 }

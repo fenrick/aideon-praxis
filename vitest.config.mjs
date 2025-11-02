@@ -15,6 +15,7 @@ export default defineConfig({
         __dirname,
         'app/desktop/tests/stubs/tauri-plugin-log.ts',
       ),
+      $lib: path.resolve(__dirname, 'app/desktop/src/lib'),
     },
   },
   plugins: [

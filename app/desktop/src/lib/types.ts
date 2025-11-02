@@ -42,23 +42,61 @@ export interface WorkerHealth {
   timestampMs: number;
 }
 
-/**
- * Typed surface exposed on `window.aideon` for renderer ↔ host IPC.
- *
- * This matches the Tauri shim and any preload bridges so that UI code remains
- * agnostic of the runtime (desktop vs. future server mode).
- */
-export interface AideonApi {
-  /** Current bridge version identifier. */
-  version: string;
-  /** Invoke the temporal `state_at` command. */
-  stateAt(arguments_: StateAtArguments): Promise<StateAtResult>;
-  /** Open the settings window. */
-  openSettings(): Promise<void>;
-  /** Open the about window. */
-  openAbout(): Promise<void>;
-  /** Open the status window. */
-  openStatus(): Promise<void>;
-  /** Retrieve the current worker health snapshot. */
-  workerHealth(): Promise<WorkerHealth>;
+export interface TemporalCommitSummary {
+  id: string;
+  branch: string;
+  asOf: string;
+  parentId?: string;
+  message?: string;
 }
+
+/** Payload for committing staged graph changes to the host. */
+export interface TemporalCommitRequest {
+  branch: string;
+  asOf: string;
+  message?: string;
+  addNodes?: readonly string[];
+  removeNodes?: readonly string[];
+  addEdges?: readonly { source: string; target: string }[];
+  removeEdges?: readonly { source: string; target: string }[];
+}
+
+/** Response returned by the host when a commit is created. */
+export interface TemporalCommitResponse {
+  id: string;
+}
+
+/** Arguments for creating a new branch within the temporal store. */
+export interface TemporalCreateBranchRequest {
+  name: string;
+  from?: string;
+}
+
+/** Host response when a branch is created. */
+export interface TemporalCreateBranchResponse {
+  name: string;
+  head: string | null;
+}
+
+export interface TemporalDiffRequest {
+  from: string;
+  to: string;
+  scope?: Record<string, unknown>;
+}
+
+export interface TemporalDiffSnapshot {
+  from: string;
+  to: string;
+  metrics: TemporalDiffMetrics;
+}
+
+export interface TemporalDiffMetrics {
+  nodesAdded: number;
+  nodesRemoved: number;
+  edgesAdded: number;
+  edgesRemoved: number;
+}
+
+/**
+ * Shared host contract types used by the renderer when invoking Tauri commands.
+ */
