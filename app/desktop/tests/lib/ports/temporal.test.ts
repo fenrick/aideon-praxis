@@ -21,6 +21,8 @@ const commits = [
   },
 ];
 
+const branches = [{ name: 'main', head: 'c1' }];
+
 describe('temporal port', () => {
   it('delegates to the Tauri invoke API', async () => {
     const invokeMock = vi.fn(async (command: string, args?: Record<string, unknown>) => {
@@ -31,6 +33,8 @@ describe('temporal port', () => {
         case 'list_commits':
           expect(args).toMatchObject({ branch: 'main' });
           return { commits };
+        case 'list_branches':
+          return { branches };
         case 'temporal_diff':
           expect(args).toMatchObject({ payload: { from: 'c1', to: 'c2' } });
           return {
@@ -58,6 +62,9 @@ describe('temporal port', () => {
         case 'create_branch':
           expect(args).toMatchObject({ payload: { name: 'feature/x', from: null } });
           return { name: 'feature/x', head: 'c1' };
+        case 'merge_branches':
+          expect(args).toMatchObject({ payload: { source: 'feature/x', target: 'main' } });
+          return { result: 'merge-1' };
         default:
           throw new Error(`unexpected command ${command}`);
       }
@@ -68,6 +75,8 @@ describe('temporal port', () => {
     await port.stateAt({ asOf: 'c1' });
     const list = await port.listCommits('main');
     expect(list[0]?.id).toBe('c1');
+    const branchList = await port.listBranches();
+    expect(branchList[0]?.name).toBe('main');
     await port.diff({ from: 'c1', to: 'c2' });
     const commit = await port.commit({
       branch: 'main',
@@ -78,9 +87,11 @@ describe('temporal port', () => {
       },
     });
     const branch = await port.createBranch({ name: 'feature/x' });
+    const merge = await port.merge({ source: 'feature/x', target: 'main' });
 
     expect(commit.id).toBe('c2');
     expect(branch).toEqual({ name: 'feature/x', head: 'c1' });
+    expect(merge.result).toBe('merge-1');
     expect(invokeMock).toHaveBeenCalledWith('create_branch', {
       payload: {
         name: 'feature/x',

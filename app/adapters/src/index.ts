@@ -96,4 +96,9 @@ export interface MutableGraphAdapter extends GraphAdapter {
     name: string;
     from?: string;
   }): Promise<{ name: string; head: string | null }>;
+  listBranches(): Promise<{ name: string; head: string | null }[]>;
+  mergeBranches(parameters: { source: string; target: string; strategy?: string }): Promise<{
+    result?: string;
+    conflicts?: { reference: string; kind: string; message: string }[];
+  }>;
 }

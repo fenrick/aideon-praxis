@@ -7,6 +7,7 @@ import type {
   NodeVersion,
   StateAtArguments,
   StateAtResult,
+  TemporalBranchSummary,
   TemporalChangeSet,
   TemporalCommitRequest,
   TemporalCommitResponse,
@@ -16,14 +17,19 @@ import type {
   TemporalDiffMetrics,
   TemporalDiffRequest,
   TemporalDiffSnapshot,
+  TemporalMergeConflict,
+  TemporalMergeRequest,
+  TemporalMergeResult,
 } from '../types.js';
 
 export interface TemporalPort {
   stateAt(parameters: StateAtArguments): Promise<StateAtResult>;
   listCommits(branch: string): Promise<TemporalCommitSummary[]>;
+  listBranches(): Promise<TemporalBranchSummary[]>;
   diff(parameters: TemporalDiffRequest): Promise<TemporalDiffSnapshot>;
   commit(parameters: TemporalCommitRequest): Promise<TemporalCommitResponse>;
   createBranch(parameters: TemporalCreateBranchRequest): Promise<TemporalCreateBranchResponse>;
+  merge(parameters: TemporalMergeRequest): Promise<TemporalMergeResult>;
 }
 
 type InvokeFunction = <T>(command: string, arguments_?: Record<string, unknown>) => Promise<T>;
@@ -61,6 +67,21 @@ interface CommitResponsePayload {
 interface BranchResponsePayload {
   name?: unknown;
   head?: unknown;
+}
+
+interface ListBranchesPayload {
+  branches?: BranchResponsePayload[];
+}
+
+interface MergeResponsePayload {
+  result?: unknown;
+  conflicts?: unknown;
+}
+
+interface ConflictPayload {
+  reference?: unknown;
+  kind?: unknown;
+  message?: unknown;
 }
 
 interface HostErrorPayload {
@@ -183,6 +204,29 @@ const toDiffMetrics = (payload: DiffResponsePayload): TemporalDiffMetrics => ({
   edgeDels: parseNumber(payload.edge_dels),
 });
 
+const toBranchSummary = (payload: BranchResponsePayload): TemporalBranchSummary => ({
+  name: typeof payload.name === 'string' ? payload.name : '',
+  head: typeof payload.head === 'string' ? payload.head : null,
+});
+
+const toConflicts = (value: unknown): TemporalMergeConflict[] | undefined => {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  return value
+    .map((item): TemporalMergeConflict | null => {
+      const conflict = item as ConflictPayload;
+      const reference = typeof conflict.reference === 'string' ? conflict.reference : '';
+      const kind = typeof conflict.kind === 'string' ? conflict.kind : 'unknown';
+      const message = typeof conflict.message === 'string' ? conflict.message : 'conflict detected';
+      if (!reference) {
+        return null;
+      }
+      return { reference, kind, message };
+    })
+    .filter((conflict): conflict is TemporalMergeConflict => conflict !== null);
+};
+
 const toHostError = (error: unknown): Error => {
   if (typeof error === 'object' && error && 'code' in error && 'message' in error) {
     const payload = error as HostErrorPayload;
@@ -220,6 +264,15 @@ export function createTemporalPort(call: InvokeFunction = invoke as InvokeFuncti
         const response = await call<ListCommitsResponse>('list_commits', { branch });
         const entries = Array.isArray(response.commits) ? response.commits : [];
         return entries.map((commit) => toCommitSummary(commit, branch));
+      } catch (error) {
+        throw toHostError(error);
+      }
+    },
+    async listBranches(): Promise<TemporalBranchSummary[]> {
+      try {
+        const response = await call<ListBranchesPayload>('list_branches');
+        const entries = Array.isArray(response.branches) ? response.branches : [];
+        return entries.map((branch) => toBranchSummary(branch));
       } catch (error) {
         throw toHostError(error);
       }
@@ -284,6 +337,20 @@ export function createTemporalPort(call: InvokeFunction = invoke as InvokeFuncti
           name,
           head,
         } satisfies TemporalCreateBranchResponse;
+      } catch (error) {
+        throw toHostError(error);
+      }
+    },
+    async merge(parameters: TemporalMergeRequest): Promise<TemporalMergeResult> {
+      try {
+        const response = await call<MergeResponsePayload>('merge_branches', {
+          payload: parameters,
+        });
+        const conflicts = toConflicts(response.conflicts);
+        return {
+          result: typeof response.result === 'string' ? response.result : undefined,
+          conflicts,
+        } satisfies TemporalMergeResult;
       } catch (error) {
         throw toHostError(error);
       }

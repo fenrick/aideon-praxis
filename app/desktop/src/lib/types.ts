@@ -116,6 +116,11 @@ export interface TemporalCreateBranchResponse {
   head: string | null;
 }
 
+export interface TemporalBranchSummary {
+  name: string;
+  head: string | null;
+}
+
 export interface TemporalDiffRequest {
   from: CommitReference;
   to: CommitReference;
@@ -135,6 +140,23 @@ export interface TemporalDiffMetrics {
   edgeAdds: number;
   edgeMods: number;
   edgeDels: number;
+}
+
+export interface TemporalMergeRequest {
+  source: string;
+  target: string;
+  strategy?: string;
+}
+
+export interface TemporalMergeConflict {
+  reference: string;
+  kind: string;
+  message: string;
+}
+
+export interface TemporalMergeResult {
+  result?: string;
+  conflicts?: readonly TemporalMergeConflict[];
 }
 
 /**

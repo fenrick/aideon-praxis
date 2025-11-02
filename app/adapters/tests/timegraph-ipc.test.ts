@@ -7,6 +7,8 @@ vi.mock('@tauri-apps/api/core', () => ({
         return Promise.resolve({ id: 'c1' });
       case 'list_commits':
         return Promise.resolve({ commits: [] });
+      case 'list_branches':
+        return Promise.resolve({ branches: [{ name: 'main', head: 'c1' }] });
       case 'temporal_diff':
         return Promise.resolve({
           from: (args as any)?.payload?.from ?? 'from',
@@ -20,6 +22,8 @@ vi.mock('@tauri-apps/api/core', () => ({
         });
       case 'create_branch':
         return Promise.resolve({ name: (args as any)?.payload?.name ?? 'feature/x', head: 'c1' });
+      case 'merge_branches':
+        return Promise.resolve({ result: 'merge-1' });
       default:
         return Promise.resolve({
           asOf: (args as any)?.payload?.asOf ?? 'x',
@@ -57,5 +61,9 @@ describe('IpcTemporalAdapter', () => {
     expect(Array.isArray(ls)).toBe(true);
     const branch = await a.createBranch({ name: 'feature/x', from: 'c1' });
     expect(branch.head).toBe('c1');
+    const branches = await a.listBranches();
+    expect(branches[0]?.name).toBe('main');
+    const merge = await a.mergeBranches({ source: 'feature/x', target: 'main' });
+    expect(merge.result).toBe('merge-1');
   });
 });
