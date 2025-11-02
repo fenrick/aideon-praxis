@@ -6,7 +6,7 @@
 use core_data::temporal::{
     BranchInfo, CommitChangesRequest, CommitChangesResponse, CreateBranchRequest, DiffArgs,
     DiffSummary, ListBranchesResponse, ListCommitsResponse, MergeRequest, MergeResponse,
-    StateAtArgs, StateAtResult,
+    StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
 };
 use log::{debug, error, info};
 use praxis::{PraxisError, PraxisErrorCode};
@@ -121,6 +121,15 @@ pub async fn merge_branches(
 ) -> Result<MergeResponse, HostError> {
     let engine = state.engine();
     engine.merge(payload).map_err(host_error)
+}
+
+#[tauri::command]
+pub async fn topology_delta(
+    state: State<'_, WorkerState>,
+    payload: TopologyDeltaArgs,
+) -> Result<TopologyDeltaResult, HostError> {
+    let engine = state.engine();
+    engine.topology_delta(payload).map_err(host_error)
 }
 
 #[derive(Debug, Serialize)]

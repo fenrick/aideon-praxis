@@ -252,6 +252,46 @@ impl DiffSummary {
     }
 }
 
+/// Arguments for computing a topology-focused delta between two commits.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopologyDeltaArgs {
+    pub from: CommitRef,
+    pub to: CommitRef,
+}
+
+/// Result metrics describing structural adds/removals between two snapshots.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TopologyDeltaResult {
+    pub from: String,
+    pub to: String,
+    pub node_adds: u64,
+    pub node_dels: u64,
+    pub edge_adds: u64,
+    pub edge_dels: u64,
+}
+
+impl TopologyDeltaResult {
+    pub fn new(
+        from: String,
+        to: String,
+        node_adds: u64,
+        node_dels: u64,
+        edge_adds: u64,
+        edge_dels: u64,
+    ) -> Self {
+        Self {
+            from,
+            to,
+            node_adds,
+            node_dels,
+            edge_adds,
+            edge_dels,
+        }
+    }
+}
+
 /// Commit request payload.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
