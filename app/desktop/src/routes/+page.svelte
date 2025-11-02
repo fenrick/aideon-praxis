@@ -3,17 +3,20 @@
   import { invoke } from '@tauri-apps/api/core';
   import { get } from 'svelte/store';
   import { debug, error, info, logSafely } from '$lib/logging';
+  import { initUiTheme } from '$lib/theme/platform';
   import AboutPanel from '$lib/components/AboutPanel.svelte';
   import MainView from '$lib/components/MainView.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
   import type { StateAtResult, WorkerHealth } from '$lib/types';
+  import type { TimeStoreState } from '$lib/stores/time';
   import { timeStore } from '$lib/stores/time';
   import { version as appVersion } from '../version.js';
 
   let version = $state(appVersion);
   let stateAt: StateAtResult | null = $state(null);
+  let timeState: TimeStoreState | null = $state(null);
   let error_: string | null = $state(null);
   let workerHealth = $state<WorkerHealth | null>(null);
   let healthError = $state<string | null>(null);
@@ -21,9 +24,9 @@
   let view = $state<'main' | 'about'>('main');
   let showSidebar = $state(true);
   let selectedId: string | null = $state(null);
-  import { initUiTheme } from '$lib/theme/platform';
 
   const unsubscribeTime = timeStore.subscribe((value) => {
+    timeState = value;
     stateAt = value.snapshot;
     error_ = value.error;
   });
@@ -112,6 +115,30 @@
     selectedId = event.detail.id;
     logSafely(debug, `renderer: sidebar selection id=${selectedId}`);
   }
+
+  const handleBranchSelect = async (branch: string) => {
+    await timeStore.loadBranch(branch);
+  };
+
+  const handleCommitSelect = async (commitId: string | null) => {
+    await timeStore.selectCommit(commitId);
+  };
+
+  const handleMerge = async (source: string, target: string) => {
+    await timeStore.mergeBranches(source, target);
+  };
+
+  const handleRefreshBranches = () => {
+    timeStore.refreshBranches().catch((error__) => {
+      const message =
+        error__ instanceof Error
+          ? error__.message
+          : typeof error__ === 'string'
+            ? error__
+            : 'refresh branches failed';
+      logSafely(error, `renderer: refreshBranches failed — ${message}`);
+    });
+  };
 </script>
 
 <div class="frame">
@@ -146,7 +173,16 @@
       {#if view === 'about'}
         <AboutPanel />
       {:else}
-        <MainView {version} {stateAt} errorMsg={error_} />
+        <MainView
+          {version}
+          {stateAt}
+          errorMsg={error_}
+          {timeState}
+          onSelectBranch={handleBranchSelect}
+          onSelectCommit={handleCommitSelect}
+          onMerge={handleMerge}
+          onRefreshBranches={handleRefreshBranches}
+        />
         {#if selectedId}
           <div class="selection">Selected: {selectedId}</div>
         {/if}

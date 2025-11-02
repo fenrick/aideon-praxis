@@ -34,6 +34,15 @@ interface ListCommitsResp {
   commits: CommitListItem[];
 }
 
+interface ListBranchesResp {
+  branches: BranchResponse[];
+}
+
+interface BranchResponse {
+  name?: unknown;
+  head?: unknown;
+}
+
 interface DiffSummaryResp {
   from: string;
   to: string;
@@ -43,6 +52,17 @@ interface DiffSummaryResp {
   edge_adds: number;
   edge_mods: number;
   edge_dels: number;
+}
+
+interface MergeResponsePayload {
+  result?: unknown;
+  conflicts?: unknown;
+}
+
+interface ConflictPayload {
+  reference?: unknown;
+  kind?: unknown;
+  message?: unknown;
 }
 
 type InvokeFunction = <T>(command: string, arguments_?: Record<string, unknown>) => Promise<T>;
@@ -173,5 +193,46 @@ export class IpcTemporalAdapter implements MutableGraphAdapter {
         from: parameters.from ?? null,
       },
     });
+  }
+  async listBranches(): Promise<{ name: string; head: string | null }[]> {
+    const response = await call<ListBranchesResp>('list_branches');
+    const entries = Array.isArray(response.branches) ? response.branches : [];
+    return entries.map((branch) => ({
+      name: typeof branch.name === 'string' ? branch.name : '',
+      head: typeof branch.head === 'string' ? branch.head : null,
+    }));
+  }
+  async mergeBranches(parameters: { source: string; target: string; strategy?: string }): Promise<{
+    result?: string;
+    conflicts?: { reference: string; kind: string; message: string }[];
+  }> {
+    const response = await call<MergeResponsePayload>('merge_branches', {
+      payload: parameters,
+    });
+    const conflicts = Array.isArray(response.conflicts)
+      ? (response.conflicts as ConflictPayload[])
+          .map((conflict) => {
+            const reference = typeof conflict.reference === 'string' ? conflict.reference : '';
+            if (!reference) {
+              return null;
+            }
+            return {
+              reference,
+              kind: typeof conflict.kind === 'string' ? conflict.kind : 'unknown',
+              message:
+                typeof conflict.message === 'string'
+                  ? conflict.message
+                  : 'Conflict requires manual resolution',
+            };
+          })
+          .filter(
+            (conflict): conflict is { reference: string; kind: string; message: string } =>
+              conflict !== null,
+          )
+      : undefined;
+    return {
+      result: typeof response.result === 'string' ? response.result : undefined,
+      conflicts,
+    };
   }
 }
