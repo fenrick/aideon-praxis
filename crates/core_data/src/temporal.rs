@@ -179,6 +179,12 @@ pub struct BranchInfo {
     pub head: Option<CommitId>,
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListBranchesResponse {
+    pub branches: Vec<BranchInfo>,
+}
+
 /// Diff payload with explicit node/edge counts.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -284,6 +290,32 @@ pub struct CreateBranchRequest {
     pub name: BranchName,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub from: Option<CommitRef>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MergeRequest {
+    pub source: BranchName,
+    pub target: BranchName,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strategy: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MergeConflict {
+    pub reference: String,
+    pub kind: String,
+    pub message: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct MergeResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<CommitId>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conflicts: Option<Vec<MergeConflict>>,
 }
 
 #[cfg(test)]

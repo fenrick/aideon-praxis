@@ -4,8 +4,8 @@
 //! persistence, validation, and diff computation to the Praxis engine.
 
 use core_data::temporal::{
-    BranchInfo, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffSummary, StateAtArgs,
-    StateAtResult,
+    BranchInfo, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffSummary,
+    ListBranchesResponse, MergeRequest, MergeResponse, StateAtArgs, StateAtResult,
 };
 use praxis::{PraxisEngine, PraxisResult};
 
@@ -38,12 +38,17 @@ impl TemporalEngine {
         self.inner.list_commits(branch)
     }
 
-    pub fn list_branches(&self) -> Vec<BranchInfo> {
-        self.inner.list_branches()
+    pub fn list_branches(&self) -> ListBranchesResponse {
+        let branches = self.inner.list_branches();
+        ListBranchesResponse { branches }
     }
 
     pub fn diff_summary(&self, args: DiffArgs) -> PraxisResult<DiffSummary> {
         self.inner.diff_summary(args)
+    }
+
+    pub fn merge(&self, request: MergeRequest) -> PraxisResult<MergeResponse> {
+        self.inner.merge(request)
     }
 }
 
