@@ -1,6 +1,7 @@
 <script lang="ts">
   import Canvas from './Canvas.svelte';
   import { getShape } from '$lib/registries/shape-registry';
+  import type { ComponentType } from 'svelte';
   import {
     boundsOf,
     clearSelection,
@@ -10,20 +11,26 @@
     getShapes,
     initDefaultShapes,
     removeSelected,
+    reloadScene,
     selectOnly,
     selectWithin,
     setGridEnabled,
     subscribe,
     toggleSelect,
+    type Selection,
+    type ShapeInstance,
   } from './shape-store';
   import { fitToBounds, reset, type Viewport } from './viewport';
-
-  let _tick = 0;
+  let shapes = $state<ShapeInstance[]>(getShapes());
+  let selection = $state<Selection>(new Set(getSelection()));
   let vp = $state<Viewport | null>(null);
   let sceneEl: HTMLDivElement | null = null;
 
   initDefaultShapes();
-  const unsubscribe = subscribe(() => (_tick = (_tick + 1) & 0xff));
+  const unsubscribe = subscribe(() => {
+    shapes = getShapes();
+    selection = new Set(getSelection());
+  });
   $effect(() => unsubscribe());
 
   let marquee = $state<{ active: boolean; x: number; y: number; w: number; h: number }>({
@@ -42,8 +49,18 @@
     base: ReturnType<typeof getShapes>;
   } = { active: false, ids: [], startX: 0, startY: 0, base: [] };
 
+  function resolveShapeComponent(typeId: string): ComponentType | null {
+    const shape = getShape(typeId);
+    return (shape?.component as ComponentType | undefined) ?? null;
+  }
+
+  function focusSceneRoot() {
+    sceneEl?.focus();
+  }
+
   function onBackgroundDown(e: CustomEvent<PointerEvent>) {
     const ev = e.detail;
+    focusSceneRoot();
     if (ev.shiftKey) {
       marquee = { active: true, x: ev.clientX, y: ev.clientY, w: 0, h: 0 };
     } else {
@@ -82,8 +99,7 @@
 
   function onShapePointerDown(e: PointerEvent, id: string) {
     e.stopPropagation();
-    const sel = getSelection();
-    const ids = sel.has(id) ? [...sel] : [id];
+    const ids = selection.has(id) ? [...selection] : [id];
     dragging = {
       active: true,
       ids,
@@ -115,7 +131,75 @@
     dragging = { active: false, ids: [], startX: 0, startY: 0, base: [] };
   }
 
+  function handlePointerMove(event: PointerEvent) {
+    onRootPointerMove(event);
+  }
+
+  function handlePointerUp() {
+    onRootPointerUp();
+  }
+
+  $effect(() => {
+    globalThis.addEventListener('pointermove', handlePointerMove);
+    globalThis.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      globalThis.removeEventListener('pointermove', handlePointerMove);
+      globalThis.removeEventListener('pointerup', handlePointerUp);
+    };
+  });
+
+  function handleGlobalKeydown(event: KeyboardEvent) {
+    if (!sceneEl) return;
+    if (event.defaultPrevented) return;
+    const target = (event.target as Element | null) ?? null;
+    if (!target || sceneEl.contains(target)) {
+      onKeydown(event);
+    }
+  }
+
+  $effect(() => {
+    globalThis.addEventListener('keydown', handleGlobalKeydown);
+    return () => {
+      globalThis.removeEventListener('keydown', handleGlobalKeydown);
+    };
+  });
+
+  function onShapeKeydown(event: KeyboardEvent, id: string) {
+    const key = event.key;
+    switch (key) {
+      case 'Enter':
+      case ' ': {
+        event.preventDefault();
+        if (event.shiftKey) toggleSelect(id);
+        else selectOnly(id);
+
+        break;
+      }
+      case 'Delete':
+      case 'Backspace': {
+        event.preventDefault();
+        removeSelected();
+
+        break;
+      }
+      case 'Escape': {
+        clearSelection();
+
+        break;
+      }
+      // No default
+    }
+  }
+
   const { asOf } = $props<{ asOf?: string | null }>();
+
+  let lastLoadedAsOf = $state<string | null>(null);
+
+  $effect(() => {
+    if (!asOf || asOf === lastLoadedAsOf) return;
+    lastLoadedAsOf = asOf;
+    void reloadScene(asOf);
+  });
 
   function zoomIn() {
     if (!vp || !sceneEl) return;
@@ -166,42 +250,28 @@
   }
 </script>
 
-<div
-  class="scene"
-  role="application"
-  tabindex="0"
-  bind:this={sceneEl}
-  onkeydown={onKeydown}
-  onpointermove={onRootPointerMove}
-  onpointerup={onRootPointerUp}
->
+<div class="scene" role="application" tabindex="-1" bind:this={sceneEl}>
   <Canvas
     bind:vp
     on:backgrounddown={onBackgroundDown}
     on:backgroundmove={onBackgroundMove}
     on:backgroundup={onBackgroundUp}
   >
-    {#each getShapes() as s (s.id)}
-      {#if getShape(s.typeId)}
-        <div
-          role="button"
-          tabindex="0"
+    {#each shapes as s (s.id)}
+      {@const Component = resolveShapeComponent(s.typeId)}
+      {#if Component}
+        <button
+          type="button"
+          data-shape-id={s.id}
+          aria-pressed={selection.has(s.id)}
           onpointerdown={(e) => onShapePointerDown(e, s.id)}
           onclick={(e) => onShapeClick(e as any, s.id)}
-          onkeydown={(e) => {
-            const k = (e as KeyboardEvent).key;
-            if (k === 'Enter' || k === ' ') onShapeClick(e as any, s.id);
-          }}
-          class={`shape ${getSelection().has(s.id) ? 'selected' : ''}`}
+          onkeydown={(e) => onShapeKeydown(e as KeyboardEvent, s.id)}
+          class={`shape ${selection.has(s.id) ? 'selected' : ''}`}
           style={`left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px;z-index:${(s as any).z ?? 0};`}
         >
-          <svelte:component
-            this={getShape(s.typeId)!.component as any}
-            {...s.props || {}}
-            width={s.w}
-            height={s.h}
-          />
-        </div>
+          <Component {...s.props || {}} width={s.w} height={s.h} />
+        </button>
       {/if}
     {/each}
     {#if marquee.active}
@@ -274,11 +344,19 @@
   }
   .shape {
     position: absolute;
-    cursor: default;
+    cursor: move;
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: inherit;
   }
   .shape.selected {
     outline: 2px solid #3b82f6;
     outline-offset: 1px;
+  }
+  .shape:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
   }
   .marquee {
     position: fixed;
@@ -311,15 +389,6 @@
     border-radius: 6px;
     padding: 2px 8px;
     cursor: pointer;
-  }
-  .grid-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image:
-      linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-    background-size: 20px 20px;
   }
   .grid-toggle {
     color: white;

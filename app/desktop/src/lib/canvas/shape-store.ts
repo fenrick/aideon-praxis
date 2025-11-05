@@ -1,4 +1,5 @@
 // Use relative path to keep ESLint TS type resolution happy (no Vite alias)
+import { debug as logDebug, error as logError, logSafely } from '../logging';
 import { getShape, registerShape } from '../registries/shape-registry';
 import { tauriInvoke } from '../tauri-invoke';
 import Rect from './Rect.svelte';
@@ -153,16 +154,25 @@ export function initDefaultShapes() {
   if (shapes.length === 0) {
     void (async () => {
       try {
+        logSafely(logDebug, 'canvas: requesting scene from host');
         const scene = await tauriInvoke('canvas_scene');
         if (Array.isArray(scene) && scene.length > 0) {
           const base = hostSceneToShapes(scene as HostSceneItem[]);
           shapes = await layoutIfNeeded(base);
+          logSafely(logDebug, `canvas: loaded scene nodes=${String(shapes.length)}`);
           emit();
           return;
         }
-      } catch {
-        // ignore and fall back
+        logSafely(logDebug, 'canvas: host returned empty scene; using fallback');
+      } catch (error) {
+        logSafely(
+          logError,
+          `canvas: failed to load scene from host — ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
       }
+      logSafely(logDebug, 'canvas: using built-in demo scene fallback');
       shapes = [
         { id: 's1', typeId: 'rect', x: 200, y: 200, w: 200, h: 120, props: { label: 'Node A' } },
         { id: 's2', typeId: 'rect', x: 600, y: 480, w: 220, h: 140, props: { label: 'Node B' } },
@@ -174,14 +184,23 @@ export function initDefaultShapes() {
 
 export async function reloadScene(asOf: string) {
   try {
-    const scene = await tauriInvoke('canvas_scene', { asOf: asOf });
-    if (Array.isArray(scene)) {
+    logSafely(logDebug, `canvas: reloading scene for asOf=${asOf}`);
+    const scene = await tauriInvoke('canvas_scene', { asOf });
+    if (Array.isArray(scene) && scene.length > 0) {
       const base = hostSceneToShapes(scene as HostSceneItem[]);
       shapes = await layoutIfNeeded(base);
+      logSafely(logDebug, `canvas: reloaded scene nodes=${String(shapes.length)} asOf=${asOf}`);
       emit();
+    } else {
+      logSafely(logDebug, `canvas: host returned empty scene for asOf=${asOf}`);
     }
-  } catch {
-    // ignore; keep existing
+  } catch (error) {
+    logSafely(
+      logError,
+      `canvas: reload failed for asOf=${asOf} — ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
   }
 }
 
@@ -224,7 +243,16 @@ export async function saveLayout(asOf: string, scenario?: string, documentId = '
   };
   try {
     await tauriInvoke('canvas_save_layout', { payload } as Record<string, unknown>);
-  } catch {
-    // ignore for now; a proper toast/log could be added
+    logSafely(
+      logDebug,
+      `canvas: saved layout nodes=${String(nodes.length)} asOf=${asOf} scenario=${scenario ?? 'default'}`,
+    );
+  } catch (error) {
+    logSafely(
+      logError,
+      `canvas: saveLayout failed for asOf=${asOf} — ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
   }
 }

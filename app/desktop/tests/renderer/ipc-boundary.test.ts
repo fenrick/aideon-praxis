@@ -84,6 +84,7 @@ function isForbidden(spec: string): boolean {
   if (spec === '@iconify/svelte') return false;
   if (spec === '@tauri-apps/api/core' || spec === '@tauri-apps/plugin-log') return false;
   if (spec === '@fluentui/web-components') return false;
+  if (spec === '@aideon/design-system' || spec.startsWith('@aideon/design-system/')) return false;
   if (spec.startsWith('$lib/')) return false;
   if (spec === '@tauri-apps/api/os' || spec === '@tauri-apps/api/window') return false;
   // Allow ELK layout engine in renderer (UI-only auto-layout)
