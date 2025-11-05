@@ -1,7 +1,7 @@
 <script lang="ts">
   import Field from './Field.svelte';
   import { createEventDispatcher, onMount } from 'svelte';
-  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
+  import { getResolvedUiTheme, onUiThemeChange } from '../theme/platform';
   const {
     id,
     label,
