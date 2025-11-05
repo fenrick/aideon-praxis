@@ -398,10 +398,12 @@ mod tests {
 
     #[test]
     fn diff_summary_roundtrip_uses_camel_case() {
-        let summary = DiffSummary::new("a".into(), "b".into(), 1, 2, 3, 4, 5);
+        let summary = DiffSummary::new("a".into(), "b".into(), 1, 2, 3, 4, 5, 6);
         let json = serde_json::to_string(&summary).expect("serialize");
         assert!(json.contains("\"nodeAdds\":1"));
+        assert!(json.contains("\"edgeDels\":6"));
         let back: DiffSummary = serde_json::from_str(&json).expect("deserialize");
-        assert_eq!(back.edge_mods, 4);
+        assert_eq!(back.edge_mods, 5);
+        assert_eq!(back.edge_dels, 6);
     }
 }
