@@ -3,8 +3,8 @@
 //! The host keeps the engine behind a managed state container so renderer IPC
 //! handlers can access it without leaking internal mutability.
 
-use chrona::TemporalEngine;
-use core_data::WorkerHealth;
+use aideon::chrona::TemporalEngine;
+use aideon::core_data::WorkerHealth;
 use log::{debug, info};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, Wry};

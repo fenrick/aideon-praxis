@@ -3,13 +3,13 @@
 //! These commands remain thin so that all business logic stays within the worker
 //! crate, reinforcing the boundary guidance spelled out in `AGENTS.md`.
 
-use core_data::temporal::{
+use aideon::core_data::temporal::{
     BranchInfo, CommitChangesRequest, CommitChangesResponse, CreateBranchRequest, DiffArgs,
     DiffSummary, ListBranchesResponse, ListCommitsResponse, MergeRequest, MergeResponse,
     StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
 };
+use aideon::praxis::{PraxisError, PraxisErrorCode};
 use log::{debug, error, info};
-use praxis::{PraxisError, PraxisErrorCode};
 use serde::Serialize;
 use std::time::Instant;
 use tauri::State;

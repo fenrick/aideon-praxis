@@ -29,15 +29,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "aideon"
+version = "0.0.0"
+dependencies = [
+ "aideon-chrona",
+ "aideon-continuum",
+ "aideon-core-data",
+ "aideon-metis",
+ "aideon-praxis",
+]
+
+[[package]]
+name = "aideon-chrona"
+version = "0.0.0"
+dependencies = [
+ "aideon-core-data",
+ "aideon-praxis",
+ "log",
+]
+
+[[package]]
+name = "aideon-continuum"
+version = "0.0.0"
+
+[[package]]
+name = "aideon-core-data"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "aideon-host"
 version = "0.0.0"
 dependencies = [
- "chrona",
- "continuum",
- "core_data",
+ "aideon",
  "dirs",
  "log",
- "praxis",
  "serde",
  "serde_json",
  "tauri",
@@ -46,6 +75,20 @@ dependencies = [
  "tauri-plugin-opener",
  "tokio",
  "window-vibrancy 0.4.3",
+]
+
+[[package]]
+name = "aideon-metis"
+version = "0.0.0"
+
+[[package]]
+name = "aideon-praxis"
+version = "0.0.0"
+dependencies = [
+ "aideon-core-data",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -573,15 +616,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "chrona"
-version = "0.0.0"
-dependencies = [
- "core_data",
- "log",
- "praxis",
-]
-
-[[package]]
 name = "chrono"
 version = "0.4.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -641,10 +675,6 @@ checksum = "4ca0197aee26d1ae37445ee532fefce43251d24cc7c166799f4d46817f1d3973"
 dependencies = [
  "crossbeam-utils",
 ]
-
-[[package]]
-name = "continuum"
-version = "0.0.0"
 
 [[package]]
 name = "convert_case"
@@ -734,14 +764,6 @@ dependencies = [
  "bitflags 2.10.0",
  "core-foundation 0.10.1",
  "libc",
-]
-
-[[package]]
-name = "core_data"
-version = "0.0.0"
-dependencies = [
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -2196,10 +2218,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "metis"
-version = "0.0.0"
-
-[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2946,16 +2964,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
 dependencies = [
  "zerocopy",
-]
-
-[[package]]
-name = "praxis"
-version = "0.0.0"
-dependencies = [
- "core_data",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
 ]
 
 [[package]]
