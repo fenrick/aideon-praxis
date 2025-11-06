@@ -26,28 +26,59 @@ const isDevelopment = () => {
 export const logSafely = (logger: Logger, message: string) => {
   const origin = (() => {
     try {
-      const stack = new Error('log origin').stack;
-      if (!stack) return null;
-      const lines = stack.split('\n').slice(1);
-      // Find first frame outside this module to approximate original callsite
-      const frame = lines.find(
-        (l) =>
-          !l.includes('/src/lib/logging.ts') &&
-          !l.includes('logging.ts') &&
-          !l.includes('logSafely'),
-      );
-      if (!frame) return null;
-      // Extract URL or absolute file path with line/column from the frame
-      const match = /(?:\(|\s)(file:\/\/\S+|https?:\/\/\S+|\/\S+):(\d+):(\d+)/.exec(frame);
-      if (match) {
-        const url = String(match[1]);
-        const line = String(match[2]);
-        const col = String(match[3]);
-        // Prefer repository-relative path if present
-        const index = url.indexOf('/src/');
-        const relative = index === -1 ? url : url.slice(index);
-        return `${relative}:${line}:${col}`;
+      const candidate = new Error('log origin');
+      const captureStackTrace = (Error as {
+        captureStackTrace?: (target: { stack?: string }, ctor?: (...args: unknown[]) => unknown) => void;
+      }).captureStackTrace;
+      if (captureStackTrace) {
+        captureStackTrace(candidate, logSafely);
       }
+
+      const stack = candidate.stack;
+      if (typeof stack !== 'string') {
+        return null;
+      }
+
+      const lines = stack.split(/\r?\n/);
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        if (
+          line.includes('logSafely') ||
+          line.includes('node:internal') ||
+          /logging\.(ts|js|mjs)/.test(line)
+        ) {
+          continue;
+        }
+
+        const match = line.match(
+          /(?:\(|\s)([\w.-]+:\/\/[^\s):]+|[A-Za-z]:[\\/][^\s):]+|\/[^\s):]+):(\d+):(\d+)/,
+        );
+        if (!match) {
+          continue;
+        }
+
+        const [, rawPath, lineNumber, columnNumber] = match;
+        const normalizedPath = rawPath
+          .replace(/^file:\/+/, '')
+          .replace(/^vite-node:\/\//, '')
+          .replace(/^webpack-internal:\/\//, '')
+          .replace(/\\/g, '/');
+
+        const markers = ['/app/', '/crates/', '/docs/', '/packages/', '/scripts/', '/tools/', '/src/'];
+        const relativePath = (() => {
+          for (const marker of markers) {
+            const index = normalizedPath.indexOf(marker);
+            if (index !== -1) {
+              return normalizedPath.slice(index + 1);
+            }
+          }
+          return normalizedPath;
+        })();
+
+        return `${relativePath}:${lineNumber}:${columnNumber}`;
+      }
+
       return null;
     } catch {
       return null;
