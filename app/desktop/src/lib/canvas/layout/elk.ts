@@ -33,7 +33,106 @@ export interface LayoutOptions {
   spacing?: number;
 }
 
-const elk = new ELK();
+type ElkConstructor = new () => unknown;
+
+function isElkConstructor(value: unknown): value is ElkConstructor {
+  return typeof value === 'function';
+}
+
+function createElkInstance(source: unknown): unknown {
+  if (!isElkConstructor(source)) return null;
+  const Ctor: ElkConstructor = source;
+  return new Ctor();
+}
+
+const elk: unknown = createElkInstance(ELK);
+
+interface ElkLayoutEngine {
+  layout(graph: ElkGraph): Promise<unknown>;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isElkLayoutEngine(value: unknown): value is ElkLayoutEngine {
+  if (!isRecord(value)) return false;
+  const candidate = value as { layout?: unknown };
+  return typeof candidate.layout === 'function';
+}
+
+function isOptionalNumber(value: unknown): value is number | undefined {
+  return value === undefined || typeof value === 'number';
+}
+
+function isElkChild(value: unknown): value is ElkChild {
+  if (!isRecord(value)) return false;
+  if (typeof value.id !== 'string') return false;
+
+  const candidate = value as Partial<ElkChild>;
+  return (
+    isOptionalNumber(candidate.x) &&
+    isOptionalNumber(candidate.y) &&
+    isOptionalNumber(candidate.width) &&
+    isOptionalNumber(candidate.height)
+  );
+}
+
+function hasValidLayoutOptions(value: unknown): value is Record<string, string> | undefined {
+  if (value === undefined) return true;
+  if (!isRecord(value)) return false;
+  const entries = Object.values(value);
+  for (const option of entries) {
+    if (typeof option !== 'string') return false;
+  }
+  return true;
+}
+
+function hasValidChildren(value: unknown): value is ElkChild[] | undefined {
+  if (value === undefined) return true;
+  if (!Array.isArray(value)) return false;
+  for (const child of value) {
+    if (!isElkChild(child)) return false;
+  }
+  return true;
+}
+
+function isElkGraph(value: unknown): value is ElkGraph {
+  if (!isRecord(value) || typeof value.id !== 'string') return false;
+
+  const candidate = value as { layoutOptions?: unknown; children?: unknown };
+  return hasValidLayoutOptions(candidate.layoutOptions) && hasValidChildren(candidate.children);
+}
+
+function resolveLayoutEngine(engine: unknown): ElkLayoutEngine | null {
+  return isElkLayoutEngine(engine) ? engine : null;
+}
+
+async function performLayout(engine: ElkLayoutEngine, graph: ElkGraph): Promise<ElkGraph | null> {
+  try {
+    const result = await engine.layout(graph);
+    return isElkGraph(result) ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+function applyLayout(shapes: ShapeInstance[], graph: ElkGraph): ShapeInstance[] {
+  const positioned = new Map<string, { x: number; y: number }>();
+  for (const child of graph.children ?? []) {
+    const x = typeof child.x === 'number' && Number.isFinite(child.x) ? child.x : 0;
+    const y = typeof child.y === 'number' && Number.isFinite(child.y) ? child.y : 0;
+    positioned.set(child.id, { x, y });
+  }
+
+  return shapes.map((shape) => {
+    const coordinates = positioned.get(shape.id);
+    if (coordinates && Number.isFinite(coordinates.x) && Number.isFinite(coordinates.y)) {
+      return { ...shape, x: coordinates.x, y: coordinates.y };
+    }
+    return shape;
+  });
+}
 
 /**
  * Compute positions for the provided shapes using elkjs.
@@ -58,23 +157,15 @@ export async function layoutShapesWithElk(
     children: shapes.map((s) => ({ id: s.id, width: s.w, height: s.h })),
   };
 
-  try {
-    const result = (await elk.layout(graph)) as ElkGraph;
-    const byId = new Map<string, { x: number; y: number }>();
-    for (const c of result.children ?? []) {
-      const x = c.x ?? 0;
-      const y = c.y ?? 0;
-      byId.set(c.id, { x: Number.isFinite(x) ? x : 0, y: Number.isFinite(y) ? y : 0 });
-    }
-    return shapes.map((s) => {
-      const p = byId.get(s.id);
-      if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) {
-        return { ...s, x: p.x, y: p.y };
-      }
-      return s;
-    });
-  } catch {
-    // Keep existing positions if layout fails
+  const layoutEngine = resolveLayoutEngine(elk);
+  if (!layoutEngine) {
     return shapes;
   }
+
+  const result = await performLayout(layoutEngine, graph);
+  if (!result) {
+    return shapes;
+  }
+
+  return applyLayout(shapes, result);
 }
