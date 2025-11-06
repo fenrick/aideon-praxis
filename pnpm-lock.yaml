@@ -155,8 +155,8 @@ importers:
         specifier: ^2.7.1
         version: 2.7.1
       '@tauri-apps/plugin-opener':
-        specifier: ^2.5.0
-        version: 2.5.0
+        specifier: ^2.5.2
+        version: 2.5.2
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: ^3.0.10
@@ -1137,8 +1137,8 @@ packages:
   '@tauri-apps/plugin-log@2.7.1':
     resolution: {integrity: sha512-jdb+o0wxQc8PjnLktgGpOs9Dh1YupaOGDXzO+Y8peA1UZ1ep3eXv4E1oiJ7nIQVN0XUFDDhnn3aBszl8ijhR+A==}
 
-  '@tauri-apps/plugin-opener@2.5.0':
-    resolution: {integrity: sha512-B0LShOYae4CZjN8leiNDbnfjSrTwoZakqKaWpfoH6nXiJwt6Rgj6RnVIffG3DoJiKsffRhMkjmBV9VeilSb4TA==}
+  '@tauri-apps/plugin-opener@2.5.2':
+    resolution: {integrity: sha512-ei/yRRoCklWHImwpCcDK3VhNXx+QXM9793aQ64YxpqVF0BDuuIlXhZgiAkc15wnPVav+IbkYhmDJIv5R326Mew==}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -5104,7 +5104,7 @@ snapshots:
     dependencies:
       '@tauri-apps/api': 2.9.0
 
-  '@tauri-apps/plugin-opener@2.5.0':
+  '@tauri-apps/plugin-opener@2.5.2':
     dependencies:
       '@tauri-apps/api': 2.9.0
 
