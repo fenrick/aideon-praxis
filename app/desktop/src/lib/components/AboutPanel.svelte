@@ -1,8 +1,20 @@
 <script lang="ts">
+  import { assets } from '$app/paths';
+
+  const buildAssetPath = (prefix: string, file: string) => {
+    const normalizedFile = file.startsWith('/') ? file.slice(1) : file;
+    if (!prefix) {
+      return `/${normalizedFile}`;
+    }
+    const normalizedPrefix = prefix.endsWith('/') ? prefix.slice(0, -1) : prefix;
+    return `${normalizedPrefix}/${normalizedFile}`;
+  };
+
+  const iconSource = buildAssetPath(assets, 'app-icon.png');
 </script>
 
 <div class="about">
-  <img class="mark" src="%sveltekit.assets%/app-icon.png" alt="Aideon Praxis" />
+  <img class="mark" src={iconSource} alt="Aideon Praxis" />
   <div class="col">
     <h1 class="title">Aideon&nbsp;Praxis</h1>
     <div class="meta">Twin‑orbit decision tooling · © Aideon</div>
