@@ -3,12 +3,12 @@
 //! Chrona keeps the IPC-friendly API exposed to the Tauri host while delegating
 //! persistence, validation, and diff computation to the Praxis engine.
 
-use core_data::temporal::{
+use aideon_core_data::temporal::{
     BranchInfo, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffSummary,
     ListBranchesResponse, MergeRequest, MergeResponse, StateAtArgs, StateAtResult,
     TopologyDeltaArgs, TopologyDeltaResult,
 };
-use praxis::{PraxisEngine, PraxisResult};
+use aideon_praxis::{PraxisEngine, PraxisResult};
 
 /// Thin wrapper that keeps the previous `TemporalEngine` name stable for the host.
 #[derive(Clone, Debug, Default)]
@@ -60,7 +60,7 @@ impl TemporalEngine {
 #[cfg(test)]
 mod tests {
     use super::TemporalEngine;
-    use core_data::temporal::{
+    use aideon_core_data::temporal::{
         ChangeSet, CommitChangesRequest, CommitRef, EdgeTombstone, EdgeVersion, NodeTombstone,
         NodeVersion, StateAtArgs, TopologyDeltaArgs,
     };
@@ -77,7 +77,7 @@ mod tests {
                 message: "seed".into(),
                 tags: vec![],
                 changes: ChangeSet {
-                    node_creates: vec![core_data::temporal::NodeVersion {
+                    node_creates: vec![aideon_core_data::temporal::NodeVersion {
                         id: "n1".into(),
                         r#type: None,
                         props: None,

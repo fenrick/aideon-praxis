@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use core_data::temporal::{ChangeSet, EdgeTombstone, EdgeVersion, NodeVersion};
+use aideon_core_data::temporal::{ChangeSet, EdgeTombstone, EdgeVersion, NodeVersion};
 
 use crate::error::{PraxisError, PraxisResult};
 
@@ -150,8 +150,8 @@ impl GraphSnapshot {
         Ok(next)
     }
 
-    pub fn diff(&self, other: &GraphSnapshot) -> core_data::temporal::DiffPatch {
-        use core_data::temporal::{DiffPatch, EdgeTombstone, NodeTombstone};
+    pub fn diff(&self, other: &GraphSnapshot) -> aideon_core_data::temporal::DiffPatch {
+        use aideon_core_data::temporal::{DiffPatch, EdgeTombstone, NodeTombstone};
 
         let mut patch = DiffPatch::default();
 

@@ -1,11 +1,11 @@
 [package]
-name = "chrona"
+name = "aideon-chrona"
 version = "0.0.0"
 edition = "2024"
 authors = ["Aideon Praxis Contributors"]
 license = "MIT"
 
 [dependencies]
-core_data = { path = "../core_data" }
+aideon-core-data = { path = "../core_data" }
 log = "0.4"
-praxis = { path = "../praxis" }
+aideon-praxis = { path = "../praxis" }
