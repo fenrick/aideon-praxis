@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
-use core_data::temporal::{
+use aideon_core_data::temporal::{
     BranchInfo, ChangeSet, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffPatch,
     DiffSummary, EdgeTombstone, EdgeVersion, MergeConflict, MergeRequest, MergeResponse,
     NodeTombstone, StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
@@ -636,7 +636,7 @@ fn build_change_set(target_snapshot: &GraphSnapshot, patch: &DiffPatch) -> Chang
 #[cfg(test)]
 mod tests {
     use super::PraxisEngine;
-    use core_data::temporal::{
+    use aideon_core_data::temporal::{
         ChangeSet, CommitChangesRequest, CommitRef, DiffArgs, EdgeTombstone, EdgeVersion,
         MergeRequest, NodeTombstone, NodeVersion, StateAtArgs, TopologyDeltaArgs,
     };

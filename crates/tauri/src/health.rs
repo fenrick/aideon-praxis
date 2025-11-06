@@ -1,7 +1,7 @@
 //! Host-level health commands exposed to the renderer.
 
 use crate::worker::WorkerState;
-use core_data::WorkerHealth;
+use aideon::core_data::WorkerHealth;
 use log::{debug, info};
 use tauri::State;
 

@@ -1,5 +1,5 @@
 [package]
-name = "core_data"
+name = "aideon-core-data"
 version = "0.0.0"
 edition = "2024"
 authors = ["Aideon Praxis Contributors"]
