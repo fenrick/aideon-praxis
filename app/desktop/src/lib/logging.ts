@@ -23,63 +23,121 @@ const isDevelopment = () => {
   return metaEnvironment?.DEV === true || metaEnvironment?.DEV === 'true';
 };
 
+const stackMarkers = ['/app/', '/crates/', '/docs/', '/packages/', '/scripts/', '/tools/', '/src/'];
+
+const trimTrailingParen = (segment: string) =>
+  segment.endsWith(')') ? segment.slice(0, -1).trim() : segment.trim();
+
+const sliceAfter = (value: string, token: string) => {
+  const index = value.lastIndexOf(token);
+  return index === -1 ? null : value.slice(index + token.length);
+};
+
+const extractLocationSegment = (line: string) => {
+  const trimmed = trimTrailingParen(line);
+  const fromParen = sliceAfter(trimmed, '(');
+  if (fromParen) {
+    return fromParen.trim();
+  }
+
+  const fromSpace = sliceAfter(trimmed, ' ');
+  return (fromSpace ?? trimmed).trim();
+};
+
+const isAllDigits = (value: string) => value.length > 0 && Number.isInteger(Number(value));
+
+const splitLocation = (location: string) => {
+  const lastColon = location.lastIndexOf(':');
+  if (lastColon === -1) {
+    return null;
+  }
+
+  const secondColon = location.lastIndexOf(':', lastColon - 1);
+  if (secondColon === -1) {
+    return null;
+  }
+
+  const rawPath = location.slice(0, secondColon);
+  const lineNumber = location.slice(secondColon + 1, lastColon);
+  const columnNumber = location.slice(lastColon + 1);
+
+  if (!isAllDigits(lineNumber) || !isAllDigits(columnNumber)) {
+    return null;
+  }
+
+  return { rawPath, lineNumber, columnNumber };
+};
+
+const normalizePath = (rawPath: string) =>
+  rawPath
+    .replace(/^file:\/+/i, '')
+    .replace(/^vite-node:\/\//i, '')
+    .replace(/^webpack-internal:\/\//i, '')
+    .replaceAll('\\', '/');
+
+const resolveRelativePath = (normalizedPath: string) => {
+  for (const marker of stackMarkers) {
+    const index = normalizedPath.indexOf(marker);
+    if (index !== -1) {
+      return normalizedPath.slice(index + 1);
+    }
+  }
+  return normalizedPath;
+};
+
+const extractOriginFromStack = (stack: string | undefined) => {
+  if (!stack) {
+    return null;
+  }
+
+  const lines = stack.split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (
+      !line ||
+      line.includes('logSafely') ||
+      line.includes('node:internal') ||
+      /logging\.(?:ts|js|mjs)/.test(line)
+    ) {
+      continue;
+    }
+
+    const locationSegment = extractLocationSegment(line);
+    if (!locationSegment) {
+      continue;
+    }
+
+    const locationParts = splitLocation(locationSegment);
+    if (!locationParts) {
+      continue;
+    }
+
+    const normalizedPath = normalizePath(locationParts.rawPath);
+    const relativePath = resolveRelativePath(normalizedPath);
+    return `${relativePath}:${locationParts.lineNumber}:${locationParts.columnNumber}`;
+  }
+
+  return null;
+};
+
 export const logSafely = (logger: Logger, message: string) => {
   const origin = (() => {
     try {
       const candidate = new Error('log origin');
-      const captureStackTrace = (Error as {
-        captureStackTrace?: (target: { stack?: string }, ctor?: (...args: unknown[]) => unknown) => void;
-      }).captureStackTrace;
+      const captureStackTrace = (
+        Error as {
+          captureStackTrace?: (
+            target: { stack?: string },
+            ctor?: (...arguments_: unknown[]) => unknown,
+          ) => void;
+        }
+      ).captureStackTrace;
       if (captureStackTrace) {
-        captureStackTrace(candidate, logSafely);
+        const frameSkipper = logSafely as unknown as (...arguments_: unknown[]) => unknown;
+        captureStackTrace(candidate, frameSkipper);
       }
 
-      const stack = candidate.stack;
-      if (typeof stack !== 'string') {
-        return null;
-      }
-
-      const lines = stack.split(/\r?\n/);
-      for (const rawLine of lines) {
-        const line = rawLine.trim();
-        if (!line) continue;
-        if (
-          line.includes('logSafely') ||
-          line.includes('node:internal') ||
-          /logging\.(ts|js|mjs)/.test(line)
-        ) {
-          continue;
-        }
-
-        const match = line.match(
-          /(?:\(|\s)([\w.-]+:\/\/[^\s):]+|[A-Za-z]:[\\/][^\s):]+|\/[^\s):]+):(\d+):(\d+)/,
-        );
-        if (!match) {
-          continue;
-        }
-
-        const [, rawPath, lineNumber, columnNumber] = match;
-        const normalizedPath = rawPath
-          .replace(/^file:\/+/, '')
-          .replace(/^vite-node:\/\//, '')
-          .replace(/^webpack-internal:\/\//, '')
-          .replace(/\\/g, '/');
-
-        const markers = ['/app/', '/crates/', '/docs/', '/packages/', '/scripts/', '/tools/', '/src/'];
-        const relativePath = (() => {
-          for (const marker of markers) {
-            const index = normalizedPath.indexOf(marker);
-            if (index !== -1) {
-              return normalizedPath.slice(index + 1);
-            }
-          }
-          return normalizedPath;
-        })();
-
-        return `${relativePath}:${lineNumber}:${columnNumber}`;
-      }
-
-      return null;
+      return extractOriginFromStack(candidate.stack);
     } catch {
       return null;
     }
