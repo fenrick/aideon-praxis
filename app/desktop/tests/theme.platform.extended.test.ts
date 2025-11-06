@@ -1,6 +1,7 @@
+import type { UiTheme } from '@aideon/design-system';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Extended coverage for app/desktop/src/lib/theme/platform.ts
+// Extended coverage for @aideon/design-system/theme/platform.ts
 
 // Helper to mutate UA for auto-detection branches
 function withUserAgent(ua: string) {
@@ -41,10 +42,10 @@ describe('theme/platform extended', () => {
 
   it('auto-detects from userAgent and emits event', async () => {
     const restoreUA = withUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X)');
-    const platform = await import('../src/lib/theme/platform');
+    const platform = await import('@aideon/design-system');
 
     const calls: string[] = [];
-    const off = platform.onUiThemeChange((t) => calls.push(t));
+    const off = platform.onUiThemeChange((t: UiTheme) => calls.push(t));
     await platform.setUiTheme('auto');
 
     expect(platform.getUiTheme()).toBe('auto');
@@ -63,14 +64,14 @@ describe('theme/platform extended', () => {
 
   it('initializes from localStorage via initUiTheme()', async () => {
     localStorage.setItem('aideon.platform', 'win');
-    const platform = await import('../src/lib/theme/platform');
+    const platform = await import('@aideon/design-system');
     await platform.initUiTheme();
     expect(platform.getUiTheme()).toBe('win');
     expect(platform.getResolvedUiTheme()).toBe('win');
   });
 
   it('handles linux by removing optional styles', async () => {
-    const platform = await import('../src/lib/theme/platform');
+    const platform = await import('@aideon/design-system');
     await platform.setUiTheme('neutral');
     expect(document.head.querySelector('#aideon-neutral-css')).toBeTruthy();
     await platform.setUiTheme('linux');
@@ -80,7 +81,7 @@ describe('theme/platform extended', () => {
   });
 
   it('does not duplicate the neutral stylesheet on repeated selection', async () => {
-    const platform = await import('../src/lib/theme/platform');
+    const platform = await import('@aideon/design-system');
     await platform.setUiTheme('neutral');
     await platform.setUiTheme('neutral');
     const links = document.head.querySelectorAll('#aideon-neutral-css');
@@ -100,7 +101,7 @@ describe('theme/platform extended', () => {
     });
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const platform = await import('../src/lib/theme/platform');
+    const platform = await import('@aideon/design-system');
     await platform.setUiTheme('win');
     // No warnings on success path
     expect(warnSpy).not.toHaveBeenCalled();
@@ -114,7 +115,7 @@ describe('theme/platform extended', () => {
     });
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const platform = await import('../src/lib/theme/platform');
+    const platform = await import('@aideon/design-system');
     await platform.setUiTheme('win');
     expect(warnSpy).toHaveBeenCalled();
   });

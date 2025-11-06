@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
+  import { getResolvedUiTheme, onUiThemeChange } from '../theme/platform';
   const {
     id,
     checked = false,

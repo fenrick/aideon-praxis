@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   package:
-    name: Package App and Worker
+    name: Package Tauri Bundles and Worker
     uses: fenrick/aideon-praxis/.github/workflows/reusable-release.yml@main
     with:
       publish: ${{ inputs.publish }}

@@ -23,7 +23,9 @@
 //! - Keep engines behind simple structs (`WorkerState`) so we can later inject
 //!   adapters (local vs remote) without revisiting command bindings.
 
+mod health;
 mod menu;
+mod scene;
 mod setup;
 mod temporal;
 mod windows;
@@ -31,13 +33,19 @@ mod worker;
 
 use std::sync::Mutex;
 
-pub use core_data::temporal::{StateAtArgs, StateAtResult};
+pub use aideon::core_data::WorkerHealth;
+pub use aideon::core_data::temporal::{DiffArgs, DiffSummary, StateAtArgs, StateAtResult};
 
 use tauri::{Manager, async_runtime::spawn};
 
+use crate::health::worker_health;
 use crate::menu::{MenuIds, build_menu};
+use crate::scene::{canvas_save_layout, canvas_scene};
 use crate::setup::{SetupState, get_setup_state, run_backend_setup, set_complete};
-use crate::temporal::temporal_state_at;
+use crate::temporal::{
+    commit_changes, create_branch, list_branches, list_commits, merge_branches, temporal_diff,
+    temporal_state_at, topology_delta,
+};
 use crate::windows::{create_windows, open_about, open_settings, open_status, open_styleguide};
 
 /// Simple sample command used by tests and smoke checks.
@@ -113,6 +121,16 @@ pub fn run() {
             greet,
             set_complete,
             temporal_state_at,
+            worker_health,
+            temporal_diff,
+            topology_delta,
+            commit_changes,
+            list_commits,
+            create_branch,
+            list_branches,
+            merge_branches,
+            canvas_scene,
+            canvas_save_layout,
             open_about,
             open_settings,
             open_status,

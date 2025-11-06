@@ -1,9 +1,9 @@
 <script lang="ts">
-  import '../../lib/styles/theme.css';
+  import '@aideon/design-system/styles/theme.css';
   import Tokens from './tokens.svelte';
   import Components from './components.svelte';
   import OSPreview from './OSPreview.svelte';
-  import { initUiTheme, setUiTheme } from '$lib/theme/platform';
+  import { initUiTheme, setUiTheme } from '@aideon/design-system';
   import { onMount } from 'svelte';
   const platforms = ['auto', 'mac', 'win', 'neutral'] as const;
   type Platform = (typeof platforms)[number];
