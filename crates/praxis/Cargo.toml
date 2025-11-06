@@ -1,8 +1,12 @@
 [package]
-name = "praxis"
+name = "aideon-praxis"
 version = "0.0.0"
 edition = "2024"
 authors = ["Aideon Praxis Contributors"]
 license = "MIT"
 
 [dependencies]
+aideon-core-data = { path = "../core_data" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"

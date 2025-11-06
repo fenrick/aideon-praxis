@@ -24,7 +24,38 @@ const isDevelopment = () => {
 };
 
 export const logSafely = (logger: Logger, message: string) => {
-  logger(message).catch((loggingError: unknown) => {
+  const origin = (() => {
+    try {
+      const stack = new Error('log origin').stack;
+      if (!stack) return null;
+      const lines = stack.split('\n').slice(1);
+      // Find first frame outside this module to approximate original callsite
+      const frame = lines.find(
+        (l) =>
+          !l.includes('/src/lib/logging.ts') &&
+          !l.includes('logging.ts') &&
+          !l.includes('logSafely'),
+      );
+      if (!frame) return null;
+      // Extract URL or absolute file path with line/column from the frame
+      const match = /(?:\(|\s)(file:\/\/\S+|https?:\/\/\S+|\/\S+):(\d+):(\d+)/.exec(frame);
+      if (match) {
+        const url = String(match[1]);
+        const line = String(match[2]);
+        const col = String(match[3]);
+        // Prefer repository-relative path if present
+        const index = url.indexOf('/src/');
+        const relative = index === -1 ? url : url.slice(index);
+        return `${relative}:${line}:${col}`;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const enriched = origin ? `[${origin}] ${message}` : message;
+  logger(enriched).catch((loggingError: unknown) => {
     if (isDevelopment()) {
       console.warn('renderer: log fallback', loggingError);
     }

@@ -1,5 +1,5 @@
+import type { ToastItem } from '@aideon/design-system';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ToastItem } from '../src/lib/ui/toast';
 
 // Tests for app/desktop/src/lib/ui/toast.ts
 
@@ -17,10 +17,10 @@ describe('ui/toast store', () => {
   });
 
   it('subscribes, pushes, and dismisses items', async () => {
-    const mod = await import('../src/lib/ui/toast');
+    const { subscribe, push, dismiss } = await import('@aideon/design-system');
     const events: ToastItem[][] = [];
 
-    const unsubscribe = mod.subscribe((items) => {
+    const unsubscribe = subscribe((items: ToastItem[]) => {
       events.push(Array.from(items));
     });
 
@@ -29,13 +29,13 @@ describe('ui/toast store', () => {
     expect(events[0]).toEqual([]);
 
     // Push without auto-timeout to avoid timers
-    mod.push('Hello', 'success', 0);
+    push('Hello', 'success', 0);
     expect(events.length).toBe(2);
     expect(events[1][0]?.text).toBe('Hello');
     const id = events[1][0]?.id as string;
 
     // Dismiss should emit empty list again
-    mod.dismiss(id);
+    dismiss(id);
     expect(events.length).toBe(3);
     expect(events[2]).toEqual([]);
 
@@ -43,11 +43,11 @@ describe('ui/toast store', () => {
   });
 
   it('auto-dismisses after timeout', async () => {
-    const mod = await import('../src/lib/ui/toast');
+    const { subscribe, push } = await import('@aideon/design-system');
     const events: ToastItem[][] = [];
-    mod.subscribe((items) => events.push(Array.from(items)));
+    subscribe((items: ToastItem[]) => events.push(Array.from(items)));
 
-    mod.push('Expiring', 'info', 10);
+    push('Expiring', 'info', 10);
     // After push, we have one non-empty emission
     expect(events.at(-1)?.length).toBe(1);
 
@@ -57,7 +57,7 @@ describe('ui/toast store', () => {
   });
 
   it('falls back to counter IDs when crypto.getRandomValues throws', async () => {
-    const mod = await import('../src/lib/ui/toast');
+    const toast = await import('@aideon/design-system');
     // Force getRandomValues to throw so catch branch runs
     vi.stubGlobal('crypto', {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -70,13 +70,13 @@ describe('ui/toast store', () => {
     vi.spyOn(Date, 'now').mockReturnValue(now);
 
     const snapshots: string[] = [];
-    mod.subscribe((items) => {
+    toast.subscribe((items: ToastItem[]) => {
       const last = items.at(-1);
       if (last) snapshots.push(last.id);
     });
 
-    mod.push('A', 'info', 0);
-    mod.push('B', 'info', 0);
+    toast.push('A', 'info', 0);
+    toast.push('B', 'info', 0);
 
     // Both IDs share the same time prefix and incrementing counter suffix
     expect(snapshots.length).toBe(2);

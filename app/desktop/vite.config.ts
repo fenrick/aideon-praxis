@@ -6,6 +6,33 @@ import { defineConfig } from 'vite';
 const host = process.env.TAURI_DEV_HOST;
 const windowRoutes = ['splash', 'about', 'settings', 'status'];
 
+function uriSanitizerPlugin() {
+  return {
+    name: 'aideon-uri-sanitizer',
+    configureServer(server: ViteDevServer) {
+      const logger = server.config.logger;
+      server.middlewares.use((req: IncomingMessage, _res: ServerResponse, next: () => void) => {
+        const url = req.url;
+        if (!url) {
+          next();
+          return;
+        }
+        try {
+          decodeURI(url);
+          next();
+        } catch (error) {
+          const sanitized = url.replace(/%(?![0-9A-Fa-f]{2})/g, '%25');
+          req.url = sanitized;
+          logger.warn(
+            `Sanitized malformed request URL "${url}" -> "${sanitized}" (${(error as Error).message})`,
+          );
+          next();
+        }
+      });
+    },
+  };
+}
+
 function windowAliasPlugin() {
   const rewrites = new Map(
     windowRoutes.flatMap((route) => [
@@ -36,7 +63,7 @@ function windowAliasPlugin() {
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  plugins: [sveltekit(), windowAliasPlugin()],
+  plugins: [sveltekit(), uriSanitizerPlugin(), windowAliasPlugin()],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

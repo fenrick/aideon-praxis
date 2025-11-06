@@ -1,7 +1,5 @@
+import { setUiTheme } from '@aideon/design-system';
 import { beforeEach, describe, expect, it } from 'vitest';
-
-// Use relative import to avoid Vite path alias resolution issues in vitest
-import { setUiTheme } from '../src/lib/theme/platform';
 
 describe('platform theme loader', () => {
   beforeEach(() => {

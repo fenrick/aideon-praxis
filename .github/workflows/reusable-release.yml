@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       publish:
-        description: 'Publish artifacts to GitHub Releases (electron-builder)'
+        description: 'Publish generated bundles to GitHub Releases'
         required: false
         type: boolean
         default: false
@@ -29,6 +29,16 @@ jobs:
       fail-fast: false
       matrix:
         os: ${{ fromJSON(inputs['os-matrix']) }}
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact-suffix: linux-x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact-suffix: macos-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact-suffix: windows-x64
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -72,24 +82,162 @@ jobs:
       - name: JS Tests
         run: pnpm run node:test
 
-      - name: Build app code
+      - name: Validate platform mapping
+        shell: bash
+        run: |
+          if [[ -z "${{ matrix.target }}" ]]; then
+            echo "::error::No target triple configured for ${{ matrix.os }}"
+            exit 1
+          fi
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+          if ! sudo apt-get install -y libsoup-3.0-dev; then
+            sudo apt-get install -y libsoup2.4-dev
+          fi
+          if ! sudo apt-get install -y libwebkit2gtk-4.1-dev; then
+            sudo apt-get install -y libwebkit2gtk-4.0-dev
+          fi
+
+      - name: Install Windows dependencies
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          choco install wixtoolset --no-progress --yes
+
+      - name: Import Apple codesign certificates
+        if: matrix.os == 'macos-latest' && inputs.publish && secrets.APPLE_CERTIFICATE != ''
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
+      - name: Build renderer assets
         run: pnpm --filter @aideon/app build
 
-      - name: Package app
-        if: ${{ !inputs.publish }}
-        run: pnpm --filter @aideon/app exec electron-builder -c electron-builder.yml --publish=never
+      - name: Build Tauri bundles
+        run: pnpm tauri build --config crates/tauri/tauri.conf.json --manifest-path crates/tauri/Cargo.toml --target ${{ matrix.target }} --ci
+        env:
+          CARGO_TARGET_DIR: target
+          RUSTC_BOOTSTRAP: 0
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-      - name: Upload installers
-        if: ${{ !inputs.publish }}
+      - name: Build worker libraries
+        run: cargo build --release --lib --manifest-path crates/tauri/Cargo.toml --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_DIR: target
+
+      - name: Stage worker artifacts
+        id: worker
+        shell: bash
+        env:
+          ARCHIVE_SUFFIX: ${{ matrix.artifact-suffix }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/worker/files
+          target_dir="target/${{ matrix.target }}/release"
+          deps_dir="${target_dir}/deps"
+          shopt -s nullglob
+          found=false
+          for file in "${target_dir}"/libaideon_praxis_lib.* "${target_dir}"/aideon_praxis_lib.*; do
+            if [[ -f "$file" ]]; then
+              cp "$file" artifacts/worker/files/
+              found=true
+            fi
+          done
+          if [[ -d "$deps_dir" ]]; then
+            for file in "${deps_dir}"/libaideon_* "${deps_dir}"/aideon_*; do
+              if [[ -f "$file" ]]; then
+                cp "$file" artifacts/worker/files/
+                found=true
+              fi
+            done
+          fi
+          if ! $found; then
+            echo "::error::No worker binaries were produced"
+            exit 1
+          fi
+          archive_name="aideon-worker-${ARCHIVE_SUFFIX}.zip"
+          export ARCHIVE_NAME="$archive_name"
+          python_cmd="$(command -v python3 || command -v python || true)"
+          if [[ -z "$python_cmd" ]]; then
+            echo "::error::Python is required to archive worker binaries"
+            exit 1
+          fi
+          "$python_cmd" - <<'PY'
+import os
+import zipfile
+
+base = os.path.join('artifacts', 'worker', 'files')
+archive = os.path.join('artifacts', 'worker', os.environ['ARCHIVE_NAME'])
+with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as zf:
+    for root, _, files in os.walk(base):
+        for name in files:
+            path = os.path.join(root, name)
+            arcname = os.path.relpath(path, base)
+            zf.write(path, arcname)
+PY
+          echo "archive=${archive_name}" >> "$GITHUB_OUTPUT"
+
+      - name: Collect Tauri bundles
+        id: bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/bundles
+          bundle_root="target/${{ matrix.target }}/release/bundle"
+          if [[ ! -d "$bundle_root" ]]; then
+            echo "::error::Bundle directory $bundle_root not found"
+            exit 1
+          fi
+          shopt -s nullglob
+          found=false
+          while IFS= read -r -d '' file; do
+            cp "$file" artifacts/bundles/
+            found=true
+          done < <(find "$bundle_root" -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.rpm' -o -name '*.dmg' -o -name '*.pkg' -o -name '*.app.tar.gz' -o -name '*.zip' -o -name '*.tar.gz' -o -name '*.msi' -o -name '*.exe' \) -print0)
+          if ! $found; then
+            echo "::error::No bundle artifacts found under $bundle_root"
+            find "$bundle_root" -maxdepth 2 -type f
+            exit 1
+          fi
+
+      - name: Upload Tauri bundles
         uses: actions/upload-artifact@v5
         with:
-          name: app-${{ runner.os }}
-          path: app/desktop/dist/pack/**
+          name: aideon-praxis-${{ matrix.artifact-suffix }}-bundles
+          path: artifacts/bundles/*
+          if-no-files-found: error
 
-      - name: Package and publish app
-        if: ${{ inputs.publish }}
+      - name: Upload worker libraries
+        uses: actions/upload-artifact@v5
+        with:
+          name: aideon-worker-${{ matrix.artifact-suffix }}
+          path: artifacts/worker/${{ steps.worker.outputs.archive }}
+          if-no-files-found: error
+
+      - name: Publish bundles to GitHub Release
+        if: inputs.publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
-        run: pnpm --filter @aideon/app exec electron-builder -c electron-builder.yml --publish always
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$RELEASE_TAG" ]]; then
+            echo "::error::Release tag is required to publish artifacts"
+            exit 1
+          fi
+          for file in artifacts/bundles/*; do
+            gh release upload "$RELEASE_TAG" "$file" --clobber
+          done
+          gh release upload "$RELEASE_TAG" "artifacts/worker/${{ steps.worker.outputs.archive }}" --clobber

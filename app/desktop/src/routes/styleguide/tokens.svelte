@@ -1,5 +1,5 @@
 <script lang="ts">
-  import '$lib/styles/theme.css';
+  import '@aideon/design-system/styles/theme.css';
 </script>
 
 <section>

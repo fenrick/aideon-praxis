@@ -5,16 +5,15 @@ boundaries are enforced.
 
 ## Layers
 
-- Renderer (Svelte front end)
-  - Entry: `app/desktop/src/main.ts`. Security hardened: `contextIsolation: true`,
-    `nodeIntegration: false`, strict CSP.
-  - Preload bridge: `app/desktop/src/preload.ts` exposes a minimal, typed API (`window.aideon.*`).
-    No backend logic inside the renderer bundle.
-  - View layer code lives under `app/desktop/src/renderer/*` and talks only to adapters.
+- Renderer (SvelteKit front end)
+  - Built with SvelteKit; the Tauri host serves the built assets.
+  - No Node integration; strict CSP enforced by Tauri (see `crates/tauri/tauri.conf.json`).
+- Renderer modules call Tauri commands directly via `@tauri-apps/api/core` helpers (see `app/desktop/src/lib/ports`). No backend logic in renderer.
+  - UI code lives under `app/desktop/src/lib/**` and talks only to adapters/host via IPC.
 
 - Host (Tauri)
-  - Rust entrypoint: `crates/tauri/src/main.rs` with command definitions in `crates/tauri/src/temporal.rs` etc.
-  - Typed IPC only; capabilities and command scopes enforced by `crates/tauri/tauri.conf.json`.
+  - Rust entrypoint: `crates/tauri/src/lib.rs` creates windows at runtime and binds typed commands.
+  - Security: capabilities and CSP configured in `crates/tauri/tauri.conf.json`. No open TCP ports in desktop mode.
 
 - Adapters (TypeScript interfaces)
   - `app/adapters/src/index.ts` defines `GraphAdapter`, `StorageAdapter`, and `WorkerClient`
@@ -33,6 +32,7 @@ boundaries are enforced.
 - Host ↔ Worker: in-process Rust traits today; future remote adapters must preserve the same
   command surface. No open ports in desktop mode.
 - PII: No export code currently; future exports must include redaction tests.
+- Health: Host exposes `worker_health` for status indicators; remote adapters must mirror it.
 
 ## Packaging
 
@@ -41,16 +41,153 @@ boundaries are enforced.
 
 ## Time‑first design
 
-- `Temporal.StateAt` stub exists (`chrona::TemporalEngine::state_at`).
-- Adapters expose `stateAt()` and `diff()` signatures.
-- Future jobs (shortest path, centrality, impact) belong in the Rust engine crates with tests and
-  SLO notes.
+- `Temporal.StateAt` implemented as a stub in `chrona::TemporalEngine::state_at` and surfaced via `temporal_state_at` command.
+- `Temporal.Diff` summarised by `chrona::TemporalEngine::diff_summary` and exposed through the `temporal_diff` host command, returning node/edge deltas only.
+- Canvas persists layout snapshots per `asOf` (and optional scenario) via `canvas_save_layout`; persistence boundary provided by `continuum::SnapshotStore` (file-backed in desktop mode).
+- Future jobs (shortest path, centrality, impact) belong in the Rust engine crates with tests and SLO notes.
+
+## Time & Commit Model — Authoring Standards
+
+> **Principle**: Time is derived from commits. Logical ancestry defines the state of the twin; wall-clock timestamps remain metadata only.
+
+### Core definitions
+
+- **Commit** — Append-only change event with parent(s); introduces a new logical “tick”.
+- **Branch** — Named pointer to a head commit (scenario timeline).
+- **Snapshot** — Materialised graph view for a specific commit.
+- **Node / Edge** — Immutable typed objects; updates yield new versions.
+- **ChangeSet** — `{ nodeCreates | nodeUpdates | nodeDeletes | edgeCreates | edgeUpdates | edgeDeletes }` captured within a commit.
+
+Use the names above across DTOs, structs, and variables.
+
+### Invariants (must hold)
+
+1. Append-only history; corrections arrive as new commits.
+2. Determinism: identical ancestry + ChangeSet ⇒ identical Snapshot.
+3. No dangling edges: every edge’s endpoints exist in the resulting snapshot.
+4. ID stability: IDs are never recycled; deletes use tombstones.
+5. Schema safety: each commit passes validation before persistence.
+6. Branch isolation: changes remain scoped until merge.
+7. Ordering by ancestry, never wall time.
+
+Add unit tests that exercise the invariants when touching relevant code.
+
+### API contracts (host ↔ UI)
+
+**Read**
+
+- `stateAt(target: CommitId | { branch: BranchName, at?: CommitId }) -> SnapshotSummary`
+- `diff(a: CommitRef, b: CommitRef) -> Diff { nodeAdds, nodeMods, nodeDels, edgeAdds, edgeMods, edgeDels }`
+- `listCommits(branch: BranchName, limit?: number, before?: CommitId) -> Commit[]`
+- `listBranches() -> Branch[]`
+
+**Write**
+
+- `commit(changes: ChangeSet, message: string, tags?: string[]) -> CommitId`
+- `createBranch(name: string, from?: CommitRef) -> Branch`
+- `merge(source: BranchName, target: BranchName, strategy?: MergeStrategy) -> { result?: CommitId, conflicts?: ConflictSet }`
+
+Rules: read APIs are pure; write APIs are atomic and never leak storage internals.
+
+### Commit structure (canonical)
+
+```json
+{
+  "id": "c:ad3e…",
+  "parents": ["c:9bf2…"],
+  "branch": "main",
+  "author": "alex",
+  "time": "2025-11-02T11:05:44Z",
+  "message": "feat: add capability and link to system",
+  "tags": ["capability"],
+  "changes": {
+    "nodeCreates": [
+      { "id": "n:cap-1", "type": "Capability", "props": { "title": "Time travel", "owner": "Ops" } }
+    ],
+    "edgeCreates": [
+      {
+        "id": "e:cap1->sys7",
+        "type": "supports",
+        "from": "n:cap-1",
+        "to": "n:sys-7",
+        "directed": true,
+        "props": { "weight": 0.6 }
+      }
+    ]
+  }
+}
+```
+
+Order ChangeSet entries deterministically (by kind → id) and keep ID generation independent of wall time.
+
+### Validation rules
+
+- Enforce schema per element type.
+- Guard edge constraints (`fromType`, `edgeType`, `toType`).
+- Maintain unique keys per type where defined.
+- Ensure referential integrity (parent snapshot + ChangeSet).
+- Reject empty ChangeSets unless explicitly tagged.
+- Cap ChangeSet size (configurable) to keep diffs tractable.
+
+### Diff & merge semantics
+
+- Diff runs on snapshots derived from ancestry.
+- Three-way merge uses `{ base, ours, theirs }` at the structural level.
+- Scalar conflicts default to deterministic last-writer-wins.
+- Collections default to set-union with stable order.
+- Deletes win over updates by default (configurable).
+- Return conflicts explicitly; never drop edits silently.
+
+### Persistence & caching
+
+- Use immutable stores with structural sharing (copy-on-write).
+- Cache snapshots by `SnapshotId = hash(parentSnapshotId + changes)`.
+- Background compaction may collapse history; commit boundaries stay intact.
+
+### Error handling
+
+Emit typed errors (`ValidationError`, `ConflictError`, `IntegrityError`, `ConcurrencyError`) across the host boundary; avoid generic strings.
+
+### UI/UX obligations
+
+- Surface branch + commit ID in chrome.
+- Timebar scrubs commit order, not wall time.
+- “Unsaved changes” reflect working ChangeSet vs head snapshot.
+- Diff legend uses ADD/MOD/DEL consistently.
+- Merge UI surfaces the `ConflictSet` and chosen resolutions.
+
+### Testing requirements
+
+- Unit tests cover success, failure, and edge cases.
+- Property-based checks where feasible (`apply(diff(a,b), snapshot(a)) == snapshot(b)`).
+- Golden tests ensure serialised commits/diffs remain stable.
+- Contract tests assert command DTO schemas.
+
+### Performance guardrails
+
+- Snapshot materialisation ≤ 10 ms for median commits.
+- Diff for ≤ 500 changes ≤ 15 ms.
+- Timebar load for latest 200 commits ≤ 50 ms from cache/index.
+
+### Optional effective time
+
+- Add `valid_from` / `valid_to` when bitemporal semantics are needed.
+- Callers must specify whether they query transaction or effective time.
+
+### Versioning & migration
+
+- Breaking DTO/storage changes bump `engineVersion`, ship migrators, and keep a back-compat window or explicit upgrade error.
+
+### Checklist
+
+- **Do:** commit coherent ChangeSets, branch experiments, treat wall time as display-only.
+- **Don’t:** compute state via `now()`, mutate history, or leak storage internals.
 
 ## Compliance checklist
 
 - [x] No renderer HTTP
 - [x] No open TCP ports in desktop mode
-- [x] Minimal preload bridge
+- [x] Renderer invokes host commands through typed helper modules (no preload globals)
 - [x] Worker logic executes in-process via Rust engine traits
 - [x] No auxiliary worker binaries embedded
 - [x] Version injection via semantic-release

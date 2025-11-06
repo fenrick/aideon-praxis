@@ -1,0 +1,13 @@
+[package]
+name = "aideon"
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+authors = ["Aideon Praxis Contributors"]
+
+[dependencies]
+aideon-chrona = { path = "../chrona" }
+aideon-continuum = { path = "../continuum" }
+aideon-core-data = { path = "../core_data" }
+aideon-metis = { path = "../metis" }
+aideon-praxis = { path = "../praxis" }

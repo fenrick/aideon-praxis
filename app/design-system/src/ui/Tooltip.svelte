@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
-  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
+  import { getResolvedUiTheme, onUiThemeChange } from '../theme/platform';
   let { text = '', children } = $props<{ text?: string; children?: Snippet }>();
   let open = $state(false);
   let platform = $state(getResolvedUiTheme());

@@ -1,5 +1,5 @@
 [package]
-name = "metis"
+name = "aideon-metis"
 version = "0.0.0"
 edition = "2024"
 authors = ["Aideon Praxis Contributors"]

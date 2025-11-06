@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import { onMount } from 'svelte';
-  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
+  import { getResolvedUiTheme, onUiThemeChange } from '../theme/platform';
   const {
     icon,
     title,

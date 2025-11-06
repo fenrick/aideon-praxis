@@ -9,3 +9,36 @@ process.on('unhandledRejection', (reason) => {
 process.on('uncaughtException', (error) => {
   throw error;
 });
+
+if (
+  typeof globalThis.localStorage === 'undefined' ||
+  typeof globalThis.localStorage.clear !== 'function'
+) {
+  const store = new Map<string, string>();
+  const storage = {
+    clear() {
+      store.clear();
+    },
+    getItem(key: string) {
+      return store.has(key) ? store.get(key)! : null;
+    },
+    key(index: number) {
+      return [...store.keys()][index] ?? null;
+    },
+    removeItem(key: string) {
+      store.delete(key);
+    },
+    setItem(key: string, value: string) {
+      store.set(key, value);
+    },
+  } as Storage;
+  Object.defineProperty(storage, 'length', {
+    get() {
+      return store.size;
+    },
+  });
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: storage,
+  });
+}

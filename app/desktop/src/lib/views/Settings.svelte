@@ -1,7 +1,7 @@
 <script lang="ts">
   // Appearance settings panel. Stores the chosen mode in localStorage and
   // toggles a class on <body> so CSS can respond without any backend coupling.
-  import '$lib/styles/theme.css';
+  import '@aideon/design-system/styles/theme.css';
   type ThemeMode = 'system' | 'light' | 'dark';
   let mode: ThemeMode = (localStorage.getItem('themeMode') as ThemeMode) || 'system';
 

@@ -1,16 +1,18 @@
 <script lang="ts">
-  import Button from '$lib/ui/Button.svelte';
-  import TextField from '$lib/ui/TextField.svelte';
-  import Select from '$lib/ui/Select.svelte';
-  import Checkbox from '$lib/ui/Checkbox.svelte';
-  import Radio from '$lib/ui/Radio.svelte';
-  import Switch from '$lib/ui/Switch.svelte';
-  import Toolbar from '$lib/ui/Toolbar.svelte';
-  import ToolbarButton from '$lib/ui/ToolbarButton.svelte';
-  import Tooltip from '$lib/ui/Tooltip.svelte';
-  import Modal from '$lib/ui/Modal.svelte';
-  import ToastHost from '$lib/ui/ToastHost.svelte';
-  import { push as toast } from '$lib/ui/toast';
+  import {
+    Button,
+    Checkbox,
+    Modal,
+    Radio,
+    Select,
+    Switch,
+    TextField,
+    ToastHost,
+    Toolbar,
+    ToolbarButton,
+    Tooltip,
+    push as toast,
+  } from '@aideon/design-system';
   let open = false;
 </script>
 

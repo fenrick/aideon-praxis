@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getResolvedUiTheme, onUiThemeChange } from '$lib/theme/platform';
+  import { getResolvedUiTheme, onUiThemeChange } from '../theme/platform';
   import type { Snippet } from 'svelte';
   type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
   type Size = 'sm' | 'md' | 'lg';

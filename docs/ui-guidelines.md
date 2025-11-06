@@ -25,5 +25,6 @@ Platform styling
 
 Renderer boundaries
 
-- No backend logic in the renderer; talk to the host via the typed `window.aideon`
-  bridge only. See `app/desktop/src/renderer/tauri-shim.ts`.
+- No backend logic in the renderer; use the typed helper modules under
+  `app/desktop/src/lib/ports/**` which call Tauri commands via
+  `@tauri-apps/api/core`.
