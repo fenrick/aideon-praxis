@@ -60,16 +60,11 @@ async function main() {
 
   // Desktop renderer version file
   updatedFiles.push(
-    await writeTypeScriptVersion(
-      path.join(repoRoot, 'app/desktop/src/version.ts'),
-      version
-    )
+    await writeTypeScriptVersion(path.join(repoRoot, 'app/desktop/src/version.ts'), version),
   );
 
   // Optional worker version file(s)
-  const workerTargets = [
-    path.join(repoRoot, 'app/worker/python/src/aideon_worker/_version.py')
-  ];
+  const workerTargets = [path.join(repoRoot, 'app/worker/python/src/aideon_worker/_version.py')];
 
   for (const workerPath of workerTargets) {
     if (await fileExists(workerPath)) {
@@ -83,7 +78,7 @@ async function main() {
     updatedFiles.push(
       await updateJsonVersion(tauriConfigPath, version, (data, newVersion) => {
         data.version = newVersion;
-      })
+      }),
     );
   }
 
