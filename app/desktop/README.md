@@ -14,7 +14,9 @@ Key points
 Scripts
 
 - `pnpm --filter @aideon/app dev` — `svelte-kit dev` with static adapter fallback.
-- `pnpm --filter @aideon/app build` — `svelte-kit build` (adapter-static to `dist/renderer`).
+- `pnpm --filter @aideon/app build` — production build (Vite + `scripts/postbuild-windows.mjs`) that
+  emits `build/` for Tauri. Both `tauri build` and CI reuse this script via
+  `beforeBuildCommand`.
 - `pnpm --filter @aideon/app test` — unit tests (renderer/adapters).
 
 Testing notes
