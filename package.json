@@ -87,8 +87,8 @@
     "@types/node": "^24.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
-    "@vitest/coverage-istanbul": "^4.0.7",
-    "@vitest/coverage-v8": "^4.0.7",
+    "@vitest/coverage-istanbul": "^4.0.8",
+    "@vitest/coverage-v8": "^4.0.8",
     "concurrently": "^9.2.1",
     "dotenv": "^17.2.3",
     "eslint": "^9.39.1",
@@ -108,11 +108,11 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-svelte": "^3.4.0",
     "prettier-plugin-tailwindcss": "^0.7.1",
-    "semantic-release": "^25.0.1",
+    "semantic-release": "^25.0.2",
     "svelte": "^5.43.4",
     "svelte-eslint-parser": "^1.4.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.3",
-    "vitest": "^4.0.7"
+    "vitest": "^4.0.8"
   }
 }
