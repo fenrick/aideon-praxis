@@ -1,7 +1,7 @@
-import autoprefixer from 'autoprefixer';
 import { sveltekit } from '@sveltejs/kit/vite';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import tailwindcss from '@tailwindcss/postcss';
+import autoprefixer from 'autoprefixer';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ViteDevServer } from 'vite';
 import { defineConfig } from 'vite';
 
