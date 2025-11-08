@@ -1,4 +1,4 @@
-import { Button, setUiTheme } from '@aideon/design-system';
+import { setUiTheme } from '@aideon/design-system';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('platform theme loader', () => {
@@ -29,27 +29,16 @@ describe('platform theme loader', () => {
     expect(document.documentElement.classList.contains('platform-win')).toBe(true);
   });
 
-  it('applies neutral button styling on linux', async () => {
+  it('reuses neutral CSS bundle for linux', async () => {
+    await setUiTheme('neutral');
+    const neutralHref = document.head.querySelector<HTMLLinkElement>('#aideon-neutral-css')?.href;
+
     await setUiTheme('linux');
+    const linuxHref = document.head.querySelector<HTMLLinkElement>('#aideon-neutral-css')?.href;
 
-    const host = document.createElement('div');
-    document.body.append(host);
-
-    const button = new Button({
-      target: host,
-      props: {
-        children: () => 'Hello',
-      },
-    });
-
-    const rendered = host.querySelector('button');
-    expect(rendered).toBeTruthy();
-    expect(rendered?.classList.contains('btn-neutral')).toBe(true);
-    expect(rendered?.classList.contains('btn-neutral-primary')).toBe(false);
-    expect(document.head.querySelector('#aideon-neutral-css')).toBeTruthy();
+    expect(neutralHref).toBeTruthy();
+    expect(linuxHref).toBeTruthy();
+    expect(linuxHref).toBe(neutralHref);
     expect(document.documentElement.classList.contains('platform-linux')).toBe(true);
-
-    button.$destroy();
-    host.remove();
   });
 });

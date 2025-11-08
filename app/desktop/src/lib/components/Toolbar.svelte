@@ -206,6 +206,8 @@
       onkeydown={handleSearchKeydown}
       aria-expanded={overlayVisible()}
       aria-controls="toolbar-search-results"
+      role="combobox"
+      aria-autocomplete="list"
       aria-activedescendant={highlightedIndex >= 0
         ? `toolbar-search-result-${highlightedIndex}`
         : undefined}
@@ -221,9 +223,12 @@
             class={index === highlightedIndex ? 'search-result active' : 'search-result'}
             aria-selected={index === highlightedIndex}
             id={`toolbar-search-result-${index}`}
-            on:mousedown|preventDefault={() => highlightResult(index)}
-            on:mouseenter={() => highlightResult(index)}
-            on:click={() => void activateResult(index)}
+            onmousedown={(event) => {
+              event.preventDefault();
+              highlightResult(index);
+            }}
+            onmouseenter={() => highlightResult(index)}
+            onclick={() => void activateResult(index)}
           >
             <span class="title">{result.title}</span>
             <span class="meta">{result.subtitle ?? KIND_LABEL[result.kind]}</span>
