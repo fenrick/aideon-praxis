@@ -10,6 +10,8 @@
     TemporalDiffSnapshot,
     TemporalMergeConflict,
   } from '$lib/types';
+  import { getMainViewCopy } from '$lib/locales/main-view';
+  import { shouldShowSeededTimeline } from './main-view.helpers';
 
   type WorkspaceTab = 'overview' | 'timeline' | 'canvas' | 'activity';
 
@@ -23,6 +25,8 @@
     onMerge,
     onRefreshBranches,
     focusTab,
+    onOpenStyleGuide,
+    onCreateScenario,
   } = $props<{
     version: string;
     stateAt: {
@@ -39,11 +43,14 @@
     onMerge?: (_source: string, _target: string) => void | Promise<void>;
     onRefreshBranches?: () => void;
     focusTab?: WorkspaceTab | null;
+    onOpenStyleGuide?: () => void | Promise<void>;
+    onCreateScenario?: () => void | Promise<void>;
   }>();
 
   const numberFormatter = new Intl.NumberFormat();
 
   const dispatch = createEventDispatcher<{ tabChange: WorkspaceTab }>();
+  const copy = getMainViewCopy();
 
   // Locally tracked active workspace tab; defaults to the high-level overview.
   let activeTab = $state<WorkspaceTab>('overview');
@@ -109,6 +116,7 @@
   const timelineCommits = $derived(() => (timeState?.commits ?? []) as TemporalCommitSummary[]);
   const unsavedCount = $derived(() => timeState?.unsavedCount ?? 0);
   const activeBranch = $derived(() => timeState?.branch ?? 'main');
+  const showSeededTimelineEmpty = $derived(() => shouldShowSeededTimeline(timeState));
 
   const overviewStats = $derived(() => {
     if (!stateAt) {
@@ -158,6 +166,39 @@
   function handleTabSelect(id: string) {
     activeTab = id as WorkspaceTab;
     dispatch('tabChange', activeTab);
+  }
+
+  function goToTimeline() {
+    handleTabSelect('timeline');
+  }
+
+  function goToOverview() {
+    handleTabSelect('overview');
+  }
+
+  function goToCanvas() {
+    handleTabSelect('canvas');
+  }
+
+  async function handleOpenStyleGuideClick() {
+    try {
+      await onOpenStyleGuide?.();
+    } catch (error_) {
+      logSafely(logError, `renderer: open style guide failed — ${String(error_)}`);
+    }
+  }
+
+  async function handleCreateScenarioClick() {
+    try {
+      if (onCreateScenario) {
+        await onCreateScenario();
+        return;
+      }
+    } catch (error_) {
+      logSafely(logError, `renderer: scenario CTA failed — ${String(error_)}`);
+      return;
+    }
+    goToTimeline();
   }
 
   $effect(() => {
@@ -299,7 +340,20 @@
           <h3>Commit Timeline</h3>
           <p class="muted">Select any commit to pivot the workspace.</p>
         </header>
-        {#if commitList.length === 0}
+        {#if showSeededTimelineEmpty()}
+          <div class="empty-history" role="status" aria-live="polite">
+            <h4>{copy.timeline.empty.title}</h4>
+            <p>{copy.timeline.empty.description}</p>
+            <div class="empty-history__actions">
+              <Button variant="ghost" size="sm" onClick={handleOpenStyleGuideClick}>
+                {copy.timeline.empty.styleGuideCta}
+              </Button>
+              <Button variant="primary" size="sm" onClick={handleCreateScenarioClick}>
+                {copy.timeline.empty.scenarioCta}
+              </Button>
+            </div>
+          </div>
+        {:else if commitList.length === 0}
           <p class="muted">No commits recorded yet for this branch.</p>
         {:else}
           <ol class="timeline">
@@ -332,17 +386,20 @@
       <section class="panel">
         <header>
           <h3>Activity & Diagnostics</h3>
-          <p class="muted">Trace the most recent orchestration events and worker heartbeats.</p>
+          <p class="muted">{copy.activity.summary}</p>
         </header>
         <div class="activity-hints">
-          <p>
-            Use <code>pnpm run issues:backfill</code> after merges to keep the timeline aligned with
-            GitHub tracking.
-          </p>
-          <p>
-            Run <code>pnpm run issues:mirror</code> whenever the desktop host reconnects after going
-            offline.
-          </p>
+          <div class="activity-actions">
+            <Button variant="primary" size="sm" onClick={goToTimeline}>
+              {copy.activity.timelineCta}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={goToOverview}>
+              {copy.activity.diffCta}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={goToCanvas}>
+              {copy.activity.canvasCta}
+            </Button>
+          </div>
         </div>
       </section>
     {/if}
@@ -579,9 +636,36 @@
   }
 
   .activity-hints {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
     font-size: 0.95rem;
+  }
+
+  .activity-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .empty-history {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+    border: 1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  }
+
+  .empty-history h4 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .empty-history__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .alert {
