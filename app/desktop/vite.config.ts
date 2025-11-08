@@ -1,5 +1,7 @@
+import autoprefixer from 'autoprefixer';
 import { sveltekit } from '@sveltejs/kit/vite';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import tailwindcss from '@tailwindcss/postcss';
 import type { ViteDevServer } from 'vite';
 import { defineConfig } from 'vite';
 
@@ -64,6 +66,11 @@ function windowAliasPlugin() {
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [sveltekit(), uriSanitizerPlugin(), windowAliasPlugin()],
+  css: {
+    postcss: {
+      plugins: [tailwindcss(), autoprefixer()],
+    },
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
