@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { SidebarTreeNode } from '$lib/components/sidebar.types.js';
-import { createSearchStore, type CatalogEntitySummary } from '$lib/stores/search';
+import {
+  createSearchStore,
+  type CatalogEntitySummary,
+  type SearchStoreState,
+} from '$lib/stores/search';
 import type { TemporalCommitSummary } from '$lib/types';
 
 describe('search store', () => {
@@ -93,7 +97,7 @@ describe('search store', () => {
     store.setSidebarItems(sidebarTree);
     store.search('overview');
 
-    let snapshot = { query: '', results: [] };
+    let snapshot: SearchStoreState = { query: '', items: [], results: [] };
     const unsubscribe = store.subscribe((state) => {
       snapshot = state;
     });

@@ -32,7 +32,7 @@ interface SearchIndexItem extends SearchResult {
   priority: number;
 }
 
-interface SearchStoreState {
+export interface SearchStoreState {
   query: string;
   items: SearchIndexItem[];
   results: SearchResult[];
