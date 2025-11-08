@@ -1,4 +1,4 @@
-import type { TimeStoreState } from '$lib/stores/time';
+import type { TimeStoreState } from '../stores/time';
 
 export function shouldShowSeededTimeline(timeState: TimeStoreState | null): boolean {
   if (!timeState) {
