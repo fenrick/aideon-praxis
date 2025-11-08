@@ -91,14 +91,11 @@
 <style>
   .sidebar {
     width: 280px;
-    border-right: 1px solid rgba(15, 23, 42, 0.12);
+    border-right: 1px solid var(--color-border);
     padding: 16px 12px;
     overflow: auto;
-    background: linear-gradient(
-      180deg,
-      rgba(248, 250, 255, 0.92) 0%,
-      rgba(243, 246, 255, 0.9) 100%
-    );
+    background: var(--color-surface);
+    color: var(--color-text);
     backdrop-filter: blur(18px);
   }
   .tree {
@@ -122,7 +119,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: rgba(15, 23, 42, 0.55);
+    color: color-mix(in srgb, var(--color-muted) 85%, transparent);
     cursor: pointer;
   }
   .placeholder {
@@ -139,23 +136,34 @@
     align-items: center;
     gap: 8px;
     font-weight: 500;
-    color: rgba(15, 23, 42, 0.78);
+    color: color-mix(in srgb, var(--color-text) 85%, transparent);
     cursor: pointer;
     transition:
       background 0.18s ease,
-      box-shadow 0.18s ease;
+      box-shadow 0.18s ease,
+      color 0.18s ease;
   }
   .node:hover {
-    background: rgba(99, 102, 241, 0.08);
-    box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.24);
+    background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
   }
   .node.active {
-    background: rgba(59, 130, 246, 0.14);
-    color: rgb(30, 64, 175);
-    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.38);
+    background: color-mix(in srgb, var(--color-accent) 18%, var(--color-surface));
+    color: color-mix(in srgb, var(--color-accent) 65%, var(--color-text));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
   }
   .node-label {
     text-align: left;
+  }
+
+  :global(:root.platform-mac) .sidebar,
+  :global(:root.platform-win) .sidebar,
+  :global(:root.platform-linux) .sidebar {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface) 96%, transparent) 0%,
+      color-mix(in srgb, var(--color-surface) 85%, transparent) 100%
+    );
   }
 
   @media (max-width: 900px) {
