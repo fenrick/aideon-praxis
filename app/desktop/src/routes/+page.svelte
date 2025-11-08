@@ -100,7 +100,9 @@
     }
   }
 
-  async function openWindow(command: 'open_settings' | 'open_about' | 'open_status') {
+  async function openWindow(
+    command: 'open_settings' | 'open_about' | 'open_status' | 'open_styleguide',
+  ) {
     try {
       await invoke(command);
     } catch (error__) {
@@ -252,6 +254,7 @@
           onSelectCommit={handleCommitSelect}
           onMerge={handleMerge}
           onRefreshBranches={handleRefreshBranches}
+          onOpenStyleGuide={() => void openWindow('open_styleguide')}
         />
       {/if}
     </div>
