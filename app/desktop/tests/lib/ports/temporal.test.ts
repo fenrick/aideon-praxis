@@ -6,8 +6,8 @@ const snapshot = {
   asOf: 'c1',
   scenario: 'main',
   confidence: null,
-  nodes: 1,
-  edges: 0,
+  nodes: 5,
+  edges: 4,
 };
 
 const commits = [
@@ -82,11 +82,13 @@ describe('temporal port', () => {
 
     const port = createTemporalPort(invokeMock as never);
 
-    await port.stateAt({ asOf: 'c1' });
+    const state = await port.stateAt({ asOf: 'c1' });
     const list = await port.listCommits('main');
     expect(list[0]?.id).toBe('c1');
     const branchList = await port.listBranches();
     expect(branchList[0]?.name).toBe('main');
+    expect(state.nodes).toBeGreaterThan(0);
+    expect(state.edges).toBeGreaterThan(0);
     await port.diff({ from: 'c1', to: 'c2' });
     const topology = await port.topologyDelta({ from: 'c1', to: 'c3' });
     const commit = await port.commit({

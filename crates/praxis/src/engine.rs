@@ -4,8 +4,9 @@ use std::sync::{Arc, Mutex};
 use aideon_core_data::temporal::{
     BranchInfo, ChangeSet, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffPatch,
     DiffSummary, EdgeTombstone, EdgeVersion, MergeConflict, MergeRequest, MergeResponse,
-    NodeTombstone, StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
+    NodeTombstone, NodeVersion, StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
 };
+use serde_json::json;
 
 use crate::error::{PraxisError, PraxisResult};
 use crate::graph::{GraphSnapshot, SnapshotStats};
@@ -76,13 +77,45 @@ impl PraxisEngine {
             config,
             ..Inner::default()
         };
-        Self {
+        let engine = Self {
             inner: Arc::new(Mutex::new(inner)),
-        }
+        };
+        engine
+            .ensure_seeded()
+            .expect("praxis engine failed to seed initial commit");
+        engine
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, Inner> {
         self.inner.lock().expect("praxis engine mutex poisoned")
+    }
+
+    /// Ensure the commit log contains an initial design sample commit.
+    pub fn ensure_seeded(&self) -> PraxisResult<()> {
+        let needs_seed = {
+            let inner = self.lock();
+            inner
+                .branches
+                .get("main")
+                .and_then(|branch| branch.head.clone())
+                .is_none()
+        };
+
+        if !needs_seed {
+            return Ok(());
+        }
+
+        let request = CommitChangesRequest {
+            branch: "main".into(),
+            parent: None,
+            author: Some("bootstrap".into()),
+            time: None,
+            message: "seed: bootstrap design sample".into(),
+            tags: vec!["seed".into(), "design".into()],
+            changes: build_seed_change_set(),
+        };
+        let _ = self.commit(request)?;
+        Ok(())
     }
 
     pub fn commit(&self, request: CommitChangesRequest) -> PraxisResult<String> {
@@ -389,6 +422,95 @@ fn change_count(set: &ChangeSet) -> u64 {
         + set.edge_deletes.len()) as u64
 }
 
+fn build_seed_change_set() -> ChangeSet {
+    const VALUE_STREAM_ID: &str = "n:valuestream:customer-journey";
+    const CAPABILITY_ID: &str = "n:capability:customer-insight";
+    const APPLICATION_ID: &str = "n:application:insight-hub";
+    const DATA_ENTITY_ID: &str = "n:data-entity:customer-profile";
+    const TECHNOLOGY_ID: &str = "n:technology:stream-processor";
+
+    let mut change = ChangeSet::default();
+    change.node_creates = vec![
+        NodeVersion {
+            id: VALUE_STREAM_ID.into(),
+            r#type: Some("ValueStream".into()),
+            props: Some(json!({
+                "name": "Customer Journey",
+                "stage": "Discover",
+            })),
+        },
+        NodeVersion {
+            id: CAPABILITY_ID.into(),
+            r#type: Some("Capability".into()),
+            props: Some(json!({
+                "name": "Customer Insight",
+                "tier": "Strategic",
+            })),
+        },
+        NodeVersion {
+            id: APPLICATION_ID.into(),
+            r#type: Some("Application".into()),
+            props: Some(json!({
+                "name": "Insight Hub",
+                "lifecycle": "Production",
+            })),
+        },
+        NodeVersion {
+            id: DATA_ENTITY_ID.into(),
+            r#type: Some("DataEntity".into()),
+            props: Some(json!({
+                "name": "Customer Profile",
+                "sensitivity": "Internal",
+            })),
+        },
+        NodeVersion {
+            id: TECHNOLOGY_ID.into(),
+            r#type: Some("TechnologyComponent".into()),
+            props: Some(json!({
+                "name": "Stream Processor",
+                "vendor": "Praxis Cloud",
+            })),
+        },
+    ];
+
+    change.edge_creates = vec![
+        EdgeVersion {
+            id: Some("e:capability-serves-valuestream".into()),
+            from: CAPABILITY_ID.into(),
+            to: VALUE_STREAM_ID.into(),
+            r#type: Some("serves".into()),
+            directed: Some(true),
+            props: Some(json!({ "confidence": 0.9 })),
+        },
+        EdgeVersion {
+            id: Some("e:application-supports-capability".into()),
+            from: APPLICATION_ID.into(),
+            to: CAPABILITY_ID.into(),
+            r#type: Some("supports".into()),
+            directed: Some(true),
+            props: Some(json!({ "criticality": "High" })),
+        },
+        EdgeVersion {
+            id: Some("e:application-uses-data".into()),
+            from: APPLICATION_ID.into(),
+            to: DATA_ENTITY_ID.into(),
+            r#type: Some("uses".into()),
+            directed: Some(true),
+            props: Some(json!({ "access": "ReadWrite" })),
+        },
+        EdgeVersion {
+            id: Some("e:technology-hosts-application".into()),
+            from: TECHNOLOGY_ID.into(),
+            to: APPLICATION_ID.into(),
+            r#type: Some("hosts".into()),
+            directed: Some(true),
+            props: Some(json!({ "deployment": "Managed" })),
+        },
+    ];
+
+    change
+}
+
 fn resolve_snapshot(
     inner: &Inner,
     reference: &CommitRef,
@@ -672,8 +794,25 @@ mod tests {
                 confidence: None,
             })
             .expect("state ok");
-        assert_eq!(result.nodes, 1);
-        assert_eq!(result.edges, 0);
+        assert!(result.nodes > 0);
+        assert!(result.edges > 0);
+    }
+
+    #[test]
+    fn ensure_seeded_is_idempotent() {
+        let engine = PraxisEngine::new();
+        let initial = engine
+            .list_commits("main".into())
+            .expect("list commits succeeds");
+        assert!(!initial.is_empty());
+
+        engine.ensure_seeded().expect("ensure seeded succeeds");
+
+        let after = engine
+            .list_commits("main".into())
+            .expect("list commits succeeds again");
+        assert_eq!(after.len(), initial.len());
+        assert_eq!(after.first().map(|c| &c.id), initial.first().map(|c| &c.id));
     }
 
     #[test]
@@ -827,6 +966,16 @@ mod tests {
     #[test]
     fn merge_without_conflicts_commits_changes() {
         let engine = PraxisEngine::new();
+        let seed_head = engine
+            .list_commits("main".into())
+            .expect("seeded commits available")
+            .last()
+            .map(|commit| commit.id.clone())
+            .expect("seed head id");
+        let baseline_nodes = engine
+            .stats_for_commit(&seed_head)
+            .expect("seed stats")
+            .node_count;
         let base = engine
             .commit(CommitChangesRequest {
                 branch: "main".into(),
@@ -875,7 +1024,7 @@ mod tests {
         assert!(response.conflicts.is_none());
         let merge_commit = response.result.expect("merge commit");
         let stats = engine.stats_for_commit(&merge_commit).unwrap();
-        assert_eq!(stats.node_count, 3);
+        assert_eq!(stats.node_count, baseline_nodes + 3);
     }
 
     #[test]
@@ -959,7 +1108,6 @@ mod tests {
                 changes: make_change_set("main-root"),
             })
             .expect("main commit");
-        assert_eq!(main_commit, "c1");
 
         let feature_commit = engine
             .commit(CommitChangesRequest {
@@ -972,7 +1120,7 @@ mod tests {
                 changes: make_change_set("feature-root"),
             })
             .expect("feature commit");
-        assert_eq!(feature_commit, "c2");
+        assert_ne!(main_commit, feature_commit);
 
         let merge = engine.merge(MergeRequest {
             source: "feature".into(),
