@@ -122,7 +122,7 @@
   }
 
   function highlightResult(index: number) {
-    if (!results.length) {
+    if (results.length === 0) {
       highlightedIndex = -1;
       return;
     }
@@ -131,7 +131,10 @@
   }
 
   async function activateResult(index: number) {
-    const result = results[index];
+    if (!Number.isInteger(index) || index < 0 || index >= results.length) {
+      return;
+    }
+    const [result] = results.slice(index, index + 1);
     if (!result) {
       return;
     }
@@ -203,13 +206,15 @@
       onkeydown={handleSearchKeydown}
       aria-expanded={overlayVisible()}
       aria-controls="toolbar-search-results"
-      aria-activedescendant={highlightedIndex >= 0 ? `toolbar-search-result-${highlightedIndex}` : undefined}
+      aria-activedescendant={highlightedIndex >= 0
+        ? `toolbar-search-result-${highlightedIndex}`
+        : undefined}
       bind:this={searchInput}
       aria-label="Quick search"
     />
     {#if overlayVisible()}
       <div class="search-results" id="toolbar-search-results" role="listbox">
-        {#each results as result, index}
+        {#each results as result, index (result.id)}
           <button
             type="button"
             role="option"
