@@ -109,7 +109,8 @@ export async function setUiTheme(theme: UiTheme) {
 
       break;
     }
-    case 'neutral': {
+    case 'neutral':
+    case 'linux': {
       removeStylesheet('puppertino');
       // Tailwind bundle compiled from src/lib/styles/neutral.css
       const module_ = (await import('../styles/neutral.css?url')) as { default: string };
@@ -119,7 +120,7 @@ export async function setUiTheme(theme: UiTheme) {
       break;
     }
     default: {
-      // linux/other: keep base tokens only
+      // other: keep base tokens only
       removeStylesheet('neutral');
       removeStylesheet('puppertino');
     }
