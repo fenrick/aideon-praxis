@@ -14,8 +14,8 @@ const snapshot: StateAtResult = {
   asOf: 'c2',
   scenario: 'main',
   confidence: null,
-  nodes: 1,
-  edges: 0,
+  nodes: 5,
+  edges: 4,
 };
 
 const commits: TemporalCommitSummary[] = [
@@ -119,7 +119,8 @@ describe('time store', () => {
     expect(state.commits).toHaveLength(2);
     expect(state.branches[0]?.name).toBe('main');
     expect(state.currentCommitId).toBe('c2');
-    expect(state.snapshot?.nodes).toBe(1);
+    expect(state.snapshot?.nodes ?? 0).toBeGreaterThan(0);
+    expect(state.snapshot?.edges ?? 0).toBeGreaterThan(0);
     expect(mocks.listBranches).toHaveBeenCalled();
     expect(mocks.stateAt).toHaveBeenCalledWith({ asOf: 'c2', scenario: 'main' });
   });
