@@ -70,12 +70,13 @@ describe('theme/platform extended', () => {
     expect(platform.getResolvedUiTheme()).toBe('win');
   });
 
-  it('handles linux by removing optional styles', async () => {
+  it('treats linux as neutral while keeping the stylesheet', async () => {
     const platform = await import('@aideon/design-system');
     await platform.setUiTheme('neutral');
-    expect(document.head.querySelector('#aideon-neutral-css')).toBeTruthy();
+    const neutralLink = document.head.querySelector('#aideon-neutral-css');
+    expect(neutralLink).toBeTruthy();
     await platform.setUiTheme('linux');
-    expect(document.head.querySelector('#aideon-neutral-css')).toBeFalsy();
+    expect(document.head.querySelector('#aideon-neutral-css')).toBe(neutralLink);
     expect(document.head.querySelector('#aideon-puppertino-css')).toBeFalsy();
     expect(document.documentElement.classList.contains('platform-linux')).toBe(true);
   });
