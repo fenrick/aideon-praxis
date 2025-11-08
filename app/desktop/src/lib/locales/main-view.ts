@@ -40,10 +40,6 @@ const en: MainViewCopy = {
 
 export type SupportedLocale = 'en';
 
-export function getMainViewCopy(locale: SupportedLocale = 'en'): MainViewCopy {
-  switch (locale) {
-    case 'en':
-    default:
-      return en;
-  }
+export function getMainViewCopy(_: SupportedLocale = 'en'): MainViewCopy {
+  return en;
 }
