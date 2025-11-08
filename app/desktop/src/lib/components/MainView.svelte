@@ -356,12 +356,8 @@
     gap: var(--space-4, 16px);
     padding: 18px 24px 28px;
     min-height: 100%;
-    background: linear-gradient(
-      180deg,
-      rgba(245, 247, 255, 0.82) 0%,
-      rgba(247, 249, 255, 0.94) 40%,
-      rgba(250, 252, 255, 0.98) 100%
-    );
+    background: var(--color-bg);
+    color: var(--color-text);
   }
 
   .workspace__header {
@@ -379,7 +375,7 @@
 
   .subtitle {
     margin: 2px 0 0;
-    color: var(--color-muted, rgba(30, 41, 59, 0.6));
+    color: var(--color-muted);
   }
 
   .header-meta {
@@ -394,8 +390,10 @@
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(148, 163, 184, 0.16);
-    color: rgba(15, 23, 42, 0.75);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-1);
+    color: color-mix(in srgb, var(--color-text) 80%, transparent);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.05em;
@@ -403,8 +401,9 @@
   }
 
   .meta-pill.warning {
-    background: rgba(248, 180, 0, 0.18);
-    color: rgba(120, 53, 15, 0.85);
+    background: color-mix(in srgb, var(--color-danger) 16%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+    color: color-mix(in srgb, var(--color-danger) 70%, var(--color-text));
   }
 
   .workspace__controls {
@@ -414,8 +413,9 @@
     gap: 16px;
     padding: 12px 16px;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: 0 20px 45px -24px rgba(15, 23, 42, 0.35);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-2);
   }
 
   .workspace__body {
@@ -434,8 +434,9 @@
   .card {
     padding: 18px;
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 12px 35px -20px rgba(15, 23, 42, 0.45);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-2);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -452,8 +453,8 @@
   }
 
   .card.highlight {
-    background: linear-gradient(140deg, rgba(59, 130, 246, 0.15), rgba(147, 197, 253, 0.25));
-    box-shadow: 0 18px 40px -24px rgba(59, 130, 246, 0.55);
+    border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+    box-shadow: var(--shadow-2);
   }
 
   dl {
@@ -465,7 +466,7 @@
   dt {
     font-size: 0.75rem;
     letter-spacing: 0.06em;
-    color: rgba(15, 23, 42, 0.55);
+    color: color-mix(in srgb, var(--color-muted) 90%, transparent);
     text-transform: uppercase;
   }
 
@@ -473,7 +474,7 @@
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
-    color: rgba(15, 23, 42, 0.92);
+    color: var(--color-text);
   }
 
   .metric-list {
@@ -494,8 +495,9 @@
   .panel {
     padding: 18px 20px;
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 18px 45px -28px rgba(15, 23, 42, 0.45);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-2);
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -516,7 +518,8 @@
     min-height: 360px;
     border-radius: 12px;
     overflow: hidden;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    border: 1px solid var(--color-border);
+    background: color-mix(in srgb, var(--color-bg) 92%, transparent);
   }
 
   .conflict-list {
@@ -530,8 +533,9 @@
   .conflict-list li {
     padding: 10px 12px;
     border-radius: 12px;
-    background: rgba(248, 113, 113, 0.12);
-    border: 1px solid rgba(248, 113, 113, 0.35);
+    background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
+    border: 1px solid color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+    color: color-mix(in srgb, var(--color-danger) 65%, var(--color-text));
     display: grid;
     gap: 4px;
   }
@@ -551,26 +555,27 @@
     align-items: center;
     padding: 12px 16px;
     border-radius: 12px;
-    background: rgba(241, 245, 249, 0.65);
+    background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+    border: 1px solid var(--color-border);
   }
 
   .timeline li.active {
-    border: 1px solid rgba(59, 130, 246, 0.35);
-    background: rgba(191, 219, 254, 0.45);
+    border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+    background: color-mix(in srgb, var(--color-accent) 18%, var(--color-surface));
   }
 
   .timeline .time {
     font-weight: 600;
-    color: rgba(15, 23, 42, 0.75);
+    color: color-mix(in srgb, var(--color-text) 85%, transparent);
   }
 
   .timeline .message {
-    color: rgba(30, 41, 59, 0.85);
+    color: color-mix(in srgb, var(--color-text) 70%, transparent);
   }
 
   .timeline .id {
     font-size: 0.75rem;
-    opacity: 0.65;
+    color: var(--color-muted);
   }
 
   .activity-hints {
@@ -582,29 +587,29 @@
   .alert {
     padding: 18px;
     border-radius: 16px;
-    background: rgba(248, 113, 113, 0.18);
-    border: 1px solid rgba(248, 113, 113, 0.35);
-    color: rgba(88, 28, 28, 0.9);
+    background: color-mix(in srgb, var(--color-danger) 20%, var(--color-surface));
+    border: 1px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+    color: color-mix(in srgb, var(--color-danger) 70%, var(--color-text));
   }
 
   .loading {
     padding: 18px;
     border-radius: 16px;
-    background: rgba(148, 163, 184, 0.12);
-    border: 1px dashed rgba(148, 163, 184, 0.3);
+    background: color-mix(in srgb, var(--color-muted) 12%, var(--color-surface));
+    border: 1px dashed var(--color-border);
     text-align: center;
-    color: rgba(71, 85, 105, 0.8);
+    color: color-mix(in srgb, var(--color-muted) 70%, var(--color-text));
   }
 
   .muted {
-    color: rgba(71, 85, 105, 0.75);
+    color: var(--color-muted);
     margin: 0;
   }
 
   .mono {
     font-family: var(--font-mono, ui-monospace);
     font-size: 0.75rem;
-    opacity: 0.75;
+    color: color-mix(in srgb, var(--color-text) 70%, transparent);
   }
 
   @media (max-width: 1100px) {
