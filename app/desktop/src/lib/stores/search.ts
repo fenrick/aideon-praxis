@@ -47,7 +47,7 @@ type SourceKey = 'sidebar' | 'commits' | 'catalog';
 const normalize = (value: string): string =>
   value
     .normalize('NFKD')
-    .replace(/\p{Diacritic}/gu, '')
+    .replaceAll(/\p{Diacritic}/gu, '')
     .toLowerCase();
 
 const tokenize = (value: string): string[] =>
@@ -62,33 +62,39 @@ const basePriority: Record<SearchResultKind, number> = {
   commit: 0.5,
 };
 
+const createSidebarEntry = (
+  item: SidebarTreeNode,
+  path: string[],
+  onSelect?: SidebarSelectHandler,
+): SearchIndexItem => {
+  const title = item.label;
+  const subtitle = path.slice(0, -1).join(' • ');
+  const searchTokens = [title, subtitle, path.join(' ')].filter(Boolean).join(' ');
+  return {
+    id: `sidebar:${item.id}`,
+    title,
+    subtitle: subtitle || undefined,
+    kind: 'sidebar',
+    run: onSelect ? () => onSelect(item.id) : undefined,
+    searchValue: tokenize(searchTokens).join(' '),
+    titleValue: normalize(title),
+    priority: basePriority.sidebar + (path.length > 1 ? 0.1 : 0),
+  };
+};
+
 const buildSidebarIndex = (
   items: SidebarTreeNode[],
   onSelect?: SidebarSelectHandler,
   parents: string[] = [],
-): SearchIndexItem[] => {
-  const entries: SearchIndexItem[] = [];
-  for (const item of items) {
+): SearchIndexItem[] =>
+  items.flatMap((item) => {
     const path = [...parents, item.label];
-    const title = item.label;
-    const subtitle = path.slice(0, -1).join(' • ');
-    const searchTokens = [title, subtitle, path.join(' ')].filter(Boolean).join(' ');
-    entries.push({
-      id: `sidebar:${item.id}`,
-      title,
-      subtitle: subtitle || undefined,
-      kind: 'sidebar',
-      run: onSelect ? () => onSelect(item.id) : undefined,
-      searchValue: tokenize(searchTokens).join(' '),
-      titleValue: normalize(title),
-      priority: basePriority.sidebar + (path.length > 1 ? 0.1 : 0),
-    });
-    if (item.children?.length) {
-      entries.push(...buildSidebarIndex(item.children, onSelect, path));
+    const entry = createSidebarEntry(item, path, onSelect);
+    if (!item.children?.length) {
+      return [entry];
     }
-  }
-  return entries;
-};
+    return [entry, ...buildSidebarIndex(item.children, onSelect, path)];
+  });
 
 const buildCommitIndex = (
   commits: TemporalCommitSummary[],
@@ -97,7 +103,7 @@ const buildCommitIndex = (
   commits.map((commit) => {
     const subtitleParts = [commit.time, commit.author].filter(Boolean);
     const subtitle = subtitleParts.join(' • ') || undefined;
-    const keywords = [commit.id, commit.branch, commit.message, ...(commit.tags ?? [])];
+    const keywords = [commit.id, commit.branch, commit.message, ...commit.tags];
     const searchTokens = keywords.join(' ');
     return {
       id: `commit:${commit.id}`,
@@ -118,7 +124,13 @@ const buildCatalogIndex = (
   entities.map((entity) => {
     const subtitleParts = [entity.type, entity.description].filter(Boolean);
     const subtitle = subtitleParts.join(' • ') || undefined;
-    const keywords = [entity.name, entity.type, entity.description ?? '', entity.sidebarId ?? ''];
+    const keywords = [entity.name, entity.type];
+    if (entity.description) {
+      keywords.push(entity.description);
+    }
+    if (entity.sidebarId) {
+      keywords.push(entity.sidebarId);
+    }
     return {
       id: `catalog:${entity.id}`,
       title: entity.name,
@@ -131,25 +143,25 @@ const buildCatalogIndex = (
     };
   });
 
-const scoreItem = (item: SearchIndexItem, tokens: string[]): number => {
-  if (!tokens.length) {
-    return 0;
+const hasAllTokens = (haystack: string, tokens: string[]): boolean =>
+  tokens.every((token) => haystack.includes(token));
+
+const scoreToken = (item: SearchIndexItem, token: string): number => {
+  let score = 1;
+  if (item.titleValue.startsWith(token)) {
+    score += 1.25;
   }
-  const haystack = item.searchValue;
-  let score = item.priority;
-  for (const token of tokens) {
-    if (!haystack.includes(token)) {
-      return 0;
-    }
-    score += 1;
-    if (item.titleValue.startsWith(token)) {
-      score += 1.25;
-    }
-    if (item.kind === 'commit' && item.titleValue.includes(token)) {
-      score += 0.5;
-    }
+  if (item.kind === 'commit' && item.titleValue.includes(token)) {
+    score += 0.5;
   }
   return score;
+};
+
+const scoreItem = (item: SearchIndexItem, tokens: string[]): number => {
+  if (tokens.length === 0 || !hasAllTokens(item.searchValue, tokens)) {
+    return 0;
+  }
+  return tokens.reduce((score, token) => score + scoreToken(item, token), item.priority);
 };
 
 function createState(): SearchStoreState {
@@ -184,8 +196,8 @@ export function createSearchStore(): SearchStoreActions {
   const search = (query: string, limit = 10): SearchResult[] => {
     const normalizedTokens = tokenize(query.trim());
     const state = get(store);
-    const scored: Array<{ item: SearchIndexItem; score: number }> = [];
-    if (normalizedTokens.length) {
+    const scored: { item: SearchIndexItem; score: number }[] = [];
+    if (normalizedTokens.length > 0) {
       for (const item of state.items) {
         const score = scoreItem(item, normalizedTokens);
         if (score > 0) {
