@@ -4,6 +4,7 @@
   // styles backed by our Tailwind/theme.css.
   import { IconButton } from '@aideon/design-system';
   import { debug, info, logSafely } from '$lib/logging';
+  import { searchStore, type SearchResult } from '$lib/stores/search';
   const {
     version = '—',
     onOpenSettings,
@@ -31,6 +32,50 @@
   // Keep a local search string so we can hook up quick-jump filtering once the
   // catalog UX lands; for now we only log the intent for telemetry parity.
   let searchTerm = $state('');
+  let results = $state<SearchResult[]>([]);
+  let isFocused = $state(false);
+  let highlightedIndex = $state(-1);
+  let searchInput: HTMLInputElement | null = null;
+  const overlayVisible = $derived(() => isFocused && results.length > 0);
+
+  const KIND_LABEL: Record<SearchResult['kind'], string> = {
+    sidebar: 'Navigation',
+    commit: 'Commit',
+    catalog: 'Catalog',
+  };
+
+  const DEBOUNCE_MS = 180;
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function resetSearch() {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    searchTerm = '';
+    results = [];
+    highlightedIndex = -1;
+    searchStore.clear();
+  }
+
+  function scheduleSearch(value: string) {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    if (!value.trim()) {
+      debounceTimer = null;
+      results = [];
+      highlightedIndex = -1;
+      searchStore.clear();
+      return;
+    }
+    debounceTimer = setTimeout(() => {
+      logSafely(debug, `renderer: toolbar search query="${value}"`);
+      results = searchStore.search(value);
+      highlightedIndex = results.length > 0 ? 0 : -1;
+      debounceTimer = null;
+    }, DEBOUNCE_MS);
+  }
 
   function handleToggleSidebar() {
     logSafely(debug, `renderer: toolbar toggle sidebar requested active=${!sidebarActive}`);
@@ -55,7 +100,76 @@
   function handleSearchInput(event: Event) {
     const value = (event.currentTarget as HTMLInputElement)?.value ?? '';
     searchTerm = value;
-    logSafely(debug, `renderer: toolbar search query="${value}"`);
+    scheduleSearch(value);
+  }
+
+  function handleSearchFocus() {
+    isFocused = true;
+    if (searchTerm.trim()) {
+      results = searchStore.search(searchTerm);
+      highlightedIndex = results.length > 0 ? 0 : -1;
+    }
+  }
+
+  function handleSearchBlur(event: FocusEvent) {
+    const next = event.relatedTarget as HTMLElement | null;
+    if (next && next.closest('.search-results')) {
+      return;
+    }
+    isFocused = false;
+    results = [];
+    highlightedIndex = -1;
+  }
+
+  function highlightResult(index: number) {
+    if (!results.length) {
+      highlightedIndex = -1;
+      return;
+    }
+    const normalized = (index + results.length) % results.length;
+    highlightedIndex = normalized;
+  }
+
+  async function activateResult(index: number) {
+    const result = results[index];
+    if (!result) {
+      return;
+    }
+    try {
+      await result.run?.();
+    } catch (error) {
+      logSafely(debug, `renderer: search activation failed — ${String(error)}`);
+    }
+    resetSearch();
+    isFocused = false;
+    searchInput?.blur();
+  }
+
+  function handleSearchKeydown(event: KeyboardEvent) {
+    if (!overlayVisible()) {
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      highlightResult(highlightedIndex + 1);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      highlightResult(highlightedIndex - 1);
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void activateResult(highlightedIndex);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      resetSearch();
+      isFocused = false;
+      searchInput?.blur();
+    }
   }
 </script>
 
@@ -84,8 +198,34 @@
       placeholder="Find node, plan event, or asset"
       value={searchTerm}
       oninput={handleSearchInput}
+      onfocus={handleSearchFocus}
+      onblur={handleSearchBlur}
+      onkeydown={handleSearchKeydown}
+      aria-expanded={overlayVisible()}
+      aria-controls="toolbar-search-results"
+      aria-activedescendant={highlightedIndex >= 0 ? `toolbar-search-result-${highlightedIndex}` : undefined}
+      bind:this={searchInput}
       aria-label="Quick search"
     />
+    {#if overlayVisible()}
+      <div class="search-results" id="toolbar-search-results" role="listbox">
+        {#each results as result, index}
+          <button
+            type="button"
+            role="option"
+            class={index === highlightedIndex ? 'search-result active' : 'search-result'}
+            aria-selected={index === highlightedIndex}
+            id={`toolbar-search-result-${index}`}
+            on:mousedown|preventDefault={() => highlightResult(index)}
+            on:mouseenter={() => highlightResult(index)}
+            on:click={() => void activateResult(index)}
+          >
+            <span class="title">{result.title}</span>
+            <span class="meta">{result.subtitle ?? KIND_LABEL[result.kind]}</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
   </div>
   <div class="context" aria-label="Branch context">
     <span class="label">Branch</span>
@@ -168,6 +308,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    position: relative;
     background: var(--color-bg);
     border-radius: 10px;
     padding: 4px 10px;
@@ -187,6 +328,48 @@
   .search-icon {
     font-size: 1rem;
     color: color-mix(in srgb, var(--color-muted) 80%, transparent);
+  }
+  .search-results {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-3);
+    z-index: 10;
+  }
+  .search-result {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+  }
+  .search-result:hover,
+  .search-result.active {
+    background: color-mix(in srgb, var(--color-accent) 18%, var(--color-surface));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  }
+  .search-result .title {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .search-result .meta {
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--color-muted) 70%, transparent);
   }
   .context {
     display: inline-flex;

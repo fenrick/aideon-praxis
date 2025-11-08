@@ -12,6 +12,7 @@
   import type { StateAtResult, WorkerHealth } from '$lib/types';
   import type { TimeStoreState } from '$lib/stores/time';
   import { timeStore } from '$lib/stores/time';
+  import { searchStore, type CatalogEntitySummary } from '$lib/stores/search';
   import { version as appVersion } from '../version.js';
 
   let version = $state(appVersion);
@@ -52,7 +53,59 @@
     { id: 'about', label: 'About Praxis' },
   ];
 
+  const catalogEntities: CatalogEntitySummary[] = [
+    {
+      id: 'catalog-applications',
+      name: 'Applications Catalogue',
+      type: 'Catalogue',
+      description: 'Inventory of application services and owners',
+      sidebarId: 'applications',
+    },
+    {
+      id: 'catalog-data',
+      name: 'Data Catalogue',
+      type: 'Catalogue',
+      description: 'Pipelines and data domains across the estate',
+      sidebarId: 'data',
+    },
+    {
+      id: 'catalog-metamodel',
+      name: 'Praxis Meta-model',
+      type: 'Reference',
+      description: 'Schema reference for temporal state snapshots',
+      sidebarId: 'metamodel',
+    },
+  ];
+
   const workspaceViews = new Set(['overview', 'timeline', 'canvas', 'activity']);
+
+  function selectSidebarItem(id: string) {
+    selectedId = id;
+    if (id === 'about') {
+      view = 'about';
+    } else {
+      view = 'main';
+      if (workspaceViews.has(id)) {
+        workspaceTab = id as typeof workspaceTab;
+      }
+    }
+    logSafely(debug, `renderer: sidebar selection id=${selectedId}`);
+  }
+
+  async function openSidebarFromSearch(id: string) {
+    selectSidebarItem(id);
+    showSidebar = true;
+  }
+
+  async function openCatalogEntityFromSearch(entity: CatalogEntitySummary) {
+    if (entity.sidebarId) {
+      selectSidebarItem(entity.sidebarId);
+      showSidebar = true;
+    } else {
+      view = 'main';
+    }
+    logSafely(debug, `renderer: search open catalog id=${entity.id}`);
+  }
 
   const toolbarBranch = $derived(() => timeState?.branch ?? 'main');
   const toolbarUnsaved = $derived(() => timeState?.unsavedCount ?? 0);
@@ -70,10 +123,47 @@
     ];
   });
 
+  async function handleBranchSelect(branch: string) {
+    await timeStore.loadBranch(branch);
+  }
+
+  async function handleCommitSelect(commitId: string | null) {
+    await timeStore.selectCommit(commitId);
+  }
+
+  async function handleMerge(source: string, target: string) {
+    await timeStore.mergeBranches(source, target);
+  }
+
+  function handleRefreshBranches() {
+    timeStore.refreshBranches().catch((error__) => {
+      const message =
+        error__ instanceof Error
+          ? error__.message
+          : typeof error__ === 'string'
+            ? error__
+            : 'refresh branches failed';
+      logSafely(error, `renderer: refreshBranches failed — ${message}`);
+    });
+  }
+
+  async function openCommitFromSearch(commitId: string) {
+    await handleCommitSelect(commitId);
+    view = 'main';
+    workspaceTab = 'timeline';
+    selectedId = 'timeline';
+    showSidebar = true;
+    logSafely(debug, `renderer: search open commit id=${commitId}`);
+  }
+
+  searchStore.setSidebarItems(sidebarItems, openSidebarFromSearch);
+  searchStore.setCatalogEntities(catalogEntities, openCatalogEntityFromSearch);
+
   const unsubscribeTime = timeStore.subscribe((value) => {
     timeState = value;
     stateAt = value.snapshot;
     error_ = value.error;
+    searchStore.setRecentCommits(value.commits, openCommitFromSearch);
   });
 
   let healthTimer: ReturnType<typeof setInterval> | null = null;
@@ -159,42 +249,8 @@
   });
 
   function onSelect(event: { detail: { id: string } }) {
-    const id = event.detail.id;
-    selectedId = id;
-    if (id === 'about') {
-      view = 'about';
-    } else {
-      view = 'main';
-      if (workspaceViews.has(id)) {
-        workspaceTab = id as typeof workspaceTab;
-      }
-    }
-    logSafely(debug, `renderer: sidebar selection id=${selectedId}`);
+    selectSidebarItem(event.detail.id);
   }
-
-  const handleBranchSelect = async (branch: string) => {
-    await timeStore.loadBranch(branch);
-  };
-
-  const handleCommitSelect = async (commitId: string | null) => {
-    await timeStore.selectCommit(commitId);
-  };
-
-  const handleMerge = async (source: string, target: string) => {
-    await timeStore.mergeBranches(source, target);
-  };
-
-  const handleRefreshBranches = () => {
-    timeStore.refreshBranches().catch((error__) => {
-      const message =
-        error__ instanceof Error
-          ? error__.message
-          : typeof error__ === 'string'
-            ? error__
-            : 'refresh branches failed';
-      logSafely(error, `renderer: refreshBranches failed — ${message}`);
-    });
-  };
 </script>
 
 <div class="app-shell">
