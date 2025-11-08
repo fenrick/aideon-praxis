@@ -18,9 +18,11 @@ pub struct TemporalEngine {
 
 impl TemporalEngine {
     pub fn new() -> Self {
-        Self {
-            inner: PraxisEngine::new(),
+        let inner = PraxisEngine::new();
+        if let Err(err) = inner.ensure_seeded() {
+            panic!("temporal engine failed to seed praxis graph: {err}");
         }
+        Self { inner }
     }
 
     pub fn state_at(&self, args: StateAtArgs) -> PraxisResult<StateAtResult> {
@@ -93,8 +95,8 @@ mod tests {
                 confidence: None,
             })
             .expect("state ok");
-        assert_eq!(result.nodes, 1);
-        assert_eq!(result.edges, 0);
+        assert!(result.nodes > 0);
+        assert!(result.edges > 0);
     }
 
     #[test]
