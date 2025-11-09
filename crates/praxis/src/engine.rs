@@ -431,7 +431,7 @@ fn build_seed_change_set() -> ChangeSet {
 
     ChangeSet {
         node_creates: vec![
-        NodeVersion {
+            NodeVersion {
             id: VALUE_STREAM_ID.into(),
             r#type: Some("ValueStream".into()),
             props: Some(json!({
@@ -439,7 +439,7 @@ fn build_seed_change_set() -> ChangeSet {
                 "stage": "Discover",
             })),
         },
-        NodeVersion {
+            NodeVersion {
             id: CAPABILITY_ID.into(),
             r#type: Some("Capability".into()),
             props: Some(json!({
@@ -447,7 +447,7 @@ fn build_seed_change_set() -> ChangeSet {
                 "tier": "Strategic",
             })),
         },
-        NodeVersion {
+            NodeVersion {
             id: APPLICATION_ID.into(),
             r#type: Some("Application".into()),
             props: Some(json!({
@@ -455,7 +455,7 @@ fn build_seed_change_set() -> ChangeSet {
                 "lifecycle": "Production",
             })),
         },
-        NodeVersion {
+            NodeVersion {
             id: DATA_ENTITY_ID.into(),
             r#type: Some("DataEntity".into()),
             props: Some(json!({
@@ -463,7 +463,7 @@ fn build_seed_change_set() -> ChangeSet {
                 "sensitivity": "Internal",
             })),
         },
-        NodeVersion {
+            NodeVersion {
             id: TECHNOLOGY_ID.into(),
             r#type: Some("TechnologyComponent".into()),
             props: Some(json!({
@@ -471,10 +471,10 @@ fn build_seed_change_set() -> ChangeSet {
                 "vendor": "Praxis Cloud",
             })),
         },
-    ];
+    ],
 
         edge_creates: vec![
-        EdgeVersion {
+            EdgeVersion {
             id: Some("e:capability-serves-valuestream".into()),
             from: CAPABILITY_ID.into(),
             to: VALUE_STREAM_ID.into(),
@@ -482,7 +482,7 @@ fn build_seed_change_set() -> ChangeSet {
             directed: Some(true),
             props: Some(json!({ "confidence": 0.9 })),
         },
-        EdgeVersion {
+            EdgeVersion {
             id: Some("e:application-supports-capability".into()),
             from: APPLICATION_ID.into(),
             to: CAPABILITY_ID.into(),
@@ -490,7 +490,7 @@ fn build_seed_change_set() -> ChangeSet {
             directed: Some(true),
             props: Some(json!({ "criticality": "High" })),
         },
-        EdgeVersion {
+            EdgeVersion {
             id: Some("e:application-uses-data".into()),
             from: APPLICATION_ID.into(),
             to: DATA_ENTITY_ID.into(),
@@ -498,7 +498,7 @@ fn build_seed_change_set() -> ChangeSet {
             directed: Some(true),
             props: Some(json!({ "access": "ReadWrite" })),
         },
-        EdgeVersion {
+            EdgeVersion {
             id: Some("e:technology-hosts-application".into()),
             from: TECHNOLOGY_ID.into(),
             to: APPLICATION_ID.into(),
@@ -506,10 +506,11 @@ fn build_seed_change_set() -> ChangeSet {
             directed: Some(true),
             props: Some(json!({ "deployment": "Managed" })),
         },
-    ];
+    ],
 
         ..Default::default()
     }
+}
 }
 
 fn resolve_snapshot(
