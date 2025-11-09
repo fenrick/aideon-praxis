@@ -429,8 +429,8 @@ fn build_seed_change_set() -> ChangeSet {
     const DATA_ENTITY_ID: &str = "n:data-entity:customer-profile";
     const TECHNOLOGY_ID: &str = "n:technology:stream-processor";
 
-    let mut change = ChangeSet::default();
-    change.node_creates = vec![
+    ChangeSet {
+        node_creates: vec![
         NodeVersion {
             id: VALUE_STREAM_ID.into(),
             r#type: Some("ValueStream".into()),
@@ -473,7 +473,7 @@ fn build_seed_change_set() -> ChangeSet {
         },
     ];
 
-    change.edge_creates = vec![
+        edge_creates: vec![
         EdgeVersion {
             id: Some("e:capability-serves-valuestream".into()),
             from: CAPABILITY_ID.into(),
@@ -508,7 +508,8 @@ fn build_seed_change_set() -> ChangeSet {
         },
     ];
 
-    change
+        ..Default::default()
+    }
 }
 
 fn resolve_snapshot(
