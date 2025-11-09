@@ -511,7 +511,6 @@ fn build_seed_change_set() -> ChangeSet {
         ..Default::default()
     }
 }
-}
 
 fn resolve_snapshot(
     inner: &Inner,
