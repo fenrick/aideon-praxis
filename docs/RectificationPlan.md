@@ -12,7 +12,7 @@ The intent in Architecture-Boundary.md:75–146 is a Git-like, append-only commi
 
 ### Abstract meta-model enforcement
 
-The design requires every node/edge to obey the ArchiMate-style catalog (docs/DESIGN.md:83–196), but the engine only stores opaque NodeVersion/EdgeVersion records with TODOs where schema validation should live (crates/praxis/src/engine.rs:183 and crates/praxis/src/graph.rs:235); StateAtResult today exposes counts only (crates/core_data/src/temporal.rs:24), so no meta-model attributes reach consumers. Introduce a MetaModelRegistry (Rust + shared JSON) that describes element types, relationships, attribute constraints, and plan-event rules, enforce it inside GraphSnapshot::apply, and emit typed DTOs the renderer can project without embedding business logic.
+The design requires every node/edge to obey the ArchiMate-style catalog (docs/DESIGN.md:83–196), but the engine only stores opaque NodeVersion/EdgeVersion records with TODOs where schema validation should live (crates/praxis/src/engine.rs:183 and crates/praxis/src/graph.rs:235); StateAtResult today exposes counts only (crates/mneme/src/temporal.rs:24), so no meta-model attributes reach consumers. Introduce a MetaModelRegistry (Rust + shared JSON) that describes element types, relationships, attribute constraints, and plan-event rules, enforce it inside GraphSnapshot::apply, and emit typed DTOs the renderer can project without embedding business logic.
 
 ### Configurable/deliverable meta-model
 

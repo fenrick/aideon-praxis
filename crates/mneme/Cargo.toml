@@ -1,0 +1,17 @@
+[package]
+name = "aideon-mneme"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = ["sqlite"]
+sqlite = ["dep:rusqlite", "dep:rusqlite_migration"]
+
+[dependencies]
+aideon-continuum = { path = "../continuum" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+rusqlite = { version = "0.37", features = ["bundled"], optional = true }
+rusqlite_migration = { version = "2.3", optional = true }

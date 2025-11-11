@@ -23,7 +23,7 @@ Renderer Design
 
 Host/DTOs
 
-- DTOs in core_data (crates/core_data/src/canvas.rs):
+- DTOs in Praxis (crates/praxis/src/canvas.rs):
   - CanvasNode { id, typeId, x, y, w, h, z, label?, groupId? }
   - CanvasEdge { id, source, target, label?, z? }
   - CanvasGroup { id, name?, parentId?, z? }

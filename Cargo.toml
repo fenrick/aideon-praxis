@@ -7,7 +7,8 @@ members = [
   "crates/chrona",
   "crates/metis",
   "crates/continuum",
-  "crates/core_data"
+  "crates/mneme",
+  "xtask"
 ]
 
 [workspace.package]
