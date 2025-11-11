@@ -167,27 +167,7 @@ jobs:
             echo "::error::No worker binaries were produced"
             exit 1
           fi
-          archive_name="aideon-worker-${ARCHIVE_SUFFIX}.zip"
-          export ARCHIVE_NAME="$archive_name"
-          python_cmd="$(command -v python3 || command -v python || true)"
-          if [[ -z "$python_cmd" ]]; then
-            echo "::error::Python is required to archive worker binaries"
-            exit 1
-          fi
-          "$python_cmd" - <<'PY'
-import os
-import zipfile
-
-base = os.path.join('artifacts', 'worker', 'files')
-archive = os.path.join('artifacts', 'worker', os.environ['ARCHIVE_NAME'])
-with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as zf:
-    for root, _, files in os.walk(base):
-        for name in files:
-            path = os.path.join(root, name)
-            arcname = os.path.relpath(path, base)
-            zf.write(path, arcname)
-PY
-          echo "archive=${archive_name}" >> "$GITHUB_OUTPUT"
+          echo "Worker binaries collected in artifacts/worker/files"
 
       - name: Collect Tauri bundles
         id: bundles
@@ -223,7 +203,7 @@ PY
         uses: actions/upload-artifact@v5
         with:
           name: aideon-worker-${{ matrix.artifact-suffix }}
-          path: artifacts/worker/${{ steps.worker.outputs.archive }}
+          path: artifacts/worker/files/*
           if-no-files-found: error
 
       - name: Publish bundles to GitHub Release
@@ -237,7 +217,20 @@ PY
             echo "::error::Release tag is required to publish artifacts"
             exit 1
           fi
-          for file in artifacts/bundles/*; do
+          shopt -s nullglob
+          bundle_files=(artifacts/bundles/*)
+          if (( ${#bundle_files[@]} == 0 )); then
+            echo "::error::No bundle artifacts found to publish"
+            exit 1
+          fi
+          for file in "${bundle_files[@]}"; do
             gh release upload "$RELEASE_TAG" "$file" --clobber
           done
-          gh release upload "$RELEASE_TAG" "artifacts/worker/${{ steps.worker.outputs.archive }}" --clobber
+          worker_files=(artifacts/worker/files/*)
+          if (( ${#worker_files[@]} == 0 )); then
+            echo "::error::No worker libraries found to publish"
+            exit 1
+          fi
+          for file in "${worker_files[@]}"; do
+            gh release upload "$RELEASE_TAG" "$file" --clobber
+          done
