@@ -35,7 +35,7 @@ app, ensuring data stays on the user’s device and performs well without requir
 setup. This local-first design addresses privacy and cost concerns, while the architecture remains
 cloud-ready for future scaling or team collaboration needs.
 
-**Modules:**
+**Modules:** *(Canonical schema: see `docs/meta/core-v1.json`.)*
 
 - **Aideon Praxis** — core digital twin platform
 - **Aideon Chrona** — time-based visualisation layer
