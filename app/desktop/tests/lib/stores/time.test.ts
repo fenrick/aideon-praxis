@@ -186,4 +186,109 @@ describe('time store', () => {
     const state = get(store);
     expect(state.mergeConflicts).toBeNull();
   });
+
+  it('selectCommit noop when id unchanged', async () => {
+    const { port, mocks } = createMockPort();
+    const store = createTimeStore(port);
+    await store.loadBranch('main');
+    await store.selectCommit('c2');
+    expect(mocks.stateAt).toHaveBeenCalledTimes(1);
+  });
+
+  it('selectCommit clears when null provided', async () => {
+    const { port } = createMockPort();
+    const store = createTimeStore(port);
+    await store.loadBranch('main');
+    await store.selectCommit(null);
+    expect(get(store).currentCommitId).toBeNull();
+    expect(get(store).snapshot).toBeNull();
+  });
+
+  it('handles refreshBranches errors without crashing', async () => {
+    const { port } = createMockPort({
+      listBranches: vi.fn(async () => {
+        throw new Error('network');
+      }),
+    });
+    const store = createTimeStore(port);
+    await store.loadBranch('main');
+    await store.refreshBranches();
+    expect(get(store).error).toBe('network');
+  });
+
+  it('startCompare clears when ids match', async () => {
+    const { port } = createMockPort();
+    const store = createTimeStore(port);
+    await store.loadBranch('main');
+    await store.startCompare('c2', 'c2');
+    const state = get(store);
+    expect(state.isComparing).toBe(false);
+    expect(state.compare.from).toBeNull();
+  });
+
+  it('setUnsavedCount clamps negative values to zero', async () => {
+    const { port } = createMockPort();
+    const store = createTimeStore(port);
+    store.setUnsavedCount(-4);
+    expect(get(store).unsavedCount).toBe(0);
+  });
+
+  it('mergeBranches surfaces adapter errors', async () => {
+    const { port } = createMockPort({
+      merge: vi.fn(async () => {
+        throw new Error('merge failed');
+      }),
+    });
+    const store = createTimeStore(port);
+    await store.loadBranch('main');
+    await store.mergeBranches('feature', 'main');
+    expect(get(store).error).toBe('merge failed');
+  });
+
+  it('loadBranch records adapter failures', async () => {
+    const { port } = createMockPort({
+      listBranches: vi.fn(async () => {
+        throw new Error('boom');
+      }),
+    });
+    const store = createTimeStore(port);
+    await store.loadBranch('main');
+    expect(get(store).error).toBe('boom');
+  });
+
+  it('selectCommit warns when commit missing and ignores request', async () => {
+    const { port } = createMockPort();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const store = createTimeStore(port);
+    await store.loadBranch('main');
+    await store.selectCommit('nope');
+    expect(warn).toHaveBeenCalledWith('timeStore.selectCommit: commit nope not found');
+    warn.mockRestore();
+  });
+
+  it('captures adapter errors when selecting commit', async () => {
+    const { port } = createMockPort({
+      stateAt: vi.fn(async () => {
+        throw new Error('state failed');
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const store = createTimeStore(port);
+    await store.loadBranch('main');
+    await store.selectCommit('c2');
+    expect(get(store).error).toBe('state failed');
+    warn.mockRestore();
+  });
+
+  it('captures adapter errors when diff fails', async () => {
+    const { port } = createMockPort({
+      diff: vi.fn(async () => {
+        throw new Error('diff failed');
+      }),
+    });
+    const store = createTimeStore(port);
+    await store.loadBranch('main');
+    await store.startCompare('c1', 'c2');
+    expect(get(store).error).toBe('diff failed');
+  });
 });

@@ -6,14 +6,16 @@ not introduce backend specifics into the renderer.
 
 Interfaces
 
-- `GraphAdapter` — read‑only time‑sliced graph access returning `TemporalStateSnapshot` and `TemporalDiffSnapshot`.
+- `GraphAdapter` — read-only time-sliced graph access returning `TemporalStateSnapshot` and `TemporalDiffSnapshot`.
 - `MutableGraphAdapter` — extends `GraphAdapter` with branch/commit helpers for dev tooling.
+- `MetaModelProvider` — surfaces the active schema (`MetaModelDocument`) so UIs can build forms dynamically.
 - `StorageAdapter` — snapshot persistence (get/put by opaque reference).
-- `WorkerClient` — strongly‑typed job runner backed by `WorkerJobMap`.
+- `WorkerClient` — strongly-typed job runner backed by `WorkerJobMap`.
 
 Supporting types
 
 - `TemporalStateParameters`, `TemporalStateSnapshot`, `TemporalDiffParameters`, `TemporalDiffSnapshot`.
+- `MetaModelDocument`, `MetaModelType`, and related attribute/relationship helpers.
 - `PlanEvent`, matching the minimal schema in `AGENTS.md`.
 - `WorkerJobMap`, `WorkerJobRequest`, `WorkerJobResult` covering analytics and temporal jobs.
 - Utility `ensureIsoDateTime(value)` to normalise timestamp inputs.

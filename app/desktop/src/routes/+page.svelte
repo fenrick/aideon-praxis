@@ -5,6 +5,7 @@
   import { debug, error, info, logSafely } from '$lib/logging';
   import { initUiTheme } from '@aideon/design-system';
   import AboutPanel from '$lib/components/AboutPanel.svelte';
+  import MetaModelPanel from '$lib/components/MetaModelPanel.svelte';
   import MainView from '$lib/components/MainView.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import StatusBar from '$lib/components/StatusBar.svelte';
@@ -295,6 +296,8 @@
       </div>
       {#if view === 'about'}
         <AboutPanel />
+      {:else if selectedId === 'metamodel'}
+        <MetaModelPanel />
       {:else}
         <MainView
           {version}

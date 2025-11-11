@@ -16,6 +16,9 @@ const config = {
       // Explicitly include auxiliary windows so Tauri can load them by path.
       entries: ['*', '/splash/', '/about/', '/settings/', '/status/'],
     },
+    alias: {
+      '@adapters': '../adapters/src',
+    },
   },
   trailingSlash: 'always',
 };
