@@ -1,6 +1,7 @@
 mod error;
 pub mod health;
 mod memory;
+pub mod meta;
 pub mod temporal;
 mod types;
 
@@ -9,6 +10,7 @@ pub mod sqlite;
 
 pub use error::{MnemeError, MnemeResult};
 pub use health::WorkerHealth;
+pub use meta::*;
 pub use temporal::*;
 pub use types::PersistedCommit;
 

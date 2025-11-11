@@ -9,3 +9,6 @@ license = "MIT"
 aideon-mneme = { path = "../mneme" }
 aideon-praxis = { path = "../praxis" }
 log = "0.4"
+
+[dev-dependencies]
+serde_json = "1.0"

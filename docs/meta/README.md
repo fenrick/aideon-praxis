@@ -8,7 +8,7 @@
   permissible attributes, relationship rules, and plan-event constraints.
 - `README.md`: this file.
 
-We treat the meta-model as *data*, so other schema flavours (customer extensions, previews) live in
+We treat the meta-model as _data_, so other schema flavours (customer extensions, previews) live in
 additional files (e.g., `core-v2.json`, `customer/acme.json`).
 
 ## JSON structure
@@ -65,3 +65,12 @@ that report the active version to the renderer.
 - `overrides/` directories per tenant.
 - JSON schema describing the meta-model format itself.
 - Tooling to validate meta-model files before shipping.
+
+## Runtime consumption
+
+- `aideon_mneme::meta` defines the shared DTOs for these files.
+- `MetaModelRegistry` (see `crates/praxis/src/meta.rs`) loads `core-v1.json` plus any overrides and
+  enforces every node/edge mutation through Praxis.
+- The Tauri host exposes the active document via `temporal_metamodel_get`. The renderer caches it in
+  `metaModelStore` and renders a “Meta-model” panel so UX can stay data-driven instead of hardcoding
+  enum lists.

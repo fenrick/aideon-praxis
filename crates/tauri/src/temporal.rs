@@ -3,6 +3,7 @@
 //! These commands remain thin so that all business logic stays within the worker
 //! crate, reinforcing the boundary guidance spelled out in `AGENTS.md`.
 
+use aideon::mneme::meta::MetaModelDocument;
 use aideon::mneme::temporal::{
     BranchInfo, CommitChangesRequest, CommitChangesResponse, CreateBranchRequest, DiffArgs,
     DiffSummary, ListBranchesResponse, ListCommitsResponse, MergeRequest, MergeResponse,
@@ -130,6 +131,14 @@ pub async fn topology_delta(
 ) -> Result<TopologyDeltaResult, HostError> {
     let engine = state.engine();
     engine.topology_delta(payload).map_err(host_error)
+}
+
+#[tauri::command]
+pub async fn temporal_metamodel_get(
+    state: State<'_, WorkerState>,
+) -> Result<MetaModelDocument, HostError> {
+    let engine = state.engine();
+    Ok(engine.meta_model())
 }
 
 #[derive(Debug, Serialize)]

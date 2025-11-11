@@ -4,6 +4,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use aideon_continuum::SnapshotStore;
+use aideon_mneme::meta::MetaModelDocument;
 use aideon_mneme::temporal::{
     BranchInfo, ChangeSet, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffPatch,
     DiffSummary, EdgeTombstone, EdgeVersion, MergeConflict, MergeRequest, MergeResponse,
@@ -21,6 +22,7 @@ use time::format_description::well_known::Rfc3339;
 
 use crate::error::{PraxisError, PraxisResult};
 use crate::graph::{GraphSnapshot, SnapshotStats};
+use crate::meta::{MetaModelConfig, MetaModelRegistry};
 
 #[derive(Clone, Debug)]
 pub struct PraxisEngineConfig {
@@ -28,6 +30,8 @@ pub struct PraxisEngineConfig {
     pub allow_empty_commits: bool,
     /// Prefix applied to generated commit identifiers. Defaults to `"c"`.
     pub commit_id_prefix: String,
+    /// Meta-model configuration controlling schema enforcement.
+    pub meta_model: MetaModelConfig,
 }
 
 impl Default for PraxisEngineConfig {
@@ -35,6 +39,7 @@ impl Default for PraxisEngineConfig {
         Self {
             allow_empty_commits: false,
             commit_id_prefix: "c".into(),
+            meta_model: MetaModelConfig::default(),
         }
     }
 }
@@ -50,6 +55,7 @@ struct Inner {
     config: PraxisEngineConfig,
     store: Arc<dyn Store>,
     snapshot_store: Arc<dyn SnapshotStore>,
+    registry: Arc<MetaModelRegistry>,
 }
 
 #[derive(Clone, Debug)]
@@ -185,7 +191,7 @@ impl PraxisEngine {
             });
         }
 
-        let snapshot = Arc::new(base_snapshot.apply(&normalized_changes)?);
+        let snapshot = Arc::new(base_snapshot.apply(&normalized_changes, inner.registry.as_ref())?);
 
         let parents: Vec<String> = expected_parent.into_iter().collect();
         let timestamp = request.time.clone().or_else(|| Some(current_timestamp()));
@@ -360,6 +366,11 @@ impl PraxisEngine {
         inner.snapshot_for(commit_id)
     }
 
+    pub fn meta_model(&self) -> MetaModelDocument {
+        let inner = self.lock();
+        inner.registry.document()
+    }
+
     pub fn merge(&self, request: MergeRequest) -> PraxisResult<MergeResponse> {
         let mut inner = self.lock();
 
@@ -446,7 +457,8 @@ impl PraxisEngine {
             tags: tags.clone(),
             change_count: change_count(&normalized_changes),
         };
-        let snapshot = Arc::new(target_snapshot.apply(&normalized_changes)?);
+        let snapshot =
+            Arc::new(target_snapshot.apply(&normalized_changes, inner.registry.as_ref())?);
 
         let persisted = PersistedCommit {
             summary: summary.clone(),
@@ -493,6 +505,7 @@ impl Inner {
         store: Arc<dyn Store>,
         snapshot_store: Arc<dyn SnapshotStore>,
     ) -> PraxisResult<Self> {
+        let registry = Arc::new(MetaModelRegistry::load(&config.meta_model)?);
         let mut branches = BTreeMap::new();
         for (name, head) in store.list_branches()? {
             branches.insert(name, BranchState { head });
@@ -507,6 +520,7 @@ impl Inner {
             config,
             store,
             snapshot_store,
+            registry,
         })
     }
 
@@ -664,7 +678,7 @@ fn validate_branch_name(name: &str) -> PraxisResult<()> {
 }
 
 fn build_seed_change_set() -> ChangeSet {
-    const VALUE_STREAM_ID: &str = "n:valuestream:customer-journey";
+    const VALUE_STREAM_ID: &str = "n:valuestream-stage:discover";
     const CAPABILITY_ID: &str = "n:capability:customer-insight";
     const APPLICATION_ID: &str = "n:application:insight-hub";
     const DATA_ENTITY_ID: &str = "n:data-entity:customer-profile";
@@ -674,10 +688,10 @@ fn build_seed_change_set() -> ChangeSet {
         node_creates: vec![
             NodeVersion {
                 id: VALUE_STREAM_ID.into(),
-                r#type: Some("ValueStream".into()),
+                r#type: Some("ValueStreamStage".into()),
                 props: Some(json!({
-                    "name": "Customer Journey",
-                    "stage": "Discover",
+                    "name": "Discover",
+                    "purpose": "Identify customer needs",
                 })),
             },
             NodeVersion {
@@ -693,7 +707,7 @@ fn build_seed_change_set() -> ChangeSet {
                 r#type: Some("Application".into()),
                 props: Some(json!({
                     "name": "Insight Hub",
-                    "lifecycle": "Production",
+                    "lifecycle": "Run",
                 })),
             },
             NodeVersion {
@@ -727,7 +741,7 @@ fn build_seed_change_set() -> ChangeSet {
                 id: Some("e:application-supports-capability".into()),
                 from: APPLICATION_ID.into(),
                 to: CAPABILITY_ID.into(),
-                r#type: Some("supports".into()),
+                r#type: Some("realises".into()),
                 directed: Some(true),
                 props: Some(json!({ "criticality": "High" })),
             },
@@ -735,9 +749,9 @@ fn build_seed_change_set() -> ChangeSet {
                 id: Some("e:application-uses-data".into()),
                 from: APPLICATION_ID.into(),
                 to: DATA_ENTITY_ID.into(),
-                r#type: Some("uses".into()),
+                r#type: Some("accesses".into()),
                 directed: Some(true),
-                props: Some(json!({ "access": "ReadWrite" })),
+                props: Some(json!({ "mode": "readwrite" })),
             },
             EdgeVersion {
                 id: Some("e:technology-hosts-application".into()),
@@ -998,14 +1012,35 @@ mod tests {
         ChangeSet, CommitChangesRequest, CommitRef, DiffArgs, EdgeTombstone, EdgeVersion,
         MergeRequest, NodeTombstone, NodeVersion, StateAtArgs, TopologyDeltaArgs,
     };
+    use serde_json::json;
+
+    fn capability_node(id: &str) -> NodeVersion {
+        capability_with_name(id, id)
+    }
+
+    fn capability_with_name(id: &str, name: &str) -> NodeVersion {
+        NodeVersion {
+            id: id.into(),
+            r#type: Some("Capability".into()),
+            props: Some(json!({
+                "name": name,
+            })),
+        }
+    }
+
+    fn stage_node(id: &str) -> NodeVersion {
+        NodeVersion {
+            id: id.into(),
+            r#type: Some("ValueStreamStage".into()),
+            props: Some(json!({
+                "name": id,
+            })),
+        }
+    }
 
     fn make_change_set(node_id: &str) -> ChangeSet {
         ChangeSet {
-            node_creates: vec![NodeVersion {
-                id: node_id.into(),
-                r#type: None,
-                props: None,
-            }],
+            node_creates: vec![capability_node(node_id)],
             ..ChangeSet::default()
         }
     }
@@ -1141,18 +1176,7 @@ mod tests {
                 message: "nodes".into(),
                 tags: vec![],
                 changes: ChangeSet {
-                    node_creates: vec![
-                        NodeVersion {
-                            id: "n1".into(),
-                            r#type: None,
-                            props: None,
-                        },
-                        NodeVersion {
-                            id: "n2".into(),
-                            r#type: None,
-                            props: None,
-                        },
-                    ],
+                    node_creates: vec![capability_node("cap-1"), stage_node("stage-1")],
                     ..ChangeSet::default()
                 },
             })
@@ -1169,9 +1193,9 @@ mod tests {
                     let mut cs = ChangeSet::default();
                     cs.edge_creates.push(EdgeVersion {
                         id: None,
-                        from: "n1".into(),
-                        to: "n2".into(),
-                        r#type: None,
+                        from: "cap-1".into(),
+                        to: "stage-1".into(),
+                        r#type: Some("serves".into()),
                         directed: Some(true),
                         props: None,
                     });
@@ -1188,7 +1212,7 @@ mod tests {
             tags: vec![],
             changes: {
                 let mut cs = ChangeSet::default();
-                cs.node_deletes.push(NodeTombstone { id: "n1".into() });
+                cs.node_deletes.push(NodeTombstone { id: "cap-1".into() });
                 cs
             },
         });
@@ -1288,11 +1312,7 @@ mod tests {
                 message: "feat change".into(),
                 tags: vec![],
                 changes: ChangeSet {
-                    node_updates: vec![NodeVersion {
-                        id: "shared".into(),
-                        r#type: Some("Feature".into()),
-                        props: None,
-                    }],
+                    node_updates: vec![capability_with_name("shared", "Feature state")],
                     ..ChangeSet::default()
                 },
             })
@@ -1306,11 +1326,7 @@ mod tests {
                 message: "main change".into(),
                 tags: vec![],
                 changes: ChangeSet {
-                    node_updates: vec![NodeVersion {
-                        id: "shared".into(),
-                        r#type: Some("Main".into()),
-                        props: None,
-                    }],
+                    node_updates: vec![capability_with_name("shared", "Main state")],
                     ..ChangeSet::default()
                 },
             })
@@ -1380,7 +1396,7 @@ mod tests {
                 time: None,
                 message: "base".into(),
                 tags: vec![],
-                changes: make_change_set("n1"),
+                changes: make_change_set("cap-root"),
             })
             .expect("base commit");
 
@@ -1394,16 +1410,12 @@ mod tests {
                 tags: vec![],
                 changes: {
                     let mut change = ChangeSet::default();
-                    change.node_creates.push(NodeVersion {
-                        id: "n2".into(),
-                        r#type: None,
-                        props: None,
-                    });
+                    change.node_creates.push(stage_node("stage-extra"));
                     change.edge_creates.push(EdgeVersion {
                         id: None,
-                        from: "n1".into(),
-                        to: "n2".into(),
-                        r#type: None,
+                        from: "cap-root".into(),
+                        to: "stage-extra".into(),
+                        r#type: Some("serves".into()),
                         directed: Some(true),
                         props: None,
                     });
@@ -1434,10 +1446,12 @@ mod tests {
                 changes: {
                     let mut change = ChangeSet::default();
                     change.edge_deletes.push(EdgeTombstone {
-                        from: "n1".into(),
-                        to: "n2".into(),
+                        from: "cap-root".into(),
+                        to: "stage-extra".into(),
                     });
-                    change.node_deletes.push(NodeTombstone { id: "n2".into() });
+                    change.node_deletes.push(NodeTombstone {
+                        id: "stage-extra".into(),
+                    });
                     change
                 },
             })

@@ -35,7 +35,7 @@ app, ensuring data stays on the user’s device and performs well without requir
 setup. This local-first design addresses privacy and cost concerns, while the architecture remains
 cloud-ready for future scaling or team collaboration needs.
 
-**Modules:** *(Canonical schema: see `docs/meta/core-v1.json`.)*
+**Modules:** _(Canonical schema: see `docs/meta/core-v1.json`.)_
 
 - **Aideon Praxis** — core digital twin platform
 - **Aideon Chrona** — time-based visualisation layer
@@ -648,13 +648,29 @@ The platform exposes **standard integration options** to import and export data:
 - Conflicts raise DQ items (severity by type); auto-merge only when incoming = current except for
   whitelisted fields.
 
+### Meta-model configuration (implemented)
+
+- The canonical schema ships as JSON (`docs/meta/core-v1.json`). The `aideon-mneme` crate exposes
+  typed DTOs for that document so both host and renderer consume the same structure.
+- Praxis loads the document (plus optional overrides) into `MetaModelRegistry`
+  (`crates/praxis/src/meta.rs`). Every commit/change-set now flows through the registry before the
+  snapshot mutates, guaranteeing that required attributes, enum values, and relationship
+  constraints line up with the design intent.
+- The host exposes the active schema via the new `temporal_metamodel_get` IPC command. The desktop
+  renderer caches it through `metaModelStore` and shows a dedicated “Meta-model” view so UX/forms
+  never embed enums or type lists.
+- Overrides remain data-only: dropping a JSON file alongside `core-v1` (or injecting one at runtime
+  for managed deployments) lets us extend the schema without recompiling the engines.
+
 ### Application Logic
 
 The host enforces meta-model constraints at write-time and exposes them to the UI as typed forms and
 guarded actions. Heavy analytics (centrality, impact, clustering) run in the Python worker and
-return results via the RPC contract. The worker has no externally accessible ports in desktop mode.
-PII guardrails and redaction are applied at the host boundary before any background task or model
-inference.
+return results via the RPC contract. Praxis’ `MetaModelRegistry` is now the single source of truth
+for schema validation, the host surfaces it via `temporal_metamodel_get`, and the renderer projects
+the data into the Meta-model panel plus any future forms. The worker has no externally accessible
+ports in desktop mode. PII guardrails and redaction are applied at the host boundary before any
+background task or model inference.
 
 ## Temporal Graph & Digital Twin (normative)
 

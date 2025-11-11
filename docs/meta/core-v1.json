@@ -19,8 +19,18 @@
       "category": "Business",
       "attributes": [
         { "name": "name", "type": "string", "required": true },
-        { "name": "tier", "type": "enum", "enum": ["Strategic", "Core", "Supporting"], "required": false },
-        { "name": "lifecycle", "type": "enum", "enum": ["Target", "Current", "Retire"], "required": false }
+        {
+          "name": "tier",
+          "type": "enum",
+          "enum": ["Strategic", "Core", "Supporting"],
+          "required": false
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum",
+          "enum": ["Target", "Current", "Retire"],
+          "required": false
+        }
       ]
     },
     {
@@ -30,7 +40,12 @@
       "attributes": [
         { "name": "name", "type": "string", "required": true },
         { "name": "description", "type": "text", "required": false },
-        { "name": "criticality", "type": "enum", "enum": ["High", "Medium", "Low"], "required": false }
+        {
+          "name": "criticality",
+          "type": "enum",
+          "enum": ["High", "Medium", "Low"],
+          "required": false
+        }
       ]
     },
     {
@@ -40,8 +55,18 @@
       "attributes": [
         { "name": "name", "type": "string", "required": true },
         { "name": "vendor", "type": "string", "required": false },
-        { "name": "disposition", "type": "enum", "enum": ["Invest", "Tolerate", "Migrate", "Eliminate"], "required": false },
-        { "name": "lifecycle", "type": "enum", "enum": ["Plan", "Build", "Run", "Retire"], "required": false }
+        {
+          "name": "disposition",
+          "type": "enum",
+          "enum": ["Invest", "Tolerate", "Migrate", "Eliminate"],
+          "required": false
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum",
+          "enum": ["Plan", "Build", "Run", "Retire"],
+          "required": false
+        }
       ]
     },
     {
@@ -50,7 +75,12 @@
       "category": "Information",
       "attributes": [
         { "name": "name", "type": "string", "required": true },
-        { "name": "sensitivity", "type": "enum", "enum": ["Public", "Internal", "Confidential"], "required": false }
+        {
+          "name": "sensitivity",
+          "type": "enum",
+          "enum": ["Public", "Internal", "Confidential"],
+          "required": false
+        }
       ]
     },
     {
@@ -60,7 +90,12 @@
       "attributes": [
         { "name": "name", "type": "string", "required": true },
         { "name": "provider", "type": "string", "required": false },
-        { "name": "deployment", "type": "enum", "enum": ["On-Prem", "IaaS", "PaaS", "SaaS"], "required": false }
+        {
+          "name": "deployment",
+          "type": "enum",
+          "enum": ["On-Prem", "IaaS", "PaaS", "SaaS"],
+          "required": false
+        }
       ]
     },
     {
@@ -118,7 +153,12 @@
       "to": ["Capability", "BusinessProcess", "Application", "TechnologyComponent"],
       "directed": true,
       "attributes": [
-        { "name": "op", "type": "enum", "enum": ["create", "update", "delete", "link", "unlink"], "required": true },
+        {
+          "name": "op",
+          "type": "enum",
+          "enum": ["create", "update", "delete", "link", "unlink"],
+          "required": true
+        },
         { "name": "target_ref", "type": "string", "required": true }
       ]
     }

@@ -8,6 +8,8 @@ repository.
 Set clear guardrails and output conventions so AI agents make **safe, incremental, reviewable**
 changes that respect our **time‑first, graph‑native** architecture and security posture.
 
+> **Scope:** These instructions apply exclusively to the `aideon-praxis` codebase. Do not spend time optimising for downstream consumers, SDKs, or hypothetical adopters outside this repository unless explicitly directed in a task.
+
 ## Who this is for
 
 - AI pair‑programmers generating or refactoring code, tests, and docs.

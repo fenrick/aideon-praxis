@@ -46,6 +46,7 @@ dependencies = [
  "aideon-mneme",
  "aideon-praxis",
  "log",
+ "serde_json",
 ]
 
 [[package]]
