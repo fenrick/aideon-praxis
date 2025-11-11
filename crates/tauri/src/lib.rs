@@ -33,8 +33,8 @@ mod worker;
 
 use std::sync::Mutex;
 
-pub use aideon::core_data::WorkerHealth;
-pub use aideon::core_data::temporal::{DiffArgs, DiffSummary, StateAtArgs, StateAtResult};
+pub use aideon::mneme::WorkerHealth;
+pub use aideon::mneme::temporal::{DiffArgs, DiffSummary, StateAtArgs, StateAtResult};
 
 use tauri::{Manager, async_runtime::spawn};
 

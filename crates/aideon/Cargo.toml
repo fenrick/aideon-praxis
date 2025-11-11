@@ -8,6 +8,6 @@ authors = ["Aideon Praxis Contributors"]
 [dependencies]
 aideon-chrona = { path = "../chrona" }
 aideon-continuum = { path = "../continuum" }
-aideon-core-data = { path = "../core_data" }
 aideon-metis = { path = "../metis" }
+aideon-mneme = { path = "../mneme" }
 aideon-praxis = { path = "../praxis" }

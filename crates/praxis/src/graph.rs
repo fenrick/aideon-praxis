@@ -1,11 +1,14 @@
 use std::collections::BTreeMap;
 
-use aideon_core_data::temporal::{ChangeSet, EdgeTombstone, EdgeVersion, NodeVersion};
+use aideon_mneme::temporal::{
+    ChangeSet, DiffPatch, EdgeTombstone, EdgeVersion, NodeTombstone, NodeVersion,
+};
+use serde::{Deserialize, Serialize};
 
 use crate::error::{PraxisError, PraxisResult};
 
 /// Deterministic key for edges stored inside a graph snapshot.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 struct EdgeKey {
     id: Option<String>,
     from: String,
@@ -34,7 +37,7 @@ pub struct SnapshotStats {
 }
 
 /// Immutable graph snapshot used when materialising commits.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct GraphSnapshot {
     nodes: BTreeMap<String, NodeVersion>,
     edges: BTreeMap<EdgeKey, EdgeVersion>,
@@ -150,9 +153,7 @@ impl GraphSnapshot {
         Ok(next)
     }
 
-    pub fn diff(&self, other: &GraphSnapshot) -> aideon_core_data::temporal::DiffPatch {
-        use aideon_core_data::temporal::{DiffPatch, EdgeTombstone, NodeTombstone};
-
+    pub fn diff(&self, other: &GraphSnapshot) -> DiffPatch {
         let mut patch = DiffPatch::default();
 
         for (id, node) in other.nodes.iter() {

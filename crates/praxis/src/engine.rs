@@ -1,12 +1,23 @@
+use std::cmp::min;
 use std::collections::{BTreeMap, HashSet, VecDeque};
-use std::sync::{Arc, Mutex};
+use std::path::Path;
+use std::sync::{Arc, Mutex, MutexGuard};
 
-use aideon_core_data::temporal::{
+use aideon_continuum::SnapshotStore;
+use aideon_mneme::temporal::{
     BranchInfo, ChangeSet, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffPatch,
     DiffSummary, EdgeTombstone, EdgeVersion, MergeConflict, MergeRequest, MergeResponse,
     NodeTombstone, NodeVersion, StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
 };
+use aideon_mneme::{
+    MemorySnapshotStore, MemoryStore, PersistedCommit, SqliteDb, Store, sanitize_id,
+};
+use bincode::{deserialize, serialize};
+use blake3::Hasher;
+use serde::Serialize;
 use serde_json::json;
+use time::OffsetDateTime;
+use time::format_description::well_known::Rfc3339;
 
 use crate::error::{PraxisError, PraxisResult};
 use crate::graph::{GraphSnapshot, SnapshotStats};
@@ -28,17 +39,17 @@ impl Default for PraxisEngineConfig {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone)]
 pub struct PraxisEngine {
     inner: Arc<Mutex<Inner>>,
 }
 
-#[derive(Debug)]
 struct Inner {
     commits: BTreeMap<String, CommitRecord>,
     branches: BTreeMap<String, BranchState>,
-    next_commit: u64,
     config: PraxisEngineConfig,
+    store: Arc<dyn Store>,
+    snapshot_store: Arc<dyn SnapshotStore>,
 }
 
 #[derive(Clone, Debug)]
@@ -54,39 +65,49 @@ struct BranchState {
     head: Option<String>,
 }
 
-impl Default for Inner {
-    fn default() -> Self {
-        let mut branches = BTreeMap::new();
-        branches.insert("main".into(), BranchState::default());
-        Self {
-            commits: BTreeMap::new(),
-            branches,
-            next_commit: 0,
-            config: PraxisEngineConfig::default(),
-        }
-    }
-}
-
 impl PraxisEngine {
     pub fn new() -> Self {
         Self::with_config(PraxisEngineConfig::default())
     }
 
     pub fn with_config(config: PraxisEngineConfig) -> Self {
-        let inner = Inner {
+        Self::with_stores(
             config,
-            ..Inner::default()
-        };
+            Arc::new(MemoryStore::default()),
+            Arc::new(MemorySnapshotStore::default()),
+        )
+        .expect("in-memory praxis engine initialization failed")
+    }
+
+    pub fn with_sqlite(path: impl AsRef<Path>) -> PraxisResult<Self> {
+        Self::with_sqlite_and_config(path, PraxisEngineConfig::default())
+    }
+
+    pub fn with_sqlite_and_config(
+        path: impl AsRef<Path>,
+        config: PraxisEngineConfig,
+    ) -> PraxisResult<Self> {
+        let storage = SqliteDb::open(path)?;
+        let snapshot = storage.snapshot_store();
+        let commit_store: Arc<dyn Store> = Arc::new(storage.clone());
+        let snapshot_store: Arc<dyn SnapshotStore> = Arc::new(snapshot);
+        Self::with_stores(config, commit_store, snapshot_store)
+    }
+
+    pub fn with_stores(
+        config: PraxisEngineConfig,
+        store: Arc<dyn Store>,
+        snapshot_store: Arc<dyn SnapshotStore>,
+    ) -> PraxisResult<Self> {
+        let inner = Inner::new(config, store, snapshot_store)?;
         let engine = Self {
             inner: Arc::new(Mutex::new(inner)),
         };
-        engine
-            .ensure_seeded()
-            .expect("praxis engine failed to seed initial commit");
-        engine
+        engine.ensure_seeded()?;
+        Ok(engine)
     }
 
-    fn lock(&self) -> std::sync::MutexGuard<'_, Inner> {
+    fn lock(&self) -> MutexGuard<'_, Inner> {
         self.inner.lock().expect("praxis engine mutex poisoned")
     }
 
@@ -120,73 +141,116 @@ impl PraxisEngine {
 
     pub fn commit(&self, request: CommitChangesRequest) -> PraxisResult<String> {
         let mut inner = self.lock();
+        validate_branch_name(&request.branch)?;
+
         if !inner.config.allow_empty_commits && request.changes.is_empty() {
             return Err(PraxisError::ValidationFailed {
                 message: "empty commits are disabled".into(),
             });
         }
 
-        let branch_name = request.branch.clone();
-        let expected_parent = {
-            let state = inner.branches.entry(branch_name.clone()).or_default();
-            match (&request.parent, &state.head) {
-                (Some(explicit), Some(head)) if explicit != head => {
-                    return Err(PraxisError::ConcurrencyConflict {
-                        branch: branch_name.clone(),
-                        expected: Some(explicit.clone()),
-                        actual: state.head.clone(),
-                    });
-                }
-                (Some(explicit), None) => Some(explicit.clone()),
-                (Some(explicit), Some(_)) => Some(explicit.clone()),
-                (None, head) => head.clone(),
+        if !inner.branches.contains_key(&request.branch) {
+            inner.store.ensure_branch(&request.branch)?;
+            inner
+                .branches
+                .insert(request.branch.clone(), BranchState::default());
+        }
+
+        let current_head = inner
+            .branches
+            .get(&request.branch)
+            .and_then(|state| state.head.clone());
+
+        let expected_parent = match (&request.parent, &current_head) {
+            (Some(explicit), Some(head)) if explicit != head => {
+                return Err(PraxisError::ConcurrencyConflict {
+                    branch: request.branch.clone(),
+                    expected: Some(explicit.clone()),
+                    actual: Some(head.clone()),
+                });
             }
+            (Some(explicit), _) => Some(explicit.clone()),
+            (None, head) => head.clone(),
         };
 
-        let base_snapshot = match expected_parent {
-            Some(ref parent_id) => inner
-                .commits
-                .get(parent_id.as_str())
-                .map(|record| Arc::clone(&record.snapshot))
-                .ok_or_else(|| PraxisError::UnknownCommit {
-                    commit: parent_id.clone(),
-                })?,
+        let base_snapshot = match expected_parent.as_deref() {
+            Some(parent_id) => inner.snapshot_for(parent_id)?,
             None => Arc::new(GraphSnapshot::empty()),
         };
 
-        let snapshot = Arc::new(base_snapshot.apply(&request.changes)?);
+        let normalized_changes = normalize_change_set(&request.changes);
+        if !inner.config.allow_empty_commits && normalized_changes.is_empty() {
+            return Err(PraxisError::ValidationFailed {
+                message: "empty commits are disabled".into(),
+            });
+        }
 
-        inner.next_commit += 1;
-        let commit_id = format!("{}{}", inner.config.commit_id_prefix, inner.next_commit);
+        let snapshot = Arc::new(base_snapshot.apply(&normalized_changes)?);
+
+        let parents: Vec<String> = expected_parent.into_iter().collect();
+        let timestamp = request.time.clone().or_else(|| Some(current_timestamp()));
+
+        let commit_id = derive_commit_id(
+            &inner.config.commit_id_prefix,
+            &request.branch,
+            &parents,
+            request.author.as_deref(),
+            &request.message,
+            &request.tags,
+            &normalized_changes,
+        );
+
+        if inner.store.get_commit(&commit_id)?.is_some() {
+            return Err(PraxisError::IntegrityViolation {
+                message: format!("commit '{commit_id}' already exists"),
+            });
+        }
+
         let summary = CommitSummary {
             id: commit_id.clone(),
-            parents: expected_parent.into_iter().collect(),
-            branch: branch_name.clone(),
+            parents: parents.clone(),
+            branch: request.branch.clone(),
             author: request.author.clone(),
-            time: request.time.clone(),
+            time: timestamp,
             message: request.message.clone(),
             tags: request.tags.clone(),
-            change_count: change_count(&request.changes),
+            change_count: change_count(&normalized_changes),
         };
+
+        let persisted = PersistedCommit {
+            summary: summary.clone(),
+            change_set: normalized_changes.clone(),
+        };
+
+        inner.store.put_commit(&persisted)?;
+        inner.persist_snapshot(&commit_id, &snapshot)?;
+
+        inner.store.compare_and_swap_branch(
+            &request.branch,
+            current_head.as_deref(),
+            Some(&commit_id),
+        )?;
+        inner
+            .branches
+            .entry(request.branch.clone())
+            .or_default()
+            .head = Some(commit_id.clone());
 
         inner.commits.insert(
             commit_id.clone(),
             CommitRecord {
-                summary: summary.clone(),
+                summary,
                 snapshot: Arc::clone(&snapshot),
-                change_set: request.changes.clone(),
+                change_set: normalized_changes,
             },
         );
-
-        inner.branches.entry(branch_name).or_default().head = Some(commit_id.clone());
-
-        // To-do: enforce schema validation here once the meta-model module lands.
 
         Ok(commit_id)
     }
 
     pub fn create_branch(&self, name: String, from: Option<CommitRef>) -> PraxisResult<BranchInfo> {
         let mut inner = self.lock();
+        validate_branch_name(&name)?;
         if inner.branches.contains_key(&name) {
             return Err(PraxisError::ValidationFailed {
                 message: format!("branch '{name}' already exists"),
@@ -194,9 +258,13 @@ impl PraxisEngine {
         }
 
         let head = match from {
-            Some(reference) => Some(resolve_commit_id(&inner, &reference, None)?),
+            Some(reference) => Some(resolve_commit_id(&mut inner, &reference, None)?),
             None => inner.branches.get("main").and_then(|b| b.head.clone()),
         };
+        inner.store.ensure_branch(&name)?;
+        inner
+            .store
+            .compare_and_swap_branch(&name, None, head.as_deref())?;
         inner
             .branches
             .insert(name.clone(), BranchState { head: head.clone() });
@@ -204,7 +272,7 @@ impl PraxisEngine {
     }
 
     pub fn list_commits(&self, branch: String) -> PraxisResult<Vec<CommitSummary>> {
-        let inner = self.lock();
+        let mut inner = self.lock();
         let state = inner
             .branches
             .get(&branch)
@@ -215,10 +283,7 @@ impl PraxisEngine {
         let mut ordered: Vec<CommitSummary> = Vec::new();
         let mut cursor = state.head.clone();
         while let Some(id) = cursor {
-            let record = inner
-                .commits
-                .get(&id)
-                .ok_or_else(|| PraxisError::UnknownCommit { commit: id.clone() })?;
+            let record = inner.record_for(&id)?;
             ordered.push(record.summary.clone());
             cursor = record.summary.parents.first().cloned();
         }
@@ -227,9 +292,9 @@ impl PraxisEngine {
     }
 
     pub fn state_at(&self, args: StateAtArgs) -> PraxisResult<StateAtResult> {
-        let inner = self.lock();
+        let mut inner = self.lock();
         let (commit_id, snapshot, branch_name) =
-            resolve_snapshot(&inner, &args.as_of, args.scenario.as_deref())?;
+            resolve_snapshot(&mut inner, &args.as_of, args.scenario.as_deref())?;
         let stats = snapshot.stats();
         Ok(StateAtResult::new(
             commit_id,
@@ -241,9 +306,9 @@ impl PraxisEngine {
     }
 
     pub fn diff_summary(&self, args: DiffArgs) -> PraxisResult<DiffSummary> {
-        let inner = self.lock();
-        let (from_id, from_snapshot, _) = resolve_snapshot(&inner, &args.from, None)?;
-        let (to_id, to_snapshot, _) = resolve_snapshot(&inner, &args.to, None)?;
+        let mut inner = self.lock();
+        let (from_id, from_snapshot, _) = resolve_snapshot(&mut inner, &args.from, None)?;
+        let (to_id, to_snapshot, _) = resolve_snapshot(&mut inner, &args.to, None)?;
         let patch = from_snapshot.diff(&to_snapshot);
         Ok(DiffSummary::new(
             from_id,
@@ -258,9 +323,9 @@ impl PraxisEngine {
     }
 
     pub fn topology_delta(&self, args: TopologyDeltaArgs) -> PraxisResult<TopologyDeltaResult> {
-        let inner = self.lock();
-        let (from_id, from_snapshot, _) = resolve_snapshot(&inner, &args.from, None)?;
-        let (to_id, to_snapshot, _) = resolve_snapshot(&inner, &args.to, None)?;
+        let mut inner = self.lock();
+        let (from_id, from_snapshot, _) = resolve_snapshot(&mut inner, &args.from, None)?;
+        let (to_id, to_snapshot, _) = resolve_snapshot(&mut inner, &args.to, None)?;
         let patch = from_snapshot.diff(&to_snapshot);
         Ok(TopologyDeltaResult::new(
             from_id,
@@ -285,83 +350,52 @@ impl PraxisEngine {
     }
 
     pub fn stats_for_commit(&self, commit_id: &str) -> PraxisResult<SnapshotStats> {
-        let inner = self.lock();
-        let record = inner
-            .commits
-            .get(commit_id)
-            .ok_or_else(|| PraxisError::UnknownCommit {
-                commit: commit_id.into(),
-            })?;
+        let mut inner = self.lock();
+        let record = inner.record_for(commit_id)?;
         Ok(record.snapshot.stats())
     }
 
     pub fn snapshot_for_commit(&self, commit_id: &str) -> PraxisResult<Arc<GraphSnapshot>> {
-        let inner = self.lock();
-        let record = inner
-            .commits
-            .get(commit_id)
-            .ok_or_else(|| PraxisError::UnknownCommit {
-                commit: commit_id.into(),
-            })?;
-        Ok(Arc::clone(&record.snapshot))
+        let mut inner = self.lock();
+        inner.snapshot_for(commit_id)
     }
 
     pub fn merge(&self, request: MergeRequest) -> PraxisResult<MergeResponse> {
         let mut inner = self.lock();
 
-        let source_branch =
-            inner
-                .branches
-                .get(&request.source)
-                .ok_or_else(|| PraxisError::UnknownBranch {
-                    branch: request.source.clone(),
-                })?;
-        let target_branch =
-            inner
-                .branches
-                .get(&request.target)
-                .ok_or_else(|| PraxisError::UnknownBranch {
-                    branch: request.target.clone(),
-                })?;
-
-        let source_head = source_branch
+        let source_head = inner
+            .branches
+            .get(&request.source)
+            .ok_or_else(|| PraxisError::UnknownBranch {
+                branch: request.source.clone(),
+            })?
             .head
             .clone()
             .ok_or_else(|| PraxisError::UnknownCommit {
                 commit: request.source.clone(),
             })?;
-        let target_head = target_branch
+        let target_head = inner
+            .branches
+            .get(&request.target)
+            .ok_or_else(|| PraxisError::UnknownBranch {
+                branch: request.target.clone(),
+            })?
             .head
             .clone()
             .ok_or_else(|| PraxisError::UnknownCommit {
                 commit: request.target.clone(),
             })?;
 
-        let base = find_common_ancestor(&inner, &source_head, &target_head).ok_or_else(|| {
-            PraxisError::MergeConflict {
-                message: "branches do not share a common ancestor".into(),
-            }
-        })?;
+        let base =
+            find_common_ancestor(&mut inner, &source_head, &target_head)?.ok_or_else(|| {
+                PraxisError::MergeConflict {
+                    message: "branches do not share a common ancestor".into(),
+                }
+            })?;
 
-        let base_snapshot = inner
-            .commits
-            .get(&base)
-            .map(|record| Arc::clone(&record.snapshot))
-            .unwrap_or_else(|| Arc::new(GraphSnapshot::empty()));
-        let source_snapshot = inner
-            .commits
-            .get(&source_head)
-            .map(|record| Arc::clone(&record.snapshot))
-            .ok_or_else(|| PraxisError::UnknownCommit {
-                commit: source_head.clone(),
-            })?;
-        let target_snapshot = inner
-            .commits
-            .get(&target_head)
-            .map(|record| Arc::clone(&record.snapshot))
-            .ok_or_else(|| PraxisError::UnknownCommit {
-                commit: target_head.clone(),
-            })?;
+        let base_snapshot = inner.snapshot_for(&base)?;
+        let source_snapshot = inner.snapshot_for(&source_head)?;
+        let target_snapshot = inner.snapshot_for(&target_head)?;
 
         let source_patch = base_snapshot.diff(&source_snapshot);
         let target_patch = base_snapshot.diff(&target_snapshot);
@@ -381,35 +415,145 @@ impl PraxisEngine {
                 conflicts: None,
             });
         }
+        let normalized_changes = normalize_change_set(&changes);
 
-        inner.next_commit += 1;
-        let commit_id = format!("{}{}", inner.config.commit_id_prefix, inner.next_commit);
+        let parents = vec![target_head.clone(), source_head.clone()];
+        let message = format!("merge {} -> {}", request.source, request.target);
+        let tags = vec!["merge".into()];
+        let commit_id = derive_commit_id(
+            &inner.config.commit_id_prefix,
+            &request.target,
+            &parents,
+            None,
+            &message,
+            &tags,
+            &normalized_changes,
+        );
+
+        if inner.store.get_commit(&commit_id)?.is_some() {
+            return Err(PraxisError::IntegrityViolation {
+                message: format!("commit '{commit_id}' already exists"),
+            });
+        }
+
         let summary = CommitSummary {
             id: commit_id.clone(),
-            parents: vec![target_head.clone(), source_head.clone()],
+            parents: parents.clone(),
             branch: request.target.clone(),
             author: None,
-            time: None,
-            message: format!("merge {} -> {}", request.source, request.target),
-            tags: vec!["merge".into()],
-            change_count: change_count(&changes),
+            time: Some(current_timestamp()),
+            message,
+            tags: tags.clone(),
+            change_count: change_count(&normalized_changes),
         };
-        let snapshot = Arc::new(target_snapshot.apply(&changes)?);
+        let snapshot = Arc::new(target_snapshot.apply(&normalized_changes)?);
 
+        let persisted = PersistedCommit {
+            summary: summary.clone(),
+            change_set: normalized_changes.clone(),
+        };
+
+        inner.store.put_commit(&persisted)?;
+        inner.persist_snapshot(&commit_id, &snapshot)?;
+        inner.store.compare_and_swap_branch(
+            &request.target,
+            Some(&target_head),
+            Some(&commit_id),
+        )?;
+        inner
+            .branches
+            .entry(request.target.clone())
+            .or_default()
+            .head = Some(commit_id.clone());
         inner.commits.insert(
             commit_id.clone(),
             CommitRecord {
-                summary: summary.clone(),
+                summary,
                 snapshot: Arc::clone(&snapshot),
-                change_set: changes.clone(),
+                change_set: normalized_changes,
             },
         );
-        inner.branches.entry(request.target).or_default().head = Some(commit_id.clone());
 
         Ok(MergeResponse {
             result: Some(commit_id),
             conflicts: None,
         })
+    }
+}
+
+impl Default for PraxisEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Inner {
+    fn new(
+        config: PraxisEngineConfig,
+        store: Arc<dyn Store>,
+        snapshot_store: Arc<dyn SnapshotStore>,
+    ) -> PraxisResult<Self> {
+        let mut branches = BTreeMap::new();
+        for (name, head) in store.list_branches()? {
+            branches.insert(name, BranchState { head });
+        }
+        if !branches.contains_key("main") {
+            store.ensure_branch("main")?;
+            branches.insert("main".into(), BranchState::default());
+        }
+        Ok(Self {
+            commits: BTreeMap::new(),
+            branches,
+            config,
+            store,
+            snapshot_store,
+        })
+    }
+
+    fn persist_snapshot(&self, commit_id: &str, snapshot: &GraphSnapshot) -> PraxisResult<()> {
+        let bytes = serialize(snapshot).map_err(|err| PraxisError::IntegrityViolation {
+            message: format!("encode snapshot '{commit_id}': {err}"),
+        })?;
+        let key = snapshot_key(commit_id);
+        self.snapshot_store
+            .put(&key, &bytes)
+            .map_err(|err| PraxisError::IntegrityViolation {
+                message: format!("write snapshot '{commit_id}': {err}"),
+            })
+    }
+
+    fn record_for(&mut self, commit_id: &str) -> PraxisResult<CommitRecord> {
+        if let Some(record) = self.commits.get(commit_id) {
+            return Ok(record.clone());
+        }
+        let persisted =
+            self.store
+                .get_commit(commit_id)?
+                .ok_or_else(|| PraxisError::UnknownCommit {
+                    commit: commit_id.into(),
+                })?;
+        let bytes = self
+            .snapshot_store
+            .get(&snapshot_key(commit_id))
+            .map_err(|err| PraxisError::IntegrityViolation {
+                message: format!("read snapshot '{commit_id}': {err}"),
+            })?;
+        let snapshot: GraphSnapshot =
+            deserialize(&bytes).map_err(|err| PraxisError::IntegrityViolation {
+                message: format!("decode snapshot '{commit_id}': {err}"),
+            })?;
+        let record = CommitRecord {
+            summary: persisted.summary.clone(),
+            snapshot: Arc::new(snapshot),
+            change_set: persisted.change_set.clone(),
+        };
+        self.commits.insert(commit_id.into(), record.clone());
+        Ok(record)
+    }
+
+    fn snapshot_for(&mut self, commit_id: &str) -> PraxisResult<Arc<GraphSnapshot>> {
+        let record = self.record_for(commit_id)?;
+        Ok(Arc::clone(&record.snapshot))
     }
 }
 
@@ -420,6 +564,103 @@ fn change_count(set: &ChangeSet) -> u64 {
         + set.edge_creates.len()
         + set.edge_updates.len()
         + set.edge_deletes.len()) as u64
+}
+
+fn normalize_change_set(input: &ChangeSet) -> ChangeSet {
+    let mut normalized = input.clone();
+    normalized.node_creates.sort_by_key(|node| node.id.clone());
+    normalized.node_updates.sort_by_key(|node| node.id.clone());
+    normalized.node_deletes.sort_by_key(|node| node.id.clone());
+    normalized.edge_creates.sort_by_key(edge_sort_key);
+    normalized.edge_updates.sort_by_key(edge_sort_key);
+    normalized.edge_deletes.sort_by_key(edge_tombstone_key);
+    normalized
+}
+
+fn edge_sort_key(edge: &EdgeVersion) -> (String, String, String) {
+    (
+        edge.id.clone().unwrap_or_default(),
+        edge.from.clone(),
+        edge.to.clone(),
+    )
+}
+
+fn edge_tombstone_key(tombstone: &EdgeTombstone) -> (String, String) {
+    (tombstone.from.clone(), tombstone.to.clone())
+}
+
+fn derive_commit_id(
+    prefix: &str,
+    branch: &str,
+    parents: &[String],
+    author: Option<&str>,
+    message: &str,
+    tags: &[String],
+    changes: &ChangeSet,
+) -> String {
+    #[derive(Serialize)]
+    struct Identity<'a> {
+        branch: &'a str,
+        parents: &'a [String],
+        author: Option<&'a str>,
+        message: &'a str,
+        tags: &'a [String],
+        changes: &'a ChangeSet,
+    }
+
+    let identity = Identity {
+        branch,
+        parents,
+        author,
+        message,
+        tags,
+        changes,
+    };
+    let payload = serde_json::to_vec(&identity).expect("commit identity serialization");
+    let mut hasher = Hasher::new();
+    hasher.update(&payload);
+    let hex = hasher.finalize().to_hex().to_string();
+    let short = &hex[..min(32, hex.len())];
+    format!("{}{}", prefix, short)
+}
+
+fn current_timestamp() -> String {
+    OffsetDateTime::now_utc()
+        .format(&Rfc3339)
+        .unwrap_or_else(|_| "1970-01-01T00:00:00Z".into())
+}
+
+fn snapshot_key(commit_id: &str) -> String {
+    format!("snapshots/{}.bin", sanitize_id(commit_id))
+}
+
+fn validate_branch_name(name: &str) -> PraxisResult<()> {
+    if name.trim().is_empty() {
+        return Err(PraxisError::ValidationFailed {
+            message: "branch name cannot be empty".into(),
+        });
+    }
+    for segment in name.split('/') {
+        if segment.is_empty() {
+            return Err(PraxisError::ValidationFailed {
+                message: "branch segments cannot be empty".into(),
+            });
+        }
+        if segment == "." || segment == ".." {
+            return Err(PraxisError::ValidationFailed {
+                message: "branch segments may not be '.' or '..'".into(),
+            });
+        }
+        if !segment
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.'))
+        {
+            return Err(PraxisError::ValidationFailed {
+                message: format!("branch segment '{segment}' contains invalid characters"),
+            });
+        }
+    }
+    Ok(())
 }
 
 fn build_seed_change_set() -> ChangeSet {
@@ -513,17 +754,12 @@ fn build_seed_change_set() -> ChangeSet {
 }
 
 fn resolve_snapshot(
-    inner: &Inner,
+    inner: &mut Inner,
     reference: &CommitRef,
     scenario_hint: Option<&str>,
 ) -> PraxisResult<(String, Arc<GraphSnapshot>, String)> {
     let commit_id = resolve_commit_id(inner, reference, scenario_hint)?;
-    let record = inner
-        .commits
-        .get(&commit_id)
-        .ok_or_else(|| PraxisError::UnknownCommit {
-            commit: commit_id.clone(),
-        })?;
+    let record = inner.record_for(&commit_id)?;
     Ok((
         commit_id,
         Arc::clone(&record.snapshot),
@@ -532,13 +768,13 @@ fn resolve_snapshot(
 }
 
 fn resolve_commit_id(
-    inner: &Inner,
+    inner: &mut Inner,
     reference: &CommitRef,
     scenario_hint: Option<&str>,
 ) -> PraxisResult<String> {
     match reference {
         CommitRef::Id(value) => {
-            if inner.commits.contains_key(value.as_str()) {
+            if inner.record_for(value).is_ok() {
                 Ok(value.clone())
             } else if let Some(branch_state) = inner.branches.get(value.as_str()) {
                 branch_state
@@ -568,9 +804,8 @@ fn resolve_commit_id(
             }
         }
         CommitRef::Branch { branch, at } => {
-            if let Some(at) = at
-                && inner.commits.contains_key(at.as_str())
-            {
+            if let Some(at) = at {
+                inner.record_for(at)?;
                 return Ok(at.clone());
             }
             let target_branch =
@@ -590,8 +825,8 @@ fn resolve_commit_id(
     }
 }
 
-fn find_common_ancestor(inner: &Inner, a: &str, b: &str) -> Option<String> {
-    let ancestors_a = collect_ancestors(inner, a);
+fn find_common_ancestor(inner: &mut Inner, a: &str, b: &str) -> PraxisResult<Option<String>> {
+    let ancestors_a = collect_ancestors(inner, a)?;
     let mut queue: VecDeque<String> = VecDeque::new();
     queue.push_back(b.to_string());
     let mut visited = HashSet::new();
@@ -600,18 +835,18 @@ fn find_common_ancestor(inner: &Inner, a: &str, b: &str) -> Option<String> {
             continue;
         }
         if ancestors_a.contains(&id) {
-            return Some(id);
+            return Ok(Some(id));
         }
-        if let Some(record) = inner.commits.get(&id) {
+        if let Ok(record) = inner.record_for(&id) {
             for parent in &record.summary.parents {
                 queue.push_back(parent.clone());
             }
         }
     }
-    None
+    Ok(None)
 }
 
-fn collect_ancestors(inner: &Inner, head: &str) -> HashSet<String> {
+fn collect_ancestors(inner: &mut Inner, head: &str) -> PraxisResult<HashSet<String>> {
     let mut visited = HashSet::new();
     let mut queue: VecDeque<String> = VecDeque::new();
     queue.push_back(head.to_string());
@@ -619,13 +854,13 @@ fn collect_ancestors(inner: &Inner, head: &str) -> HashSet<String> {
         if !visited.insert(id.clone()) {
             continue;
         }
-        if let Some(record) = inner.commits.get(&id) {
+        if let Ok(record) = inner.record_for(&id) {
             for parent in &record.summary.parents {
                 queue.push_back(parent.clone());
             }
         }
     }
-    visited
+    Ok(visited)
 }
 
 fn detect_conflicts(source: &DiffPatch, target: &DiffPatch) -> Vec<MergeConflict> {
@@ -759,7 +994,7 @@ fn build_change_set(target_snapshot: &GraphSnapshot, patch: &DiffPatch) -> Chang
 #[cfg(test)]
 mod tests {
     use super::PraxisEngine;
-    use aideon_core_data::temporal::{
+    use aideon_mneme::temporal::{
         ChangeSet, CommitChangesRequest, CommitRef, DiffArgs, EdgeTombstone, EdgeVersion,
         MergeRequest, NodeTombstone, NodeVersion, StateAtArgs, TopologyDeltaArgs,
     };
@@ -905,9 +1140,8 @@ mod tests {
                 time: None,
                 message: "nodes".into(),
                 tags: vec![],
-                changes: {
-                    let mut cs = ChangeSet::default();
-                    cs.node_creates = vec![
+                changes: ChangeSet {
+                    node_creates: vec![
                         NodeVersion {
                             id: "n1".into(),
                             r#type: None,
@@ -918,8 +1152,8 @@ mod tests {
                             r#type: None,
                             props: None,
                         },
-                    ];
-                    cs
+                    ],
+                    ..ChangeSet::default()
                 },
             })
             .unwrap();

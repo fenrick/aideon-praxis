@@ -3,7 +3,7 @@
 //! Chrona keeps the IPC-friendly API exposed to the Tauri host while delegating
 //! persistence, validation, and diff computation to the Praxis engine.
 
-use aideon_core_data::temporal::{
+use aideon_mneme::temporal::{
     BranchInfo, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffSummary,
     ListBranchesResponse, MergeRequest, MergeResponse, StateAtArgs, StateAtResult,
     TopologyDeltaArgs, TopologyDeltaResult,
@@ -11,18 +11,20 @@ use aideon_core_data::temporal::{
 use aideon_praxis::{PraxisEngine, PraxisResult};
 
 /// Thin wrapper that keeps the previous `TemporalEngine` name stable for the host.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone)]
 pub struct TemporalEngine {
     inner: PraxisEngine,
 }
 
 impl TemporalEngine {
     pub fn new() -> Self {
-        let inner = PraxisEngine::new();
-        if let Err(err) = inner.ensure_seeded() {
-            panic!("temporal engine failed to seed praxis graph: {err}");
+        Self {
+            inner: PraxisEngine::new(),
         }
-        Self { inner }
+    }
+
+    pub fn from_engine(engine: PraxisEngine) -> Self {
+        Self { inner: engine }
     }
 
     pub fn state_at(&self, args: StateAtArgs) -> PraxisResult<StateAtResult> {
@@ -59,10 +61,16 @@ impl TemporalEngine {
     }
 }
 
+impl Default for TemporalEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::TemporalEngine;
-    use aideon_core_data::temporal::{
+    use aideon_mneme::temporal::{
         ChangeSet, CommitChangesRequest, CommitRef, EdgeTombstone, EdgeVersion, NodeTombstone,
         NodeVersion, StateAtArgs, TopologyDeltaArgs,
     };
@@ -79,7 +87,7 @@ mod tests {
                 message: "seed".into(),
                 tags: vec![],
                 changes: ChangeSet {
-                    node_creates: vec![aideon_core_data::temporal::NodeVersion {
+                    node_creates: vec![aideon_mneme::temporal::NodeVersion {
                         id: "n1".into(),
                         r#type: None,
                         props: None,

@@ -4,8 +4,10 @@
 //! handlers can access it without leaking internal mutability.
 
 use aideon::chrona::TemporalEngine;
-use aideon::core_data::WorkerHealth;
+use aideon::mneme::WorkerHealth;
+use aideon::praxis::PraxisEngine;
 use log::{debug, info};
+use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, Wry};
 
@@ -38,8 +40,19 @@ impl WorkerState {
 
 /// Lazily initialize the temporal engine and store it in Tauri managed state.
 pub async fn init_temporal(app: &AppHandle<Wry>) -> Result<(), String> {
-    let engine = TemporalEngine::new();
-    app.manage(WorkerState::new(engine));
+    let storage_root = app
+        .path()
+        .app_data_dir()
+        .map_err(|err| err.to_string())?
+        .join("AideonPraxis")
+        .join(".praxis");
+    fs::create_dir_all(&storage_root)
+        .map_err(|err| format!("failed to prepare storage dir: {err}"))?;
+    let db_path = storage_root.join("praxis.sqlite");
+    let engine = PraxisEngine::with_sqlite(&db_path)
+        .map_err(|err| format!("temporal engine init failed: {err}"))?;
+    let temporal = TemporalEngine::from_engine(engine);
+    app.manage(WorkerState::new(temporal));
     info!("host: temporal engine registered with application state");
     Ok(())
 }

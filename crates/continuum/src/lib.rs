@@ -6,7 +6,7 @@ use std::path::PathBuf;
 /// Abstraction for snapshot persistence that the host can use without committing
 /// to a specific backend. Implementations may store bytes in files, SQLite,
 /// object stores, etc. Keys are implementation-defined references.
-pub trait SnapshotStore {
+pub trait SnapshotStore: Send + Sync {
     fn put(&self, key: &str, bytes: &[u8]) -> Result<(), String>;
     fn get(&self, key: &str) -> Result<Vec<u8>, String>;
 }
