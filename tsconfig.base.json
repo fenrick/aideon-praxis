@@ -3,6 +3,7 @@
     "target": "ES2023",
     "module": "ES2022",
     "moduleResolution": "Bundler",
+    "baseUrl": ".",
     "strict": true,
     "jsx": "react-jsx",
     "noUncheckedIndexedAccess": true,
@@ -12,6 +13,10 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "types": ["node", "vite/client"]
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@adapters": ["app/adapters/src"],
+      "@adapters/*": ["app/adapters/src/*"]
+    }
   }
 }
