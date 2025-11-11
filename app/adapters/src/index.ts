@@ -3,6 +3,12 @@ export { ensureIsoDateTime } from './contracts';
 export type {
   ConfidencePercent,
   GraphSnapshotMetrics,
+  MetaAttributeKind,
+  MetaModelAttribute,
+  MetaModelDocument,
+  MetaModelRelationship,
+  MetaModelType,
+  MetaValidationRules,
   PlanEvent,
   PlanEventEffect,
   PlanEventSource,
@@ -21,6 +27,7 @@ export type {
 } from './contracts';
 
 import type {
+  MetaModelDocument,
   TemporalDiffParameters,
   TemporalDiffSnapshot,
   TemporalStateParameters,
@@ -50,6 +57,10 @@ export interface GraphAdapter {
    * most efficient path (e.g., diffing plateau IDs or re-running analytics).
    */
   diff(parameters: TemporalDiffParameters): Promise<TemporalDiffSnapshot>;
+}
+
+export interface MetaModelProvider {
+  getMetaModel(): Promise<MetaModelDocument>;
 }
 
 /**

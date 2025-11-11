@@ -2,6 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 
 import type {
   GraphSnapshotMetrics,
+  MetaModelDocument,
+  MetaModelProvider,
   MutableGraphAdapter,
   TemporalDiffParameters,
   TemporalDiffSnapshot,
@@ -81,7 +83,7 @@ type InvokeFunction = <T>(command: string, arguments_?: Record<string, unknown>)
 const call: InvokeFunction = (command, arguments_) => invoke(command, arguments_);
 // To-do: introduce streaming support when temporal_diff grows beyond summary metrics.
 
-export class IpcTemporalAdapter implements MutableGraphAdapter {
+export class IpcTemporalAdapter implements MutableGraphAdapter, MetaModelProvider {
   async stateAt(parameters: TemporalStateParameters): Promise<TemporalStateSnapshot> {
     const result = await call<StateAtResp>('temporal_state_at', {
       payload: {
@@ -265,5 +267,9 @@ export class IpcTemporalAdapter implements MutableGraphAdapter {
       to,
       metrics,
     };
+  }
+
+  async getMetaModel(): Promise<MetaModelDocument> {
+    return call<MetaModelDocument>('temporal_metamodel_get');
   }
 }
