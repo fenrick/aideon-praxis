@@ -70,7 +70,7 @@ Quality gates
 
 - `app/desktop` — Svelte renderer bundle consumed by the Tauri host.
 - `crates/tauri` — Rust desktop host (Tauri) and IPC surface.
-- `crates/{praxis,chrona,metis,continuum,core_data}` — domain crates for graph/time/analytics orchestration.
+- `crates/{praxis,chrona,metis,continuum,mneme}` — domain crates for graph/time/analytics, orchestration, and persistence.
 - `app/adapters` — Shared TypeScript adapters (renderer ↔ host contracts).
 - `docs/` — Architecture content, ADRs, C4 diagrams.
 - `scripts/` — Minimal tooling entrypoints (issues.py). Legacy node scripts removed.

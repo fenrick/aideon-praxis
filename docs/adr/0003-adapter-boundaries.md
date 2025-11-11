@@ -15,7 +15,7 @@ server modes.
 Adopt interface-driven adapters with these responsibilities and constraints:
 
 - `GraphAdapter` — read-only time-sliced graph access (`stateAt`, `diff`). No persistence or
-  backend-specific queries. Returns DTOs defined in `core_data` (camelCase JSON).
+  backend-specific queries. Returns DTOs defined in `mneme` (camelCase JSON).
 - `StorageAdapter` — snapshot persistence by reference (local file or remote). Deny-by-default on
   PII for exports; redaction enforced by tests.
 - `WorkerClient` — runs analytics/time jobs via the host (desktop) or remote service (server).
@@ -26,7 +26,7 @@ Constraints:
 - Renderer never imports DB/HTTP clients; the host exposes typed commands only.
 - Desktop mode opens no TCP ports. Host ↔ Worker use in-process modules now; later UDS/Named Pipes
   with JSON-RPC. Contracts unchanged across modes.
-- DTOs live in `crates/core_data` and are shared across host and worker crates.
+- DTOs live in `crates/mneme` and are shared across host and worker crates.
 
 ### Consequences
 

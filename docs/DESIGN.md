@@ -41,6 +41,7 @@ cloud-ready for future scaling or team collaboration needs.
 - **Aideon Chrona** — time-based visualisation layer
 - **Aideon Metis** — analytical reasoning module (as a nod to wisdom, not the standalone brand)
 - **Aideon Continuum** — orchestration/automation engine
+- **Aideon Mneme** — persistence + shared DTOs (commits, refs, snapshots, health, etc.)
 
 ## Strategy-to-Execution Map (normative)
 

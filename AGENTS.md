@@ -30,8 +30,10 @@ changes that respect our **time‑first, graph‑native** architecture and secur
 - `app/desktop` — Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only).
 - `app/adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
 - `crates/tauri` — Tauri host (Rust) exposing the typed command/event surface.
-- `crates/{praxis,chrona,metis,continuum,core_data}` — Rust domain crates (graph, time, analytics,
-  orchestration, shared data) scoped to host/worker logic.
+- `crates/{praxis,chrona,metis,continuum}` — Rust domain crates (graph, time, analytics,
+  orchestration) scoped to host/worker logic.
+- `crates/mneme` — Aideon Mneme persistence layer (commits, refs, snapshots) powering SQLITE/other
+  storage backends via a shared API.
 - `docs/` — C4 diagrams, meta‑model, viewpoints, ADRs.
 
 Never cross these boundaries with imports or side‑effects.

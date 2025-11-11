@@ -6,8 +6,8 @@ Packages:
 
 - `app/desktop` — Svelte renderer bundle consumed by the Tauri host.
 - `crates/tauri` — Tauri desktop host (Rust) with typed IPC surface.
-- `crates/{praxis, chrona, metis, continuum, core_data}` — Rust crates for the graph model, time
-  engine, analytics, orchestration, and shared DTOs respectively.
+- `crates/{praxis, chrona, metis, continuum, mneme}` — Rust crates for the graph model, time
+  engine, analytics, orchestration, and persistence/DTOs respectively.
 - `app/adapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
 
 Tooling:
