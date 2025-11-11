@@ -24,6 +24,12 @@ boundaries are enforced.
     computation traits consumed by the host.
   - The default desktop mode uses in-process adapters. Remote/server adapters will implement the
     same traits without changing the renderer contract.
+- Persistence & Schema (Mneme + MetaModelRegistry)
+  - `crates/mneme` owns the ACID store (SQLite/WAL today) plus shared DTOs, including the
+    meta-model document types.
+  - `crates/praxis/src/meta.rs` materialises `docs/meta/core-v1.json` (and optional overrides)
+    into a `MetaModelRegistry` that performs all node/edge validation and exposes the active schema
+    through the `temporal_metamodel_get` IPC command.
 
 ## Boundaries & Security
 
@@ -133,6 +139,9 @@ Order ChangeSet entries deterministically (by kind → id) and keep ID generatio
 - Ensure referential integrity (parent snapshot + ChangeSet).
 - Reject empty ChangeSets unless explicitly tagged.
 - Cap ChangeSet size (configurable) to keep diffs tractable.
+- Praxis loads the schema via `MetaModelRegistry` at startup so every commit/merge passes
+  validation before persistence; the renderer consumes the same JSON via `temporal_metamodel_get`
+  (see `MetaModelPanel` in the desktop UI) to avoid hard-coded enums.
 
 ### Diff & merge semantics
 

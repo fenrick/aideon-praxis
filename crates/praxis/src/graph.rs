@@ -6,6 +6,7 @@ use aideon_mneme::temporal::{
 use serde::{Deserialize, Serialize};
 
 use crate::error::{PraxisError, PraxisResult};
+use crate::meta::MetaModelRegistry;
 
 /// Deterministic key for edges stored inside a graph snapshot.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -55,7 +56,11 @@ impl GraphSnapshot {
         }
     }
 
-    pub fn apply(&self, change: &ChangeSet) -> PraxisResult<GraphSnapshot> {
+    pub fn apply(
+        &self,
+        change: &ChangeSet,
+        registry: &MetaModelRegistry,
+    ) -> PraxisResult<GraphSnapshot> {
         let mut next = self.clone();
 
         // Node deletes first — we will validate edges afterwards to forbid dangling refs.
@@ -69,6 +74,7 @@ impl GraphSnapshot {
 
         // Node creates
         for node in &change.node_creates {
+            registry.validate_node(node)?;
             if next.nodes.contains_key(&node.id) {
                 return Err(PraxisError::ValidationFailed {
                     message: format!("node '{}' already exists", node.id),
@@ -79,6 +85,7 @@ impl GraphSnapshot {
 
         // Node updates are replace-by-id for now (TODO: support partial updates with schema merge).
         for node in &change.node_updates {
+            registry.validate_node(node)?;
             if !next.nodes.contains_key(&node.id) {
                 return Err(PraxisError::ValidationFailed {
                     message: format!("node '{}' missing for update", node.id),
@@ -95,6 +102,9 @@ impl GraphSnapshot {
         // Edge creates
         for edge in &change.edge_creates {
             ensure_endpoints_exist(&next.nodes, edge)?;
+            let from_type = node_type(&next.nodes, &edge.from)?;
+            let to_type = node_type(&next.nodes, &edge.to)?;
+            registry.validate_edge(edge, &from_type, &to_type)?;
             let key = EdgeKey::new(edge);
             if next.edges.contains_key(&key) {
                 return Err(PraxisError::ValidationFailed {
@@ -105,6 +115,10 @@ impl GraphSnapshot {
                             .unwrap_or_else(|| format!("{}->{}", edge.from, edge.to))
                     ),
                 });
+            }
+            let rel_type = relationship_type(edge)?;
+            if !registry.allows_duplicate(rel_type) {
+                assert_no_duplicate_edge(&next.edges, edge, rel_type)?;
             }
             next.edges.insert(key, sanitize_edge(edge));
         }
@@ -146,6 +160,13 @@ impl GraphSnapshot {
                 matches.pop().expect("single match")
             };
             next.edges.remove(&key);
+            let from_type = node_type(&next.nodes, &edge.from)?;
+            let to_type = node_type(&next.nodes, &edge.to)?;
+            registry.validate_edge(edge, &from_type, &to_type)?;
+            let rel_type = relationship_type(edge)?;
+            if !registry.allows_duplicate(rel_type) {
+                assert_no_duplicate_edge(&next.edges, edge, rel_type)?;
+            }
             next.edges.insert(EdgeKey::new(edge), sanitize_edge(edge));
         }
 
@@ -257,6 +278,48 @@ fn sanitize_edge(edge: &EdgeVersion) -> EdgeVersion {
         copy.props = None;
     }
     copy
+}
+
+fn node_type(nodes: &BTreeMap<String, NodeVersion>, node_id: &str) -> PraxisResult<String> {
+    let node = nodes
+        .get(node_id)
+        .ok_or_else(|| PraxisError::ValidationFailed {
+            message: format!("node '{node_id}' missing"),
+        })?;
+    node.r#type
+        .clone()
+        .ok_or_else(|| PraxisError::ValidationFailed {
+            message: format!("node '{node_id}' missing type"),
+        })
+}
+
+fn relationship_type(edge: &EdgeVersion) -> PraxisResult<&str> {
+    edge.r#type
+        .as_deref()
+        .ok_or_else(|| PraxisError::ValidationFailed {
+            message: format!("edge '{}->{}' missing type", edge.from, edge.to),
+        })
+}
+
+fn assert_no_duplicate_edge(
+    edges: &BTreeMap<EdgeKey, EdgeVersion>,
+    candidate: &EdgeVersion,
+    rel_type: &str,
+) -> PraxisResult<()> {
+    let exists = edges.values().any(|edge| {
+        edge.from == candidate.from
+            && edge.to == candidate.to
+            && edge.r#type.as_deref() == Some(rel_type)
+    });
+    if exists {
+        return Err(PraxisError::ValidationFailed {
+            message: format!(
+                "relationship '{rel_type}' already exists between '{}' and '{}'",
+                candidate.from, candidate.to
+            ),
+        });
+    }
+    Ok(())
 }
 
 fn ensure_endpoints_exist(

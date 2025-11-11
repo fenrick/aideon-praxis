@@ -3,6 +3,7 @@
 //! Chrona keeps the IPC-friendly API exposed to the Tauri host while delegating
 //! persistence, validation, and diff computation to the Praxis engine.
 
+use aideon_mneme::meta::MetaModelDocument;
 use aideon_mneme::temporal::{
     BranchInfo, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffSummary,
     ListBranchesResponse, MergeRequest, MergeResponse, StateAtArgs, StateAtResult,
@@ -59,6 +60,10 @@ impl TemporalEngine {
     pub fn topology_delta(&self, args: TopologyDeltaArgs) -> PraxisResult<TopologyDeltaResult> {
         self.inner.topology_delta(args)
     }
+
+    pub fn meta_model(&self) -> MetaModelDocument {
+        self.inner.meta_model()
+    }
 }
 
 impl Default for TemporalEngine {
@@ -74,6 +79,23 @@ mod tests {
         ChangeSet, CommitChangesRequest, CommitRef, EdgeTombstone, EdgeVersion, NodeTombstone,
         NodeVersion, StateAtArgs, TopologyDeltaArgs,
     };
+    use serde_json::json;
+
+    fn capability_node(id: &str) -> NodeVersion {
+        NodeVersion {
+            id: id.into(),
+            r#type: Some("Capability".into()),
+            props: Some(json!({ "name": id })),
+        }
+    }
+
+    fn stage_node(id: &str) -> NodeVersion {
+        NodeVersion {
+            id: id.into(),
+            r#type: Some("ValueStreamStage".into()),
+            props: Some(json!({ "name": id })),
+        }
+    }
 
     #[test]
     fn commit_and_state_flow() {
@@ -87,11 +109,7 @@ mod tests {
                 message: "seed".into(),
                 tags: vec![],
                 changes: ChangeSet {
-                    node_creates: vec![aideon_mneme::temporal::NodeVersion {
-                        id: "n1".into(),
-                        r#type: None,
-                        props: None,
-                    }],
+                    node_creates: vec![capability_node("cap-1")],
                     ..ChangeSet::default()
                 },
             })
@@ -119,11 +137,7 @@ mod tests {
                 message: "base".into(),
                 tags: vec![],
                 changes: ChangeSet {
-                    node_creates: vec![NodeVersion {
-                        id: "n1".into(),
-                        r#type: None,
-                        props: None,
-                    }],
+                    node_creates: vec![capability_node("cap-root")],
                     ..ChangeSet::default()
                 },
             })
@@ -139,16 +153,12 @@ mod tests {
                 tags: vec![],
                 changes: {
                     let mut change = ChangeSet::default();
-                    change.node_creates.push(NodeVersion {
-                        id: "n2".into(),
-                        r#type: None,
-                        props: None,
-                    });
+                    change.node_creates.push(stage_node("stage-extra"));
                     change.edge_creates.push(EdgeVersion {
                         id: None,
-                        from: "n1".into(),
-                        to: "n2".into(),
-                        r#type: None,
+                        from: "cap-root".into(),
+                        to: "stage-extra".into(),
+                        r#type: Some("serves".into()),
                         directed: Some(true),
                         props: None,
                     });
@@ -177,10 +187,12 @@ mod tests {
                 changes: {
                     let mut change = ChangeSet::default();
                     change.edge_deletes.push(EdgeTombstone {
-                        from: "n1".into(),
-                        to: "n2".into(),
+                        from: "cap-root".into(),
+                        to: "stage-extra".into(),
                     });
-                    change.node_deletes.push(NodeTombstone { id: "n2".into() });
+                    change.node_deletes.push(NodeTombstone {
+                        id: "stage-extra".into(),
+                    });
                     change
                 },
             })

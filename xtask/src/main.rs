@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use aideon_continuum::SnapshotStore;
 use aideon_mneme::temporal::{ChangeSet, CommitSummary};
 use aideon_mneme::{PersistedCommit, SqliteDb, Store, sanitize_id};
-use aideon_praxis::GraphSnapshot;
+use aideon_praxis::{GraphSnapshot, MetaModelRegistry};
 use anyhow::{Context, Result, anyhow};
 use bincode::serialize;
 use clap::{Parser, Subcommand};
@@ -79,6 +79,8 @@ fn migrate_state(args: MigrateStateArgs) -> Result<()> {
     let mut snapshots: HashMap<String, GraphSnapshot> = HashMap::new();
     let mut last_commit_id: Option<String> = None;
 
+    let registry = MetaModelRegistry::embedded().map_err(|err| anyhow!(err.to_string()))?;
+
     for commit in legacy.commits {
         let base = match commit.summary.parents.first() {
             Some(parent) => snapshots.get(parent).cloned().ok_or_else(|| {
@@ -87,7 +89,7 @@ fn migrate_state(args: MigrateStateArgs) -> Result<()> {
             None => GraphSnapshot::empty(),
         };
         let next = base
-            .apply(&commit.change_set)
+            .apply(&commit.change_set, &registry)
             .map_err(|err| anyhow!("apply commit {} failed: {err}", commit.summary.id))?;
 
         let persisted = PersistedCommit {

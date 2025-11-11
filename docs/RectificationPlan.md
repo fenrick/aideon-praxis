@@ -90,6 +90,10 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 **Objective:** Materialise the ArchiMate-aligned meta-model as machine-readable data, enforce it during commits, and expose it via Typed IPC for UI adaptability.
 
+**Status (2025-11-11):** `docs/meta/core-v1.json` is now the canonical schema, Praxis loads it via
+`MetaModelRegistry`, and the Tauri command `temporal_metamodel_get` feeds the renderer’s new
+Meta-model panel plus the adapter contracts. Overrides remain data-driven to keep swaps trivial.
+
 ### Tasks
 
 1. **Schema artefacts**
