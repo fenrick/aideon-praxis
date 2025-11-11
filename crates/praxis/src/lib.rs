@@ -5,6 +5,7 @@
 //! keep the engine simple, deterministic, and well-documented so future
 //! work (e.g., remote adapters, persistence) can reuse the same API surface.
 
+pub mod canvas;
 mod engine;
 mod error;
 mod graph;

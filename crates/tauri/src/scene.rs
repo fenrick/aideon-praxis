@@ -2,7 +2,7 @@
 
 use aideon::chrona::scene::generate_demo_scene;
 use aideon::continuum::{FileSnapshotStore, SnapshotStore};
-use aideon::core_data::canvas::{CanvasLayoutSaveRequest, CanvasShape};
+use aideon::praxis::canvas::{CanvasLayoutSaveRequest, CanvasShape};
 use log::info;
 
 /// Return a raw scene for the canvas. The renderer performs layout when needed.

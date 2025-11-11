@@ -24,7 +24,7 @@ pub mod continuum {
     pub use aideon_continuum::*;
 }
 
-/// Re-export the Core Data DTOs crate.
-pub mod core_data {
-    pub use aideon_core_data::*;
+/// Re-export Mneme (persistence + DTOs).
+pub mod mneme {
+    pub use aideon_mneme::*;
 }

@@ -118,6 +118,11 @@ Rules: read APIs are pure; write APIs are atomic and never leak storage internal
 }
 ```
 
+- Commit IDs are now content-addressed: `id = "c_" + blake3(parents + branch + author + message + ChangeSet)`.
+- The engine stamps `time` with an ISO-8601 UTC string if the caller omits it, ensuring commits always carry a wall-clock reference while ancestry remains authoritative.
+- ChangeSets are normalised (per-kind, deterministic ordering) before hashing or persistence so semantically identical edits yield the same commit hash.
+- Snapshots are serialised alongside commits to a binary payload so `state_at`/`diff` can hydrate directly from disk without replaying every ChangeSet.
+
 Order ChangeSet entries deterministically (by kind → id) and keep ID generation independent of wall time.
 
 ### Validation rules
@@ -140,9 +145,12 @@ Order ChangeSet entries deterministically (by kind → id) and keep ID generatio
 
 ### Persistence & caching
 
-- Use immutable stores with structural sharing (copy-on-write).
-- Cache snapshots by `SnapshotId = hash(parentSnapshotId + changes)`.
-- Background compaction may collapse history; commit boundaries stay intact.
+- Backing store: `AppData/AideonPraxis/.praxis/praxis.sqlite` (SQLite 3, WAL mode) with tables for commits, refs, and snapshots. See `docs/storage/sqlite.md` for schemas + rules.
+- Commit metadata + ChangeSets live in the `commits` table (JSON columns) written inside transactions; snapshots share the same DB so recovery never depends on loose files.
+- Branch refs update through `INSERT ... ON CONFLICT ... DO UPDATE` statements that enforce compare-and-swap semantics and still bubble concurrency conflicts via the engine.
+- The `CommitStore` trait (Praxis) abstracts `put_commit`, `get_commit`, `list_refs`, and `compare_and-swap` ref updates so adapters (file, remote API, etc.) can slot in without touching the engines.
+- `cargo xtask migrate-state --input legacy.json --output ~/.praxis` replays exported in-memory commits into the durable layout so older builds can upgrade without data loss; upcoming flags will target SQLite directly.
+- Use immutable stores with structural sharing (copy-on-write) and cache snapshots by `SnapshotId = hash(parentSnapshotId + changes)`; background compaction may collapse history, but commit boundaries stay intact.
 
 ### Error handling
 

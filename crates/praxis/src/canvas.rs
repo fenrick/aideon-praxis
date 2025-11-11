@@ -1,5 +1,4 @@
 //! Canvas DTOs used for renderer scene construction.
-//! These are UI-agnostic shapes computed by the Rust engine.
 
 use serde::{Deserialize, Serialize};
 
@@ -16,7 +15,6 @@ pub struct CanvasShape {
     pub label: Option<String>,
 }
 
-/// Richer node used for saving canvas layout and z-order/grouping.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CanvasNode {
@@ -58,7 +56,6 @@ pub struct CanvasGroup {
     pub z: Option<i32>,
 }
 
-/// Save payload sent from the renderer to persist a layout snapshot for a document
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CanvasLayoutSaveRequest {
@@ -80,7 +77,7 @@ mod tests {
 
     #[test]
     fn serializes_camel_case() {
-        let s = CanvasShape {
+        let shape = CanvasShape {
             id: "s1".into(),
             type_id: "rect".into(),
             x: 10.0,
@@ -89,7 +86,7 @@ mod tests {
             h: 50.0,
             label: Some("Node".into()),
         };
-        let json = serde_json::to_string(&s).unwrap();
+        let json = serde_json::to_string(&shape).unwrap();
         assert!(json.contains("\"typeId\":"));
         assert!(json.contains("\"label\":"));
     }

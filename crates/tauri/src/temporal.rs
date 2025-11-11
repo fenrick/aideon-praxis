@@ -3,7 +3,7 @@
 //! These commands remain thin so that all business logic stays within the worker
 //! crate, reinforcing the boundary guidance spelled out in `AGENTS.md`.
 
-use aideon::core_data::temporal::{
+use aideon::mneme::temporal::{
     BranchInfo, CommitChangesRequest, CommitChangesResponse, CreateBranchRequest, DiffArgs,
     DiffSummary, ListBranchesResponse, ListCommitsResponse, MergeRequest, MergeResponse,
     StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
