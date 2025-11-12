@@ -7,14 +7,14 @@
 
 pub mod canvas;
 mod dataset;
-mod engine;
+pub mod engine;
 mod error;
 mod graph;
-mod meta;
+pub mod meta;
 mod meta_seed;
 
 pub use dataset::{BaselineDataset, DatasetCommit};
 pub use engine::{PraxisEngine, PraxisEngineConfig};
 pub use error::{PraxisError, PraxisErrorCode, PraxisResult};
 pub use graph::{GraphSnapshot, SnapshotStats};
-pub use meta::{MetaModelConfig, MetaModelRegistry, MetaModelSource};
+pub use meta::{MetaModelConfig, MetaModelRegistry};
