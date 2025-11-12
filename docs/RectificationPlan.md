@@ -50,6 +50,19 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 **Objective:** Replace the in-memory temporal store with an async, SeaORM-backed persistence layer that keeps commits/refs/snapshots in SQLite, alongside a readonly Metis-friendly fact/star schema, and seeds the baseline dataset (including the meta-model) at setup.
 
+### Status
+
+**Done**
+
+- `PraxisEngine` persists commits/refs/snapshots through the `Store`/`SnapshotStore` traits, writing to SQLite with CAS branch updates and deterministic snapshot blobs.
+- The Tauri host provisions per-user `.praxis` directories via `create_datastore`, runs seeding (meta + baseline dataset), and restores history on restart.
+
+**Outstanding**
+
+- Extract a backend-agnostic `CommitStore` interface + health tooling so additional databases (Postgres/FoundationDB) can plug in and provide compaction/repair operations.
+- Expose richer history metadata (branch pointers, head timestamps, snapshot ids) via IPC so the renderer no longer infers timelines locally.
+- Add storage validation/regression tests (power-cut simulations, snapshot integrity checks) and document recovery procedures per Architecture-Boundary guidance.
+
 ### Tasks
 
 1. **Async trait conversion**
@@ -94,6 +107,19 @@ baseline dataset; Praxis loads it via `MetaModelRegistry`, and the Tauri command
 feeds the renderer’s new Meta-model panel plus the adapter contracts. Overrides remain data-driven to keep
 swaps trivial.
 
+### Status
+
+**Done**
+
+- Canonical schema captured in `docs/data/meta/core-v1.json` and embedded into the binary for deterministic seeding.
+- `MetaModelRegistry` enforces node/edge rules; host IPC exposes the live document, and the renderer now renders the schema panel from that payload.
+
+**Outstanding**
+
+- Treat schema changes as commits (or `.praxis/meta` payloads) instead of Rust literals so tenants can author extensions through the same time-first workflow.
+- Deliver schema authoring UX/CLI plus validation workflows, including approval gates and documentation updates when the meta-model evolves.
+- Expand adapters/DTOs to return meta-aware graph slices (not just counts) so UI/reporting logic can be data-driven.
+
 ### Tasks
 
 1. **Schema artefacts**
@@ -137,6 +163,19 @@ swaps trivial.
 
 **Status (2025-11-12):** `docs/data/base/baseline.yaml` now holds dataset v1.0.0, seeded via `PraxisEngine::bootstrap_with_dataset` and the `cargo xtask import-dataset` CLI (with dry-run validation). Fresh stores receive the meta-model commit plus two baseline commits automatically.
 
+### Status
+
+**Done**
+
+- Authored the first semantic-versioned baseline YAML + changelog, embedded it in Praxis, and documented the import workflow with dry-run validation.
+- Added integration tests to ensure seeding reproduces expected node/edge counts after importer runs.
+
+**Outstanding**
+
+- Enrich the dataset (value streams, plateaus, plan gaps, measures, policies, cost curves) and publish versioned releases per change log entry.
+- Add schema/YAML lint + importer dry-run to CI, plus reviewer checklists to keep data quality high.
+- Provide large synthetic datasets and fixtures for analytics/perf testing so WS-D can validate SLOs.
+
 ### Tasks
 
 1. **Dataset authoring**
@@ -169,6 +208,18 @@ swaps trivial.
 ## WS-D — Reporting & Analytics Functionality
 
 **Objective:** Deliver analytics jobs (Metis) and UI reporting surfaces aligned with design documents (capability scorecards, roadmap timelines, diff/impact views).
+
+### Status
+
+**Done**
+
+- Defined analytics/reporting contracts in `WorkerJobMap`, hooked renderer placeholders (MainView metrics, canvas MVP) and IPC adapters so future commands have a landing zone.
+
+**Outstanding**
+
+- Implement Metis worker jobs (shortest path, centrality, impact, TCO) with deterministic fixtures, caching, and perf instrumentation; add host commands + adapters.
+- Build UI/reporting surfaces (capability heatmaps, scenario comparisons, roadmap exports) plus CSV/PDF output with PII redaction + accessibility coverage.
+- Persist real canvas layouts keyed to snapshots/branches instead of demo rectangles so analytics/reporting views visualise actual graph state.
 
 ### Tasks
 
@@ -205,6 +256,18 @@ swaps trivial.
 ## WS-E — Process & Quality Guardrails
 
 **Objective:** Institutionalize Definition of Done, CI, and tracking so future work remains aligned with architecture.
+
+### Status
+
+**Done**
+
+- Added consolidated GitHub helper CLI (`scripts/issues.py`) plus npm aliases for `issues:start`, `split`, `dod`, `linkify`, and `backfill`; DoD guidance now appears across AGENTS/docs.
+
+**Outstanding**
+
+- Implement the `issues:project` automation + enforce Project Status syncing/pre-push checks alongside `issues:mirror:check`.
+- Extend CI to run dataset/meta linting, schema/import dry-runs, and capture coverage artifacts for Sonar; codify macOS packaging/security verification per DoD.
+- Write ADRs covering the new storage/reporting decisions and ensure release checklists include dataset regression + analytics SLO gates.
 
 ### Tasks
 
