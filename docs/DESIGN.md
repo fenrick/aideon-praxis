@@ -667,6 +667,15 @@ The platform exposes **standard integration options** to import and export data:
 - The initial meta-model is inserted via the bootstrap commit through the same public change-set
   APIs the renderer uses, so our seed is dog-fooding the authoring surface instead of importing JSON.
 
+### Baseline dataset (implemented)
+
+- The canonical dataset lives under `docs/data/base/baseline.yaml` with a semantic version and
+  accompanying changelog. It expresses nodes/edges/plan-events as YAML so diffs are readable.
+- `cargo xtask import-dataset` replays the dataset into any datastore (use `--dry-run` for CI), and
+  the Tauri host reuses the same helper during startup so fresh installs contain the FY26 baseline.
+- Dataset commits are tagged with `baseline` + version labels, letting analytics and migration
+  tooling distinguish vendor data from user contributions.
+
 ### Application Logic
 
 The host enforces meta-model constraints at write-time and exposes them to the UI as typed forms and

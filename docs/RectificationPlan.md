@@ -135,31 +135,30 @@ swaps trivial.
 
 **Objective:** Replace toy seed data with the delivered strategy-to-execution dataset aligned with the meta-model, and provide tooling to maintain it.
 
+**Status (2025-11-12):** `docs/data/base/baseline.yaml` now holds dataset v1.0.0, seeded via `PraxisEngine::bootstrap_with_dataset` and the `cargo xtask import-dataset` CLI (with dry-run validation). Fresh stores receive the meta-model commit plus two baseline commits automatically.
+
 ### Tasks
 
 1. **Dataset authoring**
-   - Model baseline entities/relations in structured files (e.g., `docs/data/base/*.yaml`).
-   - Include version metadata and change log.
+   - Model baseline entities/relations in structured files under `docs/data/base/` with semantic version metadata and a change log.
 2. **Importer pipeline**
-   - Implement CLI (`cargo xtask import-dataset`) that converts dataset files into ordered commits on `main` (using `CommitStore`).
-   - Support dry-run validation for CI.
+   - `cargo xtask import-dataset` replays the YAML into ordered commits on `main`, with `--dry-run` enforcing validation in CI.
 3. **Engine seeding**
-   - Update Praxis `ensure_seeded` to call importer instead of `build_seed_change_set`.
-   - Tag baseline commit (`tags: ['baseline','v1']`).
+   - Praxis `ensure_seeded` now reuses the importer helpers so fresh installs automatically include the meta-model plus baseline commits tagged `baseline/v1`.
 4. **Docs & maintenance**
    - Create `docs/data/README.md` explaining dataset structure, update process, and QA checklist.
 
 ### Definition of Done
 
 - Fresh installs reproduce baseline dataset; renderer shows real nodes/edges & relationships.
-- Dataset updates follow semantic versioning; importer idempotent on existing stores.
-- QA script validates counts, mandatory attributes, and cross-links per design.
+- Dataset updates follow semantic versioning; importer idempotent on empty stores and safely validates via `--dry-run`.
+- QA test (`dataset::tests::dataset_bootstrap_yields_expected_counts`) validates counts, mandatory attributes, and cross-links per design.
 
 ### Testing & Quality
 
 - Integration test runs importer into temporary store; asserts expected counts per type.
-- Lint dataset files via JSON Schema/YAML validation (add to CI).
-- Document manual validation steps (e.g., run `cargo xtask import-dataset --check`).
+- Lint dataset files via JSON Schema/YAML validation (add to CI) and capture in `docs/data/README.md` workflow.
+- Document manual validation steps (e.g., `cargo xtask import-dataset --dry-run`).
 
 ### Commit & Tracking Guidance
 
