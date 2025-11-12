@@ -88,11 +88,9 @@ fn resolve_type_descriptor(
         })?;
     stack.push(id.clone());
     let mut attributes: BTreeMap<String, MetaAttribute> = BTreeMap::new();
-    if let Some(parent_id) = &ty.extends {
-        if types.contains_key(parent_id) {
-            let parent_desc = resolve_type_descriptor(parent_id.clone(), types, cache, stack)?;
-            attributes.extend(parent_desc.attributes);
-        }
+    if let Some(parent_id) = &ty.extends && types.contains_key(parent_id) {
+        let parent_desc = resolve_type_descriptor(parent_id.clone(), types, cache, stack)?;
+        attributes.extend(parent_desc.attributes);
     }
     stack.pop();
     for attribute in &ty.attributes {
