@@ -25,9 +25,11 @@ boundaries are enforced.
   - The default desktop mode uses in-process adapters. Remote/server adapters will implement the
     same traits without changing the renderer contract.
 - Persistence & Schema (Mneme + MetaModelRegistry)
-  - `crates/mneme` owns the ACID store (SQLite/WAL today) plus shared DTOs, including the
-    meta-model document types.
-  - `crates/praxis/src/meta.rs` materialises `docs/meta/core-v1.json` (and optional overrides)
+- `crates/mneme` owns the ACID store (SQLite/WAL today) plus shared DTOs, including the
+  meta-model document types. SeaORM/SeaQuery 1.1.19 drives the new persistence layer, creating the
+  `commits`, `refs`, `snapshots`, and readonly `metis_events` tables so the host can keep analytics
+  data alongside the graph.
+  - `crates/praxis/src/meta.rs` materialises `docs/data/meta/core-v1.json` (and optional overrides)
     into a `MetaModelRegistry` that performs all node/edge validation and exposes the active schema
     through the `temporal_metamodel_get` IPC command.
 

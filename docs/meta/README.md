@@ -1,76 +1,38 @@
 # Meta-Model Artifacts
 
-`docs/meta` holds machine-readable definitions of the ArchiMate-aligned schema that Praxis enforces.
+This folder now documents how the meta-model is delivered as data rather than code. The
+**baseline schema** is a payload inside the dataset (`docs/data/meta/core-v1.json`) so it
+can be versioned, imported, and branched along with the rest of the graph. The renderer and host
+load that document through `MetaModelRegistry`, so runtime validation and UI forms always stay
+data-driven.
 
-## File layout
+## Structure
 
-- `core-v1.json`: canonical schema shipped with the desktop build. It lists element types,
-  permissible attributes, relationship rules, and plan-event constraints.
-- `README.md`: this file.
+The payload expresses the schema using a graph-style hierarchy of object types where each node
+represents an ArchiMate concept (`Capability`, `Application`, `PlanEvent`, etc.). Each type
+includes attribute definitions, enum constraints, and allowed relationships to other types. The
+host treats the payload as a commit-level artifact, and future configuration screens will let
+stewards build these structures interactively (nesting attributes, grouping relationships, and
+linking effects) instead of editing JSON manually.
 
-We treat the meta-model as _data_, so other schema flavours (customer extensions, previews) live in
-additional files (e.g., `core-v2.json`, `customer/acme.json`).
+## Code-first seeding
 
-## JSON structure
+`crates/praxis/src/meta_seed.rs` contains the code representation of this schema. When a new
+database is created, `PraxisEngine::ensure_seeded` calls `meta_model_seed_change_set` so the
+meta-model and relationship descriptors are built as regular nodes/edges via the commit APIs
+instead of reading the JSON at runtime. This dog-foots the same APIs the renderer uses and keeps
+the schema aligned with the baseline dataset without introducing JSON parsing hooks in production.
 
-Each file must include:
+## Overrides
 
-```jsonc
-{
-  "version": "1.0.0",
-  "description": "Human readable note",
-  "types": [
-    {
-      "id": "Capability",
-      "label": "Capability",
-      "category": "Business",
-      "extends": "OptionalBaseType",
-      "attributes": [
-        { "name": "name", "type": "string", "required": true },
-        { "name": "tier", "type": "enum", "enum": ["Strategic", "Core", "Supporting"] }
-      ]
-    }
-  ],
-  "relationships": [
-    {
-      "id": "serves",
-      "from": ["Capability"],
-      "to": ["ValueStreamStage"],
-      "attributes": [ { "name": "weight", "type": "number" } ]
-    }
-  ],
-  "validation": { ... optional global guards ... }
-}
-```
+Overrides live alongside the baseline payload, such as `.praxis/meta/<tenant>.json` or as
+scenario-specific commits. The registry merges them in order, so the desktop renderer always
+receives the effective schema via `temporal_metamodel_get`. Since they are just data, adding new
+object types or constraints is handled by extending the dataset rather than editing Rust.
 
-### Attribute types
+## SeaORM persistence
 
-- `string`, `text`, `number`, `datetime`, `enum`, `boolean`.
-- `enum` definitions must list allowed values; they are case insensitive by default.
-
-### Relationship rules
-
-- `from`/`to`: arrays of type ids.
-- Optional `multiplicity` (e.g., `{ "from": "many", "to": "one" }`).
-- Optional `directed` flag (defaults to `true`).
-
-### Versioning
-
-Bump the `version` field when the schema is incompatible (e.g., removing a type). Add new files for
-major updates and keep older versions for migrations. Praxis will eventually expose registry APIs
-that report the active version to the renderer.
-
-## Future extensions
-
-- `overrides/` directories per tenant.
-- JSON schema describing the meta-model format itself.
-- Tooling to validate meta-model files before shipping.
-
-## Runtime consumption
-
-- `aideon_mneme::meta` defines the shared DTOs for these files.
-- `MetaModelRegistry` (see `crates/praxis/src/meta.rs`) loads `core-v1.json` plus any overrides and
-  enforces every node/edge mutation through Praxis.
-- The Tauri host exposes the active document via `temporal_metamodel_get`. The renderer caches it in
-  `metaModelStore` and renders a “Meta-model” panel so UX can stay data-driven instead of hardcoding
-  enum lists.
+The SQLite persistence layer now runs through SeaORM/SeaQuery 1.1.19 located in `crates/mneme`.
+Startup migrations create the `commits`, `refs`, `snapshots`, and readonly `metis_events` tables and
+the meta-model dataset is seeded via those tables so analytics can consume both the graph and the
+flattened Metis view without embedding schema logic in the renderer.

@@ -10,6 +10,7 @@ mod engine;
 mod error;
 mod graph;
 mod meta;
+mod meta_seed;
 
 pub use engine::{PraxisEngine, PraxisEngineConfig};
 pub use error::{PraxisError, PraxisErrorCode, PraxisResult};

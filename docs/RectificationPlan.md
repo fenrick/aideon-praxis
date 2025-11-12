@@ -12,11 +12,11 @@ The intent in Architecture-Boundary.md:75–146 is a Git-like, append-only commi
 
 ### Abstract meta-model enforcement
 
-The design requires every node/edge to obey the ArchiMate-style catalog (docs/DESIGN.md:83–196), but the engine only stores opaque NodeVersion/EdgeVersion records with TODOs where schema validation should live (crates/praxis/src/engine.rs:183 and crates/praxis/src/graph.rs:235); StateAtResult today exposes counts only (crates/mneme/src/temporal.rs:24), so no meta-model attributes reach consumers. Introduce a MetaModelRegistry (Rust + shared JSON) that describes element types, relationships, attribute constraints, and plan-event rules, enforce it inside GraphSnapshot::apply, and emit typed DTOs the renderer can project without embedding business logic.
+The design requires every node/edge to obey the ArchiMate-style catalog (docs/DESIGN.md:83–196), but the engine only stores opaque NodeVersion/EdgeVersion records with TODOs where schema validation should live (crates/praxis/src/engine.rs:183 and crates/praxis/src/graph.rs:235); StateAtResult today exposes counts only (crates/mneme/src/temporal.rs:24), so no meta-model attributes reach consumers. Introduce a MetaModelRegistry that materialises the schema definitions from commit-style data (e.g., `docs/data/meta/core-v1.json` seeded during import) so the same nested graph structure describing object types, attributes, and constraints is versioned alongside regular commits, enforced inside `GraphSnapshot::apply`, and surfaced as typed DTOs the renderer consumes without embedding business logic.
 
 ### Configurable/deliverable meta-model
 
-The delivered meta-model is only prose in docs/DESIGN.md, and there’s no mechanism to configure it or ship extensions; even the analytics contract (app/adapters/src/contracts.ts:145) lists job types but nothing populates them. Package the canonical meta-model as data (e.g., docs/meta/core.json) with migration/ versioning, allow tenant overrides via config or scenario commits, and expose schema metadata through the host so UI/business logic can materialise different viewpoints without code changes.
+The delivered meta-model is only prose in docs/DESIGN.md, and there’s no mechanism to configure it or ship extensions; even the analytics contract (app/adapters/src/contracts.ts:145) lists job types but nothing populates them. Instead of keeping schema definitions in static files, treat meta-model configuration as data that can be authoring via in-app screens—users compose object types in a graph-style hierarchy, define attributes and constraints, and commit the resulting descriptor; the baseline offering (`docs/data/meta/core-v1.json`) is just the default data payload. This data-first approach lets overrides land as additional commits or files under `.praxis/meta`, and the host exposes the active schema so UI/business logic can materialise different viewpoints without code changes.
 
 ### Base dataset alignment
 
@@ -48,23 +48,22 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 ## WS-A — Git-Structured Temporal Storage
 
-**Objective:** Replace in-memory `BTreeMap` commit log with durable, git-like storage where commits form an immutable DAG, branches map to refs, and snapshots persist across sessions.
+**Objective:** Replace the in-memory temporal store with an async, SeaORM-backed persistence layer that keeps commits/refs/snapshots in SQLite, alongside a readonly Metis-friendly fact/star schema, and seeds the baseline dataset (including the meta-model) at setup.
 
 ### Tasks
 
-1. **Storage design**
-   - Document required commit fields (parents, ChangeSet hash, metadata) in `docs/Architecture-Boundary.md`.
-   - Specify on-disk layout: `<repo>/.praxis/commits/<hash>.json`, `refs/heads/<branch>`, `snapshots/<commit>.bin`.
-2. **Implement `CommitStore` interface**
-   - Define trait (put/get commit, list refs, update refs atomically) backed by `continuum::SnapshotStore`.
-   - Provide file-based implementation with fsync + write-temp-then-rename semantics.
-3. **Refactor Praxis engine**
-   - Inject `CommitStore`/`SnapshotStore` via config.
-   - Replace `next_commit` counter with content address generator (e.g., blake3 over ChangeSet + parents).
-   - Ensure branch operations use optimistic locking (compare-and-swap on refs).
-4. **Migrations & tooling**
-   - Add CLI (`cargo xtask migrate-state`) to export existing in-memory commits to new store.
-   - Update Tauri setup to initialise store location under `AppData/AideonPraxis`.
+1. **Async trait conversion**
+   - Update `mneme::Store`/`SnapshotStore` to async traits (via `async-trait`) so SeaORM can power the implementation.
+   - Modernise every caller (`PraxisEngine`, host worker, xtask, tests) to await the store operations without changing the visible API surface.
+2. **SeaORM schema & migrations**
+   - Introduce SeaORM 1.1.19 + SeaQuery in `crates/mneme`, define entities for commits, refs, snapshots, and the readonly Metis fact/star tables.
+   - Build migrations that create the tables with the required constraints and indexes, and run them at startup via a SeaORM migrator.
+3. **Baseline dataset seeding**
+   - Seed the baseline dataset (meta-model, object graph, plan events) as part of the migration/seed logic so a fresh database already contains the canonical schema and sample graph.
+   - Record the same event stream into the Metis-ready tables so the analytics worker can later query a flattened, star/fact-oriented view of the commits.
+4. **Persistence wiring**
+   - Replace `mneme::sqlite::SqliteDb` with the new SeaORM-backed store while still returning `PersistedCommit`/`CommitSummary` DTOs.
+   - Ensure `PraxisEngine::with_sqlite` (and the Tauri worker) initialise the SeaORM connection, run migrations/seeds, and expose the async store to the engine.
 
 ### Definition of Done
 
@@ -74,10 +73,10 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 ### Testing & Quality
 
-- Unit tests for `CommitStore` (write/read, ref updates, corruption handling) and persistence-backed engine flows.
-- Property test: `apply(diff(a,b), snapshot(a)) == snapshot(b)` using stored snapshots.
-- Benchmarks confirm `state_at()` p95 ≤ 250 ms (record results in PR summary).
-- Commands to run before commit: `cargo fmt`, `cargo clippy --all-targets --all-features`, `cargo test --all --all-targets`.
+- Async unit tests that exercise the new SeaORM store (store/merge semantics, branch CAS, snapshot reads).
+- Integration tests to ensure migrations/seeds populate the baseline dataset and Metis tables as expected.
+- Property test: `apply(diff(a,b), snapshot(a)) == snapshot(b)` still holds after the async refactor.
+- Commands to run before commit: `cargo fmt`, `cargo clippy --all-targets --all-features`, `cargo test --all --all-targets`, `pnpm run node:test:coverage`.
 
 ### Commit & Tracking Guidance
 
@@ -90,23 +89,28 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 **Objective:** Materialise the ArchiMate-aligned meta-model as machine-readable data, enforce it during commits, and expose it via Typed IPC for UI adaptability.
 
-**Status (2025-11-11):** `docs/meta/core-v1.json` is now the canonical schema, Praxis loads it via
-`MetaModelRegistry`, and the Tauri command `temporal_metamodel_get` feeds the renderer’s new
-Meta-model panel plus the adapter contracts. Overrides remain data-driven to keep swaps trivial.
+**Status (2025-11-11):** `docs/data/meta/core-v1.json` is now the canonical schema payload delivered as part of the
+baseline dataset; Praxis loads it via `MetaModelRegistry`, and the Tauri command `temporal_metamodel_get`
+feeds the renderer’s new Meta-model panel plus the adapter contracts. Overrides remain data-driven to keep
+swaps trivial.
 
 ### Tasks
 
 1. **Schema artefacts**
-   - Convert `docs/DESIGN.md` meta-model into JSON/YAML (`docs/meta/core-v1.json`), covering element types, relationships, attributes, constraints.
-   - Define override format for tenant extensions (e.g., `~/.praxis/meta/custom.json`).
+   - Convert `docs/DESIGN.md` meta-model into a commit-style payload (`docs/data/meta/core-v1.json`), covering graph-style object types, nested attribute blocks, relationships, and plan-event rule definitions.
+   - Treat overrides as additional payloads placed alongside the baseline dataset (e.g., `.praxis/meta/<tenant>.json`) so the registry can merge them without code changes.
+   - Seed the meta-model through the same initial commit that inserts the first nodes/edges (using the public commit API) rather than importing JSON at runtime so we dogfood the authoring surface.
 2. **Registry implementation**
    - Build `MetaModelRegistry` (Praxis crate) to load base + overrides, validate version, and expose APIs for lookup/validation.
 3. **Validation integration**
    - Update `GraphSnapshot::apply` to call registry validators for creates/updates/edges.
    - Emit typed `PraxisError::ValidationFailed` with actionable messages.
-4. **Host exposure**
+4. **Host exposure & datastore lifecycle**
    - Add Tauri command `temporal_metamodel_get` returning schema metadata.
    - Extend adapters/UI to cache schema and use it for form generation (no backend logic in renderer).
+   - Introduce a `mneme::create_datastore` helper so new SQLite stores are created via code: the helper runs during host startup (or when user supplies a name) to prepare the `.praxis/datastore.json` state file, create the named database, and return the path that `PraxisEngine` then opens and seeds.
+5. **Configuration UX**
+   - Build renderer screens that let stewards author object types, attributes, and relationships in a nested graph-style view and persist those edits as commit data so the registry sees the new schema immediately.
 
 ### Definition of Done
 
