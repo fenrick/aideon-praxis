@@ -1,4 +1,4 @@
-version: "1.0.0"
+version: '1.0.0'
 released: 2025-11-11
 description: >
   Canonical baseline dataset spanning value streams, capabilities, applications,
@@ -10,7 +10,7 @@ defaults:
   tags: [baseline, v1]
 commits:
   - key: baseline-graph
-    message: "baseline: seed strategy-to-execution graph"
+    message: 'baseline: seed strategy-to-execution graph'
     tags: [baseline, v1, graph]
     nodes:
       - id: n:valuestream-stage:discover
@@ -147,21 +147,21 @@ commits:
         from: n:technology:event-bus
         to: n:application:journey-studio
   - key: baseline-plan
-    message: "baseline: add FY26 plan events"
+    message: 'baseline: add FY26 plan events'
     tags: [baseline, v1, plan]
     nodes:
       - id: n:plan-event:fy26-modernization
         type: PlanEvent
         props:
           name: FY26 Insight Modernization
-          effective_at: "2026-01-15T00:00:00Z"
+          effective_at: '2026-01-15T00:00:00Z'
           confidence: 0.7
           'source.priority': P1
       - id: n:plan-event:fy26-channel-cutover
         type: PlanEvent
         props:
           name: FY26 Q2 Channel Cutover
-          effective_at: "2026-05-01T00:00:00Z"
+          effective_at: '2026-05-01T00:00:00Z'
           confidence: 0.8
           'source.priority': P2
     edges:
