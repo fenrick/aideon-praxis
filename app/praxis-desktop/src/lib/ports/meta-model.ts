@@ -1,4 +1,4 @@
-import type { MetaModelDocument } from '@adapters/contracts';
+import type { MetaModelDocument } from '@aideon/praxis-adapters/contracts';
 import { invoke } from '@tauri-apps/api/core';
 
 export interface MetaModelPort {
