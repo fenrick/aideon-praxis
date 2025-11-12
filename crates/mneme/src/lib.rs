@@ -13,9 +13,9 @@ pub use meta::*;
 pub use temporal::*;
 pub use types::PersistedCommit;
 
-pub use datastore::create_datastore;
+pub use datastore::{create_datastore, datastore_path};
 pub use memory::{MemorySnapshotStore, MemoryStore};
-pub use sqlite::{SqliteDb, SqliteSnapshotStore, sanitize_id};
+pub use sqlite::SqliteDb;
 
 /// Storage interface consumed by engines.
 pub trait Store: Send + Sync {
@@ -30,4 +30,7 @@ pub trait Store: Send + Sync {
     ) -> MnemeResult<()>;
     fn get_branch_head(&self, branch: &str) -> MnemeResult<Option<String>>;
     fn list_branches(&self) -> MnemeResult<Vec<(String, Option<String>)>>;
+    fn put_tag(&self, tag: &str, commit_id: &str) -> MnemeResult<()>;
+    fn get_tag(&self, tag: &str) -> MnemeResult<Option<String>>;
+    fn list_tags(&self) -> MnemeResult<Vec<(String, String)>>;
 }

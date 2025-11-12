@@ -2,10 +2,9 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use aideon_continuum::SnapshotStore as ContinuumSnapshotStore;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, Database, DatabaseConnection, DbBackend, DbErr,
-    EntityTrait, QueryFilter, Schema, Set, Statement, TransactionTrait,
+    EntityTrait, QueryFilter, Schema, Set, Statement, TransactionTrait, Value,
 };
 use sea_query::SqliteQueryBuilder;
 use serde_json;
@@ -70,13 +69,6 @@ impl SqliteDb {
             change_count: Set(commit.summary.change_count as i64),
             summary_json: Set(serde_json::to_string(&commit.summary).unwrap_or_default()),
             changes_json: Set(serde_json::to_string(&commit.change_set).unwrap_or_default()),
-        }
-    }
-
-    pub fn snapshot_store(&self) -> SqliteSnapshotStore {
-        SqliteSnapshotStore {
-            conn: self.conn.clone(),
-            runtime: Arc::clone(&self.runtime),
         }
     }
 }
@@ -176,64 +168,46 @@ impl Store for SqliteDb {
                 .collect())
         })
     }
-}
 
-/// SeaORM-backed snapshot store.
-pub struct SqliteSnapshotStore {
-    conn: DatabaseConnection,
-    runtime: Arc<Runtime>,
-}
-
-impl ContinuumSnapshotStore for SqliteSnapshotStore {
-    fn put(&self, key: &str, bytes: &[u8]) -> Result<(), String> {
+    fn put_tag(&self, tag: &str, commit_id: &str) -> MnemeResult<()> {
         let conn = self.conn.clone();
-        let key = key.to_string();
-        let payload = bytes.to_vec();
-        self.runtime
-            .block_on(async move {
-                let insert = snapshots::ActiveModel {
-                    snapshot_key: Set(key.clone()),
-                    bytes: Set(payload.clone()),
-                };
-                match insert.insert(&conn).await {
-                    Ok(_) => Ok(()),
-                    Err(err) if is_unique_violation(&err) => {
-                        snapshots::Entity::update(snapshots::ActiveModel {
-                            snapshot_key: Set(key.clone()),
-                            bytes: Set(payload.clone()),
-                        })
-                        .filter(snapshots::Column::SnapshotKey.eq(key.clone()))
-                        .exec(&conn)
-                        .await
-                        .map(|_| ())
-                    }
-                    Err(err) => Err(err),
-                }
-            })
-            .map_err(|err| err.to_string())
-    }
-
-    fn get(&self, key: &str) -> Result<Vec<u8>, String> {
-        let conn = self.conn.clone();
-        let key = key.to_string();
-        self.runtime
-            .block_on(async move {
-                let record = snapshots::Entity::find_by_id(key).one(&conn).await?;
-                record
-                    .ok_or_else(|| DbErr::Custom("snapshot not found".into()))
-                    .map(|row| row.bytes)
-            })
-            .map_err(|err| err.to_string())
-    }
-}
-
-pub fn sanitize_id(id: &str) -> String {
-    id.chars()
-        .map(|ch| match ch {
-            'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => ch,
-            _ => '_',
+        let tag = tag.to_string();
+        let commit = commit_id.to_string();
+        let timestamp = current_time_ms();
+        self.block_on(async move {
+            let statement = Statement::from_sql_and_values(
+                DbBackend::Sqlite,
+                "INSERT INTO snapshot_tags (tag, commit_id, created_at_ms) VALUES (?, ?, ?)\
+                 ON CONFLICT(tag) DO UPDATE SET commit_id=excluded.commit_id, created_at_ms=excluded.created_at_ms",
+                vec![
+                    Value::from(tag.clone()),
+                    Value::from(commit.clone()),
+                    Value::from(timestamp),
+                ],
+            );
+            conn.execute(statement).await.map(|_| ())
         })
-        .collect()
+    }
+
+    fn get_tag(&self, tag: &str) -> MnemeResult<Option<String>> {
+        let conn = self.conn.clone();
+        let tag = tag.to_string();
+        self.block_on(async move {
+            let record = snapshot_tags::Entity::find_by_id(tag).one(&conn).await?;
+            Ok(record.map(|row| row.commit_id))
+        })
+    }
+
+    fn list_tags(&self) -> MnemeResult<Vec<(String, String)>> {
+        let conn = self.conn.clone();
+        self.block_on(async move {
+            let rows = snapshot_tags::Entity::find().all(&conn).await?;
+            Ok(rows
+                .into_iter()
+                .map(|row| (row.tag, row.commit_id))
+                .collect())
+        })
+    }
 }
 
 fn current_time_ms() -> i64 {
@@ -258,15 +232,15 @@ async fn run_migrations(conn: &DatabaseConnection) -> Result<(), DbErr> {
         .create_table_from_entity(refs::Entity)
         .if_not_exists()
         .to_string(SqliteQueryBuilder);
-    let snapshots_sql = schema
-        .create_table_from_entity(snapshots::Entity)
+    let tags_sql = schema
+        .create_table_from_entity(snapshot_tags::Entity)
         .if_not_exists()
         .to_string(SqliteQueryBuilder);
     let metis_sql = schema
         .create_table_from_entity(metis::Entity)
         .if_not_exists()
         .to_string(SqliteQueryBuilder);
-    for statement in [commits_sql, refs_sql, snapshots_sql, metis_sql] {
+    for statement in [commits_sql, refs_sql, tags_sql, metis_sql] {
         conn.execute(Statement::from_string(backend, statement))
             .await?;
     }
@@ -292,7 +266,7 @@ mod commits {
     #[derive(Clone, Debug, DeriveEntityModel)]
     #[sea_orm(table_name = "commits")]
     pub struct Model {
-        #[sea_orm(primary_key)]
+        #[sea_orm(primary_key, auto_increment = false)]
         pub commit_id: String,
         pub branch: String,
         pub parents_json: String,
@@ -323,7 +297,7 @@ mod refs {
     #[derive(Clone, Debug, DeriveEntityModel)]
     #[sea_orm(table_name = "refs")]
     pub struct Model {
-        #[sea_orm(primary_key)]
+        #[sea_orm(primary_key, auto_increment = false)]
         pub branch: String,
         pub commit_id: Option<String>,
         pub updated_at_ms: i64,
@@ -341,15 +315,16 @@ mod refs {
     impl ActiveModelBehavior for ActiveModel {}
 }
 
-mod snapshots {
+mod snapshot_tags {
     use sea_orm::entity::prelude::*;
 
     #[derive(Clone, Debug, DeriveEntityModel)]
-    #[sea_orm(table_name = "snapshots")]
+    #[sea_orm(table_name = "snapshot_tags")]
     pub struct Model {
-        #[sea_orm(primary_key)]
-        pub snapshot_key: String,
-        pub bytes: Vec<u8>,
+        #[sea_orm(primary_key, auto_increment = false)]
+        pub tag: String,
+        pub commit_id: String,
+        pub created_at_ms: i64,
     }
 
     #[derive(Copy, Clone, Debug, EnumIter)]
@@ -370,7 +345,7 @@ mod metis {
     #[derive(Clone, Debug, DeriveEntityModel)]
     #[sea_orm(table_name = "metis_events")]
     pub struct Model {
-        #[sea_orm(primary_key)]
+        #[sea_orm(primary_key, auto_increment = false)]
         pub event_id: String,
         pub commit_id: String,
         pub payload: String,

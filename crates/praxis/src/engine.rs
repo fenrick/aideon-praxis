@@ -3,17 +3,13 @@ use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use aideon_continuum::SnapshotStore;
 use aideon_mneme::meta::MetaModelDocument;
 use aideon_mneme::temporal::{
     BranchInfo, ChangeSet, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffPatch,
     DiffSummary, EdgeTombstone, EdgeVersion, MergeConflict, MergeRequest, MergeResponse,
     NodeTombstone, StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
 };
-use aideon_mneme::{
-    MemorySnapshotStore, MemoryStore, PersistedCommit, SqliteDb, Store, sanitize_id,
-};
-use bincode::{deserialize, serialize};
+use aideon_mneme::{MemoryStore, PersistedCommit, SqliteDb, Store};
 use blake3::Hasher;
 use serde::Serialize;
 use time::OffsetDateTime;
@@ -55,7 +51,6 @@ struct Inner {
     branches: BTreeMap<String, BranchState>,
     config: PraxisEngineConfig,
     store: Arc<dyn Store>,
-    snapshot_store: Arc<dyn SnapshotStore>,
     registry: Arc<MetaModelRegistry>,
 }
 
@@ -78,12 +73,8 @@ impl PraxisEngine {
     }
 
     pub fn with_config(config: PraxisEngineConfig) -> Self {
-        Self::with_stores(
-            config,
-            Arc::new(MemoryStore::default()),
-            Arc::new(MemorySnapshotStore::default()),
-        )
-        .expect("in-memory praxis engine initialization failed")
+        Self::with_stores(config, Arc::new(MemoryStore::default()))
+            .expect("in-memory praxis engine initialization failed")
     }
 
     pub fn with_sqlite(path: impl AsRef<Path>) -> PraxisResult<Self> {
@@ -104,20 +95,15 @@ impl PraxisEngine {
         Self::with_sqlite_inner(path, config, false)
     }
 
-    pub fn with_stores(
-        config: PraxisEngineConfig,
-        store: Arc<dyn Store>,
-        snapshot_store: Arc<dyn SnapshotStore>,
-    ) -> PraxisResult<Self> {
-        Self::with_stores_inner(config, store, snapshot_store, true)
+    pub fn with_stores(config: PraxisEngineConfig, store: Arc<dyn Store>) -> PraxisResult<Self> {
+        Self::with_stores_inner(config, store, true)
     }
 
     pub fn with_stores_unseeded(
         config: PraxisEngineConfig,
         store: Arc<dyn Store>,
-        snapshot_store: Arc<dyn SnapshotStore>,
     ) -> PraxisResult<Self> {
-        Self::with_stores_inner(config, store, snapshot_store, false)
+        Self::with_stores_inner(config, store, false)
     }
 
     fn lock(&self) -> MutexGuard<'_, Inner> {
@@ -130,19 +116,16 @@ impl PraxisEngine {
         seed: bool,
     ) -> PraxisResult<Self> {
         let storage = SqliteDb::open(path)?;
-        let snapshot = storage.snapshot_store();
         let commit_store: Arc<dyn Store> = Arc::new(storage.clone());
-        let snapshot_store: Arc<dyn SnapshotStore> = Arc::new(snapshot);
-        Self::with_stores_inner(config, commit_store, snapshot_store, seed)
+        Self::with_stores_inner(config, commit_store, seed)
     }
 
     fn with_stores_inner(
         config: PraxisEngineConfig,
         store: Arc<dyn Store>,
-        snapshot_store: Arc<dyn SnapshotStore>,
         seed: bool,
     ) -> PraxisResult<Self> {
-        let inner = Inner::new(config, store, snapshot_store)?;
+        let inner = Inner::new(config, store)?;
         let engine = Self {
             inner: Arc::new(Mutex::new(inner)),
         };
@@ -262,7 +245,7 @@ impl PraxisEngine {
         };
 
         inner.store.put_commit(&persisted)?;
-        inner.persist_snapshot(&commit_id, &snapshot)?;
+        inner.record_snapshot_tag(&commit_id)?;
 
         inner.store.compare_and_swap_branch(
             &request.branch,
@@ -529,7 +512,7 @@ impl PraxisEngine {
         };
 
         inner.store.put_commit(&persisted)?;
-        inner.persist_snapshot(&commit_id, &snapshot)?;
+        inner.record_snapshot_tag(&commit_id)?;
         inner.store.compare_and_swap_branch(
             &request.target,
             Some(&target_head),
@@ -563,11 +546,7 @@ impl Default for PraxisEngine {
 }
 
 impl Inner {
-    fn new(
-        config: PraxisEngineConfig,
-        store: Arc<dyn Store>,
-        snapshot_store: Arc<dyn SnapshotStore>,
-    ) -> PraxisResult<Self> {
+    fn new(config: PraxisEngineConfig, store: Arc<dyn Store>) -> PraxisResult<Self> {
         let registry = Arc::new(MetaModelRegistry::load(&config.meta_model)?);
         let mut branches = BTreeMap::new();
         for (name, head) in store.list_branches()? {
@@ -582,20 +561,16 @@ impl Inner {
             branches,
             config,
             store,
-            snapshot_store,
             registry,
         })
     }
 
-    fn persist_snapshot(&self, commit_id: &str, snapshot: &GraphSnapshot) -> PraxisResult<()> {
-        let bytes = serialize(snapshot).map_err(|err| PraxisError::IntegrityViolation {
-            message: format!("encode snapshot '{commit_id}': {err}"),
-        })?;
-        let key = snapshot_key(commit_id);
-        self.snapshot_store
-            .put(&key, &bytes)
+    fn record_snapshot_tag(&self, commit_id: &str) -> PraxisResult<()> {
+        let tag = snapshot_tag(commit_id);
+        self.store
+            .put_tag(&tag, commit_id)
             .map_err(|err| PraxisError::IntegrityViolation {
-                message: format!("write snapshot '{commit_id}': {err}"),
+                message: format!("record snapshot tag '{tag}': {err}"),
             })
     }
 
@@ -609,19 +584,20 @@ impl Inner {
                 .ok_or_else(|| PraxisError::UnknownCommit {
                     commit: commit_id.into(),
                 })?;
-        let bytes = self
-            .snapshot_store
-            .get(&snapshot_key(commit_id))
-            .map_err(|err| PraxisError::IntegrityViolation {
-                message: format!("read snapshot '{commit_id}': {err}"),
-            })?;
-        let snapshot: GraphSnapshot =
-            deserialize(&bytes).map_err(|err| PraxisError::IntegrityViolation {
-                message: format!("decode snapshot '{commit_id}': {err}"),
-            })?;
+        let base_snapshot = match persisted.summary.parents.first() {
+            Some(parent_id) => self.snapshot_for(parent_id)?,
+            None => Arc::new(GraphSnapshot::empty()),
+        };
+        let snapshot = Arc::new(
+            base_snapshot
+                .apply(&persisted.change_set, self.registry.as_ref())
+                .map_err(|err| PraxisError::IntegrityViolation {
+                    message: format!("replay commit '{commit_id}' failed: {err}"),
+                })?,
+        );
         let record = CommitRecord {
             summary: persisted.summary.clone(),
-            snapshot: Arc::new(snapshot),
+            snapshot: Arc::clone(&snapshot),
             change_set: persisted.change_set.clone(),
         };
         self.commits.insert(commit_id.into(), record.clone());
@@ -707,8 +683,8 @@ fn current_timestamp() -> String {
         .unwrap_or_else(|_| "1970-01-01T00:00:00Z".into())
 }
 
-fn snapshot_key(commit_id: &str) -> String {
-    format!("snapshots/{}.bin", sanitize_id(commit_id))
+fn snapshot_tag(commit_id: &str) -> String {
+    format!("snapshot/{commit_id}")
 }
 
 fn validate_branch_name(name: &str) -> PraxisResult<()> {

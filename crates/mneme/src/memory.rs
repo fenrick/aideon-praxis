@@ -14,6 +14,7 @@ pub struct MemoryStore {
 struct MemoryState {
     commits: BTreeMap<String, PersistedCommit>,
     branches: BTreeMap<String, Option<String>>,
+    tags: BTreeMap<String, String>,
 }
 
 impl Store for MemoryStore {
@@ -75,6 +76,26 @@ impl Store for MemoryStore {
             .collect();
         list.sort_by(|a, b| a.0.cmp(&b.0));
         Ok(list)
+    }
+
+    fn put_tag(&self, tag: &str, commit_id: &str) -> MnemeResult<()> {
+        let mut guard = self.inner.lock().expect("memory store poisoned");
+        guard.tags.insert(tag.into(), commit_id.into());
+        Ok(())
+    }
+
+    fn get_tag(&self, tag: &str) -> MnemeResult<Option<String>> {
+        let guard = self.inner.lock().expect("memory store poisoned");
+        Ok(guard.tags.get(tag).cloned())
+    }
+
+    fn list_tags(&self) -> MnemeResult<Vec<(String, String)>> {
+        let guard = self.inner.lock().expect("memory store poisoned");
+        Ok(guard
+            .tags
+            .iter()
+            .map(|(tag, commit)| (tag.clone(), commit.clone()))
+            .collect())
     }
 }
 
