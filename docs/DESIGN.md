@@ -35,7 +35,7 @@ app, ensuring data stays on the user’s device and performs well without requir
 setup. This local-first design addresses privacy and cost concerns, while the architecture remains
 cloud-ready for future scaling or team collaboration needs.
 
-**Modules:** _(Canonical schema: see `docs/meta/core-v1.json`.)_
+**Modules:** _(Canonical schema data lives under `docs/data/meta/core-v1.json` and is delivered as part of the baseline dataset so it can be versioned alongside commits.)_
 
 - **Aideon Praxis** — core digital twin platform
 - **Aideon Chrona** — time-based visualisation layer
@@ -650,17 +650,22 @@ The platform exposes **standard integration options** to import and export data:
 
 ### Meta-model configuration (implemented)
 
-- The canonical schema ships as JSON (`docs/meta/core-v1.json`). The `aideon-mneme` crate exposes
-  typed DTOs for that document so both host and renderer consume the same structure.
+- The canonical schema is data inside the baseline dataset (`docs/data/meta/core-v1.json`). The
+  upcoming importer ensures the definition lands as a commit-level artifact so schema, data, and
+  migrations stay in lock-step.
 - Praxis loads the document (plus optional overrides) into `MetaModelRegistry`
-  (`crates/praxis/src/meta.rs`). Every commit/change-set now flows through the registry before the
-  snapshot mutates, guaranteeing that required attributes, enum values, and relationship
-  constraints line up with the design intent.
-- The host exposes the active schema via the new `temporal_metamodel_get` IPC command. The desktop
-  renderer caches it through `metaModelStore` and shows a dedicated “Meta-model” view so UX/forms
-  never embed enums or type lists.
-- Overrides remain data-only: dropping a JSON file alongside `core-v1` (or injecting one at runtime
-  for managed deployments) lets us extend the schema without recompiling the engines.
+  (`crates/praxis/src/meta.rs`). Every change-set touches the registry before a snapshot mutates,
+  so required attributes, enum values, and relationship constraints align with the design intent.
+- The host exposes the active schema via the `temporal_metamodel_get` IPC command; the renderer
+  caches it through `metaModelStore`, renders a “Meta-model” panel, and will wire future
+  configuration screens so users can author object types, attributes, and relationship rules in a
+  graph-style hierarchy rather than editing flat lists.
+- Overrides remain data-only: placing an override payload alongside the baseline dataset or
+  committing it via a scenario branch lets us extend/replace the schema without code changes.
+- The initial meta-model is seeded via `crates/praxis/src/meta_seed.rs`, which translates the
+  schema definitions into nodes/edges through the same change-set APIs the renderer uses.
+- The initial meta-model is inserted via the bootstrap commit through the same public change-set
+  APIs the renderer uses, so our seed is dog-fooding the authoring surface instead of importing JSON.
 
 ### Application Logic
 

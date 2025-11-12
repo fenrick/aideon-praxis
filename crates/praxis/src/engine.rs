@@ -23,6 +23,7 @@ use time::format_description::well_known::Rfc3339;
 use crate::error::{PraxisError, PraxisResult};
 use crate::graph::{GraphSnapshot, SnapshotStats};
 use crate::meta::{MetaModelConfig, MetaModelRegistry};
+use crate::meta_seed::meta_model_seed_change_set;
 
 #[derive(Clone, Debug)]
 pub struct PraxisEngineConfig {
@@ -132,6 +133,10 @@ impl PraxisEngine {
             return Ok(());
         }
 
+        let mut initial = build_seed_change_set();
+        let meta_changes = meta_model_seed_change_set();
+        initial.node_creates.extend(meta_changes.node_creates);
+        initial.edge_creates.extend(meta_changes.edge_creates);
         let request = CommitChangesRequest {
             branch: "main".into(),
             parent: None,
@@ -139,7 +144,7 @@ impl PraxisEngine {
             time: None,
             message: "seed: bootstrap design sample".into(),
             tags: vec!["seed".into(), "design".into()],
-            changes: build_seed_change_set(),
+            changes: initial,
         };
         let _ = self.commit(request)?;
         Ok(())

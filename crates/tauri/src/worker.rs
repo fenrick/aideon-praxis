@@ -4,7 +4,7 @@
 //! handlers can access it without leaking internal mutability.
 
 use aideon::chrona::TemporalEngine;
-use aideon::mneme::WorkerHealth;
+use aideon::mneme::{datastore::create_datastore, WorkerHealth};
 use aideon::praxis::PraxisEngine;
 use log::{debug, info};
 use std::fs;
@@ -48,7 +48,8 @@ pub async fn init_temporal(app: &AppHandle<Wry>) -> Result<(), String> {
         .join(".praxis");
     fs::create_dir_all(&storage_root)
         .map_err(|err| format!("failed to prepare storage dir: {err}"))?;
-    let db_path = storage_root.join("praxis.sqlite");
+    let db_path = create_datastore(&storage_root, None)
+        .map_err(|err| format!("datastore init failed: {err}"))?;
     let engine = PraxisEngine::with_sqlite(&db_path)
         .map_err(|err| format!("temporal engine init failed: {err}"))?;
     let temporal = TemporalEngine::from_engine(engine);

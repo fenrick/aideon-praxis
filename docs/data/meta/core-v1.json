@@ -109,6 +109,16 @@
         { "name": "source.priority", "type": "enum", "enum": ["P0", "P1", "P2"], "required": false }
       ],
       "effectTypes": ["create", "update", "delete", "link", "unlink"]
+    },
+    {
+      "id": "MetaModelEntry",
+      "label": "Meta-model Entry",
+      "category": "Design",
+      "attributes": [
+        { "name": "name", "type": "string", "required": true },
+        { "name": "description", "type": "text", "required": false },
+        { "name": "payload", "type": "text", "required": true }
+      ]
     }
   ],
   "relationships": [

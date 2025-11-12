@@ -14,12 +14,12 @@ use time::format_description::well_known::Rfc3339;
 
 use crate::error::{PraxisError, PraxisResult};
 
-const CORE_META_JSON: &str = include_str!("../../../docs/meta/core-v1.json");
+const CORE_META_JSON: &str = include_str!("../../../docs/data/meta/core-v1.json");
 
 /// Source definition for loading meta-model documents.
 #[derive(Clone, Debug)]
 pub enum MetaModelSource {
-    /// Built-in `docs/meta/core-v1.json` embedded at compile time.
+    /// Built-in `docs/data/meta/core-v1.json` embedded at compile time.
     EmbeddedCore,
     /// Load schema from a file on disk.
     File(PathBuf),
