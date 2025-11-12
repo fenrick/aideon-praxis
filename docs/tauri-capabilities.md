@@ -17,7 +17,7 @@ enforced in dev and packaged builds via Tauri’s permissions manifest and per-w
 - `uds-ipc` — open UNIX domain sockets for worker RPC only.
 - `clipboard` — optional, disabled by default.
 
-These will be referenced from `crates/tauri/tauri.conf.json` once implemented.
+These will be referenced from `crates/praxis-host/tauri.conf.json` once implemented.
 
 ## Security Defaults
 
@@ -27,6 +27,6 @@ These will be referenced from `crates/tauri/tauri.conf.json` once implemented.
 
 ## Next Steps
 
-- Define capability TOML files under `crates/tauri/capabilities/`.
+- Define capability TOML files under `crates/praxis-host/capabilities/`.
 - Add a build-time check ensuring capabilities are referenced in `tauri.conf.json`.
 - Unit tests for deny-by-default behavior in preload IPC bridge.

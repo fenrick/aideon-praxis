@@ -122,10 +122,10 @@ jobs:
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
       - name: Build renderer assets
-        run: pnpm --filter @aideon/app build
+        run: pnpm --filter @aideon/praxis-desktop build
 
       - name: Build Tauri bundles
-        run: pnpm tauri build --config crates/tauri/tauri.conf.json --manifest-path crates/tauri/Cargo.toml --target ${{ matrix.target }} --ci
+        run: pnpm tauri build --config crates/praxis-host/tauri.conf.json --manifest-path crates/praxis-host/Cargo.toml --target ${{ matrix.target }} --ci
         env:
           CARGO_TARGET_DIR: target
           RUSTC_BOOTSTRAP: 0
@@ -133,7 +133,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Build worker libraries
-        run: cargo build --release --lib --manifest-path crates/tauri/Cargo.toml --target ${{ matrix.target }}
+        run: cargo build --release --lib --manifest-path crates/praxis-host/Cargo.toml --target ${{ matrix.target }}
         env:
           CARGO_TARGET_DIR: target
 
@@ -149,7 +149,7 @@ jobs:
           deps_dir="${target_dir}/deps"
           shopt -s nullglob
           found=false
-          for file in "${target_dir}"/libaideon_praxis_lib.* "${target_dir}"/aideon_praxis_lib.*; do
+          for file in "${target_dir}"/libpraxis_engine_lib.* "${target_dir}"/praxis_engine_lib.*; do
             if [[ -f "$file" ]]; then
               cp "$file" artifacts/worker/files/
               found=true

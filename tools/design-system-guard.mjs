@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Guard to ensure shared UI components live in @aideon/design-system.
- * Fails if app/desktop/src/lib/ui contains any implementation files.
+ * Guard to ensure shared UI components live in @aideon/praxis-design-system.
+ * Fails if app/praxis-desktop/src/lib/ui contains any implementation files.
  */
 
 import { access, constants, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
-const uiDir = join(process.cwd(), 'app/desktop/src/lib/ui');
+const uiDir = join(process.cwd(), 'app/praxis-desktop/src/lib/ui');
 
 try {
   await access(uiDir, constants.F_OK);
@@ -29,8 +29,8 @@ if (offenders.length === 0) {
 console.error(
   [
     '❌ Design system guard failed:',
-    'Move UI components into app/design-system and export them there.',
-    `Found disallowed files in app/desktop/src/lib/ui: ${offenders.join(', ')}`,
+    'Move UI components into app/praxis-design-system and export them there.',
+    `Found disallowed files in app/praxis-desktop/src/lib/ui: ${offenders.join(', ')}`,
   ].join('\n'),
 );
 process.exitCode = 1;

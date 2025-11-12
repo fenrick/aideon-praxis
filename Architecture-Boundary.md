@@ -7,29 +7,29 @@ boundaries are enforced.
 
 - Renderer (SvelteKit front end)
   - Built with SvelteKit; the Tauri host serves the built assets.
-  - No Node integration; strict CSP enforced by Tauri (see `crates/tauri/tauri.conf.json`).
-- Renderer modules call Tauri commands directly via `@tauri-apps/api/core` helpers (see `app/desktop/src/lib/ports`). No backend logic in renderer.
-  - UI code lives under `app/desktop/src/lib/**` and talks only to adapters/host via IPC.
+  - No Node integration; strict CSP enforced by Tauri (see `crates/praxis-host/tauri.conf.json`).
+- Renderer modules call Tauri commands directly via `@tauri-apps/api/core` helpers (see `app/praxis-desktop/src/lib/ports`). No backend logic in renderer.
+  - UI code lives under `app/praxis-desktop/src/lib/**` and talks only to adapters/host via IPC.
 
 - Host (Tauri)
-  - Rust entrypoint: `crates/tauri/src/lib.rs` creates windows at runtime and binds typed commands.
-  - Security: capabilities and CSP configured in `crates/tauri/tauri.conf.json`. No open TCP ports in desktop mode.
+  - Rust entrypoint: `crates/praxis-host/src/lib.rs` creates windows at runtime and binds typed commands.
+  - Security: capabilities and CSP configured in `crates/praxis-host/tauri.conf.json`. No open TCP ports in desktop mode.
 
 - Adapters (TypeScript interfaces)
-  - `app/adapters/src/index.ts` defines `GraphAdapter`, `StorageAdapter`, and `WorkerClient`
+  - `app/praxis-adapters/src/index.ts` defines `GraphAdapter`, `StorageAdapter`, and `WorkerClient`
     interfaces. No backend specifics.
 
 - Worker (Rust engine crates)
-  - Modules: `crates/chrona`, `crates/praxis`, `crates/metis`, `crates/continuum` expose the
+  - Modules: `crates/chrona-visualization`, `crates/praxis-engine`, `crates/metis-analytics`, `crates/continuum-orchestrator` expose the
     computation traits consumed by the host.
   - The default desktop mode uses in-process adapters. Remote/server adapters will implement the
     same traits without changing the renderer contract.
 - Persistence & Schema (Mneme + MetaModelRegistry)
-- `crates/mneme` owns the ACID store (SQLite/WAL today) plus shared DTOs, including the
+- `crates/mneme-core` owns the ACID store (SQLite/WAL today) plus shared DTOs, including the
   meta-model document types. SeaORM/SeaQuery 1.1.19 drives the new persistence layer, creating the
   `commits`, `refs`, `snapshots`, and readonly `metis_events` tables so the host can keep analytics
   data alongside the graph.
-  - `crates/praxis/src/meta.rs` materialises `docs/data/meta/core-v1.json` (and optional overrides)
+  - `crates/praxis-engine/src/meta.rs` materialises `docs/data/meta/core-v1.json` (and optional overrides)
     into a `MetaModelRegistry` that performs all node/edge validation and exposes the active schema
     through the `temporal_metamodel_get` IPC command.
 
@@ -49,9 +49,9 @@ boundaries are enforced.
 
 ## Time‑first design
 
-- `Temporal.StateAt` implemented as a stub in `chrona::TemporalEngine::state_at` and surfaced via `temporal_state_at` command.
-- `Temporal.Diff` summarised by `chrona::TemporalEngine::diff_summary` and exposed through the `temporal_diff` host command, returning node/edge deltas only.
-- Canvas persists layout snapshots per `asOf` (and optional scenario) via `canvas_save_layout`; persistence boundary provided by `continuum::SnapshotStore` (file-backed in desktop mode).
+- `Temporal.StateAt` implemented as a stub in `chrona_visualization::TemporalEngine::state_at` and surfaced via `temporal_state_at` command.
+- `Temporal.Diff` summarised by `chrona_visualization::TemporalEngine::diff_summary` and exposed through the `temporal_diff` host command, returning node/edge deltas only.
+- Canvas persists layout snapshots per `asOf` (and optional scenario) via `canvas_save_layout`; persistence boundary provided by `continuum-orchestrator::SnapshotStore` (file-backed in desktop mode).
 - Future jobs (shortest path, centrality, impact) belong in the Rust engine crates with tests and SLO notes.
 
 ## Time & Commit Model — Authoring Standards

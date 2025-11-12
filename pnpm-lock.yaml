@@ -138,9 +138,13 @@ importers:
         specifier: ^4.0.8
         version: 4.0.15(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(jsdom@27.2.0)(lightningcss@1.30.2)(msw@2.12.4(@types/node@24.10.1)(typescript@5.9.3))(yaml@2.8.1)
 
-  app/adapters: {}
+  app/praxis-adapters:
+    dependencies:
+      '@aideon/praxis-dtos':
+        specifier: workspace:*
+        version: link:../praxis-dtos
 
-  app/design-system:
+  app/praxis-design-system:
     dependencies:
       '@fluentui/web-components':
         specifier: ^2.6.1
@@ -174,11 +178,11 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
 
-  app/desktop:
+  app/praxis-desktop:
     dependencies:
-      '@aideon/design-system':
+      '@aideon/praxis-design-system':
         specifier: workspace:*
-        version: link:../design-system
+        version: link:../praxis-design-system
       '@fluentui/web-components':
         specifier: ^2.6.1
         version: 2.6.1
@@ -240,6 +244,8 @@ importers:
       vite:
         specifier: ^7.1.12
         version: 7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.8.1)
+
+  app/praxis-dtos: {}
 
 packages:
 

@@ -29,12 +29,12 @@ changes that respect our **time‑first, graph‑native** architecture and secur
 
 ## Repository boundaries (monorepo)
 
-- `app/desktop` — Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only).
-- `app/adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
-- `crates/tauri` — Tauri host (Rust) exposing the typed command/event surface.
-- `crates/{praxis,chrona,metis,continuum}` — Rust domain crates (graph, time, analytics,
+- `app/praxis-desktop` — Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only).
+- `app/praxis-adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
+- `crates/praxis-host` — Tauri host (Rust) exposing the typed command/event surface.
+- `crates/{praxis-engine,chrona-visualization,metis-analytics,continuum-orchestrator}` — Rust domain crates (graph, time, analytics,
   orchestration) scoped to host/worker logic.
-- `crates/mneme` — Aideon Mneme persistence layer (commits, refs, snapshots) powering SQLITE/other
+- `crates/mneme-core` — Aideon Mneme persistence layer (commits, refs, snapshots) powering SQLITE/other
   storage backends via a shared API.
 - `docs/` — C4 diagrams, meta‑model, viewpoints, ADRs.
 
@@ -155,7 +155,7 @@ defaults consistent with this guide.
 For the authoritative coding standards (quality gates, coverage targets,
 tooling, and CI rules), see `docs/CODING_STANDARDS.md`.
 
-### TypeScript / React (app/desktop, app/adapters)
+### TypeScript / React (app/praxis-desktop, app/praxis-adapters)
 
 – Node 24, React 18. Strict TS config; ESLint + Prettier.
 
@@ -176,7 +176,7 @@ Lint/Format discipline
 - Keep code paths single and explicit (server-only worker over UDS) to reduce maintenance cost.
   - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime.
 
-### Rust worker crates (crates/chrona, crates/metis, crates/praxis, crates/continuum)
+### Rust worker crates (crates/chrona-visualization, crates/metis-analytics, crates/praxis-engine, crates/continuum-orchestrator)
 
 – Rust 2024 edition, `cargo fmt` + `cargo clippy --all-targets --all-features` clean.
 
@@ -275,9 +275,7 @@ Changes that could affect these must include a note in CHECKS and, when possible
 
 ## Example response template (use this shape)
 
-PLAN
-
-- Add `Temporal.TopologyDelta` trait to `crates/metis` with empty stub.
+- Add `Temporal.TopologyDelta` trait to `crates/metis-analytics` with empty stub.
 - Wire Tauri command to call the new trait via `WorkerState` adapter.
 - Extend Svelte store to request topology delta and render placeholder counts.
 
@@ -285,9 +283,7 @@ PATCH
 
 - Unified diffs here, paths from repo root.
 
-TESTS
-
-- New unit tests for topology_delta stub in `crates/metis`; Vitest store smoke tests.
+- New unit tests for topology_delta stub in `crates/metis-analytics`; Vitest store smoke tests.
 
 RUN
 

@@ -1,13 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/aideon",
-  "crates/tauri",
-  "crates/praxis",
-  "crates/chrona",
-  "crates/metis",
-  "crates/continuum",
-  "crates/mneme",
+  "crates/praxis-facade",
+  "crates/praxis-host",
+  "crates/praxis-engine",
+  "crates/chrona-visualization",
+  "crates/metis-analytics",
+  "crates/continuum-orchestrator",
+  "crates/mneme-core",
   "xtask"
 ]
 
