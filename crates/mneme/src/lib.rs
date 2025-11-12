@@ -2,11 +2,10 @@ mod error;
 pub mod health;
 mod memory;
 pub mod meta;
+pub mod sqlite;
 pub mod temporal;
 mod types;
-
-#[cfg(feature = "sqlite")]
-pub mod sqlite;
+pub mod datastore;
 
 pub use error::{MnemeError, MnemeResult};
 pub use health::WorkerHealth;
@@ -15,8 +14,8 @@ pub use temporal::*;
 pub use types::PersistedCommit;
 
 pub use memory::{MemorySnapshotStore, MemoryStore};
-#[cfg(feature = "sqlite")]
 pub use sqlite::{SqliteDb, SqliteSnapshotStore, sanitize_id};
+pub use datastore::create_datastore;
 
 /// Storage interface consumed by engines.
 pub trait Store: Send + Sync {
