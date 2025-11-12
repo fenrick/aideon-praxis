@@ -3,17 +3,14 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use aideon_continuum::SnapshotStore;
 use aideon_mneme::temporal::{ChangeSet, CommitSummary};
 use aideon_mneme::{
-    MemorySnapshotStore, MemoryStore, PersistedCommit, SqliteDb, Store, create_datastore,
-    sanitize_id,
+    MemoryStore, PersistedCommit, SqliteDb, Store, create_datastore, datastore_path,
 };
 use aideon_praxis::{
     BaselineDataset, GraphSnapshot, MetaModelRegistry, PraxisEngine, PraxisEngineConfig,
 };
 use anyhow::{Context, Result, anyhow};
-use bincode::serialize;
 use clap::{Parser, Subcommand};
 
 fn main() -> Result<()> {
@@ -21,6 +18,7 @@ fn main() -> Result<()> {
     match cli.command {
         Command::MigrateState(args) => migrate_state(args),
         Command::ImportDataset(args) => import_dataset(args),
+        Command::Health(args) => check_health(args),
     }
 }
 
@@ -41,6 +39,8 @@ enum Command {
     MigrateState(MigrateStateArgs),
     /// Apply the baseline dataset to a datastore (or dry-run for validation).
     ImportDataset(ImportDatasetArgs),
+    /// Validate datastore integrity by scanning commits, heads, and snapshots.
+    Health(HealthArgs),
 }
 
 #[derive(Parser)]
@@ -72,6 +72,19 @@ struct ImportDatasetArgs {
     force: bool,
 }
 
+#[derive(Parser)]
+struct HealthArgs {
+    /// Directory where the datastore lives (contains datastore.json and sqlite file).
+    #[arg(long, default_value = ".praxis")]
+    datastore: PathBuf,
+    /// Limit the health scan to a single branch.
+    #[arg(long)]
+    branch: Option<String>,
+    /// Reduce output to errors only.
+    #[arg(long, default_value_t = false)]
+    quiet: bool,
+}
+
 fn migrate_state(args: MigrateStateArgs) -> Result<()> {
     let raw = fs::read_to_string(&args.input)
         .with_context(|| format!("failed to read {}", args.input.display()))?;
@@ -99,7 +112,6 @@ fn migrate_state(args: MigrateStateArgs) -> Result<()> {
             .with_context(|| format!("failed to remove {}", db_path.display()))?;
     }
     let db = SqliteDb::open(&db_path).map_err(|err| anyhow!(err.to_string()))?;
-    let snapshot_store = db.snapshot_store();
 
     let mut snapshots: HashMap<String, GraphSnapshot> = HashMap::new();
     let mut last_commit_id: Option<String> = None;
@@ -123,12 +135,6 @@ fn migrate_state(args: MigrateStateArgs) -> Result<()> {
         };
         db.put_commit(&persisted)
             .map_err(|err| anyhow!(err.to_string()))?;
-
-        let key = format!("snapshots/{}.bin", sanitize_id(&persisted.summary.id));
-        let bytes = serialize(&next).context("serialize snapshot")?;
-        snapshot_store
-            .put(&key, &bytes)
-            .map_err(|err| anyhow!("write snapshot failed: {err}"))?;
 
         last_commit_id = Some(persisted.summary.id.clone());
         snapshots.insert(persisted.summary.id, next);
@@ -174,11 +180,9 @@ fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
     let db_path =
         create_datastore(&args.datastore, None).map_err(|err| anyhow!(err.to_string()))?;
     let storage = SqliteDb::open(&db_path).map_err(|err| anyhow!(err.to_string()))?;
-    let snapshot = storage.snapshot_store();
     let engine = PraxisEngine::with_stores_unseeded(
         PraxisEngineConfig::default(),
         Arc::new(storage.clone()),
-        Arc::new(snapshot),
     )
     .map_err(|err| anyhow!(err.to_string()))?;
 
@@ -223,12 +227,155 @@ fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
     Ok(())
 }
 
+fn check_health(args: HealthArgs) -> Result<()> {
+    let db_path = datastore_path(&args.datastore)
+        .with_context(|| format!("resolve datastore under {}", args.datastore.display()))?;
+    let storage = SqliteDb::open(&db_path).map_err(|err| anyhow!(err.to_string()))?;
+    let engine = PraxisEngine::with_stores_unseeded(
+        PraxisEngineConfig::default(),
+        Arc::new(storage.clone()),
+    )
+    .map_err(|err| anyhow!(err.to_string()))?;
+
+    let branches = engine.list_branches();
+    let filtered: Vec<_> = branches
+        .into_iter()
+        .filter(|branch| match &args.branch {
+            Some(target) => &branch.name == target,
+            None => true,
+        })
+        .collect();
+
+    if filtered.is_empty() {
+        return Err(anyhow!("no branches found (filter={:?})", args.branch));
+    }
+
+    struct Finding {
+        kind: &'static str,
+        message: String,
+    }
+
+    let mut findings: Vec<Finding> = Vec::new();
+    let mut commit_total: usize = 0;
+
+    for branch in &filtered {
+        let branch_name = branch.name.clone();
+        let commits = engine
+            .list_commits(branch_name.clone())
+            .map_err(|err| anyhow!(err.to_string()))?;
+        commit_total += commits.len();
+
+        match (branch.head.as_ref(), commits.last()) {
+            (Some(head), Some(last)) if head != &last.id => {
+                findings.push(Finding {
+                    kind: "error",
+                    message: format!(
+                        "branch '{}' head {} mismatches latest commit {}",
+                        branch_name, head, last.id
+                    ),
+                });
+            }
+            (Some(head), None) => findings.push(Finding {
+                kind: "error",
+                message: format!(
+                    "branch '{}' records head {} but has no commits",
+                    branch_name, head
+                ),
+            }),
+            (None, Some(last)) => findings.push(Finding {
+                kind: "warning",
+                message: format!(
+                    "branch '{}' has {} commits but no recorded head (latest {})",
+                    branch_name,
+                    commits.len(),
+                    last.id
+                ),
+            }),
+            (None, None) => findings.push(Finding {
+                kind: "warning",
+                message: format!("branch '{}' is empty", branch_name),
+            }),
+            _ => {}
+        }
+
+        if let Some(last) = commits.last()
+            && last.time.is_none()
+        {
+            findings.push(Finding {
+                kind: "warning",
+                message: format!(
+                    "branch '{}' head {} missing timestamp metadata",
+                    branch_name, last.id
+                ),
+            });
+        }
+
+        for commit in commits {
+            if let Err(err) = engine.stats_for_commit(&commit.id) {
+                findings.push(Finding {
+                    kind: "error",
+                    message: format!("snapshot for commit {} unreadable: {}", commit.id, err),
+                });
+            }
+
+            let tag_key = format!("snapshot/{}", commit.id);
+            match storage.get_tag(&tag_key) {
+                Ok(Some(resolved)) if resolved == commit.id => {}
+                Ok(Some(resolved)) => findings.push(Finding {
+                    kind: "error",
+                    message: format!(
+                        "snapshot tag {} points to {} instead of {}",
+                        tag_key, resolved, commit.id
+                    ),
+                }),
+                Ok(None) => findings.push(Finding {
+                    kind: "warning",
+                    message: format!("snapshot tag missing for commit {}", commit.id),
+                }),
+                Err(err) => findings.push(Finding {
+                    kind: "error",
+                    message: format!("snapshot tag lookup failed for {}: {}", commit.id, err),
+                }),
+            }
+        }
+    }
+
+    if !args.quiet {
+        println!("Datastore: {}", db_path.display());
+        println!("Branches scanned: {}", filtered.len());
+        println!("Commits scanned: {}", commit_total);
+    }
+
+    let errors: Vec<&Finding> = findings.iter().filter(|f| f.kind == "error").collect();
+    let warnings: Vec<&Finding> = findings.iter().filter(|f| f.kind == "warning").collect();
+
+    if !args.quiet {
+        for warn in &warnings {
+            println!("warning: {}", warn.message);
+        }
+    }
+
+    if !errors.is_empty() {
+        for err in &errors {
+            eprintln!("error: {}", err.message);
+        }
+        return Err(anyhow!(
+            "health check failed ({} errors, {} warnings)",
+            errors.len(),
+            warnings.len()
+        ));
+    }
+
+    if !args.quiet {
+        println!("health check passed with {} warnings", warnings.len());
+    }
+    Ok(())
+}
+
 fn dry_run_dataset(dataset: &BaselineDataset) -> Result<()> {
     let store: Arc<dyn Store> = Arc::new(MemoryStore::default());
-    let snapshots: Arc<dyn SnapshotStore> = Arc::new(MemorySnapshotStore::default());
-    let engine =
-        PraxisEngine::with_stores_unseeded(PraxisEngineConfig::default(), store, snapshots)
-            .map_err(|err| anyhow!(err.to_string()))?;
+    let engine = PraxisEngine::with_stores_unseeded(PraxisEngineConfig::default(), store)
+        .map_err(|err| anyhow!(err.to_string()))?;
     engine
         .bootstrap_with_dataset(dataset)
         .map_err(|err| anyhow!(err.to_string()))?;
