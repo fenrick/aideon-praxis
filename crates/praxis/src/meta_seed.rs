@@ -6,11 +6,11 @@ pub fn meta_model_seed_change_set() -> ChangeSet {
     let mut change = ChangeSet::default();
     change
         .node_creates
-        .extend(META_TYPES.iter().map(|ty| node_for_type(ty)));
+        .extend(META_TYPES.iter().map(node_for_type));
     change.node_creates.extend(
         META_RELATIONSHIPS
             .iter()
-            .map(|rel| node_for_relationship(rel)),
+            .map(node_for_relationship),
     );
     change
 }
