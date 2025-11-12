@@ -14,21 +14,21 @@ Intent and Principles
 
 Renderer Design
 
-- ELK wrapper: app/desktop/src/lib/canvas/layout/elk.ts wraps elkjs (bundled build). API: layoutShapesWithElk(shapes, { algorithm, spacing }).
-- Shape store: app/desktop/src/lib/canvas/shape-store.ts
+- ELK wrapper: app/praxis-desktop/src/lib/canvas/layout/elk.ts wraps elkjs (bundled build). API: layoutShapesWithElk(shapes, { algorithm, spacing }).
+- Shape store: app/praxis-desktop/src/lib/canvas/shape-store.ts
   - initDefaultShapes()/reloadScene(asOf): fetch raw nodes from host; if all x/y are 0 or missing, run ELK once; otherwise use positions as‑is.
   - relayout(options): re‑run ELK and update positions.
   - saveLayout(asOf, scenario?, docId=default): post current node geometry/z/group to host.
-- Scene UI: app/desktop/src/lib/canvas/Scene.svelte adds Relayout and Save actions, grid spacing overlay, and z‑index style. It receives asOf from MainView for save.
+- Scene UI: app/praxis-desktop/src/lib/canvas/Scene.svelte adds Relayout and Save actions, grid spacing overlay, and z‑index style. It receives asOf from MainView for save.
 
 Host/DTOs
 
-- DTOs in Praxis (crates/praxis/src/canvas.rs):
+- DTOs in Praxis (crates/praxis-engine/src/canvas.rs):
   - CanvasNode { id, typeId, x, y, w, h, z, label?, groupId? }
   - CanvasEdge { id, source, target, label?, z? }
   - CanvasGroup { id, name?, parentId?, z? }
   - CanvasLayoutSaveRequest { docId, asOf, scenario?, nodes[], edges[], groups[] }
-- Tauri commands (crates/tauri/src/scene.rs):
+- Tauri commands (crates/praxis-host/src/scene.rs):
   - canvas_scene(as_of?): returns raw nodes for bootstrap/demo. Renderer performs layout if needed.
   - canvas_save_layout(payload): persists JSON to OS data dir under AideonPraxis/canvas/<docId>/layout-<asOf>.json.
 
@@ -55,6 +55,6 @@ What’s Built vs What’s Next
 
 Developer Notes
 
-- Tests: See app/desktop/tests/elk.layout.test.ts for ELK sanity; IPC boundary tests allow elkjs in renderer.
+- Tests: See app/praxis-desktop/tests/elk.layout.test.ts for ELK sanity; IPC boundary tests allow elkjs in renderer.
 - CI: pnpm run ci runs Node lint/typecheck/tests/format and Rust clippy/check/fmt. svelte-check warnings are tracked but non‑blocking for now (deprecated runes patterns/a11y).
 - Security: No renderer HTTP; no open ports; typed IPC only. Elkjs is UI‑only.

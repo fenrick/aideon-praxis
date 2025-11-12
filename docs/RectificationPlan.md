@@ -8,23 +8,23 @@
 
 ### Git-structured timeline
 
-The intent in Architecture-Boundary.md:75–146 is a Git-like, append-only commit graph with deterministic ancestry and timeline semantics, yet PraxisEngine just keeps commits/branches in BTreeMaps behind a mutex and increments next_commit for ids (crates/praxis/src/engine.rs:37 and crates/praxis/src/engine.rs:159), meaning history evaporates on restart and commit timestamps are optional/unused; even the UI falls back to showing the id when time is missing (app/desktop/src/lib/components/MainView.svelte:103). Wire PraxisEngine to a persistent commit/tag store that records authoritative snapshot markers inside SQLite, stamp commit metadata server-side, and surface branch pointers so “main” always reflects “now” without trusting the renderer.
+The intent in Architecture-Boundary.md:75–146 is a Git-like, append-only commit graph with deterministic ancestry and timeline semantics, yet PraxisEngine just keeps commits/branches in BTreeMaps behind a mutex and increments next_commit for ids (crates/praxis-engine/src/engine.rs:37 and crates/praxis-engine/src/engine.rs:159), meaning history evaporates on restart and commit timestamps are optional/unused; even the UI falls back to showing the id when time is missing (app/praxis-desktop/src/lib/components/MainView.svelte:103). Wire PraxisEngine to a persistent commit/tag store that records authoritative snapshot markers inside SQLite, stamp commit metadata server-side, and surface branch pointers so “main” always reflects “now” without trusting the renderer.
 
 ### Abstract meta-model enforcement
 
-The design requires every node/edge to obey the ArchiMate-style catalog (docs/DESIGN.md:83–196), but the engine only stores opaque NodeVersion/EdgeVersion records with TODOs where schema validation should live (crates/praxis/src/engine.rs:183 and crates/praxis/src/graph.rs:235); StateAtResult today exposes counts only (crates/mneme/src/temporal.rs:24), so no meta-model attributes reach consumers. Introduce a MetaModelRegistry that materialises the schema definitions from commit-style data (e.g., `docs/data/meta/core-v1.json` seeded during import) so the same nested graph structure describing object types, attributes, and constraints is versioned alongside regular commits, enforced inside `GraphSnapshot::apply`, and surfaced as typed DTOs the renderer consumes without embedding business logic.
+The design requires every node/edge to obey the ArchiMate-style catalog (docs/DESIGN.md:83–196), but the engine only stores opaque NodeVersion/EdgeVersion records with TODOs where schema validation should live (crates/praxis-engine/src/engine.rs:183 and crates/praxis-engine/src/graph.rs:235); StateAtResult today exposes counts only (crates/mneme-core/src/temporal.rs:24), so no meta-model attributes reach consumers. Introduce a MetaModelRegistry that materialises the schema definitions from commit-style data (e.g., `docs/data/meta/core-v1.json` seeded during import) so the same nested graph structure describing object types, attributes, and constraints is versioned alongside regular commits, enforced inside `GraphSnapshot::apply`, and surfaced as typed DTOs the renderer consumes without embedding business logic.
 
 ### Configurable/deliverable meta-model
 
-The delivered meta-model is only prose in docs/DESIGN.md, and there’s no mechanism to configure it or ship extensions; even the analytics contract (app/adapters/src/contracts.ts:145) lists job types but nothing populates them. Instead of keeping schema definitions in static files, treat meta-model configuration as data that can be authoring via in-app screens—users compose object types in a graph-style hierarchy, define attributes and constraints, and commit the resulting descriptor; the baseline offering (`docs/data/meta/core-v1.json`) is just the default data payload. This data-first approach lets overrides land as additional commits or files under `.praxis/meta`, and the host exposes the active schema so UI/business logic can materialise different viewpoints without code changes.
+The delivered meta-model is only prose in docs/DESIGN.md, and there’s no mechanism to configure it or ship extensions; even the analytics contract (app/praxis-adapters/src/contracts.ts:145) lists job types but nothing populates them. Instead of keeping schema definitions in static files, treat meta-model configuration as data that can be authoring via in-app screens—users compose object types in a graph-style hierarchy, define attributes and constraints, and commit the resulting descriptor; the baseline offering (`docs/data/meta/core-v1.json`) is just the default data payload. This data-first approach lets overrides land as additional commits or files under `.praxis/meta`, and the host exposes the active schema so UI/business logic can materialise different viewpoints without code changes.
 
 ### Base dataset alignment
 
-Requirements call for a baseline dataset that mirrors the strategy-to-execution chain, yet the engine seeds just five sample nodes and four edges (crates/praxis/src/engine.rs:425) and the renderer’s dev adapter merely tracks node/edge counts in memory (app/adapters/src/development-memory.ts:14). Build an importer that loads the real delivered dataset (value streams, capabilities, applications, plan events, etc.) into commits, version it alongside migrations, and ensure state_at can stream actual graph data (not just counts) to both the canvas and reporting layers.
+Requirements call for a baseline dataset that mirrors the strategy-to-execution chain, yet the engine seeds just five sample nodes and four edges (crates/praxis-engine/src/engine.rs:425) and the renderer’s dev adapter merely tracks node/edge counts in memory (app/praxis-adapters/src/development-memory.ts:14). Build an importer that loads the real delivered dataset (value streams, capabilities, applications, plan events, etc.) into commits, version it alongside migrations, and ensure state_at can stream actual graph data (not just counts) to both the canvas and reporting layers.
 
 ### Reporting & analytics surface
 
-The design promises executive dashboards, scorecards, and roadmap visuals (docs/DESIGN.md:860–884), but today the renderer shows only snapshot counts and diff totals in MainView (app/desktop/src/lib/components/MainView.svelte:275), the canvas pulls a hard-coded two-rectangle scene (crates/chrona/src/scene.rs:5), StateAtResult lacks any graph detail, and Metis is an empty placeholder (crates/metis/src/lib.rs:1). Deliver the analytics worker jobs defined in the contracts file (app/adapters/src/contracts.ts:145), add host commands to invoke them, persist/report their outputs (heatmaps, TCO, timeline charts), and expand.
+The design promises executive dashboards, scorecards, and roadmap visuals (docs/DESIGN.md:860–884), but today the renderer shows only snapshot counts and diff totals in MainView (app/praxis-desktop/src/lib/components/MainView.svelte:275), the canvas pulls a hard-coded two-rectangle scene (crates/chrona-visualization/src/scene.rs:5), StateAtResult lacks any graph detail, and Metis is an empty placeholder (crates/metis-analytics/src/lib.rs:1). Deliver the analytics worker jobs defined in the contracts file (app/praxis-adapters/src/contracts.ts:145), add host commands to invoke them, persist/report their outputs (heatmaps, TCO, timeline charts), and expand.
 
 ## 1. Guiding Principles
 
@@ -70,7 +70,7 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
    - Update `mneme::Store` to an async trait (via `async-trait`) so SeaORM can power commit, branch, and tag operations without blocking the host runtime.
    - Modernise every caller (`PraxisEngine`, host worker, xtask, tests) to await the store operations without changing the visible API surface.
 2. **SeaORM schema & migrations**
-   - Introduce SeaORM 1.1.19 + SeaQuery in `crates/mneme`, define entities for commits, refs, snapshot tags, and the readonly Metis fact/star tables.
+   - Introduce SeaORM 1.1.19 + SeaQuery in `crates/mneme-core`, define entities for commits, refs, snapshot tags, and the readonly Metis fact/star tables.
    - Build migrations that create the tables with the required constraints and indexes, and run them at startup via a SeaORM migrator.
 3. **Baseline dataset seeding**
    - Seed the baseline dataset (meta-model, object graph, plan events) as part of the migration/seed logic so a fresh database already contains the canonical schema and sample graph.
@@ -229,7 +229,7 @@ swaps trivial.
 ### Tasks
 
 1. **Worker jobs**
-   - Flesh out `crates/metis` with algorithms for `Analytics.ShortestPath`, `Analytics.Centrality`, `Analytics.Impact`, `Finance.TCO` using graph snapshots.
+   - Flesh out `crates/metis-analytics` with algorithms for `Analytics.ShortestPath`, `Analytics.Centrality`, `Analytics.Impact`, `Finance.TCO` using graph snapshots.
    - Provide deterministic fixtures and SLO instrumentation.
 2. **Host adapters**
    - Expose new Tauri commands (e.g., `analytics_shortest_path`, `report_capability_scorecard`).

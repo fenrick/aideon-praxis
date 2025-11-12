@@ -12,7 +12,7 @@
   },
   "scripts": {
     "preflight": "node tools/preflight.mjs",
-    "node:dev": "pnpm --filter @aideon/app dev",
+    "node:dev": "pnpm --filter @aideon/praxis-desktop dev",
     "node:build": "vite build",
     "node:test": "vitest run --reporter=default",
     "node:test:coverage": "vitest run --coverage.enabled=true --coverage.provider=istanbul --coverage.reporter=lcov --coverage.reporter=html --coverage.reporter=text",
@@ -20,7 +20,7 @@
     "node:lint:fix": "eslint --max-warnings=10 \"app/**/src/**/*.{ts,tsx,js,svelte}\" --fix",
     "node:format": "prettier -w .",
     "node:format:check": "prettier -c .",
-    "node:typecheck": "pnpm --filter @aideon/app run check && tsc -b --pretty",
+    "node:typecheck": "pnpm --filter @aideon/praxis-desktop run check && tsc -b --pretty",
     "design:guard": "node tools/design-system-guard.mjs",
     "node:ci": "pnpm run design:guard && pnpm run node:lint:fix && pnpm run node:typecheck && pnpm run node:test:coverage && pnpm run node:format",
     "tauri": "tauri",
@@ -45,7 +45,7 @@
   "vitest": {
     "environment": "jsdom",
     "setupFiles": [
-      "app/desktop/tests/setup.ts"
+      "app/praxis-desktop/tests/setup.ts"
     ],
     "coverage": {
       "provider": "istanbul",
@@ -56,16 +56,16 @@
       ],
       "reportOnFailure": true,
       "include": [
-        "app/desktop/src/lib/**/*.{ts,tsx}",
-        "app/adapters/src/**/*.{ts,tsx}"
+        "app/praxis-desktop/src/lib/**/*.{ts,tsx}",
+        "app/praxis-adapters/src/**/*.{ts,tsx}"
       ],
       "exclude": [
         "**/*.d.ts",
         "**/*.test.*",
         "app/**/dist/**",
         "scripts/**",
-        "app/desktop/src/version.ts",
-        "app/desktop/src/routes/**",
+        "app/praxis-desktop/src/version.ts",
+        "app/praxis-desktop/src/routes/**",
         "**/routes/+layout.ts"
       ]
     }

@@ -3,15 +3,13 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use aideon_mneme::temporal::{ChangeSet, CommitSummary};
-use aideon_mneme::{
-    MemoryStore, PersistedCommit, SqliteDb, Store, create_datastore, datastore_path,
-};
-use aideon_praxis::{
-    BaselineDataset, GraphSnapshot, MetaModelRegistry, PraxisEngine, PraxisEngineConfig,
-};
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
+use mneme_core::temporal::{ChangeSet, CommitSummary};
+use mneme_core::{MemoryStore, PersistedCommit, SqliteDb, Store, create_datastore, datastore_path};
+use praxis_engine::{
+    BaselineDataset, GraphSnapshot, MetaModelRegistry, PraxisEngine, PraxisEngineConfig,
+};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();

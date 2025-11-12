@@ -69,11 +69,11 @@ docs/schedule/*.json
  
 # Rust build artifacts
 target/
-crates/tauri/target/
-crates/tauri/**/.fingerprint/
-crates/tauri/.cargo/
-crates/tauri/**/Cargo.lock.bk
-crates/tauri/gen/
-/crates/tauri/binaries
-/app/desktop/.svelte-kit
+crates/praxis-host/target/
+crates/praxis-host/**/.fingerprint/
+crates/praxis-host/.cargo/
+crates/praxis-host/**/Cargo.lock.bk
+crates/praxis-host/gen/
+/crates/praxis-host/binaries
+/app/praxis-desktop/.svelte-kit
 .tools/

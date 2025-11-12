@@ -60,7 +60,7 @@ async function main() {
 
   // Desktop renderer version file
   updatedFiles.push(
-    await writeTypeScriptVersion(path.join(repoRoot, 'app/desktop/src/version.ts'), version),
+    await writeTypeScriptVersion(path.join(repoRoot, 'app/praxis-desktop/src/version.ts'), version),
   );
 
   // Optional worker version file(s)
@@ -73,7 +73,7 @@ async function main() {
   }
 
   // Update Tauri configuration so bundles use the semantic-release version
-  const tauriConfigPath = path.join(repoRoot, 'crates/tauri/tauri.conf.json');
+  const tauriConfigPath = path.join(repoRoot, 'crates/praxis-host/tauri.conf.json');
   if (await fileExists(tauriConfigPath)) {
     updatedFiles.push(
       await updateJsonVersion(tauriConfigPath, version, (data, newVersion) => {

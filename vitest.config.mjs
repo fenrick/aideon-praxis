@@ -8,15 +8,15 @@ export default defineConfig({
       // Stubs to keep tests offline and avoid Vite resolution failures
       '@fluentui/web-components': path.resolve(
         __dirname,
-        'app/desktop/tests/stubs/fluentui.web-components.ts',
+        'app/praxis-desktop/tests/stubs/fluentui.web-components.ts',
       ),
-      '@tauri-apps/api/core': path.resolve(__dirname, 'app/desktop/tests/stubs/tauri-api-core.ts'),
+      '@tauri-apps/api/core': path.resolve(__dirname, 'app/praxis-desktop/tests/stubs/tauri-api-core.ts'),
       '@tauri-apps/plugin-log': path.resolve(
         __dirname,
-        'app/desktop/tests/stubs/tauri-plugin-log.ts',
+        'app/praxis-desktop/tests/stubs/tauri-plugin-log.ts',
       ),
-      $lib: path.resolve(__dirname, 'app/desktop/src/lib'),
-      '@adapters': path.resolve(__dirname, 'app/adapters/src'),
+      $lib: path.resolve(__dirname, 'app/praxis-desktop/src/lib'),
+      '@adapters': path.resolve(__dirname, 'app/praxis-adapters/src'),
     },
   },
   plugins: [
@@ -29,19 +29,23 @@ export default defineConfig({
   ],
   test: {
     environment: 'jsdom',
-    setupFiles: ['app/desktop/tests/setup.ts'],
+    setupFiles: ['app/praxis-desktop/tests/setup.ts'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'lcov', 'html'],
       reportOnFailure: true,
-      include: ['app/desktop/src/lib/**/*.{ts,tsx}', 'app/adapters/src/**/*.{ts,tsx}'],
+      include: [
+        'app/praxis-desktop/src/lib/**/*.{ts,tsx}',
+        'app/praxis-adapters/src/**/*.{ts,tsx}',
+        'app/praxis-dtos/src/**/*.{ts,tsx}',
+      ],
       exclude: [
         '**/*.d.ts',
         '**/*.test.*',
         'app/**/dist/**',
         'scripts/**',
-        'app/desktop/src/version.ts',
-        'app/desktop/src/routes/**',
+        'app/praxis-desktop/src/version.ts',
+        'app/praxis-desktop/src/routes/**',
       ],
     },
   },

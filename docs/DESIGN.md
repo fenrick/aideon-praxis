@@ -654,7 +654,7 @@ The platform exposes **standard integration options** to import and export data:
   upcoming importer ensures the definition lands as a commit-level artifact so schema, data, and
   migrations stay in lock-step.
 - Praxis loads the document (plus optional overrides) into `MetaModelRegistry`
-  (`crates/praxis/src/meta.rs`). Every change-set touches the registry before a snapshot mutates,
+  (`crates/praxis-engine/src/meta.rs`). Every change-set touches the registry before a snapshot mutates,
   so required attributes, enum values, and relationship constraints align with the design intent.
 - The host exposes the active schema via the `temporal_metamodel_get` IPC command; the renderer
   caches it through `metaModelStore`, renders a “Meta-model” panel, and will wire future
@@ -662,7 +662,7 @@ The platform exposes **standard integration options** to import and export data:
   graph-style hierarchy rather than editing flat lists.
 - Overrides remain data-only: placing an override payload alongside the baseline dataset or
   committing it via a scenario branch lets us extend/replace the schema without code changes.
-- The initial meta-model is seeded via `crates/praxis/src/meta_seed.rs`, which translates the
+- The initial meta-model is seeded via `crates/praxis-engine/src/meta_seed.rs`, which translates the
   schema definitions into nodes/edges through the same change-set APIs the renderer uses.
 - The initial meta-model is inserted via the bootstrap commit through the same public change-set
   APIs the renderer uses, so our seed is dog-fooding the authoring surface instead of importing JSON.
