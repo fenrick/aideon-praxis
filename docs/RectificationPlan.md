@@ -8,7 +8,7 @@
 
 ### Git-structured timeline
 
-The intent in Architecture-Boundary.md:75–146 is a Git-like, append-only commit graph with deterministic ancestry and timeline semantics, yet PraxisEngine just keeps commits/branches in BTreeMaps behind a mutex and increments next_commit for ids (crates/praxis/src/engine.rs:37 and crates/praxis/src/engine.rs:159), meaning history evaporates on restart and commit timestamps are optional/unused; even the UI falls back to showing the id when time is missing (app/desktop/src/lib/components/MainView.svelte:103). Wire PraxisEngine to a persistent CommitStore abstraction that leverages the existing, currently unused SnapshotStore trait (crates/continuum/src/lib.rs:7), stamp commit metadata server-side, and surface branch pointers so “main” always reflects “now” without trusting the renderer.
+The intent in Architecture-Boundary.md:75–146 is a Git-like, append-only commit graph with deterministic ancestry and timeline semantics, yet PraxisEngine just keeps commits/branches in BTreeMaps behind a mutex and increments next_commit for ids (crates/praxis/src/engine.rs:37 and crates/praxis/src/engine.rs:159), meaning history evaporates on restart and commit timestamps are optional/unused; even the UI falls back to showing the id when time is missing (app/desktop/src/lib/components/MainView.svelte:103). Wire PraxisEngine to a persistent commit/tag store that records authoritative snapshot markers inside SQLite, stamp commit metadata server-side, and surface branch pointers so “main” always reflects “now” without trusting the renderer.
 
 ### Abstract meta-model enforcement
 
@@ -54,22 +54,23 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 **Done**
 
-- `PraxisEngine` persists commits/refs/snapshots through the `Store`/`SnapshotStore` traits, writing to SQLite with CAS branch updates and deterministic snapshot blobs.
+- `PraxisEngine` now persists commits/refs via the `Store` trait, reconstructs graph state directly from the commit log, and records `snapshot/<commit>` tags inside SQLite instead of writing blobbed snapshots.
 - The Tauri host provisions per-user `.praxis` directories via `create_datastore`, runs seeding (meta + baseline dataset), and restores history on restart.
+- Added `cargo xtask health` plus a SQLite persistence regression test so operators can scan datastores for branch/head drift, missing tags, and unreadable commits without mutating state.
 
 **Outstanding**
 
-- Extract a backend-agnostic `CommitStore` interface + health tooling so additional databases (Postgres/FoundationDB) can plug in and provide compaction/repair operations.
+- Extract a backend-agnostic `CommitStore` interface plus compaction/repair hooks so alternative databases (Postgres/FoundationDB) can plug in beyond SQLite.
 - Expose richer history metadata (branch pointers, head timestamps, snapshot ids) via IPC so the renderer no longer infers timelines locally.
 - Add storage validation/regression tests (power-cut simulations, snapshot integrity checks) and document recovery procedures per Architecture-Boundary guidance.
 
 ### Tasks
 
 1. **Async trait conversion**
-   - Update `mneme::Store`/`SnapshotStore` to async traits (via `async-trait`) so SeaORM can power the implementation.
+   - Update `mneme::Store` to an async trait (via `async-trait`) so SeaORM can power commit, branch, and tag operations without blocking the host runtime.
    - Modernise every caller (`PraxisEngine`, host worker, xtask, tests) to await the store operations without changing the visible API surface.
 2. **SeaORM schema & migrations**
-   - Introduce SeaORM 1.1.19 + SeaQuery in `crates/mneme`, define entities for commits, refs, snapshots, and the readonly Metis fact/star tables.
+   - Introduce SeaORM 1.1.19 + SeaQuery in `crates/mneme`, define entities for commits, refs, snapshot tags, and the readonly Metis fact/star tables.
    - Build migrations that create the tables with the required constraints and indexes, and run them at startup via a SeaORM migrator.
 3. **Baseline dataset seeding**
    - Seed the baseline dataset (meta-model, object graph, plan events) as part of the migration/seed logic so a fresh database already contains the canonical schema and sample graph.
@@ -81,15 +82,19 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 ### Definition of Done
 
 - Application restart preserves entire history; `list_commits('main')` includes authoritative timestamps.
-- `state_at()`/`diff()` read from persisted snapshots with structural sharing to meet SLOs.
+- `state_at()`/`diff()` replay commits deterministically (with memoised caches) to meet SLOs without depending on blobbed snapshots.
 - Docs updated with storage layout & recovery steps; ADR recorded if format is new.
 
 ### Testing & Quality
 
-- Async unit tests that exercise the new SeaORM store (store/merge semantics, branch CAS, snapshot reads).
+- Async unit tests that exercise the new SeaORM store (store/merge semantics, branch CAS, snapshot tag lifecycles).
 - Integration tests to ensure migrations/seeds populate the baseline dataset and Metis tables as expected.
 - Property test: `apply(diff(a,b), snapshot(a)) == snapshot(b)` still holds after the async refactor.
 - Commands to run before commit: `cargo fmt`, `cargo clippy --all-targets --all-features`, `cargo test --all --all-targets`, `pnpm run node:test:coverage`.
+
+### Operational Tooling
+
+- `cargo xtask health --datastore .praxis` scans branch heads, commit timelines, and `snapshot/<commit>` tags without mutating state and exits non-zero if drift or corruption is detected. Use `--branch` to scope checks to a single scenario and `--quiet` for automation-friendly logging.
 
 ### Commit & Tracking Guidance
 

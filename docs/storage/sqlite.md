@@ -56,7 +56,7 @@ CockroachDB later only requires replaying migrations + COPY/ingest.
 2. Keep app-generated IDs (BLAKE3) and ISO-8601 timestamps so other engines do not inject metadata.
 3. Use `INSERT ... ON CONFLICT ...` for upserts—works in both SQLite and PostgreSQL.
 4. Keep JSON logic in views/DAOs, not scattered SQL fragments.
-5. Store large binary content in the `snapshots` table (or future blob store) via `SnapshotStore`.
+5. Track snapshot metadata in the `snapshot_tags` table so every logical snapshot maps back to a commit/tag combination instead of storing raw blobs.
 6. Wrap search/full-text needs behind a DAO so we can swap SQLite FTS5 for `tsvector` later.
 
 ## File locations

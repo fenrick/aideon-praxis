@@ -125,7 +125,7 @@ path to server mode.
 
 1. Prove the pipeline and harden
 
-- Persistence boundary (optional): keep `SnapshotStore` behind a trait; prepare SQLite impl (commits/nodes/edges) to replace file JSON.
+- Persistence boundary (optional): keep `continuum::SnapshotStore` for canvas/layout data but rely on SQLite commits/nodes/edges plus `snapshot_tags` for temporal history instead of dumping JSON blobs.
 - E2E contract tests: Vitest against mocked Tauri bridge with golden JSON snapshots for `stateAt()` and `commit()`.
 - Coverage in CI: generate LCOV (Vitest) and Rust coverage (grcov); feed Sonar (ensure report paths).
 - Security checks: assert CSP and window permission caps in a prod build test.
