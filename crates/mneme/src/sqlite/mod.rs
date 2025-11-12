@@ -1,16 +1,35 @@
+//! SeaORM-backed implementation of the Mneme store.
+
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, Database, DatabaseConnection, DbBackend, DbErr,
-    EntityTrait, QueryFilter, Schema, Set, Statement, TransactionTrait, Value,
+    ActiveModelTrait,
+    ColumnTrait,
+    ConnectionTrait,
+    Database,
+    DatabaseConnection,
+    DbBackend,
+    DbErr,
+    EntityTrait,
+    QueryFilter,
+    Schema,
+    Set,
+    Statement,
+    TransactionTrait,
+    Value,
 };
 use sea_query::SqliteQueryBuilder;
 use serde_json;
 use tokio::runtime::{Builder, Runtime};
 
 use crate::{MnemeError, MnemeResult, PersistedCommit, Store};
+
+mod commits;
+mod metis;
+mod refs;
+mod snapshot_tags;
 
 /// SeaORM-backed implementation of the Mneme store (synonym kept for existing callers).
 #[derive(Clone)]
@@ -86,10 +105,10 @@ impl Store for SqliteDb {
         self.block_on(async move {
             let record = commits::Entity::find_by_id(id).one(&conn).await?;
             if let Some(rec) = record {
-                let summary: crate::temporal::CommitSummary =
+                let summary: crate::temporal::CommitSummary = 
                     serde_json::from_str(&rec.summary_json)
                         .map_err(|err| DbErr::Custom(err.to_string()))?;
-                let change_set: crate::temporal::ChangeSet =
+                let change_set: crate::temporal::ChangeSet = 
                     serde_json::from_str(&rec.changes_json)
                         .map_err(|err| DbErr::Custom(err.to_string()))?;
                 Ok(Some(PersistedCommit {
@@ -258,108 +277,4 @@ async fn ensure_main_branch(conn: &DatabaseConnection) -> Result<(), DbErr> {
         Err(err) if is_unique_violation(&err) => Ok(()),
         Err(err) => Err(err),
     }
-}
-
-mod commits {
-    use sea_orm::entity::prelude::*;
-
-    #[derive(Clone, Debug, DeriveEntityModel)]
-    #[sea_orm(table_name = "commits")]
-    pub struct Model {
-        #[sea_orm(primary_key, auto_increment = false)]
-        pub commit_id: String,
-        pub branch: String,
-        pub parents_json: String,
-        pub author: Option<String>,
-        pub time: Option<String>,
-        pub message: String,
-        pub tags_json: String,
-        pub change_count: i64,
-        pub summary_json: String,
-        pub changes_json: String,
-    }
-
-    #[derive(Copy, Clone, Debug, EnumIter)]
-    pub enum Relation {}
-
-    impl RelationTrait for Relation {
-        fn def(&self) -> RelationDef {
-            panic!("No relations")
-        }
-    }
-
-    impl ActiveModelBehavior for ActiveModel {}
-}
-
-mod refs {
-    use sea_orm::entity::prelude::*;
-
-    #[derive(Clone, Debug, DeriveEntityModel)]
-    #[sea_orm(table_name = "refs")]
-    pub struct Model {
-        #[sea_orm(primary_key, auto_increment = false)]
-        pub branch: String,
-        pub commit_id: Option<String>,
-        pub updated_at_ms: i64,
-    }
-
-    #[derive(Copy, Clone, Debug, EnumIter)]
-    pub enum Relation {}
-
-    impl RelationTrait for Relation {
-        fn def(&self) -> RelationDef {
-            panic!("No relations")
-        }
-    }
-
-    impl ActiveModelBehavior for ActiveModel {}
-}
-
-mod snapshot_tags {
-    use sea_orm::entity::prelude::*;
-
-    #[derive(Clone, Debug, DeriveEntityModel)]
-    #[sea_orm(table_name = "snapshot_tags")]
-    pub struct Model {
-        #[sea_orm(primary_key, auto_increment = false)]
-        pub tag: String,
-        pub commit_id: String,
-        pub created_at_ms: i64,
-    }
-
-    #[derive(Copy, Clone, Debug, EnumIter)]
-    pub enum Relation {}
-
-    impl RelationTrait for Relation {
-        fn def(&self) -> RelationDef {
-            panic!("No relations")
-        }
-    }
-
-    impl ActiveModelBehavior for ActiveModel {}
-}
-
-mod metis {
-    use sea_orm::entity::prelude::*;
-
-    #[derive(Clone, Debug, DeriveEntityModel)]
-    #[sea_orm(table_name = "metis_events")]
-    pub struct Model {
-        #[sea_orm(primary_key, auto_increment = false)]
-        pub event_id: String,
-        pub commit_id: String,
-        pub payload: String,
-        pub created_at_ms: i64,
-    }
-
-    #[derive(Copy, Clone, Debug, EnumIter)]
-    pub enum Relation {}
-
-    impl RelationTrait for Relation {
-        fn def(&self) -> RelationDef {
-            panic!("No relations")
-        }
-    }
-
-    impl ActiveModelBehavior for ActiveModel {}
 }
