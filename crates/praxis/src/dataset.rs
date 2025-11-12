@@ -36,15 +36,19 @@ impl BaselineDataset {
 
     pub fn from_path(path: impl AsRef<Path>) -> PraxisResult<Self> {
         let raw = fs::read_to_string(&path).map_err(|err| PraxisError::IntegrityViolation {
-            message: format!("failed to read dataset '{}': {err}", path.as_ref().display()),
+            message: format!(
+                "failed to read dataset '{}': {err}",
+                path.as_ref().display()
+            ),
         })?;
         Self::from_str(&raw)
     }
 
     fn from_str(raw: &str) -> PraxisResult<Self> {
-        let spec: DatasetSpec = serde_yaml::from_str(raw).map_err(|err| PraxisError::IntegrityViolation {
-            message: format!("baseline dataset parse error: {err}"),
-        })?;
+        let spec: DatasetSpec =
+            serde_yaml::from_str(raw).map_err(|err| PraxisError::IntegrityViolation {
+                message: format!("baseline dataset parse error: {err}"),
+            })?;
         spec.prepare()
     }
 
@@ -54,7 +58,10 @@ impl BaselineDataset {
 }
 
 impl DatasetCommit {
-    pub fn to_request(&self, parent: Option<String>) -> aideon_mneme::temporal::CommitChangesRequest {
+    pub fn to_request(
+        &self,
+        parent: Option<String>,
+    ) -> aideon_mneme::temporal::CommitChangesRequest {
         aideon_mneme::temporal::CommitChangesRequest {
             branch: self.branch.clone(),
             parent,
@@ -215,8 +222,8 @@ fn default_branch() -> String {
 
 #[cfg(test)]
 mod tests {
-    use aideon_mneme::temporal::ChangeSet;
     use aideon_continuum::SnapshotStore;
+    use aideon_mneme::temporal::ChangeSet;
     use aideon_mneme::{MemorySnapshotStore, MemoryStore, Store};
     use std::sync::Arc;
 
@@ -236,19 +243,12 @@ mod tests {
         let dataset = BaselineDataset::embedded().expect("dataset");
         let store: Arc<dyn Store> = Arc::new(MemoryStore::default());
         let snapshots: Arc<dyn SnapshotStore> = Arc::new(MemorySnapshotStore::default());
-        let engine = PraxisEngine::with_stores_unseeded(
-            PraxisEngineConfig::default(),
-            store,
-            snapshots,
-        )
-        .expect("engine");
-        engine
-            .bootstrap_with_dataset(&dataset)
-            .expect("bootstrap");
+        let engine =
+            PraxisEngine::with_stores_unseeded(PraxisEngineConfig::default(), store, snapshots)
+                .expect("engine");
+        engine.bootstrap_with_dataset(&dataset).expect("bootstrap");
 
-        let commits = engine
-            .list_commits("main".into())
-            .expect("list commits");
+        let commits = engine.list_commits("main".into()).expect("list commits");
         assert_eq!(
             commits.len(),
             dataset.commits().len() + 1,

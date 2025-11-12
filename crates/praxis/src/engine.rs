@@ -309,9 +309,7 @@ impl PraxisEngine {
             .collect();
         for commit in dataset.commits() {
             let branch = commit.branch.clone();
-            let parent = branch_heads
-                .get(&branch)
-                .and_then(|head| head.clone());
+            let parent = branch_heads.get(&branch).and_then(|head| head.clone());
             let request = commit.to_request(parent);
             let next_id = self.commit(request)?;
             branch_heads.insert(branch, Some(next_id));

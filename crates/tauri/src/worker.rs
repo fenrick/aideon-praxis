@@ -4,7 +4,7 @@
 //! handlers can access it without leaking internal mutability.
 
 use aideon::chrona::TemporalEngine;
-use aideon::mneme::{datastore::create_datastore, WorkerHealth};
+use aideon::mneme::{WorkerHealth, datastore::create_datastore};
 use aideon::praxis::PraxisEngine;
 use log::{debug, info};
 use std::fs;
