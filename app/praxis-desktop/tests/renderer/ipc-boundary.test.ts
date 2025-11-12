@@ -84,7 +84,8 @@ function isForbidden(spec: string): boolean {
   if (spec === '@iconify/svelte') return false;
   if (spec === '@tauri-apps/api/core' || spec === '@tauri-apps/plugin-log') return false;
   if (spec === '@fluentui/web-components') return false;
-  if (spec === '@aideon/praxis-design-system' || spec.startsWith('@aideon/praxis-design-system/')) return false;
+  if (spec === '@aideon/praxis-design-system' || spec.startsWith('@aideon/praxis-design-system/'))
+    return false;
   if (spec === '@adapters' || spec.startsWith('@adapters/')) return false;
   if (spec.startsWith('$lib/')) return false;
   if (spec === '$app/paths') return false;

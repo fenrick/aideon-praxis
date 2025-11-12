@@ -2,27 +2,27 @@ export { ensureIsoDateTime } from './iso';
 
 export type { IsoDateTime } from './iso';
 export type {
-  TemporalStateParameters,
-  TemporalStateSnapshot,
-  TemporalDiffParameters,
-  TemporalDiffSnapshot,
-  TemporalTopologyDeltaParameters,
-  TemporalTopologyDeltaSnapshot,
-  TemporalDiffMetrics,
-  TemporalTopologyDeltaMetrics,
+  ConfidencePercent,
   GraphSnapshotMetrics,
   ScenarioKey,
-  ConfidencePercent,
+  TemporalDiffMetrics,
+  TemporalDiffParameters,
+  TemporalDiffSnapshot,
   TemporalResultMeta,
+  TemporalStateParameters,
+  TemporalStateSnapshot,
+  TemporalTopologyDeltaMetrics,
+  TemporalTopologyDeltaParameters,
+  TemporalTopologyDeltaSnapshot,
 } from './temporal';
 
 export type {
   MetaAttributeKind,
   MetaModelAttribute,
-  MetaModelMultiplicity,
-  MetaModelType,
   MetaModelDocument,
+  MetaModelMultiplicity,
   MetaModelRelationship,
+  MetaModelType,
   MetaRelationshipRule,
   MetaValidationRules,
 } from './meta';

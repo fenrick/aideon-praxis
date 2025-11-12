@@ -27,12 +27,12 @@ export type {
   TemporalDiffMetrics,
   TemporalDiffParameters,
   TemporalDiffSnapshot,
-  TemporalTopologyDeltaMetrics,
-  TemporalTopologyDeltaParameters,
-  TemporalTopologyDeltaSnapshot,
   TemporalResultMeta,
   TemporalStateParameters,
   TemporalStateSnapshot,
+  TemporalTopologyDeltaMetrics,
+  TemporalTopologyDeltaParameters,
+  TemporalTopologyDeltaSnapshot,
 } from '@aideon/praxis-dtos';
 
 import type {

@@ -1,7 +1,4 @@
 {
   "files": [],
-  "references": [
-    { "path": "./app/praxis-dtos" },
-    { "path": "./app/praxis-adapters" }
-  ]
+  "references": [{ "path": "./app/praxis-dtos" }, { "path": "./app/praxis-adapters" }]
 }
