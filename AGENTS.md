@@ -63,6 +63,10 @@ Never cross these boundaries with imports or side‑effects.
 
 ### Environment
 
+Remember that this is a desktop application: everything runs inside packaged binaries on Windows/macOS/Linux, so you must resolve settings and state paths via the platform conventions (AppData, Application Support, XDG directories) or Tauri-provided helpers. Do not assume arbitrary files can be created next to the binary; rely on the APIs that expose the correct directories for config/state instead of hardcoding repo-relative paths once delivered.
+
+The Tauri stack already ships with helpers that are safe to use in these environments: the `tauri-plugin-fs` plugin (file system helpers), `tauri-plugin-dialog` (choose files/directories, prompts), `tauri-plugin-window-state` (persist size/position), etc. Reach for these plugins instead of rolling your own file handling when wiring renderer/host logic so you benefit from the packaged, multiplatform behavior they expose.
+
 Copy `.env.example` to `.env` and set:
 
 - `AIDEON_GH_REPO=owner/repo`
