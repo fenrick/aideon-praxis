@@ -8,7 +8,7 @@ use aideon_mneme::meta::MetaModelDocument;
 use aideon_mneme::temporal::{
     BranchInfo, ChangeSet, CommitChangesRequest, CommitRef, CommitSummary, DiffArgs, DiffPatch,
     DiffSummary, EdgeTombstone, EdgeVersion, MergeConflict, MergeRequest, MergeResponse,
-    NodeTombstone, NodeVersion, StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
+    NodeTombstone, StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
 };
 use aideon_mneme::{
     MemorySnapshotStore, MemoryStore, PersistedCommit, SqliteDb, Store, sanitize_id,
@@ -16,10 +16,10 @@ use aideon_mneme::{
 use bincode::{deserialize, serialize};
 use blake3::Hasher;
 use serde::Serialize;
-use serde_json::json;
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 
+use crate::dataset::BaselineDataset;
 use crate::error::{PraxisError, PraxisResult};
 use crate::graph::{GraphSnapshot, SnapshotStats};
 use crate::meta::{MetaModelConfig, MetaModelRegistry};
@@ -94,11 +94,14 @@ impl PraxisEngine {
         path: impl AsRef<Path>,
         config: PraxisEngineConfig,
     ) -> PraxisResult<Self> {
-        let storage = SqliteDb::open(path)?;
-        let snapshot = storage.snapshot_store();
-        let commit_store: Arc<dyn Store> = Arc::new(storage.clone());
-        let snapshot_store: Arc<dyn SnapshotStore> = Arc::new(snapshot);
-        Self::with_stores(config, commit_store, snapshot_store)
+        Self::with_sqlite_inner(path, config, true)
+    }
+
+    pub fn with_sqlite_unseeded(
+        path: impl AsRef<Path>,
+        config: PraxisEngineConfig,
+    ) -> PraxisResult<Self> {
+        Self::with_sqlite_inner(path, config, false)
     }
 
     pub fn with_stores(
@@ -106,16 +109,47 @@ impl PraxisEngine {
         store: Arc<dyn Store>,
         snapshot_store: Arc<dyn SnapshotStore>,
     ) -> PraxisResult<Self> {
-        let inner = Inner::new(config, store, snapshot_store)?;
-        let engine = Self {
-            inner: Arc::new(Mutex::new(inner)),
-        };
-        engine.ensure_seeded()?;
-        Ok(engine)
+        Self::with_stores_inner(config, store, snapshot_store, true)
+    }
+
+    pub fn with_stores_unseeded(
+        config: PraxisEngineConfig,
+        store: Arc<dyn Store>,
+        snapshot_store: Arc<dyn SnapshotStore>,
+    ) -> PraxisResult<Self> {
+        Self::with_stores_inner(config, store, snapshot_store, false)
     }
 
     fn lock(&self) -> MutexGuard<'_, Inner> {
         self.inner.lock().expect("praxis engine mutex poisoned")
+    }
+
+    fn with_sqlite_inner(
+        path: impl AsRef<Path>,
+        config: PraxisEngineConfig,
+        seed: bool,
+    ) -> PraxisResult<Self> {
+        let storage = SqliteDb::open(path)?;
+        let snapshot = storage.snapshot_store();
+        let commit_store: Arc<dyn Store> = Arc::new(storage.clone());
+        let snapshot_store: Arc<dyn SnapshotStore> = Arc::new(snapshot);
+        Self::with_stores_inner(config, commit_store, snapshot_store, seed)
+    }
+
+    fn with_stores_inner(
+        config: PraxisEngineConfig,
+        store: Arc<dyn Store>,
+        snapshot_store: Arc<dyn SnapshotStore>,
+        seed: bool,
+    ) -> PraxisResult<Self> {
+        let inner = Inner::new(config, store, snapshot_store)?;
+        let engine = Self {
+            inner: Arc::new(Mutex::new(inner)),
+        };
+        if seed {
+            engine.ensure_seeded()?;
+        }
+        Ok(engine)
     }
 
     /// Ensure the commit log contains an initial design sample commit.
@@ -133,20 +167,14 @@ impl PraxisEngine {
             return Ok(());
         }
 
-        let mut initial = build_seed_change_set();
-        let meta_changes = meta_model_seed_change_set();
-        initial.node_creates.extend(meta_changes.node_creates);
-        initial.edge_creates.extend(meta_changes.edge_creates);
-        let request = CommitChangesRequest {
-            branch: "main".into(),
-            parent: None,
-            author: Some("bootstrap".into()),
-            time: None,
-            message: "seed: bootstrap design sample".into(),
-            tags: vec!["seed".into(), "design".into()],
-            changes: initial,
-        };
-        let _ = self.commit(request)?;
+        let dataset = BaselineDataset::embedded()?;
+        self.bootstrap_with_dataset(&dataset)?;
+        Ok(())
+    }
+
+    pub fn bootstrap_with_dataset(&self, dataset: &BaselineDataset) -> PraxisResult<()> {
+        self.seed_meta_commit()?;
+        self.apply_dataset_commits(dataset)?;
         Ok(())
     }
 
@@ -257,6 +285,38 @@ impl PraxisEngine {
         );
 
         Ok(commit_id)
+    }
+
+    fn seed_meta_commit(&self) -> PraxisResult<String> {
+        let meta_changes = meta_model_seed_change_set();
+        let request = CommitChangesRequest {
+            branch: "main".into(),
+            parent: None,
+            author: Some("bootstrap".into()),
+            time: None,
+            message: "seed: meta-model".into(),
+            tags: vec!["baseline".into(), "meta".into()],
+            changes: meta_changes,
+        };
+        self.commit(request)
+    }
+
+    fn apply_dataset_commits(&self, dataset: &BaselineDataset) -> PraxisResult<()> {
+        let mut branch_heads: BTreeMap<String, Option<String>> = self
+            .list_branches()
+            .into_iter()
+            .map(|info| (info.name.clone(), info.head.clone()))
+            .collect();
+        for commit in dataset.commits() {
+            let branch = commit.branch.clone();
+            let parent = branch_heads
+                .get(&branch)
+                .and_then(|head| head.clone());
+            let request = commit.to_request(parent);
+            let next_id = self.commit(request)?;
+            branch_heads.insert(branch, Some(next_id));
+        }
+        Ok(())
     }
 
     pub fn create_branch(&self, name: String, from: Option<CommitRef>) -> PraxisResult<BranchInfo> {
@@ -680,96 +740,6 @@ fn validate_branch_name(name: &str) -> PraxisResult<()> {
         }
     }
     Ok(())
-}
-
-fn build_seed_change_set() -> ChangeSet {
-    const VALUE_STREAM_ID: &str = "n:valuestream-stage:discover";
-    const CAPABILITY_ID: &str = "n:capability:customer-insight";
-    const APPLICATION_ID: &str = "n:application:insight-hub";
-    const DATA_ENTITY_ID: &str = "n:data-entity:customer-profile";
-    const TECHNOLOGY_ID: &str = "n:technology:stream-processor";
-
-    ChangeSet {
-        node_creates: vec![
-            NodeVersion {
-                id: VALUE_STREAM_ID.into(),
-                r#type: Some("ValueStreamStage".into()),
-                props: Some(json!({
-                    "name": "Discover",
-                    "purpose": "Identify customer needs",
-                })),
-            },
-            NodeVersion {
-                id: CAPABILITY_ID.into(),
-                r#type: Some("Capability".into()),
-                props: Some(json!({
-                    "name": "Customer Insight",
-                    "tier": "Strategic",
-                })),
-            },
-            NodeVersion {
-                id: APPLICATION_ID.into(),
-                r#type: Some("Application".into()),
-                props: Some(json!({
-                    "name": "Insight Hub",
-                    "lifecycle": "Run",
-                })),
-            },
-            NodeVersion {
-                id: DATA_ENTITY_ID.into(),
-                r#type: Some("DataEntity".into()),
-                props: Some(json!({
-                    "name": "Customer Profile",
-                    "sensitivity": "Internal",
-                })),
-            },
-            NodeVersion {
-                id: TECHNOLOGY_ID.into(),
-                r#type: Some("TechnologyComponent".into()),
-                props: Some(json!({
-                    "name": "Stream Processor",
-                    "vendor": "Praxis Cloud",
-                })),
-            },
-        ],
-
-        edge_creates: vec![
-            EdgeVersion {
-                id: Some("e:capability-serves-valuestream".into()),
-                from: CAPABILITY_ID.into(),
-                to: VALUE_STREAM_ID.into(),
-                r#type: Some("serves".into()),
-                directed: Some(true),
-                props: Some(json!({ "confidence": 0.9 })),
-            },
-            EdgeVersion {
-                id: Some("e:application-supports-capability".into()),
-                from: APPLICATION_ID.into(),
-                to: CAPABILITY_ID.into(),
-                r#type: Some("realises".into()),
-                directed: Some(true),
-                props: Some(json!({ "criticality": "High" })),
-            },
-            EdgeVersion {
-                id: Some("e:application-uses-data".into()),
-                from: APPLICATION_ID.into(),
-                to: DATA_ENTITY_ID.into(),
-                r#type: Some("accesses".into()),
-                directed: Some(true),
-                props: Some(json!({ "mode": "readwrite" })),
-            },
-            EdgeVersion {
-                id: Some("e:technology-hosts-application".into()),
-                from: TECHNOLOGY_ID.into(),
-                to: APPLICATION_ID.into(),
-                r#type: Some("hosts".into()),
-                directed: Some(true),
-                props: Some(json!({ "deployment": "Managed" })),
-            },
-        ],
-
-        ..Default::default()
-    }
 }
 
 fn resolve_snapshot(

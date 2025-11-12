@@ -9,7 +9,7 @@ use sea_orm::{
 };
 use sea_query::SqliteQueryBuilder;
 use serde_json;
-use tokio::runtime::Runtime;
+use tokio::runtime::{Builder, Runtime};
 
 use crate::{MnemeError, MnemeResult, PersistedCommit, Store};
 
@@ -23,8 +23,10 @@ pub struct SqliteDb {
 impl SqliteDb {
     /// Open (or create) a SQLite database using SeaORM, apply migrations, and ensure the main branch exists.
     pub fn open(path: impl AsRef<Path>) -> MnemeResult<Self> {
-        let runtime =
-            Runtime::new().map_err(|err| MnemeError::storage(format!("tokio runtime: {err}")))?;
+        let runtime = Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .map_err(|err| MnemeError::storage(format!("tokio runtime: {err}")))?;
         let database_url = format!("sqlite://{}?mode=rwc&cache=shared", path.as_ref().display());
         let conn = runtime
             .block_on(Database::connect(&database_url))

@@ -6,6 +6,7 @@
 //! work (e.g., remote adapters, persistence) can reuse the same API surface.
 
 pub mod canvas;
+mod dataset;
 mod engine;
 mod error;
 mod graph;
@@ -16,3 +17,4 @@ pub use engine::{PraxisEngine, PraxisEngineConfig};
 pub use error::{PraxisError, PraxisErrorCode, PraxisResult};
 pub use graph::{GraphSnapshot, SnapshotStats};
 pub use meta::{MetaModelConfig, MetaModelRegistry, MetaModelSource};
+pub use dataset::{BaselineDataset, DatasetCommit};
