@@ -1,0 +1,59 @@
+use aideon_mneme::{
+    SqliteDb, Store,
+    temporal::{ChangeSet, CommitChangesRequest, NodeVersion},
+};
+use aideon_praxis::{PraxisEngine, PraxisEngineConfig};
+use serde_json::json;
+use tempfile::tempdir;
+
+#[test]
+fn sqlite_persists_commits_across_restarts() {
+    let dir = tempdir().expect("tempdir");
+    let db_path = dir.path().join("integration.sqlite");
+
+    let engine = PraxisEngine::with_sqlite(&db_path).expect("engine init");
+    let parent = engine
+        .list_commits("main".into())
+        .expect("list commits")
+        .last()
+        .map(|commit| commit.id.clone());
+
+    let commit_id = engine
+        .commit(CommitChangesRequest {
+            branch: "main".into(),
+            parent,
+            author: Some("health-check".into()),
+            time: Some("2025-11-12T00:00:00Z".into()),
+            message: "add capability for persistence test".into(),
+            tags: vec!["test".into()],
+            changes: ChangeSet {
+                node_creates: vec![NodeVersion {
+                    id: "cap-health".into(),
+                    r#type: Some("Capability".into()),
+                    props: Some(json!({ "name": "Health Check" })),
+                }],
+                ..ChangeSet::default()
+            },
+        })
+        .expect("commit succeeds");
+
+    drop(engine);
+
+    let reopened = PraxisEngine::with_sqlite_unseeded(&db_path, PraxisEngineConfig::default())
+        .expect("reopen engine");
+    let commits = reopened
+        .list_commits("main".into())
+        .expect("list commits after restart");
+    assert!(
+        commits.iter().any(|summary| summary.id == commit_id),
+        "persisted commit should still be present"
+    );
+    reopened
+        .stats_for_commit(&commit_id)
+        .expect("snapshot available for persisted commit");
+
+    let db = SqliteDb::open(&db_path).expect("open sqlite for tag check");
+    let tag = format!("snapshot/{commit_id}");
+    let resolved = db.get_tag(&tag).expect("query tag").expect("tag present");
+    assert_eq!(resolved, commit_id, "snapshot tag should point to commit");
+}

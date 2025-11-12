@@ -222,9 +222,8 @@ fn default_branch() -> String {
 
 #[cfg(test)]
 mod tests {
-    use aideon_continuum::SnapshotStore;
     use aideon_mneme::temporal::ChangeSet;
-    use aideon_mneme::{MemorySnapshotStore, MemoryStore, Store};
+    use aideon_mneme::{MemoryStore, Store};
     use std::sync::Arc;
 
     use super::*;
@@ -242,10 +241,8 @@ mod tests {
     fn dataset_bootstrap_yields_expected_counts() {
         let dataset = BaselineDataset::embedded().expect("dataset");
         let store: Arc<dyn Store> = Arc::new(MemoryStore::default());
-        let snapshots: Arc<dyn SnapshotStore> = Arc::new(MemorySnapshotStore::default());
-        let engine =
-            PraxisEngine::with_stores_unseeded(PraxisEngineConfig::default(), store, snapshots)
-                .expect("engine");
+        let engine = PraxisEngine::with_stores_unseeded(PraxisEngineConfig::default(), store)
+            .expect("engine");
         engine.bootstrap_with_dataset(&dataset).expect("bootstrap");
 
         let commits = engine.list_commits("main".into()).expect("list commits");
