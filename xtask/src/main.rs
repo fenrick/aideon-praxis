@@ -9,7 +9,9 @@ use aideon_mneme::{
     MemorySnapshotStore, MemoryStore, PersistedCommit, SqliteDb, Store, create_datastore,
     sanitize_id,
 };
-use aideon_praxis::{BaselineDataset, GraphSnapshot, MetaModelRegistry, PraxisEngine, PraxisEngineConfig};
+use aideon_praxis::{
+    BaselineDataset, GraphSnapshot, MetaModelRegistry, PraxisEngine, PraxisEngineConfig,
+};
 use anyhow::{Context, Result, anyhow};
 use bincode::serialize;
 use clap::{Parser, Subcommand};
@@ -169,8 +171,8 @@ fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
             .with_context(|| format!("failed to clean {}", args.datastore.display()))?;
     }
 
-    let db_path = create_datastore(&args.datastore, None)
-        .map_err(|err| anyhow!(err.to_string()))?;
+    let db_path =
+        create_datastore(&args.datastore, None).map_err(|err| anyhow!(err.to_string()))?;
     let storage = SqliteDb::open(&db_path).map_err(|err| anyhow!(err.to_string()))?;
     let snapshot = storage.snapshot_store();
     let engine = PraxisEngine::with_stores_unseeded(
@@ -224,12 +226,9 @@ fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
 fn dry_run_dataset(dataset: &BaselineDataset) -> Result<()> {
     let store: Arc<dyn Store> = Arc::new(MemoryStore::default());
     let snapshots: Arc<dyn SnapshotStore> = Arc::new(MemorySnapshotStore::default());
-    let engine = PraxisEngine::with_stores_unseeded(
-        PraxisEngineConfig::default(),
-        store,
-        snapshots,
-    )
-    .map_err(|err| anyhow!(err.to_string()))?;
+    let engine =
+        PraxisEngine::with_stores_unseeded(PraxisEngineConfig::default(), store, snapshots)
+            .map_err(|err| anyhow!(err.to_string()))?;
     engine
         .bootstrap_with_dataset(dataset)
         .map_err(|err| anyhow!(err.to_string()))?;

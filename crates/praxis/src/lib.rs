@@ -13,8 +13,8 @@ mod graph;
 mod meta;
 mod meta_seed;
 
+pub use dataset::{BaselineDataset, DatasetCommit};
 pub use engine::{PraxisEngine, PraxisEngineConfig};
 pub use error::{PraxisError, PraxisErrorCode, PraxisResult};
 pub use graph::{GraphSnapshot, SnapshotStats};
 pub use meta::{MetaModelConfig, MetaModelRegistry, MetaModelSource};
-pub use dataset::{BaselineDataset, DatasetCommit};

@@ -11,4 +11,4 @@ serde_json = "1.0"
 thiserror = "1.0"
 sea-orm = { version = "1.1.19", features = ["sqlx-sqlite", "macros"] }
 sea-query = "0.32.7"
-tokio = { version = "1.45", features = ["rt", "macros", "fs"] }
+tokio = { version = "1.48", features = ["rt", "macros", "fs"] }

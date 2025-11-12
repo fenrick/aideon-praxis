@@ -7,11 +7,9 @@ pub fn meta_model_seed_change_set() -> ChangeSet {
     change
         .node_creates
         .extend(META_TYPES.iter().map(node_for_type));
-    change.node_creates.extend(
-        META_RELATIONSHIPS
-            .iter()
-            .map(node_for_relationship),
-    );
+    change
+        .node_creates
+        .extend(META_RELATIONSHIPS.iter().map(node_for_relationship));
     change
 }
 
