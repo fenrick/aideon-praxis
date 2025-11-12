@@ -82,12 +82,13 @@ pub(super) fn validate_edge(
         });
     }
 
-    if let Some(rule) = relationship_rules.get(rel_type) {
-        if rule.allow_self == Some(false) && edge.from == edge.to {
-            return Err(PraxisError::ValidationFailed {
-                message: format!("relationship '{rel_type}' forbids self-links"),
-            });
-        }
+    if let Some(rule) = relationship_rules.get(rel_type)
+        && rule.allow_self == Some(false)
+        && edge.from == edge.to
+    {
+        return Err(PraxisError::ValidationFailed {
+            message: format!("relationship '{rel_type}' forbids self-links"),
+        });
     }
 
     if let Some(props) = edge.props.as_ref() {
@@ -152,16 +153,14 @@ fn attribute_value_ok(
             } else {
                 rules.string_max
             };
-            if let Some(limit) = max {
-                if text.chars().count() > limit {
-                    return Err(PraxisError::ValidationFailed {
-                        message: format_error(format!(
-                            "exceeds max length {} ({} chars)",
-                            limit,
-                            text.chars().count()
-                        )),
-                    });
-                }
+            if let Some(limit) = max && text.chars().count() > limit {
+                return Err(PraxisError::ValidationFailed {
+                    message: format_error(format!(
+                        "exceeds max length {} ({} chars)",
+                        limit,
+                        text.chars().count()
+                    )),
+                });
             }
         }
         MetaAttributeKind::Number => {

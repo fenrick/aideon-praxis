@@ -9,7 +9,6 @@ use sea_orm::{
     EntityTrait, QueryFilter, Schema, Set, Statement, TransactionTrait, Value,
 };
 use sea_query::SqliteQueryBuilder;
-use serde_json;
 use tokio::runtime::{Builder, Runtime};
 
 use crate::{MnemeError, MnemeResult, PersistedCommit, Store};
