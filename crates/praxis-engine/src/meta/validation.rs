@@ -153,7 +153,9 @@ fn attribute_value_ok(
             } else {
                 rules.string_max
             };
-            if let Some(limit) = max && text.chars().count() > limit {
+            if let Some(limit) = max
+                && text.chars().count() > limit
+            {
                 return Err(PraxisError::ValidationFailed {
                     message: format_error(format!(
                         "exceeds max length {} ({} chars)",
