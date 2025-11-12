@@ -19,7 +19,7 @@ export default defineConfig({
         'app/praxis-desktop/tests/stubs/tauri-plugin-log.ts',
       ),
       $lib: path.resolve(__dirname, 'app/praxis-desktop/src/lib'),
-      '@adapters': path.resolve(__dirname, 'app/praxis-adapters/src'),
+      '@aideon/praxis-adapters': path.resolve(__dirname, 'app/praxis-adapters/src'),
     },
   },
   plugins: [
