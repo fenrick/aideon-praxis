@@ -29,6 +29,8 @@ export interface SearchIndexItem extends SearchResult {
   tokens: readonly string[];
   /** Precomputed set for token lookups to speed up query evaluation. */
   tokenSet: ReadonlySet<string>;
+  /** Concatenated normalized string used for substring matching. */
+  searchValue: string;
   /** Normalized title string used to compute scoring bonuses. */
   titleValue: string;
   /** Base priority applied before token scoring. */
