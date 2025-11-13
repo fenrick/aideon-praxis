@@ -23,25 +23,44 @@ export const normalize = (value: string): string =>
     .replaceAll(/\p{Diacritic}/gu, '')
     .toLowerCase();
 
-/** Split a string into normalized tokens ready for search. */
-export const tokenize = (value: string): readonly string[] =>
-  normalize(value)
+/**
+ * Split a string into normalized, de-duplicated tokens ready for search.
+ *
+ * Tokens preserve their first-seen order so prefix scoring remains stable
+ * regardless of repeated words in the source string.
+ */
+export const tokenize = (value: string): readonly string[] => {
+  const normalized = normalize(value)
     .split(/\s+/)
     .map((token) => token.trim())
     .filter(Boolean);
+  const uniqueTokens: string[] = [];
+  const seen = new Set<string>();
+  for (const token of normalized) {
+    if (!seen.has(token)) {
+      seen.add(token);
+      uniqueTokens.push(token);
+    }
+  }
+  return uniqueTokens;
+};
 
 const createIndexItem = (
   result: Omit<SearchIndexItem, 'tokens' | 'tokenSet' | 'titleValue' | 'priority'>,
   tokens: readonly string[],
   priority: number,
   titleValue: string,
-): SearchIndexItem => ({
-  ...result,
-  tokens,
-  tokenSet: new Set(tokens),
-  priority,
-  titleValue,
-});
+): SearchIndexItem => {
+  const tokenList = [...tokens];
+  return {
+    ...result,
+    tokens: tokenList,
+    tokenSet: new Set(tokenList),
+    searchValue: tokenList.join(' '),
+    priority,
+    titleValue,
+  };
+};
 
 const createSidebarEntry = (
   item: SidebarTreeNode,
@@ -138,8 +157,10 @@ export const buildCatalogIndex = (
     );
   });
 
-const hasAllTokens = (haystack: ReadonlySet<string>, tokens: readonly string[]): boolean =>
-  tokens.every((token) => haystack.has(token));
+const hasAllTokens = (item: SearchIndexItem, tokens: readonly string[]): boolean =>
+  tokens.every(
+    (token) => item.tokenSet.has(token) || item.searchValue.includes(token),
+  );
 
 const scoreToken = (item: SearchIndexItem, token: string): number => {
   let score = 1;
@@ -156,7 +177,7 @@ export const scoreItem = (
   item: SearchIndexItem,
   tokens: readonly string[],
 ): number => {
-  if (tokens.length === 0 || !hasAllTokens(item.tokenSet, tokens)) {
+  if (tokens.length === 0 || !hasAllTokens(item, tokens)) {
     return 0;
   }
   return tokens.reduce((score, token) => score + scoreToken(item, token), item.priority);
