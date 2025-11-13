@@ -75,5 +75,6 @@ crates/praxis-host/.cargo/
 crates/praxis-host/**/Cargo.lock.bk
 crates/praxis-host/gen/
 /crates/praxis-host/binaries
-/app/praxis-desktop/.svelte-kit
+/app/praxis-desktop/.svelte-kit/*
+!/app/praxis-desktop/.svelte-kit/tsconfig.json
 .tools/
