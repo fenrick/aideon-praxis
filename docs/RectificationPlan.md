@@ -267,10 +267,11 @@ swaps trivial.
 **Done**
 
 - Added consolidated GitHub helper CLI (`scripts/issues.py`) plus npm aliases for `issues:start`, `split`, `dod`, `linkify`, and `backfill`; DoD guidance now appears across AGENTS/docs.
+- Implemented the `issues:project` automation to sync Project Status values from canonical issue labels.
 
 **Outstanding**
 
-- Implement the `issues:project` automation + enforce Project Status syncing/pre-push checks alongside `issues:mirror:check`.
+- Enforce `issues:project` in CI or pre-push hooks so Project Status stays aligned alongside `issues:mirror:check`.
 - Extend CI to run dataset/meta linting, schema/import dry-runs, and capture coverage artifacts for Sonar; codify macOS packaging/security verification per DoD.
 - Write ADRs covering the new storage/reporting decisions and ensure release checklists include dataset regression + analytics SLO gates.
 
