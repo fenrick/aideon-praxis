@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "strict": true,
+    "moduleResolution": "bundler"
+  },
+  "include": ["../src/**/*", "../tests/**/*"],
+  "exclude": ["../node_modules", "../dist"]
+}

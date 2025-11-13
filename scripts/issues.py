@@ -19,6 +19,7 @@ import os
 import re
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 from typing import Any
 
@@ -51,6 +52,26 @@ def gh_json(args: list[str]) -> Any:
     cmd = ["gh", *args]
     res = run(cmd, check=True)
     return json.loads(res.stdout)
+
+
+def gh_graphql(query: str, variables: dict[str, Any]) -> dict[str, Any]:
+    args = ["gh", "api", "graphql", "-f", f"query={textwrap.dedent(query).strip()}"]
+    for key, value in variables.items():
+        if value is None:
+            continue
+        if isinstance(value, bool):
+            rendered = "true" if value else "false"
+        else:
+            rendered = str(value)
+        args.extend(["-F", f"{key}={rendered}"])
+    res = run(args, check=True)
+    payload = json.loads(res.stdout or "{}")
+    if "errors" in payload:
+        raise SystemExit(f"GraphQL query failed: {payload['errors']}")
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        raise SystemExit("GraphQL response missing data field")
+    return data
 
 
 def cmd_start(args: argparse.Namespace) -> int:
@@ -148,6 +169,334 @@ def cmd_mirror(args: argparse.Namespace) -> int:
         return 0
 
 
+def project_env() -> tuple[str, int, str, dict[str, str]]:
+    owner = os.environ.get("AIDEON_GH_PROJECT_OWNER")
+    if not owner:
+        raise SystemExit("AIDEON_GH_PROJECT_OWNER must be set (org or user login)")
+    try:
+        number = int(os.environ.get("AIDEON_GH_PROJECT_NUMBER", ""))
+    except ValueError as exc:
+        raise SystemExit("AIDEON_GH_PROJECT_NUMBER must be an integer") from exc
+    if not number:
+        raise SystemExit("AIDEON_GH_PROJECT_NUMBER must be provided")
+    status_field = os.environ.get("AIDEON_GH_STATUS_FIELD")
+    if not status_field:
+        raise SystemExit("AIDEON_GH_STATUS_FIELD must be set (e.g. 'Status')")
+    raw_map = os.environ.get("AIDEON_GH_STATUS_MAP")
+    if not raw_map:
+        raise SystemExit("AIDEON_GH_STATUS_MAP must map labels to project statuses")
+    try:
+        mapping: dict[str, str] = json.loads(raw_map)
+    except json.JSONDecodeError as exc:
+        raise SystemExit("AIDEON_GH_STATUS_MAP must be valid JSON") from exc
+    if not isinstance(mapping, dict) or not mapping:
+        raise SystemExit("AIDEON_GH_STATUS_MAP must be a non-empty JSON object")
+    normalized: dict[str, str] = {}
+    for label, status in mapping.items():
+        if not isinstance(label, str) or not isinstance(status, str):
+            raise SystemExit("AIDEON_GH_STATUS_MAP must map strings to strings")
+        normalized[label] = status
+    return owner, number, status_field, normalized
+
+
+def fetch_project(owner: str, number: int, status_field: str) -> tuple[str, str, dict[str, str]]:
+    query = """
+    query($owner: String!, $number: Int!) {
+      organization(login: $owner) {
+        projectV2(number: $number) {
+          id
+          fields(first: 50) {
+            nodes {
+              ... on ProjectV2SingleSelectField {
+                id
+                name
+                options {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+      user(login: $owner) {
+        projectV2(number: $number) {
+          id
+          fields(first: 50) {
+            nodes {
+              ... on ProjectV2SingleSelectField {
+                id
+                name
+                options {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    data = gh_graphql(query, {"owner": owner, "number": number})
+    project = None
+    if data.get("organization", {}).get("projectV2"):
+        project = data["organization"]["projectV2"]
+    elif data.get("user", {}).get("projectV2"):
+        project = data["user"]["projectV2"]
+    if project is None:
+        raise SystemExit(
+            f"Project {owner}/{number} not found. Ensure credentials grant project access."
+        )
+    project_id = project.get("id")
+    if not project_id:
+        raise SystemExit("Project response missing id")
+    status_field_id = None
+    options: dict[str, str] = {}
+    for field in project.get("fields", {}).get("nodes", []):
+        if field and field.get("name") == status_field:
+            status_field_id = field.get("id")
+            options = {opt.get("name"): opt.get("id") for opt in field.get("options", []) if opt}
+            break
+    if not status_field_id:
+        raise SystemExit(f"Project missing status field '{status_field}'")
+    if not options:
+        raise SystemExit(f"Project status field '{status_field}' has no options")
+    return project_id, status_field_id, options
+
+
+def fetch_project_items(project_id: str, status_field_id: str) -> dict[str, dict[str, str | None]]:
+    query = """
+    query($project: ID!, $after: String) {
+      node(id: $project) {
+        ... on ProjectV2 {
+          items(first: 100, after: $after) {
+            nodes {
+              id
+              content {
+                __typename
+                ... on Issue {
+                  id
+                  number
+                }
+              }
+              fieldValues(first: 20) {
+                nodes {
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    field {
+                      id
+                    }
+                    optionId
+                  }
+                }
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    }
+    """
+    cursor: str | None = None
+    items: dict[str, dict[str, str | None]] = {}
+    while True:
+        variables = {"project": project_id, "after": cursor}
+        data = gh_graphql(query, variables)
+        node = data.get("node")
+        if node is None:
+            break
+        connection = node.get("items", {})
+        for entry in connection.get("nodes", []):
+            if not entry:
+                continue
+            content = entry.get("content") or {}
+            if content.get("__typename") != "Issue":
+                continue
+            content_id = content.get("id")
+            if not content_id:
+                continue
+            status_value = None
+            for fv in (entry.get("fieldValues") or {}).get("nodes", []):
+                if fv and fv.get("field", {}).get("id") == status_field_id:
+                    status_value = fv.get("optionId")
+                    break
+            items[content_id] = {
+                "item_id": entry.get("id"),
+                "status_option": status_value,
+            }
+        page = connection.get("pageInfo") or {}
+        if page.get("hasNextPage"):
+            cursor = page.get("endCursor")
+        else:
+            break
+    return items
+
+
+def fetch_repo_issues(owner: str, name: str) -> list[dict[str, Any]]:
+    query = """
+    query($owner: String!, $name: String!, $after: String) {
+      repository(owner: $owner, name: $name) {
+        issues(first: 100, after: $after, states: [OPEN, CLOSED]) {
+          nodes {
+            id
+            number
+            labels(first: 50) {
+              nodes {
+                name
+              }
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+    """
+    issues: list[dict[str, Any]] = []
+    cursor: str | None = None
+    while True:
+        variables = {"owner": owner, "name": name, "after": cursor}
+        data = gh_graphql(query, variables)
+        repo = data.get("repository")
+        if repo is None:
+            raise SystemExit(f"Repository {owner}/{name} not accessible via GraphQL")
+        conn = repo.get("issues") or {}
+        for node in conn.get("nodes", []):
+            if not node:
+                continue
+            labels = [lbl.get("name") for lbl in (node.get("labels") or {}).get("nodes", []) if lbl]
+            node["labels"] = labels
+            issues.append(node)
+        page = conn.get("pageInfo") or {}
+        if page.get("hasNextPage"):
+            cursor = page.get("endCursor")
+        else:
+            break
+    return issues
+
+
+def add_project_item(project_id: str, content_id: str) -> str:
+    mutation = """
+    mutation($projectId: ID!, $contentId: ID!) {
+      addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+        item {
+          id
+        }
+      }
+    }
+    """
+    data = gh_graphql(mutation, {"projectId": project_id, "contentId": content_id})
+    item = data.get("addProjectV2ItemById", {}).get("item")
+    if not item or not item.get("id"):
+        raise SystemExit("Failed to add issue to project board")
+    return item["id"]
+
+
+def update_project_status(
+    project_id: str,
+    item_id: str,
+    field_id: str,
+    option_id: str,
+) -> None:
+    mutation = """
+    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+      updateProjectV2ItemFieldValue(
+        input: {
+          projectId: $projectId,
+          itemId: $itemId,
+          fieldId: $fieldId,
+          value: {singleSelectOptionId: $optionId}
+        }
+      ) {
+        projectV2Item {
+          id
+        }
+      }
+    }
+    """
+    gh_graphql(
+        mutation,
+        {
+            "projectId": project_id,
+            "itemId": item_id,
+            "fieldId": field_id,
+            "optionId": option_id,
+        },
+    )
+
+
+def cmd_project(args: argparse.Namespace) -> int:
+    repo = repo_slug()
+    try:
+        owner_repo = repo.split("/", 1)
+        repo_owner, repo_name = owner_repo[0], owner_repo[1]
+    except IndexError as exc:
+        raise SystemExit(f"Invalid repo slug: {repo}") from exc
+    project_owner, project_number, status_field, label_status_map = project_env()
+    project_id, status_field_id, status_options = fetch_project(
+        project_owner, project_number, status_field
+    )
+    ordered_mapping = list(label_status_map.items())
+    label_to_option: list[tuple[str, str]] = []
+    for label, status_name in ordered_mapping:
+        option_id = status_options.get(status_name)
+        if not option_id:
+            raise SystemExit(
+                f"Status '{status_name}' from AIDEON_GH_STATUS_MAP not found in project options"
+            )
+        label_to_option.append((label, option_id))
+
+    existing_items = fetch_project_items(project_id, status_field_id)
+    issues = fetch_repo_issues(repo_owner, repo_name)
+    added = 0
+    updated = 0
+    for issue in issues:
+        content_id = issue.get("id")
+        if not content_id:
+            continue
+        labels = set(issue.get("labels", []))
+        target_option = None
+        for label, option in label_to_option:
+            if label in labels:
+                target_option = option
+                break
+        item_entry = existing_items.get(content_id)
+        item_id = item_entry.get("item_id") if item_entry else None
+        current_option = item_entry.get("status_option") if item_entry else None
+        if item_id is None:
+            if args.dry_run:
+                print(f"[issues] dry-run: would add issue #{issue.get('number')} to project")
+            else:
+                item_id = add_project_item(project_id, content_id)
+            if item_id:
+                existing_items[content_id] = {
+                    "item_id": item_id,
+                    "status_option": current_option,
+                }
+                added += 1
+        if target_option and item_id:
+            if current_option != target_option:
+                if args.dry_run:
+                    print(
+                        "[issues] dry-run: would set status of issue #"
+                        f"{issue.get('number')} to option {target_option}"
+                    )
+                else:
+                    update_project_status(project_id, item_id, status_field_id, target_option)
+                existing_items[content_id]["status_option"] = target_option
+                updated += 1
+    print(
+        f"[issues] project sync complete: {added} added, {updated} status updates"
+        + (" (dry-run)" if args.dry_run else "")
+    )
+    return 0
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="issues")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -159,6 +508,13 @@ def main(argv: list[str]) -> int:
     ap_mirror = sub.add_parser("mirror", help="mirror issues to docs/issues/index.json")
     ap_mirror.add_argument("--check", action="store_true", help="check if mirror is stale")
     ap_mirror.set_defaults(func=cmd_mirror)
+
+    ap_project = sub.add_parser(
+        "project",
+        help="sync project status with issue labels (requires GitHub Projects access)",
+    )
+    ap_project.add_argument("--dry-run", action="store_true", help="log actions without mutating")
+    ap_project.set_defaults(func=cmd_project)
 
     # Split: create child issues from items or a file and update parent checklist
     def cmd_split(ns: argparse.Namespace) -> int:

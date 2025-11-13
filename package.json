@@ -31,6 +31,7 @@
     "issues:dod": "python3 scripts/issues.py dod",
     "issues:linkify": "python3 scripts/issues.py linkify",
     "issues:backfill": "python3 scripts/issues.py backfill",
+    "issues:project": "python3 scripts/issues.py project",
     "host:clean": "cargo clean",
     "host:format": "cargo fmt --all",
     "host:format:check": "cargo fmt --all -- --check",

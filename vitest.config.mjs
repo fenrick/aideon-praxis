@@ -10,6 +10,14 @@ export default defineConfig({
         __dirname,
         'app/praxis-desktop/tests/stubs/fluentui.web-components.ts',
       ),
+      '@aideon/praxis-design-system': path.resolve(
+        __dirname,
+        'app/praxis-design-system/src',
+      ),
+      '@iconify/svelte': path.resolve(
+        __dirname,
+        'app/praxis-desktop/tests/stubs/iconify.svelte',
+      ),
       '@tauri-apps/api/core': path.resolve(
         __dirname,
         'app/praxis-desktop/tests/stubs/tauri-api-core.ts',
@@ -17,6 +25,10 @@ export default defineConfig({
       '@tauri-apps/plugin-log': path.resolve(
         __dirname,
         'app/praxis-desktop/tests/stubs/tauri-plugin-log.ts',
+      ),
+      'elkjs/lib/elk.bundled.js': path.resolve(
+        __dirname,
+        'app/praxis-desktop/tests/stubs/elk.bundled.ts',
       ),
       $lib: path.resolve(__dirname, 'app/praxis-desktop/src/lib'),
       '@aideon/praxis-adapters': path.resolve(__dirname, 'app/praxis-adapters/src'),

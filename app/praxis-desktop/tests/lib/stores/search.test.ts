@@ -110,4 +110,32 @@ describe('search store', () => {
     expect(results[0]?.id).toBe('sidebar:timeline');
     unsubscribe();
   });
+
+  it('honours the provided result limit when returning matches', () => {
+    const store = createSearchStore();
+    store.setSidebarItems(sidebarTree);
+    store.setCatalogEntities(catalog);
+
+    const results = store.search('praxis', 1);
+    expect(results).toHaveLength(1);
+    expect(results[0]?.id).toBeDefined();
+  });
+
+  it('re-executes the active query when sources are updated', () => {
+    const store = createSearchStore();
+    store.setCatalogEntities([catalog[0]!]);
+    const observations: SearchStoreState[] = [];
+    const unsubscribe = store.subscribe((state) => {
+      if (state.query) {
+        observations.push(state);
+      }
+    });
+
+    store.search('catalogue');
+    expect(observations.at(-1)?.results[0]?.id).toBe('catalog:catalog-applications');
+
+    store.setSidebarItems(sidebarTree);
+    expect(observations.at(-1)?.results[0]?.id).toBe('catalog:catalog-applications');
+    unsubscribe();
+  });
 });
