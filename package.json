@@ -107,7 +107,7 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-svelte": "^3.4.0",
     "prettier-plugin-tailwindcss": "^0.7.1",
-    "semantic-release": "^25.0.1",
+    "semantic-release": "^25.0.2",
     "svelte": "^5.43.0",
     "svelte-eslint-parser": "^1.4.0",
     "typescript": "^5.9.3",
