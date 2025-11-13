@@ -11,7 +11,7 @@ import type { CatalogEntitySummary } from '$lib/stores/search';
 
 describe('search index utilities', () => {
   it('normalizes casing, diacritics and spacing', () => {
-    const tokens = tokenize('  Héllö  World  ');
+    const tokens = tokenize('  Héllö  World  héllö ');
     expect(tokens).toEqual(['hello', 'world']);
   });
 
@@ -91,5 +91,20 @@ describe('search index utilities', () => {
     expect(scoreItem(entry, ['missing'])).toBe(0);
     const score = scoreItem(entry, ['data']);
     expect(score).toBeGreaterThan(entry.priority + 1);
+  });
+
+  it('supports substring matches when evaluating tokens', () => {
+    const [entry] = buildSidebarIndex(
+      [
+        {
+          id: 'timeline',
+          label: 'Timeline',
+        },
+      ],
+      undefined,
+    );
+    expect(entry).toBeDefined();
+    const score = scoreItem(entry, ['time']);
+    expect(score).toBeGreaterThan(0);
   });
 });
