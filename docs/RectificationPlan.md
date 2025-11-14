@@ -60,7 +60,7 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 **Outstanding**
 
 - Convert the `Store` trait to async and remove the bespoke Tokio runtime that currently blocks on SeaORM operations inside `SqliteDb`.
-- Populate the analytics/fact tables (for example `metis_events`) and extend regression coverage so persistence migrations are tracked instead of being created inline at runtime.
+- Populate the analytics/fact tables (for example `metis_events`) and extend regression coverage so persistence migrations capture the projection work instead of being created inline at runtime.
 
 ### Tasks
 
@@ -71,7 +71,7 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 2. **SeaORM schema & migrations**
    - Introduce SeaORM 1.1.19 + SeaQuery in `crates/mneme-core`, define entities for commits, refs, snapshot tags, and the readonly Metis fact/star tables.
    - Build migrations that create the tables with the required constraints and indexes, and run them at startup via a SeaORM migrator.
-   - _Partially complete — tables are created inline at startup; dedicated migration history and Metis fact population remain TODO._
+   - _In progress — `mneme_migrations` now records applied versions, and regression coverage ensures idempotent replays; Metis fact population remains TODO._
 3. **Baseline dataset seeding**
    - Seed the baseline dataset (meta-model, object graph, plan events) as part of the migration/seed logic so a fresh database already contains the canonical schema and sample graph.
    - Record the same event stream into the Metis-ready tables so the analytics worker can later query a flattened, star/fact-oriented view of the commits.
@@ -104,6 +104,10 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 - Commit 2: Refactor Praxis engine to use store + update tests.
 - Commit 3: Add migration tooling + docs.
 - Reference GitHub issue; include `Fixes #<id>`; ensure DoD checklist updated via `pnpm run issues:dod`.
+
+### Progress Log
+
+- 2025-11-12 — Added versioned migration history via `mneme_migrations` and regression coverage that reopens SQLite datastores without reapplying schema DDL.
 
 ## WS-B — Meta-Model Enforcement & Configurability
 
