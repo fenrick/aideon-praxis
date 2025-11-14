@@ -4,6 +4,7 @@ mod app;
 mod commands;
 mod health;
 mod menu;
+mod praxis_api;
 mod scene;
 mod setup;
 mod temporal;
