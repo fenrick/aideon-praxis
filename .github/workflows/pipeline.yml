@@ -32,7 +32,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    # Minimal Rust gating (fmt/clippy) for crates/aideon-praxis-host only; no Tauri build yet.
+    # Minimal Rust gating (fmt/clippy) for crates/aideon_praxis_host only; no Tauri build yet.
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -82,49 +82,49 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            crates/aideon-praxis-host/target
-          key: ${{ runner.os }}-rust-${{ hashFiles('crates/aideon-praxis-host/Cargo.toml') }}
+            crates/aideon_praxis_host/target
+          key: ${{ runner.os }}-rust-${{ hashFiles('crates/aideon_praxis_host/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-rust-
 
       - name: Generate lockfile (for audit & caching)
-        working-directory: crates/aideon-praxis-host
+        working-directory: crates/aideon_praxis_host
         run: cargo generate-lockfile
 
       - name: Create placeholder sidecar (externalBin)
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p crates/aideon-praxis-host/binaries
+          mkdir -p crates/aideon_praxis_host/binaries
           case "${{ runner.os }}" in
             Linux)
-              touch crates/aideon-praxis-host/binaries/aideon-worker-x86_64-unknown-linux-gnu
-              chmod +x crates/aideon-praxis-host/binaries/aideon-worker-x86_64-unknown-linux-gnu
+              touch crates/aideon_praxis_host/binaries/aideon-worker-x86_64-unknown-linux-gnu
+              chmod +x crates/aideon_praxis_host/binaries/aideon-worker-x86_64-unknown-linux-gnu
               ;;
             macOS)
-              touch crates/aideon-praxis-host/binaries/aideon-worker-aarch64-apple-darwin
-              chmod +x crates/aideon-praxis-host/binaries/aideon-worker-aarch64-apple-darwin
+              touch crates/aideon_praxis_host/binaries/aideon-worker-aarch64-apple-darwin
+              chmod +x crates/aideon_praxis_host/binaries/aideon-worker-aarch64-apple-darwin
               ;;
             Windows)
               # create placeholder executable for Windows; chmod is a no-op under Git Bash
-              touch crates/aideon-praxis-host/binaries/aideon-worker-x86_64-pc-windows-msvc.exe
+              touch crates/aideon_praxis_host/binaries/aideon-worker-x86_64-pc-windows-msvc.exe
               ;;
           esac
 
       - name: Cargo fmt (check)
-        working-directory: crates/aideon-praxis-host
+        working-directory: crates/aideon_praxis_host
         run: cargo fmt --all --check
 
       - name: Cargo clippy (deny warnings)
-        working-directory: crates/aideon-praxis-host
+        working-directory: crates/aideon_praxis_host
         run: cargo clippy --all-targets -- -D warnings
 
       - name: Cargo check (typecheck)
-        working-directory: crates/aideon-praxis-host
+        working-directory: crates/aideon_praxis_host
         run: cargo check --all-targets --all-features
 
       - name: Cargo test
-        working-directory: crates/aideon-praxis-host
+        working-directory: crates/aideon_praxis_host
         run: cargo test --all --quiet
 
       - name: Install cargo-llvm-cov
@@ -135,7 +135,7 @@ jobs:
 
       - name: Rust coverage (LCOV)
         if: runner.os == 'Linux'
-        working-directory: crates/aideon-praxis-host
+        working-directory: crates/aideon_praxis_host
         shell: bash
         run: |
           set -euo pipefail
@@ -144,7 +144,7 @@ jobs:
 
       - name: Clippy JSON report (for Sonar import)
         if: runner.os == 'Linux'
-        working-directory: crates/aideon-praxis-host
+        working-directory: crates/aideon_praxis_host
         shell: bash
         run: |
           set -euo pipefail
@@ -160,7 +160,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
           path: |
-            crates/aideon-praxis-host/coverage
+            crates/aideon_praxis_host/coverage
 
       - name: Cache RustSec advisory DB
         uses: actions/cache@v4
@@ -176,7 +176,7 @@ jobs:
           tool: cargo-audit
 
       - name: Cargo audit (advisories)
-        working-directory: crates/aideon-praxis-host
+        working-directory: crates/aideon_praxis_host
         shell: bash
         run: |
           # Do not fail the pipeline on third-party advisory noise yet; surface as warnings
@@ -297,8 +297,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            crates/aideon-praxis-host/target
-          key: ${{ runner.os }}-tauri-build-${{ hashFiles('crates/aideon-praxis-host/Cargo.toml', 'pnpm-lock.yaml') }}
+            crates/aideon_praxis_host/target
+          key: ${{ runner.os }}-tauri-build-${{ hashFiles('crates/aideon_praxis_host/Cargo.toml', 'pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-tauri-build-
 
@@ -306,7 +306,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Tauri bundles
-        run: pnpm tauri build --ci --config crates/aideon-praxis-host/tauri.conf.json
+        run: pnpm tauri build --ci --config crates/aideon_praxis_host/tauri.conf.json
 
   sonar:
     name: SonarCloud
@@ -332,13 +332,13 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           name: coverage-rs
-          path: crates/aideon-praxis-host/coverage
+          path: crates/aideon_praxis_host/coverage
 
       - name: Normalize coverage paths
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p coverage crates/aideon-praxis-host/coverage
+          mkdir -p coverage crates/aideon_praxis_host/coverage
           # TS coverage (downloaded directly to coverage/)
           if [[ -f coverage/lcov.info ]]; then
             echo "TS coverage at coverage/lcov.info"
@@ -380,26 +380,26 @@ jobs:
 
           # Rust coverage (LCOV -> Generic Coverage XML)
           # Locate the LCOV file from the artifact
-          if [[ -f crates/aideon-praxis-host/coverage/lcov.info ]]; then
-            echo "Rust lcov at crates/aideon-praxis-host/coverage/lcov.info"
+          if [[ -f crates/aideon_praxis_host/coverage/lcov.info ]]; then
+            echo "Rust lcov at crates/aideon_praxis_host/coverage/lcov.info"
           elif [[ -f coverage-rs/lcov.info ]]; then
-            mv coverage-rs/lcov.info crates/aideon-praxis-host/coverage/lcov.info
-          elif [[ -f coverage-rs/crates/aideon-praxis-host/coverage/lcov.info ]]; then
-            mv coverage-rs/crates/aideon-praxis-host/coverage/lcov.info crates/aideon-praxis-host/coverage/lcov.info
+            mv coverage-rs/lcov.info crates/aideon_praxis_host/coverage/lcov.info
+          elif [[ -f coverage-rs/crates/aideon_praxis_host/coverage/lcov.info ]]; then
+            mv coverage-rs/crates/aideon_praxis_host/coverage/lcov.info crates/aideon_praxis_host/coverage/lcov.info
           else
             echo "[warn] Rust coverage lcov.info not found after artifact download" >&2
           fi
 
           # Normalize Rust LCOV paths to repo-relative to help Sonar resolve files
-          if [[ -f crates/aideon-praxis-host/coverage/lcov.info ]]; then
+          if [[ -f crates/aideon_praxis_host/coverage/lcov.info ]]; then
             sed -E 's#^(SF:)/home/runner/work/[^/]+/[^/]+/#+\1#; s#^(SF:)/github/workspace/#+\1#' \
-              crates/aideon-praxis-host/coverage/lcov.info > crates/aideon-praxis-host/coverage/lcov.norm && \
-              mv crates/aideon-praxis-host/coverage/lcov.norm crates/aideon-praxis-host/coverage/lcov.info
+              crates/aideon_praxis_host/coverage/lcov.info > crates/aideon_praxis_host/coverage/lcov.norm && \
+              mv crates/aideon_praxis_host/coverage/lcov.norm crates/aideon_praxis_host/coverage/lcov.info
           fi
 
           # No Rust XML conversion required; Sonar ingests LCOV directly via sonar.rust.lcov.reportPaths
           ls -l coverage || true
-          ls -l crates/aideon-praxis-host/coverage || true
+          ls -l crates/aideon_praxis_host/coverage || true
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
