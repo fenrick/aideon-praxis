@@ -12,6 +12,7 @@
   },
   "scripts": {
     "preflight": "node tools/preflight.mjs",
+    "postinstall": "pnpm --filter @aideon/PraxisDtos run build",
     "node:dev": "pnpm --filter @aideon/PraxisCanvas dev",
     "node:build": "vite build",
     "node:test": "vitest run --reporter=default",
