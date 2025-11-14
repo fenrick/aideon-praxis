@@ -41,7 +41,8 @@ imports/exports, and Chrona/Metis/Continuum widgets.
   until the React runtime overtakes it, but treat new work as greenfield React + Tauri code.
 - The React canvas shell lives in `app/PraxisCanvas` and now renders a shadcn/ui + Tailwind layout
   (sidebar, header, health cards) backed by React components. Worker health and scenario data flow
-  through the shared `praxisApi` wrapper while the React Flow widget waits for Phase 3.
+  through the shared `praxisApi` wrapper, and the primary canvas column now embeds a React Flow
+  `GraphWidget` fed by `getGraphView`.
 - Documentation, ADRs, and guardrails must describe the React/Tauri direction so every contributor
   understands the destination.
 - A new React workspace will live alongside the Svelte code until the cut-over.
