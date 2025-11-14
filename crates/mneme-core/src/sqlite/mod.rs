@@ -6,15 +6,15 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, Database, DatabaseConnection, DbBackend, DbErr,
-    EntityTrait, QueryFilter, Schema, Set, Statement, TransactionTrait, Value,
+    EntityTrait, QueryFilter, Set, Statement, TransactionTrait, Value,
 };
-use sea_query::SqliteQueryBuilder;
 use tokio::runtime::{Builder, Runtime};
 
 use crate::{MnemeError, MnemeResult, PersistedCommit, Store};
 
 mod commits;
 mod metis;
+mod migrations;
 mod refs;
 mod snapshot_tags;
 
@@ -216,7 +216,7 @@ impl Store for SqliteDb {
     }
 }
 
-fn current_time_ms() -> i64 {
+pub(super) fn current_time_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
@@ -228,29 +228,7 @@ fn is_unique_violation(err: &DbErr) -> bool {
 }
 
 async fn run_migrations(conn: &DatabaseConnection) -> Result<(), DbErr> {
-    let backend = DbBackend::Sqlite;
-    let schema = Schema::new(backend);
-    let commits_sql = schema
-        .create_table_from_entity(commits::Entity)
-        .if_not_exists()
-        .to_string(SqliteQueryBuilder);
-    let refs_sql = schema
-        .create_table_from_entity(refs::Entity)
-        .if_not_exists()
-        .to_string(SqliteQueryBuilder);
-    let tags_sql = schema
-        .create_table_from_entity(snapshot_tags::Entity)
-        .if_not_exists()
-        .to_string(SqliteQueryBuilder);
-    let metis_sql = schema
-        .create_table_from_entity(metis::Entity)
-        .if_not_exists()
-        .to_string(SqliteQueryBuilder);
-    for statement in [commits_sql, refs_sql, tags_sql, metis_sql] {
-        conn.execute(Statement::from_string(backend, statement))
-            .await?;
-    }
-    Ok(())
+    migrations::apply(conn).await
 }
 
 async fn ensure_main_branch(conn: &DatabaseConnection) -> Result<(), DbErr> {
