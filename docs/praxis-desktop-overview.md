@@ -39,12 +39,23 @@ imports/exports, and Chrona/Metis/Continuum widgets.
 
 - The checked-in SvelteKit renderer (`app/PraxisDesktop`) is a **legacy prototype**. Keep it working
   until the React runtime overtakes it, but treat new work as greenfield React + Tauri code.
-- The React canvas shell lives in `app/PraxisCanvas`. In this offline phase it is implemented with a
-  vanilla TypeScript view layer that mimics the target layout so we can wire IPC, styling, and
-  templates before React Flow packages become available.
+- The React canvas shell lives in `app/PraxisCanvas` and now renders a shadcn/ui + Tailwind layout
+  (sidebar, header, health cards) backed by React components. Worker health and scenario data flow
+  through the shared `praxisApi` wrapper while the React Flow widget waits for Phase 3.
 - Documentation, ADRs, and guardrails must describe the React/Tauri direction so every contributor
   understands the destination.
 - A new React workspace will live alongside the Svelte code until the cut-over.
+
+## praxisApi + IPC contracts
+
+- `app/PraxisCanvas/src/praxis-api.ts` centralises the twin contracts (nodes, edges, view
+  definitions, operations, scenarios) and wraps every Tauri command behind typed helpers.
+- Matching commands live in `crates/aideon_praxis_host/src/praxis_api.rs` (`praxis_graph_view`,
+  `praxis_catalogue_view`, `praxis_matrix_view`, `praxis_apply_operations`, `praxis_list_scenarios`).
+- React components never call `invoke` directly; they import from `praxisApi` so mocks work in the
+  browser and the contracts stay consistent.
+- The shell currently calls `listScenarios` for sidebar metadata and `getGraphView` for canvas stats
+  to prove the round-trip. New widgets should follow the same pattern.
 
 ## Phase checkpoints
 
