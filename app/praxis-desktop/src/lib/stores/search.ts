@@ -58,7 +58,7 @@ export function createSearchStore(): SearchStoreActions {
   };
 
   const search = (query: string, limit = 10): SearchResult[] => {
-    const normalizedTokens = Array.from(tokenize(query.trim()));
+    const normalizedTokens = [...tokenize(query.trim())];
     const state = get(store);
     const scored: { item: SearchIndexItem; score: number }[] = [];
     if (normalizedTokens.length > 0) {
