@@ -5,11 +5,11 @@ Maintain at least **80% automated test coverage** across the codebase (Rust + Ty
 
 This document explains:
 
-* what kinds of tests we use,
-* which tools to use,
-* what must be tested in each layer (Rust, Tauri, React/TS),
-* how we measure coverage,
-* what the definition of done is for new code.
+- what kinds of tests we use,
+- which tools to use,
+- what must be tested in each layer (Rust, Tauri, React/TS),
+- how we measure coverage,
+- what the definition of done is for new code.
 
 It is written so a coding agent can follow it without other documents.
 
@@ -20,23 +20,19 @@ It is written so a coding agent can follow it without other documents.
 Praxis Desktop has three main parts:
 
 1. **Rust Engine**
-
-   * Owns the digital twin: nodes, edges, metamodel, commits, scenarios, time, etc.
-   * Exposes functions the rest of the app calls.
+   - Owns the digital twin: nodes, edges, metamodel, commits, scenarios, time, etc.
+   - Exposes functions the rest of the app calls.
 
 2. **Tauri Backend**
-
-   * Wraps the Rust engine in Tauri commands (IPC).
-   * Handles desktop-specific concerns (filesystem, configuration, etc.).
+   - Wraps the Rust engine in Tauri commands (IPC).
+   - Handles desktop-specific concerns (filesystem, configuration, etc.).
 
 3. **React/TypeScript Frontend**
-
-   * Desktop GUI written in React + TypeScript, using shadcn/ui + Tailwind.
-   * Contains:
-
-     * canvas runtime (React Flow),
-     * widgets (graph, catalogue, matrix, chart, etc.),
-     * sidebar/control plane, views, state management.
+   - Desktop GUI written in React + TypeScript, using shadcn/ui + Tailwind.
+   - Contains:
+     - canvas runtime (React Flow),
+     - widgets (graph, catalogue, matrix, chart, etc.),
+     - sidebar/control plane, views, state management.
 
 We test each layer separately, plus full end-to-end (E2E) flows.
 
@@ -47,32 +43,28 @@ We test each layer separately, plus full end-to-end (E2E) flows.
 We use four main kinds of tests:
 
 1. **Rust unit tests**
-
-   * Test pure functions and small modules in the engine.
-   * Run with `cargo test`.
+   - Test pure functions and small modules in the engine.
+   - Run with `cargo test`.
 
 2. **Rust integration tests (including Tauri commands)**
-
-   * Test how multiple Rust modules work together.
-   * Test Tauri commands (engine + IPC) without the GUI.
-   * Run with `cargo test` in appropriate test crates/folders.
+   - Test how multiple Rust modules work together.
+   - Test Tauri commands (engine + IPC) without the GUI.
+   - Run with `cargo test` in appropriate test crates/folders.
 
 3. **TypeScript/React unit & integration tests**
-
-   * Test TS utilities, hooks, and React components.
-   * Use a JS test runner (Vitest or Jest) + React Testing Library.
+   - Test TS utilities, hooks, and React components.
+   - Use a JS test runner (Vitest or Jest) + React Testing Library.
 
 4. **End-to-end (E2E) tests**
-
-   * Launch the Tauri desktop app and test real user flows.
-   * Use a browser automation tool (e.g. Playwright).
+   - Launch the Tauri desktop app and test real user flows.
+   - Use a browser automation tool (e.g. Playwright).
 
 **If the repo already has a preferred tool (e.g. Vitest vs Jest, Playwright vs something else), use that. If not, the default assumptions are:**
 
-* Rust: `cargo test` with built-in test harness.
-* Tauri: use Rust integration tests and/or a Tauri testing crate.
-* TypeScript: **Vitest + React Testing Library**.
-* E2E: **Playwright**.
+- Rust: `cargo test` with built-in test harness.
+- Tauri: use Rust integration tests and/or a Tauri testing crate.
+- TypeScript: **Vitest + React Testing Library**.
+- E2E: **Playwright**.
 
 ---
 
@@ -82,28 +74,25 @@ We use four main kinds of tests:
 
 Rust unit tests must cover:
 
-* **Core domain logic**
+- **Core domain logic**
+  - Node/edge creation and deletion.
+  - Metamodel rules (valid types, allowed relationships).
+  - Commit model and scenarios (branching, merging).
+  - Time-based queries (what exists at time t).
 
-  * Node/edge creation and deletion.
-  * Metamodel rules (valid types, allowed relationships).
-  * Commit model and scenarios (branching, merging).
-  * Time-based queries (what exists at time t).
+- **Validation and error handling**
+  - Invalid inputs (bad IDs, illegal relationships).
+  - Boundary conditions (empty graphs, maximum sizes, etc.).
 
-* **Validation and error handling**
-
-  * Invalid inputs (bad IDs, illegal relationships).
-  * Boundary conditions (empty graphs, maximum sizes, etc.).
-
-* **Conversion and mapping logic**
-
-  * Serialisation/deserialisation of twin data.
-  * Mapping internal models to view models (if done in Rust).
+- **Conversion and mapping logic**
+  - Serialisation/deserialisation of twin data.
+  - Mapping internal models to view models (if done in Rust).
 
 ### 3.2. How to structure tests
 
-* Use Rust’s built-in test framework.
+- Use Rust’s built-in test framework.
 
-* For small modules, place tests inline in the same file with:
+- For small modules, place tests inline in the same file with:
 
   ```rust
   #[cfg(test)]
@@ -117,11 +106,11 @@ Rust unit tests must cover:
   }
   ```
 
-* For larger subsystems, create integration tests under `tests/` in the Rust crate.
+- For larger subsystems, create integration tests under `tests/` in the Rust crate.
 
 ### 3.3. Coverage expectations for Rust
 
-* **Rust domain/engine code should target ≥ 90% line coverage.**
+- **Rust domain/engine code should target ≥ 90% line coverage.**
   This is where the most important business logic lives; it must be very well covered.
 
 The overall project target is 80%, but we expect higher coverage in the engine than in UI code.
@@ -134,29 +123,26 @@ The overall project target is 80%, but we expect higher coverage in the engine t
 
 Tauri backend tests must cover:
 
-* **Tauri commands**
+- **Tauri commands**
+  - Each public command (e.g. `get_graph_view`, `apply_operations`, `list_scenarios`, etc.) should have integration tests that:
+    - construct a minimal Tauri context if needed,
+    - call the command directly,
+    - assert on the Rust data returned or side effects.
 
-  * Each public command (e.g. `get_graph_view`, `apply_operations`, `list_scenarios`, etc.) should have integration tests that:
+- **Error and edge cases**
+  - Missing or invalid arguments.
+  - Engine errors propagated through Tauri commands.
 
-    * construct a minimal Tauri context if needed,
-    * call the command directly,
-    * assert on the Rust data returned or side effects.
+### 4.2. What _not_ to test in Rust
 
-* **Error and edge cases**
-
-  * Missing or invalid arguments.
-  * Engine errors propagated through Tauri commands.
-
-### 4.2. What *not* to test in Rust
-
-* Do **not** attempt to assert on HTML/React components from Rust.
-* Do **not** start the full GUI in Rust tests.
+- Do **not** attempt to assert on HTML/React components from Rust.
+- Do **not** start the full GUI in Rust tests.
 
 Tauri + Rust tests stop at the IPC boundary.
 
 ### 4.3. Coverage expectations for Tauri layer
 
-* Aim for **≥ 80% coverage** of the backend (commands, IPC handlers, context initialisation code), with particular attention to error cases.
+- Aim for **≥ 80% coverage** of the backend (commands, IPC handlers, context initialisation code), with particular attention to error cases.
 
 ---
 
@@ -164,9 +150,9 @@ Tauri + Rust tests stop at the IPC boundary.
 
 ### 5.1. Tools (assumed default)
 
-* **Vitest** (or Jest) as the test runner.
-* **React Testing Library** for components.
-* Optional: testing library for hooks.
+- **Vitest** (or Jest) as the test runner.
+- **React Testing Library** for components.
+- Optional: testing library for hooks.
 
 ### 5.2. What to test
 
@@ -174,11 +160,11 @@ Tauri + Rust tests stop at the IPC boundary.
 
 Anything that doesn’t depend on the DOM should be treated like normal business logic and tested thoroughly:
 
-* View builders:
+- View builders:
+  - e.g. `buildGraphView`, `buildCatalogueView`, `buildMatrixView`.
 
-  * e.g. `buildGraphView`, `buildCatalogueView`, `buildMatrixView`.
-* Data transformers, selectors, and sorting/filtering functions.
-* Global state store logic (reducers, actions if using something like Zustand, Redux, or custom hooks).
+- Data transformers, selectors, and sorting/filtering functions.
+- Global state store logic (reducers, actions if using something like Zustand, Redux, or custom hooks).
 
 These should be covered with straightforward unit tests.
 
@@ -186,13 +172,12 @@ These should be covered with straightforward unit tests.
 
 The global view state (selection, filters, time cursor, scenario, template) is critical. Test:
 
-* Initial state is correct.
-* State transitions when:
-
-  * user selects/deselects nodes,
-  * filters change,
-  * time cursor changes,
-  * template changes.
+- Initial state is correct.
+- State transitions when:
+  - user selects/deselects nodes,
+  - filters change,
+  - time cursor changes,
+  - template changes.
 
 Use hook testing helpers or small harness components to drive events and assert on final state.
 
@@ -200,58 +185,50 @@ Use hook testing helpers or small harness components to drive events and assert 
 
 For major components:
 
-* **GraphWidget**
+- **GraphWidget**
+  - Given a `GraphViewModel` prop, renders a set of nodes/edges.
+  - Clicking a node:
+    - fires a selection callback OR
+    - updates global selection store.
 
-  * Given a `GraphViewModel` prop, renders a set of nodes/edges.
-  * Clicking a node:
+  - React Flow integration:
+    - verify minimal expected behaviour (e.g. nodes appear, selection handler is called), without trying to exhaustively test React Flow library itself.
 
-    * fires a selection callback OR
-    * updates global selection store.
-  * React Flow integration:
+- **CatalogueWidget**
+  - Given a catalogue view, renders rows and columns.
+  - Row selection updates selection store or invokes selection callback.
+  - Bulk selection, basic filtering (if implemented).
 
-    * verify minimal expected behaviour (e.g. nodes appear, selection handler is called), without trying to exhaustively test React Flow library itself.
+- **MatrixWidget**
+  - Row/column rendering, cell interaction.
+  - Ensure selection/edit events are fired correctly.
 
-* **CatalogueWidget**
-
-  * Given a catalogue view, renders rows and columns.
-  * Row selection updates selection store or invokes selection callback.
-  * Bulk selection, basic filtering (if implemented).
-
-* **MatrixWidget**
-
-  * Row/column rendering, cell interaction.
-  * Ensure selection/edit events are fired correctly.
-
-* **Sidebar/control components**
-
-  * Template dropdowns, filters, scenario selectors, etc.
-  * When a user interacts, the right state changes occur.
+- **Sidebar/control components**
+  - Template dropdowns, filters, scenario selectors, etc.
+  - When a user interacts, the right state changes occur.
 
 Focus on **behaviour and interaction**, not pixel-perfect visual output.
 
 #### 5.2.4. API layer (`praxisApi`)
 
-* Unit tests that, with a mocked Tauri bridge, verify:
-
-  * correct commands are called with correct arguments,
-  * errors are handled gracefully and propagated usefully to callers.
+- Unit tests that, with a mocked Tauri bridge, verify:
+  - correct commands are called with correct arguments,
+  - errors are handled gracefully and propagated usefully to callers.
 
 Note: do **not** depend on real Tauri in TS unit tests; mock it.
 
 ### 5.3. What not to test in TS
 
-* Do not test third-party libraries themselves (React Flow, shadcn, etc.).
-* Only test your integration with them:
-
-  * that you pass the right props,
-  * that you handle callbacks correctly.
+- Do not test third-party libraries themselves (React Flow, shadcn, etc.).
+- Only test your integration with them:
+  - that you pass the right props,
+  - that you handle callbacks correctly.
 
 ### 5.4. Coverage expectations for TS/React
 
-* **TS logic and state management:** aim for ≥ 90% line coverage.
-* **React components overall:** aim for ≥ 70% line coverage.
-
-  * Complex container components can be harder to cover; focus on important user paths and branching logic.
+- **TS logic and state management:** aim for ≥ 90% line coverage.
+- **React components overall:** aim for ≥ 70% line coverage.
+  - Complex container components can be harder to cover; focus on important user paths and branching logic.
 
 Overall, the TS/React part of the codebase should average **≥ 80% line coverage**.
 
@@ -263,10 +240,10 @@ Overall, the TS/React part of the codebase should average **≥ 80% line coverag
 
 E2E tests validate that everything works together from a **user’s point of view**:
 
-* Tauri shell starts correctly.
-* Rust engine + commands work over IPC.
-* React UI renders and allows real interactions.
-* Data travels from engine → UI and back.
+- Tauri shell starts correctly.
+- Rust engine + commands work over IPC.
+- React UI renders and allows real interactions.
+- Data travels from engine → UI and back.
 
 They are not for coverage; they are for **confidence in critical flows**.
 
@@ -274,42 +251,37 @@ They are not for coverage; they are for **confidence in critical flows**.
 
 Assuming **Playwright** as default:
 
-* It launches the Tauri app, attaches to the window, and drives clicks/keystrokes.
-* Tests are written in TypeScript.
+- It launches the Tauri app, attaches to the window, and drives clicks/keystrokes.
+- Tests are written in TypeScript.
 
 ### 6.3. Flows to cover
 
 At minimum, E2E should cover:
 
 1. **App startup**
-
-   * Tauri app launches.
-   * Main window renders sidebar + canvas.
+   - Tauri app launches.
+   - Main window renders sidebar + canvas.
 
 2. **Loading a default canvas/template**
-
-   * On first open, a default template loads.
-   * Graph widget appears with some nodes/edges.
-   * No errors in the console/log.
+   - On first open, a default template loads.
+   - Graph widget appears with some nodes/edges.
+   - No errors in the console/log.
 
 3. **Selection synchronisation**
-
-   * Click a node on the canvas → selection is reflected in the sidebar/canvas.
-   * Click a row in a catalogue widget → corresponding node is highlighted in the graph.
+   - Click a node on the canvas → selection is reflected in the sidebar/canvas.
+   - Click a row in a catalogue widget → corresponding node is highlighted in the graph.
 
 4. **Simple edit flow**
+   - Create/import a small set of elements.
+   - Check that they appear in:
+     - catalogue widget,
+     - graph widget.
 
-   * Create/import a small set of elements.
-   * Check that they appear in:
-
-     * catalogue widget,
-     * graph widget.
-   * Apply a simple change (e.g. rename node) and verify it persists.
+   - Apply a simple change (e.g. rename node) and verify it persists.
 
 5. **Scenario/time basic behaviour**
-
-   * Switch scenario or adjust time cursor (once implemented).
-   * Verify that views update accordingly.
+   - Switch scenario or adjust time cursor (once implemented).
+   - Verify that views update accordingly.
 
 E2E tests should be **stable** and **fast enough** to run in CI (they might be in a separate job).
 
@@ -317,8 +289,8 @@ E2E tests should be **stable** and **fast enough** to run in CI (they might be i
 
 We do not chase coverage percentage from E2E tests. Instead:
 
-* We require that **all major critical flows** above are covered.
-* E2E suite should be small and robust, not exhaustive.
+- We require that **all major critical flows** above are covered.
+- E2E suite should be small and robust, not exhaustive.
 
 ---
 
@@ -328,19 +300,16 @@ We target **≥ 80% overall line coverage** across Rust and TypeScript.
 
 In practice:
 
-* **Rust engine + Tauri**
+- **Rust engine + Tauri**
+  - Use coverage tooling compatible with the Rust toolchain (e.g. `cargo` coverage tools).
+  - Target ≥ 85–90% for core engine modules, ≥ 80% overall.
 
-  * Use coverage tooling compatible with the Rust toolchain (e.g. `cargo` coverage tools).
-  * Target ≥ 85–90% for core engine modules, ≥ 80% overall.
-
-* **TypeScript/React**
-
-  * Use the coverage reporting from Vitest/Jest.
-  * Set thresholds (e.g. in config) so the test run fails if:
-
-    * `lines` < 80%
-    * `statements` < 80%
-    * `branches` < 70% (branch coverage is harder; adjust if needed).
+- **TypeScript/React**
+  - Use the coverage reporting from Vitest/Jest.
+  - Set thresholds (e.g. in config) so the test run fails if:
+    - `lines` < 80%
+    - `statements` < 80%
+    - `branches` < 70% (branch coverage is harder; adjust if needed).
 
 We can relax thresholds slightly for auto-generated code or trivial glue, but **any exception must be documented with a clear reason** (e.g. platform bootstrap code, configuration boilerplate).
 
@@ -350,27 +319,23 @@ We can relax thresholds slightly for auto-generated code or trivial glue, but **
 
 ### 8.1. Principles
 
-* Use **small, realistic graphs** and datasets for tests, not random junk.
-* Prefer *named fixtures* that are easy to understand (e.g. `simple_service_capability_graph`, `three_layer_hierarchy_with_pain_points`).
+- Use **small, realistic graphs** and datasets for tests, not random junk.
+- Prefer _named fixtures_ that are easy to understand (e.g. `simple_service_capability_graph`, `three_layer_hierarchy_with_pain_points`).
 
 ### 8.2. Implementation
 
-* In Rust:
+- In Rust:
+  - Create helper functions to build typical graphs and scenarios for tests.
+  - Keep them in a shared `test_utils` or similar module.
 
-  * Create helper functions to build typical graphs and scenarios for tests.
-  * Keep them in a shared `test_utils` or similar module.
+- In TypeScript:
+  - Create fixture builders for:
+    - view models (graph, catalogue, matrix, chart),
+    - global state initialisations.
 
-* In TypeScript:
-
-  * Create fixture builders for:
-
-    * view models (graph, catalogue, matrix, chart),
-    * global state initialisations.
-
-* For E2E:
-
-  * Provide a small sample project / dataset that is loaded in test mode.
-  * Keep it deterministic and stable.
+- For E2E:
+  - Provide a small sample project / dataset that is loaded in test mode.
+  - Keep it deterministic and stable.
 
 ---
 
@@ -379,42 +344,35 @@ We can relax thresholds slightly for auto-generated code or trivial glue, but **
 Whenever new code is written or changed:
 
 1. **Rust engine / Tauri**
-
-   * Any new function with non-trivial logic **must** have unit tests.
-   * Any new Tauri command **must** have at least one integration test.
+   - Any new function with non-trivial logic **must** have unit tests.
+   - Any new Tauri command **must** have at least one integration test.
 
 2. **TypeScript logic**
-
-   * Any new function that transforms data or holds business rules **must** have unit tests.
-   * Any change that modifies branching logic or error handling **must** adjust existing tests or add new ones.
+   - Any new function that transforms data or holds business rules **must** have unit tests.
+   - Any change that modifies branching logic or error handling **must** adjust existing tests or add new ones.
 
 3. **React components**
-
-   * New components:
-
-     * If they contain important interaction or state logic, write tests.
-     * Pure presentational components may be lightly tested (or skipped), but keep them simple.
+   - New components:
+     - If they contain important interaction or state logic, write tests.
+     - Pure presentational components may be lightly tested (or skipped), but keep them simple.
 
 4. **E2E tests**
-
-   * When you add a new **critical flow** or significantly alter an existing one:
-
-     * add or update an E2E test that covers the end-to-end behaviour.
+   - When you add a new **critical flow** or significantly alter an existing one:
+     - add or update an E2E test that covers the end-to-end behaviour.
 
 ### 9.1. Definition of Done for a PR
 
 A pull request (or automated change set) is **not done** unless:
 
-* All relevant tests (Rust, TS, E2E where applicable) **pass**.
-* Coverage report still meets:
+- All relevant tests (Rust, TS, E2E where applicable) **pass**.
+- Coverage report still meets:
+  - overall ≥ 80%,
+  - Rust domain modules and TS logic modules ≥ 85–90% where practical.
 
-  * overall ≥ 80%,
-  * Rust domain modules and TS logic modules ≥ 85–90% where practical.
-* New or changed behaviour is covered by appropriate tests:
-
-  * engine logic by Rust tests,
-  * UI logic by TS/React tests,
-  * critical user flows by E2E tests where relevant.
+- New or changed behaviour is covered by appropriate tests:
+  - engine logic by Rust tests,
+  - UI logic by TS/React tests,
+  - critical user flows by E2E tests where relevant.
 
 “No tests, but it works on my machine” is **not acceptable**.
 
@@ -425,20 +383,17 @@ A pull request (or automated change set) is **not done** unless:
 When you, as an automated coding agent, implement or change code:
 
 1. Identify which layer you are working in:
-
-   * Rust engine, Tauri backend, TS logic, React components, or E2E flow.
+   - Rust engine, Tauri backend, TS logic, React components, or E2E flow.
 
 2. For each change:
-
-   * Plan corresponding tests **before or alongside** implementation.
-   * Keep tests small, focussed, and readable.
+   - Plan corresponding tests **before or alongside** implementation.
+   - Keep tests small, focussed, and readable.
 
 3. Always ensure:
-
-   * `cargo test` passes for Rust.
-   * `npm/yarn/pnpm test` passes for TS/React.
-   * Coverage thresholds are not breached.
-   * E2E tests still pass if your changes affect critical flows.
+   - `cargo test` passes for Rust.
+   - `npm/yarn/pnpm test` passes for TS/React.
+   - Coverage thresholds are not breached.
+   - E2E tests still pass if your changes affect critical flows.
 
 4. If you deliberately skip tests for a small utility (rare), add a short code comment explaining why.
 
