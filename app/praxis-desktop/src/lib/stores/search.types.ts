@@ -39,23 +39,12 @@ export interface SearchIndexItem extends SearchResult {
 
 export type SidebarSelectHandler = (id: string) => void | Promise<void>;
 export type CommitSelectHandler = (id: string) => void | Promise<void>;
-export type CatalogSelectHandler = (
-  entity: CatalogEntitySummary,
-) => void | Promise<void>;
+export type CatalogSelectHandler = (entity: CatalogEntitySummary) => void | Promise<void>;
 
 export type SourceKey = 'sidebar' | 'commits' | 'catalog';
 
 export interface SearchSourceBuilders {
-  sidebar: (
-    items: SidebarTreeNode[],
-    onSelect?: SidebarSelectHandler,
-  ) => SearchIndexItem[];
-  commits: (
-    commits: TemporalCommitSummary[],
-    onSelect?: CommitSelectHandler,
-  ) => SearchIndexItem[];
-  catalog: (
-    entities: CatalogEntitySummary[],
-    onSelect?: CatalogSelectHandler,
-  ) => SearchIndexItem[];
+  sidebar: (items: SidebarTreeNode[], onSelect?: SidebarSelectHandler) => SearchIndexItem[];
+  commits: (commits: TemporalCommitSummary[], onSelect?: CommitSelectHandler) => SearchIndexItem[];
+  catalog: (entities: CatalogEntitySummary[], onSelect?: CatalogSelectHandler) => SearchIndexItem[];
 }

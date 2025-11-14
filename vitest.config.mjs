@@ -10,14 +10,8 @@ export default defineConfig({
         __dirname,
         'app/praxis-desktop/tests/stubs/fluentui.web-components.ts',
       ),
-      '@aideon/praxis-design-system': path.resolve(
-        __dirname,
-        'app/praxis-design-system/src',
-      ),
-      '@iconify/svelte': path.resolve(
-        __dirname,
-        'app/praxis-desktop/tests/stubs/iconify.svelte',
-      ),
+      '@aideon/praxis-design-system': path.resolve(__dirname, 'app/praxis-design-system/src'),
+      '@iconify/svelte': path.resolve(__dirname, 'app/praxis-desktop/tests/stubs/iconify.svelte'),
       '@tauri-apps/api/core': path.resolve(
         __dirname,
         'app/praxis-desktop/tests/stubs/tauri-api-core.ts',
