@@ -125,7 +125,7 @@ jobs:
         run: pnpm --filter @aideon/praxis-desktop build
 
       - name: Build Tauri bundles
-        run: pnpm tauri build --config crates/aideon-praxis-host/tauri.conf.json --manifest-path crates/aideon-praxis-host/Cargo.toml --target ${{ matrix.target }} --ci
+        run: pnpm tauri build --config crates/aideon_praxis_host/tauri.conf.json --manifest-path crates/aideon_praxis_host/Cargo.toml --target ${{ matrix.target }} --ci
         env:
           CARGO_TARGET_DIR: target
           RUSTC_BOOTSTRAP: 0
@@ -133,7 +133,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Build worker libraries
-        run: cargo build --release --lib --manifest-path crates/aideon-praxis-host/Cargo.toml --target ${{ matrix.target }}
+        run: cargo build --release --lib --manifest-path crates/aideon_praxis_host/Cargo.toml --target ${{ matrix.target }}
         env:
           CARGO_TARGET_DIR: target
 
