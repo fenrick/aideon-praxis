@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom/vitest';
+
 // Ensure unhandled promise rejections fail the test run deterministically.
 process.on('unhandledRejection', (reason) => {
   const error = reason instanceof Error ? reason : new Error(String(reason));

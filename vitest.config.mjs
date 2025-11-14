@@ -25,6 +25,7 @@ export default defineConfig({
         'app/PraxisDesktop/tests/stubs/elk.bundled.ts',
       ),
       $lib: path.resolve(__dirname, 'app/PraxisDesktop/src/lib'),
+      '@': path.resolve(__dirname, 'app/PraxisCanvas/src'),
       '@aideon/PraxisAdapters': path.resolve(__dirname, 'app/PraxisAdapters/src'),
     },
   },
@@ -44,6 +45,7 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       reportOnFailure: true,
       include: [
+        'app/PraxisCanvas/src/**/*.{ts,tsx}',
         'app/PraxisDesktop/src/lib/**/*.{ts,tsx}',
         'app/PraxisAdapters/src/**/*.{ts,tsx}',
         'app/PraxisDtos/src/**/*.{ts,tsx}',
