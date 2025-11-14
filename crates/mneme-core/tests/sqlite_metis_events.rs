@@ -71,4 +71,82 @@ async fn writes_metis_projection_for_commits() {
     assert_eq!(json["summary"]["nodes"]["created"], 1);
     assert_eq!(json["summary"]["nodes"]["deleted"], 1);
     assert_eq!(json["summary"]["edges"]["created"], 1);
+
+    let node_rows = conn
+        .query_all(Statement::from_string(
+            DbBackend::Sqlite,
+            String::from(
+                "SELECT node_id, operation, node_type, recorded_at_ms FROM metis_commit_nodes ORDER BY operation",
+            ),
+        ))
+        .await
+        .expect("query nodes");
+    assert_eq!(node_rows.len(), 2);
+    let create_row = &node_rows[0];
+    let delete_row = &node_rows[1];
+    assert_eq!(
+        create_row.try_get::<String>("", "operation").unwrap(),
+        "create"
+    );
+    assert_eq!(
+        create_row
+            .try_get::<String>("", "node_id")
+            .expect("create node id"),
+        "n-1"
+    );
+    assert_eq!(
+        create_row
+            .try_get::<Option<String>>("", "node_type")
+            .expect("create node type"),
+        Some(String::from("Capability"))
+    );
+    let create_recorded: i64 = create_row
+        .try_get("", "recorded_at_ms")
+        .expect("create recorded");
+    assert!(create_recorded > 0);
+
+    assert_eq!(
+        delete_row.try_get::<String>("", "operation").unwrap(),
+        "delete"
+    );
+    assert_eq!(
+        delete_row
+            .try_get::<String>("", "node_id")
+            .expect("delete node id"),
+        "n-9"
+    );
+    assert!(
+        delete_row
+            .try_get::<Option<String>>("", "node_type")
+            .expect("delete node type")
+            .is_none()
+    );
+
+    let edge_rows = conn
+        .query_all(Statement::from_string(
+            DbBackend::Sqlite,
+            String::from(
+                "SELECT edge_id, from_node, to_node, operation, recorded_at_ms FROM metis_commit_edges",
+            ),
+        ))
+        .await
+        .expect("query edges");
+    assert_eq!(edge_rows.len(), 1);
+    let edge_row = &edge_rows[0];
+    assert_eq!(
+        edge_row.try_get::<String>("", "operation").unwrap(),
+        "create"
+    );
+    assert_eq!(
+        edge_row.try_get::<String>("", "from_node").expect("from"),
+        "n-1"
+    );
+    assert_eq!(
+        edge_row.try_get::<String>("", "to_node").expect("to"),
+        "n-2"
+    );
+    let recorded: i64 = edge_row
+        .try_get("", "recorded_at_ms")
+        .expect("edge recorded");
+    assert!(recorded > 0);
 }

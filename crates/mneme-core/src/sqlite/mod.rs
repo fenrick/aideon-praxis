@@ -9,11 +9,14 @@ use sea_orm::{
 };
 
 use async_trait::async_trait;
+use serde::Serialize;
 
 use crate::{MnemeError, MnemeResult, PersistedCommit, Store};
 
 mod commits;
-mod metis;
+mod metis_edge_changes;
+mod metis_events;
+mod metis_node_changes;
 mod migrations;
 mod projections;
 mod refs;
@@ -44,19 +47,22 @@ impl SqliteDb {
         Ok(Self { conn })
     }
 
-    fn commit_model_from(&self, commit: &PersistedCommit) -> commits::ActiveModel {
-        commits::ActiveModel {
+    fn commit_model_from(
+        &self,
+        commit: &PersistedCommit,
+    ) -> Result<commits::ActiveModel, MnemeError> {
+        Ok(commits::ActiveModel {
             commit_id: Set(commit.summary.id.clone()),
             branch: Set(commit.summary.branch.clone()),
-            parents_json: Set(serde_json::to_string(&commit.summary.parents).unwrap_or_default()),
+            parents_json: Set(serialize_json(&commit.summary.parents, "commit parents")?),
             author: Set(commit.summary.author.clone()),
             time: Set(commit.summary.time.clone()),
             message: Set(commit.summary.message.clone()),
-            tags_json: Set(serde_json::to_string(&commit.summary.tags).unwrap_or_default()),
+            tags_json: Set(serialize_json(&commit.summary.tags, "commit tags")?),
             change_count: Set(commit.summary.change_count as i64),
-            summary_json: Set(serde_json::to_string(&commit.summary).unwrap_or_default()),
-            changes_json: Set(serde_json::to_string(&commit.change_set).unwrap_or_default()),
-        }
+            summary_json: Set(serialize_json(&commit.summary, "commit summary")?),
+            changes_json: Set(serialize_json(&commit.change_set, "commit changes")?),
+        })
     }
 }
 
@@ -64,8 +70,8 @@ impl SqliteDb {
 impl Store for SqliteDb {
     async fn put_commit(&self, commit: &PersistedCommit) -> MnemeResult<()> {
         let conn = self.conn.clone();
-        let model = self.commit_model_from(commit);
-        let metis_model = projections::metis_event_model(commit)?;
+        let model = self.commit_model_from(commit)?;
+        let projections = projections::project_commit(commit)?;
         let txn = conn
             .begin()
             .await
@@ -74,10 +80,23 @@ impl Store for SqliteDb {
             .insert(&txn)
             .await
             .map_err(|err| MnemeError::storage(format!("SeaORM error: {err}")))?;
-        metis_model
+        projections
+            .event
             .insert(&txn)
             .await
             .map_err(|err| MnemeError::storage(format!("SeaORM error: {err}")))?;
+        if !projections.node_changes.is_empty() {
+            metis_node_changes::Entity::insert_many(projections.node_changes)
+                .exec(&txn)
+                .await
+                .map_err(|err| MnemeError::storage(format!("SeaORM error: {err}")))?;
+        }
+        if !projections.edge_changes.is_empty() {
+            metis_edge_changes::Entity::insert_many(projections.edge_changes)
+                .exec(&txn)
+                .await
+                .map_err(|err| MnemeError::storage(format!("SeaORM error: {err}")))?;
+        }
         txn.commit()
             .await
             .map(|_| ())
@@ -236,6 +255,11 @@ pub(super) fn current_time_ms() -> i64 {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis() as i64
+}
+
+fn serialize_json<T: Serialize>(value: &T, label: &str) -> Result<String, MnemeError> {
+    serde_json::to_string(value)
+        .map_err(|err| MnemeError::storage(format!("serialise {label}: {err}")))
 }
 
 fn is_unique_violation(err: &DbErr) -> bool {
