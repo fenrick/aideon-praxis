@@ -7,7 +7,10 @@ use sea_orm::{
 };
 use sea_query::SqliteQueryBuilder;
 
-use super::{commits, current_time_ms, metis, refs, snapshot_tags};
+use super::{
+    commits, current_time_ms, metis_edge_changes, metis_events, metis_node_changes, refs,
+    snapshot_tags,
+};
 
 struct Migration {
     id: &'static str,
@@ -71,7 +74,7 @@ async fn apply_migration(conn: &DatabaseConnection, migration: &Migration) -> Re
 fn build_initial_schema_statements() -> Vec<String> {
     let backend = DbBackend::Sqlite;
     let schema = Schema::new(backend);
-    vec![
+    let mut statements = vec![
         schema
             .create_table_from_entity(commits::Entity)
             .if_not_exists()
@@ -85,10 +88,38 @@ fn build_initial_schema_statements() -> Vec<String> {
             .if_not_exists()
             .to_string(SqliteQueryBuilder),
         schema
-            .create_table_from_entity(metis::Entity)
+            .create_table_from_entity(metis_events::Entity)
             .if_not_exists()
             .to_string(SqliteQueryBuilder),
-    ]
+        schema
+            .create_table_from_entity(metis_node_changes::Entity)
+            .if_not_exists()
+            .to_string(SqliteQueryBuilder),
+        schema
+            .create_table_from_entity(metis_edge_changes::Entity)
+            .if_not_exists()
+            .to_string(SqliteQueryBuilder),
+    ];
+
+    statements.extend([
+        String::from(
+            "CREATE INDEX IF NOT EXISTS idx_metis_events_commit ON metis_events(commit_id)",
+        ),
+        String::from(
+            "CREATE INDEX IF NOT EXISTS idx_metis_nodes_commit ON metis_commit_nodes(commit_id)",
+        ),
+        String::from(
+            "CREATE INDEX IF NOT EXISTS idx_metis_nodes_event ON metis_commit_nodes(event_id)",
+        ),
+        String::from(
+            "CREATE INDEX IF NOT EXISTS idx_metis_edges_commit ON metis_commit_edges(commit_id)",
+        ),
+        String::from(
+            "CREATE INDEX IF NOT EXISTS idx_metis_edges_event ON metis_commit_edges(event_id)",
+        ),
+    ]);
+
+    statements
 }
 
 mod history {
