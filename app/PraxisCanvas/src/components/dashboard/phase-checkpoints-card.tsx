@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 const PHASES = [
   { title: 'Bootstrap shell', status: 'complete' },
-  { title: 'Bind praxisApi IPC', status: 'in-progress' },
-  { title: 'Render React Flow widgets', status: 'pending' },
+  { title: 'praxisApi IPC', status: 'complete' },
+  { title: 'React Flow graph widget', status: 'complete' },
+  { title: 'Catalogue + Matrix widgets', status: 'complete' },
+  { title: 'Charts + templates', status: 'in-progress' },
 ];
 
 export function PhaseCheckpointsCard() {

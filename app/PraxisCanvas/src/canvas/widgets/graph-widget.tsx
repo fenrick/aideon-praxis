@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { toErrorMessage } from '@/lib/errors';
+import { getGraphView, type GraphViewModel } from '@/praxis-api';
 import {
   Background,
   BackgroundVariant,
@@ -12,18 +14,15 @@ import {
   type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Loader2, RefreshCcw } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { toErrorMessage } from '@/lib/errors';
-import { getGraphView, type GraphViewModel } from '@/praxis-api';
-
-import type { GraphWidgetConfig, WidgetSelection } from '../types';
+import type { GraphWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import { buildFlowEdges, buildFlowNodes } from './graph-transform';
+import { WidgetToolbar } from './widget-toolbar';
 
 interface GraphWidgetProperties {
   readonly widget: GraphWidgetConfig;
   readonly reloadVersion: number;
+  readonly selection?: SelectionState;
   readonly onSelectionChange?: (selection: WidgetSelection) => void;
   readonly onViewChange?: (view: GraphViewModel) => void;
   readonly onError?: (message: string) => void;
@@ -32,6 +31,7 @@ interface GraphWidgetProperties {
 export function GraphWidget({
   widget,
   reloadVersion,
+  selection,
   onSelectionChange,
   onViewChange,
   onError,
@@ -71,12 +71,30 @@ export function GraphWidget({
     void loadView();
   }, [loadView]);
 
+  useEffect(() => {
+    if (!selection) {
+      setNodes((current) => current.map((node) => ({ ...node, selected: false })));
+      setEdges((current) => current.map((edge) => ({ ...edge, selected: false })));
+      return;
+    }
+    setNodes((current) =>
+      current.map((node) => ({ ...node, selected: selection.nodeIds.includes(node.id) })),
+    );
+    setEdges((current) =>
+      current.map((edge) => {
+        const edgeId = edge.id;
+        const isSelected = selection.edgeIds.includes(edgeId);
+        return { ...edge, selected: isSelected };
+      }),
+    );
+  }, [selection, setEdges, setNodes]);
+
   const handleSelection = useCallback(
-    (selection: { nodes?: Node[]; edges?: Edge[] }) => {
+    (nextSelection: { nodes?: Node[]; edges?: Edge[] }) => {
       onSelectionChange?.({
         widgetId: widget.id,
-        nodeIds: (selection.nodes ?? []).map((node) => node.id),
-        edgeIds: (selection.edges ?? []).map((edge) => edge.id),
+        nodeIds: (nextSelection.nodes ?? []).map((node) => node.id),
+        edgeIds: (nextSelection.edges ?? []).map((edge) => edge.id),
       });
     },
     [onSelectionChange, widget.id],
@@ -84,7 +102,12 @@ export function GraphWidget({
 
   return (
     <div className="relative h-full w-full">
-      <GraphWidgetToolbar metadata={metadata} loading={loading} onRefresh={() => void loadView()} />
+      <WidgetToolbar
+        metadata={metadata}
+        fallbackTitle={widget.title}
+        loading={loading}
+        onRefresh={() => void loadView()}
+      />
       <div className="h-[320px] w-full rounded-2xl border border-border/60 bg-muted/20">
         <ReactFlowProvider>
           <ReactFlow
@@ -107,34 +130,6 @@ export function GraphWidget({
         {loading ? <GraphWidgetOverlay message="Loading graph" /> : null}
         {error ? <GraphWidgetOverlay isError message={error} /> : null}
       </div>
-    </div>
-  );
-}
-
-interface GraphWidgetToolbarProperties {
-  readonly metadata?: GraphViewModel['metadata'];
-  readonly loading: boolean;
-  readonly onRefresh: () => void;
-}
-
-function GraphWidgetToolbar({ metadata, loading, onRefresh }: GraphWidgetToolbarProperties) {
-  return (
-    <div className="mb-3 flex items-center justify-between">
-      <div>
-        <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Widget</p>
-        <p className="text-sm font-medium text-foreground">{metadata?.name ?? 'Twin overview'}</p>
-        <p className="text-xs text-muted-foreground">
-          {metadata ? `As of ${new Date(metadata.asOf).toLocaleString()}` : 'Awaiting twin data'}
-        </p>
-      </div>
-      <Button variant="secondary" size="sm" disabled={loading} onClick={onRefresh}>
-        {loading ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <RefreshCcw className="mr-2 h-4 w-4" />
-        )}
-        Refresh
-      </Button>
     </div>
   );
 }

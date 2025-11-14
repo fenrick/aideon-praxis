@@ -1,21 +1,60 @@
-import type { GraphViewDefinition, GraphViewModel } from '@/praxis-api';
+import type {
+  CatalogueViewDefinition,
+  ChartViewDefinition,
+  GraphViewDefinition,
+  GraphViewModel,
+  MatrixViewDefinition,
+} from '@/praxis-api';
 
-export type WidgetKind = 'graph';
+export type WidgetKind = 'graph' | 'catalogue' | 'matrix' | 'chart';
 
-export interface GraphWidgetConfig {
+export type WidgetSize = 'full' | 'half';
+
+interface BaseWidgetConfig<TView> {
   id: string;
-  kind: 'graph';
   title: string;
-  view: GraphViewDefinition;
+  view: TView;
+  size?: WidgetSize;
 }
 
-export type CanvasWidget = GraphWidgetConfig;
+export interface GraphWidgetConfig extends BaseWidgetConfig<GraphViewDefinition> {
+  kind: 'graph';
+}
+
+export interface CatalogueWidgetConfig extends BaseWidgetConfig<CatalogueViewDefinition> {
+  kind: 'catalogue';
+}
+
+export interface MatrixWidgetConfig extends BaseWidgetConfig<MatrixViewDefinition> {
+  kind: 'matrix';
+}
+
+export interface ChartWidgetConfig extends BaseWidgetConfig<ChartViewDefinition> {
+  kind: 'chart';
+}
+
+export type CanvasWidget =
+  | GraphWidgetConfig
+  | CatalogueWidgetConfig
+  | MatrixWidgetConfig
+  | ChartWidgetConfig;
 
 export interface WidgetSelection {
   widgetId: string;
   nodeIds: string[];
   edgeIds: string[];
 }
+
+export interface SelectionState {
+  sourceWidgetId?: string;
+  nodeIds: string[];
+  edgeIds: string[];
+}
+
+export const EMPTY_SELECTION: SelectionState = {
+  nodeIds: [],
+  edgeIds: [],
+};
 
 export interface WidgetViewEvent {
   widgetId: string;

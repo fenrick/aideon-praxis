@@ -1,16 +1,29 @@
 import { useCallback, useState } from 'react';
 
 import { CanvasRuntime } from '@/canvas/canvas-runtime';
-import type { CanvasWidget, WidgetErrorEvent, WidgetViewEvent } from '@/canvas/types';
+import { fromWidgetSelection } from '@/canvas/selection';
+import type {
+  CanvasWidget,
+  SelectionState,
+  WidgetErrorEvent,
+  WidgetSelection,
+  WidgetViewEvent,
+} from '@/canvas/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { GraphViewModel } from '@/praxis-api';
 
 interface CanvasRuntimeCardProperties {
   readonly widgets: CanvasWidget[];
+  readonly selection: SelectionState;
+  readonly onSelectionChange?: (selection: SelectionState) => void;
 }
 
-export function CanvasRuntimeCard({ widgets }: CanvasRuntimeCardProperties) {
+export function CanvasRuntimeCard({
+  widgets,
+  selection,
+  onSelectionChange,
+}: CanvasRuntimeCardProperties) {
   const [reloadVersion, setReloadVersion] = useState(0);
   const [metadata, setMetadata] = useState<GraphViewModel['metadata'] | undefined>();
   const [stats, setStats] = useState<GraphViewModel['stats'] | undefined>();
@@ -25,6 +38,13 @@ export function CanvasRuntimeCard({ widgets }: CanvasRuntimeCardProperties) {
   const handleGraphError = useCallback((event: WidgetErrorEvent) => {
     setError(event.message);
   }, []);
+
+  const handleSelection = useCallback(
+    (event: WidgetSelection) => {
+      onSelectionChange?.(fromWidgetSelection(event));
+    },
+    [onSelectionChange],
+  );
 
   return (
     <Card className="h-full">
@@ -58,6 +78,8 @@ export function CanvasRuntimeCard({ widgets }: CanvasRuntimeCardProperties) {
           <CanvasRuntime
             widgets={widgets}
             reloadVersion={reloadVersion}
+            selection={selection}
+            onSelectionChange={handleSelection}
             onGraphViewChange={handleGraphViewChange}
             onGraphError={handleGraphError}
           />
