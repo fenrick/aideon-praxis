@@ -679,12 +679,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "chrona-visualization"
+name = "aideon-chrona-visualization"
 version = "0.0.0"
 dependencies = [
  "log",
- "mneme-core",
- "praxis-engine",
+ "aideon-mneme-core",
+ "aideon-praxis-engine",
  "serde_json",
  "tokio",
 ]
@@ -779,7 +779,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
 
 [[package]]
-name = "continuum-orchestrator"
+name = "aideon-continuum-orchestrator"
 version = "0.0.0"
 
 [[package]]
@@ -2539,7 +2539,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "metis-analytics"
+name = "aideon-metis-analytics"
 version = "0.0.0"
 
 [[package]]
@@ -2570,11 +2570,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "mneme-core"
+name = "aideon-mneme-core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "continuum-orchestrator",
+ "aideon-continuum-orchestrator",
  "sea-orm",
  "sea-query",
  "serde",
@@ -3423,14 +3423,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "praxis-engine"
+name = "aideon-praxis-engine"
 version = "0.0.0"
 dependencies = [
  "async-recursion",
  "blake3",
- "continuum-orchestrator",
+ "aideon-continuum-orchestrator",
  "futures",
- "mneme-core",
+ "aideon-mneme-core",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -3441,23 +3441,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "praxis-facade"
+name = "aideon-praxis-facade"
 version = "0.0.0"
 dependencies = [
- "chrona-visualization",
- "continuum-orchestrator",
- "metis-analytics",
- "mneme-core",
- "praxis-engine",
+ "aideon-chrona-visualization",
+ "aideon-continuum-orchestrator",
+ "aideon-metis-analytics",
+ "aideon-mneme-core",
+ "aideon-praxis-engine",
 ]
 
 [[package]]
-name = "praxis-host"
+name = "aideon-praxis-host"
 version = "0.0.0"
 dependencies = [
  "dirs",
  "log",
- "praxis-facade",
+ "aideon-praxis-facade",
  "serde",
  "serde_json",
  "tauri",
@@ -6647,14 +6647,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "xtask"
+name = "aideon-xtask"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "continuum-orchestrator",
- "mneme-core",
- "praxis-engine",
+ "aideon-continuum-orchestrator",
+ "aideon-mneme-core",
+ "aideon-praxis-engine",
  "serde",
  "serde_json",
  "tokio",
