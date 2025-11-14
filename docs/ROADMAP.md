@@ -23,6 +23,10 @@ path to server mode.
 - ADRs for RPC and adapter boundaries.
 - Interfaces: `GraphAdapter`, `StorageAdapter`, `WorkerClient`.
 
+> **Renderer migration:** The historical SvelteKit UI remains in the repo for continuity but all
+> roadmap items now assume the React + React Flow canvas runtime described in
+> `docs/praxis-desktop-overview.md`. Treat Svelte references as legacy unless explicitly noted.
+
 #### Acceptance
 
 - `pnpm run node:test` green on macOS/Windows/Linux; Rust host `cargo fmt/clippy/check/test` clean.
@@ -33,7 +37,7 @@ path to server mode.
 
 #### Outcomes (updated)
 
-- SvelteKit renderer, typed IPC; in-memory time-graph engine (commit/branch/diff) behind Tauri.
+- React + Tauri desktop shell (migrating away from the legacy SvelteKit renderer), typed IPC; in-memory time-graph engine (commit/branch/diff) behind Tauri.
 - Canvas with ELK layout, manual placement, save per asOf (JSON snapshots behind a traited store).
 - Reference adapters (TS): dev in-memory adapter and IPC adapter for temporal calls.
 - Pipeline hardening (coverage in CI, CSP checks, Sonar inputs).

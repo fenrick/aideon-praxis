@@ -3,7 +3,7 @@
 This is the single source of truth for code quality, testing, tooling, and
 boundaries across the Aideon Praxis monorepo.
 
-- Stacks: Node 24 (TS/SvelteKit), Rust 2024 (host + engines)
+- Stacks: Node 24 (TS/React canvas runtime replacing the legacy SvelteKit prototype), Rust 2024 (host + engines)
 - Monorepo: pnpm workspaces; Cargo workspace for Rust crates
 - Runtime posture: typed adapters over IPC; no renderer HTTP and no open TCP
   ports in desktop mode
@@ -11,7 +11,7 @@ boundaries across the Aideon Praxis monorepo.
 ## Architecture & Boundaries
 
 - Modules & Layers
-- Renderer (SvelteKit): UI only; never accesses local process APIs directly.
+- Renderer (React canvas runtime; Svelte prototype kept only for continuity): UI only; never accesses local process APIs directly.
   - Main (Tauri host): IPC commands + local orchestration; no backend logic in renderer.
   - Engines (Rust crates): analytics/time/graph orchestration behind typed traits; host injects
     the appropriate adapter (local or remote).
@@ -63,19 +63,20 @@ boundaries across the Aideon Praxis monorepo.
   - New code is measured against `main` (see `sonar.new_code.referenceBranch`)
   - CI waits for Sonar Quality Gate; failing the gate blocks merges
 
-## TypeScript / Svelte
+## TypeScript / React (Praxis Desktop)
 
-- Tooling: ESLint + Prettier; Vitest for unit tests; Svelte compiler checks
+- Tooling: ESLint + Prettier; Vitest for unit tests; React compiler/runtime checks. The Svelte
+  compiler remains only for the legacy UI and should not receive new features.
 - Environment: Node 24, pnpm 9; strict TS config
 - Rules
-  - No inline rule suppressions (no `eslint-disable`, `ts-ignore`, etc.).
-    If absolutely necessary, require an issue reference and a TODO explaining
-    removal criteria.
-  - No backend‑specific logic in the renderer; IPC only via preload bridge
-  - Sanitise/validate data that crosses the preload boundary; avoid leaking
-    privileged data into renderer state
-- Keep code paths single and explicit; the app speaks to the host over typed
-  IPC commands, and the host selects the appropriate engine adapter
+  - No inline rule suppressions (no `eslint-disable`, `ts-ignore`, etc.). If absolutely necessary,
+    require an issue reference and a TODO explaining removal criteria.
+  - No backend‑specific logic in the renderer; IPC only via the typed `praxisApi` bridge. React
+    components must not reach for `@tauri-apps/api` directly.
+  - Sanitise/validate data crossing the preload boundary; avoid leaking privileged data into
+    renderer state. React Flow nodes/edges should carry only the data required for rendering.
+- Keep code paths single and explicit; the app speaks to the host over typed IPC commands, and the
+  host selects the appropriate engine adapter.
 - Coverage
   - Run: `pnpm run node:test:coverage`
   - Add targeted, focused tests; it is acceptable to export clearly named

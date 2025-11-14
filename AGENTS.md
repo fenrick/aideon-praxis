@@ -29,7 +29,7 @@ changes that respect our **time‑first, graph‑native** architecture and secur
 
 ## Repository boundaries (monorepo)
 
-- `app/PraxisDesktop` — Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only).
+- `app/PraxisDesktop` — legacy Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only). Keep it running until the React canvas runtime fully replaces it.
 - `app/PraxisAdapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
 - `crates/aideon_praxis_host` — Tauri host (Rust) exposing the typed command/event surface.
 - `crates/{aideon_praxis_engine,aideon_chrona_visualization,aideon_metis_analytics,aideon_continuum_orchestrator}` — Rust domain crates (graph, time, analytics,
@@ -155,17 +155,22 @@ defaults consistent with this guide.
 For the authoritative coding standards (quality gates, coverage targets,
 tooling, and CI rules), see `docs/CODING_STANDARDS.md`.
 
-### TypeScript / React (app/PraxisDesktop, app/PraxisAdapters)
+### TypeScript / React (Praxis Desktop canvas, app/PraxisAdapters)
 
-– Node 24, React 18. Strict TS config; ESLint + Prettier.
+– Node 24, React 18. Strict TS config; ESLint + Prettier. The SvelteKit bundle is considered
+legacy/prototype; all new surface/canvas work targets the React + React Flow + shadcn/ui stack
+described in `docs/praxis-desktop-overview.md`.
 
 - Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict
-  plugin access. The host exposes typed commands only.
-- Never embed backend‑specific queries in renderer; call adapters or host APIs.
+  plugin access. The host exposes typed commands only, and React components call the host through a
+  dedicated `praxisApi` wrapper rather than ad-hoc IPC.
+- Never embed backend‑specific queries in renderer; call adapters or host APIs. React Flow widgets
+  must treat the twin as the source of truth.
 
 Lint/Format discipline
 
-- Do not disable lint rules in code (no inline `eslint-disable`, `ts-ignore`, etc.).
+- Do not disable lint rules in code (no inline `eslint-disable`, `ts-ignore`, etc.) in new React/
+  TypeScript modules.
 - Refactor code to satisfy linters and static analysis rather than suppressing warnings.
 - Use check-only hooks locally; CI enforces the same rules.
 
@@ -174,7 +179,7 @@ Lint/Format discipline
 - Coverage targets (Node/TS and Rust): Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code; overall should trend upward.
 - Sonar: `sonar.new_code.referenceBranch=main` configured; CI waits for the Sonar Quality Gate before merging.
 - Keep code paths single and explicit (server-only worker over UDS) to reduce maintenance cost.
-  - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime.
+  - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime. For React widgets, add Vitest + Testing Library smoke tests alongside the new runtime as soon as it exists.
 
 ### Rust worker crates (crates/aideon_chrona_visualization, crates/aideon_metis_analytics, crates/aideon_praxis_engine, crates/aideon_continuum_orchestrator)
 
@@ -248,7 +253,7 @@ Changes that could affect these must include a note in CHECKS and, when possible
 
 - Ensure that code will pass the GitHub CI checks with:
 - `pnpm run ci`
-- this will check TypeScript/JS/Svelte and then Rust targets
+- this will check TypeScript/React packages (legacy Svelte bundle included for now) and then Rust targets
   - executing formatting, linting, static analysis checks and then tests
   - it needs to be clean before any commits.
 - Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and
@@ -277,7 +282,7 @@ Changes that could affect these must include a note in CHECKS and, when possible
 
 - Add `Temporal.TopologyDelta` trait to `crates/aideon_metis_analytics` with empty stub.
 - Wire Tauri command to call the new trait via `WorkerState` adapter.
-- Extend Svelte store to request topology delta and render placeholder counts.
+- Extend the React canvas store to request topology delta and render placeholder counts.
 
 PATCH
 

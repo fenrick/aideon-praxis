@@ -8,6 +8,12 @@ Author: Jolyon Suthers
 
 ## Architecture Overview
 
+> **Renderer migration:** Documentation historically referenced the Svelte renderer. We are now
+> converging on a React + React Flow + shadcn/ui canvas runtime running inside the Tauri shell (see
+> `docs/praxis-desktop-overview.md`). Treat any Svelte-specific notes as legacy context and avoid
+> extending that code path unless absolutely necessary to keep the desktop build healthy during the
+> migration.
+
 The platform is a **graph-native Enterprise Architecture (EA) intelligence system** designed to
 model the whole “language of the business” in line with a robust meta-model. Applications can serve
 multiple processes, and data entities link to many applications—all these many-to-many relationships

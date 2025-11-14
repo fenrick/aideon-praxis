@@ -5,11 +5,12 @@ boundaries are enforced.
 
 ## Layers
 
-- Renderer (SvelteKit front end)
-  - Built with SvelteKit; the Tauri host serves the built assets.
+- Renderer (React front end; Svelte prototype kept until cut-over)
+  - Target stack: React + React Flow + shadcn/ui running inside the Tauri shell. The existing
+    SvelteKit bundle remains in `app/PraxisDesktop` as a prototype until Phase 3 in the implementation guide lands.
   - No Node integration; strict CSP enforced by Tauri (see `crates/aideon_praxis_host/tauri.conf.json`).
-- Renderer modules call Tauri commands directly via `@tauri-apps/api/core` helpers (see `app/PraxisDesktop/src/lib/ports`). No backend logic in renderer.
-  - UI code lives under `app/PraxisDesktop/src/lib/**` and talks only to adapters/host via IPC.
+- Renderer modules call Tauri commands exclusively through typed wrappers (the new `praxisApi`), never directly via `@tauri-apps/api/core`. Until the React runtime is in place, the Svelte prototype uses the older helpers but must not expand architecturally.
+  - React UI code will live under a new workspace (see guide). The Svelte tree stays frozen except for critical fixes.
 
 - Host (Tauri)
   - Rust entrypoint: `crates/aideon_praxis_host/src/lib.rs` creates windows at runtime and binds typed commands.

@@ -4,6 +4,9 @@ Date: 2025-10-28
 
 Status: Draft (implements M0 baseline; informs M1 scope)
 
+> **Renderer migration:** Historic UX notes reference Svelte components. Use them as conceptual
+> guidance only; new implementation work must target the React + React Flow + shadcn/ui stack.
+
 ## Goals
 
 - Feel native and respectful on each OS while retaining a coherent visual language.

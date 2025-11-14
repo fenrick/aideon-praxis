@@ -4,11 +4,16 @@ This is a draft monorepo scaffold following the guardrails in `AGENTS.md`.
 
 Packages:
 
-- `app/PraxisDesktop` — Svelte renderer bundle consumed by the Tauri host.
+- `app/PraxisDesktop` — **legacy Svelte prototype** for the desktop UI. Keep it running while the
+  React/Tauri canvas comes online, but treat all new work as feeding the React stack described in
+  `docs/praxis-desktop-overview.md`.
 - `crates/aideon_praxis_host` — Tauri desktop host (Rust) with typed IPC surface.
 - `crates/{aideon_praxis_engine, aideon_chrona_visualization, aideon_metis_analytics, aideon_continuum_orchestrator, aideon_mneme_core}` —
   Rust crates for the graph model, time engine, analytics, orchestration, and persistence/DTOs respectively.
 - `app/PraxisAdapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
+
+See `docs/praxis-desktop-overview.md` for the React/Tauri canvas target and
+`docs/praxis-desktop-implementation-guide.md` for the agent playbook.
 
 Tooling:
 
@@ -67,8 +72,9 @@ The intelligent companion that turns **design intent into action over time**.
 Aideon Praxis is a **graph-native, local-first Enterprise Architecture (EA) platform** with a
 **time-first meta-model**. It builds a **digital twin of the enterprise**, supports **bitemporal
 state** (valid & record time), **scenario branches**, **Plan Events** for future projections, and a
-Rust engine for **heavy analytics and ML**. Designed for desktop (Tauri + Svelte) with a clean
-path to server/cloud mode.
+Rust engine for **heavy analytics and ML**. We are migrating the desktop UI to a **React + Tauri
+canvas runtime** (React Flow + shadcn/ui). The existing SvelteKit bundle remains a prototype until
+the React runtime fully lands.
 
 - **Graph-native:** Rich many-to-many relationships across Strategy → Capability → Service/Process →
   App/API → Tech/Cloud.
@@ -99,7 +105,7 @@ published under `docs/c4/`.
 ```
 .
 ├─ app/
-│  ├─ PraxisDesktop/   # Svelte renderer bundle (Praxis + Chrona UI)
+│  ├─ PraxisDesktop/   # Legacy Svelte renderer bundle (kept until React cut-over)
 │  ├─ PraxisAdapters/  # TypeScript adapters bridging renderer ↔ host
 │  ├─ PraxisDesignSystem/ # Shared UI components, theming, and tokens
 │  └─ PraxisDtos/       # Centralised DTOs that shape IPC contracts
