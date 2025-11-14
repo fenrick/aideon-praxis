@@ -1,0 +1,13 @@
+[package]
+name = "aideon-praxis-facade"
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+authors = ["Aideon Praxis Contributors"]
+
+[dependencies]
+aideon-chrona-visualization = { path = "../aideon-chrona-visualization" }
+aideon-continuum-orchestrator = { path = "../aideon-continuum-orchestrator" }
+aideon-metis-analytics = { path = "../aideon-metis-analytics" }
+aideon-mneme-core = { path = "../aideon-mneme-core" }
+aideon-praxis-engine = { path = "../aideon-praxis-engine" }

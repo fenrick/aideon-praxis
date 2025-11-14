@@ -7,29 +7,29 @@ boundaries are enforced.
 
 - Renderer (SvelteKit front end)
   - Built with SvelteKit; the Tauri host serves the built assets.
-  - No Node integration; strict CSP enforced by Tauri (see `crates/praxis-host/tauri.conf.json`).
+  - No Node integration; strict CSP enforced by Tauri (see `crates/aideon-praxis-host/tauri.conf.json`).
 - Renderer modules call Tauri commands directly via `@tauri-apps/api/core` helpers (see `app/praxis-desktop/src/lib/ports`). No backend logic in renderer.
   - UI code lives under `app/praxis-desktop/src/lib/**` and talks only to adapters/host via IPC.
 
 - Host (Tauri)
-  - Rust entrypoint: `crates/praxis-host/src/lib.rs` creates windows at runtime and binds typed commands.
-  - Security: capabilities and CSP configured in `crates/praxis-host/tauri.conf.json`. No open TCP ports in desktop mode.
+  - Rust entrypoint: `crates/aideon-praxis-host/src/lib.rs` creates windows at runtime and binds typed commands.
+  - Security: capabilities and CSP configured in `crates/aideon-praxis-host/tauri.conf.json`. No open TCP ports in desktop mode.
 
 - Adapters (TypeScript interfaces)
   - `app/praxis-adapters/src/index.ts` defines `GraphAdapter`, `StorageAdapter`, and `WorkerClient`
     interfaces. No backend specifics.
 
 - Worker (Rust engine crates)
-  - Modules: `crates/chrona-visualization`, `crates/praxis-engine`, `crates/metis-analytics`, `crates/continuum-orchestrator` expose the
+  - Modules: `crates/aideon-chrona-visualization`, `crates/aideon-praxis-engine`, `crates/aideon-metis-analytics`, `crates/aideon-continuum-orchestrator` expose the
     computation traits consumed by the host.
   - The default desktop mode uses in-process adapters. Remote/server adapters will implement the
     same traits without changing the renderer contract.
 - Persistence & Schema (Mneme + MetaModelRegistry)
-- `crates/mneme-core` owns the ACID store (SQLite/WAL today) plus shared DTOs, including the
+- `crates/aideon-mneme-core` owns the ACID store (SQLite/WAL today) plus shared DTOs, including the
   meta-model document types. SeaORM/SeaQuery 1.1.19 drives the new persistence layer, creating the
   `commits`, `refs`, `snapshots`, and readonly `metis_events` tables so the host can keep analytics
   data alongside the graph.
-  - `crates/praxis-engine/src/meta.rs` materialises `docs/data/meta/core-v1.json` (and optional overrides)
+  - `crates/aideon-praxis-engine/src/meta.rs` materialises `docs/data/meta/core-v1.json` (and optional overrides)
     into a `MetaModelRegistry` that performs all node/edge validation and exposes the active schema
     through the `temporal_metamodel_get` IPC command.
 
@@ -49,9 +49,9 @@ boundaries are enforced.
 
 ## Time‑first design
 
-- `Temporal.StateAt` implemented as a stub in `chrona_visualization::TemporalEngine::state_at` and surfaced via `temporal_state_at` command.
-- `Temporal.Diff` summarised by `chrona_visualization::TemporalEngine::diff_summary` and exposed through the `temporal_diff` host command, returning node/edge deltas only.
-- Canvas persists layout snapshots per `asOf` (and optional scenario) via `canvas_save_layout`; persistence boundary provided by `continuum-orchestrator::SnapshotStore` (file-backed in desktop mode).
+- `Temporal.StateAt` implemented as a stub in `aideon_chrona_visualization::TemporalEngine::state_at` and surfaced via `temporal_state_at` command.
+- `Temporal.Diff` summarised by `aideon_chrona_visualization::TemporalEngine::diff_summary` and exposed through the `temporal_diff` host command, returning node/edge deltas only.
+- Canvas persists layout snapshots per `asOf` (and optional scenario) via `canvas_save_layout`; persistence boundary provided by `aideon-continuum-orchestrator::SnapshotStore` (file-backed in desktop mode).
 - Future jobs (shortest path, centrality, impact) belong in the Rust engine crates with tests and SLO notes.
 
 ## Time & Commit Model — Authoring Standards
@@ -160,7 +160,7 @@ Order ChangeSet entries deterministically (by kind → id) and keep ID generatio
 - Commit metadata + ChangeSets live in the `commits` table (JSON columns) written inside transactions; snapshots share the same DB so recovery never depends on loose files.
 - Branch refs update through `INSERT ... ON CONFLICT ... DO UPDATE` statements that enforce compare-and-swap semantics and still bubble concurrency conflicts via the engine.
 - The `CommitStore` trait (Praxis) abstracts `put_commit`, `get_commit`, `list_refs`, and `compare_and-swap` ref updates so adapters (file, remote API, etc.) can slot in without touching the engines.
-- `cargo xtask migrate-state --input legacy.json --output ~/.praxis` replays exported in-memory commits into the durable layout so older builds can upgrade without data loss; upcoming flags will target SQLite directly.
+- `cargo aideon-xtask migrate-state --input legacy.json --output ~/.praxis` replays exported in-memory commits into the durable layout so older builds can upgrade without data loss; upcoming flags will target SQLite directly.
 - Use immutable stores with structural sharing (copy-on-write) and cache snapshots by `SnapshotId = hash(parentSnapshotId + changes)`; background compaction may collapse history, but commit boundaries stay intact.
 
 ### Error handling

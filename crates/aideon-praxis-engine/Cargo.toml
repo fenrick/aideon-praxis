@@ -1,0 +1,23 @@
+[package]
+name = "aideon-praxis-engine"
+version = "0.0.0"
+edition = "2024"
+authors = ["Aideon Praxis Contributors"]
+license = "MIT"
+
+[dependencies]
+aideon-continuum-orchestrator = { path = "../aideon-continuum-orchestrator" }
+aideon-mneme-core = { path = "../aideon-mneme-core" }
+blake3 = "1.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+thiserror = "1.0"
+time = { version = "0.3", features = ["formatting", "parsing"] }
+tokio = { version = "1.48", features = ["sync"] }
+futures = "0.3"
+async-recursion = "1.0"
+
+[dev-dependencies]
+tempfile = "3.23"
+tokio = { version = "1.48", features = ["macros", "rt"] }
