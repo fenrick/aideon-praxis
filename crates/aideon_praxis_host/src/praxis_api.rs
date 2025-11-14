@@ -24,6 +24,13 @@ pub async fn praxis_matrix_view(
 }
 
 #[tauri::command]
+pub async fn praxis_chart_view(
+    definition: ChartViewDefinition,
+) -> Result<ChartViewModel, String> {
+    Ok(ChartViewModel::demo(definition))
+}
+
+#[tauri::command]
 pub async fn praxis_apply_operations(
     operations: Vec<PraxisOperation>,
 ) -> Result<OperationBatchResult, String> {
@@ -101,6 +108,25 @@ pub struct MatrixViewDefinition {
     pub as_of: String,
     pub row_type: String,
     pub column_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scenario: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filters: Option<ViewFilters>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChartViewDefinition {
+    pub id: String,
+    pub name: String,
+    pub kind: String,
+    pub as_of: String,
+    pub chart_type: String,
+    pub measure: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dimension: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scenario: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -394,6 +420,47 @@ pub struct MatrixViewModel {
     pub cells: Vec<MatrixCell>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChartPoint {
+    pub label: String,
+    pub value: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChartSeries {
+    pub id: String,
+    pub label: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+    pub points: Vec<ChartPoint>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChartKpiSummary {
+    pub value: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub units: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delta: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trend: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChartViewModel {
+    pub metadata: ViewMetadata,
+    pub chart_type: String,
+    pub series: Vec<ChartSeries>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kpi: Option<ChartKpiSummary>,
+}
+
 impl MatrixViewModel {
     fn demo(definition: MatrixViewDefinition) -> Self {
         let rows = vec![
@@ -456,6 +523,60 @@ impl MatrixViewModel {
             rows,
             columns: cols,
             cells,
+        }
+    }
+}
+
+impl ChartViewModel {
+    fn demo(definition: ChartViewDefinition) -> Self {
+        let metadata = metadata_from(
+            &definition.id,
+            &definition.name,
+            &definition.as_of,
+            definition.scenario.clone(),
+        );
+        match definition.chart_type.as_str() {
+            "kpi" => Self {
+                metadata,
+                chart_type: "kpi".into(),
+                series: Vec::new(),
+                kpi: Some(ChartKpiSummary {
+                    value: 128.0,
+                    units: Some("services".into()),
+                    delta: Some(6.0),
+                    trend: Some("up".into()),
+                }),
+            },
+            "line" => Self {
+                metadata,
+                chart_type: "line".into(),
+                series: vec![ChartSeries {
+                    id: "velocity".into(),
+                    label: "Delivery velocity".into(),
+                    color: Some("#2563eb".into()),
+                    points: recent_velocity_points(),
+                }],
+                kpi: None,
+            },
+            _ => Self {
+                metadata,
+                chart_type: "bar".into(),
+                series: vec![
+                    ChartSeries {
+                        id: "current".into(),
+                        label: "Current".into(),
+                        color: Some("#0f172a".into()),
+                        points: competency_scores(),
+                    },
+                    ChartSeries {
+                        id: "target".into(),
+                        label: "Target".into(),
+                        color: Some("#10b981".into()),
+                        points: competency_targets(),
+                    },
+                ],
+                kpi: None,
+            },
         }
     }
 }
@@ -550,6 +671,52 @@ fn map_from(value: Value) -> Map<String, Value> {
         Value::Object(map) => map,
         _ => Map::new(),
     }
+}
+
+fn recent_velocity_points() -> Vec<ChartPoint> {
+    let now = OffsetDateTime::now_utc();
+    let mut points = Vec::new();
+    for index in 0..7 {
+        let offset = 6 - index;
+        if let Some(timestamp) = now.checked_sub(time::Duration::days(offset)) {
+            points.push(ChartPoint {
+                label: timestamp.weekday().to_string(),
+                value: 78.0 + (index as f64 * 3.5),
+                timestamp: Some(timestamp.format(&Rfc3339).unwrap_or_else(|_| now_iso())),
+            });
+        }
+    }
+    points
+}
+
+fn competency_scores() -> Vec<ChartPoint> {
+    ["Security", "Resilience", "Efficiency", "Experience"]
+        .iter()
+        .map(|label| ChartPoint {
+            label: (*label).into(),
+            value: seeded_score(label) as f64,
+            timestamp: None,
+        })
+        .collect()
+}
+
+fn competency_targets() -> Vec<ChartPoint> {
+    ["Security", "Resilience", "Efficiency", "Experience"]
+        .iter()
+        .map(|label| ChartPoint {
+            label: (*label).into(),
+            value: 95.0,
+            timestamp: None,
+        })
+        .collect()
+}
+
+fn seeded_score(label: &str) -> i32 {
+    let mut hash = 0i32;
+    for ch in label.chars() {
+        hash = hash.wrapping_shl(5).wrapping_sub(hash) + i32::from(ch as u32);
+    }
+    60 + (hash.abs() % 35)
 }
 
 fn now_iso() -> String {

@@ -165,9 +165,9 @@ The agent must:
 - At least one Tauri command is callable from React and logs/prints expected results.
 - All new components obey repo lint/format rules and compile without TypeScript errors.
 
-> **Status (14 Nov 2025):** `app/PraxisCanvas` now renders a real React + shadcn shell (sidebar,
-> header, cards) with Tailwind theming, and the worker health card already calls the host via
-> `praxisApi`. The next milestone in this phase is dropping React Flow widgets into the canvas area.
+> **Status (14 Nov 2025):** `app/PraxisCanvas` renders the shadcn shell (sidebar, header, cards)
+> with Tailwind theming, and the worker health card calls the host via `praxisApi`. The React Flow
+> runtime already lives inside this shell, so Phase 1 is fully complete.
 
 ---
 
@@ -205,10 +205,10 @@ The agent must:
 - Types in the `praxisApi` module compile cleanly under strict TypeScript settings.
 
 > **Status (14 Nov 2025):** `app/PraxisCanvas/src/praxis-api.ts` defines the shared view contracts
-> (nodes, edges, catalogues, matrices, operations, scenarios) and calls the new host commands in
-> `crates/aideon_praxis_host/src/praxis_api.rs`. The React shell already consumes
-> `listScenarios()` and `getGraphView()`; `applyOperations()` returns a mock commit id until the
-> worker mutation path is wired.
+> (nodes, edges, catalogues, matrices, operations, scenarios) and calls the typed host commands in
+> `crates/aideon_praxis_host/src/praxis_api.rs`. The React shell consumes
+> `listScenarios()`, `getGraphView()`, `getCatalogueView()`, and `getMatrixView()`; `applyOperations()`
+> still returns a mock commit id until the worker mutation path is wired.
 
 ---
 
@@ -253,9 +253,10 @@ The agent must:
 - All graph data is loaded via `praxisApi`, not hard-coded.
 - Node/edge selection changes are reflected in global state.
 
-> **Status (14 Nov 2025):** The React shell now hosts a `CanvasRuntime` component backed by
-> React Flow. A `GraphWidget` fetches twin data via `praxisApi.getGraphView`, renders the nodes, and
-> reports selections/stats back to the sidebar. Catalogue/Matrix widgets remain to be added in Phase 4.
+> **Status (14 Nov 2025):** The React shell hosts a `CanvasRuntime` component backed by React Flow.
+> A `GraphWidget` fetches twin data via `praxisApi.getGraphView`, renders the nodes, and reports
+> selections/stats back to the new dashboard inspector. With the shared selection state wired up,
+> work now pushes into the Phase 4 widgets.
 
 ---
 
@@ -297,6 +298,10 @@ The agent must:
 
 - All data for these widgets comes from the twin via `praxisApi` (no mock data in components).
 
+> **Status (14 Nov 2025):** Graph, catalogue, and matrix widgets now co-exist in
+> `CanvasRuntime`. Selection flows bidirectionally across widgets and into the sidebar inspector,
+> satisfying Phase 4’s core interoperability goals.
+
 ---
 
 ### Phase 5 – Dashboards, charts, and templates
@@ -337,6 +342,11 @@ The agent must:
 - At least one template with a graph + charts + catalogue is selectable and loads deterministic layouts.
 - Switching templates reconfigures the canvas without breaking widget bindings.
 - Chart widgets show data derived from the twin, not hard-coded demo data.
+
+> **Status (14 Nov 2025):** CanvasRuntime now includes KPI, line, and bar chart widgets powered by
+> `praxisApi.getChartView`, and the shell exposes a template selector + save action that swaps the
+> widget layout in-place. Templates instantiate deterministic widgets from JSON descriptors, meeting
+> the Phase 5 baseline.
 
 ---
 
@@ -382,8 +392,11 @@ The agent must treat these as **non-negotiable** across all phases:
    - No React components should call Tauri directly; they must go through `praxisApi`.
 
 3. **Styling and design system**
-   - All UI elements (except highly experimental ones) should use shadcn/ui components or be composed from them. ([Shadcn UI][3])
-   - Tailwind classes should be consistent with existing Tailwind config and design tokens.
+
+- All UI elements (except highly experimental ones) should use shadcn/ui components or be composed from them. ([Shadcn UI][3])
+- All UI elements (except highly experimental ones) should use shadcn/ui components or be composed from them. ([Shadcn UI][3])
+- Generate components through the official shadcn CLI (`pnpm dlx shadcn@latest add <component>`) so `components.json` stays in sync with [ui.shadcn.com](https://ui.shadcn.com/) and every primitive (Select, Table, Dialog, etc.) shares the same design tokens.
+  - Tailwind classes should be consistent with existing Tailwind config and design tokens.
 
 4. **Testing and linting**
    - All new code must pass existing lint and format checks.
