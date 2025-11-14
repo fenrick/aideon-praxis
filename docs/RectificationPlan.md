@@ -52,34 +52,34 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 ### Status
 
-**Done**
+**Partially complete**
 
-- `PraxisEngine` now persists commits/refs via the `Store` trait, reconstructs graph state directly from the commit log, and records `snapshot/<commit>` tags inside SQLite instead of writing blobbed snapshots.
-- The Tauri host provisions per-user `.praxis` directories via `create_datastore`, runs seeding (meta + baseline dataset), and restores history on restart.
-- Added `cargo xtask health` plus a SQLite persistence regression test so operators can scan datastores for branch/head drift, missing tags, and unreadable commits without mutating state.
+- `SqliteDb` now persists commits/refs/tags via SeaORM and `PraxisEngine::ensure_seeded` replays the embedded baseline dataset whenever `main` is empty so fresh installs have realistic history.
+- `create_datastore`, `cargo xtask import-dataset`, and `cargo xtask health` provide the bootstrapping and verification tooling needed to stand up and audit SQLite datastores.
 
 **Outstanding**
 
-- _None — milestone closed on 2025-11-18 after final persistence hardening pass._
+- Convert the `Store` trait to async and remove the bespoke Tokio runtime that currently blocks on SeaORM operations inside `SqliteDb`.
+- Populate the analytics/fact tables (for example `metis_events`) and extend regression coverage so persistence migrations are tracked instead of being created inline at runtime.
 
 ### Tasks
 
 1. **Async trait conversion**
    - Update `mneme::Store` to an async trait (via `async-trait`) so SeaORM can power commit, branch, and tag operations without blocking the host runtime.
    - Modernise every caller (`PraxisEngine`, host worker, xtask, tests) to await the store operations without changing the visible API surface.
-   - _Completed via PR #842; all callers now operate on the async trait and regression tests pass._
+   - _Pending — `Store` remains synchronous and `SqliteDb` spins up a Tokio runtime to `block_on` SeaORM queries._
 2. **SeaORM schema & migrations**
    - Introduce SeaORM 1.1.19 + SeaQuery in `crates/mneme-core`, define entities for commits, refs, snapshot tags, and the readonly Metis fact/star tables.
    - Build migrations that create the tables with the required constraints and indexes, and run them at startup via a SeaORM migrator.
-   - _Schema shipped with zero-downtime migrations; migration history tracked under `crates/mneme-core/migration`._
+   - _Partially complete — tables are created inline at startup; dedicated migration history and Metis fact population remain TODO._
 3. **Baseline dataset seeding**
    - Seed the baseline dataset (meta-model, object graph, plan events) as part of the migration/seed logic so a fresh database already contains the canonical schema and sample graph.
    - Record the same event stream into the Metis-ready tables so the analytics worker can later query a flattened, star/fact-oriented view of the commits.
-   - _Bootstrap now generates deterministic commit hashes and mirrored fact tables validated in CI._
+   - _Completed — `ensure_seeded` reuses the embedded dataset, though analytics projections still need wiring._
 4. **Persistence wiring**
    - Replace `mneme::sqlite::SqliteDb` with the new SeaORM-backed store while still returning `PersistedCommit`/`CommitSummary` DTOs.
    - Ensure `PraxisEngine::with_sqlite` (and the Tauri worker) initialise the SeaORM connection, run migrations/seeds, and expose the async store to the engine.
-   - _Finalised with host adapter patch set; renderer confirms commit timelines without fallback heuristics._
+   - _Completed — the engine now instantiates `SqliteDb`, seeds when empty, and replays commits from the SeaORM-backed store._
 
 ### Definition of Done
 
@@ -116,15 +116,14 @@ swaps trivial.
 
 ### Status
 
-**Done**
+**Partially complete**
 
-- Canonical schema captured in `docs/data/meta/core-v1.json` and embedded into the binary for deterministic seeding.
-- `MetaModelRegistry` enforces node/edge rules; host IPC exposes the live document, and the renderer now renders the schema panel from that payload.
-- Schema evolution now lands as commit-authored payloads; `.praxis/meta/` overrides merge automatically with validation receipts stored in the commit log.
+- Canonical schema captured in `docs/data/meta/core-v1.json`, loaded by `MetaModelRegistry`, and exposed over IPC so the renderer can display a read-only schema reference.
+- Validation now runs inside `GraphSnapshot::apply`, ensuring commits respect type and relationship rules.
 
 **Outstanding**
 
-- _None — WS-B wrapped on 2025-11-22 with schema authoring GA._
+- Authoring, override merge flows, and schema commits created from the UI are still pending — the current panel is read-only and the registry defaults to the embedded document only.
 
 ### Tasks
 
@@ -132,22 +131,22 @@ swaps trivial.
    - Convert `docs/DESIGN.md` meta-model into a commit-style payload (`docs/data/meta/core-v1.json`), covering graph-style object types, nested attribute blocks, relationships, and plan-event rule definitions.
    - Treat overrides as additional payloads placed alongside the baseline dataset (e.g., `.praxis/meta/<tenant>.json`) so the registry can merge them without code changes.
    - Seed the meta-model through the same initial commit that inserts the first nodes/edges (using the public commit API) rather than importing JSON at runtime so we dogfood the authoring surface.
-   - _Implemented; GA tenants can now push custom payloads validated at commit time with audit trail preserved._
+   - _Baseline payload committed; override ingestion and authoring workflow still need to be implemented._
 2. **Registry implementation**
    - Build `MetaModelRegistry` (Praxis crate) to load base + overrides, validate version, and expose APIs for lookup/validation.
-   - _Registry ships with caching + hot-reload hooks; coverage reported via `cargo tarpaulin` workflow._
+   - _Completed — registry materialises descriptors and validation helpers consumed by the engine._
 3. **Validation integration**
    - Update `GraphSnapshot::apply` to call registry validators for creates/updates/edges.
    - Emit typed `PraxisError::ValidationFailed` with actionable messages.
-   - _Validation errors now surface through typed IPC responses and renderer toasts with remediation hints._
+   - _Completed — validation executes during snapshot application and surfaces structured errors._
 4. **Host exposure & datastore lifecycle**
    - Add Tauri command `temporal_metamodel_get` returning schema metadata.
    - Extend adapters/UI to cache schema and use it for form generation (no backend logic in renderer).
    - Introduce a `mneme::create_datastore` helper so new SQLite stores are created via code: the helper runs during host startup (or when user supplies a name) to prepare the `.praxis/datastore.json` state file, create the named database, and return the path that `PraxisEngine` then opens and seeds.
-   - _Command + helper now power self-service datastore provisioning with telemetry for success/failure counts._
+   - _Completed — IPC command and datastore helper are present; renderer currently consumes the command for read-only display._
 5. **Configuration UX**
    - Build renderer screens that let stewards author object types, attributes, and relationships in a nested graph-style view and persist those edits as commit data so the registry sees the new schema immediately.
-   - _Rolled out with guided tours; screenshots captured in docs/UX Schema Authoring._
+   - _Pending — the MetaModel panel is read-only and no authoring or commit path exists yet._
 
 ### Definition of Done
 
@@ -176,31 +175,29 @@ swaps trivial.
 
 ### Status
 
-**Done**
+**Partially complete**
 
 - Authored the first semantic-versioned baseline YAML + changelog, embedded it in Praxis, and documented the import workflow with dry-run validation.
-- Added integration tests to ensure seeding reproduces expected node/edge counts after importer runs.
-- Expanded dataset to include value streams, plan events, measures, cost structures, and plateau gaps with cross-linked narratives.
-- Synthetic 5k/50k datasets now published alongside fixtures for analytics performance testing.
+- Added CLI wiring so `cargo xtask import-dataset` and `ensure_seeded` replay the baseline dataset into new datastores.
 
 **Outstanding**
 
-- _None — baseline dataset v1.2.0 released on 2025-12-01 with ongoing change log._
+- Expand dataset coverage (additional commits, scenarios, and larger synthetic fixtures) and add regression checks beyond basic node/edge counts.
 
 ### Tasks
 
 1. **Dataset authoring**
    - Model baseline entities/relations in structured files under `docs/data/base/` with semantic version metadata and a change log.
-   - _Now maintained via collaborative pipeline; changelog automation publishes release notes per import._
+   - _Initial baseline (v1.0.0) is present; further versions and automation for changelog publication remain to be built._
 2. **Importer pipeline**
    - `cargo xtask import-dataset` replays the YAML into ordered commits on `main`, with `--dry-run` enforcing validation in CI.
-   - _Pipeline integrated into nightly CI; failures gate releases and notify #praxis-datasets channel._
+   - _Completed — the xtask command supports dry-run/import flows, but CI wiring still needs to be added._
 3. **Engine seeding**
    - Praxis `ensure_seeded` now reuses the importer helpers so fresh installs automatically include the meta-model plus baseline commits tagged `baseline/v1`.
-   - _Engine boot sequence verifies dataset hash and replays upgrades idempotently._
+   - _Completed — bootstrapping seeds meta-model + baseline when `main` is empty; upgrade path still needs hash verification._
 4. **Docs & maintenance**
    - Create `docs/data/README.md` explaining dataset structure, update process, and QA checklist.
-   - _Docs expanded with reviewer checklist and data steward RACI; kept current via doc lint pipeline._
+   - _Initial README exists; automated linting and stewarding processes remain to be wired into CI._
 
 ### Definition of Done
 
@@ -226,34 +223,31 @@ swaps trivial.
 
 ### Status
 
-**Done**
+**Not started**
 
-- Defined analytics/reporting contracts in `WorkerJobMap`, hooked renderer placeholders (MainView metrics, canvas MVP) and IPC adapters so future commands have a landing zone.
-- Delivered production-grade implementations for shortest path, centrality, impact, and TCO jobs with memoised caches and instrumentation.
-- Renderer now renders capability heatmaps, scenario timelines, and export-ready scorecards sourced from live analytics outputs.
-- Canvas persists layouts per snapshot/branch, unlocking reporting overlays across commits.
+- Contracts exist for analytics jobs, and the renderer shows placeholder metrics, but no backend analytics implementations or UI visualisations have shipped.
 
 **Outstanding**
 
-- _None — WS-D accepted on 2025-12-12 following UX review and PII certification._
+- Implement Metis analytics jobs, wire host IPC commands, expand renderer surfaces, and add caching/performance guardrails as originally scoped.
 
 ### Tasks
 
 1. **Worker jobs**
    - Flesh out `crates/metis-analytics` with algorithms for `Analytics.ShortestPath`, `Analytics.Centrality`, `Analytics.Impact`, `Finance.TCO` using graph snapshots.
    - Provide deterministic fixtures and SLO instrumentation.
-   - _Jobs ship with fixture suite + telemetry dashboards; p95 latency within target bands._
+   - _Not started — `crates/metis-analytics/src/lib.rs` still exports a placeholder string._
 2. **Host adapters**
    - Expose new Tauri commands (e.g., `analytics_shortest_path`, `report_capability_scorecard`).
    - Update TypeScript adapters/contracts to call commands with typed payloads.
-   - _Adapters ship with Vitest contract tests; renderer telemetry confirms end-to-end success paths._
+   - _Not started — no Tauri analytics commands or adapter methods exist yet._
 3. **Renderer UX**
    - Expand `MainView` (overview tab) with KPI cards, capability heatmap, diff legends, scenario comparisons.
    - Add reporting exports (CSV/PDF placeholder) triggered from UI; ensure PII redaction and scenario context.
-   - _Exports hardened with automated redaction tests; accessibility audits logged in docs/UX Accessibility.md._
+   - _Not started — MainView still presents snapshot counts and diff metrics only._
 4. **Caching & performance**
    - Cache analytics outputs per commit to meet latency requirements (<100 ms UI updates, <300 ms worker jobs where specified).
-   - _Cache invalidation tied to commit ids; metrics dashboards show sustained p95 within thresholds._
+   - _Not started — caching and instrumentation await the analytics implementations._
 
 ### Definition of Done
 
@@ -279,33 +273,32 @@ swaps trivial.
 
 ### Status
 
-**Done**
+**In progress**
 
-- Added consolidated GitHub helper CLI (`scripts/issues.py`) plus npm aliases for `issues:start`, `split`, `dod`, `linkify`, and `backfill`; DoD guidance now appears across AGENTS/docs.
-- Implemented the `issues:project` automation to sync Project Status values from canonical issue labels.
-- Integrated dataset/meta linting, schema dry-runs, and analytics coverage uploads into CI; macOS packaging checks now run nightly.
-- ADR series (`ADR-012` to `ADR-016`) documents storage, schema, dataset, analytics, and governance decisions.
+- Consolidated GitHub helper CLI (`scripts/issues.py`) and accompanying npm aliases are available for common workflows.
+- `pnpm run ci` covers formatter, lint, typecheck, and unit tests across Node and Rust targets.
 
 **Outstanding**
 
-- _None — WS-E concluded on 2025-12-15 with CI enforcement merged._
+- Extend automation to cover dataset/schema linting, analytics coverage, and project sync enforcement in CI.
+- Author follow-up ADRs for storage, schema, dataset, analytics, and governance changes — only legacy ADRs are present today.
 
 ### Tasks
 
 1. **Issue hygiene**
    - Enforce DoD template on all `status/in-progress` issues via `pnpm run issues:dod`.
    - Automate project sync with `pnpm run issues:project` in CI or pre-push hook.
-   - _Hooks now block pushes without project sync; audit logs stored under `.aideon/` cache._
+   - _CLI support exists, but enforcement is still manual and needs CI/pre-push integration._
 2. **CI coverage**
    - Ensure `pnpm run ci` runs on feature branches; fail fast on lint/test gaps.
    - Add dataset/import + schema validation steps to CI pipeline.
-   - _CI matrix enforces checks across Windows/macOS/Linux; dataset/schema lint jobs block merges._
+   - _Partial — core lint/test checks run, but dataset/schema validation and analytics coverage jobs are not yet wired in._
 3. **Documentation & ADRs**
    - Record key decisions (storage format, schema versioning, reporting architecture) as ADRs under `docs/adr/`.
-   - _ADRs published with changelog references; contributors signpost updates in PR templates._
+   - _Pending — current ADR folder only contains legacy entries; new rectification decisions still need to be authored._
 4. **Release gating**
    - Update release checklist to include dataset regression, analytics SLO verification, and PII redaction tests.
-   - _Checklist automated via `pnpm run release:verify`; PII audits logged in compliance tracker._
+   - _Pending — supporting automation (e.g., `release:verify`) has not been added to the repository scripts._
 
 ### Definition of Done
 
@@ -344,6 +337,8 @@ Adjust based on issue sizing; break down large tasks using `pnpm run issues:spli
 
 ## 5. Next Actions
 
-1. Maintain quarterly retrospectives to assess storage, schema, dataset, analytics, and governance health; capture follow-ups as new issues when gaps re-emerge.
-2. Keep instrumentation dashboards under `docs/metrics/` current so leadership can audit latency and data quality trends.
-3. Archive this rectification plan alongside final ADRs once the next major milestone (M4) lock-in review approves the sustainment roadmap.
+1. Finish the WS-A backlog: convert the store trait to async, add real migrations, and start populating analytics read models.
+2. Deliver WS-B configuration workflows so schema overrides can be authored and committed through the product experience.
+3. Expand WS-C datasets with additional versions and synthetic fixtures, and wire importer validation into CI.
+4. Stand up WS-D analytics end-to-end (worker jobs, host commands, renderer surfaces, caching) before claiming reporting parity.
+5. Close the WS-E governance gaps by automating issue hygiene, adding missing ADRs, and extending CI/release gates to cover datasets, schema, and analytics.
