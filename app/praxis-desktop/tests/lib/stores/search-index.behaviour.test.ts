@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { CatalogEntitySummary } from '$lib/stores/search';
 import {
   buildCatalogIndex,
   buildCommitIndex,
@@ -7,7 +8,6 @@ import {
   scoreItem,
   tokenize,
 } from '$lib/stores/search-index';
-import type { CatalogEntitySummary } from '$lib/stores/search';
 
 describe('search index utilities', () => {
   it('normalizes casing, diacritics and spacing', () => {

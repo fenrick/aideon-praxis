@@ -158,9 +158,7 @@ export const buildCatalogIndex = (
   });
 
 const hasAllTokens = (item: SearchIndexItem, tokens: readonly string[]): boolean =>
-  tokens.every(
-    (token) => item.tokenSet.has(token) || item.searchValue.includes(token),
-  );
+  tokens.every((token) => item.tokenSet.has(token) || item.searchValue.includes(token));
 
 const scoreToken = (item: SearchIndexItem, token: string): number => {
   let score = 1;
@@ -173,10 +171,7 @@ const scoreToken = (item: SearchIndexItem, token: string): number => {
   return score;
 };
 
-export const scoreItem = (
-  item: SearchIndexItem,
-  tokens: readonly string[],
-): number => {
+export const scoreItem = (item: SearchIndexItem, tokens: readonly string[]): number => {
   if (tokens.length === 0 || !hasAllTokens(item, tokens)) {
     return 0;
   }
