@@ -1,6 +1,9 @@
 # UI Guidelines
 
-This desktop app uses a modern, toolbar‑driven layout:
+This desktop app uses a modern, toolbar‑driven layout. The details below were written for the
+Svelte prototype; port them to the React + React Flow + shadcn/ui runtime described in
+`docs/praxis-desktop-overview.md`. Keep references to Iconify/Svelte only where the legacy renderer
+still needs maintenance.
 
 - Top toolbar (left‑aligned): grouped icon buttons similar to ribbons. Icons
   are Fluent 2 via Iconify. Idle state uses regular outline; active/toggled

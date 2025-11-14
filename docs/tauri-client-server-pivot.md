@@ -2,10 +2,11 @@
 
 ## Bottom line
 
-Moving to **Svelte (UX) + Rust (host/compute)*- actually *makes the client-server pivot easier\*—provided you keep the renderer
+Moving to a **React (UX) + Rust (host/compute)** desktop app (replacing the older Svelte prototype)
+actually makes the client-server pivot easier—provided you keep the renderer
 speaking a **single, typed command surface**, and hide locality (local vs remote) behind **Rust service adapters**. Tauri’s
 IPC already mirrors client-server message passing (Commands for request/response, Events for pub/sub, Channels for streaming),
-so you can swap a local implementation for a remote one without touching the Svelte UI. Lock it down with **Capabilities/
+so you can swap a local implementation for a remote one without touching the React UI. Lock it down with **Capabilities/
 Scopes*- and the\*\*Isolation pattern*- so the security posture holds when you add networking. ([Tauri][1])
 
 ## How this helps the transition (renderer stays stable)
@@ -69,7 +70,7 @@ path to cloud/server mode in M5.
 ## Reference architecture (client ↔ server, unchanged UI)
 
 ```bash
-Svelte UI
+React UI (legacy Svelte prototype kept only for fallback)
   └─ TypeScript port helpers (invoke)
        └─ Tauri Command: Temporal/Analytics/TCO
             ├─ LocalAdapter (default): Rust modules (graph_core, time_engine, analytics)
@@ -99,8 +100,8 @@ Svelte UI
    - Keep Isolation code validating payloads/schemas. ([Tauri][3])
    - This is consistent with your “no renderer HTTP / deny-by-default” standards.
 
-1. **Do \*not- move business invariants into Svelte**
-   - Svelte handles view-model shaping, progressive rendering, and local caching only. All rules/time-materialisation/
+1. **Do not move business invariants into the renderer**
+   - React (and, temporarily, the Svelte prototype) handles view-model shaping, progressive rendering, and local caching only. All rules/time-materialisation/
      analytics stay in Rust so you can relocate them to the server later without re-teaching the UI. (Matches your “renderer
      boundaries”.)
 
@@ -131,7 +132,7 @@ Svelte UI
   **Isolation\*- security story. ([Tauri][8])
 
 If useful, I can draft the Rust trait signatures and a tiny `mode=remote` adapter skeleton (Command → trait → async
-Channel → Svelte store) so you can drop it straight into the spike.
+Channel → React store/hooks) so you can drop it straight into the spike.
 
 [1]: https://v2.tauri.app/develop/calling-rust/ 'Calling Rust from the Frontend - Tauri'
 [2]: https://v2.tauri.app/concept/inter-process-communication/ 'Inter-Process Communication - Tauri'
