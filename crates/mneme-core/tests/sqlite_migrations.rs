@@ -2,33 +2,27 @@ use mneme_core::SqliteDb;
 use sea_orm::{ConnectionTrait, Database, DbBackend, Statement};
 use tempfile::tempdir;
 
-#[test]
-fn applies_initial_migration_once() {
+#[tokio::test]
+async fn applies_initial_migration_once() {
     let dir = tempdir().expect("tempdir");
     let path = dir.path().join("mneme.sqlite");
 
     // first open should apply migrations
-    SqliteDb::open(&path).expect("initial open");
+    SqliteDb::open(&path).await.expect("initial open");
 
     // reopen should be idempotent
-    SqliteDb::open(&path).expect("reopen");
+    SqliteDb::open(&path).await.expect("reopen");
 
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .expect("runtime");
-    runtime.block_on(async {
-        let database_url = format!("sqlite://{}?mode=rwc&cache=shared", path.display());
-        let conn = Database::connect(&database_url).await.expect("connect");
-        let rows = conn
-            .query_all(Statement::from_string(
-                DbBackend::Sqlite,
-                String::from("SELECT migration_id FROM mneme_migrations ORDER BY migration_id"),
-            ))
-            .await
-            .expect("query");
-        assert_eq!(rows.len(), 1);
-        let id: String = rows[0].try_get("", "migration_id").expect("migration id");
-        assert_eq!(id, "0001_init_schema");
-    });
+    let database_url = format!("sqlite://{}?mode=rwc&cache=shared", path.display());
+    let conn = Database::connect(&database_url).await.expect("connect");
+    let rows = conn
+        .query_all(Statement::from_string(
+            DbBackend::Sqlite,
+            String::from("SELECT migration_id FROM mneme_migrations ORDER BY migration_id"),
+        ))
+        .await
+        .expect("query");
+    assert_eq!(rows.len(), 1);
+    let id: String = rows[0].try_get("", "migration_id").expect("migration id");
+    assert_eq!(id, "0001_init_schema");
 }

@@ -14,10 +14,10 @@ use mneme_core::temporal::{
     NodeTombstone, StateAtArgs, StateAtResult, TopologyDeltaArgs, TopologyDeltaResult,
 };
 use std::collections::HashSet;
-use std::sync::{Arc, MutexGuard};
+use std::sync::Arc;
 
-pub(super) fn commit(
-    mut inner: MutexGuard<Inner>,
+pub(super) async fn commit(
+    inner: &mut Inner,
     request: CommitChangesRequest,
 ) -> PraxisResult<String> {
     validate_branch_name(&request.branch)?;
@@ -29,7 +29,7 @@ pub(super) fn commit(
     }
 
     if !inner.branches.contains_key(&request.branch) {
-        inner.store.ensure_branch(&request.branch)?;
+        inner.store.ensure_branch(&request.branch).await?;
         inner
             .branches
             .insert(request.branch.clone(), BranchState::default());
@@ -53,7 +53,7 @@ pub(super) fn commit(
     };
 
     let base_snapshot = match expected_parent.as_deref() {
-        Some(parent_id) => inner.snapshot_for(parent_id)?,
+        Some(parent_id) => inner.snapshot_for(parent_id).await?,
         None => Arc::new(GraphSnapshot::empty()),
     };
 
@@ -79,7 +79,7 @@ pub(super) fn commit(
         &normalized_changes,
     );
 
-    if inner.store.get_commit(&commit_id)?.is_some() {
+    if inner.store.get_commit(&commit_id).await?.is_some() {
         return Err(PraxisError::IntegrityViolation {
             message: format!("commit '{commit_id}' already exists"),
         });
@@ -101,14 +101,13 @@ pub(super) fn commit(
         change_set: normalized_changes.clone(),
     };
 
-    inner.store.put_commit(&persisted)?;
-    inner.record_snapshot_tag(&commit_id)?;
+    inner.store.put_commit(&persisted).await?;
+    inner.record_snapshot_tag(&commit_id).await?;
 
-    inner.store.compare_and_swap_branch(
-        &request.branch,
-        current_head.as_deref(),
-        Some(&commit_id),
-    )?;
+    inner
+        .store
+        .compare_and_swap_branch(&request.branch, current_head.as_deref(), Some(&commit_id))
+        .await?;
     inner
         .branches
         .entry(request.branch.clone())
@@ -127,8 +126,8 @@ pub(super) fn commit(
     Ok(commit_id)
 }
 
-pub(super) fn create_branch(
-    mut inner: MutexGuard<Inner>,
+pub(super) async fn create_branch(
+    inner: &mut Inner,
     name: String,
     from: Option<CommitRef>,
 ) -> PraxisResult<BranchInfo> {
@@ -140,21 +139,22 @@ pub(super) fn create_branch(
     }
 
     let head = match from {
-        Some(reference) => Some(resolve_commit_id(&mut inner, &reference, None)?),
+        Some(reference) => Some(resolve_commit_id(inner, &reference, None).await?),
         None => inner.branches.get("main").and_then(|b| b.head.clone()),
     };
-    inner.store.ensure_branch(&name)?;
+    inner.store.ensure_branch(&name).await?;
     inner
         .store
-        .compare_and_swap_branch(&name, None, head.as_deref())?;
+        .compare_and_swap_branch(&name, None, head.as_deref())
+        .await?;
     inner
         .branches
         .insert(name.clone(), BranchState { head: head.clone() });
     Ok(BranchInfo { name, head })
 }
 
-pub(super) fn list_commits(
-    mut inner: MutexGuard<Inner>,
+pub(super) async fn list_commits(
+    inner: &mut Inner,
     branch: String,
 ) -> PraxisResult<Vec<CommitSummary>> {
     let state = inner
@@ -167,7 +167,7 @@ pub(super) fn list_commits(
     let mut ordered: Vec<CommitSummary> = Vec::new();
     let mut cursor = state.head.clone();
     while let Some(id) = cursor {
-        let record = inner.record_for(&id)?;
+        let record = inner.record_for(&id).await?;
         ordered.push(record.summary.clone());
         cursor = record.summary.parents.first().cloned();
     }
@@ -175,12 +175,9 @@ pub(super) fn list_commits(
     Ok(ordered)
 }
 
-pub(super) fn state_at(
-    mut inner: MutexGuard<Inner>,
-    args: StateAtArgs,
-) -> PraxisResult<StateAtResult> {
+pub(super) async fn state_at(inner: &mut Inner, args: StateAtArgs) -> PraxisResult<StateAtResult> {
     let (commit_id, snapshot, branch_name) =
-        resolve_snapshot(&mut inner, &args.as_of, args.scenario.as_deref())?;
+        resolve_snapshot(inner, &args.as_of, args.scenario.as_deref()).await?;
     let stats = snapshot.stats();
     Ok(StateAtResult::new(
         commit_id,
@@ -191,12 +188,9 @@ pub(super) fn state_at(
     ))
 }
 
-pub(super) fn diff_summary(
-    mut inner: MutexGuard<Inner>,
-    args: DiffArgs,
-) -> PraxisResult<DiffSummary> {
-    let (from_id, from_snapshot, _) = resolve_snapshot(&mut inner, &args.from, None)?;
-    let (to_id, to_snapshot, _) = resolve_snapshot(&mut inner, &args.to, None)?;
+pub(super) async fn diff_summary(inner: &mut Inner, args: DiffArgs) -> PraxisResult<DiffSummary> {
+    let (from_id, from_snapshot, _) = resolve_snapshot(inner, &args.from, None).await?;
+    let (to_id, to_snapshot, _) = resolve_snapshot(inner, &args.to, None).await?;
     let patch = from_snapshot.diff(&to_snapshot);
     Ok(DiffSummary::new(
         from_id,
@@ -210,12 +204,12 @@ pub(super) fn diff_summary(
     ))
 }
 
-pub(super) fn topology_delta(
-    mut inner: MutexGuard<Inner>,
+pub(super) async fn topology_delta(
+    inner: &mut Inner,
     args: TopologyDeltaArgs,
 ) -> PraxisResult<TopologyDeltaResult> {
-    let (from_id, from_snapshot, _) = resolve_snapshot(&mut inner, &args.from, None)?;
-    let (to_id, to_snapshot, _) = resolve_snapshot(&mut inner, &args.to, None)?;
+    let (from_id, from_snapshot, _) = resolve_snapshot(inner, &args.from, None).await?;
+    let (to_id, to_snapshot, _) = resolve_snapshot(inner, &args.to, None).await?;
     let patch = from_snapshot.diff(&to_snapshot);
     Ok(TopologyDeltaResult::new(
         from_id,
@@ -227,10 +221,7 @@ pub(super) fn topology_delta(
     ))
 }
 
-pub(super) fn merge(
-    mut inner: MutexGuard<Inner>,
-    request: MergeRequest,
-) -> PraxisResult<MergeResponse> {
+pub(super) async fn merge(inner: &mut Inner, request: MergeRequest) -> PraxisResult<MergeResponse> {
     let source_head = inner
         .branches
         .get(&request.source)
@@ -254,15 +245,15 @@ pub(super) fn merge(
             commit: request.target.clone(),
         })?;
 
-    let base = find_common_ancestor(&mut inner, &source_head, &target_head)?.ok_or_else(|| {
-        PraxisError::MergeConflict {
+    let base = find_common_ancestor(inner, &source_head, &target_head)
+        .await?
+        .ok_or_else(|| PraxisError::MergeConflict {
             message: "branches do not share a common ancestor".into(),
-        }
-    })?;
+        })?;
 
-    let base_snapshot = inner.snapshot_for(&base)?;
-    let source_snapshot = inner.snapshot_for(&source_head)?;
-    let target_snapshot = inner.snapshot_for(&target_head)?;
+    let base_snapshot = inner.snapshot_for(&base).await?;
+    let source_snapshot = inner.snapshot_for(&source_head).await?;
+    let target_snapshot = inner.snapshot_for(&target_head).await?;
 
     let source_patch = base_snapshot.diff(&source_snapshot);
     let target_patch = base_snapshot.diff(&target_snapshot);
@@ -297,7 +288,7 @@ pub(super) fn merge(
         &normalized_changes,
     );
 
-    if inner.store.get_commit(&commit_id)?.is_some() {
+    if inner.store.get_commit(&commit_id).await?.is_some() {
         return Err(PraxisError::IntegrityViolation {
             message: format!("commit '{commit_id}' already exists"),
         });
@@ -320,11 +311,12 @@ pub(super) fn merge(
         change_set: normalized_changes.clone(),
     };
 
-    inner.store.put_commit(&persisted)?;
-    inner.record_snapshot_tag(&commit_id)?;
+    inner.store.put_commit(&persisted).await?;
+    inner.record_snapshot_tag(&commit_id).await?;
     inner
         .store
-        .compare_and_swap_branch(&request.target, Some(&target_head), Some(&commit_id))?;
+        .compare_and_swap_branch(&request.target, Some(&target_head), Some(&commit_id))
+        .await?;
     inner
         .branches
         .entry(request.target.clone())

@@ -9,9 +9,9 @@ use std::collections::BTreeMap;
 
 impl PraxisEngine {
     /// Ensure the commit log contains an initial design sample commit.
-    pub fn ensure_seeded(&self) -> PraxisResult<()> {
+    pub async fn ensure_seeded(&self) -> PraxisResult<()> {
         let needs_seed = {
-            let inner = self.lock();
+            let inner = self.lock().await;
             inner
                 .branches
                 .get("main")
@@ -24,17 +24,17 @@ impl PraxisEngine {
         }
 
         let dataset = BaselineDataset::embedded()?;
-        self.bootstrap_with_dataset(&dataset)?;
+        self.bootstrap_with_dataset(&dataset).await?;
         Ok(())
     }
 
-    pub fn bootstrap_with_dataset(&self, dataset: &BaselineDataset) -> PraxisResult<()> {
-        self.seed_meta_commit()?;
-        self.apply_dataset_commits(dataset)?;
+    pub async fn bootstrap_with_dataset(&self, dataset: &BaselineDataset) -> PraxisResult<()> {
+        self.seed_meta_commit().await?;
+        self.apply_dataset_commits(dataset).await?;
         Ok(())
     }
 
-    fn seed_meta_commit(&self) -> PraxisResult<String> {
+    async fn seed_meta_commit(&self) -> PraxisResult<String> {
         let meta_changes = meta_model_seed_change_set();
         let request = CommitChangesRequest {
             branch: "main".into(),
@@ -45,12 +45,13 @@ impl PraxisEngine {
             tags: vec!["baseline".into(), "meta".into()],
             changes: meta_changes,
         };
-        self.commit(request)
+        self.commit(request).await
     }
 
-    fn apply_dataset_commits(&self, dataset: &BaselineDataset) -> PraxisResult<()> {
+    async fn apply_dataset_commits(&self, dataset: &BaselineDataset) -> PraxisResult<()> {
         let mut branch_heads: BTreeMap<String, Option<String>> = self
             .list_branches()
+            .await
             .into_iter()
             .map(|info| (info.name.clone(), info.head.clone()))
             .collect();
@@ -58,7 +59,7 @@ impl PraxisEngine {
             let branch = commit.branch.clone();
             let parent = branch_heads.get(&branch).and_then(|head| head.clone());
             let request = commit.to_request(parent);
-            let next_id = self.commit(request)?;
+            let next_id = self.commit(request).await?;
             branch_heads.insert(branch, Some(next_id));
         }
         Ok(())

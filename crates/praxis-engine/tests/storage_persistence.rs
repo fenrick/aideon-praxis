@@ -6,14 +6,17 @@ use praxis_engine::{PraxisEngine, PraxisEngineConfig};
 use serde_json::json;
 use tempfile::tempdir;
 
-#[test]
-fn sqlite_persists_commits_across_restarts() {
+#[tokio::test]
+async fn sqlite_persists_commits_across_restarts() {
     let dir = tempdir().expect("tempdir");
     let db_path = dir.path().join("integration.sqlite");
 
-    let engine = PraxisEngine::with_sqlite(&db_path).expect("engine init");
+    let engine = PraxisEngine::with_sqlite(&db_path)
+        .await
+        .expect("engine init");
     let parent = engine
         .list_commits("main".into())
+        .await
         .expect("list commits")
         .last()
         .map(|commit| commit.id.clone());
@@ -35,14 +38,17 @@ fn sqlite_persists_commits_across_restarts() {
                 ..ChangeSet::default()
             },
         })
+        .await
         .expect("commit succeeds");
 
     drop(engine);
 
     let reopened = PraxisEngine::with_sqlite_unseeded(&db_path, PraxisEngineConfig::default())
+        .await
         .expect("reopen engine");
     let commits = reopened
         .list_commits("main".into())
+        .await
         .expect("list commits after restart");
     assert!(
         commits.iter().any(|summary| summary.id == commit_id),
@@ -50,10 +56,17 @@ fn sqlite_persists_commits_across_restarts() {
     );
     reopened
         .stats_for_commit(&commit_id)
+        .await
         .expect("snapshot available for persisted commit");
 
-    let db = SqliteDb::open(&db_path).expect("open sqlite for tag check");
+    let db = SqliteDb::open(&db_path)
+        .await
+        .expect("open sqlite for tag check");
     let tag = format!("snapshot/{commit_id}");
-    let resolved = db.get_tag(&tag).expect("query tag").expect("tag present");
+    let resolved = db
+        .get_tag(&tag)
+        .await
+        .expect("query tag")
+        .expect("tag present");
     assert_eq!(resolved, commit_id, "snapshot tag should point to commit");
 }

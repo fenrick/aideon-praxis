@@ -59,15 +59,14 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 **Outstanding**
 
-- Convert the `Store` trait to async and remove the bespoke Tokio runtime that currently blocks on SeaORM operations inside `SqliteDb`.
-- Populate the analytics/fact tables (for example `metis_events`) and extend regression coverage so persistence migrations capture the projection work instead of being created inline at runtime.
+- Extend analytics projections beyond the commit-level `metis_events` feed (dimension tables, rollups) and grow regression coverage for branch merge/diff scenarios so future migrations stay fully data-driven.
 
 ### Tasks
 
 1. **Async trait conversion**
    - Update `mneme::Store` to an async trait (via `async-trait`) so SeaORM can power commit, branch, and tag operations without blocking the host runtime.
    - Modernise every caller (`PraxisEngine`, host worker, xtask, tests) to await the store operations without changing the visible API surface.
-   - _Pending — `Store` remains synchronous and `SqliteDb` spins up a Tokio runtime to `block_on` SeaORM queries._
+   - _Completed — the store trait is async end-to-end, `SqliteDb` executes directly on the caller runtime, and all engines/hosts/tests await the new futures._
 2. **SeaORM schema & migrations**
    - Introduce SeaORM 1.1.19 + SeaQuery in `crates/mneme-core`, define entities for commits, refs, snapshot tags, and the readonly Metis fact/star tables.
    - Build migrations that create the tables with the required constraints and indexes, and run them at startup via a SeaORM migrator.
@@ -108,6 +107,8 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 ### Progress Log
 
 - 2025-11-12 — Added versioned migration history via `mneme_migrations` and regression coverage that reopens SQLite datastores without reapplying schema DDL.
+- 2025-11-13 — Converted the Mneme store to async, removed the bespoke Tokio runtime, and updated engine/host toolchains to await persistence operations.
+- 2025-11-14 — Persist commit-level analytics into `metis_events` during `put_commit` and covered the projection with an integration test against the SQLite backend.
 
 ## WS-B — Meta-Model Enforcement & Configurability
 
