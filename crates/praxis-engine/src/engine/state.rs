@@ -4,6 +4,7 @@ use crate::engine::config::PraxisEngineConfig;
 use crate::error::PraxisResult;
 use crate::graph::GraphSnapshot;
 use crate::meta::MetaModelRegistry;
+use async_recursion::async_recursion;
 use mneme_core::temporal::ChangeSet;
 use mneme_core::{CommitSummary, Store};
 use std::collections::BTreeMap;
@@ -31,14 +32,17 @@ pub(super) struct BranchState {
 }
 
 impl Inner {
-    pub(super) fn new(config: PraxisEngineConfig, store: Arc<dyn Store>) -> PraxisResult<Self> {
+    pub(super) async fn new(
+        config: PraxisEngineConfig,
+        store: Arc<dyn Store>,
+    ) -> PraxisResult<Self> {
         let registry = Arc::new(MetaModelRegistry::load(&config.meta_model)?);
         let mut branches = BTreeMap::new();
-        for (name, head) in store.list_branches()? {
+        for (name, head) in store.list_branches().await? {
             branches.insert(name, BranchState { head });
         }
         if !branches.contains_key("main") {
-            store.ensure_branch("main")?;
+            store.ensure_branch("main").await?;
             branches.insert("main".into(), BranchState::default());
         }
         Ok(Self {
@@ -50,26 +54,27 @@ impl Inner {
         })
     }
 
-    pub(super) fn record_snapshot_tag(&self, commit_id: &str) -> PraxisResult<()> {
+    pub(super) async fn record_snapshot_tag(&self, commit_id: &str) -> PraxisResult<()> {
         let tag = super::util::snapshot_tag(commit_id);
-        self.store.put_tag(&tag, commit_id).map_err(|err| {
+        self.store.put_tag(&tag, commit_id).await.map_err(|err| {
             crate::error::PraxisError::IntegrityViolation {
                 message: format!("record snapshot tag '{tag}': {err}"),
             }
         })
     }
 
-    pub(super) fn record_for(&mut self, commit_id: &str) -> PraxisResult<CommitRecord> {
+    #[async_recursion]
+    pub(super) async fn record_for(&mut self, commit_id: &str) -> PraxisResult<CommitRecord> {
         if let Some(record) = self.commits.get(commit_id) {
             return Ok(record.clone());
         }
-        let persisted = self.store.get_commit(commit_id)?.ok_or_else(|| {
+        let persisted = self.store.get_commit(commit_id).await?.ok_or_else(|| {
             crate::error::PraxisError::UnknownCommit {
                 commit: commit_id.into(),
             }
         })?;
         let base_snapshot = match persisted.summary.parents.first() {
-            Some(parent_id) => self.snapshot_for(parent_id)?,
+            Some(parent_id) => self.snapshot_for(parent_id).await?,
             None => Arc::new(GraphSnapshot::empty()),
         };
         let snapshot = Arc::new(
@@ -88,8 +93,12 @@ impl Inner {
         Ok(record)
     }
 
-    pub(super) fn snapshot_for(&mut self, commit_id: &str) -> PraxisResult<Arc<GraphSnapshot>> {
-        let record = self.record_for(commit_id)?;
+    #[async_recursion]
+    pub(super) async fn snapshot_for(
+        &mut self,
+        commit_id: &str,
+    ) -> PraxisResult<Arc<GraphSnapshot>> {
+        let record = self.record_for(commit_id).await?;
         Ok(Arc::clone(&record.snapshot))
     }
 }

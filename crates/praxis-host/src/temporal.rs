@@ -32,7 +32,7 @@ pub async fn temporal_state_at(
 
     let started = Instant::now();
     let engine = worker_state.engine();
-    let output = engine.state_at(payload.clone()).map_err(host_error)?;
+    let output = engine.state_at(payload.clone()).await.map_err(host_error)?;
     let elapsed = started.elapsed();
     info!(
         "host: temporal_state_at ok nodes={} edges={} elapsed_ms={}",
@@ -56,7 +56,10 @@ pub async fn temporal_diff(
         payload.from, payload.to, payload.scope
     );
     let engine = state.engine();
-    let summary = engine.diff_summary(payload.clone()).map_err(host_error)?;
+    let summary = engine
+        .diff_summary(payload.clone())
+        .await
+        .map_err(host_error)?;
     info!(
         "host: temporal_diff counts node_adds={} node_mods={} node_dels={} edge_adds={} edge_mods={} edge_dels={}",
         summary.node_adds,
@@ -76,7 +79,7 @@ pub async fn commit_changes(
     payload: CommitChangesRequest,
 ) -> Result<CommitChangesResponse, HostError> {
     let engine = state.engine();
-    let id = engine.commit(payload).map_err(host_error)?;
+    let id = engine.commit(payload).await.map_err(host_error)?;
     Ok(CommitChangesResponse { id })
 }
 
@@ -86,7 +89,10 @@ pub async fn list_commits(
     branch: String,
 ) -> Result<ListCommitsResponse, HostError> {
     let engine = state.engine();
-    let commits = engine.list_commits(branch.clone()).map_err(host_error)?;
+    let commits = engine
+        .list_commits(branch.clone())
+        .await
+        .map_err(host_error)?;
     debug!(
         "host: list_commits branch={} count={}",
         branch,
@@ -103,6 +109,7 @@ pub async fn create_branch(
     let engine = state.engine();
     let info = engine
         .create_branch(payload.name.clone(), payload.from.clone())
+        .await
         .map_err(host_error)?;
     Ok(info)
 }
@@ -112,7 +119,7 @@ pub async fn list_branches(
     state: State<'_, WorkerState>,
 ) -> Result<ListBranchesResponse, HostError> {
     let engine = state.engine();
-    Ok(engine.list_branches())
+    Ok(engine.list_branches().await)
 }
 
 #[tauri::command]
@@ -121,7 +128,7 @@ pub async fn merge_branches(
     payload: MergeRequest,
 ) -> Result<MergeResponse, HostError> {
     let engine = state.engine();
-    engine.merge(payload).map_err(host_error)
+    engine.merge(payload).await.map_err(host_error)
 }
 
 #[tauri::command]
@@ -130,7 +137,7 @@ pub async fn topology_delta(
     payload: TopologyDeltaArgs,
 ) -> Result<TopologyDeltaResult, HostError> {
     let engine = state.engine();
-    engine.topology_delta(payload).map_err(host_error)
+    engine.topology_delta(payload).await.map_err(host_error)
 }
 
 #[tauri::command]
@@ -138,7 +145,7 @@ pub async fn temporal_metamodel_get(
     state: State<'_, WorkerState>,
 ) -> Result<MetaModelDocument, HostError> {
     let engine = state.engine();
-    Ok(engine.meta_model())
+    Ok(engine.meta_model().await)
 }
 
 #[derive(Debug, Serialize)]

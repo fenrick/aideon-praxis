@@ -3,6 +3,8 @@ use std::sync::{Arc, Mutex};
 
 use continuum_orchestrator::SnapshotStore as ContinuumSnapshotStore;
 
+use async_trait::async_trait;
+
 use crate::{MnemeError, MnemeResult, PersistedCommit, Store};
 
 #[derive(Clone, Default)]
@@ -17,8 +19,9 @@ struct MemoryState {
     tags: BTreeMap<String, String>,
 }
 
+#[async_trait]
 impl Store for MemoryStore {
-    fn put_commit(&self, commit: &PersistedCommit) -> MnemeResult<()> {
+    async fn put_commit(&self, commit: &PersistedCommit) -> MnemeResult<()> {
         let mut guard = self.inner.lock().expect("memory store poisoned");
         if guard.commits.contains_key(&commit.summary.id) {
             return Err(MnemeError::storage(format!(
@@ -32,18 +35,18 @@ impl Store for MemoryStore {
         Ok(())
     }
 
-    fn get_commit(&self, id: &str) -> MnemeResult<Option<PersistedCommit>> {
+    async fn get_commit(&self, id: &str) -> MnemeResult<Option<PersistedCommit>> {
         let guard = self.inner.lock().expect("memory store poisoned");
         Ok(guard.commits.get(id).cloned())
     }
 
-    fn ensure_branch(&self, branch: &str) -> MnemeResult<()> {
+    async fn ensure_branch(&self, branch: &str) -> MnemeResult<()> {
         let mut guard = self.inner.lock().expect("memory store poisoned");
         guard.branches.entry(branch.into()).or_insert(None);
         Ok(())
     }
 
-    fn compare_and_swap_branch(
+    async fn compare_and_swap_branch(
         &self,
         branch: &str,
         expected: Option<&str>,
@@ -62,12 +65,12 @@ impl Store for MemoryStore {
         Ok(())
     }
 
-    fn get_branch_head(&self, branch: &str) -> MnemeResult<Option<String>> {
+    async fn get_branch_head(&self, branch: &str) -> MnemeResult<Option<String>> {
         let guard = self.inner.lock().expect("memory store poisoned");
         Ok(guard.branches.get(branch).cloned().unwrap_or(None))
     }
 
-    fn list_branches(&self) -> MnemeResult<Vec<(String, Option<String>)>> {
+    async fn list_branches(&self) -> MnemeResult<Vec<(String, Option<String>)>> {
         let guard = self.inner.lock().expect("memory store poisoned");
         let mut list: Vec<(String, Option<String>)> = guard
             .branches
@@ -78,18 +81,18 @@ impl Store for MemoryStore {
         Ok(list)
     }
 
-    fn put_tag(&self, tag: &str, commit_id: &str) -> MnemeResult<()> {
+    async fn put_tag(&self, tag: &str, commit_id: &str) -> MnemeResult<()> {
         let mut guard = self.inner.lock().expect("memory store poisoned");
         guard.tags.insert(tag.into(), commit_id.into());
         Ok(())
     }
 
-    fn get_tag(&self, tag: &str) -> MnemeResult<Option<String>> {
+    async fn get_tag(&self, tag: &str) -> MnemeResult<Option<String>> {
         let guard = self.inner.lock().expect("memory store poisoned");
         Ok(guard.tags.get(tag).cloned())
     }
 
-    fn list_tags(&self) -> MnemeResult<Vec<(String, String)>> {
+    async fn list_tags(&self) -> MnemeResult<Vec<(String, String)>> {
         let guard = self.inner.lock().expect("memory store poisoned");
         Ok(guard
             .tags

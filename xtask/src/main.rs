@@ -11,12 +11,13 @@ use praxis_engine::{
     BaselineDataset, GraphSnapshot, MetaModelRegistry, PraxisEngine, PraxisEngineConfig,
 };
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::MigrateState(args) => migrate_state(args),
-        Command::ImportDataset(args) => import_dataset(args),
-        Command::Health(args) => check_health(args),
+        Command::MigrateState(args) => migrate_state(args).await,
+        Command::ImportDataset(args) => import_dataset(args).await,
+        Command::Health(args) => check_health(args).await,
     }
 }
 
@@ -83,7 +84,7 @@ struct HealthArgs {
     quiet: bool,
 }
 
-fn migrate_state(args: MigrateStateArgs) -> Result<()> {
+async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
     let raw = fs::read_to_string(&args.input)
         .with_context(|| format!("failed to read {}", args.input.display()))?;
     let legacy: LegacyState = serde_json::from_str(&raw)
@@ -109,7 +110,9 @@ fn migrate_state(args: MigrateStateArgs) -> Result<()> {
         fs::remove_file(&db_path)
             .with_context(|| format!("failed to remove {}", db_path.display()))?;
     }
-    let db = SqliteDb::open(&db_path).map_err(|err| anyhow!(err.to_string()))?;
+    let db = SqliteDb::open(&db_path)
+        .await
+        .map_err(|err| anyhow!(err.to_string()))?;
 
     let mut snapshots: HashMap<String, GraphSnapshot> = HashMap::new();
     let mut last_commit_id: Option<String> = None;
@@ -132,6 +135,7 @@ fn migrate_state(args: MigrateStateArgs) -> Result<()> {
             change_set: commit.change_set.clone(),
         };
         db.put_commit(&persisted)
+            .await
             .map_err(|err| anyhow!(err.to_string()))?;
 
         last_commit_id = Some(persisted.summary.id.clone());
@@ -140,14 +144,18 @@ fn migrate_state(args: MigrateStateArgs) -> Result<()> {
 
     if legacy.branches.is_empty() {
         db.ensure_branch("main")
+            .await
             .map_err(|err| anyhow!(err.to_string()))?;
         db.compare_and_swap_branch("main", None, last_commit_id.as_deref())
+            .await
             .map_err(|err| anyhow!(err.to_string()))?;
     } else {
         for branch in legacy.branches {
             db.ensure_branch(&branch.name)
+                .await
                 .map_err(|err| anyhow!(err.to_string()))?;
             db.compare_and_swap_branch(&branch.name, None, branch.head.as_deref())
+                .await
                 .map_err(|err| anyhow!(err.to_string()))?;
         }
     }
@@ -160,13 +168,13 @@ fn migrate_state(args: MigrateStateArgs) -> Result<()> {
     Ok(())
 }
 
-fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
+async fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
     let dataset = BaselineDataset::from_path(&args.dataset)
         .or_else(|_| BaselineDataset::embedded())
         .map_err(|err| anyhow!(err.to_string()))?;
 
     if args.dry_run {
-        dry_run_dataset(&dataset)?;
+        dry_run_dataset(&dataset).await?;
         return Ok(());
     }
 
@@ -177,15 +185,19 @@ fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
 
     let db_path =
         create_datastore(&args.datastore, None).map_err(|err| anyhow!(err.to_string()))?;
-    let storage = SqliteDb::open(&db_path).map_err(|err| anyhow!(err.to_string()))?;
+    let storage = SqliteDb::open(&db_path)
+        .await
+        .map_err(|err| anyhow!(err.to_string()))?;
     let engine = PraxisEngine::with_stores_unseeded(
         PraxisEngineConfig::default(),
         Arc::new(storage.clone()),
     )
+    .await
     .map_err(|err| anyhow!(err.to_string()))?;
 
     let has_commits = engine
         .list_branches()
+        .await
         .into_iter()
         .any(|branch| branch.name == "main" && branch.head.is_some());
     if has_commits {
@@ -197,14 +209,17 @@ fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
 
     engine
         .bootstrap_with_dataset(&dataset)
+        .await
         .map_err(|err| anyhow!(err.to_string()))?;
 
     let commits = engine
         .list_commits("main".into())
+        .await
         .map_err(|err| anyhow!(err.to_string()))?;
     if let Some(last) = commits.last() {
         let stats = engine
             .stats_for_commit(&last.id)
+            .await
             .map_err(|err| anyhow!(err.to_string()))?;
         println!(
             "imported dataset {} (commits={} nodes={} edges={}) into {}",
@@ -225,17 +240,20 @@ fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
     Ok(())
 }
 
-fn check_health(args: HealthArgs) -> Result<()> {
+async fn check_health(args: HealthArgs) -> Result<()> {
     let db_path = datastore_path(&args.datastore)
         .with_context(|| format!("resolve datastore under {}", args.datastore.display()))?;
-    let storage = SqliteDb::open(&db_path).map_err(|err| anyhow!(err.to_string()))?;
+    let storage = SqliteDb::open(&db_path)
+        .await
+        .map_err(|err| anyhow!(err.to_string()))?;
     let engine = PraxisEngine::with_stores_unseeded(
         PraxisEngineConfig::default(),
         Arc::new(storage.clone()),
     )
+    .await
     .map_err(|err| anyhow!(err.to_string()))?;
 
-    let branches = engine.list_branches();
+    let branches = engine.list_branches().await;
     let filtered: Vec<_> = branches
         .into_iter()
         .filter(|branch| match &args.branch {
@@ -260,6 +278,7 @@ fn check_health(args: HealthArgs) -> Result<()> {
         let branch_name = branch.name.clone();
         let commits = engine
             .list_commits(branch_name.clone())
+            .await
             .map_err(|err| anyhow!(err.to_string()))?;
         commit_total += commits.len();
 
@@ -309,7 +328,7 @@ fn check_health(args: HealthArgs) -> Result<()> {
         }
 
         for commit in commits {
-            if let Err(err) = engine.stats_for_commit(&commit.id) {
+            if let Err(err) = engine.stats_for_commit(&commit.id).await {
                 findings.push(Finding {
                     kind: "error",
                     message: format!("snapshot for commit {} unreadable: {}", commit.id, err),
@@ -317,7 +336,7 @@ fn check_health(args: HealthArgs) -> Result<()> {
             }
 
             let tag_key = format!("snapshot/{}", commit.id);
-            match storage.get_tag(&tag_key) {
+            match storage.get_tag(&tag_key).await {
                 Ok(Some(resolved)) if resolved == commit.id => {}
                 Ok(Some(resolved)) => findings.push(Finding {
                     kind: "error",
@@ -370,23 +389,28 @@ fn check_health(args: HealthArgs) -> Result<()> {
     Ok(())
 }
 
-fn dry_run_dataset(dataset: &BaselineDataset) -> Result<()> {
+async fn dry_run_dataset(dataset: &BaselineDataset) -> Result<()> {
     let store: Arc<dyn Store> = Arc::new(MemoryStore::default());
     let engine = PraxisEngine::with_stores_unseeded(PraxisEngineConfig::default(), store)
+        .await
         .map_err(|err| anyhow!(err.to_string()))?;
     engine
         .bootstrap_with_dataset(dataset)
+        .await
         .map_err(|err| anyhow!(err.to_string()))?;
 
     let commits = engine
         .list_commits("main".into())
+        .await
         .map_err(|err| anyhow!(err.to_string()))?;
-    let stats = commits
-        .last()
-        .map(|summary| engine.stats_for_commit(&summary.id))
-        .transpose()
-        .map_err(|err| anyhow!(err.to_string()))?
-        .unwrap_or_default();
+    let stats = if let Some(summary) = commits.last() {
+        engine
+            .stats_for_commit(&summary.id)
+            .await
+            .map_err(|err| anyhow!(err.to_string()))?
+    } else {
+        Default::default()
+    };
     println!(
         "dry-run ok: dataset {} commits={} nodes={} edges={}",
         dataset.version,
