@@ -118,7 +118,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
       if (!branch) {
         return;
       }
-      if (commitId === state.commitId) {
+      if (commitId !== null && commitId === state.commitId) {
         return;
       }
       if (!commitId) {
