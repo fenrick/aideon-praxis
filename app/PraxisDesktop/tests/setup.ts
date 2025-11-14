@@ -10,10 +10,20 @@ process.on('uncaughtException', (error) => {
   throw error;
 });
 
-if (
-  typeof globalThis.localStorage === 'undefined' ||
-  typeof globalThis.localStorage.clear !== 'function'
-) {
+let hasLocalStorage = false;
+
+try {
+  hasLocalStorage =
+    typeof globalThis.localStorage !== 'undefined' &&
+    typeof globalThis.localStorage.clear === 'function';
+} catch {
+  // Some DOM shims expose localStorage accessors that throw unless additional
+  // CLI flags are provided. Treat those as "not available" so we can install
+  // the in-memory polyfill below without failing the test bootstrap.
+  hasLocalStorage = false;
+}
+
+if (!hasLocalStorage) {
   const store = new Map<string, string>();
   const storage = {
     clear() {
