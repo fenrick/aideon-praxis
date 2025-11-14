@@ -26,5 +26,5 @@ Platform styling
 Renderer boundaries
 
 - No backend logic in the renderer; use the typed helper modules under
-  `app/praxis-desktop/src/lib/ports/**` which call Tauri commands via
+  `app/PraxisDesktop/src/lib/ports/**` which call Tauri commands via
   `@tauri-apps/api/core`.

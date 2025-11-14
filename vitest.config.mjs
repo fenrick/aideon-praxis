@@ -8,24 +8,24 @@ export default defineConfig({
       // Stubs to keep tests offline and avoid Vite resolution failures
       '@fluentui/web-components': path.resolve(
         __dirname,
-        'app/praxis-desktop/tests/stubs/fluentui.web-components.ts',
+        'app/PraxisDesktop/tests/stubs/fluentui.web-components.ts',
       ),
-      '@aideon/praxis-design-system': path.resolve(__dirname, 'app/praxis-design-system/src'),
-      '@iconify/svelte': path.resolve(__dirname, 'app/praxis-desktop/tests/stubs/iconify.svelte'),
+      '@aideon/PraxisDesignSystem': path.resolve(__dirname, 'app/PraxisDesignSystem/src'),
+      '@iconify/svelte': path.resolve(__dirname, 'app/PraxisDesktop/tests/stubs/iconify.svelte'),
       '@tauri-apps/api/core': path.resolve(
         __dirname,
-        'app/praxis-desktop/tests/stubs/tauri-api-core.ts',
+        'app/PraxisDesktop/tests/stubs/tauri-api-core.ts',
       ),
       '@tauri-apps/plugin-log': path.resolve(
         __dirname,
-        'app/praxis-desktop/tests/stubs/tauri-plugin-log.ts',
+        'app/PraxisDesktop/tests/stubs/tauri-plugin-log.ts',
       ),
       'elkjs/lib/elk.bundled.js': path.resolve(
         __dirname,
-        'app/praxis-desktop/tests/stubs/elk.bundled.ts',
+        'app/PraxisDesktop/tests/stubs/elk.bundled.ts',
       ),
-      $lib: path.resolve(__dirname, 'app/praxis-desktop/src/lib'),
-      '@aideon/praxis-adapters': path.resolve(__dirname, 'app/praxis-adapters/src'),
+      $lib: path.resolve(__dirname, 'app/PraxisDesktop/src/lib'),
+      '@aideon/PraxisAdapters': path.resolve(__dirname, 'app/PraxisAdapters/src'),
     },
   },
   plugins: [
@@ -38,23 +38,23 @@ export default defineConfig({
   ],
   test: {
     environment: 'jsdom',
-    setupFiles: ['app/praxis-desktop/tests/setup.ts'],
+    setupFiles: ['app/PraxisDesktop/tests/setup.ts'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'lcov', 'html'],
       reportOnFailure: true,
       include: [
-        'app/praxis-desktop/src/lib/**/*.{ts,tsx}',
-        'app/praxis-adapters/src/**/*.{ts,tsx}',
-        'app/praxis-dtos/src/**/*.{ts,tsx}',
+        'app/PraxisDesktop/src/lib/**/*.{ts,tsx}',
+        'app/PraxisAdapters/src/**/*.{ts,tsx}',
+        'app/PraxisDtos/src/**/*.{ts,tsx}',
       ],
       exclude: [
         '**/*.d.ts',
         '**/*.test.*',
         'app/**/dist/**',
         'scripts/**',
-        'app/praxis-desktop/src/version.ts',
-        'app/praxis-desktop/src/routes/**',
+        'app/PraxisDesktop/src/version.ts',
+        'app/PraxisDesktop/src/routes/**',
       ],
     },
   },

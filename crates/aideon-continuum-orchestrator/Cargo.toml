@@ -1,8 +1,0 @@
-[package]
-name = "aideon-continuum-orchestrator"
-version = "0.0.0"
-edition = "2024"
-authors = ["Aideon Praxis Contributors"]
-license = "MIT"
-
-[dependencies]

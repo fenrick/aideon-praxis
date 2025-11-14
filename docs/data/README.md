@@ -29,13 +29,13 @@ docs/data/
    versions in the `version` field and document the change in `CHANGELOG.md`.
 2. Run the importer against a scratch datastore to validate:
    ```sh
-   cargo aideon-xtask import-dataset --dataset docs/data/base/baseline.yaml \
+   cargo aideon_xtask import-dataset --dataset docs/data/base/baseline.yaml \
        --datastore /tmp/praxis --dry-run
    ```
 3. When satisfied, drop `--dry-run` (or point to a packaged datastore) to write
    the commits:
    ```sh
-   cargo aideon-xtask import-dataset --dataset docs/data/base/baseline.yaml \
+   cargo aideon_xtask import-dataset --dataset docs/data/base/baseline.yaml \
        --datastore /tmp/praxis
    ```
 4. Execute `cargo test -p aideon-praxis dataset::tests::baseline_counts` to

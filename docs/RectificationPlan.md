@@ -8,23 +8,23 @@
 
 ### Git-structured timeline
 
-The intent in Architecture-Boundary.md:75–146 is a Git-like, append-only commit graph with deterministic ancestry and timeline semantics, yet PraxisEngine just keeps commits/branches in BTreeMaps behind a mutex and increments next_commit for ids (crates/aideon-praxis-engine/src/engine.rs:37 and crates/aideon-praxis-engine/src/engine.rs:159), meaning history evaporates on restart and commit timestamps are optional/unused; even the UI falls back to showing the id when time is missing (app/praxis-desktop/src/lib/components/MainView.svelte:103). Wire PraxisEngine to a persistent commit/tag store that records authoritative snapshot markers inside SQLite, stamp commit metadata server-side, and surface branch pointers so “main” always reflects “now” without trusting the renderer.
+The intent in Architecture-Boundary.md:75–146 is a Git-like, append-only commit graph with deterministic ancestry and timeline semantics, yet PraxisEngine just keeps commits/branches in BTreeMaps behind a mutex and increments next_commit for ids (crates/aideon_praxis_engine/src/engine.rs:37 and crates/aideon_praxis_engine/src/engine.rs:159), meaning history evaporates on restart and commit timestamps are optional/unused; even the UI falls back to showing the id when time is missing (app/PraxisDesktop/src/lib/components/MainView.svelte:103). Wire PraxisEngine to a persistent commit/tag store that records authoritative snapshot markers inside SQLite, stamp commit metadata server-side, and surface branch pointers so “main” always reflects “now” without trusting the renderer.
 
 ### Abstract meta-model enforcement
 
-The design requires every node/edge to obey the ArchiMate-style catalog (docs/DESIGN.md:83–196), but the engine only stores opaque NodeVersion/EdgeVersion records with TODOs where schema validation should live (crates/aideon-praxis-engine/src/engine.rs:183 and crates/aideon-praxis-engine/src/graph.rs:235); StateAtResult today exposes counts only (crates/aideon-mneme-core/src/temporal.rs:24), so no meta-model attributes reach consumers. Introduce a MetaModelRegistry that materialises the schema definitions from commit-style data (e.g., `docs/data/meta/core-v1.json` seeded during import) so the same nested graph structure describing object types, attributes, and constraints is versioned alongside regular commits, enforced inside `GraphSnapshot::apply`, and surfaced as typed DTOs the renderer consumes without embedding business logic.
+The design requires every node/edge to obey the ArchiMate-style catalog (docs/DESIGN.md:83–196), but the engine only stores opaque NodeVersion/EdgeVersion records with TODOs where schema validation should live (crates/aideon_praxis_engine/src/engine.rs:183 and crates/aideon_praxis_engine/src/graph.rs:235); StateAtResult today exposes counts only (crates/aideon_mneme_core/src/temporal.rs:24), so no meta-model attributes reach consumers. Introduce a MetaModelRegistry that materialises the schema definitions from commit-style data (e.g., `docs/data/meta/core-v1.json` seeded during import) so the same nested graph structure describing object types, attributes, and constraints is versioned alongside regular commits, enforced inside `GraphSnapshot::apply`, and surfaced as typed DTOs the renderer consumes without embedding business logic.
 
 ### Configurable/deliverable meta-model
 
-The delivered meta-model is only prose in docs/DESIGN.md, and there’s no mechanism to configure it or ship extensions; even the analytics contract (app/praxis-adapters/src/contracts.ts:145) lists job types but nothing populates them. Instead of keeping schema definitions in static files, treat meta-model configuration as data that can be authoring via in-app screens—users compose object types in a graph-style hierarchy, define attributes and constraints, and commit the resulting descriptor; the baseline offering (`docs/data/meta/core-v1.json`) is just the default data payload. This data-first approach lets overrides land as additional commits or files under `.praxis/meta`, and the host exposes the active schema so UI/business logic can materialise different viewpoints without code changes.
+The delivered meta-model is only prose in docs/DESIGN.md, and there’s no mechanism to configure it or ship extensions; even the analytics contract (app/PraxisAdapters/src/contracts.ts:145) lists job types but nothing populates them. Instead of keeping schema definitions in static files, treat meta-model configuration as data that can be authoring via in-app screens—users compose object types in a graph-style hierarchy, define attributes and constraints, and commit the resulting descriptor; the baseline offering (`docs/data/meta/core-v1.json`) is just the default data payload. This data-first approach lets overrides land as additional commits or files under `.praxis/meta`, and the host exposes the active schema so UI/business logic can materialise different viewpoints without code changes.
 
 ### Base dataset alignment
 
-Requirements call for a baseline dataset that mirrors the strategy-to-execution chain, yet the engine seeds just five sample nodes and four edges (crates/aideon-praxis-engine/src/engine.rs:425) and the renderer’s dev adapter merely tracks node/edge counts in memory (app/praxis-adapters/src/development-memory.ts:14). Build an importer that loads the real delivered dataset (value streams, capabilities, applications, plan events, etc.) into commits, version it alongside migrations, and ensure state_at can stream actual graph data (not just counts) to both the canvas and reporting layers.
+Requirements call for a baseline dataset that mirrors the strategy-to-execution chain, yet the engine seeds just five sample nodes and four edges (crates/aideon_praxis_engine/src/engine.rs:425) and the renderer’s dev adapter merely tracks node/edge counts in memory (app/PraxisAdapters/src/development-memory.ts:14). Build an importer that loads the real delivered dataset (value streams, capabilities, applications, plan events, etc.) into commits, version it alongside migrations, and ensure state_at can stream actual graph data (not just counts) to both the canvas and reporting layers.
 
 ### Reporting & analytics surface
 
-The design promises executive dashboards, scorecards, and roadmap visuals (docs/DESIGN.md:860–884), but today the renderer shows only snapshot counts and diff totals in MainView (app/praxis-desktop/src/lib/components/MainView.svelte:275), the canvas pulls a hard-coded two-rectangle scene (crates/aideon-chrona-visualization/src/scene.rs:5), StateAtResult lacks any graph detail, and Metis is an empty placeholder (crates/aideon-metis-analytics/src/lib.rs:1). Deliver the analytics worker jobs defined in the contracts file (app/praxis-adapters/src/contracts.ts:145), add host commands to invoke them, persist/report their outputs (heatmaps, TCO, timeline charts), and expand.
+The design promises executive dashboards, scorecards, and roadmap visuals (docs/DESIGN.md:860–884), but today the renderer shows only snapshot counts and diff totals in MainView (app/PraxisDesktop/src/lib/components/MainView.svelte:275), the canvas pulls a hard-coded two-rectangle scene (crates/aideon_chrona_visualization/src/scene.rs:5), StateAtResult lacks any graph detail, and Metis is an empty placeholder (crates/aideon_metis_analytics/src/lib.rs:1). Deliver the analytics worker jobs defined in the contracts file (app/PraxisAdapters/src/contracts.ts:145), add host commands to invoke them, persist/report their outputs (heatmaps, TCO, timeline charts), and expand.
 
 ## 1. Guiding Principles
 
@@ -55,7 +55,7 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 **Partially complete**
 
 - `SqliteDb` now persists commits/refs/tags via SeaORM and `PraxisEngine::ensure_seeded` replays the embedded baseline dataset whenever `main` is empty so fresh installs have realistic history.
-- `create_datastore`, `cargo aideon-xtask import-dataset`, and `cargo aideon-xtask health` provide the bootstrapping and verification tooling needed to stand up and audit SQLite datastores.
+- `create_datastore`, `cargo aideon_xtask import-dataset`, and `cargo aideon_xtask health` provide the bootstrapping and verification tooling needed to stand up and audit SQLite datastores.
 
 **Outstanding**
 
@@ -65,10 +65,10 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 1. **Async trait conversion**
    - Update `mneme::Store` to an async trait (via `async-trait`) so SeaORM can power commit, branch, and tag operations without blocking the host runtime.
-   - Modernise every caller (`PraxisEngine`, host worker, aideon-xtask CLI, tests) to await the store operations without changing the visible API surface.
+   - Modernise every caller (`PraxisEngine`, host worker, aideon_xtask CLI, tests) to await the store operations without changing the visible API surface.
    - _Completed — the store trait is async end-to-end, `SqliteDb` executes directly on the caller runtime, and all engines/hosts/tests await the new futures._
 2. **SeaORM schema & migrations**
-   - Introduce SeaORM 1.1.19 + SeaQuery in `crates/aideon-mneme-core`, define entities for commits, refs, snapshot tags, and the readonly Metis fact/star tables.
+   - Introduce SeaORM 1.1.19 + SeaQuery in `crates/aideon_mneme_core`, define entities for commits, refs, snapshot tags, and the readonly Metis fact/star tables.
    - Build migrations that create the tables with the required constraints and indexes, and run them at startup via a SeaORM migrator.
    - _In progress — `mneme_migrations` now records applied versions; commit/node/edge fact tables populate during projections, but aggregated rollups and merge regression coverage remain._
 3. **Baseline dataset seeding**
@@ -95,7 +95,7 @@ Each workstream below details steps, Definition of Done (DoD), testing, and comm
 
 ### Operational Tooling
 
-- `cargo aideon-xtask health --datastore .praxis` scans branch heads, commit timelines, and `snapshot/<commit>` tags without mutating state and exits non-zero if drift or corruption is detected. Use `--branch` to scope checks to a single scenario and `--quiet` for automation-friendly logging.
+- `cargo aideon_xtask health --datastore .praxis` scans branch heads, commit timelines, and `snapshot/<commit>` tags without mutating state and exits non-zero if drift or corruption is detected. Use `--branch` to scope checks to a single scenario and `--quiet` for automation-friendly logging.
 
 ### Commit & Tracking Guidance
 
@@ -177,14 +177,14 @@ swaps trivial.
 
 **Objective:** Replace toy seed data with the delivered strategy-to-execution dataset aligned with the meta-model, and provide tooling to maintain it.
 
-**Status (2025-11-12):** `docs/data/base/baseline.yaml` now holds dataset v1.0.0, seeded via `PraxisEngine::bootstrap_with_dataset` and the `cargo aideon-xtask import-dataset` CLI (with dry-run validation). Fresh stores receive the meta-model commit plus two baseline commits automatically.
+**Status (2025-11-12):** `docs/data/base/baseline.yaml` now holds dataset v1.0.0, seeded via `PraxisEngine::bootstrap_with_dataset` and the `cargo aideon_xtask import-dataset` CLI (with dry-run validation). Fresh stores receive the meta-model commit plus two baseline commits automatically.
 
 ### Status
 
 **Partially complete**
 
 - Authored the first semantic-versioned baseline YAML + changelog, embedded it in Praxis, and documented the import workflow with dry-run validation.
-- Added CLI wiring so `cargo aideon-xtask import-dataset` and `ensure_seeded` replay the baseline dataset into new datastores.
+- Added CLI wiring so `cargo aideon_xtask import-dataset` and `ensure_seeded` replay the baseline dataset into new datastores.
 
 **Outstanding**
 
@@ -196,8 +196,8 @@ swaps trivial.
    - Model baseline entities/relations in structured files under `docs/data/base/` with semantic version metadata and a change log.
    - _Initial baseline (v1.0.0) is present; further versions and automation for changelog publication remain to be built._
 2. **Importer pipeline**
-   - `cargo aideon-xtask import-dataset` replays the YAML into ordered commits on `main`, with `--dry-run` enforcing validation in CI.
-   - _Completed — the aideon-xtask command supports dry-run/import flows, but CI wiring still needs to be added._
+   - `cargo aideon_xtask import-dataset` replays the YAML into ordered commits on `main`, with `--dry-run` enforcing validation in CI.
+   - _Completed — the aideon_xtask command supports dry-run/import flows, but CI wiring still needs to be added._
 3. **Engine seeding**
    - Praxis `ensure_seeded` now reuses the importer helpers so fresh installs automatically include the meta-model plus baseline commits tagged `baseline/v1`.
    - _Completed — bootstrapping seeds meta-model + baseline when `main` is empty; upgrade path still needs hash verification._
@@ -215,7 +215,7 @@ swaps trivial.
 
 - Integration test runs importer into temporary store; asserts expected counts per type.
 - Lint dataset files via JSON Schema/YAML validation (add to CI) and capture in `docs/data/README.md` workflow.
-- Document manual validation steps (e.g., `cargo aideon-xtask import-dataset --dry-run`).
+- Document manual validation steps (e.g., `cargo aideon_xtask import-dataset --dry-run`).
 
 ### Commit & Tracking Guidance
 
@@ -240,9 +240,9 @@ swaps trivial.
 ### Tasks
 
 1. **Worker jobs**
-   - Flesh out `crates/aideon-metis-analytics` with algorithms for `Analytics.ShortestPath`, `Analytics.Centrality`, `Analytics.Impact`, `Finance.TCO` using graph snapshots.
+   - Flesh out `crates/aideon_metis_analytics` with algorithms for `Analytics.ShortestPath`, `Analytics.Centrality`, `Analytics.Impact`, `Finance.TCO` using graph snapshots.
    - Provide deterministic fixtures and SLO instrumentation.
-   - _Not started — `crates/aideon-metis-analytics/src/lib.rs` still exports a placeholder string._
+   - _Not started — `crates/aideon_metis_analytics/src/lib.rs` still exports a placeholder string._
 2. **Host adapters**
    - Expose new Tauri commands (e.g., `analytics_shortest_path`, `report_capability_scorecard`).
    - Update TypeScript adapters/contracts to call commands with typed payloads.

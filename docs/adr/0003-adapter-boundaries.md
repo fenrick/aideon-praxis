@@ -26,7 +26,7 @@ Constraints:
 - Renderer never imports DB/HTTP clients; the host exposes typed commands only.
 - Desktop mode opens no TCP ports. Host ↔ Worker use in-process modules now; later UDS/Named Pipes
   with JSON-RPC. Contracts unchanged across modes.
-- DTOs live in `crates/aideon-mneme-core` and are shared across host and worker crates.
+- DTOs live in `crates/aideon_mneme_core` and are shared across host and worker crates.
 
 ### Consequences
 
@@ -36,6 +36,6 @@ Constraints:
 
 ### Verification
 
-- Interfaces live at `app/praxis-adapters/src/index.ts` with unit tests.
+- Interfaces live at `app/PraxisAdapters/src/index.ts` with unit tests.
 - Boundary tests ensure renderer imports remain safe (`ipc-boundary.test.ts`).
 - Host commands remain thin wrappers delegating to worker engines.

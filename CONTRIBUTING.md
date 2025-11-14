@@ -68,10 +68,10 @@ Quality gates
 
 ## Repository structure
 
-- `app/praxis-desktop` — Svelte renderer bundle consumed by the Tauri host.
-- `crates/aideon-praxis-host` — Rust desktop host (Tauri) and IPC surface.
-- `crates/{aideon-praxis-engine, aideon-chrona-visualization, aideon-metis-analytics, aideon-continuum-orchestrator, aideon-mneme-core}` — domain crates for graph/time/analytics, orchestration, and persistence.
-- `app/praxis-adapters` — Shared TypeScript adapters (renderer ↔ host contracts).
+- `app/PraxisDesktop` — Svelte renderer bundle consumed by the Tauri host.
+- `crates/aideon_praxis_host` — Rust desktop host (Tauri) and IPC surface.
+- `crates/{aideon_praxis_engine, aideon_chrona_visualization, aideon_metis_analytics, aideon_continuum_orchestrator, aideon_mneme_core}` — domain crates for graph/time/analytics, orchestration, and persistence.
+- `app/PraxisAdapters` — Shared TypeScript adapters (renderer ↔ host contracts).
 - `docs/` — Architecture content, ADRs, C4 diagrams.
 - `scripts/` — Minimal tooling entrypoints (issues.py). Legacy node scripts removed.
 

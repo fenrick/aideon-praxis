@@ -1,3 +1,4 @@
-packages/host/gen/**
 .github/workflows/reusable-release.yml
 
+pnpm-lock.yaml
+cargo.lock
