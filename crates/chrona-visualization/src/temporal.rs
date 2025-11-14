@@ -18,57 +18,69 @@ pub struct TemporalEngine {
 }
 
 impl TemporalEngine {
-    pub fn new() -> Self {
-        Self {
-            inner: PraxisEngine::new(),
-        }
+    /// Construct a new temporal engine backed by the default in-memory Praxis store.
+    pub async fn new() -> PraxisResult<Self> {
+        Ok(Self {
+            inner: PraxisEngine::new().await?,
+        })
     }
 
+    /// Wrap an existing Praxis engine.
     pub fn from_engine(engine: PraxisEngine) -> Self {
         Self { inner: engine }
     }
 
-    pub fn state_at(&self, args: StateAtArgs) -> PraxisResult<StateAtResult> {
-        self.inner.state_at(args)
+    /// Fetch state-at snapshot statistics for the given reference.
+    pub async fn state_at(&self, args: StateAtArgs) -> PraxisResult<StateAtResult> {
+        self.inner.state_at(args).await
     }
 
-    pub fn commit(&self, request: CommitChangesRequest) -> PraxisResult<String> {
-        self.inner.commit(request)
+    /// Commit a new change set to the underlying Praxis engine.
+    pub async fn commit(&self, request: CommitChangesRequest) -> PraxisResult<String> {
+        self.inner.commit(request).await
     }
 
-    pub fn create_branch(&self, name: String, from: Option<CommitRef>) -> PraxisResult<BranchInfo> {
-        self.inner.create_branch(name, from)
+    /// Create a new branch from the optional reference point.
+    pub async fn create_branch(
+        &self,
+        name: String,
+        from: Option<CommitRef>,
+    ) -> PraxisResult<BranchInfo> {
+        self.inner.create_branch(name, from).await
     }
 
-    pub fn list_commits(&self, branch: String) -> PraxisResult<Vec<CommitSummary>> {
-        self.inner.list_commits(branch)
+    /// List commits for the specified branch (oldest to newest).
+    pub async fn list_commits(&self, branch: String) -> PraxisResult<Vec<CommitSummary>> {
+        self.inner.list_commits(branch).await
     }
 
-    pub fn list_branches(&self) -> ListBranchesResponse {
-        let branches = self.inner.list_branches();
+    /// Enumerate branches along with their current heads.
+    pub async fn list_branches(&self) -> ListBranchesResponse {
+        let branches = self.inner.list_branches().await;
         ListBranchesResponse { branches }
     }
 
-    pub fn diff_summary(&self, args: DiffArgs) -> PraxisResult<DiffSummary> {
-        self.inner.diff_summary(args)
+    /// Produce a diff summary between two commit references.
+    pub async fn diff_summary(&self, args: DiffArgs) -> PraxisResult<DiffSummary> {
+        self.inner.diff_summary(args).await
     }
 
-    pub fn merge(&self, request: MergeRequest) -> PraxisResult<MergeResponse> {
-        self.inner.merge(request)
+    /// Merge the source branch into the target branch.
+    pub async fn merge(&self, request: MergeRequest) -> PraxisResult<MergeResponse> {
+        self.inner.merge(request).await
     }
 
-    pub fn topology_delta(&self, args: TopologyDeltaArgs) -> PraxisResult<TopologyDeltaResult> {
-        self.inner.topology_delta(args)
+    /// Compute topology deltas between two commit references.
+    pub async fn topology_delta(
+        &self,
+        args: TopologyDeltaArgs,
+    ) -> PraxisResult<TopologyDeltaResult> {
+        self.inner.topology_delta(args).await
     }
 
-    pub fn meta_model(&self) -> MetaModelDocument {
-        self.inner.meta_model()
-    }
-}
-
-impl Default for TemporalEngine {
-    fn default() -> Self {
-        Self::new()
+    /// Return the active meta-model document.
+    pub async fn meta_model(&self) -> MetaModelDocument {
+        self.inner.meta_model().await
     }
 }
 
@@ -97,9 +109,9 @@ mod tests {
         }
     }
 
-    #[test]
-    fn commit_and_state_flow() {
-        let engine = TemporalEngine::new();
+    #[tokio::test]
+    async fn commit_and_state_flow() {
+        let engine = TemporalEngine::new().await.expect("engine");
         let commit_id = engine
             .commit(CommitChangesRequest {
                 branch: "main".into(),
@@ -113,6 +125,7 @@ mod tests {
                     ..ChangeSet::default()
                 },
             })
+            .await
             .expect("commit ok");
         let result = engine
             .state_at(StateAtArgs {
@@ -120,14 +133,15 @@ mod tests {
                 scenario: Some("main".into()),
                 confidence: None,
             })
+            .await
             .expect("state ok");
         assert!(result.nodes > 0);
         assert!(result.edges > 0);
     }
 
-    #[test]
-    fn topology_delta_passthrough() {
-        let engine = TemporalEngine::new();
+    #[tokio::test]
+    async fn topology_delta_passthrough() {
+        let engine = TemporalEngine::new().await.expect("engine");
         let base = engine
             .commit(CommitChangesRequest {
                 branch: "main".into(),
@@ -141,6 +155,7 @@ mod tests {
                     ..ChangeSet::default()
                 },
             })
+            .await
             .expect("base commit");
 
         let expanded = engine
@@ -165,6 +180,7 @@ mod tests {
                     change
                 },
             })
+            .await
             .expect("expanded commit");
 
         let delta = engine
@@ -172,6 +188,7 @@ mod tests {
                 from: CommitRef::Id(base.clone()),
                 to: CommitRef::Id(expanded.clone()),
             })
+            .await
             .expect("topology delta");
         assert_eq!(delta.node_adds, 1);
         assert_eq!(delta.edge_adds, 1);
@@ -196,6 +213,7 @@ mod tests {
                     change
                 },
             })
+            .await
             .expect("trim commit");
 
         let delta_trim = engine
@@ -203,6 +221,7 @@ mod tests {
                 from: CommitRef::Id(expanded),
                 to: CommitRef::Id(trimmed),
             })
+            .await
             .expect("topology delta trim");
         assert_eq!(delta_trim.node_dels, 1);
         assert_eq!(delta_trim.edge_dels, 1);

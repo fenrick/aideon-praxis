@@ -118,13 +118,13 @@ pub(super) fn validate_branch_name(name: &str) -> PraxisResult<()> {
     Ok(())
 }
 
-pub(super) fn resolve_snapshot(
+pub(super) async fn resolve_snapshot(
     inner: &mut Inner,
     reference: &CommitRef,
     scenario_hint: Option<&str>,
 ) -> PraxisResult<(String, Arc<GraphSnapshot>, String)> {
-    let commit_id = resolve_commit_id(inner, reference, scenario_hint)?;
-    let record = inner.record_for(&commit_id)?;
+    let commit_id = resolve_commit_id(inner, reference, scenario_hint).await?;
+    let record = inner.record_for(&commit_id).await?;
     Ok((
         commit_id,
         Arc::clone(&record.snapshot),
@@ -132,14 +132,14 @@ pub(super) fn resolve_snapshot(
     ))
 }
 
-pub(super) fn resolve_commit_id(
+pub(super) async fn resolve_commit_id(
     inner: &mut Inner,
     reference: &CommitRef,
     scenario_hint: Option<&str>,
 ) -> PraxisResult<String> {
     match reference {
         CommitRef::Id(value) => {
-            if inner.record_for(value).is_ok() {
+            if inner.record_for(value).await.is_ok() {
                 Ok(value.clone())
             } else if let Some(branch_state) = inner.branches.get(value.as_str()) {
                 branch_state
@@ -170,7 +170,7 @@ pub(super) fn resolve_commit_id(
         }
         CommitRef::Branch { branch, at } => {
             if let Some(at) = at {
-                inner.record_for(at)?;
+                inner.record_for(at).await?;
                 return Ok(at.clone());
             }
             let target_branch =
@@ -190,12 +190,12 @@ pub(super) fn resolve_commit_id(
     }
 }
 
-pub(super) fn find_common_ancestor(
+pub(super) async fn find_common_ancestor(
     inner: &mut Inner,
     a: &str,
     b: &str,
 ) -> PraxisResult<Option<String>> {
-    let ancestors_a = collect_ancestors(inner, a)?;
+    let ancestors_a = collect_ancestors(inner, a).await?;
     let mut queue: VecDeque<String> = VecDeque::new();
     queue.push_back(b.to_string());
     let mut visited = HashSet::new();
@@ -206,7 +206,7 @@ pub(super) fn find_common_ancestor(
         if ancestors_a.contains(&id) {
             return Ok(Some(id));
         }
-        if let Ok(record) = inner.record_for(&id) {
+        if let Ok(record) = inner.record_for(&id).await {
             for parent in &record.summary.parents {
                 queue.push_back(parent.clone());
             }
@@ -215,7 +215,7 @@ pub(super) fn find_common_ancestor(
     Ok(None)
 }
 
-fn collect_ancestors(inner: &mut Inner, head: &str) -> PraxisResult<HashSet<String>> {
+async fn collect_ancestors(inner: &mut Inner, head: &str) -> PraxisResult<HashSet<String>> {
     let mut visited = HashSet::new();
     let mut queue: VecDeque<String> = VecDeque::new();
     queue.push_back(head.to_string());
@@ -223,7 +223,7 @@ fn collect_ancestors(inner: &mut Inner, head: &str) -> PraxisResult<HashSet<Stri
         if !visited.insert(id.clone()) {
             continue;
         }
-        if let Ok(record) = inner.record_for(&id) {
+        if let Ok(record) = inner.record_for(&id).await {
             for parent in &record.summary.parents {
                 queue.push_back(parent.clone());
             }
