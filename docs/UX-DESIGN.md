@@ -26,7 +26,7 @@ We will not lock into a single third-party kit; we compose small wrappers where 
 
 ## 3) Theming & Tokens
 
-- Tokens live in `app/praxis-desktop/src/lib/styles/tokens.css`. Theme composition and platform overrides live in `app/praxis-desktop/src/lib/styles/theme.css`.
+- Tokens live in `app/PraxisDesktop/src/lib/styles/tokens.css`. Theme composition and platform overrides live in `app/PraxisDesktop/src/lib/styles/theme.css`.
 - Primary token: `--color-accent` drives primary buttons, focus rings, selected state.
 - Platform dev-preview:
   - mac: `--color-accent: #0a84ff`

@@ -7,7 +7,7 @@
     "**/out/**",
     "**/.pnpm/**",
     "**/node_modules/**",
-    "app/praxis-desktop/.svelte-kit/**",
+    "app/PraxisDesktop/.svelte-kit/**",
     "app/**/tsconfig.tsbuildinfo"
   ]
 }

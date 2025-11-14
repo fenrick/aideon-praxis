@@ -10,7 +10,7 @@ Scopes*- and the\*\*Isolation pattern*- so the security posture holds when you a
 
 ## How this helps the transition (renderer stays stable)
 
-**Design seam:** treat every UX action as a call through a small TypeScript port (e.g., `app/praxis-desktop/src/lib/ports/temporal.ts`) → Tauri **Command** → Rust service **trait** (port). You ship two adapters:
+**Design seam:** treat every UX action as a call through a small TypeScript port (e.g., `app/PraxisDesktop/src/lib/ports/temporal.ts`) → Tauri **Command** → Rust service **trait** (port). You ship two adapters:
 
 - \*_LocalAdapter (default):_- calls in-process Rust modules (graph/time/analytics).
 - \*_RemoteAdapter (server mode):_- calls your server over HTTP/2 or WebSocket, then returns the same DTOs.

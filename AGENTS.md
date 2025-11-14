@@ -29,12 +29,12 @@ changes that respect our **time‑first, graph‑native** architecture and secur
 
 ## Repository boundaries (monorepo)
 
-- `app/praxis-desktop` — Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only).
-- `app/praxis-adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
-- `crates/aideon-praxis-host` — Tauri host (Rust) exposing the typed command/event surface.
-- `crates/{aideon-praxis-engine,aideon-chrona-visualization,aideon-metis-analytics,aideon-continuum-orchestrator}` — Rust domain crates (graph, time, analytics,
+- `app/PraxisDesktop` — Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only).
+- `app/PraxisAdapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
+- `crates/aideon_praxis_host` — Tauri host (Rust) exposing the typed command/event surface.
+- `crates/{aideon_praxis_engine,aideon_chrona_visualization,aideon_metis_analytics,aideon_continuum_orchestrator}` — Rust domain crates (graph, time, analytics,
   orchestration) scoped to host/worker logic.
-- `crates/aideon-mneme-core` — Aideon Mneme persistence layer (commits, refs, snapshots) powering SQLITE/other
+- `crates/aideon_mneme_core` — Aideon Mneme persistence layer (commits, refs, snapshots) powering SQLITE/other
   storage backends via a shared API.
 - `docs/` — C4 diagrams, meta‑model, viewpoints, ADRs.
 
@@ -155,7 +155,7 @@ defaults consistent with this guide.
 For the authoritative coding standards (quality gates, coverage targets,
 tooling, and CI rules), see `docs/CODING_STANDARDS.md`.
 
-### TypeScript / React (app/praxis-desktop, app/praxis-adapters)
+### TypeScript / React (app/PraxisDesktop, app/PraxisAdapters)
 
 – Node 24, React 18. Strict TS config; ESLint + Prettier.
 
@@ -176,7 +176,7 @@ Lint/Format discipline
 - Keep code paths single and explicit (server-only worker over UDS) to reduce maintenance cost.
   - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime.
 
-### Rust worker crates (crates/aideon-chrona-visualization, crates/aideon-metis-analytics, crates/aideon-praxis-engine, crates/aideon-continuum-orchestrator)
+### Rust worker crates (crates/aideon_chrona_visualization, crates/aideon_metis_analytics, crates/aideon_praxis_engine, crates/aideon_continuum_orchestrator)
 
 – Rust 2024 edition, `cargo fmt` + `cargo clippy --all-targets --all-features` clean.
 
@@ -275,7 +275,7 @@ Changes that could affect these must include a note in CHECKS and, when possible
 
 ## Example response template (use this shape)
 
-- Add `Temporal.TopologyDelta` trait to `crates/aideon-metis-analytics` with empty stub.
+- Add `Temporal.TopologyDelta` trait to `crates/aideon_metis_analytics` with empty stub.
 - Wire Tauri command to call the new trait via `WorkerState` adapter.
 - Extend Svelte store to request topology delta and render placeholder counts.
 
@@ -283,7 +283,7 @@ PATCH
 
 - Unified diffs here, paths from repo root.
 
-- New unit tests for topology_delta stub in `crates/aideon-metis-analytics`; Vitest store smoke tests.
+- New unit tests for topology_delta stub in `crates/aideon_metis_analytics`; Vitest store smoke tests.
 
 RUN
 

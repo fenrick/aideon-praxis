@@ -15,8 +15,8 @@
     "resolveJsonModule": true,
     "types": ["node", "vite/client"],
     "paths": {
-      "@aideon/praxis-adapters": ["app/praxis-adapters/src"],
-      "@aideon/praxis-adapters/*": ["app/praxis-adapters/src/*"]
+      "@aideon/PraxisAdapters": ["app/PraxisAdapters/src"],
+      "@aideon/PraxisAdapters/*": ["app/PraxisAdapters/src/*"]
     }
   }
 }

@@ -4,11 +4,11 @@ This is a draft monorepo scaffold following the guardrails in `AGENTS.md`.
 
 Packages:
 
-- `app/praxis-desktop` — Svelte renderer bundle consumed by the Tauri host.
-- `crates/aideon-praxis-host` — Tauri desktop host (Rust) with typed IPC surface.
-- `crates/{aideon-praxis-engine, aideon-chrona-visualization, aideon-metis-analytics, aideon-continuum-orchestrator, aideon-mneme-core}` —
+- `app/PraxisDesktop` — Svelte renderer bundle consumed by the Tauri host.
+- `crates/aideon_praxis_host` — Tauri desktop host (Rust) with typed IPC surface.
+- `crates/{aideon_praxis_engine, aideon_chrona_visualization, aideon_metis_analytics, aideon_continuum_orchestrator, aideon_mneme_core}` —
   Rust crates for the graph model, time engine, analytics, orchestration, and persistence/DTOs respectively.
-- `app/praxis-adapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
+- `app/PraxisAdapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
 
 Tooling:
 
@@ -24,16 +24,16 @@ Getting started
 
 - Prereqs: Node 24, Rust stable toolchain.
 - Enable Corepack then install deps: `corepack enable && pnpm install`.
-- Build once: `pnpm run build` (renderer assets to `app/praxis-desktop/dist/renderer`, main+preload to
-  `app/praxis-desktop/dist`).
+- Build once: `pnpm run build` (renderer assets to `app/PraxisDesktop/dist/renderer`, main+preload to
+  `app/PraxisDesktop/dist`).
 - Dev (no HTTP server): `pnpm tauri dev` (watches Vite + Tauri and launches the desktop app).
 
 See docs/commands.md for the full list of pnpm commands used across JS/TS and the Rust workspace.
 
 Packaging
 
-- Local packaging (unsigned): `pnpm --filter @aideon/praxis-desktop run dist`.
-- Outputs installers to `app/praxis-desktop/dist/pack/` for macOS (DMG), Windows (NSIS), and Linux
+- Local packaging (unsigned): `pnpm --filter @aideon/PraxisDesktop run dist`.
+- Outputs installers to `app/PraxisDesktop/dist/pack/` for macOS (DMG), Windows (NSIS), and Linux
   (AppImage/DEB).
 - CI packaging: when a GitHub Release is published (including nightly channel), the
   `Package Artifacts` workflow builds on macOS, Windows, and Linux and uploads assets to the release
@@ -47,7 +47,7 @@ Commit conventions and releases
 - Lint commit messages locally: `pnpm run commitlint`.
 - CI enforces PR title style and runs semantic-release on `main` to generate changelog and GitHub
   releases.
-- Version injection: during release, CI writes `app/praxis-desktop/src/version.ts` with the computed
+- Version injection: during release, CI writes `app/PraxisDesktop/src/version.ts` with the computed
   version so binaries embed an immutable version. Local dev uses `0.0.0-dev`.
 - Nightly builds: push a `nightly` branch. CI publishes prereleases like `x.y.z-nightly.YYYYMMDD`,
   channel `nightly`.
@@ -99,10 +99,10 @@ published under `docs/c4/`.
 ```
 .
 ├─ app/
-│  ├─ praxis-desktop/   # Svelte renderer bundle (Praxis + Chrona UI)
-│  ├─ praxis-adapters/  # TypeScript adapters bridging renderer ↔ host
-│  ├─ praxis-design-system/ # Shared UI components, theming, and tokens
-│  └─ praxis-dtos/       # Centralised DTOs that shape IPC contracts
+│  ├─ PraxisDesktop/   # Svelte renderer bundle (Praxis + Chrona UI)
+│  ├─ PraxisAdapters/  # TypeScript adapters bridging renderer ↔ host
+│  ├─ PraxisDesignSystem/ # Shared UI components, theming, and tokens
+│  └─ PraxisDtos/       # Centralised DTOs that shape IPC contracts
 ├─ crates/
 │  ├─ tauri/            # Desktop host (Rust + Tauri)
 │  ├─ praxis/           # Graph model crate (placeholder)

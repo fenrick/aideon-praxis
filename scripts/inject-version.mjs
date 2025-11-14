@@ -60,7 +60,7 @@ async function main() {
 
   // Desktop renderer version file
   updatedFiles.push(
-    await writeTypeScriptVersion(path.join(repoRoot, 'app/praxis-desktop/src/version.ts'), version),
+    await writeTypeScriptVersion(path.join(repoRoot, 'app/PraxisDesktop/src/version.ts'), version),
   );
 
   // Optional worker version file(s)
@@ -73,7 +73,7 @@ async function main() {
   }
 
   // Update Tauri configuration so bundles use the semantic-release version
-  const tauriConfigPath = path.join(repoRoot, 'crates/aideon-praxis-host/tauri.conf.json');
+  const tauriConfigPath = path.join(repoRoot, 'crates/aideon_praxis_host/tauri.conf.json');
   if (await fileExists(tauriConfigPath)) {
     updatedFiles.push(
       await updateJsonVersion(tauriConfigPath, version, (data, newVersion) => {

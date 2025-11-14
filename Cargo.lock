@@ -29,6 +29,100 @@ dependencies = [
 ]
 
 [[package]]
+name = "aideon_chrona_visualization"
+version = "0.0.0"
+dependencies = [
+ "aideon_mneme_core",
+ "aideon_praxis_engine",
+ "log",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "aideon_continuum_orchestrator"
+version = "0.0.0"
+
+[[package]]
+name = "aideon_metis_analytics"
+version = "0.0.0"
+
+[[package]]
+name = "aideon_mneme_core"
+version = "0.1.0"
+dependencies = [
+ "aideon_continuum_orchestrator",
+ "async-trait",
+ "sea-orm",
+ "sea-query",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+]
+
+[[package]]
+name = "aideon_praxis_engine"
+version = "0.0.0"
+dependencies = [
+ "aideon_continuum_orchestrator",
+ "aideon_mneme_core",
+ "async-recursion",
+ "blake3",
+ "futures",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "time",
+ "tokio",
+]
+
+[[package]]
+name = "aideon_praxis_facade"
+version = "0.0.0"
+dependencies = [
+ "aideon_chrona_visualization",
+ "aideon_continuum_orchestrator",
+ "aideon_metis_analytics",
+ "aideon_mneme_core",
+ "aideon_praxis_engine",
+]
+
+[[package]]
+name = "aideon_praxis_host"
+version = "0.0.0"
+dependencies = [
+ "aideon_praxis_facade",
+ "dirs",
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-log",
+ "tauri-plugin-opener",
+ "tokio",
+ "window-vibrancy",
+]
+
+[[package]]
+name = "aideon_xtask"
+version = "0.1.0"
+dependencies = [
+ "aideon_continuum_orchestrator",
+ "aideon_mneme_core",
+ "aideon_praxis_engine",
+ "anyhow",
+ "clap",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "aliasable"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -679,17 +773,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "aideon-chrona-visualization"
-version = "0.0.0"
-dependencies = [
- "log",
- "aideon-mneme-core",
- "aideon-praxis-engine",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "chrono"
 version = "0.4.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -777,10 +860,6 @@ name = "constant_time_eq"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
-
-[[package]]
-name = "aideon-continuum-orchestrator"
-version = "0.0.0"
 
 [[package]]
 name = "convert_case"
@@ -2539,10 +2618,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aideon-metis-analytics"
-version = "0.0.0"
-
-[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2567,21 +2642,6 @@ dependencies = [
  "libc",
  "wasi 0.11.1+wasi-snapshot-preview1",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "aideon-mneme-core"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "aideon-continuum-orchestrator",
- "sea-orm",
- "sea-query",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 1.0.69",
- "tokio",
 ]
 
 [[package]]
@@ -3420,52 +3480,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
 dependencies = [
  "zerocopy",
-]
-
-[[package]]
-name = "aideon-praxis-engine"
-version = "0.0.0"
-dependencies = [
- "async-recursion",
- "blake3",
- "aideon-continuum-orchestrator",
- "futures",
- "aideon-mneme-core",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "thiserror 1.0.69",
- "time",
- "tokio",
-]
-
-[[package]]
-name = "aideon-praxis-facade"
-version = "0.0.0"
-dependencies = [
- "aideon-chrona-visualization",
- "aideon-continuum-orchestrator",
- "aideon-metis-analytics",
- "aideon-mneme-core",
- "aideon-praxis-engine",
-]
-
-[[package]]
-name = "aideon-praxis-host"
-version = "0.0.0"
-dependencies = [
- "dirs",
- "log",
- "aideon-praxis-facade",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-log",
- "tauri-plugin-opener",
- "tokio",
- "window-vibrancy",
 ]
 
 [[package]]
@@ -6644,20 +6658,6 @@ dependencies = [
  "libc",
  "once_cell",
  "pkg-config",
-]
-
-[[package]]
-name = "aideon-xtask"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "aideon-continuum-orchestrator",
- "aideon-mneme-core",
- "aideon-praxis-engine",
- "serde",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
