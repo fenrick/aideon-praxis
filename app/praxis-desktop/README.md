@@ -27,7 +27,7 @@ Testing notes
 Security
 
 - No renderer HTTP. Host/worker run locally; desktop mode opens no TCP ports.
-- IPC bridge is minimal and typed; see `crates/praxis-host/src/lib.rs`.
+- IPC bridge is minimal and typed; see `crates/aideon-praxis-host/src/lib.rs`.
 
 UI
 

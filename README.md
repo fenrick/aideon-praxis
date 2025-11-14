@@ -5,8 +5,8 @@ This is a draft monorepo scaffold following the guardrails in `AGENTS.md`.
 Packages:
 
 - `app/praxis-desktop` — Svelte renderer bundle consumed by the Tauri host.
-- `crates/praxis-host` — Tauri desktop host (Rust) with typed IPC surface.
-- `crates/{praxis-engine, chrona-visualization, metis-analytics, continuum-orchestrator, mneme-core}` —
+- `crates/aideon-praxis-host` — Tauri desktop host (Rust) with typed IPC surface.
+- `crates/{aideon-praxis-engine, aideon-chrona-visualization, aideon-metis-analytics, aideon-continuum-orchestrator, aideon-mneme-core}` —
   Rust crates for the graph model, time engine, analytics, orchestration, and persistence/DTOs respectively.
 - `app/praxis-adapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
 

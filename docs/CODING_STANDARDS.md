@@ -285,8 +285,8 @@ boundaries across the Aideon Praxis monorepo.
 
 ### Rust crate & module naming conventions
 
-- **Crate package names** (Cargo `[package].name`): kebab‑case (e.g., `praxis-engine`); the crate library name defaults to snake_case; set `lib.name` only if needed for coherence.
-- **Prefixes & suffixes**: use the product prefixes from _Product modules & naming_ and the approved suffixes. Proc‑macro crates end with `-macros`; the automation crate at the workspace root is named `xtask`.
+- **Crate package names** (Cargo `[package].name`): kebab‑case (e.g., `aideon-praxis-engine`); the crate library name defaults to snake_case; set `lib.name` only if needed for coherence.
+- **Prefixes & suffixes**: use the product prefixes from _Product modules & naming_ and the approved suffixes. Proc‑macro crates end with `-macros`; the automation crate at the workspace root is named `aideon-xtask`.
 - **Modules/files**: snake_case; prefer clear domain nouns. Avoid abbreviations and generic labels. Only create a `prelude` module for a small set of frequently used traits/types; keep it minimal and opt‑in.
 - **Features**: all‑lowercase, additive; backend features (`sqlite`, `postgres`, `memory`), platform features (`desktop`, `server`). Features must not change public type shapes in incompatible ways.
 - **Public API paths**: expose a flat, tidy surface via `lib.rs` facades and selective `pub use`. Do not leak third‑party types or deep module paths in public signatures.
