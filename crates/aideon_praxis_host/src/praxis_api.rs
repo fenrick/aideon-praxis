@@ -23,6 +23,7 @@ pub async fn praxis_matrix_view(
     Ok(MatrixViewModel::demo(definition))
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn praxis_chart_view(definition: ChartViewDefinition) -> Result<ChartViewModel, String> {
     Ok(ChartViewModel::demo(definition))
@@ -114,6 +115,7 @@ pub struct MatrixViewDefinition {
     pub filters: Option<ViewFilters>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartViewDefinition {
@@ -418,6 +420,7 @@ pub struct MatrixViewModel {
     pub cells: Vec<MatrixCell>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartPoint {
@@ -427,6 +430,7 @@ pub struct ChartPoint {
     pub timestamp: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartSeries {
@@ -437,6 +441,7 @@ pub struct ChartSeries {
     pub points: Vec<ChartPoint>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartKpiSummary {
@@ -449,6 +454,7 @@ pub struct ChartKpiSummary {
     pub trend: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartViewModel {
@@ -525,6 +531,7 @@ impl MatrixViewModel {
     }
 }
 
+#[allow(dead_code)]
 impl ChartViewModel {
     fn demo(definition: ChartViewDefinition) -> Self {
         let metadata = metadata_from(
@@ -671,6 +678,7 @@ fn map_from(value: Value) -> Map<String, Value> {
     }
 }
 
+#[allow(dead_code)]
 fn recent_velocity_points() -> Vec<ChartPoint> {
     let now = OffsetDateTime::now_utc();
     let mut points = Vec::new();
@@ -687,6 +695,7 @@ fn recent_velocity_points() -> Vec<ChartPoint> {
     points
 }
 
+#[allow(dead_code)]
 fn competency_scores() -> Vec<ChartPoint> {
     ["Security", "Resilience", "Efficiency", "Experience"]
         .iter()
@@ -698,6 +707,7 @@ fn competency_scores() -> Vec<ChartPoint> {
         .collect()
 }
 
+#[allow(dead_code)]
 fn competency_targets() -> Vec<ChartPoint> {
     ["Security", "Resilience", "Efficiency", "Experience"]
         .iter()
@@ -709,10 +719,12 @@ fn competency_targets() -> Vec<ChartPoint> {
         .collect()
 }
 
+#[allow(dead_code)]
 fn seeded_score(label: &str) -> i32 {
     let mut hash = 0i32;
     for ch in label.chars() {
-        hash = hash.wrapping_shl(5).wrapping_sub(hash) + i32::from(ch as u32);
+        let code_point = ch as i32;
+        hash = hash.wrapping_shl(5).wrapping_sub(hash) + code_point;
     }
     60 + (hash.abs() % 35)
 }

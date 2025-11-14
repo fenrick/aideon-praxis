@@ -7,7 +7,8 @@ const selectCommitSpy = vi.fn();
 const selectBranchSpy = vi.fn();
 
 vi.mock('@/time/use-temporal-panel', () => ({
-  useTemporalPanel: () => [mockState, { selectCommit: selectCommitSpy, selectBranch: selectBranchSpy }] as const,
+  useTemporalPanel: () =>
+    [mockState, { selectCommit: selectCommitSpy, selectBranch: selectBranchSpy }] as const,
 }));
 
 let mockState: TemporalPanelState;

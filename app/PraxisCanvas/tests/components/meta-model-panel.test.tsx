@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchMetaModelSpy = vi.fn();
@@ -11,8 +11,8 @@ vi.mock('@/lib/meta-model', async () => {
   };
 });
 
-import type { MetaModelSchema } from '@/lib/meta-model';
 import { MetaModelPanel } from '@/components/dashboard/meta-model-panel';
+import type { MetaModelSchema } from '@/lib/meta-model';
 
 const SAMPLE_SCHEMA: MetaModelSchema = {
   version: '1.0',
@@ -48,11 +48,14 @@ describe('MetaModelPanel', () => {
   });
 
   it('shows error banner if fetch fails and allows retry', async () => {
-    fetchMetaModelSpy.mockRejectedValueOnce(new Error('network down')).mockResolvedValueOnce(SAMPLE_SCHEMA);
+    fetchMetaModelSpy
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValueOnce(SAMPLE_SCHEMA);
     render(<MetaModelPanel />);
 
     expect(await screen.findByText('Failed to load meta-model')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Refresh'));
+    const [reloadButton] = screen.getAllByText('Reload schema');
+    fireEvent.click(reloadButton);
     expect(await screen.findByText('Capability')).toBeInTheDocument();
   });
 });

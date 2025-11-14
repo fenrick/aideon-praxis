@@ -54,7 +54,7 @@ export function MetaModelPanel() {
             }}
             disabled={status === 'loading'}
           >
-            Refresh
+            Reload schema
           </Button>
         </div>
         {renderSchemaState({
@@ -90,7 +90,7 @@ function renderSchemaState(parameters: {
             onRetry();
           }}
         >
-          Retry
+          Retry load
         </Button>
       </div>
     );
