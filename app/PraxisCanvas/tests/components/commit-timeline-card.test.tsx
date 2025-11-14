@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TemporalPanelState } from '@/time/use-temporal-panel';
@@ -74,7 +74,10 @@ describe('CommitTimelineCard', () => {
   });
 
   it('shows merge conflicts when provided', () => {
-    mockState = { ...mockState, mergeConflicts: [{ reference: 'cap-1', kind: 'node', message: 'Diverged' }] };
+    mockState = {
+      ...mockState,
+      mergeConflicts: [{ reference: 'cap-1', kind: 'node', message: 'Diverged' }],
+    };
 
     render(<CommitTimelineCard />);
 
