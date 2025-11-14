@@ -1,4 +1,4 @@
-# @aideon/praxis-adapters — Type Contracts
+# @aideon/PraxisAdapters — Type Contracts
 
 TypeScript interfaces defining the UI boundary for Graph access, Storage
 snapshots, and the Worker client. Implementations are backend‑agnostic and must
@@ -24,14 +24,14 @@ Usage
 
 - UI code depends solely on these interfaces; concrete adapters live in dedicated
   renderer or host modules and are injected at the IPC boundary.
-- Import from `@aideon/praxis-adapters` to obtain the adapters and shared
+- Import from `@aideon/PraxisAdapters` to obtain the adapters and shared
   contracts, e.g.:
 
   ```ts
-  import type { GraphAdapter, TemporalStateSnapshot } from '@aideon/praxis-adapters';
+  import type { GraphAdapter, TemporalStateSnapshot } from '@aideon/PraxisAdapters';
   ```
 
-- General DTOs like temporal snapshots are defined in `@aideon/praxis-dtos`.
+- General DTOs like temporal snapshots are defined in `@aideon/PraxisDtos`.
 
 Testing
 

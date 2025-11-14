@@ -2,7 +2,7 @@
   // Platform-aware toolbar. On Windows we render Fluent buttons; on macOS we
   // keep a lightweight style (future: Puppertino). Others default to shadcn-like
   // styles backed by our Tailwind/theme.css.
-  import { IconButton } from '@aideon/praxis-design-system';
+  import { IconButton } from '@aideon/PraxisDesignSystem';
   import { debug, info, logSafely } from '$lib/logging';
   import { searchStore, type SearchResult } from '$lib/stores/search';
   const {

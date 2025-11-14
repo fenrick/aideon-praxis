@@ -2,7 +2,7 @@
   // Minimal OS-specific component previews
   // Assumes the theme manager has already injected any required CSS/assets
   import { onMount } from 'svelte';
-  import { getResolvedUiTheme, onUiThemeChange } from '@aideon/praxis-design-system';
+  import { getResolvedUiTheme, onUiThemeChange } from '@aideon/PraxisDesignSystem';
   let theme = $state(getResolvedUiTheme());
   onMount(() => {
     const off = onUiThemeChange((t) => (theme = t));

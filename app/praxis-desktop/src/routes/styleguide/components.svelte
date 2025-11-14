@@ -12,7 +12,7 @@
     ToolbarButton,
     Tooltip,
     push as toast,
-  } from '@aideon/praxis-design-system';
+  } from '@aideon/PraxisDesignSystem';
   import AppToolbar from '$lib/components/Toolbar.svelte';
   import MainView from '$lib/components/MainView.svelte';
   import SidebarComponent from '$lib/components/Sidebar.svelte';

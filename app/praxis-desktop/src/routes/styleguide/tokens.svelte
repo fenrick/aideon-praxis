@@ -1,5 +1,5 @@
 <script lang="ts">
-  import '@aideon/praxis-design-system/styles/theme.css';
+  import '@aideon/PraxisDesignSystem/styles/theme.css';
 </script>
 
 <section>

@@ -3,7 +3,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { get } from 'svelte/store';
   import { debug, error, info, logSafely } from '$lib/logging';
-  import { initUiTheme } from '@aideon/praxis-design-system';
+  import { initUiTheme } from '@aideon/PraxisDesignSystem';
   import AboutPanel from '$lib/components/AboutPanel.svelte';
   import MetaModelPanel from '$lib/components/MetaModelPanel.svelte';
   import MainView from '$lib/components/MainView.svelte';

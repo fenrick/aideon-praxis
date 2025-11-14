@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["app/**/*.ts", "app/**/*.tsx"],
+  "include": ["app/**/*.ts", "app/**/*.tsx", "app/**/*.d.ts"],
   "exclude": [
     "**/dist/**",
     "**/build/**",

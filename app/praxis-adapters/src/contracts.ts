@@ -7,7 +7,7 @@
  * interfaces to guarantee interoperability between local and remote hosts.
  */
 
-export { ensureIsoDateTime } from '@aideon/praxis-dtos';
+export { ensureIsoDateTime } from '@aideon/PraxisDtos';
 export type {
   ConfidencePercent,
   GraphSnapshotMetrics,
@@ -33,7 +33,7 @@ export type {
   TemporalTopologyDeltaMetrics,
   TemporalTopologyDeltaParameters,
   TemporalTopologyDeltaSnapshot,
-} from '@aideon/praxis-dtos';
+} from '@aideon/PraxisDtos';
 
 import type {
   IsoDateTime,
@@ -44,7 +44,7 @@ import type {
   TemporalStateSnapshot,
   TemporalTopologyDeltaParameters,
   TemporalTopologyDeltaSnapshot,
-} from '@aideon/praxis-dtos';
+} from '@aideon/PraxisDtos';
 
 /**
  * Analytics job definitions exposed by the WorkerClient. These mirror the job

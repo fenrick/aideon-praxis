@@ -1,4 +1,4 @@
-import type { MetaModelDocument } from '@aideon/praxis-adapters/contracts';
+import type { MetaModelDocument } from '@aideon/PraxisAdapters/contracts';
 import { get, writable } from 'svelte/store';
 import type { MetaModelPort } from '../ports/meta-model.js';
 import { metaModelPort } from '../ports/meta-model.js';

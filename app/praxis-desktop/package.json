@@ -1,5 +1,5 @@
 {
-  "name": "@aideon/praxis-desktop",
+  "name": "@aideon/PraxisDesktop",
   "version": "0.1.0",
   "private": true,
   "main": "",
@@ -24,7 +24,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@aideon/praxis-design-system": "workspace:*",
+    "@aideon/PraxisDesignSystem": "workspace:*",
     "@fluentui/web-components": "^2.6.1",
     "@iconify/svelte": "^5.0.2",
     "@tauri-apps/api": "^2.9.0",

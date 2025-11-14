@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Guard to ensure shared UI components live in @aideon/praxis-design-system.
+ * Guard to ensure shared UI components live in @aideon/PraxisDesignSystem.
  * Fails if app/praxis-desktop/src/lib/ui contains any implementation files.
  */
 

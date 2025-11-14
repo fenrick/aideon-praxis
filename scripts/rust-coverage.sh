@@ -4,7 +4,7 @@ set -euo pipefail
 # Generate Rust coverage (LCOV) for the Tauri crate using grcov.
 # Requires: nightly or stable with llvm-tools-preview and grcov installed.
 
-CRATE_DIR="crates/praxis-host"
+CRATE_DIR="crates/aideon_praxis_host"
 OUT_DIR="$CRATE_DIR/coverage"
 
 if ! command -v grcov >/dev/null 2>&1; then

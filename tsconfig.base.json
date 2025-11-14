@@ -15,8 +15,12 @@
     "resolveJsonModule": true,
     "types": ["node", "vite/client"],
     "paths": {
-      "@aideon/praxis-adapters": ["app/praxis-adapters/src"],
-      "@aideon/praxis-adapters/*": ["app/praxis-adapters/src/*"]
+      "@aideon/PraxisAdapters": ["app/praxis-adapters/src"],
+      "@aideon/PraxisAdapters/*": ["app/praxis-adapters/src/*"],
+      "@aideon/PraxisDtos": ["app/praxis-dtos/src"],
+      "@aideon/PraxisDtos/*": ["app/praxis-dtos/src/*"],
+      "@aideon/PraxisDesignSystem": ["app/praxis-design-system/src"],
+      "@aideon/PraxisDesignSystem/*": ["app/praxis-design-system/src/*"]
     }
   }
 }

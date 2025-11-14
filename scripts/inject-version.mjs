@@ -73,7 +73,7 @@ async function main() {
   }
 
   // Update Tauri configuration so bundles use the semantic-release version
-  const tauriConfigPath = path.join(repoRoot, 'crates/praxis-host/tauri.conf.json');
+  const tauriConfigPath = path.join(repoRoot, 'crates/aideon_praxis_host/tauri.conf.json');
   if (await fileExists(tauriConfigPath)) {
     updatedFiles.push(
       await updateJsonVersion(tauriConfigPath, version, (data, newVersion) => {

@@ -65,7 +65,7 @@ host logs appear in the DevTools console in addition to the terminal.
 
 ```bash
 # Terminal A — UI (SvelteKit)
-pnpm --filter @aideon/praxis-desktop dev
+pnpm --filter @aideon/PraxisDesktop dev
 
 # Terminal B — Host (Tauri). From repo root:
 pnpm tauri dev

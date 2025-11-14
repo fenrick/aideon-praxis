@@ -33,8 +33,8 @@ boundaries across the Aideon Praxis monorepo.
 - **Canonical product modules**: Praxis (core/host & engine orchestration), Mneme (persistence & shared DTOs), Metis (analytics/reasoning), Chrona (time/visualisation), Continuum (automation/orchestration).
 - **When to add a new product module** (require ≥2): distinct runtime/container; distinct dependency profile; versioned public API with different release cadence; multi‑consumer reuse across UIs/services; separate security/licensing boundary.
 - **Repo‑wide naming prefixes**:
-  - Rust crates: `praxis-*`, `mneme-*`, `metis-*`, `chrona-*`, `continuum-*`.
-  - TypeScript packages (pnpm workspace): `@aideon/praxis-*`, `@aideon/mneme-*`, `@aideon/metis-*`, `@aideon/chrona-*`, `@aideon/continuum-*`.
+  - Rust crates: `aideon_praxis_*`, `aideon_mneme_*`, `aideon_metis_*`, `aideon_chrona_*`, `aideon_continuum_*`.
+  - TypeScript packages (pnpm workspace): `@aideon/Praxis*`, `@aideon/Mneme*`, `@aideon/Metis*`, `@aideon/Chrona*`, `@aideon/Continuum*`.
 - **Approved suffixes** (meaningful roles only): `-core`, `-engine`, `-adapter`, `-sqlite`, `-postgres`, `-api`, `-ui`, `-worker`, `-cli`, `-macros`, `-xtask`.
 - **Prohibited names**: `util`, `common`, `shared` (without a clarifying role). Use domain‑specific names or one of the approved suffixes.
 - **Path stability**: external import paths must remain stable across refactors; reshape internal structure via facades/barrel exports rather than changing consumer paths.
@@ -285,8 +285,8 @@ boundaries across the Aideon Praxis monorepo.
 
 ### Rust crate & module naming conventions
 
-- **Crate package names** (Cargo `[package].name`): kebab‑case (e.g., `praxis-engine`); the crate library name defaults to snake_case; set `lib.name` only if needed for coherence.
-- **Prefixes & suffixes**: use the product prefixes from _Product modules & naming_ and the approved suffixes. Proc‑macro crates end with `-macros`; the automation crate at the workspace root is named `xtask`.
+- **Crate package names** (Cargo `[package].name`): snake_case (e.g., `aideon_praxis_engine`); the crate library name defaults to snake_case; set `lib.name` only if needed for coherence.
+- **Prefixes & suffixes**: use the product prefixes from _Product modules & naming_ and the approved suffixes. Proc‑macro crates end with `-macros`; the automation crate at the workspace root is named `aideon_xtask`.
 - **Modules/files**: snake_case; prefer clear domain nouns. Avoid abbreviations and generic labels. Only create a `prelude` module for a small set of frequently used traits/types; keep it minimal and opt‑in.
 - **Features**: all‑lowercase, additive; backend features (`sqlite`, `postgres`, `memory`), platform features (`desktop`, `server`). Features must not change public type shapes in incompatible ways.
 - **Public API paths**: expose a flat, tidy surface via `lib.rs` facades and selective `pub use`. Do not leak third‑party types or deep module paths in public signatures.

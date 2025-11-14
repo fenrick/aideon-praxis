@@ -7,5 +7,6 @@
     "composite": true,
     "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [{ "path": "../praxis-dtos" }]
 }

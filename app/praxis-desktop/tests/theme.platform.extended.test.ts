@@ -1,7 +1,7 @@
-import type { UiTheme } from '@aideon/praxis-design-system';
+import type { UiTheme } from '@aideon/PraxisDesignSystem';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Extended coverage for @aideon/praxis-design-system/theme/platform.ts
+// Extended coverage for @aideon/PraxisDesignSystem/theme/platform.ts
 
 // Helper to mutate UA for auto-detection branches
 function withUserAgent(ua: string) {
@@ -42,7 +42,7 @@ describe('theme/platform extended', () => {
 
   it('auto-detects from userAgent and emits event', async () => {
     const restoreUA = withUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X)');
-    const platform = await import('@aideon/praxis-design-system');
+    const platform = await import('@aideon/PraxisDesignSystem');
 
     const calls: string[] = [];
     const off = platform.onUiThemeChange((t: UiTheme) => calls.push(t));
@@ -64,14 +64,14 @@ describe('theme/platform extended', () => {
 
   it('initializes from localStorage via initUiTheme()', async () => {
     localStorage.setItem('aideon.platform', 'win');
-    const platform = await import('@aideon/praxis-design-system');
+    const platform = await import('@aideon/PraxisDesignSystem');
     await platform.initUiTheme();
     expect(platform.getUiTheme()).toBe('win');
     expect(platform.getResolvedUiTheme()).toBe('win');
   });
 
   it('treats linux as neutral while keeping the stylesheet', async () => {
-    const platform = await import('@aideon/praxis-design-system');
+    const platform = await import('@aideon/PraxisDesignSystem');
     await platform.setUiTheme('neutral');
     const neutralLink = document.head.querySelector('#aideon-neutral-css');
     expect(neutralLink).toBeTruthy();
@@ -82,7 +82,7 @@ describe('theme/platform extended', () => {
   });
 
   it('does not duplicate the neutral stylesheet on repeated selection', async () => {
-    const platform = await import('@aideon/praxis-design-system');
+    const platform = await import('@aideon/PraxisDesignSystem');
     await platform.setUiTheme('neutral');
     await platform.setUiTheme('neutral');
     const links = document.head.querySelectorAll('#aideon-neutral-css');
@@ -102,7 +102,7 @@ describe('theme/platform extended', () => {
     });
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const platform = await import('@aideon/praxis-design-system');
+    const platform = await import('@aideon/PraxisDesignSystem');
     await platform.setUiTheme('win');
     // No warnings on success path
     expect(warnSpy).not.toHaveBeenCalled();
@@ -116,7 +116,7 @@ describe('theme/platform extended', () => {
     });
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const platform = await import('@aideon/praxis-design-system');
+    const platform = await import('@aideon/PraxisDesignSystem');
     await platform.setUiTheme('win');
     expect(warnSpy).toHaveBeenCalled();
   });

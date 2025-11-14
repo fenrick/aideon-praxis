@@ -1,15 +1,21 @@
 {
-  "name": "@aideon/praxis-dtos",
+  "name": "@aideon/PraxisDtos",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "license": "MIT",
   "description": "Shared DTOs for Prisma Praxis adapters and UI boundaries",
   "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
   },
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit"
   }

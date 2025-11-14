@@ -31,10 +31,10 @@ changes that respect our **time‑first, graph‑native** architecture and secur
 
 - `app/praxis-desktop` — Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only).
 - `app/praxis-adapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
-- `crates/praxis-host` — Tauri host (Rust) exposing the typed command/event surface.
-- `crates/{praxis-engine,chrona-visualization,metis-analytics,continuum-orchestrator}` — Rust domain crates (graph, time, analytics,
+- `crates/aideon_praxis_host` — Tauri host (Rust) exposing the typed command/event surface.
+- `crates/{aideon_praxis_engine,aideon_chrona_visualization,aideon_metis_analytics,aideon_continuum_orchestrator}` — Rust domain crates (graph, time, analytics,
   orchestration) scoped to host/worker logic.
-- `crates/mneme-core` — Aideon Mneme persistence layer (commits, refs, snapshots) powering SQLITE/other
+- `crates/aideon_mneme_core` — Aideon Mneme persistence layer (commits, refs, snapshots) powering SQLITE/other
   storage backends via a shared API.
 - `docs/` — C4 diagrams, meta‑model, viewpoints, ADRs.
 
@@ -176,7 +176,7 @@ Lint/Format discipline
 - Keep code paths single and explicit (server-only worker over UDS) to reduce maintenance cost.
   - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime.
 
-### Rust worker crates (crates/chrona-visualization, crates/metis-analytics, crates/praxis-engine, crates/continuum-orchestrator)
+### Rust worker crates (crates/aideon_chrona_visualization, crates/aideon_metis_analytics, crates/aideon_praxis_engine, crates/aideon_continuum_orchestrator)
 
 – Rust 2024 edition, `cargo fmt` + `cargo clippy --all-targets --all-features` clean.
 
@@ -275,7 +275,7 @@ Changes that could affect these must include a note in CHECKS and, when possible
 
 ## Example response template (use this shape)
 
-- Add `Temporal.TopologyDelta` trait to `crates/metis-analytics` with empty stub.
+- Add `Temporal.TopologyDelta` trait to `crates/aideon_metis_analytics` with empty stub.
 - Wire Tauri command to call the new trait via `WorkerState` adapter.
 - Extend Svelte store to request topology delta and render placeholder counts.
 
@@ -283,7 +283,7 @@ PATCH
 
 - Unified diffs here, paths from repo root.
 
-- New unit tests for topology_delta stub in `crates/metis-analytics`; Vitest store smoke tests.
+- New unit tests for topology_delta stub in `crates/aideon_metis_analytics`; Vitest store smoke tests.
 
 RUN
 

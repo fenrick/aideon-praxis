@@ -1,9 +1,9 @@
 <script lang="ts">
-  import '@aideon/praxis-design-system/styles/theme.css';
+  import '@aideon/PraxisDesignSystem/styles/theme.css';
   import Tokens from './tokens.svelte';
   import Components from './components.svelte';
   import OSPreview from './OSPreview.svelte';
-  import { initUiTheme, setUiTheme } from '@aideon/praxis-design-system';
+  import { initUiTheme, setUiTheme } from '@aideon/PraxisDesignSystem';
   import { onMount } from 'svelte';
   const platforms = ['auto', 'mac', 'win', 'neutral'] as const;
   type Platform = (typeof platforms)[number];

@@ -679,13 +679,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "chrona-visualization"
+name = "aideon_chrona_visualization"
 version = "0.0.0"
 dependencies = [
  "log",
- "mneme-core",
- "praxis-engine",
+ "aideon_mneme_core",
+ "aideon_praxis_engine",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -778,7 +779,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
 
 [[package]]
-name = "continuum-orchestrator"
+name = "aideon_continuum_orchestrator"
 version = "0.0.0"
 
 [[package]]
@@ -1095,7 +1096,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1280,7 +1281,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1441,6 +1442,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "futures"
+version = "0.3.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65bc07b1a8bc7c85c5f2e110c476c7389b4554ba72af57d8445ea63a576b0876"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "futures-executor",
+ "futures-io",
+ "futures-sink",
+ "futures-task",
+ "futures-util",
+]
+
+[[package]]
 name = "futures-channel"
 version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1526,6 +1542,7 @@ version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9fa08315bb612088cc391249efdc3bc77536f16c91f6cf495e6fbe85b20a4a81"
 dependencies = [
+ "futures-channel",
  "futures-core",
  "futures-io",
  "futures-macro",
@@ -2522,7 +2539,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "metis-analytics"
+name = "aideon_metis_analytics"
 version = "0.0.0"
 
 [[package]]
@@ -2553,10 +2570,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "mneme-core"
+name = "aideon_mneme_core"
 version = "0.1.0"
 dependencies = [
- "continuum-orchestrator",
+ "async-trait",
+ "aideon_continuum_orchestrator",
  "sea-orm",
  "sea-query",
  "serde",
@@ -3405,38 +3423,41 @@ dependencies = [
 ]
 
 [[package]]
-name = "praxis-engine"
+name = "aideon_praxis_engine"
 version = "0.0.0"
 dependencies = [
+ "async-recursion",
  "blake3",
- "continuum-orchestrator",
- "mneme-core",
+ "aideon_continuum_orchestrator",
+ "futures",
+ "aideon_mneme_core",
  "serde",
  "serde_json",
  "serde_yaml",
  "tempfile",
  "thiserror 1.0.69",
  "time",
+ "tokio",
 ]
 
 [[package]]
-name = "praxis-facade"
+name = "aideon_praxis_facade"
 version = "0.0.0"
 dependencies = [
- "chrona-visualization",
- "continuum-orchestrator",
- "metis-analytics",
- "mneme-core",
- "praxis-engine",
+ "aideon_chrona_visualization",
+ "aideon_continuum_orchestrator",
+ "aideon_metis_analytics",
+ "aideon_mneme_core",
+ "aideon_praxis_engine",
 ]
 
 [[package]]
-name = "praxis-host"
+name = "aideon_praxis_host"
 version = "0.0.0"
 dependencies = [
  "dirs",
  "log",
- "praxis-facade",
+ "aideon_praxis_facade",
  "serde",
  "serde_json",
  "tauri",
@@ -3904,7 +3925,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5193,7 +5214,7 @@ dependencies = [
  "getrandom 0.3.4",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -6032,7 +6053,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -6626,16 +6647,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "xtask"
+name = "aideon_xtask"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "continuum-orchestrator",
- "mneme-core",
- "praxis-engine",
+ "aideon_continuum_orchestrator",
+ "aideon_mneme_core",
+ "aideon_praxis_engine",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

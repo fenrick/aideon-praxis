@@ -1,5 +1,5 @@
 {
-  "name": "@aideon/praxis-adapters",
+  "name": "@aideon/PraxisAdapters",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
@@ -13,6 +13,6 @@
     "test": "echo 'No adapter tests yet'"
   },
   "dependencies": {
-    "@aideon/praxis-dtos": "workspace:*"
+    "@aideon/PraxisDtos": "workspace:*"
   }
 }

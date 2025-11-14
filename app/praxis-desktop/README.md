@@ -1,4 +1,4 @@
-# @aideon/praxis-desktop — Desktop UI (SvelteKit)
+# @aideon/PraxisDesktop — Desktop UI (SvelteKit)
 
 SvelteKit SPA bundle for the Aideon Praxis desktop app. The renderer talks to
 the Tauri host via direct `@tauri-apps/api/core` invokes, wrapped in small
@@ -13,11 +13,11 @@ Key points
 
 Scripts
 
-- `pnpm --filter @aideon/praxis-desktop dev` — `svelte-kit dev` with static adapter fallback.
-- `pnpm --filter @aideon/praxis-desktop build` — production build (Vite + `scripts/postbuild-windows.mjs`) that
+- `pnpm --filter @aideon/PraxisDesktop dev` — `svelte-kit dev` with static adapter fallback.
+- `pnpm --filter @aideon/PraxisDesktop build` — production build (Vite + `scripts/postbuild-windows.mjs`) that
   emits `build/` for Tauri. Both `tauri build` and CI reuse this script via
   `beforeBuildCommand`.
-- `pnpm --filter @aideon/praxis-desktop test` — unit tests (renderer/adapters).
+- `pnpm --filter @aideon/PraxisDesktop test` — unit tests (renderer/adapters).
 
 Testing notes
 
@@ -27,7 +27,7 @@ Testing notes
 Security
 
 - No renderer HTTP. Host/worker run locally; desktop mode opens no TCP ports.
-- IPC bridge is minimal and typed; see `crates/praxis-host/src/lib.rs`.
+- IPC bridge is minimal and typed; see `crates/aideon_praxis_host/src/lib.rs`.
 
 UI
 
@@ -51,6 +51,6 @@ Paths
 
 Dev
 
-- Dev server: `pnpm --filter @aideon/praxis-desktop dev`
-- Typecheck: `pnpm --filter @aideon/praxis-desktop check`
-- Tests: `pnpm --filter @aideon/praxis-desktop test`
+- Dev server: `pnpm --filter @aideon/PraxisDesktop dev`
+- Typecheck: `pnpm --filter @aideon/PraxisDesktop check`
+- Tests: `pnpm --filter @aideon/PraxisDesktop test`

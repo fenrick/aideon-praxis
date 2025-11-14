@@ -23,12 +23,12 @@ Renderer Design
 
 Host/DTOs
 
-- DTOs in Praxis (crates/praxis-engine/src/canvas.rs):
+- DTOs in Praxis (crates/aideon_praxis_engine/src/canvas.rs):
   - CanvasNode { id, typeId, x, y, w, h, z, label?, groupId? }
   - CanvasEdge { id, source, target, label?, z? }
   - CanvasGroup { id, name?, parentId?, z? }
   - CanvasLayoutSaveRequest { docId, asOf, scenario?, nodes[], edges[], groups[] }
-- Tauri commands (crates/praxis-host/src/scene.rs):
+- Tauri commands (crates/aideon_praxis_host/src/scene.rs):
   - canvas_scene(as_of?): returns raw nodes for bootstrap/demo. Renderer performs layout if needed.
   - canvas_save_layout(payload): persists JSON to OS data dir under AideonPraxis/canvas/<docId>/layout-<asOf>.json.
 

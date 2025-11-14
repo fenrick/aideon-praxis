@@ -1,4 +1,4 @@
-import type { ToastItem } from '@aideon/praxis-design-system';
+import type { ToastItem } from '@aideon/PraxisDesignSystem';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Tests for app/praxis-desktop/src/lib/ui/toast.ts
@@ -17,7 +17,7 @@ describe('ui/toast store', () => {
   });
 
   it('subscribes, pushes, and dismisses items', async () => {
-    const { subscribe, push, dismiss } = await import('@aideon/praxis-design-system');
+    const { subscribe, push, dismiss } = await import('@aideon/PraxisDesignSystem');
     const events: ToastItem[][] = [];
 
     const unsubscribe = subscribe((items: ToastItem[]) => {
@@ -43,7 +43,7 @@ describe('ui/toast store', () => {
   });
 
   it('auto-dismisses after timeout', async () => {
-    const { subscribe, push } = await import('@aideon/praxis-design-system');
+    const { subscribe, push } = await import('@aideon/PraxisDesignSystem');
     const events: ToastItem[][] = [];
     subscribe((items: ToastItem[]) => events.push(Array.from(items)));
 
@@ -57,7 +57,7 @@ describe('ui/toast store', () => {
   });
 
   it('falls back to counter IDs when crypto.getRandomValues throws', async () => {
-    const toast = await import('@aideon/praxis-design-system');
+    const toast = await import('@aideon/PraxisDesignSystem');
     // Force getRandomValues to throw so catch branch runs
     vi.stubGlobal('crypto', {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

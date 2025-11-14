@@ -16,16 +16,11 @@ import type {
   CommitSelectHandler,
   SearchIndexItem,
   SearchResult,
-  SearchResultKind,
   SidebarSelectHandler,
   SourceKey,
 } from './search.types.js';
 
-export type {
-  CatalogEntitySummary,
-  SearchResult,
-  SearchResultKind,
-} from './search.types.js';
+export type { CatalogEntitySummary, SearchResult, SearchResultKind } from './search.types.js';
 
 export interface SearchStoreState {
   query: string;
@@ -35,18 +30,9 @@ export interface SearchStoreState {
 
 export interface SearchStoreActions {
   subscribe: (run: (value: SearchStoreState) => void) => () => void;
-  setSidebarItems: (
-    items: SidebarTreeNode[],
-    onSelect?: SidebarSelectHandler,
-  ) => void;
-  setRecentCommits: (
-    commits: TemporalCommitSummary[],
-    onSelect?: CommitSelectHandler,
-  ) => void;
-  setCatalogEntities: (
-    entities: CatalogEntitySummary[],
-    onSelect?: CatalogSelectHandler,
-  ) => void;
+  setSidebarItems: (items: SidebarTreeNode[], onSelect?: SidebarSelectHandler) => void;
+  setRecentCommits: (commits: TemporalCommitSummary[], onSelect?: CommitSelectHandler) => void;
+  setCatalogEntities: (entities: CatalogEntitySummary[], onSelect?: CatalogSelectHandler) => void;
   search: (query: string, limit?: number) => SearchResult[];
   clear: () => void;
 }
@@ -72,7 +58,7 @@ export function createSearchStore(): SearchStoreActions {
   };
 
   const search = (query: string, limit = 10): SearchResult[] => {
-    const normalizedTokens = Array.from(tokenize(query.trim()));
+    const normalizedTokens = [...tokenize(query.trim())];
     const state = get(store);
     const scored: { item: SearchIndexItem; score: number }[] = [];
     if (normalizedTokens.length > 0) {

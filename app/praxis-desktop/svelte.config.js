@@ -17,7 +17,9 @@ const config = {
       entries: ['*', '/splash/', '/about/', '/settings/', '/status/'],
     },
     alias: {
-      '@aideon/praxis-adapters': '../praxis-adapters/src',
+      '@aideon/PraxisAdapters': '../praxis-adapters/src',
+      '@aideon/PraxisDtos': '../praxis-dtos/src',
+      '@aideon/PraxisDesignSystem': '../praxis-design-system/src',
     },
   },
   trailingSlash: 'always',

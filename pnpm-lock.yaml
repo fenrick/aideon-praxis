@@ -139,7 +139,7 @@ importers:
 
   app/praxis-adapters:
     dependencies:
-      '@aideon/praxis-dtos':
+      '@aideon/PraxisDtos':
         specifier: workspace:*
         version: link:../praxis-dtos
 
@@ -179,7 +179,7 @@ importers:
 
   app/praxis-desktop:
     dependencies:
-      '@aideon/praxis-design-system':
+      '@aideon/PraxisDesignSystem':
         specifier: workspace:*
         version: link:../praxis-design-system
       '@fluentui/web-components':

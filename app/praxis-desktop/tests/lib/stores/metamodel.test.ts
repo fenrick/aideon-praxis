@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { MetaModelPort } from '$lib/ports/meta-model';
 import { createMetaModelStore } from '$lib/stores/metamodel';
-import type { MetaModelDocument } from '@aideon/praxis-adapters/contracts';
+import type { MetaModelDocument } from '@aideon/PraxisAdapters/contracts';
 
 const baseDoc: MetaModelDocument = {
   version: '1.0.0',

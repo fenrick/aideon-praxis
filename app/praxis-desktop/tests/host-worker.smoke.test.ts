@@ -1,7 +1,7 @@
 import { describe, test } from 'vitest';
 
 // Placeholder smoke test for host+worker READY + state_at over UDS.
-// Intentionally skipped until wiring is implemented in @aideon/praxis-desktop test harness.
+// Intentionally skipped until wiring is implemented in @aideon/PraxisDesktop test harness.
 describe.skip('host↔worker smoke (READY + state_at via UDS)', () => {
   test('boots host, waits READY, calls state_at()', async () => {
     // follow-up plan (tracked in issue #70):

@@ -5,8 +5,8 @@ This is a draft monorepo scaffold following the guardrails in `AGENTS.md`.
 Packages:
 
 - `app/praxis-desktop` — Svelte renderer bundle consumed by the Tauri host.
-- `crates/praxis-host` — Tauri desktop host (Rust) with typed IPC surface.
-- `crates/{praxis-engine, chrona-visualization, metis-analytics, continuum-orchestrator, mneme-core}` —
+- `crates/aideon_praxis_host` — Tauri desktop host (Rust) with typed IPC surface.
+- `crates/{aideon_praxis_engine, aideon_chrona_visualization, aideon_metis_analytics, aideon_continuum_orchestrator, aideon_mneme_core}` —
   Rust crates for the graph model, time engine, analytics, orchestration, and persistence/DTOs respectively.
 - `app/praxis-adapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
 
@@ -32,7 +32,7 @@ See docs/commands.md for the full list of pnpm commands used across JS/TS and th
 
 Packaging
 
-- Local packaging (unsigned): `pnpm --filter @aideon/praxis-desktop run dist`.
+- Local packaging (unsigned): `pnpm --filter @aideon/PraxisDesktop run dist`.
 - Outputs installers to `app/praxis-desktop/dist/pack/` for macOS (DMG), Windows (NSIS), and Linux
   (AppImage/DEB).
 - CI packaging: when a GitHub Release is published (including nightly channel), the

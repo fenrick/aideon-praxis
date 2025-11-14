@@ -1,4 +1,4 @@
-import { ensureIsoDateTime } from '@aideon/praxis-dtos';
+import { ensureIsoDateTime } from '@aideon/PraxisDtos';
 import { describe, expect, test } from 'vitest';
 
 describe('ensureIsoDateTime', () => {

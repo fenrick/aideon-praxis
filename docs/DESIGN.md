@@ -654,7 +654,7 @@ The platform exposes **standard integration options** to import and export data:
   upcoming importer ensures the definition lands as a commit-level artifact so schema, data, and
   migrations stay in lock-step.
 - Praxis loads the document (plus optional overrides) into `MetaModelRegistry`
-  (`crates/praxis-engine/src/meta.rs`). Every change-set touches the registry before a snapshot mutates,
+  (`crates/aideon_praxis_engine/src/meta.rs`). Every change-set touches the registry before a snapshot mutates,
   so required attributes, enum values, and relationship constraints align with the design intent.
 - The host exposes the active schema via the `temporal_metamodel_get` IPC command; the renderer
   caches it through `metaModelStore`, renders a “Meta-model” panel, and will wire future
@@ -662,7 +662,7 @@ The platform exposes **standard integration options** to import and export data:
   graph-style hierarchy rather than editing flat lists.
 - Overrides remain data-only: placing an override payload alongside the baseline dataset or
   committing it via a scenario branch lets us extend/replace the schema without code changes.
-- The initial meta-model is seeded via `crates/praxis-engine/src/meta_seed.rs`, which translates the
+- The initial meta-model is seeded via `crates/aideon_praxis_engine/src/meta_seed.rs`, which translates the
   schema definitions into nodes/edges through the same change-set APIs the renderer uses.
 - The initial meta-model is inserted via the bootstrap commit through the same public change-set
   APIs the renderer uses, so our seed is dog-fooding the authoring surface instead of importing JSON.
@@ -671,7 +671,7 @@ The platform exposes **standard integration options** to import and export data:
 
 - The canonical dataset lives under `docs/data/base/baseline.yaml` with a semantic version and
   accompanying changelog. It expresses nodes/edges/plan-events as YAML so diffs are readable.
-- `cargo xtask import-dataset` replays the dataset into any datastore (use `--dry-run` for CI), and
+- `cargo aideon_xtask import-dataset` replays the dataset into any datastore (use `--dry-run` for CI), and
   the Tauri host reuses the same helper during startup so fresh installs contain the FY26 baseline.
 - Dataset commits are tagged with `baseline` + version labels, letting analytics and migration
   tooling distinguish vendor data from user contributions.

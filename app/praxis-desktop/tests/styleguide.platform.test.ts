@@ -1,4 +1,4 @@
-import { setUiTheme } from '@aideon/praxis-design-system';
+import { setUiTheme } from '@aideon/PraxisDesignSystem';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('platform theme loader', () => {

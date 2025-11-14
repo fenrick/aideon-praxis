@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { debug, error as logError, info as logInfo, logSafely } from '$lib/logging';
   import Scene from '$lib/canvas/Scene.svelte';
-  import { Button, Select, Tabs, type TabItem } from '@aideon/praxis-design-system';
+  import { Button, Select, Tabs, type TabItem } from '@aideon/PraxisDesignSystem';
   import type { TimeStoreState } from '$lib/stores/time';
   import type {
     TemporalBranchSummary,
