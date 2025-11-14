@@ -4,6 +4,7 @@ import type { CanvasWidget, SelectionState } from '@/canvas/types';
 import { EMPTY_SELECTION } from '@/canvas/types';
 import { AppSidebar } from '@/components/app-sidebar';
 import { CanvasRuntimeCard } from '@/components/dashboard/canvas-runtime-card';
+import { CommitTimelineCard } from '@/components/dashboard/commit-timeline-card';
 import { PhaseCheckpointsCard } from '@/components/dashboard/phase-checkpoints-card';
 import { SelectionInspectorCard } from '@/components/dashboard/selection-inspector-card';
 import { TimeCursorCard } from '@/components/dashboard/time-cursor-card';
@@ -109,6 +110,7 @@ export default function App() {
           </section>
           <section className="w-full space-y-6 lg:w-[360px]">
             <TimeCursorCard />
+            <CommitTimelineCard />
             <SelectionInspectorCard
               selection={selection}
               widgets={widgets}
