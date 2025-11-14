@@ -1,0 +1,20 @@
+{
+  "name": "@aideon/PraxisCanvas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Praxis React migration shell (vanilla TS fallback)",
+  "scripts": {
+    "dev": "vite dev --host 127.0.0.1 --port 1420",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12"
+  }
+}

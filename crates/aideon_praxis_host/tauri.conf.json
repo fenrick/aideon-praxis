@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.aideon.praxis",
   "build": {
-    "beforeDevCommand": "pnpm --filter @aideon/PraxisDesktop run dev",
-    "beforeBuildCommand": "pnpm --filter @aideon/PraxisDesktop run build",
-    "devUrl": "http://localhost:1420",
-    "frontendDist": "../../app/PraxisDesktop/build"
+    "beforeDevCommand": "pnpm --filter @aideon/PraxisCanvas run dev",
+    "beforeBuildCommand": "pnpm --filter @aideon/PraxisCanvas run build",
+    "devUrl": "http://127.0.0.1:1420",
+    "frontendDist": "../../app/PraxisCanvas/dist"
   },
   "app": {
     "windows": [],
