@@ -253,6 +253,10 @@ The agent must:
 - All graph data is loaded via `praxisApi`, not hard-coded.
 - Node/edge selection changes are reflected in global state.
 
+> **Status (14 Nov 2025):** The React shell now hosts a `CanvasRuntime` component backed by
+> React Flow. A `GraphWidget` fetches twin data via `praxisApi.getGraphView`, renders the nodes, and
+> reports selections/stats back to the sidebar. Catalogue/Matrix widgets remain to be added in Phase 4.
+
 ---
 
 ### Phase 4 – Catalogue and Matrix widgets on the canvas

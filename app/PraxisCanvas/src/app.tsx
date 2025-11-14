@@ -1,24 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import type { CanvasWidget } from '@/canvas/types';
 import { AppSidebar } from '@/components/app-sidebar';
-import { CanvasPlaceholderCard } from '@/components/dashboard/canvas-placeholder-card';
+import { CanvasRuntimeCard } from '@/components/dashboard/canvas-runtime-card';
 import { PhaseCheckpointsCard } from '@/components/dashboard/phase-checkpoints-card';
 import { WorkerHealthCard } from '@/components/dashboard/worker-health-card';
 import { Button } from '@/components/ui/button';
 import { toErrorMessage } from '@/lib/errors';
-import {
-  getGraphView,
-  listScenarios,
-  type GraphViewDefinition,
-  type GraphViewModel,
-  type ScenarioSummary,
-} from '@/praxis-api';
-
-interface GraphState {
-  loading: boolean;
-  error?: string;
-  view?: GraphViewModel;
-}
+import { listScenarios, type GraphViewDefinition, type ScenarioSummary } from '@/praxis-api';
 
 interface ScenarioState {
   loading: boolean;
@@ -37,13 +26,27 @@ const GRAPH_VIEW_BASE: Omit<GraphViewDefinition, 'asOf'> = {
 };
 
 export default function App() {
-  const [graphState, setGraphState] = useState<GraphState>({ loading: true });
   const [scenarioState, setScenarioState] = useState<ScenarioState>({ loading: true, data: [] });
 
   const activeScenario = useMemo(
     () => scenarioState.data.find((scenario) => scenario.isDefault) ?? scenarioState.data[0],
     [scenarioState.data],
   );
+
+  const widgets = useMemo<CanvasWidget[]>(() => {
+    return [
+      {
+        id: 'graph-overview',
+        kind: 'graph',
+        title: 'Twin overview graph',
+        view: {
+          ...GRAPH_VIEW_BASE,
+          asOf: new Date().toISOString(),
+          scenario: activeScenario?.branch,
+        },
+      },
+    ];
+  }, [activeScenario?.branch]);
 
   const refreshScenarios = useCallback(async () => {
     setScenarioState((previous) => ({ ...previous, loading: true, error: undefined }));
@@ -56,29 +59,9 @@ export default function App() {
     }
   }, []);
 
-  const refreshGraph = useCallback(async () => {
-    setGraphState((previous) => ({ ...previous, loading: true, error: undefined }));
-    try {
-      const definition: GraphViewDefinition = {
-        ...GRAPH_VIEW_BASE,
-        asOf: new Date().toISOString(),
-        scenario: activeScenario?.branch,
-      };
-      const view = await getGraphView(definition);
-      setGraphState({ loading: false, view });
-    } catch (unknownError) {
-      const message = toErrorMessage(unknownError);
-      setGraphState({ loading: false, error: message });
-    }
-  }, [activeScenario?.branch]);
-
   useEffect(() => {
     void refreshScenarios();
   }, [refreshScenarios]);
-
-  useEffect(() => {
-    void refreshGraph();
-  }, [refreshGraph]);
 
   return (
     <div className="flex min-h-screen bg-muted/30 text-foreground">
@@ -90,12 +73,7 @@ export default function App() {
         ) : null}
         <div className="flex flex-1 flex-col gap-6 p-6 lg:flex-row">
           <section className="flex-1">
-            <CanvasPlaceholderCard
-              state={graphState}
-              onRefresh={() => {
-                void refreshGraph();
-              }}
-            />
+            <CanvasRuntimeCard widgets={widgets} />
           </section>
           <section className="w-full space-y-6 lg:w-[360px]">
             <WorkerHealthCard />
