@@ -46,7 +46,7 @@ export const tokenize = (value: string): readonly string[] => {
 };
 
 const createIndexItem = (
-  result: Omit<SearchIndexItem, 'tokens' | 'tokenSet' | 'titleValue' | 'priority'>,
+  result: Omit<SearchIndexItem, 'tokens' | 'tokenSet' | 'titleValue' | 'priority' | 'searchValue'>,
   tokens: readonly string[],
   priority: number,
   titleValue: string,
