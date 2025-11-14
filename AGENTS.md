@@ -29,6 +29,8 @@ changes that respect our **time‑first, graph‑native** architecture and secur
 
 ## Repository boundaries (monorepo)
 
+- `app/PraxisCanvas` — React canvas workspace (Phase 1 shell). Implemented with a vanilla TypeScript
+  placeholder that mirrors the React layout while registry access is offline.
 - `app/PraxisDesktop` — legacy Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only). Keep it running until the React canvas runtime fully replaces it.
 - `app/PraxisAdapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
 - `crates/aideon_praxis_host` — Tauri host (Rust) exposing the typed command/event surface.

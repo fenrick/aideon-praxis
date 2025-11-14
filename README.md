@@ -4,6 +4,8 @@ This is a draft monorepo scaffold following the guardrails in `AGENTS.md`.
 
 Packages:
 
+- `app/PraxisCanvas` — React-style canvas runtime shell (Phase 1) implemented with a vanilla
+  TypeScript fallback so we can integrate React Flow once registry access returns.
 - `app/PraxisDesktop` — **legacy Svelte prototype** for the desktop UI. Keep it running while the
   React/Tauri canvas comes online, but treat all new work as feeding the React stack described in
   `docs/praxis-desktop-overview.md`.
@@ -105,6 +107,7 @@ published under `docs/c4/`.
 ```
 .
 ├─ app/
+│  ├─ PraxisCanvas/    # React canvas runtime (Phase 1 shell)
 │  ├─ PraxisDesktop/   # Legacy Svelte renderer bundle (kept until React cut-over)
 │  ├─ PraxisAdapters/  # TypeScript adapters bridging renderer ↔ host
 │  ├─ PraxisDesignSystem/ # Shared UI components, theming, and tokens

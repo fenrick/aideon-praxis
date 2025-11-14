@@ -12,7 +12,7 @@
   },
   "scripts": {
     "preflight": "node tools/preflight.mjs",
-    "node:dev": "pnpm --filter @aideon/PraxisDesktop dev",
+    "node:dev": "pnpm --filter @aideon/PraxisCanvas dev",
     "node:build": "vite build",
     "node:test": "vitest run --reporter=default",
     "node:test:coverage": "vitest run --coverage.enabled=true --coverage.provider=istanbul --coverage.reporter=lcov --coverage.reporter=html --coverage.reporter=text",
@@ -20,7 +20,7 @@
     "node:lint:fix": "eslint --max-warnings=10 \"app/**/src/**/*.{ts,tsx,js,svelte}\" --fix",
     "node:format": "prettier -w .",
     "node:format:check": "prettier -c .",
-    "node:typecheck": "pnpm --filter @aideon/PraxisDesktop run check && tsc -b --pretty",
+    "node:typecheck": "pnpm --filter @aideon/PraxisCanvas run typecheck && pnpm --filter @aideon/PraxisDesktop run check && tsc -b --pretty",
     "design:guard": "node tools/design-system-guard.mjs",
     "node:ci": "pnpm run design:guard && pnpm run node:lint:fix && pnpm run node:typecheck && pnpm run node:test:coverage && pnpm run node:format",
     "tauri": "tauri",
@@ -57,6 +57,7 @@
       ],
       "reportOnFailure": true,
       "include": [
+        "app/PraxisCanvas/src/**/*.{ts,tsx}",
         "app/PraxisDesktop/src/lib/**/*.{ts,tsx}",
         "app/PraxisAdapters/src/**/*.{ts,tsx}"
       ],

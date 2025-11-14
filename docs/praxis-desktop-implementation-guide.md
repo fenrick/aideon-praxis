@@ -144,6 +144,7 @@ The agent must:
 2. **Set up Tailwind CSS and shadcn/ui.**
    - Integrate Tailwind with the React app.
    - Install shadcn/ui and generate a minimal set of base components (Button, Input, Card, Tabs, Sidebar/Nav primitives). ([Shadcn UI][3])
+   - Run `pnpm dlx shadcn@latest mcp init --client codex` to setup the mcp server support for adding into codex mcp support
 
 3. **Build a basic layout using shadcn/ui.**
    - Application frame with:
@@ -163,6 +164,10 @@ The agent must:
 
 - At least one Tauri command is callable from React and logs/prints expected results.
 - All new components obey repo lint/format rules and compile without TypeScript errors.
+
+> **Status:** The initial shell now lives in `app/PraxisCanvas`. Until npm access is restored, it uses
+> a vanilla TypeScript DOM layer that mirrors the React layout so we can continue wiring IPC and
+> styles ahead of the full React dependency graph.
 
 ---
 

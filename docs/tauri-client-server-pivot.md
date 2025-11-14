@@ -6,8 +6,8 @@ Moving to a **React (UX) + Rust (host/compute)** desktop app (replacing the olde
 actually makes the client-server pivot easier—provided you keep the renderer
 speaking a **single, typed command surface**, and hide locality (local vs remote) behind **Rust service adapters**. Tauri’s
 IPC already mirrors client-server message passing (Commands for request/response, Events for pub/sub, Channels for streaming),
-so you can swap a local implementation for a remote one without touching the React UI. Lock it down with **Capabilities/
-Scopes*- and the\*\*Isolation pattern*- so the security posture holds when you add networking. ([Tauri][1])
+so you can swap a local implementation for a remote one without touching the React UI. Lock it down with \*_Capabilities/
+Scopes_- and the\*\*Isolation pattern\*- so the security posture holds when you add networking. ([Tauri][1])
 
 ## How this helps the transition (renderer stays stable)
 

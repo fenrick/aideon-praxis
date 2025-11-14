@@ -1,9 +1,9 @@
 # @aideon/PraxisDesktop — Desktop UI (Legacy SvelteKit prototype)
 
 SvelteKit SPA bundle for the Aideon Praxis desktop app. This codepath is on
-life-support while the React + React Flow + shadcn/ui runtime described in
-`docs/praxis-desktop-overview.md` is developed. Do not add new features here
-unless required to keep the desktop build operational.
+life-support while the React canvas shell under `app/PraxisCanvas` evolves.
+Do not add new features here unless required to keep the desktop build
+operational.
 
 The renderer talks to
 the Tauri host via direct `@tauri-apps/api/core` invokes, wrapped in small

@@ -64,9 +64,11 @@ temporal engine in-process (desktop mode only, no TCP ports). Tauri injects a lo
 host logs appear in the DevTools console in addition to the terminal.
 
 ```bash
-# Terminal A — UI (legacy SvelteKit prototype)
-# Run this only to keep the existing renderer working while the React canvas is under construction.
-pnpm --filter @aideon/PraxisDesktop dev
+# Terminal A — UI (React canvas shell)
+pnpm --filter @aideon/PraxisCanvas dev
+
+# Optional: legacy Svelte prototype
+# pnpm --filter @aideon/PraxisDesktop dev
 
 # Terminal B — Host (Tauri). From repo root:
 pnpm tauri dev
@@ -78,8 +80,8 @@ pnpm run host:lint && pnpm run host:check
 
 What to expect:
 
-- A Tauri window serving the SvelteKit UI at http://localhost:1420. Once the React workspace lands
-  (Phase 1 in the implementation guide), this step will point to the new React dev entrypoint.
+- A Tauri window serving the React canvas shell at http://127.0.0.1:1420. The SvelteKit UI remains
+  available for reference by running the optional command above.
 - Desktop mode opens no TCP ports by default; all work happens via typed IPC in-process.
 - DevTools Console will show renderer logs (console) and host logs (tauri-plugin-log).
 - If you see a port conflict on 1420, stop any previous dev server and retry.

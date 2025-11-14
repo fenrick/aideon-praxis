@@ -6,14 +6,14 @@ contributors a single reference for what “done” looks like.
 
 ## Target stack
 
-| Layer                | Technology                                                    | Notes |
-| -------------------- | ------------------------------------------------------------- | ----- |
-| Desktop shell        | [Tauri](https://v2.tauri.app)                                 | Ships the React UI + Rust host as a single binary; capabilities locked down. |
-| UI runtime           | React 18 + TypeScript                                         | Replaces the historical SvelteKit prototype. |
-| Canvas engine        | [React Flow (XYFlow)](https://reactflow.dev/)                 | Node-based canvases, pan/zoom, selection, view transforms. |
-| Design system        | [shadcn/ui](https://ui.shadcn.com/) + Tailwind CSS            | Copied-in primitives that we customise; no runtime dependency. |
-| (Future) whiteboard  | [tldraw](https://tldraw.dev/)                                 | Optional layer for freeform sketching once licensing is cleared. |
-| Twin/back-end access | Rust engines via typed Tauri commands (`praxisApi` wrappers) | All React code talks to the twin through IPC, never directly. |
+| Layer                | Technology                                                   | Notes                                                                        |
+| -------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| Desktop shell        | [Tauri](https://v2.tauri.app)                                | Ships the React UI + Rust host as a single binary; capabilities locked down. |
+| UI runtime           | React 18 + TypeScript                                        | Replaces the historical SvelteKit prototype.                                 |
+| Canvas engine        | [React Flow (XYFlow)](https://reactflow.dev/)                | Node-based canvases, pan/zoom, selection, view transforms.                   |
+| Design system        | [shadcn/ui](https://ui.shadcn.com/) + Tailwind CSS           | Copied-in primitives that we customise; no runtime dependency.               |
+| (Future) whiteboard  | [tldraw](https://tldraw.dev/)                                | Optional layer for freeform sketching once licensing is cleared.             |
+| Twin/back-end access | Rust engines via typed Tauri commands (`praxisApi` wrappers) | All React code talks to the twin through IPC, never directly.                |
 
 ## Core concepts
 
@@ -39,6 +39,9 @@ imports/exports, and Chrona/Metis/Continuum widgets.
 
 - The checked-in SvelteKit renderer (`app/PraxisDesktop`) is a **legacy prototype**. Keep it working
   until the React runtime overtakes it, but treat new work as greenfield React + Tauri code.
+- The React canvas shell lives in `app/PraxisCanvas`. In this offline phase it is implemented with a
+  vanilla TypeScript view layer that mimics the target layout so we can wire IPC, styling, and
+  templates before React Flow packages become available.
 - Documentation, ADRs, and guardrails must describe the React/Tauri direction so every contributor
   understands the destination.
 - A new React workspace will live alongside the Svelte code until the cut-over.
