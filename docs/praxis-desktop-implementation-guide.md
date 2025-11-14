@@ -165,9 +165,9 @@ The agent must:
 - At least one Tauri command is callable from React and logs/prints expected results.
 - All new components obey repo lint/format rules and compile without TypeScript errors.
 
-> **Status:** The initial shell now lives in `app/PraxisCanvas`. Until npm access is restored, it uses
-> a vanilla TypeScript DOM layer that mirrors the React layout so we can continue wiring IPC and
-> styles ahead of the full React dependency graph.
+> **Status (14 Nov 2025):** `app/PraxisCanvas` now renders a real React + shadcn shell (sidebar,
+> header, cards) with Tailwind theming, and the worker health card already calls the host via
+> `praxisApi`. The next milestone in this phase is dropping React Flow widgets into the canvas area.
 
 ---
 
@@ -203,6 +203,12 @@ The agent must:
   - A simple “mutating” operation (even if it’s a stub).
 
 - Types in the `praxisApi` module compile cleanly under strict TypeScript settings.
+
+> **Status (14 Nov 2025):** `app/PraxisCanvas/src/praxis-api.ts` defines the shared view contracts
+> (nodes, edges, catalogues, matrices, operations, scenarios) and calls the new host commands in
+> `crates/aideon_praxis_host/src/praxis_api.rs`. The React shell already consumes
+> `listScenarios()` and `getGraphView()`; `applyOperations()` returns a mock commit id until the
+> worker mutation path is wired.
 
 ---
 
