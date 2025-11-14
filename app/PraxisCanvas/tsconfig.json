@@ -2,9 +2,15 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.canvas.tsbuildinfo",
+    "baseUrl": "./",
     "outDir": "./dist",
     "rootDir": "./src",
-    "module": "ES2022"
+    "module": "ES2022",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@aideon/PraxisAdapters": ["../PraxisAdapters/src"],
+      "@aideon/PraxisAdapters/*": ["../PraxisAdapters/src/*"]
+    }
   },
   "include": ["src"],
   "references": []
