@@ -24,9 +24,7 @@ pub async fn praxis_matrix_view(
 }
 
 #[tauri::command]
-pub async fn praxis_chart_view(
-    definition: ChartViewDefinition,
-) -> Result<ChartViewModel, String> {
+pub async fn praxis_chart_view(definition: ChartViewDefinition) -> Result<ChartViewModel, String> {
     Ok(ChartViewModel::demo(definition))
 }
 
