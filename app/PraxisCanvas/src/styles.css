@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
 :root {
   font-family:
@@ -35,11 +33,16 @@
 
 @layer base {
   * {
-    @apply border-border box-border;
+    border-color: hsl(var(--border));
+    box-sizing: border-box;
   }
 
   body {
-    @apply bg-background text-foreground min-h-screen antialiased;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   ::selection {
