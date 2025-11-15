@@ -96,6 +96,18 @@ export default defineConfig(
     },
   },
 
+  // Allow generated shadcn components to keep their original prop names
+  {
+    files: ['app/PraxisCanvas/src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'unicorn/prevent-abbreviations': 'off',
+      'sonarjs/prefer-read-only-props': 'off',
+      'sonarjs/deprecation': 'off',
+      '@typescript-eslint/no-deprecated': 'off',
+      'sonarjs/table-header': 'off',
+    },
+  },
+
   // Svelte files
   {
     files: ['**/*.svelte'],

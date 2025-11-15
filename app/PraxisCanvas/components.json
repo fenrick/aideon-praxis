@@ -11,17 +11,10 @@
   },
   "aliases": {
     "components": "@/components",
-    "utils": "@/lib/utilities"
+    "utils": "@/lib/utilities",
+    "ui": "@/components/ui"
   },
-  "components": [
-    { "name": "button", "path": "@/components/ui/button.tsx", "registry": "shadcn" },
-    { "name": "card", "path": "@/components/ui/card.tsx", "registry": "shadcn" },
-    { "name": "input", "path": "@/components/ui/input.tsx", "registry": "shadcn" },
-    { "name": "select", "path": "@/components/ui/select.tsx", "registry": "shadcn" },
-    { "name": "table", "path": "@/components/ui/table.tsx", "registry": "shadcn" },
-    { "name": "dialog", "path": "@/components/ui/dialog.tsx", "registry": "shadcn" },
-    { "name": "command", "path": "@/components/ui/command.tsx", "registry": "shadcn" },
-    { "name": "slider", "path": "@/components/ui/slider.tsx", "registry": "shadcn" },
-    { "name": "node-search", "path": "@/components/node-search.tsx", "registry": "reactflow" }
-  ]
+  "registries": {
+    "@reactflow": "https://ui.reactflow.dev/{name}"
+  }
 }
