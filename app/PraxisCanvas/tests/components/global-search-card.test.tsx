@@ -5,10 +5,18 @@ import type { TemporalPanelState } from '@/time/use-temporal-panel';
 
 const selectCommitSpy = vi.fn();
 const selectBranchSpy = vi.fn();
+const refreshBranchesSpy = vi.fn();
 
 vi.mock('@/time/use-temporal-panel', () => ({
   useTemporalPanel: () =>
-    [mockState, { selectCommit: selectCommitSpy, selectBranch: selectBranchSpy }] as const,
+    [
+      mockState,
+      {
+        selectCommit: selectCommitSpy,
+        selectBranch: selectBranchSpy,
+        refreshBranches: refreshBranchesSpy,
+      },
+    ] as const,
 }));
 
 let mockState: TemporalPanelState;
@@ -19,8 +27,12 @@ describe('GlobalSearchCard', () => {
   beforeEach(() => {
     selectCommitSpy.mockReset();
     selectBranchSpy.mockReset();
+    refreshBranchesSpy.mockReset();
     mockState = {
-      branches: [{ name: 'main', head: 'a1' }],
+      branches: [
+        { name: 'main', head: 'a1' },
+        { name: 'chronaplay', head: 'b2' },
+      ],
       branch: 'main',
       commits: [
         {
@@ -54,15 +66,9 @@ describe('GlobalSearchCard', () => {
     } satisfies TemporalPanelState;
   });
 
-  it('filters commits by search query and triggers actions', () => {
+  it('shows recent commits preview actions', () => {
     render(<GlobalSearchCard />);
 
-    const [input] = screen.getAllByPlaceholderText('Search commits, branches, tags');
-    fireEvent.change(input, {
-      target: { value: 'catalogue' },
-    });
-
-    expect(screen.getByText('Add catalogue widgets')).toBeInTheDocument();
     const [switchBranchButton] = screen.getAllByText('Switch branch');
     fireEvent.click(switchBranchButton);
     expect(selectBranchSpy).toHaveBeenCalledWith('main');
@@ -72,13 +78,21 @@ describe('GlobalSearchCard', () => {
     expect(selectCommitSpy).toHaveBeenCalledWith('commit-1');
   });
 
-  it('shows empty results message when nothing matches', () => {
+  it('uses the command palette to trigger actions', () => {
     render(<GlobalSearchCard />);
 
-    const [input] = screen.getAllByPlaceholderText('Search commits, branches, tags');
-    fireEvent.change(input, {
-      target: { value: 'missing' },
-    });
-    expect(screen.getByText('No matches found.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Open command palette/i }));
+    fireEvent.click(screen.getByText('chronaplay'));
+    expect(selectBranchSpy).toHaveBeenCalledWith('chronaplay');
+
+    fireEvent.click(screen.getByRole('button', { name: /Open command palette/i }));
+    const input = screen.getByPlaceholderText('Search branches, commits, tags');
+    fireEvent.input(input, { target: { value: 'catalogue' } });
+    fireEvent.click(screen.getByText('Add catalogue widgets'));
+    expect(selectCommitSpy).toHaveBeenCalledWith('commit-1');
+
+    fireEvent.click(screen.getByRole('button', { name: /Open command palette/i }));
+    fireEvent.click(screen.getByText('Refresh branches'));
+    expect(refreshBranchesSpy).toHaveBeenCalled();
   });
 });
