@@ -54,6 +54,8 @@ vi.mock('@xyflow/react', () => {
       setNodes: (updater: (nodes: []) => []) => updater([]),
       fitView: vi.fn(),
     }),
+    Panel: ({ children }: { children?: React.ReactNode }) =>
+      createElement('div', { 'data-testid': 'panel' }, children),
   };
 });
 

@@ -7,16 +7,21 @@ import {
   Background,
   BackgroundVariant,
   Controls,
+  Panel,
   ReactFlow,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
   type Edge,
+  type EdgeTypes,
   type Node,
+  type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { NodeSearchDialog } from '@/components/node-search';
+import { PraxisNode, type PraxisNodeData } from '@/components/reactflow/praxis-node';
+import { TimelineEdge, type TimelineEdgeData } from '@/components/reactflow/timeline-edge';
 import { Button } from '@/components/ui/button';
 import type { GraphWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import { buildFlowEdges, buildFlowNodes } from './graph-transform';
@@ -41,8 +46,8 @@ export function GraphWidget({
   onError,
   onRequestMetaModelFocus,
 }: GraphWidgetProperties) {
-  const [nodes, setNodes, handleNodesChange] = useNodesState([] as Node[]);
-  const [edges, setEdges, handleEdgesChange] = useEdgesState([] as Edge[]);
+  const [nodes, setNodes, handleNodesChange] = useNodesState<Node<PraxisNodeData>>([]);
+  const [edges, setEdges, handleEdgesChange] = useEdgesState<Edge<TimelineEdgeData>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const [metadata, setMetadata] = useState<GraphViewModel['metadata'] | undefined>();
@@ -54,13 +59,38 @@ export function GraphWidget({
     };
   }, [widget.view, reloadVersion]);
 
+  const attachInspectHandlers = useCallback(
+    (flowNodes: Node<PraxisNodeData>[]) => {
+      if (!onRequestMetaModelFocus) {
+        return flowNodes;
+      }
+      return flowNodes.map((node) => {
+        const types = (node.data.entityTypes ?? []).filter((value) => isNonEmptyString(value));
+        if (types.length === 0) {
+          return node;
+        }
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            onInspect: () => {
+              onRequestMetaModelFocus(types);
+            },
+          },
+        };
+      });
+    },
+    [onRequestMetaModelFocus],
+  );
+
   const loadView = useCallback(async () => {
     setLoading(true);
     setError(undefined);
     try {
       const view = await getGraphView(definition);
       setMetadata(view.metadata);
-      setNodes(buildFlowNodes(view));
+      const flowNodes = buildFlowNodes(view);
+      setNodes(attachInspectHandlers(flowNodes));
       setEdges(buildFlowEdges(view));
       onViewChange?.(view);
     } catch (unknownError) {
@@ -70,11 +100,15 @@ export function GraphWidget({
     } finally {
       setLoading(false);
     }
-  }, [definition, onError, onViewChange, setEdges, setNodes]);
+  }, [attachInspectHandlers, definition, onError, onViewChange, setEdges, setNodes]);
 
   useEffect(() => {
     void loadView();
   }, [loadView]);
+
+  useEffect(() => {
+    setNodes((current) => attachInspectHandlers(current));
+  }, [attachInspectHandlers, setNodes]);
 
   useEffect(() => {
     if (!selection) {
@@ -107,9 +141,11 @@ export function GraphWidget({
 
   const [nodeSearchOpen, setNodeSearchOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const nodeTypes = useMemo<NodeTypes>(() => ({ 'praxis-node': PraxisNode }), []);
+  const edgeTypes = useMemo<EdgeTypes>(() => ({ timeline: TimelineEdge }), []);
 
   const handleNodeContextMenu = useCallback(
-    (event: ReactMouseEvent, node: Node) => {
+    (event: ReactMouseEvent, node: Node<PraxisNodeData>) => {
       event.preventDefault();
       const selectedNodes = nodes.filter((entry) => entry.selected);
       if (selectedNodes.length === 0 || !node.selected) {
@@ -148,17 +184,6 @@ export function GraphWidget({
         loading={loading}
         onRefresh={() => void loadView()}
       />
-      <div className="flex justify-end py-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setNodeSearchOpen(true);
-          }}
-        >
-          Search nodes
-        </Button>
-      </div>
       <div className="h-[320px] w-full rounded-2xl border border-border/60 bg-muted/20">
         <ReactFlowProvider>
           <ReactFlow
@@ -167,6 +192,8 @@ export function GraphWidget({
             onNodesChange={handleNodesChange}
             onEdgesChange={handleEdgesChange}
             fitView
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             onSelectionChange={handleSelection}
             onNodeContextMenu={handleNodeContextMenu}
             onPaneClick={() => {
@@ -183,6 +210,22 @@ export function GraphWidget({
               size={1}
             />
             <Controls position="bottom-right" />
+            <Panel
+              position="top-left"
+              className="rounded-2xl border border-border/60 bg-background/90 p-3 text-xs text-muted-foreground shadow"
+            >
+              <p className="mb-1">Use node search or right-click selection for meta actions.</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-0 text-xs"
+                onClick={() => {
+                  setNodeSearchOpen(true);
+                }}
+              >
+                Open node search
+              </Button>
+            </Panel>
           </ReactFlow>
         </ReactFlowProvider>
         {loading ? <GraphWidgetOverlay message="Loading graph" /> : null}
@@ -216,12 +259,13 @@ interface ContextMenuState {
   readonly types: string[];
 }
 
-function resolveNodeType(node: Node): string {
-  const typeValue = (node.data as { type?: string } | undefined)?.type;
+function resolveNodeType(node: Node<PraxisNodeData>): string {
+  const typeValue = node.data.typeLabel;
   if (typeof typeValue === 'string' && typeValue.trim()) {
     return typeValue;
   }
-  return 'Entity';
+  const fallback = (node.data.entityTypes ?? []).find((value) => isNonEmptyString(value));
+  return fallback ?? 'Entity';
 }
 
 interface GraphWidgetOverlayProperties {
@@ -271,4 +315,8 @@ function GraphContextMenu({
       </button>
     </div>
   );
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
 }

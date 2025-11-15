@@ -8,7 +8,8 @@
     "dev": "vite dev --host 127.0.0.1 --port 1420",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "components:refresh": "pnpm dlx shadcn@latest add button card input select table dialog command slider --overwrite --yes && pnpm dlx shadcn@latest add @reactflow/node-search @reactflow/base-node @reactflow/node-tooltip @reactflow/animated-svg-edge --overwrite --yes"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
