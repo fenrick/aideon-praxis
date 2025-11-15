@@ -16,11 +16,11 @@ The React/shadcn canvas in `app/PraxisCanvas` now delivers the primary shell (si
 ## Review snapshot — 15 Nov 2025
 
 - `app/PraxisCanvas/src/components/blocks/time-control-panel.tsx` now wraps the branch/commit selects, adds a shadcn Slider timeline, and exposes merge/reload actions; `Toolbar.svelte` still handles global status messaging.
-- `app/PraxisCanvas/src/components/dashboard/global-search-card.tsx` pulls a real catalogue view + meta-model schema so the command palette can surface those entries alongside branches/commits, but sidebar search shortcuts still depend on the Svelte `searchStore`.
+- `app/PraxisCanvas/src/components/dashboard/global-search-card.tsx` pulls a real catalogue view + meta-model schema so the command palette can surface those entries alongside branches/commits; catalogue hits now select the matching node in the React Flow canvas and meta-model hits scroll the React inspector. Sidebar search shortcuts still depend on the Svelte `searchStore`.
 - The React canvas runtime (`app/PraxisCanvas/src/canvas/canvas-runtime.tsx` and the surrounding dashboard card) renders graph, catalogue, matrix, and chart widgets, while timeline/activity/overview tabs remain Svelte-only and still rely on the ELK canvas wiring.
 - `app/PraxisCanvas/src/components/app-sidebar.tsx` ships only a static navigation/state summary; there is no command/search flow mirroring Svelte’s `searchStore`, so quick-jump and filtering remain blocked.
-- `app/PraxisCanvas/src/components/dashboard/global-search-card.tsx` now wraps shadcn’s command palette block for branch/commit jumps but still lacks catalogue/meta-model search sources.
-- Meta-model inspectors (`app/PraxisDesktop/src/lib/components/MetaModelPanel.svelte`) and the styleguide routes continue to be the reference implementations; React lacks equivalent inspectors and theming previews.
+- Graph nodes now use the React Flow UI node search + context menus so right-clicking a selected shape allows you to jump into the meta-model panel (parity with the Svelte toolbar action). Node search opens a shadcn Command dialog powered by React Flow’s registry component.
+- Meta-model inspectors (`app/PraxisDesktop/src/lib/components/MetaModelPanel.svelte`) and the styleguide routes continue to be the reference implementations; React lacks equivalent inspectors and theming previews, though the React card will highlight entries passed from search/context menus.
 - Worker controls such as merge/apply actions are still surfaced via `timeStore` in Svelte, so React must gain parity before `app/PraxisDesktop` can be removed from the Tauri bundle.
 
 ## Replacement priorities

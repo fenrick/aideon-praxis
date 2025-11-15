@@ -17,12 +17,14 @@ interface CanvasRuntimeCardProperties {
   readonly widgets: CanvasWidget[];
   readonly selection: SelectionState;
   readonly onSelectionChange?: (selection: SelectionState) => void;
+  readonly onRequestMetaModelFocus?: (types: string[]) => void;
 }
 
 export function CanvasRuntimeCard({
   widgets,
   selection,
   onSelectionChange,
+  onRequestMetaModelFocus,
 }: CanvasRuntimeCardProperties) {
   const [reloadVersion, setReloadVersion] = useState(0);
   const [metadata, setMetadata] = useState<GraphViewModel['metadata'] | undefined>();
@@ -82,6 +84,7 @@ export function CanvasRuntimeCard({
             onSelectionChange={handleSelection}
             onGraphViewChange={handleGraphViewChange}
             onGraphError={handleGraphError}
+            onRequestMetaModelFocus={onRequestMetaModelFocus}
           />
         </div>
       </CardContent>

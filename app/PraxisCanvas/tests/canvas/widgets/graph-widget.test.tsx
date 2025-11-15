@@ -17,6 +17,10 @@ vi.mock('@/praxis-api', async () => {
   };
 });
 
+vi.mock('@/components/node-search', () => ({
+  NodeSearchDialog: () => null,
+}));
+
 let latestSelectionHandler:
   | ((selection: { nodes?: { id: string }[]; edges?: { id: string }[] }) => void)
   | undefined;
@@ -45,6 +49,11 @@ vi.mock('@xyflow/react', () => {
     BackgroundVariant: { Dots: 'dots' },
     useNodesState: () => [[], vi.fn(), vi.fn()],
     useEdgesState: () => [[], vi.fn(), vi.fn()],
+    useReactFlow: () => ({
+      getNodes: () => [],
+      setNodes: (updater: (nodes: []) => []) => updater([]),
+      fitView: vi.fn(),
+    }),
   };
 });
 
