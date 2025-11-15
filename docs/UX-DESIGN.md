@@ -27,6 +27,13 @@ Status: Draft (implements M0 baseline; informs M1 scope)
 
 We will not lock into a single third-party kit; we compose small wrappers where needed.
 
+### React/shadcn layering principles
+
+- Use vanilla shadcn components in their default theme so upstream updates remain easy to adopt and regression surfaces stay small.
+- Layer the Praxis design system on top by composing “blocks” (cards, inspectors, toolbars, command palettes) out of shadcn primitives plus our tokens, rather than forking the primitives themselves.
+- Build UX screens from those reusable blocks first, only reaching for raw shadcn elements when defining a new block; once a pattern appears twice, promote it to a block and document its props.
+- Keep Tailwind utility usage scoped inside the blocks; feature code should mostly consume block variants so the renderer remains consistent across React views.
+
 ## 3) Theming & Tokens
 
 - Tokens live in `app/PraxisDesktop/src/lib/styles/tokens.css`. Theme composition and platform overrides live in `app/PraxisDesktop/src/lib/styles/theme.css`.
