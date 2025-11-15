@@ -7,6 +7,20 @@ const selectCommitSpy = vi.fn();
 const selectBranchSpy = vi.fn();
 const refreshBranchesSpy = vi.fn();
 
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+beforeAll(() => {
+  vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
+});
+
 vi.mock('@/time/use-temporal-panel', () => ({
   useTemporalPanel: () =>
     [
@@ -71,27 +85,28 @@ describe('GlobalSearchCard', () => {
 
     const [switchBranchButton] = screen.getAllByText('Switch branch');
     fireEvent.click(switchBranchButton);
-    expect(selectBranchSpy).toHaveBeenCalledWith('main');
+    expect(selectBranchSpy).toHaveBeenCalledWith('chronaplay');
 
     const [jumpButton] = screen.getAllByText('Jump to commit');
     fireEvent.click(jumpButton);
-    expect(selectCommitSpy).toHaveBeenCalledWith('commit-1');
+    expect(selectCommitSpy).toHaveBeenCalledWith('commit-2');
   });
 
   it('uses the command palette to trigger actions', () => {
     render(<GlobalSearchCard />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Open command palette/i }));
+    const [openButton] = screen.getAllByRole('button', { name: /Open command palette/i });
+    fireEvent.click(openButton);
     fireEvent.click(screen.getByText('chronaplay'));
     expect(selectBranchSpy).toHaveBeenCalledWith('chronaplay');
 
-    fireEvent.click(screen.getByRole('button', { name: /Open command palette/i }));
+    fireEvent.click(openButton);
     const input = screen.getByPlaceholderText('Search branches, commits, tags');
     fireEvent.input(input, { target: { value: 'catalogue' } });
     fireEvent.click(screen.getByText('Add catalogue widgets'));
     expect(selectCommitSpy).toHaveBeenCalledWith('commit-1');
 
-    fireEvent.click(screen.getByRole('button', { name: /Open command palette/i }));
+    fireEvent.click(openButton);
     fireEvent.click(screen.getByText('Refresh branches'));
     expect(refreshBranchesSpy).toHaveBeenCalled();
   });

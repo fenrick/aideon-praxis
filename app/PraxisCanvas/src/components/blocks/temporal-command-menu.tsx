@@ -12,6 +12,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command';
+import { DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 interface TemporalCommandMenuProperties {
   readonly open: boolean;
@@ -55,6 +56,10 @@ export function TemporalCommandMenu({
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
+      <DialogTitle className="sr-only">Temporal command palette</DialogTitle>
+      <DialogDescription className="sr-only">
+        Search branches, commits, and worker actions
+      </DialogDescription>
       <CommandInput placeholder="Search branches, commits, tags" />
       <CommandList>
         <CommandEmpty>{loading ? 'Loading twin data…' : 'No results found.'}</CommandEmpty>
