@@ -4,9 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TemporalPanelState } from '@/time/use-temporal-panel';
 
 const selectCommitSpy = vi.fn();
+const refreshBranchesSpy = vi.fn();
 
 vi.mock('@/time/use-temporal-panel', () => ({
-  useTemporalPanel: () => [mockState, { selectCommit: selectCommitSpy }] as const,
+  useTemporalPanel: () =>
+    [
+      mockState,
+      { selectCommit: selectCommitSpy, refreshBranches: refreshBranchesSpy },
+    ] as const,
 }));
 
 let mockState: TemporalPanelState;
@@ -16,6 +21,7 @@ import { ActivityFeedCard } from '@/components/dashboard/activity-feed-card';
 describe('ActivityFeedCard', () => {
   beforeEach(() => {
     selectCommitSpy.mockReset();
+    refreshBranchesSpy.mockReset();
     mockState = {
       branches: [{ name: 'main', head: 'a1' }],
       branch: 'main',
@@ -45,14 +51,20 @@ describe('ActivityFeedCard', () => {
     render(<ActivityFeedCard />);
 
     expect(screen.getByText('Add widgets')).toBeInTheDocument();
-    expect(screen.getByText('#ui')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Inspect'));
+    fireEvent.click(screen.getByText('View'));
     expect(selectCommitSpy).toHaveBeenCalledWith('commit-1');
   });
 
   it('shows empty state when no commits exist', () => {
     mockState = { ...mockState, commits: [] };
     render(<ActivityFeedCard />);
-    expect(screen.getByText('No activity on this branch yet.')).toBeInTheDocument();
+    expect(screen.getByText('No commits recorded yet for this branch.')).toBeInTheDocument();
+  });
+
+  it('handles refresh control', () => {
+    render(<ActivityFeedCard />);
+    const [refreshButton] = screen.getAllByText('Refresh timeline');
+    fireEvent.click(refreshButton);
+    expect(refreshBranchesSpy).toHaveBeenCalled();
   });
 });
