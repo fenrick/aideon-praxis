@@ -34,6 +34,7 @@ We will not lock into a single third-party kit; we compose small wrappers where 
 - Build UX screens from those reusable blocks first, only reaching for raw shadcn elements when defining a new block; once a pattern appears twice, promote it to a block and document its props.
 - Keep Tailwind utility usage scoped inside the blocks; feature code should mostly consume block variants so the renderer remains consistent across React views.
 - Start from shadcn’s out-of-box blocks (e.g., Command palette, Sidebar/Nav, Dashboard cards) whenever they cover the UX layer; wrap them with Praxis tokens instead of recreating equivalent scaffolding.
+- Track concrete block implementations and compliance status in `docs/praxis-design-system-blocks.md`; update it whenever new blocks land or existing ones change roles.
 
 ## 3) Theming & Tokens
 
