@@ -1,11 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TemporalPanelState } from '@/time/use-temporal-panel';
 
 const selectCommitSpy = vi.fn();
 const selectBranchSpy = vi.fn();
 const refreshBranchesSpy = vi.fn();
+const fetchMetaModelMock = vi.fn();
+const getCatalogueViewMock = vi.fn();
 
 class ResizeObserverMock {
   observe() {}
@@ -33,6 +35,18 @@ vi.mock('@/time/use-temporal-panel', () => ({
     ] as const,
 }));
 
+vi.mock('@/lib/meta-model', () => ({
+  fetchMetaModel: fetchMetaModelMock,
+}));
+
+vi.mock('@/praxis-api', async () => {
+  const actual = await vi.importActual<typeof import('@/praxis-api')>('@/praxis-api');
+  return {
+    ...actual,
+    getCatalogueView: getCatalogueViewMock,
+  };
+});
+
 let mockState: TemporalPanelState;
 
 import { GlobalSearchCard } from '@/components/dashboard/global-search-card';
@@ -42,6 +56,34 @@ describe('GlobalSearchCard', () => {
     selectCommitSpy.mockReset();
     selectBranchSpy.mockReset();
     refreshBranchesSpy.mockReset();
+    fetchMetaModelMock.mockResolvedValue({
+      version: 'test',
+      description: 'Test schema',
+      types: [{ id: 'Capability', label: 'Business Capability', category: 'Business' }],
+      relationships: [
+        { id: 'supports', label: 'Supports', from: ['Application'], to: ['Capability'] },
+      ],
+    });
+    getCatalogueViewMock.mockResolvedValue({
+      metadata: {
+        id: 'cmd',
+        name: 'Command palette quick search',
+        asOf: new Date().toISOString(),
+        fetchedAt: new Date().toISOString(),
+        source: 'mock',
+      },
+      columns: [
+        { id: 'name', label: 'Name', type: 'string' },
+        { id: 'owner', label: 'Owner', type: 'string' },
+        { id: 'state', label: 'State', type: 'string' },
+      ],
+      rows: [
+        {
+          id: 'cap-onboarding',
+          values: { name: 'Customer Onboarding', owner: 'CX', state: 'Pilot' },
+        },
+      ],
+    });
     mockState = {
       branches: [
         { name: 'main', head: 'a1' },
@@ -80,7 +122,7 @@ describe('GlobalSearchCard', () => {
     } satisfies TemporalPanelState;
   });
 
-  it('shows recent commits preview actions', () => {
+  it('shows recent commits preview actions', async () => {
     render(<GlobalSearchCard />);
 
     const [switchBranchButton] = screen.getAllByText('Switch branch');
@@ -90,21 +132,34 @@ describe('GlobalSearchCard', () => {
     const [jumpButton] = screen.getAllByText('Jump to commit');
     fireEvent.click(jumpButton);
     expect(selectCommitSpy).toHaveBeenCalledWith('commit-2');
+
+    await waitFor(() => {
+      expect(getCatalogueViewMock).toHaveBeenCalled();
+    });
   });
 
-  it('uses the command palette to trigger actions', () => {
+  it('uses the command palette to trigger actions', async () => {
     render(<GlobalSearchCard />);
 
     const [openButton] = screen.getAllByRole('button', { name: /Open command palette/i });
     fireEvent.click(openButton);
+    await waitFor(() => {
+      expect(screen.getByText('chronaplay')).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByText('chronaplay'));
     expect(selectBranchSpy).toHaveBeenCalledWith('chronaplay');
 
     fireEvent.click(openButton);
-    const input = screen.getByPlaceholderText('Search branches, commits, tags');
-    fireEvent.input(input, { target: { value: 'catalogue' } });
-    fireEvent.click(screen.getByText('Add catalogue widgets'));
-    expect(selectCommitSpy).toHaveBeenCalledWith('commit-1');
+    const catalogueEntry = await screen.findByText('Customer Onboarding');
+    fireEvent.click(catalogueEntry);
+    expect(
+      screen.getByText('Last command · Catalogue · Customer Onboarding'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(openButton);
+    const metaEntry = await screen.findByText('Business Capability');
+    fireEvent.click(metaEntry);
+    expect(screen.getByText('Last command · Meta-model · Business Capability')).toBeInTheDocument();
 
     fireEvent.click(openButton);
     fireEvent.click(screen.getByText('Refresh branches'));
