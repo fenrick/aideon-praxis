@@ -21,6 +21,7 @@ interface CanvasRuntimeProperties {
   readonly onSelectionChange?: (selection: WidgetSelection) => void;
   readonly onGraphViewChange?: (event: WidgetViewEvent) => void;
   readonly onGraphError?: (event: WidgetErrorEvent) => void;
+  readonly onRequestMetaModelFocus?: (types: string[]) => void;
 }
 
 export const CanvasRuntime = memo(function CanvasRuntime({
@@ -30,6 +31,7 @@ export const CanvasRuntime = memo(function CanvasRuntime({
   onSelectionChange,
   onGraphViewChange,
   onGraphError,
+  onRequestMetaModelFocus,
 }: CanvasRuntimeProperties) {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-2xl border border-border/60 bg-card">
@@ -43,6 +45,7 @@ export const CanvasRuntime = memo(function CanvasRuntime({
               onSelectionChange,
               onGraphViewChange,
               onGraphError,
+              onRequestMetaModelFocus,
             })}
           </div>
         ))}
@@ -58,9 +61,17 @@ function renderWidget(parameters: {
   onSelectionChange?: (selection: WidgetSelection) => void;
   onGraphViewChange?: (event: WidgetViewEvent) => void;
   onGraphError?: (event: WidgetErrorEvent) => void;
+  onRequestMetaModelFocus?: (types: string[]) => void;
 }) {
-  const { widget, reloadVersion, selection, onSelectionChange, onGraphViewChange, onGraphError } =
-    parameters;
+  const {
+    widget,
+    reloadVersion,
+    selection,
+    onSelectionChange,
+    onGraphViewChange,
+    onGraphError,
+    onRequestMetaModelFocus,
+  } = parameters;
   if (widget.kind === 'graph') {
     return (
       <GraphWidget
@@ -74,6 +85,7 @@ function renderWidget(parameters: {
         onError={(message: string) => {
           onGraphError?.({ widgetId: widget.id, message });
         }}
+        onRequestMetaModelFocus={onRequestMetaModelFocus}
       />
     );
   }

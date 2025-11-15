@@ -9,8 +9,10 @@ stay aligned with the UX ground rules.
 ## Compliance summary
 
 - Direct `@radix-ui/*` imports only appear inside `app/PraxisCanvas/src/components/ui` wrappers
-  (`button`, `select`, `dialog`, `command`). Feature components exclusively consume these wrappers
-  plus Tailwind tokens, so we can swap upstream shadcn updates without touching app code.
+  (`button`, `select`, `dialog`, `command`, `slider`). Refreshing them is a single command:
+  `pnpm dlx shadcn@latest add button card input select table dialog command slider --overwrite --yes`.
+- React Flow UI components (`node-search`) are imported via the same CLI (`pnpm dlx shadcn@latest add https://ui.reactflow.dev/node-search --overwrite --yes`) and wrapped in
+  Praxis blocks so they stay vanilla but proxy our tokens.
 - Dashboard cards (`Card`, `Button`, `Select`) all import from `@/components/ui`; none re-style the
   primitives beyond Tailwind utilities scoped to the block, as required by the UX doc.
 - The new `TemporalCommandMenu` composes shadcn’s default Command/Dialog blocks directly, exposing
@@ -27,11 +29,12 @@ stay aligned with the UX ground rules.
 | Selection inspector | `.../selection-inspector-card.tsx`                                           | `Card`, `Table`, `Button`             | All UI primitives imported from `/ui`; consistent tokens.                                                                                 |
 | Worker health       | `.../worker-health-card.tsx`                                                 | `Card`, `Badge` (Tailwind)            | No Radix usage; keep watch for future Toast integrations.                                                                                 |
 | Sidebar shell       | `app/PraxisCanvas/src/components/app-sidebar.tsx`                            | `Button`                              | Conforms to Tailwind + token rules; currently a bespoke component that can be promoted to a “Sidebar block” when navigation wiring lands. |
+| Node search         | `app/PraxisCanvas/src/components/node-search.tsx` + graph widgets            | React Flow UI `NodeSearch` + shadcn   | Imported via React Flow UI registry; the block proxies selection + fitView without mutating upstream styles.                             |
 
 ## Follow-ups
 
-1. Extract the time controls into `components/blocks/time-control-panel.tsx` so both the dashboard
-   card and future toolbar replacement can share the UI state machine.
-2. Build a catalogue/meta-model search provider so the command palette mirrors the legacy
-   `searchStore` coverage described in the UX guide.
+1. Promote branch pills (commit timeline) and graph overlays (node search panels) into dedicated
+   blocks so timeline/activity parity becomes a drop-in replacement for the Svelte tabs.
+2. Pipe catalogue/meta-model selection into the sidebar inspector templates once those panels are
+   ported, keeping renderer navigation in sync.
 3. Document token usage per block (primary/muted) once the design system exposes formal tokens.

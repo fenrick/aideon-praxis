@@ -13,7 +13,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function GlobalSearchCard() {
+interface GlobalSearchCardProperties {
+  readonly onSelectNodes?: (nodeIds: string[]) => void;
+  readonly onFocusMetaModel?: (entry: MetaModelCommandEntry) => void;
+}
+
+export function GlobalSearchCard({
+  onSelectNodes,
+  onFocusMetaModel,
+}: GlobalSearchCardProperties = {}) {
   const [state, actions] = useTemporalPanel();
   const [commandOpen, setCommandOpen] = useState(false);
   const [catalogueEntries, setCatalogueEntries] = useState<CatalogueCommandEntry[]>([]);
@@ -141,9 +149,11 @@ export function GlobalSearchCard() {
         metaModelEntries={metaModelEntries}
         onSelectCatalogueEntry={(entry) => {
           setCommandStatus(`Catalogue · ${entry.label}`);
+          onSelectNodes?.([entry.id]);
         }}
         onSelectMetaModelEntry={(entry) => {
           setCommandStatus(`Meta-model · ${entry.label}`);
+          onFocusMetaModel?.(entry);
         }}
       />
     </>

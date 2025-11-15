@@ -1,3 +1,4 @@
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { toErrorMessage } from '@/lib/errors';
@@ -15,6 +16,8 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
+import { NodeSearchDialog } from '@/components/node-search';
+import { Button } from '@/components/ui/button';
 import type { GraphWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import { buildFlowEdges, buildFlowNodes } from './graph-transform';
 import { WidgetToolbar } from './widget-toolbar';
@@ -26,6 +29,7 @@ interface GraphWidgetProperties {
   readonly onSelectionChange?: (selection: WidgetSelection) => void;
   readonly onViewChange?: (view: GraphViewModel) => void;
   readonly onError?: (message: string) => void;
+  readonly onRequestMetaModelFocus?: (types: string[]) => void;
 }
 
 export function GraphWidget({
@@ -35,6 +39,7 @@ export function GraphWidget({
   onSelectionChange,
   onViewChange,
   onError,
+  onRequestMetaModelFocus,
 }: GraphWidgetProperties) {
   const [nodes, setNodes, handleNodesChange] = useNodesState([] as Node[]);
   const [edges, setEdges, handleEdgesChange] = useEdgesState([] as Edge[]);
@@ -100,6 +105,41 @@ export function GraphWidget({
     [onSelectionChange, widget.id],
   );
 
+  const [nodeSearchOpen, setNodeSearchOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+
+  const handleNodeContextMenu = useCallback(
+    (event: ReactMouseEvent, node: Node) => {
+      event.preventDefault();
+      const selectedNodes = nodes.filter((entry) => entry.selected);
+      if (selectedNodes.length === 0 || !node.selected) {
+        return;
+      }
+      const types = [...new Set(selectedNodes.map((entry) => resolveNodeType(entry)))];
+      setContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        types: types.length > 0 ? types : ['Entity'],
+      });
+    },
+    [nodes],
+  );
+
+  useEffect(() => {
+    if (!contextMenu) {
+      return;
+    }
+    const dismiss = () => {
+      setContextMenu(null);
+    };
+    document.addEventListener('click', dismiss);
+    document.addEventListener('contextmenu', dismiss);
+    return () => {
+      document.removeEventListener('click', dismiss);
+      document.removeEventListener('contextmenu', dismiss);
+    };
+  }, [contextMenu]);
+
   return (
     <div className="relative h-full w-full">
       <WidgetToolbar
@@ -108,6 +148,17 @@ export function GraphWidget({
         loading={loading}
         onRefresh={() => void loadView()}
       />
+      <div className="flex justify-end py-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setNodeSearchOpen(true);
+          }}
+        >
+          Search nodes
+        </Button>
+      </div>
       <div className="h-[320px] w-full rounded-2xl border border-border/60 bg-muted/20">
         <ReactFlowProvider>
           <ReactFlow
@@ -117,6 +168,13 @@ export function GraphWidget({
             onEdgesChange={handleEdgesChange}
             fitView
             onSelectionChange={handleSelection}
+            onNodeContextMenu={handleNodeContextMenu}
+            onPaneClick={() => {
+              setContextMenu(null);
+            }}
+            onPaneContextMenu={() => {
+              setContextMenu(null);
+            }}
           >
             <Background
               color="hsl(var(--muted-foreground))"
@@ -129,9 +187,41 @@ export function GraphWidget({
         </ReactFlowProvider>
         {loading ? <GraphWidgetOverlay message="Loading graph" /> : null}
         {error ? <GraphWidgetOverlay isError message={error} /> : null}
+        {contextMenu ? (
+          <GraphContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onFocus={() => {
+              onRequestMetaModelFocus?.(contextMenu.types);
+              setContextMenu(null);
+            }}
+          />
+        ) : null}
       </div>
+      <NodeSearchDialog
+        open={nodeSearchOpen}
+        onOpenChange={setNodeSearchOpen}
+        onSelectNode={(node) => {
+          handleSelection({ nodes: [node], edges: [] });
+          setNodeSearchOpen(false);
+        }}
+      />
     </div>
   );
+}
+
+interface ContextMenuState {
+  readonly x: number;
+  readonly y: number;
+  readonly types: string[];
+}
+
+function resolveNodeType(node: Node): string {
+  const typeValue = (node.data as { type?: string } | undefined)?.type;
+  if (typeof typeValue === 'string' && typeValue.trim()) {
+    return typeValue;
+  }
+  return 'Entity';
 }
 
 interface GraphWidgetOverlayProperties {
@@ -155,5 +245,30 @@ function GraphWidgetOverlay({ message, isError }: GraphWidgetOverlayProperties) 
 function AlertBadge() {
   return (
     <span className="mr-2 text-xs font-semibold uppercase tracking-wide text-red-700">Error</span>
+  );
+}
+
+function GraphContextMenu({
+  x,
+  y,
+  onFocus,
+}: {
+  readonly x: number;
+  readonly y: number;
+  readonly onFocus: () => void;
+}) {
+  return (
+    <div
+      className="fixed z-50 min-w-[160px] rounded-lg border border-border/70 bg-popover text-sm shadow-xl"
+      style={{ top: y, left: x }}
+    >
+      <button
+        type="button"
+        className="block w-full px-4 py-2 text-left hover:bg-muted"
+        onClick={onFocus}
+      >
+        View meta-model entry
+      </button>
+    </div>
   );
 }

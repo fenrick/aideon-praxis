@@ -8,6 +8,8 @@ const selectBranchSpy = vi.fn();
 const refreshBranchesSpy = vi.fn();
 const fetchMetaModelMock = vi.fn();
 const getCatalogueViewMock = vi.fn();
+const selectNodesSpy = vi.fn();
+const focusMetaModelSpy = vi.fn();
 
 class ResizeObserverMock {
   observe() {}
@@ -56,6 +58,8 @@ describe('GlobalSearchCard', () => {
     selectCommitSpy.mockReset();
     selectBranchSpy.mockReset();
     refreshBranchesSpy.mockReset();
+    selectNodesSpy.mockReset();
+    focusMetaModelSpy.mockReset();
     fetchMetaModelMock.mockResolvedValue({
       version: 'test',
       description: 'Test schema',
@@ -123,7 +127,7 @@ describe('GlobalSearchCard', () => {
   });
 
   it('shows recent commits preview actions', async () => {
-    render(<GlobalSearchCard />);
+    render(<GlobalSearchCard onSelectNodes={selectNodesSpy} onFocusMetaModel={focusMetaModelSpy} />);
 
     const [switchBranchButton] = screen.getAllByText('Switch branch');
     fireEvent.click(switchBranchButton);
@@ -139,7 +143,7 @@ describe('GlobalSearchCard', () => {
   });
 
   it('uses the command palette to trigger actions', async () => {
-    render(<GlobalSearchCard />);
+    render(<GlobalSearchCard onSelectNodes={selectNodesSpy} onFocusMetaModel={focusMetaModelSpy} />);
 
     const [openButton] = screen.getAllByRole('button', { name: /Open command palette/i });
     fireEvent.click(openButton);
@@ -155,11 +159,18 @@ describe('GlobalSearchCard', () => {
     expect(
       screen.getByText('Last command · Catalogue · Customer Onboarding'),
     ).toBeInTheDocument();
+    expect(selectNodesSpy).toHaveBeenCalledWith(['cap-onboarding']);
 
     fireEvent.click(openButton);
     const metaEntry = await screen.findByText('Business Capability');
     fireEvent.click(metaEntry);
     expect(screen.getByText('Last command · Meta-model · Business Capability')).toBeInTheDocument();
+    expect(focusMetaModelSpy).toHaveBeenCalledWith({
+      id: 'Capability',
+      label: 'Business Capability',
+      category: 'Business',
+      kind: 'type',
+    });
 
     fireEvent.click(openButton);
     fireEvent.click(screen.getByText('Refresh branches'));

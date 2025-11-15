@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { fetchMetaModel, type MetaModelSchema } from '@/lib/meta-model';
 
@@ -7,7 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
-export function MetaModelPanel() {
+interface MetaModelPanelProperties {
+  readonly focusEntryId?: string;
+}
+
+export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) {
   const [status, setStatus] = useState<Status>('idle');
   const [schema, setSchema] = useState<MetaModelSchema | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +65,7 @@ export function MetaModelPanel() {
           status,
           schema,
           error,
+          focusEntryId,
           onRetry: () => {
             void loadSchema();
           },
@@ -74,9 +79,10 @@ function renderSchemaState(parameters: {
   readonly status: Status;
   readonly schema: MetaModelSchema | null;
   readonly error: string | null;
+  readonly focusEntryId?: string;
   readonly onRetry: () => void;
 }) {
-  const { status, schema, error, onRetry } = parameters;
+  const { status, schema, error, focusEntryId, onRetry } = parameters;
   if (status === 'error') {
     return (
       <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-xs">
@@ -101,10 +107,29 @@ function renderSchemaState(parameters: {
   if (!schema) {
     return <p className="text-xs text-muted-foreground">Schema not available yet.</p>;
   }
-  return <SchemaDetails schema={schema} />;
+  return <SchemaDetails schema={schema} focusEntryId={focusEntryId} />;
 }
 
-function SchemaDetails({ schema }: { readonly schema: MetaModelSchema }) {
+function SchemaDetails({
+  schema,
+  focusEntryId,
+}: {
+  readonly schema: MetaModelSchema;
+  readonly focusEntryId?: string;
+}) {
+  useEffect(() => {
+    if (!focusEntryId) {
+      return;
+    }
+    const element = document.querySelector<HTMLElement>(`[data-metamodel-entry="${focusEntryId}"]`);
+    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focusEntryId]);
+
+  const focusedIds = useMemo(
+    () => new Set([focusEntryId].filter(Boolean) as string[]),
+    [focusEntryId],
+  );
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 rounded-2xl border border-border/60 bg-muted/10 p-4 text-center text-sm">
@@ -119,28 +144,46 @@ function SchemaDetails({ schema }: { readonly schema: MetaModelSchema }) {
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <ul className="space-y-3">
-          {schema.types.map((type) => (
-            <li key={type.id} className="rounded-2xl border border-border/60 p-3">
-              <p className="text-sm font-semibold">{type.label ?? type.id}</p>
-              <p className="text-xs text-muted-foreground">{type.category ?? 'Uncategorised'}</p>
-              {type.extends ? (
-                <p className="text-xs text-muted-foreground">Extends {type.extends}</p>
-              ) : null}
-              <AttributesList attributes={type.attributes} />
-            </li>
-          ))}
+          {schema.types.map((type) => {
+            const isFocused = focusedIds.has(type.id);
+            return (
+              <li
+                key={type.id}
+                data-metamodel-entry={type.id}
+                className={`rounded-2xl border p-3 transition ${
+                  isFocused ? 'border-primary/60 bg-primary/5 shadow-inner' : 'border-border/60'
+                }`}
+              >
+                <p className="text-sm font-semibold">{type.label ?? type.id}</p>
+                <p className="text-xs text-muted-foreground">{type.category ?? 'Uncategorised'}</p>
+                {type.extends ? (
+                  <p className="text-xs text-muted-foreground">Extends {type.extends}</p>
+                ) : null}
+                <AttributesList attributes={type.attributes} />
+              </li>
+            );
+          })}
         </ul>
         <ul className="space-y-3">
-          {schema.relationships.map((relationship) => (
-            <li key={relationship.id} className="rounded-2xl border border-border/60 p-3">
-              <p className="text-sm font-semibold">{relationship.label ?? relationship.id}</p>
-              <p className="text-xs text-muted-foreground">
-                {relationship.from.join(', ')} → {relationship.to.join(', ')} ·{' '}
-                {relationship.directed === false ? 'Undirected' : 'Directed'}
-              </p>
-              <AttributesList attributes={relationship.attributes} />
-            </li>
-          ))}
+          {schema.relationships.map((relationship) => {
+            const isFocused = focusedIds.has(relationship.id);
+            return (
+              <li
+                key={relationship.id}
+                data-metamodel-entry={relationship.id}
+                className={`rounded-2xl border p-3 transition ${
+                  isFocused ? 'border-primary/60 bg-primary/5 shadow-inner' : 'border-border/60'
+                }`}
+              >
+                <p className="text-sm font-semibold">{relationship.label ?? relationship.id}</p>
+                <p className="text-xs text-muted-foreground">
+                  {relationship.from.join(', ')} → {relationship.to.join(', ')} ·{' '}
+                  {relationship.directed === false ? 'Undirected' : 'Directed'}
+                </p>
+                <AttributesList attributes={relationship.attributes} />
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>

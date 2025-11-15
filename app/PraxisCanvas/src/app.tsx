@@ -33,6 +33,7 @@ export default function App() {
   const [selection, setSelection] = useState<SelectionState>(EMPTY_SELECTION);
   const [templates, setTemplates] = useState<CanvasTemplate[]>(BUILT_IN_TEMPLATES);
   const [activeTemplateId, setActiveTemplateId] = useState<string>(BUILT_IN_TEMPLATES[0]?.id ?? '');
+  const [focusEntryId, setFocusEntryId] = useState<string | undefined>();
 
   const activeScenario = useMemo(
     () => scenarioState.data.find((scenario) => scenario.isDefault) ?? scenarioState.data[0],
@@ -52,6 +53,10 @@ export default function App() {
 
   const handleSelectionChange = useCallback((next: SelectionState) => {
     setSelection(next);
+  }, []);
+
+  const handleCommandPaletteSelection = useCallback((nodeIds: string[]) => {
+    setSelection({ sourceWidgetId: 'command-palette', nodeIds, edgeIds: [] });
   }, []);
 
   const handleTemplateChange = useCallback((templateId: string) => {
@@ -109,14 +114,25 @@ export default function App() {
               widgets={widgets}
               selection={selection}
               onSelectionChange={handleSelectionChange}
+              onRequestMetaModelFocus={(types) => {
+                const [primary] = types;
+                if (primary) {
+                  setFocusEntryId(primary);
+                }
+              }}
             />
           </section>
           <section className="w-full space-y-6 lg:w-[360px]">
             <TimeCursorCard />
             <CommitTimelineCard />
             <ActivityFeedCard />
-            <GlobalSearchCard />
-            <MetaModelPanel />
+            <GlobalSearchCard
+              onSelectNodes={handleCommandPaletteSelection}
+              onFocusMetaModel={(entry) => {
+                setFocusEntryId(entry.id);
+              }}
+            />
+            <MetaModelPanel focusEntryId={focusEntryId} />
             <SelectionInspectorCard
               selection={selection}
               widgets={widgets}
@@ -129,10 +145,6 @@ export default function App() {
       </main>
     </div>
   );
-}
-
-interface ShellHeaderProperties {
-  readonly scenarioName?: string;
 }
 
 interface ShellHeaderProperties {
