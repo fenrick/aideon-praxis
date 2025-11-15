@@ -91,10 +91,10 @@ export function TimeControlPanel({
             disabled={state.loading || state.commits.length === 0}
             onValueCommit={(value) => {
               const [position] = value;
-              if (typeof position !== 'number') {
+              if (typeof position !== 'number' || position < 0) {
                 return;
               }
-              const nextCommit = state.commits.at(position);
+              const nextCommit = state.commits.find((_, index) => index === position);
               if (nextCommit) {
                 actions.selectCommit(nextCommit.id);
               }

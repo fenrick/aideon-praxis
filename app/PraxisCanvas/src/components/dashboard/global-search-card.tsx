@@ -1,15 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import type { TemporalCommitSummary } from '@/praxis-api';
+import { toErrorMessage } from '@/lib/errors';
+import { fetchMetaModel } from '@/lib/meta-model';
+import { getCatalogueView, type CatalogueRow, type TemporalCommitSummary } from '@/praxis-api';
 import { useTemporalPanel } from '@/time/use-temporal-panel';
 
-import { TemporalCommandMenu } from '@/components/blocks/temporal-command-menu';
+import {
+  TemporalCommandMenu,
+  type CatalogueCommandEntry,
+  type MetaModelCommandEntry,
+} from '@/components/blocks/temporal-command-menu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function GlobalSearchCard() {
   const [state, actions] = useTemporalPanel();
   const [commandOpen, setCommandOpen] = useState(false);
+  const [catalogueEntries, setCatalogueEntries] = useState<CatalogueCommandEntry[]>([]);
+  const [metaModelEntries, setMetaModelEntries] = useState<MetaModelCommandEntry[]>([]);
+  const [commandStatus, setCommandStatus] = useState<string | null>(null);
+  const [catalogueError, setCatalogueError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -23,6 +33,44 @@ export function GlobalSearchCard() {
       globalThis.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAuxiliarySources = async () => {
+      try {
+        const [schema, catalogue] = await Promise.all([
+          fetchMetaModel(),
+          getCatalogueView({
+            id: 'command-catalogue',
+            name: 'Command palette quick search',
+            kind: 'catalogue',
+            asOf: new Date().toISOString(),
+            scenario: state.branch ?? 'main',
+            columns: [
+              { id: 'name', label: 'Name', type: 'string' },
+              { id: 'owner', label: 'Owner', type: 'string' },
+              { id: 'state', label: 'State', type: 'string' },
+            ],
+            limit: 25,
+          }),
+        ]);
+        if (cancelled) {
+          return;
+        }
+        setMetaModelEntries(buildMetaModelEntries(schema));
+        setCatalogueEntries(buildCatalogueEntries(catalogue.rows));
+        setCatalogueError(null);
+      } catch (unknownError) {
+        if (!cancelled) {
+          setCatalogueError(toErrorMessage(unknownError));
+        }
+      }
+    };
+    void loadAuxiliarySources();
+    return () => {
+      cancelled = true;
+    };
+  }, [state.branch]);
 
   const recentCommits = useMemo(() => {
     return state.commits.toSorted((left, right) => {
@@ -55,6 +103,10 @@ export function GlobalSearchCard() {
             <ShortcutHint keys={['Ctrl', 'K']} />
           </div>
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Recent commits</p>
+          {commandStatus ? (
+            <p className="text-xs text-muted-foreground">Last command · {commandStatus}</p>
+          ) : null}
+          {catalogueError ? <p className="text-xs text-destructive">{catalogueError}</p> : null}
           {recentCommits.length === 0 ? (
             <p className="text-xs text-muted-foreground">
               No recent commits available. Start by creating a branch.
@@ -85,9 +137,49 @@ export function GlobalSearchCard() {
           actions.selectCommit(commitId);
         }}
         onRefreshBranches={actions.refreshBranches}
+        catalogueEntries={catalogueEntries}
+        metaModelEntries={metaModelEntries}
+        onSelectCatalogueEntry={(entry) => {
+          setCommandStatus(`Catalogue · ${entry.label}`);
+        }}
+        onSelectMetaModelEntry={(entry) => {
+          setCommandStatus(`Meta-model · ${entry.label}`);
+        }}
       />
     </>
   );
+}
+
+function buildCatalogueEntries(rows: CatalogueRow[]): CatalogueCommandEntry[] {
+  return rows.map((row) => {
+    const rawName = row.values.name;
+    const rawOwner = row.values.owner;
+    const rawState = row.values.state;
+    return {
+      id: row.id,
+      label: typeof rawName === 'string' && rawName.trim() ? rawName : row.id,
+      owner: typeof rawOwner === 'string' && rawOwner.trim() ? rawOwner : undefined,
+      state: typeof rawState === 'string' && rawState.trim() ? rawState : undefined,
+    } satisfies CatalogueCommandEntry;
+  });
+}
+
+function buildMetaModelEntries(
+  schema: Awaited<ReturnType<typeof fetchMetaModel>>,
+): MetaModelCommandEntry[] {
+  const typeEntries: MetaModelCommandEntry[] = schema.types.map((type) => ({
+    id: type.id,
+    label: type.label ?? type.id,
+    category: type.category ?? 'Entity',
+    kind: 'type',
+  }));
+  const relationshipEntries: MetaModelCommandEntry[] = schema.relationships.map((relationship) => ({
+    id: relationship.id,
+    label: relationship.label ?? relationship.id,
+    category: `${relationship.from.join(', ')} → ${relationship.to.join(', ')}`,
+    kind: 'relationship',
+  }));
+  return [...typeEntries, ...relationshipEntries];
 }
 
 function ShortcutHint({ keys }: { readonly keys: string[] }) {
