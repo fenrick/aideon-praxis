@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@aideon/design-system/ui/card';
+} from '@aideon/design-system/components/ui/card';
 
 const PHASES = [
   { title: 'Bootstrap shell', status: 'complete' },

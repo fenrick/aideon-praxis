@@ -1,10 +1,10 @@
 import type { Edge, Node } from '@xyflow/react';
 
 import type { GraphEdgeView, GraphNodeView, GraphViewModel } from '@/praxis-api';
-import type { PraxisNodeData } from '@aideon/design-system/reactflow/praxis-node';
 import type { TimelineEdgeData } from '@aideon/design-system/reactflow/timeline-edge';
+import type { GraphNodeData } from './graph-node-data';
 
-export function buildFlowNodes(view: GraphViewModel): Node<PraxisNodeData>[] {
+export function buildFlowNodes(view: GraphViewModel): Node<GraphNodeData>[] {
   return view.nodes.map((node) => toFlowNode(node));
 }
 
@@ -12,7 +12,7 @@ export function buildFlowEdges(view: GraphViewModel): Edge<TimelineEdgeData>[] {
   return view.edges.map((edge, index) => toFlowEdge(edge, index));
 }
 
-export function toFlowNode(node: GraphNodeView): Node<PraxisNodeData> {
+export function toFlowNode(node: GraphNodeView): Node<GraphNodeData> {
   return {
     id: node.id,
     type: 'praxis-node',

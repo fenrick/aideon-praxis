@@ -11,15 +11,15 @@ import {
   PanelTitle,
   PanelToolbar,
 } from '@aideon/design-system/blocks/panel';
-import { Button } from '@aideon/design-system/ui/button';
+import { Button } from '@aideon/design-system/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@aideon/design-system/ui/select';
-import { Slider } from '@aideon/design-system/ui/slider';
+} from '@aideon/design-system/components/ui/select';
+import { Slider } from '@aideon/design-system/components/ui/slider';
 
 interface TimeControlPanelProperties {
   readonly title?: string;

@@ -1,14 +1,14 @@
 import type { TemporalCommitSummary } from '@/praxis-api';
 import { useTemporalPanel } from '@/time/use-temporal-panel';
 
-import { Button } from '@aideon/design-system/ui/button';
+import { Button } from '@aideon/design-system/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@aideon/design-system/ui/card';
+} from '@aideon/design-system/components/ui/card';
 
 interface ActivityTimelinePanelProperties {
   readonly title?: string;

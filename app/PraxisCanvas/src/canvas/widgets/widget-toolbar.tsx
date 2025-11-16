@@ -1,7 +1,7 @@
 import { Loader2, RefreshCcw } from 'lucide-react';
 
 import type { ViewMetadata } from '@/praxis-api';
-import { Button } from '@aideon/design-system/ui/button';
+import { Button } from '@aideon/design-system/components/ui/button';
 
 interface WidgetToolbarProperties {
   readonly metadata?: ViewMetadata;

@@ -10,14 +10,14 @@ import type {
   WidgetViewEvent,
 } from '@/canvas/types';
 import type { GraphViewModel } from '@/praxis-api';
-import { Button } from '@aideon/design-system/ui/button';
+import { Button } from '@aideon/design-system/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@aideon/design-system/ui/card';
+} from '@aideon/design-system/components/ui/card';
 
 interface CanvasRuntimeCardProperties {
   readonly widgets: CanvasWidget[];

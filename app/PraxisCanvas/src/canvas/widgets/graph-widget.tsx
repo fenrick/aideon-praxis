@@ -17,13 +17,13 @@ import {
   type Node,
   type NodeTypes,
 } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 
 import { NodeSearchDialog } from '@aideon/design-system/reactflow/node-search';
-import { PraxisNode, type PraxisNodeData } from '@aideon/design-system/reactflow/praxis-node';
+import { PraxisNode } from '@aideon/design-system/reactflow/praxis-node';
 import { TimelineEdge, type TimelineEdgeData } from '@aideon/design-system/reactflow/timeline-edge';
-import { Button } from '@aideon/design-system/ui/button';
+import { Button } from '@aideon/design-system/components/ui/button';
 import type { GraphWidgetConfig, SelectionState, WidgetSelection } from '../types';
+import type { GraphNodeData } from './graph-node-data';
 import { buildFlowEdges, buildFlowNodes } from './graph-transform';
 import { WidgetToolbar } from './widget-toolbar';
 
@@ -46,7 +46,7 @@ export function GraphWidget({
   onError,
   onRequestMetaModelFocus,
 }: GraphWidgetProperties) {
-  const [nodes, setNodes, handleNodesChange] = useNodesState<Node<PraxisNodeData>>([]);
+  const [nodes, setNodes, handleNodesChange] = useNodesState<Node<GraphNodeData>>([]);
   const [edges, setEdges, handleEdgesChange] = useEdgesState<Edge<TimelineEdgeData>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
@@ -60,7 +60,7 @@ export function GraphWidget({
   }, [widget.view, reloadVersion]);
 
   const attachInspectHandlers = useCallback(
-    (flowNodes: Node<PraxisNodeData>[]) => {
+    (flowNodes: Node<GraphNodeData>[]) => {
       if (!onRequestMetaModelFocus) {
         return flowNodes;
       }
@@ -143,11 +143,17 @@ export function GraphWidget({
 
   const [nodeSearchOpen, setNodeSearchOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
-  const nodeTypes = useMemo<NodeTypes>(() => ({ 'praxis-node': PraxisNode }), []);
-  const edgeTypes = useMemo<EdgeTypes>(() => ({ timeline: TimelineEdge }), []);
+  const nodeTypes = useMemo<NodeTypes>(
+    () => ({ 'praxis-node': PraxisNode as NodeTypes['praxis-node'] }),
+    [],
+  );
+  const edgeTypes = useMemo<EdgeTypes>(
+    () => ({ timeline: TimelineEdge as EdgeTypes['timeline'] }),
+    [],
+  );
 
   const handleNodeContextMenu = useCallback(
-    (event: ReactMouseEvent, node: Node<PraxisNodeData>) => {
+    (event: ReactMouseEvent, node: Node<GraphNodeData>) => {
       event.preventDefault();
       const selectedNodes = nodes.filter((entry) => entry.selected);
       if (selectedNodes.length === 0 || !node.selected) {
@@ -261,7 +267,7 @@ interface ContextMenuState {
   readonly types: string[];
 }
 
-function resolveNodeType(node: Node<PraxisNodeData>): string {
+function resolveNodeType(node: Node<GraphNodeData>): string {
   const typeValue = node.data.typeLabel;
   if (typeof typeValue === 'string' && typeValue.trim()) {
     return typeValue;

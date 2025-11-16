@@ -11,7 +11,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@aideon/design-system/ui/table';
+} from '@aideon/design-system/components/ui/table';
 
 import type { CatalogueWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import { WidgetToolbar } from './widget-toolbar';

@@ -1,10 +1,19 @@
-import type { ComponentType, SVGProps } from 'react';
+import type { ReactNode } from 'react';
 
-import { Layers, LayoutPanelTop, Network, NotebookTabs, Settings2 } from 'lucide-react';
+import {
+  Layers,
+  LayoutPanelTop,
+  Network,
+  NotebookTabs,
+  Settings2,
+  type LucideIcon,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utilities';
 import type { ScenarioSummary } from '@/praxis-api';
-import { Button } from '@aideon/design-system/ui/button';
+import { Button } from '@aideon/design-system/components/ui/button';
+
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
 const NAV_ITEMS = [
   { label: 'Overview', icon: LayoutPanelTop, active: true },
@@ -73,8 +82,8 @@ export function AppSidebar({ scenarios, loading }: AppSidebarProperties) {
 }
 
 interface SidebarNavButtonProperties {
-  readonly icon: ComponentType<SVGProps<SVGSVGElement>>;
-  readonly children: React.ReactNode;
+  readonly icon: LucideIcon;
+  readonly children: ReactNode;
   readonly active?: boolean;
 }
 
