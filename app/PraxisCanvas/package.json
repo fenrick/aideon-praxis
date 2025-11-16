@@ -6,7 +6,7 @@
   "description": "Praxis React migration shell (vanilla TS fallback)",
   "scripts": {
     "dev": "vite dev --host 127.0.0.1 --port 1420",
-    "build": "vite build",
+    "build": "vite build && node scripts/postbuild-windows.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "typecheck": "tsc --noEmit"
   },

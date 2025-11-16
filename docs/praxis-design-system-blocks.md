@@ -55,4 +55,4 @@ left in the Svelte → React migration.
 2. Switch the command palette + context modals to the `Modal` shell and move the React sidebar onto
    the `Sidebar` block before removing the Svelte renderer.
 3. Track adoption progress directly in this doc (per component) and link each migration back to
-   `docs/praxis-desktop-svelte-migration.md` so we know when the Svelte parity table can be updated.
+   `docs/praxis-desktop-svelte-migration.md`, especially for the helper windows/workspace tabs, so we know when those Svelte entries can finally flip to “Replaced in React.”
