@@ -5,7 +5,7 @@ import { EdgeLabelRenderer, type Edge, type EdgeProps } from '@xyflow/react';
 import {
   AnimatedSvgEdge as AnimatedSvgEdgeComponent,
   type AnimatedSvgEdge as AnimatedSvgEdgeType,
-} from '@/components/animated-svg-edge';
+} from './animated-svg-edge';
 
 type AnimatedEdgeOptions = NonNullable<AnimatedSvgEdgeType['data']>;
 

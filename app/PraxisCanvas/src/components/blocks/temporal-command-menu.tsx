@@ -11,8 +11,8 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from '@/components/ui/command';
-import { DialogDescription, DialogTitle } from '@/components/ui/dialog';
+} from '@aideon/design-system/ui/command';
+import { DialogDescription, DialogTitle } from '@aideon/design-system/ui/dialog';
 
 interface TemporalCommandMenuProperties {
   readonly open: boolean;

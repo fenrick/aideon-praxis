@@ -8,10 +8,7 @@ const refreshBranchesSpy = vi.fn();
 
 vi.mock('@/time/use-temporal-panel', () => ({
   useTemporalPanel: () =>
-    [
-      mockState,
-      { selectCommit: selectCommitSpy, refreshBranches: refreshBranchesSpy },
-    ] as const,
+    [mockState, { selectCommit: selectCommitSpy, refreshBranches: refreshBranchesSpy }] as const,
 }));
 
 let mockState: TemporalPanelState;

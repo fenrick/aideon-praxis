@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import type { BuiltInEdge, Node, PanelProps } from '@xyflow/react';
 import { useReactFlow } from '@xyflow/react';
 
+import { cn } from '../lib/cn';
 import {
   Command,
   CommandDialog,
@@ -11,8 +12,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { cn } from '@/lib/utilities';
+} from '../ui/command';
 
 export interface NodeSearchProperties extends Omit<PanelProps, 'children'> {
   // The function to search for nodes, should return an array of nodes that match the search string

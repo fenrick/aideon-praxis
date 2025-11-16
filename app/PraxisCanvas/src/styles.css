@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '@aideon/design-system/styles.css';
 
 :root {
   font-family:

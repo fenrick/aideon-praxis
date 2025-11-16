@@ -1,6 +1,12 @@
 import { CheckCircle2 } from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@aideon/design-system/ui/card';
 
 const PHASES = [
   { title: 'Bootstrap shell', status: 'complete' },

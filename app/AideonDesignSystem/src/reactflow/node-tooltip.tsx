@@ -10,7 +10,7 @@ import {
   type MouseEvent,
 } from 'react';
 
-import { cn } from '@/lib/utilities';
+import { cn } from '../lib/cn';
 
 /* TOOLTIP CONTEXT ---------------------------------------------------------- */
 
