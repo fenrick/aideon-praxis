@@ -53,6 +53,10 @@ export default defineConfig({
         replacement: resolve(__dirname, '../AideonDesignSystem/dist/ui'),
       },
       {
+        find: '@aideon/design-system/components/ui/tabs',
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/components/ui/tabs.tsx'),
+      },
+      {
         find: '@aideon/design-system/components/ui',
         replacement: resolve(__dirname, '../AideonDesignSystem/dist/ui'),
       },

@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
   getStateAtSnapshot,
+  getTemporalDiff,
   listTemporalBranches,
   listTemporalCommits,
   mergeTemporalBranches,
   type StateAtSnapshot,
   type TemporalBranchSummary,
   type TemporalCommitSummary,
+  type TemporalDiffSnapshot,
   type TemporalMergeConflict,
 } from '@/praxis-api';
 
@@ -24,6 +26,7 @@ export interface TemporalPanelState {
   readonly error?: string;
   readonly mergeConflicts?: TemporalMergeConflict[];
   readonly merging: boolean;
+  readonly diff?: TemporalDiffSnapshot | null;
 }
 
 export interface TemporalPanelActions {
@@ -40,10 +43,25 @@ const INITIAL_STATE: TemporalPanelState = {
   snapshotLoading: false,
   mergeConflicts: undefined,
   merging: false,
+  diff: undefined,
 };
 
 export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
   const [state, setState] = useState<TemporalPanelState>(INITIAL_STATE);
+  const loadDiff = useCallback(async (commits: TemporalCommitSummary[]) => {
+    if (commits.length < 2) {
+      setState((previous) => ({ ...previous, diff: undefined }));
+      return;
+    }
+    const trailing = commits.slice(-2);
+    const [from, to] = [trailing[0].id, trailing[1].id];
+    try {
+      const diff = await getTemporalDiff({ from, to });
+      setState((previous) => ({ ...previous, diff }));
+    } catch {
+      setState((previous) => ({ ...previous, diff: undefined }));
+    }
+  }, []);
 
   const loadBranches = useCallback(async () => {
     setState((previous) => ({ ...previous, loading: true, error: undefined }));
@@ -70,7 +88,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         merging: false,
       }));
     }
-  }, []);
+  }, [loadBranch]);
 
   const loadBranch = useCallback(async (branch: string) => {
     setState((previous) => ({
@@ -101,6 +119,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         loading: false,
         merging: false,
       }));
+      void loadDiff(commits);
     } catch (unknownError) {
       setState((previous) => ({
         ...previous,
@@ -110,7 +129,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         merging: false,
       }));
     }
-  }, []);
+  }, [loadDiff]);
 
   const selectCommit = useCallback(
     (commitId: string | null) => {
