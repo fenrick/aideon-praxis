@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import type { ViteDevServer } from 'vite';
 import { defineConfig } from 'vite';
 
-const windowRoutes = ['splash', 'about', 'settings', 'status'];
+const windowRoutes = ['splash', 'about', 'settings', 'status', 'styleguide'];
 const spaRoutes = ['canvas'];
 
 function windowAliasPlugin() {
@@ -42,15 +42,39 @@ function windowAliasPlugin() {
   };
 }
 
+function designSystemPathsPlugin() {
+  return {
+    enforce: 'pre' as const,
+    name: 'aideon-design-system-paths',
+    resolveId(source: string, importer?: string) {
+      if (!importer) {
+        return null;
+      }
+      if (!importer.includes('AideonDesignSystem/dist')) {
+        return null;
+      }
+      if (!source.startsWith('@/')) {
+        return null;
+      }
+      const relative = source.slice(2);
+      return resolve(__dirname, '../AideonDesignSystem/dist', `${relative}.js`);
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [tailwindcss(), react(), windowAliasPlugin()],
+  plugins: [tailwindcss(), react(), designSystemPathsPlugin(), windowAliasPlugin()],
   resolve: {
     alias: [
+      {
+        find: /^@\/components\/ui\/(.*)$/,
+        replacement: resolve(__dirname, '../AideonDesignSystem/dist/components/ui/$1.js'),
+      },
       { find: '@', replacement: resolve(__dirname, 'src') },
       { find: '@aideon/PraxisAdapters', replacement: resolve(__dirname, '../PraxisAdapters/src') },
       {
         find: '@aideon/design-system/ui',
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/ui'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/dist/components/ui'),
       },
       {
         find: '@aideon/design-system/components/ui/tabs',
@@ -58,7 +82,7 @@ export default defineConfig({
       },
       {
         find: '@aideon/design-system/components/ui',
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/ui'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/dist/components/ui'),
       },
       {
         find: '@aideon/design-system/blocks',
@@ -70,7 +94,7 @@ export default defineConfig({
       },
       {
         find: '@aideon/design-system/lib/utils',
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/lib/cn.js'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/dist/lib/utils.js'),
       },
       {
         find: '@aideon/design-system/lib',
@@ -100,6 +124,7 @@ export default defineConfig({
         about: resolve(__dirname, 'about.html'),
         settings: resolve(__dirname, 'settings.html'),
         status: resolve(__dirname, 'status.html'),
+        styleguide: resolve(__dirname, 'styleguide.html'),
       },
     },
   },

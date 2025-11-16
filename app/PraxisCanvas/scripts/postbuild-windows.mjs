@@ -10,6 +10,7 @@ const windows = [
   { name: 'settings', source: 'settings.html' },
   { name: 'status', source: 'status.html' },
   { name: 'canvas', source: 'index.html' },
+  { name: 'styleguide', source: 'styleguide.html' },
 ];
 
 async function main() {
