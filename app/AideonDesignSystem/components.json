@@ -10,9 +10,9 @@
     "cssVariables": true
   },
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utilities",
-    "ui": "@/components/ui"
+    "components": "@/ui",
+    "utils": "@/lib",
+    "ui": "@/ui"
   },
   "registries": {
     "@reactflow": "https://ui.reactflow.dev/{name}"

@@ -17,7 +17,7 @@ vi.mock('@/praxis-api', async () => {
   };
 });
 
-vi.mock('@/components/node-search', () => ({
+vi.mock('@aideon/design-system/reactflow/node-search', () => ({
   NodeSearchDialog: () => null,
 }));
 

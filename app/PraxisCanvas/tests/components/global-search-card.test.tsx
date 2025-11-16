@@ -127,7 +127,9 @@ describe('GlobalSearchCard', () => {
   });
 
   it('shows recent commits preview actions', async () => {
-    render(<GlobalSearchCard onSelectNodes={selectNodesSpy} onFocusMetaModel={focusMetaModelSpy} />);
+    render(
+      <GlobalSearchCard onSelectNodes={selectNodesSpy} onFocusMetaModel={focusMetaModelSpy} />,
+    );
 
     const [switchBranchButton] = screen.getAllByText('Switch branch');
     fireEvent.click(switchBranchButton);
@@ -143,7 +145,9 @@ describe('GlobalSearchCard', () => {
   });
 
   it('uses the command palette to trigger actions', async () => {
-    render(<GlobalSearchCard onSelectNodes={selectNodesSpy} onFocusMetaModel={focusMetaModelSpy} />);
+    render(
+      <GlobalSearchCard onSelectNodes={selectNodesSpy} onFocusMetaModel={focusMetaModelSpy} />,
+    );
 
     const [openButton] = screen.getAllByRole('button', { name: /Open command palette/i });
     fireEvent.click(openButton);
@@ -156,9 +160,7 @@ describe('GlobalSearchCard', () => {
     fireEvent.click(openButton);
     const catalogueEntry = await screen.findByText('Customer Onboarding');
     fireEvent.click(catalogueEntry);
-    expect(
-      screen.getByText('Last command · Catalogue · Customer Onboarding'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Last command · Catalogue · Customer Onboarding')).toBeInTheDocument();
     expect(selectNodesSpy).toHaveBeenCalledWith(['cap-onboarding']);
 
     fireEvent.click(openButton);

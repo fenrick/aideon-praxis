@@ -21,7 +21,7 @@
     "node:lint:fix": "eslint --max-warnings=10 \"app/**/src/**/*.{ts,tsx,js,svelte}\" --fix",
     "node:format": "prettier -w .",
     "node:format:check": "prettier -c .",
-    "node:typecheck": "pnpm --filter @aideon/PraxisCanvas run typecheck && pnpm --filter @aideon/PraxisDesktop run check && tsc -b --pretty",
+    "node:typecheck": "pnpm --filter @aideon/design-system run typecheck && pnpm --filter @aideon/PraxisCanvas run typecheck && pnpm --filter @aideon/PraxisDesktop run check && tsc -b --pretty",
     "design:guard": "node tools/design-system-guard.mjs",
     "node:ci": "pnpm run design:guard && pnpm run node:lint:fix && pnpm run node:typecheck && pnpm run node:test:coverage && pnpm run node:format",
     "tauri": "tauri",

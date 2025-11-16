@@ -2,16 +2,16 @@ import { memo } from 'react';
 
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
+import { cn } from '../lib/cn';
+import { Button } from '../ui/button';
 import {
   BaseNode,
   BaseNodeContent,
   BaseNodeFooter,
   BaseNodeHeader,
   BaseNodeHeaderTitle,
-} from '@/components/base-node';
-import { NodeTooltip, NodeTooltipContent, NodeTooltipTrigger } from '@/components/node-tooltip';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utilities';
+} from './base-node';
+import { NodeTooltip, NodeTooltipContent, NodeTooltipTrigger } from './node-tooltip';
 
 export type PraxisNodeStatus = 'active' | 'warning' | 'error';
 
@@ -24,15 +24,10 @@ export interface PraxisNodeData extends Record<string, unknown> {
   readonly entityTypes?: string[];
 }
 
-const EMPTY_NODE_DATA: PraxisNodeData = {
-  label: 'Untitled node',
-  entityTypes: ['Entity'],
-};
-
 export type PraxisNodeType = Node<PraxisNodeData>;
 
 export const PraxisNode = memo(function PraxisNode({ data, id }: NodeProps<PraxisNodeType>) {
-  const nodeData: PraxisNodeData = data ?? EMPTY_NODE_DATA;
+  const nodeData = data;
   const status = resolveStatus(nodeData.status);
 
   return (
@@ -56,7 +51,7 @@ export const PraxisNode = memo(function PraxisNode({ data, id }: NodeProps<Praxi
             )}
           </BaseNodeContent>
           <BaseNodeFooter className="items-start gap-1 text-[0.65rem] text-muted-foreground">
-            <span className="font-semibold uppercase tracking-wide">#{String(id)}</span>
+            <span className="font-semibold uppercase tracking-wide">#{id}</span>
             <span className="text-muted-foreground/80">
               Click or right-click nodes for block actions.
             </span>

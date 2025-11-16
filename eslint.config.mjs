@@ -98,7 +98,10 @@ export default defineConfig(
 
   // Allow generated shadcn components to keep their original prop names
   {
-    files: ['app/PraxisCanvas/src/components/ui/**/*.{ts,tsx}'],
+    files: [
+      'app/PraxisCanvas/src/components/ui/**/*.{ts,tsx}',
+      'app/AideonDesignSystem/src/ui/**/*.{ts,tsx}',
+    ],
     rules: {
       'unicorn/prevent-abbreviations': 'off',
       'sonarjs/prefer-read-only-props': 'off',

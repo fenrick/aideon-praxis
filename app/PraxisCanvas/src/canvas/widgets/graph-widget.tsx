@@ -19,10 +19,10 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { NodeSearchDialog } from '@/components/node-search';
-import { PraxisNode, type PraxisNodeData } from '@/components/reactflow/praxis-node';
-import { TimelineEdge, type TimelineEdgeData } from '@/components/reactflow/timeline-edge';
-import { Button } from '@/components/ui/button';
+import { NodeSearchDialog } from '@aideon/design-system/reactflow/node-search';
+import { PraxisNode, type PraxisNodeData } from '@aideon/design-system/reactflow/praxis-node';
+import { TimelineEdge, type TimelineEdgeData } from '@aideon/design-system/reactflow/timeline-edge';
+import { Button } from '@aideon/design-system/ui/button';
 import type { GraphWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import { buildFlowEdges, buildFlowNodes } from './graph-transform';
 import { WidgetToolbar } from './widget-toolbar';
@@ -65,7 +65,9 @@ export function GraphWidget({
         return flowNodes;
       }
       return flowNodes.map((node) => {
-        const types = (node.data.entityTypes ?? []).filter((value) => isNonEmptyString(value));
+        const types = (node.data.entityTypes ?? []).filter((value: string) => {
+          return isNonEmptyString(value);
+        });
         if (types.length === 0) {
           return node;
         }
@@ -244,7 +246,7 @@ export function GraphWidget({
       <NodeSearchDialog
         open={nodeSearchOpen}
         onOpenChange={setNodeSearchOpen}
-        onSelectNode={(node) => {
+        onSelectNode={(node: Node) => {
           handleSelection({ nodes: [node], edges: [] });
           setNodeSearchOpen(false);
         }}
@@ -264,7 +266,7 @@ function resolveNodeType(node: Node<PraxisNodeData>): string {
   if (typeof typeValue === 'string' && typeValue.trim()) {
     return typeValue;
   }
-  const fallback = (node.data.entityTypes ?? []).find((value) => isNonEmptyString(value));
+  const fallback = (node.data.entityTypes ?? []).find((value: string) => isNonEmptyString(value));
   return fallback ?? 'Entity';
 }
 

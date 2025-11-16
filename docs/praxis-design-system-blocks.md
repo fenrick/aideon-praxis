@@ -11,7 +11,7 @@ stay aligned with the UX ground rules.
 - Direct `@radix-ui/*` imports only appear inside `app/PraxisCanvas/src/components/ui` wrappers
   (`button`, `select`, `dialog`, `command`, `slider`). Refreshing them is a single command:
   `pnpm dlx shadcn@latest add button card input select table dialog command slider --overwrite --yes`.
-- React Flow UI components (Base Node, Node Tooltip, Node Search, Animated SVG Edge) are also pulled through the CLI, and `pnpm --filter @aideon/PraxisCanvas run components:refresh` re-imports the entire set (shadcn + React Flow) so proxies stay in sync with the vanilla registries.citeturn0view0turn2search0turn2search1turn5view0
+- React Flow UI components (Base Node, Node Tooltip, Node Search, Animated SVG Edge) are also pulled through the CLI, and `pnpm --filter @aideon/design-system run components:refresh` re-imports the entire set (shadcn + React Flow) so proxies stay in sync with the vanilla registries.citeturn0view0turn2search0turn2search1turn5view0
 - Dashboard cards (`Card`, `Button`, `Select`) all import from `@/components/ui`; none re-style the
   primitives beyond Tailwind utilities scoped to the block, as required by the UX doc.
 - The new `TemporalCommandMenu` composes shadcn’s default Command/Dialog blocks directly, exposing

@@ -12,7 +12,6 @@ import { PhaseCheckpointsCard } from '@/components/dashboard/phase-checkpoints-c
 import { SelectionInspectorCard } from '@/components/dashboard/selection-inspector-card';
 import { TimeCursorCard } from '@/components/dashboard/time-cursor-card';
 import { WorkerHealthCard } from '@/components/dashboard/worker-health-card';
-import { Button } from '@/components/ui/button';
 import { toErrorMessage } from '@/lib/errors';
 import { listScenarios, type ScenarioSummary } from '@/praxis-api';
 import {
@@ -21,6 +20,7 @@ import {
   instantiateTemplate,
   type CanvasTemplate,
 } from '@/templates';
+import { Button } from '@aideon/design-system/ui/button';
 
 interface ScenarioState {
   loading: boolean;

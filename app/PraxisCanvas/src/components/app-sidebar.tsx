@@ -2,9 +2,9 @@ import type { ComponentType, SVGProps } from 'react';
 
 import { Layers, LayoutPanelTop, Network, NotebookTabs, Settings2 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utilities';
 import type { ScenarioSummary } from '@/praxis-api';
+import { Button } from '@aideon/design-system/ui/button';
 
 const NAV_ITEMS = [
   { label: 'Overview', icon: LayoutPanelTop, active: true },

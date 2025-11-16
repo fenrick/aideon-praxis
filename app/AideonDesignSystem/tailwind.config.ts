@@ -4,7 +4,7 @@ import defaultTheme from 'tailwindcss/defaultTheme';
 
 export default {
   darkMode: ['class'],
-  content: ['./index.html', './src/**/*.{ts,tsx}', '../AideonDesignSystem/src/**/*.{ts,tsx}'],
+  content: ['./src/**/*.{ts,tsx}'],
   theme: {
     container: {
       center: true,

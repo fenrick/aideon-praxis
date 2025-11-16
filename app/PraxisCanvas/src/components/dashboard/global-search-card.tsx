@@ -10,8 +10,14 @@ import {
   type CatalogueCommandEntry,
   type MetaModelCommandEntry,
 } from '@/components/blocks/temporal-command-menu';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@aideon/design-system/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@aideon/design-system/ui/card';
 
 interface GlobalSearchCardProperties {
   readonly onSelectNodes?: (nodeIds: string[]) => void;

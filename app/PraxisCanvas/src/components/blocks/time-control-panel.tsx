@@ -2,16 +2,22 @@ import { useMemo, type ReactNode } from 'react';
 
 import type { TemporalPanelActions, TemporalPanelState } from '@/time/use-temporal-panel';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@aideon/design-system/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@aideon/design-system/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+} from '@aideon/design-system/ui/select';
+import { Slider } from '@aideon/design-system/ui/slider';
 
 interface TimeControlPanelProperties {
   readonly title?: string;
@@ -45,7 +51,7 @@ export function TimeControlPanel({
           <Select
             value={state.branch ?? undefined}
             disabled={state.loading || branchOptions.length === 0}
-            onValueChange={(value) => {
+            onValueChange={(value: string) => {
               actions.selectBranch(value);
             }}
           >
@@ -65,7 +71,7 @@ export function TimeControlPanel({
           <Select
             value={state.commitId ?? undefined}
             disabled={state.loading || state.commits.length === 0}
-            onValueChange={(value) => {
+            onValueChange={(value: string) => {
               actions.selectCommit(value);
             }}
           >
@@ -89,7 +95,7 @@ export function TimeControlPanel({
             step={1}
             value={sliderValue}
             disabled={state.loading || state.commits.length === 0}
-            onValueCommit={(value) => {
+            onValueCommit={(value: number[]) => {
               const [position] = value;
               if (typeof position !== 'number' || position < 0) {
                 return;

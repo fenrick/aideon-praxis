@@ -2,14 +2,6 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 
 import { AlertTriangle } from 'lucide-react';
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { toErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utilities';
 import {
@@ -18,6 +10,14 @@ import {
   type MatrixCell,
   type MatrixViewModel,
 } from '@/praxis-api';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@aideon/design-system/ui/table';
 
 import type { MatrixWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import { WidgetToolbar } from './widget-toolbar';

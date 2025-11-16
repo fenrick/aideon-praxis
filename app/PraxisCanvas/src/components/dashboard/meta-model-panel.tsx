@@ -2,8 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { fetchMetaModel, type MetaModelSchema } from '@/lib/meta-model';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@aideon/design-system/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@aideon/design-system/ui/card';
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 

@@ -2,10 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toErrorMessage } from '@/lib/errors';
 import { getWorkerHealth, type WorkerHealth } from '@/praxis-api';
+import { Button } from '@aideon/design-system/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@aideon/design-system/ui/card';
 
 interface HealthState {
   snapshot?: WorkerHealth;
