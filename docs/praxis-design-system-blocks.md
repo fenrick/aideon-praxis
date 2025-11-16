@@ -1,42 +1,58 @@
 # Praxis Canvas – Design System Block Audit
 
-Date: 2025-11-15
+Date: 2025-11-16
 
-Purpose: capture the React/shadcn building blocks currently in `app/PraxisCanvas`, confirm
-they stay on vanilla shadcn primitives (default theme), and highlight any follow-ups needed to
-stay aligned with the UX ground rules.
+Purpose: capture the layered blocks that now live in `app/AideonDesignSystem`, confirm Praxis
+Canvas consumes them without forking vanilla shadcn/reactflow components, and highlight the gaps
+left in the Svelte → React migration.
 
 ## Compliance summary
 
-- Direct `@radix-ui/*` imports only appear inside `app/PraxisCanvas/src/components/ui` wrappers
-  (`button`, `select`, `dialog`, `command`, `slider`). Refreshing them is a single command:
-  `pnpm dlx shadcn@latest add button card input select table dialog command slider --overwrite --yes`.
-- React Flow UI components (Base Node, Node Tooltip, Node Search, Animated SVG Edge) are also pulled through the CLI, and `pnpm --filter @aideon/design-system run components:refresh` re-imports the entire set (shadcn + React Flow) so proxies stay in sync with the vanilla registries.citeturn0view0turn2search0turn2search1turn5view0
-- Dashboard cards (`Card`, `Button`, `Select`) all import from `@/components/ui`; none re-style the
-  primitives beyond Tailwind utilities scoped to the block, as required by the UX doc.
-- The new `TemporalCommandMenu` composes shadcn’s default Command/Dialog blocks directly, exposing
-  a Praxis-specific API while leaving cmdk styles untouched.
-- Graph canvas nodes/edges use Praxis proxies that wrap vanilla React Flow UI exports so we can refresh upstream changes without rewriting our design system blocks; proxies only add minimal layout/tokens.
+- All shadcn/ui and React Flow UI primitives sit inside `app/AideonDesignSystem/src/ui` or
+  `src/reactflow`; the only `@radix-ui/*` imports in the workspace reside there. Refreshing *all*
+  primitives is a single command scoped to the package:
+  `pnpm --filter @aideon/design-system run components:refresh` (pulls shadcn defaults plus the
+  React Flow UI registry entries such as `@reactflow/base-node`, `@reactflow/node-tooltip`,
+  `@reactflow/node-search`, `@reactflow/animated-svg-edge`).
+- `components.json` in the design-system package tracks both registries (shadcn default + React Flow)
+  so we can add future sources without touching app bundles. No renderer edits are required when the
+  registries are refreshed.
+- Vanilla-first blocks now live under `app/AideonDesignSystem/src/blocks` (panel, toolbar, sidebar,
+  modal). They proxy the primitives so UX surfaces (forms, toolbars, modals, sidebars) can be
+  assembled from consistent Lego pieces while keeping upstream code refreshable.
+- Praxis Canvas imports everything through `@aideon/design-system`. Example: the
+  `TimeControlPanel` block now uses `Panel`, `PanelField`, and `PanelToolbar` rather than pulling
+  shadcn cards directly, proving the proxy layer is working.
+- React Flow canvas nodes/edges (`PraxisNode`, `TimelineEdge`, `NodeSearchDialog`) are defined in the
+  design system package and consume the vanilla React Flow UI exports untouched; Praxis-specific
+  styling/tokens happen only in the proxy wrappers.
 
 ## Block inventory
 
-| Block               | File                                                                         | shadcn primitives                              | Status                                                                                                                                    |
-| ------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Time control panel  | `app/PraxisCanvas/src/components/blocks/time-control-panel.tsx`              | `Card`, `Button`, `Select`, `Slider`           | Extracted from the dashboard card; adds the shadcn Slider timeline plus merge/reload actions for reuse in future toolbar work.            |
-| Commit timeline     | `.../commit-timeline-card.tsx`                                               | `Card`, `Button`                               | Compliant; future enhancement is to extract branch pills into a reusable `BranchPillList` block.                                          |
-| Command palette     | `.../global-search-card.tsx` + `components/blocks/temporal-command-menu.tsx` | `Card`, `Button`, `Command`, `Dialog`          | Uses vanilla shadcn Command/Dialog plus catalogue + meta-model groups; callbacks update local UX instead of forking primitives.           |
-| Canvas runtime      | `.../canvas-runtime-card.tsx`                                                | `Card`, `Button`, tables                       | Uses shared `Card`/`Table` primitives; no direct Radix usage.                                                                             |
-| Selection inspector | `.../selection-inspector-card.tsx`                                           | `Card`, `Table`, `Button`                      | All UI primitives imported from `/ui`; consistent tokens.                                                                                 |
-| Worker health       | `.../worker-health-card.tsx`                                                 | `Card`, `Badge` (Tailwind)                     | No Radix usage; keep watch for future Toast integrations.                                                                                 |
-| Sidebar shell       | `app/PraxisCanvas/src/components/app-sidebar.tsx`                            | `Button`                                       | Conforms to Tailwind + token rules; currently a bespoke component that can be promoted to a “Sidebar block” when navigation wiring lands. |
-| Node search         | `app/PraxisCanvas/src/components/node-search.tsx` + graph widgets            | React Flow UI `NodeSearch` + shadcn            | Imported via React Flow UI registry; the block proxies selection + fitView without mutating upstream styles.                              |
-| Graph node proxy    | `app/PraxisCanvas/src/components/reactflow/praxis-node.tsx`                  | React Flow `BaseNode`, `NodeTooltip`, `Button` | Wraps vanilla Base Node + Tooltip to expose status badges and inspect actions while keeping upstream styles refreshable.                  |
-| Timeline edge proxy | `app/PraxisCanvas/src/components/reactflow/timeline-edge.tsx`                | React Flow `AnimatedSvgEdge`                   | Composes the animated edge registry entry with a Praxis label badge to keep timeline affordances consistent.                              |
+### Shared design-system blocks
+
+| Block | File | Built from | Notes |
+| ----- | ---- | ---------- | ----- |
+| Panel stack (`Panel`, `PanelHeader`, `PanelTitle`, `PanelDescription`, `PanelContent`, `PanelField`, `PanelToolbar`) | `app/AideonDesignSystem/src/blocks/panel.tsx` | shadcn `Card` primitives + Tailwind tokens | Canonical form block for cards, inspectors, and control panels. `TimeControlPanel` is the first adopter; roadmap is to migrate the remaining dashboard cards and inspector views. |
+| Modal shell (`Modal`, `ModalContent`, `ModalHeader`, `ModalTitle`, `ModalDescription`, `ModalFooter`) | `app/AideonDesignSystem/src/blocks/modal.tsx` | shadcn `Dialog` primitives | Provides default padding/radius for dialogs so command palette, exports, and confirmation prompts stay consistent. Ready for adoption as command/search modals are refreshed. |
+| Toolbar (`Toolbar`, `ToolbarSection`, `ToolbarSeparator`) | `app/AideonDesignSystem/src/blocks/toolbar.tsx` | Tailwind layout + shadcn tokens | Used for future canvas/tool controls; aligns with UX ask for vanilla shadcn blocks assembled into reusable toolbars. Pending wiring into the React shell toolbar. |
+| Sidebar (`SidebarShell`, `SidebarSection`, `SidebarHeading`, `SidebarNav`) | `app/AideonDesignSystem/src/blocks/sidebar.tsx` | Semantic `aside` + shadcn tokens | Provides the baseline for navigation and catalog inspectors; will replace the bespoke sidebar in Praxis Canvas once search wiring lands. |
+
+### Praxis Canvas adoption snapshot
+
+| Surface | Consumed blocks | Status |
+| ------- | ---------------- | ------ |
+| Time control panel (`app/PraxisCanvas/src/components/blocks/time-control-panel.tsx`) | `Panel`, `PanelField`, `PanelToolbar`, shadcn `Select`/`Slider` proxies | ✅ Migrated to the shared panel block; demonstrates field + helper usage and action toolbar. |
+| Command palette (`components/blocks/temporal-command-menu.tsx`) | `Modal` (planned), shadcn `Command` | ⏳ Next step is to swap in `Modal` wrappers so dialogs inherit the shared chrome. |
+| Sidebar shell (`components/app-sidebar.tsx`) | `SidebarShell`, `SidebarHeading` (planned) | ⏳ Currently bespoke; target is to adopt the sidebar block once search shortcuts port from Svelte. |
+| Canvas toolbar + widget toolbars | `Toolbar`, `ToolbarSection` (planned) | ⏳ Will replace bespoke flex rows as soon as timeline/activity tabs move to React. |
+| React Flow nodes/edges | `PraxisNode`, `TimelineEdge`, `NodeSearchDialog` from design system | ✅ Already consuming vanilla React Flow UI registry components via proxies. |
 
 ## Follow-ups
 
-1. Promote branch pills (commit timeline) and graph overlays (node search panels) into dedicated
-   blocks so timeline/activity parity becomes a drop-in replacement for the Svelte tabs.
-2. Pipe catalogue/meta-model selection into the sidebar inspector templates once those panels are
-   ported, keeping renderer navigation in sync.
-3. Document token usage per block (primary/muted) once the design system exposes formal tokens.
+1. Convert the remaining dashboard cards (`commit-timeline`, `worker-health`, `selection-inspector`,
+   etc.) to the shared `Panel` stack so future apps get the same block palette.
+2. Switch the command palette + context modals to the `Modal` shell and move the React sidebar onto
+   the `Sidebar` block before removing the Svelte renderer.
+3. Track adoption progress directly in this doc (per component) and link each migration back to
+   `docs/praxis-desktop-svelte-migration.md` so we know when the Svelte parity table can be updated.

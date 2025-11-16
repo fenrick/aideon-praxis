@@ -10,6 +10,7 @@
     ".": "./src/index.ts",
     "./ui/*": "./src/ui/*",
     "./reactflow/*": "./src/reactflow/*",
+    "./blocks/*": "./src/blocks/*",
     "./lib/*": "./src/lib/*",
     "./styles.css": "./src/styles.css"
   },

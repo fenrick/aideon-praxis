@@ -1,15 +1,17 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo } from 'react';
 
 import type { TemporalPanelActions, TemporalPanelState } from '@/time/use-temporal-panel';
 
-import { Button } from '@aideon/design-system/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@aideon/design-system/ui/card';
+  Panel,
+  PanelContent,
+  PanelDescription,
+  PanelField,
+  PanelHeader,
+  PanelTitle,
+  PanelToolbar,
+} from '@aideon/design-system/blocks/panel';
+import { Button } from '@aideon/design-system/ui/button';
 import {
   Select,
   SelectContent,
@@ -41,13 +43,13 @@ export function TimeControlPanel({
   const sliderMax = Math.max(state.commits.length - 1, 0);
 
   return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
-        <Field label="Branch">
+    <Panel>
+      <PanelHeader className="space-y-1">
+        <PanelTitle>{title}</PanelTitle>
+        <PanelDescription>{description}</PanelDescription>
+      </PanelHeader>
+      <PanelContent>
+        <PanelField label="Branch">
           <Select
             value={state.branch ?? undefined}
             disabled={state.loading || branchOptions.length === 0}
@@ -66,8 +68,11 @@ export function TimeControlPanel({
               ))}
             </SelectContent>
           </Select>
-        </Field>
-        <Field label="Commit">
+        </PanelField>
+        <PanelField
+          label="Commit"
+          helper={<CommitSummary commits={state.commits} selectedCommitId={state.commitId} />}
+        >
           <Select
             value={state.commitId ?? undefined}
             disabled={state.loading || state.commits.length === 0}
@@ -86,9 +91,11 @@ export function TimeControlPanel({
               ))}
             </SelectContent>
           </Select>
-          <CommitSummary commits={state.commits} selectedCommitId={state.commitId} />
-        </Field>
-        <Field label="Timeline slider">
+        </PanelField>
+        <PanelField
+          label="Timeline slider"
+          helper="Use ←/→ after focusing the slider to scrub commits chronologically."
+        >
           <Slider
             min={0}
             max={sliderMax}
@@ -106,10 +113,7 @@ export function TimeControlPanel({
               }
             }}
           />
-          <p className="text-xs text-muted-foreground">
-            Use ←/→ after focusing the slider to scrub commits chronologically.
-          </p>
-        </Field>
+        </PanelField>
         <SnapshotStats
           nodes={state.snapshot?.nodes}
           edges={state.snapshot?.edges}
@@ -119,7 +123,7 @@ export function TimeControlPanel({
           <MergeConflicts conflicts={state.mergeConflicts} />
         ) : null}
         {state.error ? <p className="text-xs text-destructive">{state.error}</p> : null}
-        <div className="flex flex-wrap justify-end gap-2">
+        <PanelToolbar>
           <Button
             variant="secondary"
             size="sm"
@@ -143,9 +147,9 @@ export function TimeControlPanel({
               {state.merging ? 'Merging…' : 'Merge into main'}
             </Button>
           ) : null}
-        </div>
-      </CardContent>
-    </Card>
+        </PanelToolbar>
+      </PanelContent>
+    </Panel>
   );
 }
 
@@ -158,15 +162,6 @@ function resolveSliderValue(commitId: string | undefined, commits: TemporalPanel
   }
   const index = commits.findIndex((commit) => commit.id === commitId);
   return [index === -1 ? commits.length - 1 : index];
-}
-
-function Field({ label, children }: { readonly label: string; readonly children: ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{label}</p>
-      {children}
-    </div>
-  );
 }
 
 function CommitSummary({

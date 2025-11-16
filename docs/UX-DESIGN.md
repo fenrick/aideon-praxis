@@ -36,7 +36,7 @@ We will not lock into a single third-party kit; we compose small wrappers where 
 - Keep Tailwind utility usage scoped inside the blocks; feature code should mostly consume block variants so the renderer remains consistent across React views.
 - Start from shadcn’s out-of-box blocks (e.g., Command palette, Sidebar/Nav, Dashboard cards) whenever they cover the UX layer; wrap them with Praxis tokens instead of recreating equivalent scaffolding.
 - React Flow’s UI registry already provides Base Node, Node Tooltip, Node Search, Button/animated edges, and other canvas affordances—import them as-is and compose Praxis-specific wrappers (forms, toolbars, modals, sidebars, inspectors) so we respect their vanilla behaviors.citeturn0view0turn2search0turn2search1turn4search0turn5view0
-- Treat every imported primitive as a proxy: blocks live under `src/components/blocks` or `src/components/reactflow`, wrap the vanilla component, and expose Praxis tokens/props so UX surfaces (forms, toolbars, modals, sidebars, context menus) are built from consistent Lego-style parts.
+- Treat every imported primitive as a proxy: blocks now live under `app/AideonDesignSystem/src/blocks` (panels, toolbars, sidebars, modals) and React Flow wrappers live under `app/AideonDesignSystem/src/reactflow`. Wrap the vanilla component once, export it from `@aideon/design-system`, and consume those proxies everywhere so UX surfaces stay consistent.
 - Track concrete block implementations and compliance status in `docs/praxis-design-system-blocks.md`; update it whenever new blocks land or existing ones change roles.
 
 ## 3) Theming & Tokens
