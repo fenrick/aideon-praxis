@@ -11,10 +11,13 @@ layered design system.
 ## Structure
 
 ```
+
+The Tailwind tokens now live inside `src/styles.css`; we removed the separate
+`tailwind.config.ts`, so the CLI relies purely on that stylesheet instead of a
+dedicated config file.
 app/AideonDesignSystem/
 ├── package.json              # workspace: scripts + dependencies
 ├── components.json           # shadcn + React Flow registry config
-├── tailwind.config.ts        # tailwind tokens for components.json / previews
 ├── src/
 │   ├── blocks/*              # reusable blocks (panel, toolbar, sidebar, modal)
 │   ├── components/ui/*       # shadcn CLI output (raw primitives + registry adapters)
@@ -22,7 +25,7 @@ app/AideonDesignSystem/
 │   ├── ui/*                  # wrapped/aggregated exports consumed by renderers
 │   ├── reactflow/*           # React Flow UI registry components + Praxis proxies
 │   ├── lib/cn.ts             # shared utility helpers
-│   ├── styles.css            # base CSS variables (import from consumers)
+│   ├── styles.css            # base CSS variables (import from consumers plus Tailwind tokens)
 │   └── index.ts              # aggregated exports
 ```
 
