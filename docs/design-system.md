@@ -16,6 +16,7 @@ app/AideonDesignSystem/
 ├── components.json           # shadcn + React Flow registry config
 ├── tailwind.config.ts        # tailwind tokens for components.json / previews
 ├── src/
+│   ├── blocks/*              # reusable blocks (panel, toolbar, sidebar, modal)
 │   ├── ui/*                  # vanilla shadcn components, untouched
 │   ├── reactflow/*           # React Flow UI registry components + Praxis proxies
 │   ├── lib/cn.ts             # shared utility helpers
@@ -36,10 +37,23 @@ This pulls the default shadcn primitives plus the React Flow UI registry entries
 Tooltip, Node Search, Animated SVG Edge, etc.). Do not edit the generated files directly; wrap them
 in proxy components under `src/reactflow` or `src/blocks` if you need design-system behavior.
 
+## Proxy + block layers
+
+- `src/blocks/panel.tsx` exposes the standard card/form stack (`Panel`, `PanelHeader`,
+  `PanelField`, `PanelToolbar`) used by Praxis components and future apps.
+- `src/blocks/modal.tsx` wraps shadcn `Dialog` so command palette, exports, and confirmations share
+  the same chrome.
+- `src/blocks/toolbar.tsx` defines toolbar rows/sections/separators for canvas controls.
+- `src/blocks/sidebar.tsx` defines the shell/headings/nav sections for inspectors and navigation.
+- New block concepts should be added here (forms, toolbars, modals, sidebars, inspectors, etc.) and
+  then consumed downstream through `@aideon/design-system/blocks/*`. Keep them vanilla-first (only
+  compose the primitives) so refreshing registries remains a one-line command.
+
 ## Using the design system
 
 - Add `@aideon/design-system` as a workspace dependency and import via the documented subpaths
-  (e.g., `@aideon/design-system/ui/button`, `@aideon/design-system/reactflow/praxis-node`).
+  (e.g., `@aideon/design-system/ui/button`, `@aideon/design-system/blocks/panel`,
+  `@aideon/design-system/reactflow/praxis-node`).
 - Include `@aideon/design-system/styles.css` (or copy its CSS variables) in the renderer’s global CSS
   so the tokens match.
 - Tailwind consumers must include `../AideonDesignSystem/src/**/*.{ts,tsx}` in their `content` globs

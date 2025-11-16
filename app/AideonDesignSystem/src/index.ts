@@ -1,3 +1,7 @@
+export * from './blocks/modal';
+export * from './blocks/panel';
+export * from './blocks/sidebar';
+export * from './blocks/toolbar';
 export * from './lib/cn';
 export * from './reactflow/animated-svg-edge';
 export * from './reactflow/base-node';
