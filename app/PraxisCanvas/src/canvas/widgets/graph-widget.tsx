@@ -18,10 +18,10 @@ import {
   type NodeTypes,
 } from '@xyflow/react';
 
+import { Button } from '@aideon/design-system/components/ui/button';
 import { NodeSearchDialog } from '@aideon/design-system/reactflow/node-search';
 import { PraxisNode } from '@aideon/design-system/reactflow/praxis-node';
 import { TimelineEdge, type TimelineEdgeData } from '@aideon/design-system/reactflow/timeline-edge';
-import { Button } from '@aideon/design-system/components/ui/button';
 import type { GraphWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import type { GraphNodeData } from './graph-node-data';
 import { buildFlowEdges, buildFlowNodes } from './graph-transform';
