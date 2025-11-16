@@ -1,7 +1,10 @@
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { fetchMetaModel, type MetaModelSchema } from '@/lib/meta-model';
 
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@aideon/design-system/components/ui/accordion';
+import { Badge } from '@aideon/design-system/components/ui/badge';
 import { Button } from '@aideon/design-system/components/ui/button';
 import {
   Card,
@@ -43,19 +46,15 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle>Schema reference</CardTitle>
+        <CardTitle>Meta-model inspector</CardTitle>
         <CardDescription>
-          {schema?.description ?? 'Meta-model entities and relationship definitions.'}
+          {schema?.description ?? 'Schema reference for types and relationships.'}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 text-sm">
+      <CardContent className="space-y-6">
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span className="rounded-full border border-border/70 px-3 py-1 font-medium">
-            Version · {schema?.version ?? 'loading'}
-          </span>
-          <span className="rounded-full border border-border/70 px-3 py-1 font-medium">
-            Status · {status === 'ready' ? 'live' : status}
-          </span>
+          <Badge variant="secondary">Version · {schema?.version ?? 'loading'}</Badge>
+          <Badge variant="outline">{status === 'ready' ? 'Live' : status}</Badge>
           <Button
             variant="outline"
             size="sm"
@@ -81,29 +80,27 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
   );
 }
 
-function renderSchemaState(parameters: {
+const renderSchemaState = ({
+  status,
+  schema,
+  error,
+  focusEntryId,
+  onRetry,
+}: {
   readonly status: Status;
   readonly schema: MetaModelSchema | null;
   readonly error: string | null;
   readonly focusEntryId?: string;
   readonly onRetry: () => void;
-}) {
-  const { status, schema, error, focusEntryId, onRetry } = parameters;
+}) => {
   if (status === 'error') {
     return (
       <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-xs">
         <p className="font-semibold text-destructive">Failed to load meta-model</p>
         <p className="text-destructive/80">{error}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-3"
-          onClick={() => {
-            onRetry();
-          }}
-        >
-          Retry load
-        </Button>
+          <Button variant="outline" size="sm" className="mt-3" onClick={onRetry}>
+            Retry load
+          </Button>
       </div>
     );
   }
@@ -114,7 +111,7 @@ function renderSchemaState(parameters: {
     return <p className="text-xs text-muted-foreground">Schema not available yet.</p>;
   }
   return <SchemaDetails schema={schema} focusEntryId={focusEntryId} />;
-}
+};
 
 function SchemaDetails({
   schema,
@@ -129,7 +126,7 @@ function SchemaDetails({
     }
     const element = document.querySelector<HTMLElement>(`[data-metamodel-entry="${focusEntryId}"]`);
     element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [focusEntryId]);
+  }, [focusEntryId, schema]);
 
   const focusedIds = useMemo(
     () => new Set([focusEntryId].filter(Boolean) as string[]),
@@ -138,61 +135,102 @@ function SchemaDetails({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 rounded-2xl border border-border/60 bg-muted/10 p-4 text-center text-sm">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Types</p>
-          <p className="text-2xl font-semibold">{schema.types.length}</p>
+        <div className="grid gap-4 rounded-2xl border border-border/60 bg-muted/10 p-4 text-center text-sm">
+          <StatBlock label="Types" value={schema.types.length} />
+          <StatBlock label="Relationships" value={schema.relationships.length} />
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Relationships</p>
-          <p className="text-2xl font-semibold">{schema.relationships.length}</p>
-        </div>
-      </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <ul className="space-y-3">
-          {schema.types.map((type) => {
-            const isFocused = focusedIds.has(type.id);
-            return (
-              <li
-                key={type.id}
-                data-metamodel-entry={type.id}
-                className={`rounded-2xl border p-3 transition ${
-                  isFocused ? 'border-primary/60 bg-primary/5 shadow-inner' : 'border-border/60'
-                }`}
-              >
-                <p className="text-sm font-semibold">{type.label ?? type.id}</p>
-                <p className="text-xs text-muted-foreground">{type.category ?? 'Uncategorised'}</p>
-                {type.extends ? (
-                  <p className="text-xs text-muted-foreground">Extends {type.extends}</p>
-                ) : null}
-                <AttributesList attributes={type.attributes} />
-              </li>
-            );
-          })}
-        </ul>
-        <ul className="space-y-3">
-          {schema.relationships.map((relationship) => {
-            const isFocused = focusedIds.has(relationship.id);
-            return (
-              <li
-                key={relationship.id}
-                data-metamodel-entry={relationship.id}
-                className={`rounded-2xl border p-3 transition ${
-                  isFocused ? 'border-primary/60 bg-primary/5 shadow-inner' : 'border-border/60'
-                }`}
-              >
-                <p className="text-sm font-semibold">{relationship.label ?? relationship.id}</p>
-                <p className="text-xs text-muted-foreground">
-                  {relationship.from.join(', ')} → {relationship.to.join(', ')} ·{' '}
-                  {relationship.directed === false ? 'Undirected' : 'Directed'}
-                </p>
-                <AttributesList attributes={relationship.attributes} />
-              </li>
-            );
-          })}
-        </ul>
+        <Accordion defaultValue="types" type="single" collapsible>
+          <AccordionItem value="types">
+            <AccordionTrigger className="text-sm font-semibold">Types</AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-col gap-3">
+                {schema.types.map((type) => (
+                  <MetaModelEntryCard
+                    key={type.id}
+                    id={type.id}
+                    label={type.label ?? type.id}
+                    description={type.category ?? 'Type'}
+                    extra={type.extends ? `extends ${type.extends}` : undefined}
+                    focused={focusedIds.has(type.id)}
+                  >
+                    <AttributesList attributes={type.attributes} />
+                  </MetaModelEntryCard>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+        <Accordion defaultValue="relationships" type="single" collapsible>
+          <AccordionItem value="relationships">
+            <AccordionTrigger className="text-sm font-semibold">Relationships</AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-col gap-3">
+                {schema.relationships.map((relationship) => (
+                  <MetaModelEntryCard
+                    key={relationship.id}
+                    id={relationship.id}
+                    label={relationship.label ?? relationship.id}
+                    description={`${relationship.from.join(', ')} → ${relationship.to.join(', ')}`}
+                    extra={relationship.directed === false ? 'Undirected' : 'Directed'}
+                    focused={focusedIds.has(relationship.id)}
+                  >
+                    <AttributesList attributes={relationship.attributes} />
+                  </MetaModelEntryCard>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
     </div>
+  );
+}
+
+function StatBlock({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{label}</p>
+      <p className="text-2xl font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function MetaModelEntryCard({
+  id,
+  label,
+  description,
+  extra,
+  focused,
+  children,
+}: {
+  readonly id: string;
+  readonly label: string;
+  readonly description: string;
+  readonly extra?: string;
+  readonly focused: boolean;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <article
+      data-metamodel-entry={id}
+      className={`rounded-2xl border p-4 transition ${
+        focused ? 'border-primary/60 bg-primary/5 shadow-inner' : 'border-border/60 bg-card'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold">{label}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+        {extra ? (
+          <Badge variant="secondary" className="text-[0.6rem] uppercase tracking-[0.3em]">
+            {extra}
+          </Badge>
+        ) : null}
+      </div>
+      {children}
+    </article>
   );
 }
 
@@ -202,7 +240,7 @@ function AttributesList({
   readonly attributes?: MetaModelSchema['types'][number]['attributes'];
 }) {
   if (!attributes || attributes.length === 0) {
-    return <p className="text-xs text-muted-foreground">No attributes defined.</p>;
+    return <p className="pt-2 text-xs text-muted-foreground">No attributes defined.</p>;
   }
   return (
     <dl className="mt-2 space-y-2 text-xs">
