@@ -1,7 +1,7 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { forwardRef } from 'react';
 
-import { cn } from '../lib/cn';
+import { cn } from '../lib/utils';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 export type PanelProperties = Readonly<ComponentPropsWithoutRef<typeof Card>>;

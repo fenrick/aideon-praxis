@@ -4,16 +4,20 @@
   "rsc": false,
   "tsx": true,
   "tailwind": {
-    "css": "src/styles.css",
-    "baseColor": "slate",
-    "cssVariables": true
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
   },
   "aliases": {
-    "components": "components",
-    "utils": "lib",
-    "ui": "components/ui",
-    "hooks": "hooks"
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
   },
+  "iconLibrary": "lucide",
   "registries": {
     "@reactflow": "https://ui.reactflow.dev/{name}"
   }

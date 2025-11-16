@@ -15,7 +15,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "components/components/ui/command";
+} from "@/components/ui/command";
 
 export interface NodeSearchProps extends Omit<PanelProps, "children"> {
   // The function to search for nodes, should return an array of nodes that match the search string
