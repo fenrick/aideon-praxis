@@ -1,6 +1,6 @@
 # Praxis Desktop – Svelte → React Migration Tracker
 
-The React/shadcn canvas in `app/PraxisCanvas` now delivers the primary shell (sidebar, canvas, catalogue/matrix/chart widgets, templates), but the legacy SvelteKit renderer under `app/PraxisDesktop` is still bundled. This doc captures the remaining Svelte surface area and the steps required to fully replace it with the React runtime specified in the implementation guide.
+The React/shadcn canvas in `app/PraxisCanvas` now delivers the primary shell (sidebar, canvas, catalogue/matrix/chart widgets, templates), but the legacy SvelteKit renderer under `app/PraxisDesktop` is still bundled. This doc captures the remaining Svelte surface area and the steps required to fully replace it with the React runtime specified in the implementation guide. The helper windows (splash, about, status, settings) plus the workspace tabs (overview, timeline, activity) must be ported before we delete Svelte-specific routes.
 
 ## Current Svelte footprint
 
@@ -10,6 +10,7 @@ The React/shadcn canvas in `app/PraxisCanvas` now delivers the primary shell (si
 | **Workspace views** (overview, timeline, canvas, activity) | `MainView.svelte` (+ helpers) orchestrates tabs + ELK canvas + activity feed        | Partial — canvas ready, other tabs missing        | React `CanvasRuntime` covers the canvas tab (graph/catalogue/matrix/chart widgets). Timeline/activity/overview panels not yet ported.                                                                                                          |
 | **Catalogues & meta-model**                                | `MetaModelPanel.svelte`, catalogue lists via `CatalogEntitySummary`                 | Not started                                       | React shows catalogue widgets but lacks the rich meta-model reference and catalogue selection sidebar.                                                                                                                                         |
 | **Search & sidebar wiring**                                | `Sidebar.svelte`, `searchStore` integration from `+page.svelte`                     | Partial — command palette w/ catalogue/meta-model | React sidebar is static, but the dashboard card now exposes a shadcn command palette (⌘K / Ctrl+K) for branches/commits/actions and now includes catalogue + meta-model entries. Sidebar quick search + navigation still exist only in Svelte. |
+| **Helper windows & overlays**                              | `routes/{splash,about,status,settings}/*`, `scripts/postbuild-windows.mjs`          | Not started                                       | Splash/loading, status, settings, and about overlays still rely on Svelte routes; React needs dedicated entry points (and matching assets) before the host can abandon the legacy renderer.                                                   |
 | **Styleguide & theming**                                   | `routes/styleguide/*`, `@aideon/PraxisDesignSystem` usage                           | Not started                                       | React uses shadcn/ui + Tailwind but doesn’t yet replicate dark/light auto detection, OS previews, or the styleguide sandbox.                                                                                                                   |
 | **Worker/time controls**                                   | `timeStore`, toolbar actions (branch select, commit select, merge)                  | Partial — toolbar still Svelte                    | React now owns a TimeControlPanel block (branch/commit selects, slider, merge/reload), but the global toolbar/status surface still lives in Svelte.                                                                                            |
 
@@ -21,6 +22,8 @@ The React/shadcn canvas in `app/PraxisCanvas` now delivers the primary shell (si
 - `app/PraxisCanvas/src/components/app-sidebar.tsx` ships only a static navigation/state summary; there is no command/search flow mirroring Svelte’s `searchStore`, so quick-jump and filtering remain blocked.
 - Graph nodes now lean entirely on the React Flow UI registry (Node Search, Base Node, Node Tooltip, Animated SVG Edge patterns) wrapped in Praxis proxies, so right-clicking or searching nodes routes through vanilla components before layering our meta-model focus actions.citeturn0view0turn2search0turn2search1turn5view0
 - `app/AideonDesignSystem` owns the canonical `components.json`, all vanilla shadcn/ui + React Flow primitives, and the refresh workflow (`pnpm --filter @aideon/design-system run components:refresh`). Praxis-only styling now lives in panel/toolbar/sidebar/modal blocks and React Flow proxies that simply wrap the vanilla exports, so refreshing registries is always a single command.
+- `app/PraxisCanvas` now renders an unsupported landing page at `/`, while the full canvas UX is staged at `/canvas` so Tauri can load a dedicated route without exposing the shell to direct browser hits.
+- The new helper windows (`splash`, `status`, `settings`, `about`) and settings theme toggles rely solely on `@aideon/design-system`; no `@aideon/PraxisDesignSystem` imports remain in the React stack.
 - Meta-model inspectors (`app/PraxisDesktop/src/lib/components/MetaModelPanel.svelte`) and the styleguide routes continue to be the reference implementations; React lacks equivalent inspectors and theming previews, though the React card will highlight entries passed from search/context menus.
 - Worker controls such as merge/apply actions are still surfaced via `timeStore` in Svelte, so React must gain parity before `app/PraxisDesktop` can be removed from the Tauri bundle.
 
@@ -35,6 +38,7 @@ The React/shadcn canvas in `app/PraxisCanvas` now delivers the primary shell (si
 
 ## Execution approach
 
+- Treat helper windows (splash/status/settings/about) and workspace tabs (overview/timeline/activity) as standalone migration items and document each React replacement here before deleting the Svelte route.
 - Track each migration chunk as its own issue/PR (e.g., “feat(canvas): port timeline view to React”) to keep commits reviewable.
 - For every Svelte component replaced, add a note in this doc (or an issue checklist) and remove the Svelte file plus related tests.
 - Continue leaning on shadcn/ui primitives (Tabs, Command, Dialog, Table, Badge, Tooltip) and React Flow for any graph/canvas work so the React runtime stays consistent with the design brief.

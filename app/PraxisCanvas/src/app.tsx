@@ -29,6 +29,13 @@ interface ScenarioState {
 }
 
 export default function App() {
+  const path = window.location.pathname.replace(/\/$/, '') || '/';
+  const isCanvasRoute = path === '/canvas';
+
+  if (!isCanvasRoute) {
+    return <UnsupportedPage path={path} />;
+  }
+
   const [scenarioState, setScenarioState] = useState<ScenarioState>({ loading: true, data: [] });
   const [selection, setSelection] = useState<SelectionState>(EMPTY_SELECTION);
   const [templates, setTemplates] = useState<CanvasTemplate[]>(BUILT_IN_TEMPLATES);
@@ -154,6 +161,24 @@ interface ShellHeaderProperties {
   readonly activeTemplateId: string;
   readonly onTemplateChange: (templateId: string) => void;
   readonly onTemplateSave: () => void;
+}
+
+function UnsupportedPage({ path }: { readonly path: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 text-foreground">
+      <div className="max-w-2xl space-y-6 rounded-3xl border border-border/60 bg-background/90 p-10 text-center shadow-2xl">
+        <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">Unsupported path</p>
+        <h1 className="text-3xl font-semibold text-foreground">
+          {path === '/' ? 'Launch Praxis Desktop' : 'Route unavailable outside Tauri'}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          This experience is shipped inside the Aideon Praxis desktop app. Open it to reach the canvas at
+          <span className="font-mono text-xs text-foreground"> /canvas </span>.
+        </p>
+        <p className="text-xs font-mono text-muted-foreground">Requested route: {path}</p>
+      </div>
+    </div>
+  );
 }
 
 function ShellHeader({

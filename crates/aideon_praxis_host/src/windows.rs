@@ -12,7 +12,7 @@ pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
         .build()
         .map_err(to_string)?;
 
-    let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+    let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("canvas/".into()))
         .title("Aideon Praxis")
         .visible(false)
         .inner_size(1060.0, 720.0)

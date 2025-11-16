@@ -1,10 +1,49 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { IncomingMessage, ServerResponse } from 'node:http';
 import { resolve } from 'node:path';
+import type { ViteDevServer } from 'vite';
 import { defineConfig } from 'vite';
 
+const windowRoutes = ['splash', 'about', 'settings', 'status'];
+const spaRoutes = ['canvas'];
+
+function windowAliasPlugin() {
+  const rewrites = new Map<string, string>();
+
+  for (const route of windowRoutes) {
+    rewrites.set(`/${route}/index.html`, `/${route}/`);
+    rewrites.set(`/${route}.html`, `/${route}/`);
+  }
+
+  for (const route of spaRoutes) {
+    rewrites.set(`/${route}`, '/');
+    rewrites.set(`/${route}/`, '/');
+    rewrites.set(`/${route}.html`, '/');
+  }
+
+  return {
+    name: 'aideon-window-alias',
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use((req: IncomingMessage, _res: ServerResponse, next: () => void) => {
+        const url = req.url;
+        if (!url) {
+          next();
+          return;
+        }
+        const [pathname, search = ''] = url.split('?');
+        const target = rewrites.get(pathname);
+        if (target) {
+          req.url = `${target}${search ? `?${search}` : ''}`;
+        }
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [tailwindcss(), react()],
+  plugins: [tailwindcss(), react(), windowAliasPlugin()],
   resolve: {
     alias: [
       { find: '@', replacement: resolve(__dirname, 'src') },
@@ -48,5 +87,16 @@ export default defineConfig({
     port: 4173,
     strictPort: true,
     host: '127.0.0.1',
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        splash: resolve(__dirname, 'splash.html'),
+        about: resolve(__dirname, 'about.html'),
+        settings: resolve(__dirname, 'settings.html'),
+        status: resolve(__dirname, 'status.html'),
+      },
+    },
   },
 });
