@@ -17,12 +17,17 @@ app/AideonDesignSystem/
 ├── tailwind.config.ts        # tailwind tokens for components.json / previews
 ├── src/
 │   ├── blocks/*              # reusable blocks (panel, toolbar, sidebar, modal)
-│   ├── ui/*                  # vanilla shadcn components, untouched
+│   ├── components/ui/*       # shadcn CLI output (raw primitives + registry adapters)
+│   ├── hooks/*               # shared hooks (e.g., `useIsMobile`)
+│   ├── ui/*                  # wrapped/aggregated exports consumed by renderers
 │   ├── reactflow/*           # React Flow UI registry components + Praxis proxies
 │   ├── lib/cn.ts             # shared utility helpers
 │   ├── styles.css            # base CSS variables (import from consumers)
 │   └── index.ts              # aggregated exports
 ```
+
+The CLI now targets `src/components/ui` via `components.json`, so treat that folder as
+generated output and wrap its primitives inside `src/ui/*` or `src/blocks/*` before shipping.
 
 ## Refreshing components
 
