@@ -1,8 +1,4 @@
 {
   "files": [],
-  "references": [
-    { "path": "./app/PraxisDtos" },
-    { "path": "./app/PraxisAdapters" },
-    { "path": "./app/AideonDesignSystem" }
-  ]
+  "references": [{ "path": "./app/PraxisDtos" }, { "path": "./app/PraxisAdapters" }]
 }

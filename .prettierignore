@@ -2,3 +2,4 @@
 
 pnpm-lock.yaml
 cargo.lock
+app/AideonDesignSystem/**

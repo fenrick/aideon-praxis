@@ -12,7 +12,7 @@ layered design system.
 
 ```
 
-The Tailwind tokens now live inside `src/styles.css`; we removed the separate
+The Tailwind tokens now live inside `src/styles/globals.css`; we removed the separate
 `tailwind.config.ts`, so the CLI relies purely on that stylesheet instead of a
 dedicated config file.
 app/AideonDesignSystem/
@@ -25,7 +25,7 @@ app/AideonDesignSystem/
 │   ├── ui/*                  # wrapped/aggregated exports consumed by renderers
 │   ├── reactflow/*           # React Flow UI registry components + Praxis proxies
 │   ├── lib/cn.ts             # shared utility helpers
-│   ├── styles.css            # base CSS variables (import from consumers plus Tailwind tokens)
+│   ├── styles/globals.css     # base CSS variables (import from consumers plus Tailwind tokens)
 │   └── index.ts              # aggregated exports
 ```
 
@@ -62,7 +62,7 @@ in proxy components under `src/reactflow` or `src/blocks` if you need design-sys
 - Add `@aideon/design-system` as a workspace dependency and import via the documented subpaths
   (e.g., `@aideon/design-system/ui/button`, `@aideon/design-system/blocks/panel`,
   `@aideon/design-system/reactflow/praxis-node`).
-- Include `@aideon/design-system/styles.css` (or copy its CSS variables) in the renderer’s global CSS
+- Include `@aideon/design-system/styles/globals.css` (or copy its CSS variables) in the renderer’s global CSS
   so the tokens match.
 - Tailwind consumers must include `../AideonDesignSystem/src/**/*.{ts,tsx}` in their `content` globs
   so class names from the shared components are discovered.

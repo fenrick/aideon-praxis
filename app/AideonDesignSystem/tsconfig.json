@@ -6,14 +6,9 @@
     "baseUrl": "./src",
     "types": ["node"],
     "paths": {
+      "@/*": ["./*"],
       "@aideon/design-system": ["./src"],
-      "@aideon/design-system/*": ["./src/*"],
-      "@/components": ["./components"],
-      "@/components/*": ["./components/*"],
-      "@/hooks": ["./hooks"],
-      "@/hooks/*": ["./hooks/*"],
-      "@/lib": ["./lib"],
-      "@/lib/*": ["./lib/*"]
+      "@aideon/design-system/*": ["./src/*"]
     }
   },
   "include": ["src"],

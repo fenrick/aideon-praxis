@@ -17,8 +17,6 @@
     "paths": {
       "@aideon/PraxisAdapters": ["app/PraxisAdapters/src"],
       "@aideon/PraxisAdapters/*": ["app/PraxisAdapters/src/*"],
-      "@aideon/design-system": ["app/AideonDesignSystem/src"],
-      "@aideon/design-system/*": ["app/AideonDesignSystem/src/*"],
       "@/*": ["app/PraxisCanvas/src/*"]
     }
   }
