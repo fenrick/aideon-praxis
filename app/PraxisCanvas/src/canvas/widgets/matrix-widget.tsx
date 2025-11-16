@@ -17,10 +17,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@aideon/design-system/ui/table';
+} from '@aideon/design-system/components/ui/table';
 
 import type { MatrixWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import { WidgetToolbar } from './widget-toolbar';
+
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
 interface MatrixWidgetProperties {
   readonly widget: MatrixWidgetConfig;

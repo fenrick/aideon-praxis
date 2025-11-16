@@ -4,14 +4,14 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 
 import { toErrorMessage } from '@/lib/errors';
 import { getWorkerHealth, type WorkerHealth } from '@/praxis-api';
-import { Button } from '@aideon/design-system/ui/button';
+import { Button } from '@aideon/design-system/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@aideon/design-system/ui/card';
+} from '@aideon/design-system/components/ui/card';
 
 interface HealthState {
   snapshot?: WorkerHealth;

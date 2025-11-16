@@ -5,7 +5,7 @@ import type { TemporalPanelActions, TemporalPanelState } from '@/time/use-tempor
 
 import { TimeControlPanel } from '@/components/blocks/time-control-panel';
 
-vi.mock('@aideon/design-system/ui/select', () => {
+vi.mock('@aideon/design-system/components/ui/select', () => {
   const Select = ({ onValueChange, value, disabled, children }: any) => (
     <div>
       <button
@@ -25,7 +25,7 @@ vi.mock('@aideon/design-system/ui/select', () => {
   return { Select, SelectTrigger, SelectValue, SelectContent, SelectItem };
 });
 
-vi.mock('@aideon/design-system/ui/slider', () => ({
+vi.mock('@aideon/design-system/components/ui/slider', () => ({
   Slider: ({ onValueCommit }: any) => (
     <button data-testid="slider" onClick={() => onValueCommit?.([1])}>
       slider

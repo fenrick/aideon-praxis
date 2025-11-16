@@ -1,14 +1,14 @@
 import { isSelectionEmpty, selectionSummary } from '@/canvas/selection';
 import type { CanvasWidget, SelectionState } from '@/canvas/types';
 import { EMPTY_SELECTION } from '@/canvas/types';
-import { Button } from '@aideon/design-system/ui/button';
+import { Button } from '@aideon/design-system/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@aideon/design-system/ui/card';
+} from '@aideon/design-system/components/ui/card';
 
 interface SelectionInspectorCardProperties {
   readonly selection: SelectionState;

@@ -20,7 +20,7 @@ import {
   instantiateTemplate,
   type CanvasTemplate,
 } from '@/templates';
-import { Button } from '@aideon/design-system/ui/button';
+import { Button } from '@aideon/design-system/components/ui/button';
 
 interface ScenarioState {
   loading: boolean;
