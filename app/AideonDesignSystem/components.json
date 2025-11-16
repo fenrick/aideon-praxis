@@ -10,10 +10,10 @@
     "cssVariables": true
   },
   "aliases": {
-    "components": "src/components",
-    "utils": "src/lib",
-    "ui": "src/components/ui",
-    "hooks": "src/hooks"
+    "components": "components",
+    "utils": "lib",
+    "ui": "components/ui",
+    "hooks": "hooks"
   },
   "registries": {
     "@reactflow": "https://ui.reactflow.dev/{name}"
