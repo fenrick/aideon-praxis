@@ -1,0 +1,138 @@
+import { useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, FocusEvent, KeyboardEvent } from 'react';
+
+import { Input } from '@aideon/design-system/components/ui/input';
+import type { SearchResult } from '@/lib/search/types';
+import { searchStore, useSearchStoreState } from '@/lib/search';
+
+const KIND_LABEL: Record<SearchResult['kind'], string> = {
+  sidebar: 'Navigation',
+  catalog: 'Catalogue',
+  commit: 'Commit',
+};
+
+const DEBOUNCE_MS = 180;
+
+export function SearchBar() {
+  const { results } = useSearchStoreState();
+  const [query, setQuery] = useState('');
+  const [focused, setFocused] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  const overlayOpen = focused && results.length > 0;
+
+  const scheduleSearch = (value: string) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    if (!value.trim()) {
+      searchStore.clear();
+      return;
+    }
+    debounceRef.current = setTimeout(() => {
+      searchStore.search(value);
+    }, DEBOUNCE_MS);
+  };
+
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setQuery(value);
+    scheduleSearch(value);
+  };
+
+  const handleFocus = () => {
+    setFocused(true);
+    if (query.trim()) {
+      searchStore.search(query);
+    }
+  };
+
+  const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
+    const next = event.relatedTarget as HTMLElement | null;
+    if (next && next.closest('.search-results')) {
+      return;
+    }
+    setFocused(false);
+    setHighlightedIndex(0);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!overlayOpen) {
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setHighlightedIndex((prev) => (prev + 1) % results.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setHighlightedIndex((prev) => (prev - 1 + results.length) % results.length);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      selectResult(highlightedIndex);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      searchStore.clear();
+      setQuery('');
+      inputRef.current?.blur();
+      setFocused(false);
+    }
+  };
+
+  const selectResult = (index: number) => {
+    const item = results[index];
+    if (!item) {
+      return;
+    }
+    void item.run?.();
+    searchStore.clear();
+    setQuery('');
+    setFocused(false);
+    inputRef.current?.blur();
+  };
+
+  return (
+    <div className="relative w-full" onBlur={handleBlur}>
+      <Input
+        ref={inputRef}
+        placeholder="Search branches, nodes, catalogues…"
+        value={query}
+        onChange={handleInputChange}
+        onFocus={handleFocus}
+        onKeyDown={handleKeyDown}
+        className="bg-background/80"
+      />
+      {overlayOpen ? (
+        <div className="search-results absolute left-0 top-full z-20 mt-2 max-h-64 w-full divide-y divide-border overflow-hidden rounded-2xl border border-border bg-muted/90 text-sm text-foreground shadow-lg">
+          {results.map((result, index) => (
+            <button
+              key={result.id}
+              type="button"
+              onClick={() => selectResult(index)}
+              className={`flex w-full flex-col gap-0.5 px-4 py-3 text-left transition hover:bg-background/70 ${
+                index === highlightedIndex ? 'bg-white/5' : ''
+              }`}
+            >
+              <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                {KIND_LABEL[result.kind]}
+              </span>
+              <span className="font-semibold">{result.title}</span>
+              {result.subtitle ? (
+                <span className="text-xs text-muted-foreground">{result.subtitle}</span>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}

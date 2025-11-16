@@ -4,6 +4,7 @@ import { toErrorMessage } from '@/lib/errors';
 import { fetchMetaModel } from '@/lib/meta-model';
 import { getCatalogueView, type CatalogueRow, type TemporalCommitSummary } from '@/praxis-api';
 import { useTemporalPanel } from '@/time/use-temporal-panel';
+import { searchStore } from '@/lib/search';
 
 import {
   TemporalCommandMenu,
@@ -22,11 +23,13 @@ import {
 interface GlobalSearchCardProperties {
   readonly onSelectNodes?: (nodeIds: string[]) => void;
   readonly onFocusMetaModel?: (entry: MetaModelCommandEntry) => void;
+  readonly onShowTimeline?: () => void;
 }
 
 export function GlobalSearchCard({
   onSelectNodes,
   onFocusMetaModel,
+  onShowTimeline,
 }: GlobalSearchCardProperties = {}) {
   const [state, actions] = useTemporalPanel();
   const [commandOpen, setCommandOpen] = useState(false);
@@ -72,8 +75,21 @@ export function GlobalSearchCard({
           return;
         }
         setMetaModelEntries(buildMetaModelEntries(schema));
-        setCatalogueEntries(buildCatalogueEntries(catalogue.rows));
+        const newCatalogueEntries = buildCatalogueEntries(catalogue.rows);
+        setCatalogueEntries(newCatalogueEntries);
         setCatalogueError(null);
+        searchStore.setCatalogEntities(
+          newCatalogueEntries.map((entry) => ({
+            id: entry.id,
+            name: entry.label,
+            type: entry.state ?? 'Catalogue',
+            description: entry.owner,
+            sidebarId: 'catalogues',
+          })),
+          (entity) => {
+            onSelectNodes?.([entity.id]);
+          },
+        );
       } catch (unknownError) {
         if (!cancelled) {
           setCatalogueError(toErrorMessage(unknownError));
@@ -84,7 +100,14 @@ export function GlobalSearchCard({
     return () => {
       cancelled = true;
     };
-  }, [state.branch]);
+  }, [state.branch, onSelectNodes]);
+
+  useEffect(() => {
+    searchStore.setRecentCommits(state.commits, (commitId) => {
+      onShowTimeline?.();
+      void actions.selectCommit(commitId);
+    });
+  }, [state.commits, actions, onShowTimeline]);
 
   const recentCommits = useMemo(() => {
     return state.commits.toSorted((left, right) => {

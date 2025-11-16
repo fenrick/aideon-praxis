@@ -12,6 +12,10 @@ import { SelectionInspectorCard } from '@/components/dashboard/selection-inspect
 import { TimeCursorCard } from '@/components/dashboard/time-cursor-card';
 import { WorkerHealthCard } from '@/components/dashboard/worker-health-card';
 import { WorkspaceTabs } from '@/components/workspace-tabs';
+import { SearchBar } from '@/components/shell/search-bar';
+import { searchStore } from '@/lib/search';
+import type { SidebarTreeNode } from '@/lib/search/types';
+import type { WorkspaceTabValue } from '@/components/workspace-tabs';
 import { toErrorMessage } from '@/lib/errors';
 import { listScenarios, type ScenarioSummary } from '@/praxis-api';
 import {
@@ -21,12 +25,40 @@ import {
   type CanvasTemplate,
 } from '@/templates';
 import { Button } from '@aideon/design-system/components/ui/button';
+import { isTauri } from '@/platform';
+import { invoke } from '@tauri-apps/api/core';
 
 interface ScenarioState {
   loading: boolean;
   error?: string;
   data: ScenarioSummary[];
 }
+
+const SIDEBAR_ITEMS: SidebarTreeNode[] = [
+  {
+    id: 'workspace',
+    label: 'Workspace',
+    children: [
+      { id: 'overview', label: 'Overview' },
+      { id: 'timeline', label: 'Timeline' },
+      { id: 'canvas', label: 'Canvas' },
+      { id: 'activity', label: 'Activity' },
+    ],
+  },
+  {
+    id: 'catalogues',
+    label: 'Catalogues',
+    children: [
+      { id: 'applications', label: 'Applications' },
+      { id: 'data', label: 'Data' },
+    ],
+  },
+  { id: 'metamodel', label: 'Meta-model' },
+  { id: 'visualisations', label: 'Visualisations' },
+  { id: 'about', label: 'About Praxis' },
+  { id: 'settings', label: 'Preferences' },
+  { id: 'status', label: 'Status' },
+];
 
 export default function App() {
   const path = window.location.pathname.replace(/\/$/, '') || '/';
@@ -41,6 +73,54 @@ export default function App() {
   const [templates, setTemplates] = useState<CanvasTemplate[]>(BUILT_IN_TEMPLATES);
   const [activeTemplateId, setActiveTemplateId] = useState<string>(BUILT_IN_TEMPLATES[0]?.id ?? '');
   const [focusEntryId, setFocusEntryId] = useState<string | undefined>();
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTabValue>('overview');
+
+  const openHostWindow = useCallback(
+    async (command: 'open_settings' | 'open_about' | 'open_status' | 'open_styleguide') => {
+      if (!isTauri()) {
+        return;
+      }
+      try {
+        await invoke(command);
+      } catch (error) {
+        console.warn(`failed to open ${command}`, error);
+      }
+    },
+    [],
+  );
+
+  const handleSidebarSelect = useCallback(
+    (id: string) => {
+      switch (id) {
+        case 'overview':
+        case 'timeline':
+        case 'canvas':
+        case 'activity':
+          setWorkspaceTab(id as WorkspaceTabValue);
+          break;
+        case 'visualisations':
+        case 'applications':
+        case 'data':
+          setWorkspaceTab('canvas');
+          break;
+        case 'metamodel':
+          setFocusEntryId('meta-model');
+          break;
+        case 'about':
+          void openHostWindow('open_about');
+          break;
+        case 'settings':
+          void openHostWindow('open_settings');
+          break;
+        case 'status':
+          void openHostWindow('open_status');
+          break;
+        default:
+          break;
+      }
+    },
+    [openHostWindow],
+  );
 
   const activeScenario = useMemo(
     () => scenarioState.data.find((scenario) => scenario.isDefault) ?? scenarioState.data[0],
@@ -107,6 +187,10 @@ export default function App() {
     void refreshScenarios();
   }, [refreshScenarios]);
 
+  useEffect(() => {
+    searchStore.setSidebarItems(SIDEBAR_ITEMS, handleSidebarSelect);
+  }, [handleSidebarSelect]);
+
   return (
     <div className="flex min-h-screen bg-muted/30 text-foreground">
       <AppSidebar scenarios={scenarioState.data} loading={scenarioState.loading} />
@@ -119,6 +203,9 @@ export default function App() {
           onTemplateChange={handleTemplateChange}
           onTemplateSave={handleSaveTemplate}
         />
+        <div className="px-6 pt-3">
+          <SearchBar />
+        </div>
         {scenarioState.error ? (
           <p className="px-6 pt-2 text-sm text-destructive">{scenarioState.error}</p>
         ) : null}
@@ -129,6 +216,8 @@ export default function App() {
               selection={selection}
               onSelectionChange={handleSelectionChange}
               onRequestMetaModelFocus={handleMetaModelFocus}
+              value={workspaceTab}
+              onValueChange={setWorkspaceTab}
             />
           </section>
           <section className="w-full space-y-6 lg:w-[360px]">
@@ -139,6 +228,9 @@ export default function App() {
               onSelectNodes={handleCommandPaletteSelection}
               onFocusMetaModel={(entry) => {
                 setFocusEntryId(entry.id);
+              }}
+              onShowTimeline={() => {
+                setWorkspaceTab('timeline');
               }}
             />
             <MetaModelPanel focusEntryId={focusEntryId} />

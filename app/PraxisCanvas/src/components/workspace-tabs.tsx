@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { CanvasWidget, SelectionState } from '@/canvas/types';
 import { CanvasRuntimeCard } from '@/components/dashboard/canvas-runtime-card';
@@ -27,6 +27,8 @@ interface WorkspaceTabsProperties {
   readonly selection: SelectionState;
   readonly onSelectionChange: (selection: SelectionState) => void;
   readonly onRequestMetaModelFocus: (types: string[]) => void;
+  readonly value?: WorkspaceTabValue;
+  readonly onValueChange?: (value: WorkspaceTabValue) => void;
 }
 
 const tabOptions: { value: WorkspaceTabValue; label: string }[] = [
@@ -46,13 +48,26 @@ export function WorkspaceTabs({
   selection,
   onSelectionChange,
   onRequestMetaModelFocus,
+  value,
+  onValueChange,
 }: WorkspaceTabsProperties) {
-  const [tab, setTab] = useState<WorkspaceTabValue>('overview');
+  const [tab, setTab] = useState<WorkspaceTabValue>(value ?? 'overview');
   const [state, actions] = useTemporalPanel();
+
+  useEffect(() => {
+    if (value && value !== tab) {
+      setTab(value);
+    }
+  }, [value, tab]);
+
+  const handleTabChange = (next: WorkspaceTabValue) => {
+    setTab(next);
+    onValueChange?.(next);
+  };
 
   return (
     <div className="flex flex-col gap-4 rounded-3xl border border-border/70 bg-background/90 p-6 shadow-inner">
-      <TabRoot value={tab} onValueChange={setTab} className="space-y-4">
+      <TabRoot value={tab} onValueChange={handleTabChange} className="space-y-4">
         <TabList className="grid grid-cols-4 gap-2 rounded-lg border border-border/60 bg-muted/20 p-[3px] text-xs font-semibold">
           {tabOptions.map((entry) => (
             <TabTrigger
