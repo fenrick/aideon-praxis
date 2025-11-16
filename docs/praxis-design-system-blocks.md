@@ -9,7 +9,7 @@ left in the Svelte → React migration.
 ## Compliance summary
 
 - All shadcn/ui and React Flow UI primitives sit inside `app/AideonDesignSystem/src/ui` or
-  `src/reactflow`; the only `@radix-ui/*` imports in the workspace reside there. Refreshing *all*
+  `src/reactflow`; the only `@radix-ui/*` imports in the workspace reside there. Refreshing _all_
   primitives is a single command scoped to the package:
   `pnpm --filter @aideon/design-system run components:refresh` (pulls shadcn defaults plus the
   React Flow UI registry entries such as `@reactflow/base-node`, `@reactflow/node-tooltip`,
@@ -31,22 +31,22 @@ left in the Svelte → React migration.
 
 ### Shared design-system blocks
 
-| Block | File | Built from | Notes |
-| ----- | ---- | ---------- | ----- |
-| Panel stack (`Panel`, `PanelHeader`, `PanelTitle`, `PanelDescription`, `PanelContent`, `PanelField`, `PanelToolbar`) | `app/AideonDesignSystem/src/blocks/panel.tsx` | shadcn `Card` primitives + Tailwind tokens | Canonical form block for cards, inspectors, and control panels. `TimeControlPanel` is the first adopter; roadmap is to migrate the remaining dashboard cards and inspector views. |
-| Modal shell (`Modal`, `ModalContent`, `ModalHeader`, `ModalTitle`, `ModalDescription`, `ModalFooter`) | `app/AideonDesignSystem/src/blocks/modal.tsx` | shadcn `Dialog` primitives | Provides default padding/radius for dialogs so command palette, exports, and confirmation prompts stay consistent. Ready for adoption as command/search modals are refreshed. |
-| Toolbar (`Toolbar`, `ToolbarSection`, `ToolbarSeparator`) | `app/AideonDesignSystem/src/blocks/toolbar.tsx` | Tailwind layout + shadcn tokens | Used for future canvas/tool controls; aligns with UX ask for vanilla shadcn blocks assembled into reusable toolbars. Pending wiring into the React shell toolbar. |
-| Sidebar (`SidebarShell`, `SidebarSection`, `SidebarHeading`, `SidebarNav`) | `app/AideonDesignSystem/src/blocks/sidebar.tsx` | Semantic `aside` + shadcn tokens | Provides the baseline for navigation and catalog inspectors; will replace the bespoke sidebar in Praxis Canvas once search wiring lands. |
+| Block                                                                                                                | File                                            | Built from                                 | Notes                                                                                                                                                                             |
+| -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Panel stack (`Panel`, `PanelHeader`, `PanelTitle`, `PanelDescription`, `PanelContent`, `PanelField`, `PanelToolbar`) | `app/AideonDesignSystem/src/blocks/panel.tsx`   | shadcn `Card` primitives + Tailwind tokens | Canonical form block for cards, inspectors, and control panels. `TimeControlPanel` is the first adopter; roadmap is to migrate the remaining dashboard cards and inspector views. |
+| Modal shell (`Modal`, `ModalContent`, `ModalHeader`, `ModalTitle`, `ModalDescription`, `ModalFooter`)                | `app/AideonDesignSystem/src/blocks/modal.tsx`   | shadcn `Dialog` primitives                 | Provides default padding/radius for dialogs so command palette, exports, and confirmation prompts stay consistent. Ready for adoption as command/search modals are refreshed.     |
+| Toolbar (`Toolbar`, `ToolbarSection`, `ToolbarSeparator`)                                                            | `app/AideonDesignSystem/src/blocks/toolbar.tsx` | Tailwind layout + shadcn tokens            | Used for future canvas/tool controls; aligns with UX ask for vanilla shadcn blocks assembled into reusable toolbars. Pending wiring into the React shell toolbar.                 |
+| Sidebar (`SidebarShell`, `SidebarSection`, `SidebarHeading`, `SidebarNav`)                                           | `app/AideonDesignSystem/src/blocks/sidebar.tsx` | Semantic `aside` + shadcn tokens           | Provides the baseline for navigation and catalog inspectors; will replace the bespoke sidebar in Praxis Canvas once search wiring lands.                                          |
 
 ### Praxis Canvas adoption snapshot
 
-| Surface | Consumed blocks | Status |
-| ------- | ---------------- | ------ |
-| Time control panel (`app/PraxisCanvas/src/components/blocks/time-control-panel.tsx`) | `Panel`, `PanelField`, `PanelToolbar`, shadcn `Select`/`Slider` proxies | ✅ Migrated to the shared panel block; demonstrates field + helper usage and action toolbar. |
-| Command palette (`components/blocks/temporal-command-menu.tsx`) | `Modal` (planned), shadcn `Command` | ⏳ Next step is to swap in `Modal` wrappers so dialogs inherit the shared chrome. |
-| Sidebar shell (`components/app-sidebar.tsx`) | `SidebarShell`, `SidebarHeading` (planned) | ⏳ Currently bespoke; target is to adopt the sidebar block once search shortcuts port from Svelte. |
-| Canvas toolbar + widget toolbars | `Toolbar`, `ToolbarSection` (planned) | ⏳ Will replace bespoke flex rows as soon as timeline/activity tabs move to React. |
-| React Flow nodes/edges | `PraxisNode`, `TimelineEdge`, `NodeSearchDialog` from design system | ✅ Already consuming vanilla React Flow UI registry components via proxies. |
+| Surface                                                                              | Consumed blocks                                                         | Status                                                                                             |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Time control panel (`app/PraxisCanvas/src/components/blocks/time-control-panel.tsx`) | `Panel`, `PanelField`, `PanelToolbar`, shadcn `Select`/`Slider` proxies | ✅ Migrated to the shared panel block; demonstrates field + helper usage and action toolbar.       |
+| Command palette (`components/blocks/temporal-command-menu.tsx`)                      | `Modal` (planned), shadcn `Command`                                     | ⏳ Next step is to swap in `Modal` wrappers so dialogs inherit the shared chrome.                  |
+| Sidebar shell (`components/app-sidebar.tsx`)                                         | `SidebarShell`, `SidebarHeading` (planned)                              | ⏳ Currently bespoke; target is to adopt the sidebar block once search shortcuts port from Svelte. |
+| Canvas toolbar + widget toolbars                                                     | `Toolbar`, `ToolbarSection` (planned)                                   | ⏳ Will replace bespoke flex rows as soon as timeline/activity tabs move to React.                 |
+| React Flow nodes/edges                                                               | `PraxisNode`, `TimelineEdge`, `NodeSearchDialog` from design system     | ✅ Already consuming vanilla React Flow UI registry components via proxies.                        |
 
 ## Follow-ups
 
