@@ -27,6 +27,22 @@ export default defineConfig({
       $lib: path.resolve(__dirname, 'app/PraxisDesktop/src/lib'),
       '@': path.resolve(__dirname, 'app/PraxisCanvas/src'),
       '@aideon/PraxisAdapters': path.resolve(__dirname, 'app/PraxisAdapters/src'),
+      '@aideon/design-system/ui': path.resolve(__dirname, 'app/AideonDesignSystem/dist/ui'),
+      '@aideon/design-system/components/ui': path.resolve(
+        __dirname,
+        'app/AideonDesignSystem/dist/ui',
+      ),
+      '@aideon/design-system/blocks': path.resolve(__dirname, 'app/AideonDesignSystem/dist/blocks'),
+      '@aideon/design-system/reactflow': path.resolve(
+        __dirname,
+        'app/AideonDesignSystem/dist/reactflow',
+      ),
+      '@aideon/design-system/lib/utils': path.resolve(
+        __dirname,
+        'app/AideonDesignSystem/dist/lib/cn.js',
+      ),
+      '@aideon/design-system/lib': path.resolve(__dirname, 'app/AideonDesignSystem/dist/lib'),
+      '@aideon/design-system/styles': path.resolve(__dirname, 'app/AideonDesignSystem/src/styles'),
     },
   },
   plugins: [

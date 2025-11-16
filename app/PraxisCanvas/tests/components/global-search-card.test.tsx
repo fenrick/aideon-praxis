@@ -1,15 +1,16 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { fetchMetaModel } from '@/lib/meta-model';
+import { getCatalogueView } from '@/praxis-api';
 import type { TemporalPanelState } from '@/time/use-temporal-panel';
 
 const selectCommitSpy = vi.fn();
 const selectBranchSpy = vi.fn();
 const refreshBranchesSpy = vi.fn();
-const fetchMetaModelMock = vi.fn();
-const getCatalogueViewMock = vi.fn();
 const selectNodesSpy = vi.fn();
 const focusMetaModelSpy = vi.fn();
+const scrollIntoViewMock = vi.fn();
 
 class ResizeObserverMock {
   observe() {}
@@ -19,10 +20,12 @@ class ResizeObserverMock {
 
 beforeAll(() => {
   vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+  Element.prototype.scrollIntoView = scrollIntoViewMock;
 });
 
 afterAll(() => {
   vi.unstubAllGlobals();
+  delete Element.prototype.scrollIntoView;
 });
 
 vi.mock('@/time/use-temporal-panel', () => ({
@@ -38,16 +41,20 @@ vi.mock('@/time/use-temporal-panel', () => ({
 }));
 
 vi.mock('@/lib/meta-model', () => ({
-  fetchMetaModel: fetchMetaModelMock,
+  fetchMetaModel: vi.fn(),
 }));
+
+const fetchMetaModelMock = vi.mocked(fetchMetaModel);
 
 vi.mock('@/praxis-api', async () => {
   const actual = await vi.importActual<typeof import('@/praxis-api')>('@/praxis-api');
   return {
     ...actual,
-    getCatalogueView: getCatalogueViewMock,
+    getCatalogueView: vi.fn(),
   };
 });
+
+const getCatalogueViewMock = vi.mocked(getCatalogueView);
 
 let mockState: TemporalPanelState;
 
@@ -60,6 +67,7 @@ describe('GlobalSearchCard', () => {
     refreshBranchesSpy.mockReset();
     selectNodesSpy.mockReset();
     focusMetaModelSpy.mockReset();
+    scrollIntoViewMock.mockReset();
     fetchMetaModelMock.mockResolvedValue({
       version: 'test',
       description: 'Test schema',
