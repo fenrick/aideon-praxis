@@ -4,7 +4,6 @@ import type { CanvasWidget, SelectionState } from '@/canvas/types';
 import { EMPTY_SELECTION } from '@/canvas/types';
 import { AppSidebar } from '@/components/app-sidebar';
 import { ActivityFeedCard } from '@/components/dashboard/activity-feed-card';
-import { CanvasRuntimeCard } from '@/components/dashboard/canvas-runtime-card';
 import { CommitTimelineCard } from '@/components/dashboard/commit-timeline-card';
 import { GlobalSearchCard } from '@/components/dashboard/global-search-card';
 import { MetaModelPanel } from '@/components/dashboard/meta-model-panel';
@@ -12,6 +11,7 @@ import { PhaseCheckpointsCard } from '@/components/dashboard/phase-checkpoints-c
 import { SelectionInspectorCard } from '@/components/dashboard/selection-inspector-card';
 import { TimeCursorCard } from '@/components/dashboard/time-cursor-card';
 import { WorkerHealthCard } from '@/components/dashboard/worker-health-card';
+import { WorkspaceTabs } from '@/components/workspace-tabs';
 import { toErrorMessage } from '@/lib/errors';
 import { listScenarios, type ScenarioSummary } from '@/praxis-api';
 import {
@@ -60,6 +60,13 @@ export default function App() {
 
   const handleSelectionChange = useCallback((next: SelectionState) => {
     setSelection(next);
+  }, []);
+
+  const handleMetaModelFocus = useCallback((types: string[]) => {
+    const [primary] = types;
+    if (primary) {
+      setFocusEntryId(primary);
+    }
   }, []);
 
   const handleCommandPaletteSelection = useCallback((nodeIds: string[]) => {
@@ -117,16 +124,11 @@ export default function App() {
         ) : null}
         <div className="flex flex-1 flex-col gap-6 p-6 lg:flex-row">
           <section className="flex-1">
-            <CanvasRuntimeCard
+            <WorkspaceTabs
               widgets={widgets}
               selection={selection}
               onSelectionChange={handleSelectionChange}
-              onRequestMetaModelFocus={(types) => {
-                const [primary] = types;
-                if (primary) {
-                  setFocusEntryId(primary);
-                }
-              }}
+              onRequestMetaModelFocus={handleMetaModelFocus}
             />
           </section>
           <section className="w-full space-y-6 lg:w-[360px]">
