@@ -1,6 +1,5 @@
-import type { TemporalCommitSummary } from '@/praxis-api';
-import { useTemporalPanel } from '@/time/use-temporal-panel';
 import { CommitTimelineList } from '@/components/blocks/commit-timeline-list';
+import { useTemporalPanel } from '@/time/use-temporal-panel';
 
 import { Button } from '@aideon/design-system/components/ui/button';
 import {

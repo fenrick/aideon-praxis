@@ -38,6 +38,9 @@ export type SourceKey = 'sidebar' | 'commits' | 'catalog';
 
 export interface SearchSourceBuilders {
   sidebar: (items: SidebarTreeNode[], onSelect?: SidebarSelectHandler) => SearchIndexItem[];
-  commits: (commits: import('@/praxis-api').TemporalCommitSummary[], onSelect?: CommitSelectHandler) => SearchIndexItem[];
+  commits: (
+    commits: import('@/praxis-api').TemporalCommitSummary[],
+    onSelect?: CommitSelectHandler,
+  ) => SearchIndexItem[];
   catalog: (entities: CatalogEntitySummary[], onSelect?: CatalogSelectHandler) => SearchIndexItem[];
 }

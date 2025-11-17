@@ -7,7 +7,6 @@ import type {
   CommitSelectHandler,
   SearchIndexItem,
   SearchResult,
-  SearchResultKind,
   SidebarSelectHandler,
   SidebarTreeNode,
   TemporalCommitSummary,

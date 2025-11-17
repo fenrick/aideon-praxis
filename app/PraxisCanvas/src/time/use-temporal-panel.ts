@@ -90,46 +90,49 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
     }
   }, [loadBranch]);
 
-  const loadBranch = useCallback(async (branch: string) => {
-    setState((previous) => ({
-      ...previous,
-      branch,
-      commits: [],
-      commitId: undefined,
-      snapshot: undefined,
-      loading: true,
-      error: undefined,
-      snapshotLoading: false,
-      mergeConflicts: undefined,
-    }));
-    try {
-      const commits = await listTemporalCommits(branch);
-      const latest = commits.at(-1);
-      let snapshot: StateAtSnapshot | undefined;
-      if (latest) {
-        snapshot = await getStateAtSnapshot({ asOf: latest.id, scenario: branch });
-      }
+  const loadBranch = useCallback(
+    async (branch: string) => {
       setState((previous) => ({
         ...previous,
         branch,
-        commits,
-        commitId: latest?.id,
-        snapshot,
+        commits: [],
+        commitId: undefined,
+        snapshot: undefined,
+        loading: true,
+        error: undefined,
         snapshotLoading: false,
-        loading: false,
-        merging: false,
+        mergeConflicts: undefined,
       }));
-      void loadDiff(commits);
-    } catch (unknownError) {
-      setState((previous) => ({
-        ...previous,
-        loading: false,
-        error: toErrorMessage(unknownError),
-        snapshotLoading: false,
-        merging: false,
-      }));
-    }
-  }, [loadDiff]);
+      try {
+        const commits = await listTemporalCommits(branch);
+        const latest = commits.at(-1);
+        let snapshot: StateAtSnapshot | undefined;
+        if (latest) {
+          snapshot = await getStateAtSnapshot({ asOf: latest.id, scenario: branch });
+        }
+        setState((previous) => ({
+          ...previous,
+          branch,
+          commits,
+          commitId: latest?.id,
+          snapshot,
+          snapshotLoading: false,
+          loading: false,
+          merging: false,
+        }));
+        void loadDiff(commits);
+      } catch (unknownError) {
+        setState((previous) => ({
+          ...previous,
+          loading: false,
+          error: toErrorMessage(unknownError),
+          snapshotLoading: false,
+          merging: false,
+        }));
+      }
+    },
+    [loadDiff],
+  );
 
   const selectCommit = useCallback(
     (commitId: string | null) => {
