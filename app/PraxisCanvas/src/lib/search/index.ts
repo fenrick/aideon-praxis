@@ -11,7 +11,7 @@ import type {
   SidebarTreeNode,
   TemporalCommitSummary,
 } from './types';
-import { scoreItem } from './utils';
+import { scoreItem } from './utilities';
 
 export interface SearchStoreState {
   query: string;
@@ -44,6 +44,14 @@ function createStore() {
     notify();
   };
 
+  const subscribe = (subscriber: Subscriber): (() => void) => {
+    subscriber(state);
+    subscribers.add(subscriber);
+    return () => {
+      subscribers.delete(subscriber);
+    };
+  };
+
   const search = (query: string, limit = 12): SearchResult[] => {
     const trimmed = query.trim();
     const tokens = trimmed
@@ -58,7 +66,7 @@ function createStore() {
     const scored = state.items
       .map((item) => ({ item, score: scoreItem(item, tokens) }))
       .filter(({ score }) => score > 0)
-      .sort((a, b) => {
+      .toSorted((a, b) => {
         if (b.score !== a.score) {
           return b.score - a.score;
         }
@@ -83,11 +91,7 @@ function createStore() {
   return {
     search,
     clear,
-    subscribe: (subscriber: Subscriber) => {
-      subscriber(state);
-      subscribers.add(subscriber);
-      return () => subscribers.delete(subscriber);
-    },
+    subscribe,
     setSidebarItems: (items: SidebarTreeNode[], onSelect?: SidebarSelectHandler) => {
       setSource('sidebar', buildSidebarIndex(items, onSelect));
     },
@@ -109,7 +113,9 @@ export function useSearchStoreState() {
   const [state, setState] = useState(store.getState());
   useEffect(() => {
     const unsubscribe = store.subscribe(setState);
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, []);
   return state;
 }

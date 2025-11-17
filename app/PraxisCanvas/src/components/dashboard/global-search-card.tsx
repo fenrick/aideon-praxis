@@ -105,7 +105,7 @@ export function GlobalSearchCard({
   useEffect(() => {
     searchStore.setRecentCommits(state.commits, (commitId) => {
       onShowTimeline?.();
-      void actions.selectCommit(commitId);
+      actions.selectCommit(commitId);
     });
   }, [state.commits, actions, onShowTimeline]);
 

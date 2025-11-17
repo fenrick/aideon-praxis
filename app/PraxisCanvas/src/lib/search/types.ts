@@ -36,11 +36,12 @@ export type CatalogSelectHandler = (entity: CatalogEntitySummary) => void | Prom
 
 export type SourceKey = 'sidebar' | 'commits' | 'catalog';
 
+import type { TemporalCommitSummary as PraxisTemporalCommitSummary } from '../../praxis-api';
+
+export type TemporalCommitSummary = PraxisTemporalCommitSummary;
+
 export interface SearchSourceBuilders {
   sidebar: (items: SidebarTreeNode[], onSelect?: SidebarSelectHandler) => SearchIndexItem[];
-  commits: (
-    commits: import('@/praxis-api').TemporalCommitSummary[],
-    onSelect?: CommitSelectHandler,
-  ) => SearchIndexItem[];
+  commits: (commits: TemporalCommitSummary[], onSelect?: CommitSelectHandler) => SearchIndexItem[];
   catalog: (entities: CatalogEntitySummary[], onSelect?: CatalogSelectHandler) => SearchIndexItem[];
 }

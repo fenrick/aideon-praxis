@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
 import type { CanvasWidget, SelectionState } from '@/canvas/types';
@@ -57,7 +58,8 @@ export function WorkspaceTabs({
     }
   }, [value, tab]);
 
-  const handleTabChange = (next: WorkspaceTabValue) => {
+  const handleTabChange = (nextValue: string) => {
+    const next = nextValue as WorkspaceTabValue;
     setTab(next);
     onValueChange?.(next);
   };
@@ -98,7 +100,11 @@ export function WorkspaceTabs({
   );
 }
 
-function OverviewTab({ state }: { state: TemporalPanelState }) {
+interface OverviewTabProperties {
+  readonly state: TemporalPanelState;
+}
+
+function OverviewTab({ state }: OverviewTabProperties) {
   if (state.loading && !state.snapshot) {
     return (
       <div className="rounded-2xl border border-border/70 p-6 text-sm text-muted-foreground">
@@ -116,7 +122,7 @@ function OverviewTab({ state }: { state: TemporalPanelState }) {
       label: 'Confidence',
       value:
         typeof snapshot?.confidence === 'number'
-          ? `${Math.round(snapshot.confidence * 100)}%`
+          ? `${Math.round(snapshot.confidence * 100).toString()}%`
           : 'Not set',
     },
     { label: 'Scenario', value: snapshot?.scenario ?? 'Production' },
@@ -148,11 +154,11 @@ function OverviewTab({ state }: { state: TemporalPanelState }) {
               {[
                 {
                   label: 'Nodes',
-                  details: `+${metrics.nodeAdds} / Δ${metrics.nodeMods} / -${metrics.nodeDels}`,
+                  details: `+${metrics.nodeAdds.toLocaleString()} / Δ${metrics.nodeMods.toLocaleString()} / -${metrics.nodeDels.toLocaleString()}`,
                 },
                 {
                   label: 'Edges',
-                  details: `+${metrics.edgeAdds} / Δ${metrics.edgeMods} / -${metrics.edgeDels}`,
+                  details: `+${metrics.edgeAdds.toLocaleString()} / Δ${metrics.edgeMods.toLocaleString()} / -${metrics.edgeDels.toLocaleString()}`,
                 },
               ].map((metric) => (
                 <div
@@ -189,14 +195,31 @@ function OverviewTab({ state }: { state: TemporalPanelState }) {
   );
 }
 
-function TimelineTab({
-  state,
-  actions,
-}: {
-  state: TemporalPanelState;
-  actions: TemporalPanelActions;
-}) {
+interface TimelineTabProperties {
+  readonly state: TemporalPanelState;
+  readonly actions: TemporalPanelActions;
+}
+
+function TimelineTab({ state, actions }: TimelineTabProperties) {
   const hasCommits = state.commits.length > 0;
+  let content: ReactNode;
+
+  if (state.loading) {
+    content = <p className="text-sm text-muted-foreground">Loading commits…</p>;
+  } else if (hasCommits) {
+    content = (
+      <CommitTimelineList
+        commits={state.commits}
+        activeCommitId={state.commitId}
+        onSelect={actions.selectCommit}
+      />
+    );
+  } else {
+    content = (
+      <p className="text-xs text-muted-foreground">No commits recorded yet for this branch.</p>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-3">
@@ -211,26 +234,16 @@ function TimelineTab({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => actions.selectCommit(state.commitId ?? null)}
+            onClick={() => {
+              actions.selectCommit(state.commitId ?? null);
+            }}
             disabled={!state.commitId}
           >
             Reset to latest
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        {state.loading ? (
-          <p className="text-sm text-muted-foreground">Loading commits…</p>
-        ) : hasCommits ? (
-          <CommitTimelineList
-            commits={state.commits}
-            activeCommitId={state.commitId}
-            onSelect={actions.selectCommit}
-          />
-        ) : (
-          <p className="text-xs text-muted-foreground">No commits recorded yet for this branch.</p>
-        )}
-      </CardContent>
+      <CardContent>{content}</CardContent>
     </Card>
   );
 }
