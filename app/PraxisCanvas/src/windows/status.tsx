@@ -24,7 +24,7 @@ function StatusWindow() {
   );
 }
 
-const statusRoot = document.getElementById('root');
+const statusRoot = document.querySelector('#root');
 if (statusRoot) {
   createRoot(statusRoot).render(<StatusWindow />);
 }

@@ -6,6 +6,21 @@ declare module '@aideon/design-system/components/ui/button' {
   export const buttonVariants: Record<string, unknown>;
 }
 
+declare module '@aideon/design-system/components/ui/accordion' {
+  export const Accordion: ComponentType<any>;
+  export const AccordionContent: ComponentType<any>;
+  export const AccordionItem: ComponentType<any>;
+  export const AccordionTrigger: ComponentType<any>;
+}
+
+declare module '@aideon/design-system/components/ui/badge' {
+  export const Badge: ComponentType<any>;
+}
+
+declare module '@aideon/design-system/components/ui/input' {
+  export const Input: ComponentType<any>;
+}
+
 declare module '@aideon/design-system/ui/button' {
   export const Button: ComponentType<any>;
   export const buttonVariants: Record<string, unknown>;

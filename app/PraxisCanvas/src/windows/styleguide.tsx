@@ -81,23 +81,28 @@ function StyleguideWindow() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="theme-grid">
-              {themes.map((entry) => (
-                <div key={entry.mode} className="theme-card">
-                  <span>{entry.label}</span>
-                  <div
-                    className="swatch"
-                    style={{
-                      background: `var(${entry.mode === 'system' ? '--muted' : `--${entry.mode}`})`,
-                    }}
-                  />
-                  <Button
-                    variant={mode === entry.mode ? 'secondary' : 'ghost'}
-                    onClick={() => setMode(entry.mode)}
-                  >
-                    {entry.label}
-                  </Button>
-                </div>
-              ))}
+              {themes.map((entry) => {
+                const backgroundVariable = entry.mode === 'system' ? '--muted' : `--${entry.mode}`;
+                return (
+                  <div key={entry.mode} className="theme-card">
+                    <span>{entry.label}</span>
+                    <div
+                      className="swatch"
+                      style={{
+                        background: `var(${backgroundVariable})`,
+                      }}
+                    />
+                    <Button
+                      variant={mode === entry.mode ? 'secondary' : 'ghost'}
+                      onClick={() => {
+                        setMode(entry.mode);
+                      }}
+                    >
+                      {entry.label}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
             <div className="theme-grid">
               {swatches.map((swatch) => (
@@ -120,7 +125,12 @@ function StyleguideWindow() {
             <span className="text-xs text-muted-foreground uppercase tracking-[0.3em]">
               Accent token
             </span>
-            <Select value={accent} onValueChange={(value) => setAccent(value as typeof accent)}>
+            <Select
+              value={accent}
+              onValueChange={(value: string) => {
+                setAccent(value);
+              }}
+            >
               <SelectTrigger id="accent-select" className="w-40">
                 <SelectValue placeholder="Accent token" />
               </SelectTrigger>
@@ -171,9 +181,8 @@ function StyleguideWindow() {
   );
 }
 
-const root = document.getElementById('root');
+const root = document.querySelector('#root');
 if (root) {
-  import('react-dom/client').then(({ createRoot }) => {
-    createRoot(root).render(<StyleguideWindow />);
-  });
+  const { createRoot } = await import('react-dom/client');
+  createRoot(root).render(<StyleguideWindow />);
 }

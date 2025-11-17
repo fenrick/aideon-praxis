@@ -74,7 +74,7 @@ export default function SplashWindow() {
   );
 }
 
-const splashRoot = document.getElementById('root');
+const splashRoot = document.querySelector('#root');
 if (splashRoot) {
   createRoot(splashRoot).render(<SplashWindow />);
 }

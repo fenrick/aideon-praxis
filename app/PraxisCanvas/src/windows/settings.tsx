@@ -17,18 +17,21 @@ function applyTheme(mode: ThemeMode) {
 
 function SettingsWindow() {
   const [mode, setMode] = useState<ThemeMode>(() => {
-    if (typeof window === 'undefined') {
+    const globalWindow = (globalThis as { window?: Window & typeof globalThis }).window;
+    if (!globalWindow) {
       return 'system';
     }
-    const stored = window.localStorage.getItem('themeMode') as ThemeMode | null;
+    const stored = globalWindow.localStorage.getItem('themeMode') as ThemeMode | null;
     return stored ?? 'system';
   });
 
   useEffect(() => {
     applyTheme(mode);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('themeMode', mode);
+    const globalWindow = (globalThis as { window?: Window & typeof globalThis }).window;
+    if (!globalWindow) {
+      return;
     }
+    globalWindow.localStorage.setItem('themeMode', mode);
   }, [mode]);
 
   return (
@@ -42,7 +45,9 @@ function SettingsWindow() {
             name="mode"
             value="system"
             checked={mode === 'system'}
-            onChange={() => setMode('system')}
+            onChange={() => {
+              setMode('system');
+            }}
           />
           System
         </label>
@@ -52,7 +57,9 @@ function SettingsWindow() {
             name="mode"
             value="light"
             checked={mode === 'light'}
-            onChange={() => setMode('light')}
+            onChange={() => {
+              setMode('light');
+            }}
           />
           Light
         </label>
@@ -62,7 +69,9 @@ function SettingsWindow() {
             name="mode"
             value="dark"
             checked={mode === 'dark'}
-            onChange={() => setMode('dark')}
+            onChange={() => {
+              setMode('dark');
+            }}
           />
           Dark
         </label>
@@ -72,7 +81,7 @@ function SettingsWindow() {
   );
 }
 
-const settingsRoot = document.getElementById('root');
+const settingsRoot = document.querySelector('#root');
 if (settingsRoot) {
   createRoot(settingsRoot).render(<SettingsWindow />);
 }

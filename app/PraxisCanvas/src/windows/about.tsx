@@ -16,7 +16,7 @@ function AboutWindow() {
   );
 }
 
-const aboutRoot = document.getElementById('root');
+const aboutRoot = document.querySelector('#root');
 if (aboutRoot) {
   createRoot(aboutRoot).render(<AboutWindow />);
 }
