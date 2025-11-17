@@ -1,3 +1,5 @@
+import type { SearchIndexItem } from './types';
+
 export const normalize = (value: string): string =>
   value
     .normalize('NFKD')
@@ -20,10 +22,7 @@ export const tokenize = (value: string): readonly string[] => {
   return uniqueTokens;
 };
 
-export const scoreItem = (
-  item: import('./types').SearchIndexItem,
-  tokens: readonly string[],
-): number => {
+export const scoreItem = (item: SearchIndexItem, tokens: readonly string[]): number => {
   if (tokens.length === 0) {
     return 0;
   }

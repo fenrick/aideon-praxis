@@ -18,13 +18,13 @@ export function SearchBar() {
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputReference = useRef<HTMLInputElement | null>(null);
+  const debounceReference = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
+      if (debounceReference.current) {
+        clearTimeout(debounceReference.current);
       }
     };
   }, []);
@@ -32,14 +32,14 @@ export function SearchBar() {
   const overlayOpen = focused && results.length > 0;
 
   const scheduleSearch = (value: string) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+    if (debounceReference.current) {
+      clearTimeout(debounceReference.current);
     }
     if (!value.trim()) {
       searchStore.clear();
       return;
     }
-    debounceRef.current = setTimeout(() => {
+    debounceReference.current = setTimeout(() => {
       searchStore.search(value);
     }, DEBOUNCE_MS);
   };
@@ -59,7 +59,7 @@ export function SearchBar() {
 
   const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
     const next = event.relatedTarget as HTMLElement | null;
-    if (next && next.closest('.search-results')) {
+    if (next?.closest('.search-results')) {
       return;
     }
     setFocused(false);
@@ -70,40 +70,59 @@ export function SearchBar() {
     if (!overlayOpen) {
       return;
     }
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      setHighlightedIndex((prev) => (prev + 1) % results.length);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      setHighlightedIndex((prev) => (prev - 1 + results.length) % results.length);
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      selectResult(highlightedIndex);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      searchStore.clear();
-      setQuery('');
-      inputRef.current?.blur();
-      setFocused(false);
+    switch (event.key) {
+      case 'ArrowDown': {
+        event.preventDefault();
+        setHighlightedIndex((previous) => (previous + 1) % results.length);
+
+        break;
+      }
+      case 'ArrowUp': {
+        event.preventDefault();
+        setHighlightedIndex((previous) => (previous - 1 + results.length) % results.length);
+
+        break;
+      }
+      case 'Enter': {
+        event.preventDefault();
+        selectResult(highlightedIndex);
+
+        break;
+      }
+      case 'Escape': {
+        event.preventDefault();
+        searchStore.clear();
+        setQuery('');
+        inputReference.current?.blur();
+        setFocused(false);
+
+        break;
+      }
+      // No default
     }
   };
 
   const selectResult = (index: number) => {
-    const item = results[index];
+    const item = results.at(index);
     if (!item) {
       return;
     }
-    void item.run?.();
+    const outcome = item.run?.();
+    if (outcome instanceof Promise) {
+      outcome.catch((error: unknown) => {
+        console.error('Search result run handler rejected', error);
+      });
+    }
     searchStore.clear();
     setQuery('');
     setFocused(false);
-    inputRef.current?.blur();
+    inputReference.current?.blur();
   };
 
   return (
     <div className="relative w-full" onBlur={handleBlur}>
       <Input
-        ref={inputRef}
+        ref={inputReference}
         placeholder="Search branches, nodes, catalogues…"
         value={query}
         onChange={handleInputChange}
@@ -117,7 +136,9 @@ export function SearchBar() {
             <button
               key={result.id}
               type="button"
-              onClick={() => selectResult(index)}
+              onClick={() => {
+                selectResult(index);
+              }}
               className={`flex w-full flex-col gap-0.5 px-4 py-3 text-left transition hover:bg-background/70 ${
                 index === highlightedIndex ? 'bg-white/5' : ''
               }`}

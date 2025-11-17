@@ -191,7 +191,7 @@ function SchemaDetails({
   );
 }
 
-function StatBlock({ label, value }: { label: string; value: number }) {
+function StatBlock({ label, value }: { readonly label: string; readonly value: number }) {
   return (
     <div>
       <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{label}</p>

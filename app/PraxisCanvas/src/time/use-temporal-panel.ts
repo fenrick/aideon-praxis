@@ -53,42 +53,17 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
       setState((previous) => ({ ...previous, diff: undefined }));
       return;
     }
-    const trailing = commits.slice(-2);
-    const [from, to] = [trailing[0].id, trailing[1].id];
+    const [fromCommit, toCommit] = commits.slice(-2) as [
+      TemporalCommitSummary,
+      TemporalCommitSummary,
+    ];
     try {
-      const diff = await getTemporalDiff({ from, to });
+      const diff = await getTemporalDiff({ from: fromCommit.id, to: toCommit.id });
       setState((previous) => ({ ...previous, diff }));
     } catch {
       setState((previous) => ({ ...previous, diff: undefined }));
     }
   }, []);
-
-  const loadBranches = useCallback(async () => {
-    setState((previous) => ({ ...previous, loading: true, error: undefined }));
-    try {
-      const branches = await listTemporalBranches();
-      const branch = pickInitialBranch(branches);
-      setState((previous) => ({
-        ...previous,
-        branches,
-        branch,
-        mergeConflicts: undefined,
-      }));
-      if (branch) {
-        await loadBranch(branch);
-      } else {
-        setState((previous) => ({ ...previous, loading: false, merging: false }));
-      }
-    } catch (unknownError) {
-      setState((previous) => ({
-        ...previous,
-        loading: false,
-        error: toErrorMessage(unknownError),
-        mergeConflicts: undefined,
-        merging: false,
-      }));
-    }
-  }, [loadBranch]);
 
   const loadBranch = useCallback(
     async (branch: string) => {
@@ -133,6 +108,33 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
     },
     [loadDiff],
   );
+
+  const loadBranches = useCallback(async () => {
+    setState((previous) => ({ ...previous, loading: true, error: undefined }));
+    try {
+      const branches = await listTemporalBranches();
+      const branch = pickInitialBranch(branches);
+      setState((previous) => ({
+        ...previous,
+        branches,
+        branch,
+        mergeConflicts: undefined,
+      }));
+      if (branch) {
+        await loadBranch(branch);
+      } else {
+        setState((previous) => ({ ...previous, loading: false, merging: false }));
+      }
+    } catch (unknownError) {
+      setState((previous) => ({
+        ...previous,
+        loading: false,
+        error: toErrorMessage(unknownError),
+        mergeConflicts: undefined,
+        merging: false,
+      }));
+    }
+  }, [loadBranch]);
 
   const selectCommit = useCallback(
     (commitId: string | null) => {

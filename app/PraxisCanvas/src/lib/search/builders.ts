@@ -7,7 +7,7 @@ import type {
   SidebarTreeNode,
   TemporalCommitSummary,
 } from './types';
-import { normalize, tokenize } from './utils';
+import { normalize, tokenize } from './utilities';
 
 const basePriority: Record<SearchResultKind, number> = {
   sidebar: 1,
@@ -73,7 +73,7 @@ export const buildSidebarIndex = (
 
 export const buildCommitIndex = (
   commits: TemporalCommitSummary[],
-  onSelect?: CommitSelectHandler,
+  onSelect?: (id: string) => void | Promise<void>,
 ): SearchIndexItem[] =>
   commits.map((commit) => {
     const subtitleParts = [commit.time, commit.author].filter(Boolean);
@@ -88,7 +88,16 @@ export const buildCommitIndex = (
         title: commit.message,
         subtitle,
         kind: 'commit',
-        run: onSelect ? () => onSelect(commit.id) : undefined,
+        run: onSelect
+          ? () => {
+              const outcome = onSelect(commit.id);
+              if (outcome instanceof Promise) {
+                outcome.catch((error: unknown) => {
+                  console.error('Commit search handler rejected', error);
+                });
+              }
+            }
+          : undefined,
       },
       tokens,
       priority,
