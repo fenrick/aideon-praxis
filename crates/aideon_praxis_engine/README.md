@@ -1,0 +1,29 @@
+# Praxis Engine – Aideon Suite module
+
+## Purpose
+
+Praxis Engine is the core time-aware graph engine for Aideon Suite. It owns commits, branches,
+snapshots, scenarios, and schema validation for the digital twin.
+
+## Responsibilities
+
+- Maintain the commit graph and snapshot materialisation for the twin.
+- Enforce the meta-model and relationship constraints.
+- Implement `state_at`, `diff`, and related temporal operations used by Chrona and the canvas.
+- Expose traits and types consumed by Praxis Host and other engine crates.
+
+## Relationships
+
+- **Depends on:** Mneme Core for persistence, shared DTOs for commits/refs/snapshots.
+- **Used by:** Praxis Host, Praxis Facade, Chrona Visualisation, Metis Analytics, Continuum Orchestrator.
+
+## Running and testing
+
+- Rust tests (crate only): `cargo test -p aideon_praxis_engine`
+- Workspace Rust checks: `pnpm run host:lint && pnpm run host:check`
+
+## Design and architecture
+
+Praxis Engine follows the time-first commit model described in `Architecture-Boundary.md` and
+`docs/DESIGN.md`. Internal modules (graph, commits, meta-model, importer) are outlined in
+`crates/aideon_praxis_engine/DESIGN.md`.

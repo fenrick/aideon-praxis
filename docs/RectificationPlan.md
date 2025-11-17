@@ -1,7 +1,14 @@
-# Aideon Praxis — Rectification Plan
+# Aideon Suite — Rectification Plan (Debt & Gap Analysis)
 
-**Author:** Codex Agent
-**Date:** 2025-11-10
+## Purpose
+
+Capture architectural and implementation debt for Aideon Suite (storage, meta-model, dataset,
+analytics, and governance gaps) and organise it into workstreams that can feed the roadmap and ADRs.
+This document is used for internal gap analysis; roadmap and decision records live in `docs/ROADMAP.md`
+and `docs/adr/` respectively.
+
+**Author:** Codex Agent  
+**Date:** 2025-11-10  
 **Scope:** Close architectural gaps (git-structured storage, abstract meta-model, configurable schema delivery, baseline dataset, reporting/analytics) identified during audit.
 
 ## 0. Identified Gaps in Design

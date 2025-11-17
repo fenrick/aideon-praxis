@@ -1,7 +1,10 @@
 # Coding Standards (v2)
 
-This is the single source of truth for code quality, testing, tooling, and
-boundaries across the Aideon Praxis monorepo.
+## Purpose
+
+Define the shared coding rules, quality gates, and module boundary expectations for the **Aideon Suite**
+monorepo. Praxis is the current primary desktop module, but these standards apply to all modules
+(Chrona, Metis, Continuum, Mneme) unless explicitly scoped.
 
 - Stacks: Node 24 (TS/React canvas runtime replacing the legacy SvelteKit prototype), Rust 2024 (host + engines)
 - Monorepo: pnpm workspaces; Cargo workspace for Rust crates
@@ -10,23 +13,9 @@ boundaries across the Aideon Praxis monorepo.
 
 ## Architecture & Boundaries
 
-- Modules & Layers
-- Renderer (React canvas runtime; Svelte prototype kept only for continuity): UI only; never accesses local process APIs directly.
-  - Main (Tauri host): IPC commands + local orchestration; no backend logic in renderer.
-  - Engines (Rust crates): analytics/time/graph orchestration behind typed traits; host injects
-    the appropriate adapter (local or remote).
-- Contracts between layers
-  - Renderer ↔ Main: typed preload bridge only.
-- Main ↔ Engines: trait-bound adapters (local today; remote adapters follow the same contract).
-  - Shared types encouraged in TS via dedicated package when needed; avoid
-    circular deps. For cross‑language payloads, use OpenAPI (JSON Schema) as the
-    source of truth.
-- Contract Versioning
-  - Version HTTP routes with `/api/v{n}` and embed `X-API-Version` in responses.
-  - Changes follow semver:
-    - patch/minor: additive, backward compatible
-    - major: breaking; provide deprecation window and dual‑serve old version
-  - Maintain a changelog of API changes (docs/ or OpenAPI description changes).
+This document does **not** redefine architecture; it applies coding rules to it.
+For the canonical description of layers, adapters, and time-first boundaries across Aideon Suite,
+refer to `Architecture-Boundary.md`. The notes below focus on product/module naming only.
 
 ### Product modules & naming (authoritative)
 

@@ -1,40 +1,40 @@
-# @aideon/PraxisAdapters — Type Contracts
+# @aideon/PraxisAdapters – Aideon Suite module
 
-TypeScript interfaces defining the UI boundary for Graph access, Storage
-snapshots, and the Worker client. Implementations are backend‑agnostic and must
-not introduce backend specifics into the renderer boundary.
+## Purpose
 
-Interfaces
+Praxis Adapters defines the TypeScript interfaces and contracts that form the UI boundary for graph,
+storage, and worker access. Implementations are backend-agnostic and must not introduce backend
+specifics into the renderer boundary.
 
-- `GraphAdapter` — read-only time-sliced access returning `TemporalStateSnapshot`/`TemporalDiffSnapshot`.
-- `MutableGraphAdapter` — extends `GraphAdapter` with branch/commit helpers for dev workflows.
-- `MetaModelProvider` — surfaces the active schema (`MetaModelDocument`) so UIs can build forms dynamically.
-- `StorageAdapter` — snapshot persistence (get/put by opaque reference).
-- `WorkerClient` — strongly-typed job runner backed by `WorkerJobMap`.
+## Responsibilities
 
-Supporting types
+- Provide `GraphAdapter`/`MutableGraphAdapter` for time-sliced graph access.
+- Surface meta-model information via `MetaModelProvider` so UIs can build forms dynamically.
+- Define `StorageAdapter` for snapshot persistence.
+- Define `WorkerClient` and related job DTOs for analytics and temporal jobs.
+- Offer utilities like `ensureIsoDateTime` to normalise timestamp inputs.
 
-- `TemporalStateParameters`, `TemporalStateSnapshot`, `TemporalDiffParameters`, `TemporalDiffSnapshot`.
-- `MetaModelDocument`, `MetaModelType`, and related attribute/relationship helpers.
-- `PlanEvent`, matching the minimal schema documented in `AGENTS.md`.
-- `WorkerJobMap`, `WorkerJobRequest`, `WorkerJobResult` covering analytics and temporal jobs.
-- Utility `ensureIsoDateTime(value)` to normalise timestamp inputs.
+## Relationships
 
-Usage
+- **Depends on:** TypeScript toolchain, `@aideon/PraxisDtos` for shared DTOs.
+- **Used by:** Praxis Canvas, Praxis Desktop, host/worker adapter implementations.
 
-- UI code depends solely on these interfaces; concrete adapters live in dedicated
-  renderer or host modules and are injected at the IPC boundary.
-- Import from `@aideon/PraxisAdapters` to obtain the adapters and shared
-  contracts, e.g.:
+## Running and testing
 
-  ```ts
-  import type { GraphAdapter, TemporalStateSnapshot } from '@aideon/PraxisAdapters';
-  ```
+- Typecheck (suite-wide): `pnpm run node:typecheck`
+- Tests (suite-wide, including adapters): `pnpm run node:test`
 
-- General DTOs like temporal snapshots are defined in `@aideon/PraxisDtos`.
+In module-specific tests, provide stub/fake implementations (e.g. `DevelopmentMemoryGraph`) to
+exercise UI flows without a real backend.
 
-Testing
+## Design and architecture
 
-- Provide stub/fake implementations in tests to validate UI flows without
-  hitting a real backend. `DevelopmentMemoryGraph` offers a ready-made in-memory
-  implementation for demo scenarios.
+Praxis Adapters encode the adapter pattern described in `Architecture-Boundary.md` for Graph,
+Storage, and Worker boundaries. For suite-wide schema and meta-model details, see `docs/DESIGN.md`
+and `docs/meta/README.md`.
+
+## Related global docs
+
+- Suite design and meta-model: `docs/DESIGN.md`, `docs/meta/README.md`
+- Architecture and layering: `Architecture-Boundary.md`
+- Coding standards: `docs/CODING_STANDARDS.md`

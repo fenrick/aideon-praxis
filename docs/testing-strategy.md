@@ -1,7 +1,14 @@
 # Testing Strategy – Praxis Desktop (Rust + Tauri + React/TypeScript)
 
-**Goal:**
-Maintain at least **80% automated test coverage** across the codebase (Rust + TypeScript), with tests that give real confidence in the behaviour of the digital twin engine and the desktop UI.
+## Purpose
+
+Describe how we test Aideon Suite, with a focus on the Praxis desktop module: which kinds of tests
+we use (Rust, Tauri, React/TS), where they live, and how coverage and Definition of Done are applied
+across layers. It complements `Architecture-Boundary.md` and `docs/CODING_STANDARDS.md` by focusing
+specifically on testing practice.
+
+**Goal:** Maintain at least **80% automated test coverage** across the codebase (Rust + TypeScript),
+with tests that give real confidence in the behaviour of the digital twin engine and the desktop UI.
 
 This document explains:
 
@@ -10,8 +17,6 @@ This document explains:
 - what must be tested in each layer (Rust, Tauri, React/TS),
 - how we measure coverage,
 - what the definition of done is for new code.
-
-It is written so a coding agent can follow it without other documents.
 
 ---
 

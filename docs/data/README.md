@@ -1,8 +1,14 @@
 # Baseline Dataset Assets
 
-The files under `docs/data` describe the versioned baseline that seeds every new
-Praxis datastore. They are treated as **data first** artifacts so changes stay
-reviewable, testable, and reproducible across CI and local builds.
+## Purpose
+
+Describe the structure and workflow for the baseline dataset used to seed new Praxis datastores:
+where the YAML and schema payloads live, how they are imported, and how changes are versioned and
+validated.
+
+The files under `docs/data` describe the versioned baseline that seeds every new Praxis datastore.
+They are treated as **data first** artifacts so changes stay reviewable, testable, and reproducible
+across CI and local builds.
 
 ## Layout
 

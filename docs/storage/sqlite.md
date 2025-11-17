@@ -1,14 +1,11 @@
 # SQLite Storage Layer
 
-## Decision summary
+## Purpose
 
-- **Engine**: SQLite 3 in WAL mode with `synchronous=NORMAL` and `foreign_keys=ON` via the
-  `aideon_mneme_core` crate (`crates/aideon_mneme_core`).
-- **Why**: Gives us an embedded, ACID-compliant database for desktop builds while keeping the
-  schema portable to PostgreSQL-family databases (or FoundationDB) when we stand up cloud-hosted
-  workers.
-- **Scope**: Persists commit metadata, branch refs, and serialized snapshots inside a single
-  `praxis.sqlite` file managed by the host.
+Provide a reference for the SQLite-based storage layer used by Mneme Core in desktop mode: table
+schemas, migration approach, and portability considerations. This doc is for contributors touching
+persistence or adding new tables; the decision to use SQLite and the trade-offs involved are
+captured in `docs/adr/0006-sqlite-storage-layer.md`.
 
 ## Schema (migration v1)
 
@@ -75,5 +72,4 @@ new `CommitStore` implementation (e.g., Postgres, FoundationDB) while keeping th
 - **FoundationDB**: Map commits/refs/snapshots to hierarchical keys (`/commits/<id>`, etc.) inside a
   transactional KV store; reuse hashing + serialization logic.
 
-Document any deviations from these rules in the relevant ADR/plan updates so Guardrail WS-A stays in
-sync with persistence changes.
+For rationale and trade-offs behind the SQLite choice, see `docs/adr/0006-sqlite-storage-layer.md`.

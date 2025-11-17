@@ -1,12 +1,21 @@
 # AGENTS.md
 
-Guide for AI coding assistants (e.g., Claude, GPT/Codex) contributing to the Aideon Praxis
-repository.
+Guide for AI coding assistants (e.g., Claude, GPT/Codex) contributing to the **Aideon Suite**
+repository. The current implementation focus is the **Praxis** desktop module.
 
 ## Purpose
 
-Set clear guardrails and output conventions so AI agents make **safe, incremental, reviewable**
-changes that respect our **time‑first, graph‑native** architecture and security posture.
+Describe how AI agents should work in this repo: what to read first, how to keep changes small and
+safe, and which boundaries and workflows must always be respected.
+
+Before making changes, agents should read:
+
+- Root `README.md` (suite overview and modules)
+- `docs/DESIGN.md` (suite-level design and principles)
+- `Architecture-Boundary.md` (layers, adapters, time-first boundaries)
+- `docs/CODING_STANDARDS.md` (coding rules and boundaries)
+- `docs/testing-strategy.md` (testing expectations)
+- The `README.md` and `DESIGN.md` for the module they are working in
 
 > **Scope:** These instructions apply exclusively to the `aideon-praxis` codebase. Do not spend time optimising for downstream consumers, SDKs, or hypothetical adopters outside this repository unless explicitly directed in a task.
 
@@ -26,21 +35,33 @@ changes that respect our **time‑first, graph‑native** architecture and secur
   exports; least privilege.
 - **Adapters, not entanglement:** Graph, Storage, Worker are interface‑driven. Backends swap without
   UI change.
+- **Evergreen:** Treat older patterns as candidates for upgrade; current ADRs and suite docs take
+  precedence over legacy notes.
 
 ## Repository boundaries (monorepo)
 
-- `app/PraxisCanvas` — React canvas workspace (Phase 1 shell). Implemented with a vanilla TypeScript
-  placeholder that mirrors the React layout while registry access is offline.
-- `app/PraxisDesktop` — legacy Svelte renderer bundle consumed by the Tauri host (typed IPC bridge only). Keep it running until the React canvas runtime fully replaces it.
-- `app/PraxisAdapters` — `GraphAdapter`, `StorageAdapter`, `WorkerClient` (TypeScript). No backend specifics in UI.
-- `crates/aideon_praxis_host` — Tauri host (Rust) exposing the typed command/event surface.
-- `crates/{aideon_praxis_engine,aideon_chrona_visualization,aideon_metis_analytics,aideon_continuum_orchestrator}` — Rust domain crates (graph, time, analytics,
-  orchestration) scoped to host/worker logic.
-- `crates/aideon_mneme_core` — Aideon Mneme persistence layer (commits, refs, snapshots) powering SQLITE/other
-  storage backends via a shared API.
-- `docs/` — C4 diagrams, meta‑model, viewpoints, ADRs.
+High-level module boundaries are documented in `Architecture-Boundary.md` and in each module’s
+`README.md`/`DESIGN.md` (see the “Aideon Suite modules” table in `README.md`). Never cross those
+boundaries with imports or side-effects (e.g., no renderer ↔ DB access, no engines importing Tauri).
 
-Never cross these boundaries with imports or side‑effects.
+## Evergreen environment & legacy handling
+
+This repository is an evergreen, fast-evolving codebase. Code, docs, and patterns are continuously improved and may change frequently. When resolving conflicts or ambiguity, use the following order of precedence:
+
+- **1. Code on `main`** is always authoritative.
+- **2. Accepted ADRs** in `docs/adr/` (architectural decisions).
+- **3. Suite-level docs:** `docs/DESIGN.md`, `Architecture-Boundary.md`, `docs/CODING_STANDARDS.md`, `docs/testing-strategy.md`, `docs/ROADMAP.md`.
+- **4. Module docs:** `<module>/README.md`, `<module>/DESIGN.md`.
+- **5. Supporting docs in `docs/`** (not listed above).
+- **Anything else** is informational only and does not override the above.
+
+**Behaviour rules:**
+
+- Prefer updating to current patterns over preserving legacy. When you touch code, refactor it toward the current architecture and coding standards.
+- Clean as you go: when modifying a file, remove or clearly mark obsolete TODOs, comments, and dead code in the area you touch, if safe and reasonable.
+- Do not add new features on top of obviously legacy seams (e.g., pre-refactor patterns, deprecated UIs). Only maintain or migrate these; do not extend them.
+- After changing behaviour or design, update the relevant module `README.md`, `DESIGN.md`, and applicable ADRs. Remove or archive outdated doc sections rather than adding conflicting ones.
+- Minimise new `.md` files: only create new module `README.md`/`DESIGN.md` docs or ADRs. Prefer updating existing docs.
 
 ## Task menu for agents (allowed)
 
@@ -49,9 +70,12 @@ Never cross these boundaries with imports or side‑effects.
 - Analytics in the Rust worker crates (Chrona/Metis) with tests and metrics.
 - Connectors via Continuum scheduler (e.g., CMDB), CSV wizard features, PII redaction,
   encryption‑at‑rest.
-- Docs: README, CONTRIBUTING, ROADMAP, Architecture‑Boundary, ADRs, C4 diagrams‑as‑code.
+- Docs: module `README.md`/`DESIGN.md`, global README, `docs/DESIGN.md`, `Architecture‑Boundary.md`,
+  ROADMAP, ADRs, C4 diagrams‑as‑code.
 
-## Issue & Project Tracking (GitHub is master)
+## Issues, PRs & tracking
+
+### GitHub as source of truth
 
 - Source of truth is GitHub issues and a Projects v2 board. Local Markdown under `docs/issues/` is a mirror only.
 - Use the provided CLI helpers (backed by `gh`) to keep tracking tight:
@@ -91,61 +115,32 @@ For any item labeled `status/in-progress`, ensure the issue body contains this s
 - Packaging: macOS build verified (DMG/ZIP)
 - Tracking: PRs linked; Project Status updated; local mirror refreshed
 
-When finishing work:
-
-- Check off each DoD item in the issue body.
-- Add/confirm `status/done` label; ensure the Project Status reflects completion via `pnpm run issues:project`.
-- If closed by PR merge (Fixes/Closes #N), verify the issue is closed; otherwise close with a comment referencing the commit.
-
-### Breaking Down Large Work
-
-- If an issue is larger than a single PR or small set of commits, create linked secondary issues:
-  - Use `pnpm run issues:split <parent#> --items ...` to generate child issues.
-  - Keep the parent issue as the coordination umbrella with a checklist linking to child issues.
-  - Each child issue should reference the parent (`Parent: #<parent>`), inherit priority/area/module labels, and target the same milestone.
-  - Each child should progress through `status/todo` → `status/in-progress` → `status/done` with PRs linked.
-
-### Keeping Issues Aligned With Code
-
-- On branch/PR creation: include `Fixes #<issue>` when appropriate so merges close issues automatically.
-- For existing work already on `main`, backfill tracking:
-  - `pnpm run issues:backfill --since <date>` to comment on referenced issues with commit details, optionally `--close` to close items resolved by commits.
-  - `pnpm run issues:linkify` to ensure PRs are referenced from issues.
-- After any merges to `main`: run `pnpm run issues:mirror` to update local docs. Pre‑push will block if mirror is stale.
-
-### Hooks & Hygiene
-
-- Pre‑commit: fast; runs formatters/linters only (no network).
-- Pre‑push: runs `issues:mirror:check` and blocks if the local mirror is out‑of‑date vs GitHub.
-
-Not allowed without ADR:
-
-- Meta‑model changes, RPC protocol changes, security posture changes, opening network ports, sending
-  data to external LLMs.
+When finishing work, follow the DoD and workflow expectations in `CONTRIBUTING.md` (including labels,
+milestones, PR linkage, and ADR requirements for boundary/protocol/meta-model changes).
 
 ## Output contract (must follow in every proposal/PR)
 
 Provide your response in the following sections, in this order. Keep explanations concise.
 
-1. PLAN
+### PLAN
 
 - Bulleted list of files to create/modify, with one‑line reasons.
 
-1. TESTS
+### TESTS
 
 - What tests you add/modify, how to run them, and expected assertions.
 
-1. RUN
+### RUN
 
 - Commands to build/test/lint locally (TS + Rust). Include any data generation steps.
 
-1. CHECKS
+### CHECKS
 
 - Security: confirm no renderer HTTP, no new network ports, PII redaction respected.
 - Boundaries: confirm no backend logic in renderer; worker uses RPC only.
 - Performance: note expected impact; reference SLOs if relevant.
 
-1. NOTES
+### NOTES
 
 - Trade‑offs, alternatives rejected, follow‑ups (issues to file).
 
@@ -154,14 +149,49 @@ defaults consistent with this guide.
 
 ## Coding standards
 
-For the authoritative coding standards (quality gates, coverage targets,
-tooling, and CI rules), see `docs/CODING_STANDARDS.md`.
+For coding standards (quality gates, coverage targets, tooling, and CI rules), see
+`docs/CODING_STANDARDS.md`. For testing expectations, see `docs/testing-strategy.md`.
 
-### TypeScript / React (Praxis Desktop canvas, app/PraxisAdapters)
+## Per-module guidance (where to look)
+
+- **Praxis Canvas (`app/PraxisCanvas`)**
+  - Read: `app/PraxisCanvas/README.md`, `app/PraxisCanvas/DESIGN.md`, `docs/canvas-architecture.md`.
+  - Constraints: no backend logic; IPC only via Praxis adapters; treat the twin as source of truth.
+  - Tests: JS/TS tests via `pnpm run node:test` (canvas is covered by Vitest suite).
+
+- **Praxis Desktop (legacy, `app/PraxisDesktop`)**
+  - Read: `app/PraxisDesktop/README.md`, `docs/praxis-desktop-svelte-migration.md`.
+  - Constraints: maintenance-only; do not add new features; keep Svelte UI stable during migration.
+  - Tests: Svelte tests via `pnpm --filter @aideon/PraxisDesktop test`.
+
+- **Aideon Design System (`app/AideonDesignSystem`)**
+  - Read: `app/AideonDesignSystem/README.md`, `app/AideonDesignSystem/DESIGN.md`, `docs/design-system.md`.
+  - Constraints: generated components are read-only; extend via wrappers/blocks; shared tokens in `globals.css`.
+  - Tests: design-system tests via `pnpm --filter @aideon/design-system test` if present.
+
+- **Praxis Adapters / DTOs (`app/PraxisAdapters`, `app/PraxisDtos`)**
+  - Read: their `README.md` files, `docs/adr/0003-adapter-boundaries.md`.
+  - Constraints: define TS interfaces/DTOs only; no IPC or business logic.
+  - Tests: part of `pnpm run node:test` and `pnpm run node:typecheck`.
+
+- **Praxis Host (`crates/aideon_praxis_host`)**
+  - Read: `crates/aideon_praxis_host/README.md`, `crates/aideon_praxis_host/DESIGN.md`, `docs/tauri-capabilities.md`, `docs/tauri-client-server-pivot.md`.
+  - Constraints: no renderer HTTP; no open ports in desktop mode; typed commands only.
+  - Tests: Rust tests via `cargo test -p aideon_praxis_host`; workspace checks via `pnpm run host:lint && pnpm run host:check`.
+
+- **Engines (`crates/aideon_praxis_engine`, `aideon_chrona_visualization`, `aideon_metis_analytics`, `aideon_continuum_orchestrator`, `aideon_mneme_core`)**
+  - Read: each crate’s `README.md`, `DESIGN.md` (where present), `docs/DESIGN.md`, `Architecture-Boundary.md`, relevant ADRs (`0005` meta-model, `0006` storage).
+  - Constraints: no Tauri or UI dependencies; obey time-first commit model and adapter boundaries.
+  - Tests: crate-level `cargo test -p <crate>` plus workspace Rust checks.
+
+## Technology & testing expectations
+
+### TypeScript / React (Praxis Canvas, app/PraxisAdapters)
 
 – Node 24, React 18. Strict TS config; ESLint + Prettier. The SvelteKit bundle is considered
 legacy/prototype; all new surface/canvas work targets the React + React Flow + shadcn/ui stack
-described in `docs/praxis-desktop-overview.md`.
+described in `docs/UX-DESIGN.md`, `docs/design-system.md`, and
+`docs/praxis-desktop-implementation-guide.md`.
 
 - Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict
   plugin access. The host exposes typed commands only, and React components call the host through a
@@ -169,15 +199,12 @@ described in `docs/praxis-desktop-overview.md`.
 - Never embed backend‑specific queries in renderer; call adapters or host APIs. React Flow widgets
   must treat the twin as the source of truth.
 
-Lint/Format discipline
+### Lint/Format discipline and code quality
 
 - Do not disable lint rules in code (no inline `eslint-disable`, `ts-ignore`, etc.) in new React/
   TypeScript modules.
 - Refactor code to satisfy linters and static analysis rather than suppressing warnings.
 - Use check-only hooks locally; CI enforces the same rules.
-
-### Code quality
-
 - Coverage targets (Node/TS and Rust): Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code; overall should trend upward.
 - Sonar: `sonar.new_code.referenceBranch=main` configured; CI waits for the Sonar Quality Gate before merging.
 - Keep code paths single and explicit (server-only worker over UDS) to reduce maintenance cost.
@@ -194,12 +221,17 @@ Lint/Format discipline
 
 - Markdown, markdownlint clean (no heading jumps; 2‑space nested bullets).
 - Diagrams‑as‑code preferred (Structurizr DSL, Mermaid, PlantUML) stored under `docs/c4/`.
+- When updating docs, prefer editing existing suite/module docs or ADRs; avoid creating new `.md`
+  files unless they are a new module `README.md`/`DESIGN.md` or ADR.
 
 ## Contracts snapshot (reference only)
 
-### Worker jobs (types)
+The current worker jobs and time APIs are defined by engine contracts and ADRs:
 
-- `Analytics.ShortestPath { from, to, maxHops }`
+- Worker job types and payloads: see Metis and temporal engine design docs plus ADRs `0002`, `0003`,
+  and `0010`.
+- Time APIs and PlanEvent schema: see Praxis Engine design docs and ADRs `0005`, `0007`, and `0008`.
+
 - `Analytics.Centrality { algorithm: degree|betweenness, scope }`
 - `Analytics.Impact { seedRefs[], filters{} }`
 - `Temporal.StateAt { asOf, scenario?, confidence? }`
@@ -229,11 +261,9 @@ Lint/Format discipline
 
 ## Performance & SLO gates
 
-- `state_at()` p95 ≤ 250ms at 50k/200k (warm).
-- `diff(plateauA, plateauB)` ≤ 1s at 50k/200k; SVG compare ≤ 2s (500 items).
-- Shortest path (≤6 hops) p95 ≤ 300ms; betweenness (50k) ≤ 90s batch.
-
-Changes that could affect these must include a note in CHECKS and, when possible, a quick benchmark.
+- Performance SLOs for temporal APIs and analytics are defined in `docs/ROADMAP.md` (SLO section) and
+  in module design docs for engine crates. When you change code that could affect performance, call
+  out expected impact in **CHECKS** and add a quick benchmark or test as appropriate.
 
 ## Testing guidance
 
@@ -251,15 +281,11 @@ Changes that could affect these must include a note in CHECKS and, when possible
   `cargo test --all --all-targets` with coverage tooling when touching engine logic. Sonar Quality
   Gate must pass.
 
-## Commit Hygiene (run before every commit)
+### Commit Hygiene
 
 - Ensure that code will pass the GitHub CI checks with:
-- `pnpm run ci`
-- this will check TypeScript/React packages (legacy Svelte bundle included for now) and then Rust targets
-  - executing formatting, linting, static analysis checks and then tests
-  - it needs to be clean before any commits.
-- Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and
-  deterministic.
+  - `pnpm run ci` (TS/React + Rust lint, typecheck, tests, format).
+- Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and deterministic.
 
 ## Versioning & migrations
 

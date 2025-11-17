@@ -1,213 +1,65 @@
-# Aideon Praxis
+# Aideon Suite
 
-This is a draft monorepo scaffold following the guardrails in `AGENTS.md`.
+This repository contains **Aideon Suite**, a local-first, graph-native digital twin platform that
+treats **time as a first-class dimension**. The suite is built as a set of modules that share the
+same time-first meta-model, adapter patterns, and security posture.
 
-Packages:
+Within the suite:
 
-- `app/PraxisCanvas` — React-style canvas runtime shell (Phase 1) implemented with a vanilla
-  TypeScript fallback so we can integrate React Flow once registry access returns.
-- `app/PraxisDesktop` — **legacy Svelte prototype** for the desktop UI. Keep it running while the
-  React/Tauri canvas comes online, but treat all new work as feeding the React stack described in
-  `docs/praxis-desktop-overview.md`.
-- `crates/aideon_praxis_host` — Tauri desktop host (Rust) with typed IPC surface.
-- `crates/{aideon_praxis_engine, aideon_chrona_visualization, aideon_metis_analytics, aideon_continuum_orchestrator, aideon_mneme_core}` —
-  Rust crates for the graph model, time engine, analytics, orchestration, and persistence/DTOs respectively.
-- `app/PraxisAdapters` — TypeScript interfaces for Graph/Storage/Worker adapters.
+- **Aideon Praxis** is the core desktop digital twin module (React/Tauri canvas + Rust engines).
+- **Aideon Chrona** provides time-based visualisation.
+- **Aideon Metis** focuses on analytics and reasoning.
+- **Aideon Continuum** handles orchestration and automation.
+- **Aideon Mneme** owns persistence and shared DTOs.
 
-See `docs/praxis-desktop-overview.md` for the React/Tauri canvas target and
-`docs/praxis-desktop-implementation-guide.md` for the agent playbook.
+See `docs/DESIGN.md` for suite-level product and conceptual design, and `Architecture-Boundary.md`
+for code-level layering and boundaries.
 
-Tooling:
+## Aideon Suite modules
 
-- pnpm workspaces, ESLint + Prettier, strict TypeScript base config.
-- Rust workspace managed via Cargo (`cargo fmt`, `cargo clippy`, `cargo test`).
-- GitHub Actions CI runs JS lint/typecheck and Rust lint/tests.
+The table below lists the primary modules in this repo. See each module’s README for details.
 
-See `CONTRIBUTING.md` and `AGENTS.md` for contribution rules and boundaries. For a walkthrough of
-local setup (Node 24, pnpm 9, Rust stable via rustup) and offline tips, see
-`docs/getting-started.md`.
+| Name                    | Path                                   | Responsibility                                                       | Type           |
+| ----------------------- | -------------------------------------- | -------------------------------------------------------------------- | -------------- |
+| Praxis Canvas           | `app/PraxisCanvas`                     | React/Tauri canvas shell for the Praxis desktop module.              | Node/React app |
+| Praxis Desktop (legacy) | `app/PraxisDesktop`                    | SvelteKit prototype desktop UI kept only until React cut-over.       | Node/React app |
+| Praxis Adapters         | `app/PraxisAdapters`                   | TypeScript Graph/Storage/Worker adapter interfaces and DTOs.         | Node/TS pkg    |
+| Praxis DTOs             | `app/PraxisDtos`                       | Shared TypeScript DTOs that shape IPC and worker contracts.          | Node/TS pkg    |
+| Praxis Design System    | `app/PraxisDesignSystem`               | Legacy Svelte design system components (pre-React migration).        | Node/TS pkg    |
+| Aideon Design System    | `app/AideonDesignSystem`               | Shared shadcn/ui + React Flow design system for React-based apps.    | Node/React pkg |
+| Praxis Host             | `crates/aideon_praxis_host`            | Tauri desktop host exposing typed commands and capabilities.         | Rust crate     |
+| Praxis Engine           | `crates/aideon_praxis_engine`          | Core time-aware graph/commit engine for the digital twin.            | Rust crate     |
+| Praxis Facade           | `crates/aideon_praxis_facade`          | Facade and orchestration layer over Praxis engine and adapters.      | Rust crate     |
+| Chrona Visualisation    | `crates/aideon_chrona_visualization`   | Temporal visualisation and `state_at`/`diff` helpers.                | Rust crate     |
+| Metis Analytics         | `crates/aideon_metis_analytics`        | Analytics jobs (shortest path, centrality, impact, TCO).             | Rust crate     |
+| Continuum Orchestrator  | `crates/aideon_continuum_orchestrator` | Scheduler/connectors and snapshot/layout persistence orchestration.  | Rust crate     |
+| Mneme Core              | `crates/aideon_mneme_core`             | Persistence layer (SQLite/other) and shared commit/ref/snapshot DTOs | Rust crate     |
 
-Getting started
+For module-level internal design, see each `<module>/DESIGN.md` (where present).
 
-- Prereqs: Node 24, Rust stable toolchain.
-- Enable Corepack then install deps: `corepack enable && pnpm install`.
-- Build once: `pnpm run build` (renderer assets to `app/PraxisDesktop/dist/renderer`, main+preload to
-  `app/PraxisDesktop/dist`).
-- Dev (no HTTP server): `pnpm tauri dev` (watches Vite + Tauri and launches the desktop app).
+## Getting started
 
-See docs/commands.md for the full list of pnpm commands used across JS/TS and the Rust workspace.
+For a full walkthrough (prerequisites, setup, dev workflow, and issues helpers), see
+`docs/getting-started.md`. The commands below are the most common entry points.
 
-Packaging
+### Common commands (quick reference)
 
-- Local packaging (unsigned): `pnpm --filter @aideon/PraxisDesktop run dist`.
-- Outputs installers to `app/PraxisDesktop/dist/pack/` for macOS (DMG), Windows (NSIS), and Linux
-  (AppImage/DEB).
-- CI packaging: when a GitHub Release is published (including nightly channel), the
-  `Package Artifacts` workflow builds on macOS, Windows, and Linux and uploads assets to the release
-  using the repo token.
-- Code signing/notarization: not configured by default. Provide signing credentials as environment
-  secrets if needed later. Builds remain unsigned for local/CI unless configured.
+- Install deps: `corepack enable && pnpm install`
+- Dev (Praxis Canvas + Tauri host): see `docs/getting-started.md` for the recommended terminal layout.
+- Lint/typecheck/test (TS): `pnpm run node:lint && pnpm run node:typecheck && pnpm run node:test`
+- Rust checks: `pnpm run host:lint && pnpm run host:check`
 
-Commit conventions and releases
+See `docs/getting-started.md` and `docs/commands.md` for the full list of pnpm commands used across
+JS/TS and the Rust workspace.
 
-- Use Conventional Commits (e.g., `feat(app): add AS-OF slider`).
-- Lint commit messages locally: `pnpm run commitlint`.
-- CI enforces PR title style and runs semantic-release on `main` to generate changelog and GitHub
-  releases.
-- Version injection: during release, CI writes `app/PraxisDesktop/src/version.ts` with the computed
-  version so binaries embed an immutable version. Local dev uses `0.0.0-dev`.
-- Nightly builds: push a `nightly` branch. CI publishes prereleases like `x.y.z-nightly.YYYYMMDD`,
-  channel `nightly`.
+## Key docs
 
-Security posture
+- Suite design: `docs/DESIGN.md`
+- Architecture and layering: `Architecture-Boundary.md`
+- Coding standards: `docs/CODING_STANDARDS.md`
+- Testing strategy: `docs/testing-strategy.md`
+- Agent guidance: `AGENTS.md`
+- Roadmap: `docs/ROADMAP.md`
 
-- No renderer HTTP in dev: we use Vite build in watch mode (no dev server) and load files from disk.
-- Tauri: strict capabilities; no raw HTTP from renderer; CSP enforced by Tauri. Renderer sandboxed
-  with `contextIsolation: true` and no Node.js integration.
-
-License
-
-- MIT — see `LICENSE`.
-
-The intelligent companion that turns **design intent into action over time**.
-
-Aideon Praxis is a **graph-native, local-first Enterprise Architecture (EA) platform** with a
-**time-first meta-model**. It builds a **digital twin of the enterprise**, supports **bitemporal
-state** (valid & record time), **scenario branches**, **Plan Events** for future projections, and a
-Rust engine for **heavy analytics and ML**. We are migrating the desktop UI to a **React + Tauri
-canvas runtime** (React Flow + shadcn/ui). The existing SvelteKit bundle remains a prototype until
-the React runtime fully lands.
-
-- **Graph-native:** Rich many-to-many relationships across Strategy → Capability → Service/Process →
-  App/API → Tech/Cloud.
-- **Time-first:** Snapshots, scenarios, **`state_at()`** time slicing, plateaus/gaps, and
-  date-driven colour narratives.
-- **Rust engine:** In-process adapters for topology, impact, centrality, TCO, and large payloads
-  (Arrow-ready).
-- **Local-first, cloud-ready:** Private, offline desktop app that can switch to a remote
-  graph/worker by config.
-- **Open formats:** JSON/CSV/GraphML/Arrow; diagram exports SVG/PNG/PDF.
-
-> See: ROADMAP.md • Architecture-Boundary.md
-
-## Architecture at a glance
-
-- **Praxis (core):** meta-model, adapters, snapshots/scenarios, `state_at()` / `diff()`, local APIs.
-- **Chrona (time UI):** AS-OF slider, scenario picker, confidence filters, story presets,
-  palettes/legends.
-- **Metis (analytics):** shortest path, centrality, clustering, topology deltas, trajectory
-  analytics.
-- **Continuum (automation):** scheduler, connectors, governance cadence, notifications/rules.
-
-C4 views are generated as diagrams-as-code (Structurizr DSL, Mermaid/PlantUML snippets) and
-published under `docs/c4/`.
-
-## Repository layout (monorepo)
-
-```
-.
-├─ app/
-│  ├─ PraxisCanvas/    # React canvas runtime (Phase 1 shell)
-│  ├─ PraxisDesktop/   # Legacy Svelte renderer bundle (kept until React cut-over)
-│  ├─ PraxisAdapters/  # TypeScript adapters bridging renderer ↔ host
-│  ├─ PraxisDesignSystem/ # Shared UI components, theming, and tokens
-│  └─ PraxisDtos/       # Centralised DTOs that shape IPC contracts
-├─ crates/
-│  ├─ tauri/            # Desktop host (Rust + Tauri)
-│  ├─ praxis/           # Graph model crate (placeholder)
-│  ├─ chrona/           # Time engine crate (placeholder)
-│  ├─ metis/            # Analytics crate (placeholder)
-│  └─ continuum/        # Orchestration/API crate (placeholder)
-├─ docs/                # C4 diagrams, meta-model, viewpoints, ADRs
-├─ scripts/             # Tooling, CI helpers, project automation
-├─ Architecture-Boundary.md
-├─ ROADMAP.md
-└─ ...
-```
-
-### Canvas (M1) — Layout and Save
-
-- The renderer performs auto‑layout with elkjs (default `org.eclipse.elk.rectpacking`) and respects saved positions by default.
-- Saving is explicit: the canvas writes geometry per `asOf` to the host via a typed command. Persistence is JSON under the OS app data folder for M1 and will be moved behind a StorageAdapter without changing UI APIs.
-- DTOs model nodes, edges, and groups (including nested groups) so we can add editing for edges and grouping while keeping the protocol stable.
-- See `docs/canvas-architecture.md` for details and roadmap (undo/blame via event streams, “now” semantics, and storage pluggability).
-
-## Quick start (local development)
-
-### Prerequisites
-
-- **Node.js** 24
-- **pnpm** ≥ 9 (via Corepack)
-- **Rust** (stable toolchain with `rustfmt` + `clippy` components)
-- **Graphviz** (for some diagram tools, optional)
-
-### 1) Clone and bootstrap
-
-```bash
-git clone <https://github.com/><owner>/<repo>.git
-cd <repo>
-```
-
-#### Install JS/TS deps
-
-```bash
-pnpm install
-```
-
-### 2) Run the app (dev)
-
-```bash
-pnpm run dev
-```
-
-### 3) Tests and lint
-
-#### TypeScript
-
-```bash
-pnpm run test
-pnpm run lint
-pnpm run typecheck
-```
-
-## Core capabilities
-
-- **Time-slicing APIs (desktop read-only; server read/write):**
-  - GET /graph?as_of=YYYY-MM-DD&scenario=&confidence=
-  - GET /diff?from=...&to=...
-  - GET /topology_delta?from=...&to=...
-  - GET /tco?scope=...&as_of=...&scenario=...
-- **Visual story modes:** Freshness Spotlight, Delivery Risk, EoL Radar, Scenario Trade-off,
-  Validity Time-Travel.
-- **Portfolio (TIME) & Roadmaps:** Disposition + review cycles; plateaus/gaps; AS-OF compare &
-  exports.
-- **Integration:** CSV/XLSX mapping wizard; connectors (e.g., CMDB) via Continuum scheduler.
-
-## Security & privacy
-
-- **Desktop:** renderer ↔ host via IPC only (no HTTP); optional encryption-at-rest; deny-by-default
-  PII on exports.
-- **Server mode:** mTLS, RBAC, audit, optimistic locking; same schemas over remote endpoints.
-
-See: Architecture-Boundary.md
-
-## Roadmap & milestones
-
-We work in M0–M6 stages with clear acceptance criteria. See: ROADMAP.md
-
-To create labels, milestones, and import issues:
-
-```bash
-Use the Issues CLI helpers via `pnpm run issues:*` (see AGENTS.md).
-```
-
-then in GitHub UI: Issues → Import → CSV (upload issues.csv)
-
-## Contributing
-
-We welcome issues and PRs. Start with CONTRIBUTING.md, then pick up a good-first issue or an item
-from the active milestone.
-
-## License
-
-TBD (project stewardship to confirm).
+For contributing guidelines, see `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`. The license for this
+repo is described in `LICENSE`.
