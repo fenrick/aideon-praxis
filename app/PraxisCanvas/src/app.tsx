@@ -61,7 +61,7 @@ const SIDEBAR_ITEMS: SidebarTreeNode[] = [
 ];
 
 export default function App() {
-  const path = window.location.pathname.replace(/\/$/, '') || '/';
+  const path = globalThis.location.pathname.replace(/\/$/, '') || '/';
   const isCanvasRoute = path === '/canvas';
 
   if (!isCanvasRoute) {
@@ -95,28 +95,35 @@ export default function App() {
         case 'overview':
         case 'timeline':
         case 'canvas':
-        case 'activity':
+        case 'activity': {
           setWorkspaceTab(id as WorkspaceTabValue);
           break;
+        }
         case 'visualisations':
         case 'applications':
-        case 'data':
+        case 'data': {
           setWorkspaceTab('canvas');
           break;
-        case 'metamodel':
+        }
+        case 'metamodel': {
           setFocusEntryId('meta-model');
           break;
-        case 'about':
+        }
+        case 'about': {
           void openHostWindow('open_about');
           break;
-        case 'settings':
+        }
+        case 'settings': {
           void openHostWindow('open_settings');
           break;
-        case 'status':
+        }
+        case 'status': {
           void openHostWindow('open_status');
           break;
-        default:
+        }
+        default: {
           break;
+        }
       }
     },
     [openHostWindow],
