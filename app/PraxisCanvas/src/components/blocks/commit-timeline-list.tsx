@@ -1,5 +1,5 @@
-import { Button } from '@aideon/design-system/components/ui/button';
 import type { TemporalCommitSummary } from '@/praxis-api';
+import { Button } from '@aideon/design-system/components/ui/button';
 
 interface CommitTimelineListProperties {
   readonly commits: TemporalCommitSummary[];
@@ -13,7 +13,9 @@ export function CommitTimelineList({
   onSelect,
 }: CommitTimelineListProperties) {
   if (commits.length === 0) {
-    return <p className="text-xs text-muted-foreground">No commits recorded yet for this branch.</p>;
+    return (
+      <p className="text-xs text-muted-foreground">No commits recorded yet for this branch.</p>
+    );
   }
 
   return (

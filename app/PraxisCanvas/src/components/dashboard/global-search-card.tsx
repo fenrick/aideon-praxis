@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { toErrorMessage } from '@/lib/errors';
 import { fetchMetaModel } from '@/lib/meta-model';
+import { searchStore } from '@/lib/search';
 import { getCatalogueView, type CatalogueRow, type TemporalCommitSummary } from '@/praxis-api';
 import { useTemporalPanel } from '@/time/use-temporal-panel';
-import { searchStore } from '@/lib/search';
 
 import {
   TemporalCommandMenu,

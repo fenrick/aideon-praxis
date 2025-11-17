@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
 
 import type { CanvasWidget, SelectionState } from '@/canvas/types';
-import { CanvasRuntimeCard } from '@/components/dashboard/canvas-runtime-card';
 import { ActivityTimelinePanel } from '@/components/blocks/activity-timeline-panel';
 import { CommitTimelineList } from '@/components/blocks/commit-timeline-list';
+import { CanvasRuntimeCard } from '@/components/dashboard/canvas-runtime-card';
+import type { TemporalPanelActions, TemporalPanelState } from '@/time/use-temporal-panel';
 import { useTemporalPanel } from '@/time/use-temporal-panel';
-import type {
-  TemporalPanelState,
-  TemporalPanelActions,
-} from '@/time/use-temporal-panel';
 
 import { Button } from '@aideon/design-system/components/ui/button';
 import {
@@ -137,7 +134,9 @@ function OverviewTab({ state }: { state: TemporalPanelState }) {
         <div className="grid grid-cols-2 gap-4">
           {overviewStats.map((stat) => (
             <div key={stat.label} className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{stat.label}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                {stat.label}
+              </p>
               <p className="text-2xl font-semibold">{stat.value ?? '—'}</p>
             </div>
           ))}
@@ -166,7 +165,9 @@ function OverviewTab({ state }: { state: TemporalPanelState }) {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">Diff metrics pending snapshot comparison.</p>
+            <p className="text-xs text-muted-foreground">
+              Diff metrics pending snapshot comparison.
+            </p>
           )}
         </div>
         {state.mergeConflicts && state.mergeConflicts.length > 0 ? (
@@ -188,7 +189,13 @@ function OverviewTab({ state }: { state: TemporalPanelState }) {
   );
 }
 
-function TimelineTab({ state, actions }: { state: TemporalPanelState; actions: TemporalPanelActions }) {
+function TimelineTab({
+  state,
+  actions,
+}: {
+  state: TemporalPanelState;
+  actions: TemporalPanelActions;
+}) {
   const hasCommits = state.commits.length > 0;
   return (
     <Card>

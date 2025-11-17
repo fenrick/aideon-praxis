@@ -20,11 +20,16 @@ export const tokenize = (value: string): readonly string[] => {
   return uniqueTokens;
 };
 
-export const scoreItem = (item: import('./types').SearchIndexItem, tokens: readonly string[]): number => {
+export const scoreItem = (
+  item: import('./types').SearchIndexItem,
+  tokens: readonly string[],
+): number => {
   if (tokens.length === 0) {
     return 0;
   }
-  const hasAllTokens = tokens.every((token) => item.tokenSet.has(token) || item.searchValue.includes(token));
+  const hasAllTokens = tokens.every(
+    (token) => item.tokenSet.has(token) || item.searchValue.includes(token),
+  );
   if (!hasAllTokens) {
     return 0;
   }

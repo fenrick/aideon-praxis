@@ -1,4 +1,3 @@
-import { normalize, tokenize } from './utils';
 import type {
   CatalogEntitySummary,
   CatalogSelectHandler,
@@ -8,6 +7,7 @@ import type {
   SidebarTreeNode,
   TemporalCommitSummary,
 } from './types';
+import { normalize, tokenize } from './utils';
 
 const basePriority: Record<SearchResultKind, number> = {
   sidebar: 1,

@@ -11,12 +11,13 @@ import { PhaseCheckpointsCard } from '@/components/dashboard/phase-checkpoints-c
 import { SelectionInspectorCard } from '@/components/dashboard/selection-inspector-card';
 import { TimeCursorCard } from '@/components/dashboard/time-cursor-card';
 import { WorkerHealthCard } from '@/components/dashboard/worker-health-card';
-import { WorkspaceTabs } from '@/components/workspace-tabs';
 import { SearchBar } from '@/components/shell/search-bar';
+import type { WorkspaceTabValue } from '@/components/workspace-tabs';
+import { WorkspaceTabs } from '@/components/workspace-tabs';
+import { toErrorMessage } from '@/lib/errors';
 import { searchStore } from '@/lib/search';
 import type { SidebarTreeNode } from '@/lib/search/types';
-import type { WorkspaceTabValue } from '@/components/workspace-tabs';
-import { toErrorMessage } from '@/lib/errors';
+import { isTauri } from '@/platform';
 import { listScenarios, type ScenarioSummary } from '@/praxis-api';
 import {
   BUILT_IN_TEMPLATES,
@@ -25,7 +26,6 @@ import {
   type CanvasTemplate,
 } from '@/templates';
 import { Button } from '@aideon/design-system/components/ui/button';
-import { isTauri } from '@/platform';
 import { invoke } from '@tauri-apps/api/core';
 
 interface ScenarioState {
@@ -266,7 +266,8 @@ function UnsupportedPage({ path }: { readonly path: string }) {
           {path === '/' ? 'Launch Praxis Desktop' : 'Route unavailable outside Tauri'}
         </h1>
         <p className="text-sm text-muted-foreground">
-          This experience is shipped inside the Aideon Praxis desktop app. Open it to reach the canvas at
+          This experience is shipped inside the Aideon Praxis desktop app. Open it to reach the
+          canvas at
           <span className="font-mono text-xs text-foreground"> /canvas </span>.
         </p>
         <p className="text-xs font-mono text-muted-foreground">Requested route: {path}</p>

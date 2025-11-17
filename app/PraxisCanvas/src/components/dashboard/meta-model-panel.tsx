@@ -1,9 +1,13 @@
-import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { fetchMetaModel, type MetaModelSchema } from '@/lib/meta-model';
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@aideon/design-system/components/ui/accordion';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@aideon/design-system/components/ui/accordion';
 import { Badge } from '@aideon/design-system/components/ui/badge';
 import { Button } from '@aideon/design-system/components/ui/button';
 import {
@@ -98,9 +102,9 @@ const renderSchemaState = ({
       <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-xs">
         <p className="font-semibold text-destructive">Failed to load meta-model</p>
         <p className="text-destructive/80">{error}</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={onRetry}>
-            Retry load
-          </Button>
+        <Button variant="outline" size="sm" className="mt-3" onClick={onRetry}>
+          Retry load
+        </Button>
       </div>
     );
   }
@@ -135,10 +139,10 @@ function SchemaDetails({
 
   return (
     <div className="space-y-6">
-        <div className="grid gap-4 rounded-2xl border border-border/60 bg-muted/10 p-4 text-center text-sm">
-          <StatBlock label="Types" value={schema.types.length} />
-          <StatBlock label="Relationships" value={schema.relationships.length} />
-        </div>
+      <div className="grid gap-4 rounded-2xl border border-border/60 bg-muted/10 p-4 text-center text-sm">
+        <StatBlock label="Types" value={schema.types.length} />
+        <StatBlock label="Relationships" value={schema.relationships.length} />
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Accordion defaultValue="types" type="single" collapsible>
           <AccordionItem value="types">

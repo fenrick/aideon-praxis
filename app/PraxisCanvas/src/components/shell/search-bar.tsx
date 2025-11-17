@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FocusEvent, KeyboardEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { Input } from '@aideon/design-system/components/ui/input';
-import type { SearchResult } from '@/lib/search/types';
 import { searchStore, useSearchStoreState } from '@/lib/search';
+import type { SearchResult } from '@/lib/search/types';
+import { Input } from '@aideon/design-system/components/ui/input';
 
 const KIND_LABEL: Record<SearchResult['kind'], string> = {
   sidebar: 'Navigation',
