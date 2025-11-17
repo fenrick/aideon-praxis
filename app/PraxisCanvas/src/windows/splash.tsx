@@ -1,6 +1,6 @@
+import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { invoke } from '@tauri-apps/api/core';
 
 import './splash-window.css';
 

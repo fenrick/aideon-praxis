@@ -66,7 +66,12 @@ body {
   text-shadow: 0 0 18px rgba(11, 18, 32, 0.35);
 }
 .splash .loading {
-  font: 600 12px/1.4 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    600 12px/1.4 'Geist Mono',
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
   color: #cfe6ff;
 }
 .splash .bar {

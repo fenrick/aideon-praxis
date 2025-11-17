@@ -7,9 +7,9 @@
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, rgba(14, 165, 233, 0.2), transparent 45%),
-    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.25), transparent 40%),
-    #050c1b;
+  background:
+    radial-gradient(circle at top, rgba(14, 165, 233, 0.2), transparent 45%),
+    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.25), transparent 40%), #050c1b;
   color: #e2e8f0;
 }
 

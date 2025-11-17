@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@aideon/design-system/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@aideon/design-system/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@aideon/design-system/components/ui/card';
 import { Input } from '@aideon/design-system/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@aideon/design-system/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@aideon/design-system/components/ui/select';
 
 import './styleguide-window.css';
 
@@ -72,8 +84,16 @@ function StyleguideWindow() {
               {themes.map((entry) => (
                 <div key={entry.mode} className="theme-card">
                   <span>{entry.label}</span>
-                  <div className="swatch" style={{ background: `var(${entry.mode === 'system' ? '--muted' : `--${entry.mode}`})` }} />
-                  <Button variant={mode === entry.mode ? 'secondary' : 'ghost'} onClick={() => setMode(entry.mode)}>
+                  <div
+                    className="swatch"
+                    style={{
+                      background: `var(${entry.mode === 'system' ? '--muted' : `--${entry.mode}`})`,
+                    }}
+                  />
+                  <Button
+                    variant={mode === entry.mode ? 'secondary' : 'ghost'}
+                    onClick={() => setMode(entry.mode)}
+                  >
                     {entry.label}
                   </Button>
                 </div>
@@ -84,7 +104,9 @@ function StyleguideWindow() {
                 <div key={swatch.label} className="theme-card">
                   <span>{swatch.label}</span>
                   <div className="swatch" style={{ background: `var(${swatch.variable})` }} />
-                  <p className="text-xs text-muted-foreground">{colorFromVariable(swatch.variable)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {colorFromVariable(swatch.variable)}
+                  </p>
                 </div>
               ))}
             </div>
