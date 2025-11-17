@@ -128,6 +128,9 @@ importers:
       semantic-release:
         specifier: ^25.0.2
         version: 25.0.2(typescript@5.9.3)
+      shadcn:
+        specifier: ^3.5.0
+        version: 3.5.0(@types/node@24.10.1)(typescript@5.9.3)
       svelte:
         specifier: ^5.43.7
         version: 5.45.5
