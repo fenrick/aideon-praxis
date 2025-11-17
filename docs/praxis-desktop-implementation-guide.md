@@ -1,14 +1,16 @@
 # Praxis Desktop – React/Tauri Canvas Implementation Guide (for Coding Agents)
 
-## 1. Purpose of this document
+## Purpose
 
-This document tells the coding agent **what we are building**, **how we’re building it**, and **in what order**.
+Explain **what we are building** in the Praxis desktop module, **how we’re building it**, and
+**in what order**. This is an implementation guide focused on phased delivery of the React/Tauri
+canvas; detailed architecture and boundaries live in `Architecture-Boundary.md` and
+`docs/CODING_STANDARDS.md`.
 
 We’re in an _evergreen build_ phase. There is no need to preserve legacy UI code or patterns. Existing SvelteKit artefacts can be treated as prototypes and replaced as we go, as long as we converge on a **stable, high-quality React + Tauri desktop app**.
 
 The agent must:
 
-- Use this document as the **source of truth** for architectural direction.
 - Work **phase by phase**, not attempt everything at once.
 - Keep the codebase clean, typed, and well-documented as it goes.
 

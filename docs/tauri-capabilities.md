@@ -1,15 +1,22 @@
 # Tauri Capabilities
 
-Parent: #95
+## Purpose
 
-This document outlines the capability model for the Tauri-based desktop host. Capabilities are
-enforced in dev and packaged builds via Tauri’s permissions manifest and per-window capability files.
+Describe the capability model for the Tauri-based desktop host: which permissions and capability
+files we rely on, how they are configured, and what defaults we enforce. This doc is a reference for
+contributors changing host capabilities or security posture; broader host architecture lives in
+`Architecture-Boundary.md`, and high-level security decisions belong in ADRs.
+
+Parent: #95
 
 ## Goals
 
 - Preserve strict boundaries: Renderer ↔ Host via preload IPC; Host ↔ Worker via UDS/RPC.
 - No network ports in desktop mode; deny-by-default for file system and process access.
 - Keep a single config path so desktop/server builds do not fork.
+
+See ADR `docs/adr/0011-tauri-capability-model.md` for the capability model and rationale; this doc
+focuses on how to apply that model in practice.
 
 ## Capability Files (to be added)
 

@@ -1,10 +1,14 @@
 # Meta-Model Artifacts
 
-This folder now documents how the meta-model is delivered as data rather than code. The
-**baseline schema** is a payload inside the dataset (`docs/data/meta/core-v1.json`) so it
-can be versioned, imported, and branched along with the rest of the graph. The renderer and host
-load that document through `MetaModelRegistry`, so runtime validation and UI forms always stay
-data-driven.
+## Purpose
+
+Explain how the Aideon Suite meta-model is delivered and managed as data rather than code: where the
+baseline schema lives, how it is seeded into the twin, and how overrides are applied. This is the
+primary reference for meta-model payloads and registry behaviour.
+
+The **baseline schema** is a payload inside the dataset (`docs/data/meta/core-v1.json`) so it can be
+versioned, imported, and branched along with the rest of the graph. The renderer and host load that
+document through `MetaModelRegistry`, so runtime validation and UI forms always stay data-driven.
 
 ## Structure
 

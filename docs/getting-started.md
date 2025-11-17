@@ -1,8 +1,12 @@
 # Getting Started (Developer Setup)
 
-This guide walks through a clean local setup for Aideon Praxis with
-offline‑friendly defaults. It assumes macOS or Linux. Windows works with
-WSL2 or native shells (PowerShell or Git Bash).
+## Purpose
+
+Walk through a clean local setup for **Aideon Suite**, focusing on the **Praxis desktop module**:
+prerequisites, environment configuration, installing dependencies, running the desktop app in
+development, and using the issue/project helpers. This is the main entry point for new contributors.
+
+This guide assumes macOS or Linux. Windows works with WSL2 or native shells (PowerShell or Git Bash).
 
 ## Prerequisites
 
@@ -77,6 +81,9 @@ pnpm tauri dev
 pnpm run node:test && pnpm run node:lint && pnpm run node:typecheck
 pnpm run host:lint && pnpm run host:check
 ```
+
+See also `docs/commands.md` for a complete list of pnpm scripts used across JS/TS and the Rust
+workspace.
 
 What to expect:
 

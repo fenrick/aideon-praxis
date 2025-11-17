@@ -1,10 +1,13 @@
 # Praxis Canvas – Design System Block Audit
 
-Date: 2025-11-16
+## Purpose
 
-Purpose: capture the layered blocks that now live in `app/AideonDesignSystem`, confirm Praxis
-Canvas consumes them without forking vanilla shadcn/reactflow components, and highlight the gaps
-left in the Svelte → React migration.
+Capture the layered blocks that now live in `app/AideonDesignSystem`, confirm Praxis Canvas consumes
+them without forking vanilla shadcn/reactflow components, and highlight gaps left in the Svelte →
+React migration. This is an implementation audit for the Praxis Canvas module, not a general design
+system specification.
+
+Date: 2025-11-16
 
 ## Compliance summary
 
@@ -48,11 +51,12 @@ left in the Svelte → React migration.
 | Canvas toolbar + widget toolbars                                                     | `Toolbar`, `ToolbarSection` (planned)                                   | ⏳ Will replace bespoke flex rows as soon as timeline/activity tabs move to React.                 |
 | React Flow nodes/edges                                                               | `PraxisNode`, `TimelineEdge`, `NodeSearchDialog` from design system     | ✅ Already consuming vanilla React Flow UI registry components via proxies.                        |
 
-## Follow-ups
+## Follow-ups (implementation-only)
 
-1. Convert the remaining dashboard cards (`commit-timeline`, `worker-health`, `selection-inspector`,
-   etc.) to the shared `Panel` stack so future apps get the same block palette.
-2. Switch the command palette + context modals to the `Modal` shell and move the React sidebar onto
-   the `Sidebar` block before removing the Svelte renderer.
-3. Track adoption progress directly in this doc (per component) and link each migration back to
-   `docs/praxis-desktop-svelte-migration.md`, especially for the helper windows/workspace tabs, so we know when those Svelte entries can finally flip to “Replaced in React.”
+- Convert the remaining dashboard cards (`commit-timeline`, `worker-health`, `selection-inspector`,
+  etc.) to the shared `Panel` stack so future apps get the same block palette.
+- Switch the command palette + context modals to the `Modal` shell and move the React sidebar onto
+  the `Sidebar` block before removing the Svelte renderer.
+
+This file is an implementation audit for the Praxis Canvas module; the canonical description of UX
+and design system principles lives in `docs/UX-DESIGN.md` and `docs/design-system.md`.

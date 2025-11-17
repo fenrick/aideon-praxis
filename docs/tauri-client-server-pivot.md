@@ -1,5 +1,15 @@
 # Tauri Client-Server Pivot Strategy
 
+## Purpose
+
+Explain how the Tauri-based desktop app pivots from local-only mode to client–server mode without
+changing the React/Svelte renderers: which seams to use, how adapters switch from local to remote,
+and what security posture we maintain. This doc is for contributors touching server mode or remote
+adapters; detailed command/trait definitions remain in `Architecture-Boundary.md` and ADRs.
+
+See ADR `docs/adr/0012-tauri-client-server-pivot.md` for the canonical decision; this doc provides
+additional background and concrete examples.
+
 ## Bottom line
 
 Moving to a **React (UX) + Rust (host/compute)** desktop app (replacing the older Svelte prototype)

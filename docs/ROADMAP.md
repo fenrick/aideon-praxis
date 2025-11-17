@@ -1,12 +1,20 @@
-# Aideon Praxis — Staged Implementation Roadmap
+# Aideon Suite — Staged Implementation Roadmap
 
-**Date:** 2025-10-14 **Goal:** Deliver a local-first, graph-native EA platform (Tauri + Python
-worker) that treats **time as a first-class dimension** (bitemporal + Plan Events), with a clean
-path to server mode.
+## Purpose
+
+Outline the forward-looking milestones and phases for Aideon Suite, showing how Praxis, Chrona,
+Metis, Continuum, and Mneme evolve over time. This document focuses on **what** we plan to deliver
+and in which stage, not on low-level architecture or design decisions.
+
+**Date:** 2025-10-14  
+**Goal:** Deliver **Aideon Suite**, a local-first, graph-native EA platform (Tauri + Python worker)
+that treats **time as a first-class dimension** (bitemporal + Plan Events), with a clean path to
+server mode. The current implementation focus is the **Praxis desktop module** (core digital twin),
+with Chrona, Metis, Continuum, and Mneme evolving alongside it.
 
 ## Guiding Principles
 
-- Clear separation: Tauri/Rust host & OS integration; Python worker for analytics/ML via RPC.
+- Clear separation: Tauri/Rust host & OS integration; engine crates (Praxis/Chrona/Metis/Continuum) behind typed traits.
 - Swap-friendly adapters: Graph, Storage, RPC are interfaces with reference impls.
 - Security by default: hardened IPC, PII redaction, least privilege.
 - Cloud-ready: Same components run local or remote by configuration.

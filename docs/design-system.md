@@ -1,6 +1,10 @@
 # Aideon Design System
 
-Location: `app/AideonDesignSystem`
+## Purpose
+
+Describe the structure and role of the Aideon Design System module (`app/AideonDesignSystem`): how
+shadcn/ui and React Flow primitives are wrapped into shared blocks, how tokens are managed, and how
+React-based renderers in Aideon Suite are expected to consume them.
 
 ## Purpose
 
@@ -10,11 +14,10 @@ layered design system.
 
 ## Structure
 
-```
-
 The Tailwind tokens now live inside `src/styles/globals.css`; we removed the separate
-`tailwind.config.ts`, so the CLI relies purely on that stylesheet instead of a
-dedicated config file.
+`tailwind.config.ts`, so the CLI relies purely on that stylesheet instead of a dedicated config file.
+
+```
 app/AideonDesignSystem/
 ├── package.json              # workspace: scripts + dependencies
 ├── components.json           # shadcn + React Flow registry config
@@ -25,12 +28,12 @@ app/AideonDesignSystem/
 │   ├── ui/*                  # wrapped/aggregated exports consumed by renderers
 │   ├── reactflow/*           # React Flow UI registry components + Praxis proxies
 │   ├── lib/cn.ts             # shared utility helpers
-│   ├── styles/globals.css     # base CSS variables (import from consumers plus Tailwind tokens)
+│   ├── styles/globals.css    # base CSS variables (import from consumers plus Tailwind tokens)
 │   └── index.ts              # aggregated exports
 ```
 
-The CLI now targets `src/components/ui` via `components.json`, so treat that folder as
-generated output and wrap its primitives inside `src/ui/*` or `src/blocks/*` before shipping.
+The CLI targets `src/components/ui` via `components.json`, so treat that folder as generated output
+and wrap its primitives inside `src/ui/*` or `src/blocks/*` before shipping.
 
 ## Refreshing components
 

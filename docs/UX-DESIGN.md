@@ -1,7 +1,12 @@
-# Aideon Praxis — UX Design Ground Rules (M0 → M1)
+# Aideon Suite — Praxis UX Design Ground Rules (M0 → M1)
 
-Date: 2025-10-28
+## Purpose
 
+Define UX goals, interaction patterns, and layout decisions for the Praxis desktop module within
+Aideon Suite. This document guides how the canvas, sidebar, toolbars, and supporting surfaces should
+behave and look, independent of specific implementation details in React or Svelte.
+
+Date: 2025-10-28  
 Status: Draft (implements M0 baseline; informs M1 scope)
 
 > **Renderer migration:** Historic UX notes reference Svelte components. Use them as conceptual
@@ -19,11 +24,18 @@ Status: Draft (implements M0 baseline; informs M1 scope)
 - Titlebar: default to system window chrome. Allow optional frameless+drag regions per OS in a later ADR.
 - Effects: optional per-OS vibrancy/mica when available; keep it opt-in.
 
-## 2) Component Strategies by OS
+## 2) Component strategies and layout
 
-- Windows-first: Fluent UI Web Components (FAST) for in-content widgets.
-- macOS-first: keep native menus + minimalist custom title area; prefer system fonts and restrained controls; Puppertino is acceptable for in-content CSS where needed.
-- Neutral: shadcn-svelte style using Tailwind utilities. Tailwind is not loaded globally; it is injected only when Neutral is selected in the Style Guide.
+- Layout: modern toolbar-driven shell with top toolbar, left sidebar, main content, and bottom status bar for connection/health and short messages.
+- Toolbars: grouped icon buttons similar to ribbons. Idle state uses regular outline; active/toggled uses filled variant and picks up the accent color from tokens.
+- Sidebar: tree/navigation for catalogues, meta-model, and views; React implementation should rely on design-system sidebar blocks.
+- Content: detail panels for selected items (objects, catalogues, meta-models, visualisations, etc.).
+
+Per-OS component strategies:
+
+- Windows-first: Fluent UI Web Components (FAST) for in-content widgets where native feel is important.
+- macOS-first: native menus + minimalist custom title area; system fonts and restrained controls; Puppertino-style CSS acceptable for in-content tweaks.
+- Neutral: shadcn/ui + Tailwind utilities via the shared design system.
 
 We will not lock into a single third-party kit; we compose small wrappers where needed.
 

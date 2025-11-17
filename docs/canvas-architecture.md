@@ -1,6 +1,13 @@
-Canvas (M1) — Layout, Save, and Time
+# Canvas (M1) — Layout, Save, and Time
 
-Overview
+## Purpose
+
+Describe the design of the Praxis canvas for M1: how layout, save/restore, and time integration
+work end-to-end across renderer and host. This is a focused reference for contributors touching
+canvas behaviour (ELK layout, geometry persistence, and time semantics), not a general architecture
+overview.
+
+## Overview
 
 - Purpose: Provide an interactive canvas for architectural diagrams with auto‑layout, manual positioning, and save/restore tied to the product’s time‑first model.
 - Scope (M1): Nodes rendered as shapes; pan/zoom, selection, marquee, drag with grid snap; ELK‑based auto‑layout; explicit save to host. Edges/groups/z‑order are modeled at the API layer and will be rendered next.
