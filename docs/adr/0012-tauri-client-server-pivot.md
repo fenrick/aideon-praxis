@@ -39,4 +39,3 @@ Treat Tauri Commands as the **internal RPC surface** and hide locality behind Ru
 - `docs/tauri-client-server-pivot.md` – supporting notes and concrete guidance
 - `Architecture-Boundary.md` – layering and adapter patterns
 - ADRs `0002`, `0003` – RPC and adapter decisions
-

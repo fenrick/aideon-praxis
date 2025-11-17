@@ -40,4 +40,3 @@ Adopt a **capability-driven model** for the Praxis Host with these rules:
 
 - `docs/tauri-capabilities.md` – implementation details and next steps
 - `Architecture-Boundary.md` – host/renderer/worker security boundaries
-
