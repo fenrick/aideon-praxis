@@ -11,5 +11,5 @@ aideon_praxis_engine = { path = "../aideon_praxis_engine" }
 log = "0.4"
 
 [dev-dependencies]
-serde_json = "1.0"
-tokio = { version = "1.48", features = ["macros", "rt"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt"] }
