@@ -1,16 +1,12 @@
 // ESLint v9 flat config (pure flat presets, no compat, TS type-checked)
 import js from '@eslint/js';
-import tsParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
-import prettier from 'eslint-plugin-prettier/recommended';
 import promise from 'eslint-plugin-promise';
 import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
 import sonarjs from 'eslint-plugin-sonarjs';
-import svelte from 'eslint-plugin-svelte';
 import unicorn from 'eslint-plugin-unicorn';
 import { defineConfig, globalIgnores } from 'eslint/config';
-import svelteParser from 'svelte-eslint-parser';
 import tseslint from 'typescript-eslint';
 
 // Constrain TS typed configs to only TS files in this repo
@@ -31,7 +27,6 @@ export default defineConfig(
       'app/AideonDesignSystem/**',
       '**/.pnpm/**',
       '**/out/**',
-      '**/.svelte-kit/**',
     ]),
   ],
   // Base JS rules roughly equivalent to the “core” checks Sonar also relies on
@@ -54,9 +49,6 @@ export default defineConfig(
   regexp.configs['flat/recommended'],
   unicorn.configs.recommended,
   sonarjs.configs.recommended,
-  // Svelte support
-  ...svelte.configs['flat/recommended'],
-  prettier,
 
   // Security hygiene rules (note: NOT equivalent to Sonar’s taint analysis)
   security.configs.recommended,
@@ -94,46 +86,6 @@ export default defineConfig(
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-    },
-  },
-
-  // Svelte files
-  {
-    files: ['**/*.svelte'],
-    languageOptions: {
-      parser: svelteParser,
-      parserOptions: {
-        parser: tsParser,
-      },
-      globals: {
-        window: 'readonly',
-        document: 'readonly',
-        navigator: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        localStorage: 'readonly',
-      },
-    },
-    rules: {
-      // Type names like HTMLDivElement shouldn't be flagged as undefined in TS blocks
-      'no-undef': 'off',
-      'svelte/no-target-blank': 'error',
-      'svelte/no-at-debug-tags': 'error',
-      'svelte/no-reactive-functions': 'error',
-      'svelte/no-reactive-literals': 'error',
-      // UI ergonomics: tone down noisy cross-env rules for .svelte
-      'unicorn/filename-case': 'off',
-      'unicorn/prevent-abbreviations': 'off',
-      'unicorn/prefer-query-selector': 'off',
-      'unicorn/prefer-top-level-await': 'off',
-      'sonarjs/cognitive-complexity': 'off',
-      'sonarjs/no-nested-conditional': 'off',
-      'sonarjs/pseudo-random': 'off',
-      'no-empty': 'off',
-      'promise/param-names': 'off',
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
 

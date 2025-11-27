@@ -21,6 +21,10 @@ const loadLines = [
 
 export default function SplashWindow() {
   const [currentLine, setCurrentLine] = useState(loadLines[0]);
+  const isDevelopment = (() => {
+    const environment = (import.meta as unknown as { env?: { DEV?: boolean } }).env;
+    return environment?.DEV === true;
+  })();
 
   useEffect(() => {
     let ix = 0;
@@ -46,7 +50,7 @@ export default function SplashWindow() {
         }
         await invoke('set_complete', { task: 'frontend' });
       } catch (error) {
-        if (import.meta.env.DEV) {
+        if (isDevelopment) {
           console.warn('splash: init failed', error);
         }
       }

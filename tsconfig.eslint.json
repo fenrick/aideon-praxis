@@ -8,7 +8,6 @@
     "**/.pnpm/**",
     "**/node_modules/**",
     "app/AideonDesignSystem/**",
-    "app/PraxisDesktop/.svelte-kit/**",
     "app/**/tsconfig.tsbuildinfo"
   ]
 }

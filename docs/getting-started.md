@@ -71,9 +71,6 @@ host logs appear in the DevTools console in addition to the terminal.
 # Terminal A — UI (React canvas shell)
 pnpm --filter @aideon/PraxisCanvas dev
 
-# Optional: legacy Svelte prototype
-# pnpm --filter @aideon/PraxisDesktop dev
-
 # Terminal B — Host (Tauri). From repo root:
 pnpm tauri dev
 
@@ -87,7 +84,7 @@ workspace.
 
 What to expect:
 
-- A Tauri window serving the React canvas shell at http://127.0.0.1:1420. The SvelteKit UI remains
+- A Tauri window serving the React canvas shell at http://127.0.0.1:1420.
   available for reference by running the optional command above.
 - Desktop mode opens no TCP ports by default; all work happens via typed IPC in-process.
 - DevTools Console will show renderer logs (console) and host logs (tauri-plugin-log).
