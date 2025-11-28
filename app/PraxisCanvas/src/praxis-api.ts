@@ -1,4 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
+import type {
+  TemporalDiffMetrics,
+  TemporalDiffParameters,
+  TemporalDiffSnapshot,
+  TemporalStateParameters,
+  TemporalStateSnapshot,
+  WorkerHealth,
+} from '@aideon/PraxisDtos';
 
 import { isTauri } from './platform';
 
@@ -17,13 +25,7 @@ const COMMANDS = {
   listScenarios: 'praxis_list_scenarios',
 } as const;
 
-export interface WorkerHealth {
-  ok: boolean;
-  timestamp_ms: number;
-  latency_ms?: number;
-  status?: string;
-  notes?: string;
-}
+export type { WorkerHealth };
 
 export interface TwinNode {
   id: string;
@@ -181,19 +183,8 @@ export interface ChartViewModel {
   kpi?: ChartKpiSummary;
 }
 
-export interface StateAtRequest {
-  asOf: string;
-  scenario?: string;
-  confidence?: number;
-}
-
-export interface StateAtSnapshot {
-  asOf: string;
-  scenario: string | null;
-  confidence: number | null;
-  nodes: number;
-  edges: number;
-}
+export type StateAtRequest = TemporalStateParameters;
+export type StateAtSnapshot = TemporalStateSnapshot;
 
 export interface TemporalBranchSummary {
   name: string;
@@ -211,26 +202,8 @@ export interface TemporalCommitSummary {
   changeCount: number;
 }
 
-export interface TemporalDiffRequest {
-  from: string;
-  to: string;
-  scope?: string;
-}
-
-export interface TemporalDiffMetrics {
-  nodeAdds: number;
-  nodeMods: number;
-  nodeDels: number;
-  edgeAdds: number;
-  edgeMods: number;
-  edgeDels: number;
-}
-
-export interface TemporalDiffSnapshot {
-  from: string;
-  to: string;
-  metrics: TemporalDiffMetrics;
-}
+export type TemporalDiffRequest = TemporalDiffParameters;
+export type { TemporalDiffMetrics, TemporalDiffSnapshot };
 
 export interface TemporalMergeConflict {
   reference: string;
@@ -322,7 +295,7 @@ export async function getWorkerHealth(): Promise<WorkerHealth> {
   if (!isTauri()) {
     return { ...MOCK_HEALTH, timestamp_ms: Date.now() };
   }
-  return invoke<WorkerHealth>(COMMANDS.workerHealth);
+  return invoke<WorkerHealth>(COMMANDS.workerHealth, {});
 }
 
 export async function getGraphView(definition: GraphViewDefinition): Promise<GraphViewModel> {
@@ -373,9 +346,16 @@ export async function listTemporalCommits(branch: string): Promise<TemporalCommi
 }
 
 export async function getStateAtSnapshot(request: StateAtRequest): Promise<StateAtSnapshot> {
-  return callOrMock(COMMANDS.stateAt, { payload: serializeStateAtArguments(request) }, () =>
-    mockStateAt(request),
+  const snapshot = await callOrMock<StateAtSnapshot>(
+    COMMANDS.stateAt,
+    { payload: serializeStateAtArguments(request) },
+    () => mockStateAt(request),
   );
+  return {
+    ...snapshot,
+    scenario: snapshot.scenario ?? undefined,
+    confidence: snapshot.confidence ?? undefined,
+  };
 }
 
 export async function getTemporalDiff(request: TemporalDiffRequest): Promise<TemporalDiffSnapshot> {
@@ -769,7 +749,7 @@ function mockStateAt(request: StateAtRequest): StateAtSnapshot {
   return {
     asOf,
     scenario,
-    confidence: request.confidence ?? null,
+    confidence: request.confidence ?? undefined,
     nodes,
     edges,
   };

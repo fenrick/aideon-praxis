@@ -18,13 +18,14 @@ export interface TemporalStateSnapshot {
   asOf: string;
   scenario?: ScenarioKey;
   confidence?: ConfidencePercent;
-  metrics: GraphSnapshotMetrics;
+  nodes: number;
+  edges: number;
 }
 
 export interface TemporalDiffParameters {
   from: string;
   to: string;
-  scope?: Record<string, unknown>;
+  scope?: string;
 }
 
 export interface TemporalDiffMetrics {

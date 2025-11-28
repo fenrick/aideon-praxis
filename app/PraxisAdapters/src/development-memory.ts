@@ -35,7 +35,8 @@ export class DevelopmentMemoryGraph implements GraphAdapter {
           asOf: parameters.asOf,
           scenario: parameters.scenario,
           confidence: parameters.confidence,
-          metrics: { ...metrics },
+          nodes: metrics.nodeCount,
+          edges: metrics.edgeCount,
         });
       }, 0),
     );

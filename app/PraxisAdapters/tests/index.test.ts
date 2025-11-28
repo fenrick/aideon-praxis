@@ -18,7 +18,8 @@ describe('adapter contracts', () => {
           asOf: parameters.asOf,
           scenario: parameters.scenario,
           confidence: parameters.confidence,
-          metrics: { nodeCount: 0, edgeCount: 0 },
+          nodes: 0,
+          edges: 0,
         };
         return snapshot;
       },

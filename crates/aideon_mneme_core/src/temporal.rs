@@ -327,3 +327,51 @@ impl TopologyDeltaResult {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn state_at_args_serializes_camel_case() {
+        let args = StateAtArgs::new("commit-main".into(), Some("main".into()), Some(0.9));
+        let json = serde_json::to_value(&args).expect("serialize");
+        assert_eq!(
+            json,
+            json!({"asOf":"commit-main","scenario":"main","confidence":0.9})
+        );
+    }
+
+    #[test]
+    fn diff_args_deserializes_expected_shape() {
+        let payload = json!({"from":"c1","to":"c2","scope":"capability"});
+        let args: DiffArgs = serde_json::from_value(payload).expect("deserialize");
+        match args.from {
+            CommitRef::Id(id) => assert_eq!(id, "c1"),
+            _ => panic!("unexpected commit ref"),
+        }
+        match args.to {
+            CommitRef::Id(id) => assert_eq!(id, "c2"),
+            _ => panic!("unexpected commit ref"),
+        }
+        assert_eq!(args.scope.as_deref(), Some("capability"));
+    }
+
+    #[test]
+    fn topology_delta_result_matches_json_contract() {
+        let delta = TopologyDeltaResult::new("a".into(), "b".into(), 1, 0, 2, 3);
+        let json = serde_json::to_value(&delta).expect("serialize");
+        assert_eq!(
+            json,
+            json!({
+                "from":"a",
+                "to":"b",
+                "nodeAdds":1,
+                "nodeDels":0,
+                "edgeAdds":2,
+                "edgeDels":3
+            })
+        );
+    }
+}

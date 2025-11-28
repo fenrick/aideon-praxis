@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
+const callLog: { cmd: string; args?: Record<string, unknown> }[] = [];
+
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: (cmd: string, args?: Record<string, unknown>) => {
+    callLog.push({ cmd, args });
     switch (cmd) {
       case 'commit_changes':
         return Promise.resolve({ id: 'c1' });
@@ -52,8 +55,8 @@ describe('IpcTemporalAdapter', () => {
     const asOf = 'c1';
     const s = await a.stateAt({ asOf });
     expect(s.asOf).toBe(asOf);
-    expect(s.metrics.nodeCount).toBe(0);
-    expect(s.metrics.edgeCount).toBe(0);
+    expect(s.nodes).toBe(0);
+    expect(s.edges).toBe(0);
     const diff = await a.diff({
       from: 'c0',
       to: asOf,
@@ -77,5 +80,14 @@ describe('IpcTemporalAdapter', () => {
     expect(branches[0]?.name).toBe('main');
     const merge = await a.mergeBranches({ source: 'feature/x', target: 'main' });
     expect(merge.result).toBe('merge-1');
+  });
+
+  it('passes scope through diff IPC payload', async () => {
+    callLog.length = 0;
+    const { IpcTemporalAdapter } = await import('../src/timegraph-ipc');
+    const a = new IpcTemporalAdapter();
+    await a.diff({ from: 'c0', to: 'c1', scope: 'capability' });
+    const diffCall = callLog.find((entry) => entry.cmd === 'temporal_diff');
+    expect(diffCall?.args).toEqual({ payload: { from: 'c0', to: 'c1', scope: 'capability' } });
   });
 });

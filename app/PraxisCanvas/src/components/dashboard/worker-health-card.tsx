@@ -1,9 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-
 import { HeartPulse, RefreshCw } from 'lucide-react';
-
-import { toErrorMessage } from '@/lib/errors';
-import { getWorkerHealth, type WorkerHealth } from '@/praxis-api';
+import { useWorkerHealth } from '@/health/use-worker-health';
 import { Alert, AlertDescription, AlertTitle } from '@aideon/design-system/components/ui/alert';
 import { Badge } from '@aideon/design-system/components/ui/badge';
 import { Button } from '@aideon/design-system/components/ui/button';
@@ -15,33 +11,8 @@ import {
   CardTitle,
 } from '@aideon/design-system/components/ui/card';
 
-interface HealthState {
-  snapshot?: WorkerHealth;
-  loading: boolean;
-  error?: string;
-}
-
-const INITIAL_STATE: HealthState = {
-  loading: true,
-};
-
 export function WorkerHealthCard() {
-  const [state, setState] = useState<HealthState>(INITIAL_STATE);
-
-  const refresh = useCallback(async () => {
-    setState((previous) => ({ ...previous, loading: true, error: undefined }));
-    try {
-      const snapshot = await getWorkerHealth();
-      setState({ loading: false, snapshot });
-    } catch (unknownError) {
-      const message = toErrorMessage(unknownError);
-      setState({ loading: false, error: message });
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const [state, actions] = useWorkerHealth();
 
   const timestamp = state.snapshot
     ? new Date(state.snapshot.timestamp_ms).toLocaleTimeString()
@@ -84,7 +55,7 @@ export function WorkerHealthCard() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => void refresh()}
+            onClick={() => void actions.refresh()}
             disabled={state.loading}
           >
             <RefreshCw className={state.loading ? 'mr-2 h-4 w-4 animate-spin' : 'mr-2 h-4 w-4'} />

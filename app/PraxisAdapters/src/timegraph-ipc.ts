@@ -1,7 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 
 import type {
-  GraphSnapshotMetrics,
   MetaModelDocument,
   MetaModelProvider,
   MutableGraphAdapter,
@@ -92,15 +91,12 @@ export class IpcTemporalAdapter implements MutableGraphAdapter, MetaModelProvide
         confidence: parameters.confidence ?? null,
       },
     });
-    const metrics: GraphSnapshotMetrics = {
-      nodeCount: result.nodes,
-      edgeCount: result.edges,
-    };
     return {
       asOf: result.asOf,
       scenario: result.scenario ?? undefined,
       confidence: result.confidence ?? undefined,
-      metrics,
+      nodes: result.nodes,
+      edges: result.edges,
     };
   }
   async diff(parameters: TemporalDiffParameters): Promise<TemporalDiffSnapshot> {

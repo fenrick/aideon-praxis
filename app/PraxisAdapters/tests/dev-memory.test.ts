@@ -9,8 +9,8 @@ describe('DevMemoryGraph adapter', () => {
     dev.put(jan, 10, 5);
     dev.put(feb, 12, 6);
     const s1 = await dev.stateAt({ asOf: jan });
-    expect(s1.metrics.nodeCount).toBe(10);
-    expect(s1.metrics.edgeCount).toBe(5);
+    expect(s1.nodes).toBe(10);
+    expect(s1.edges).toBe(5);
     expect(s1.scenario).toBeUndefined();
     const diff = await dev.diff({ from: jan, to: feb });
     expect(diff.metrics.nodeAdds).toBe(2);

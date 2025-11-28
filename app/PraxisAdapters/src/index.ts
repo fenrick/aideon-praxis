@@ -21,6 +21,7 @@ export type {
   TemporalTopologyDeltaMetrics,
   TemporalTopologyDeltaParameters,
   TemporalTopologyDeltaSnapshot,
+  WorkerHealth,
   WorkerJobMap,
   WorkerJobRequest,
   WorkerJobResult,

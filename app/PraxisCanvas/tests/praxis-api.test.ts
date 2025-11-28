@@ -13,6 +13,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 import {
   getStateAtSnapshot,
   getTemporalDiff,
+  getWorkerHealth,
   listTemporalBranches,
   listTemporalCommits,
   mergeTemporalBranches,
@@ -44,6 +45,13 @@ describe('praxisApi tauri bridge', () => {
       { name: 'chronaplay', head: null },
     ]);
     expect(invokeSpy).toHaveBeenCalledWith('list_branches', {});
+  });
+
+  it('returns worker health snapshot from host', async () => {
+    invokeSpy.mockResolvedValue({ ok: true, timestamp_ms: 1234, message: 'ok' });
+
+    await expect(getWorkerHealth()).resolves.toEqual({ ok: true, timestamp_ms: 1234, message: 'ok' });
+    expect(invokeSpy).toHaveBeenCalledWith('worker_health', {});
   });
 
   it('maps commit payloads to camelCase fields', async () => {
@@ -119,6 +127,23 @@ describe('praxisApi tauri bridge', () => {
     });
     expect(invokeSpy).toHaveBeenCalledWith('temporal_diff', {
       payload: { from: 'commit-main-001', to: 'commit-main-002', scope: 'capability' },
+    });
+  });
+
+  it('defaults missing diff metrics to zero', async () => {
+    invokeSpy.mockResolvedValue({ from: 'a', to: 'b' });
+
+    await expect(getTemporalDiff({ from: 'a', to: 'b' })).resolves.toEqual({
+      from: 'a',
+      to: 'b',
+      metrics: {
+        nodeAdds: 0,
+        nodeMods: 0,
+        nodeDels: 0,
+        edgeAdds: 0,
+        edgeMods: 0,
+        edgeDels: 0,
+      },
     });
   });
 

@@ -33,6 +33,7 @@ export type {
   TemporalTopologyDeltaMetrics,
   TemporalTopologyDeltaParameters,
   TemporalTopologyDeltaSnapshot,
+  WorkerHealth,
 } from '@aideon/PraxisDtos';
 
 import type {

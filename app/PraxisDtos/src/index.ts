@@ -28,3 +28,4 @@ export type {
 } from './meta';
 
 export type { PlanEvent, PlanEventEffect, PlanEventSource } from './plan-event';
+export type { WorkerHealth } from './health';

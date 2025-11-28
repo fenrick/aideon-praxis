@@ -119,7 +119,10 @@ describe('GraphWidget', () => {
       <GraphWidget widget={GRAPH_WIDGET} reloadVersion={0} onSelectionChange={onSelectionChange} />,
     );
 
-    await waitFor(() => expect(getGraphViewMock).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(getGraphViewMock).toHaveBeenCalled();
+      expect(latestSelectionHandler).toBeDefined();
+    });
     latestSelectionHandler?.({ nodes: [{ id: 'node-1' }], edges: [] });
     expect(onSelectionChange).toHaveBeenCalledWith({
       widgetId: 'graph-widget',

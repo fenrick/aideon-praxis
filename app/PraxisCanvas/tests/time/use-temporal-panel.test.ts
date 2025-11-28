@@ -252,4 +252,16 @@ describe('useTemporalPanel', () => {
       harness.unmount();
     }
   });
+
+  it('stores errors when branch loading fails', async () => {
+    listBranchesSpy.mockRejectedValueOnce(new Error('network down'));
+
+    const harness = renderTemporalPanelHook();
+    try {
+      await waitForState(() => harness.state.loading === false);
+      expect(harness.state.error).toContain('network down');
+    } finally {
+      harness.unmount();
+    }
+  });
 });

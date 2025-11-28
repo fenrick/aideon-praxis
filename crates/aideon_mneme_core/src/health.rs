@@ -50,4 +50,13 @@ mod tests {
         assert!(!back.ok);
         assert_eq!(back.timestamp_ms, 99);
     }
+
+    #[test]
+    fn deserializes_expected_contract_shape() {
+        let payload = r#"{\"ok\":true,\"timestamp_ms\":1234}"#;
+        let back: WorkerHealth = serde_json::from_str(payload).expect("deserialize");
+        assert!(back.ok);
+        assert_eq!(back.timestamp_ms, 1234);
+        assert!(back.message.is_none());
+    }
 }
