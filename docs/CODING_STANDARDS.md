@@ -11,6 +11,18 @@ monorepo. Praxis is the current primary desktop module, but these standards appl
 - Runtime posture: typed adapters over IPC; no renderer HTTP and no open TCP
   ports in desktop mode
 
+**Evergreen posture:** code on `main` + accepted ADRs override older notes. Prefer upgrading legacy
+areas to the current stack instead of preserving them.
+
+**Frameworks-first defaults:**
+
+- TS/React: React 18, shadcn/ui + Tailwind, React Flow/XYFlow for canvas graphs, React Hook Form for
+  forms, Testing Library + Vitest for tests. Use TanStack Table when you need tables; do not build
+  bespoke UI primitives if a standard component exists.
+- Rust: tokio for async, serde for serialization, thiserror for typed errors, tracing + `log` facade
+  for logging, dirs/directories for platform paths; prefer serde_json or bincode before adding new
+  formats. Avoid custom logging/async frameworks unless justified by an ADR.
+
 ## Architecture & Boundaries
 
 This document does **not** redefine architecture; it applies coding rules to it.

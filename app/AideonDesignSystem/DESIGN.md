@@ -14,6 +14,15 @@ tokens to keep renderers consistent.
 - `src/reactflow`: React Flow wrapper components for Praxis-specific nodes/edges.
 - `src/styles/globals.css`: CSS variables and Tailwind tokens shared by all consumers.
 
+### Wrapped components
+
+- We wrap shadcn primitives only when we need consistent variants or composition (e.g., `Panel` in
+  `blocks/panel`, React Flow node/edge wrappers). Most usage should import directly from
+  `@aideon/design-system/components/ui/*`.
+- New UI should **prefer existing primitives** (`Button`, `Badge`, `Select`, `ToggleGroup`,
+  `ScrollArea`, React Flow wrappers) over creating bespoke component trees. Add a wrapper only when
+  multiple features would share the exact composition.
+
 ## Data model and APIs
 
 - Exposes React components and CSS only; no business logic or IPC.
@@ -30,4 +39,3 @@ tokens to keep renderers consistent.
 
 - Generated components must not be edited directly; all customisation happens in wrappers/blocks.
 - Tokens remain centralised in `globals.css` to avoid drift between apps.
-

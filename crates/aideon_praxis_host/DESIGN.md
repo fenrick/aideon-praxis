@@ -30,3 +30,11 @@ renderers.
 - Renderer cannot bypass the typed command surface.
 - PII redaction and security posture follow `docs/tauri-capabilities.md` and
   `docs/tauri-client-server-pivot.md`.
+
+## Implementation notes
+
+- Errors: propagate engine `PraxisError` into lightweight host codes; keep mapping in one place
+  (`HostError`).
+- Logging: standard `log`/`tracing` macros; avoid custom loggers.
+- Async/concurrency: use `tokio` primitives; no bespoke threading.
+- Paths: obtain app data dir via `tauri::path`; avoid hardcoded filesystem paths.

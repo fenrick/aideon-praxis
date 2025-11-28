@@ -19,19 +19,19 @@ for code-level layering and boundaries.
 
 The table below lists the primary modules in this repo. See each module’s README for details.
 
-| Name                    | Path                                   | Responsibility                                                       | Type           |
-| ----------------------- | -------------------------------------- | -------------------------------------------------------------------- | -------------- |
-| Praxis Canvas           | `app/PraxisCanvas`                     | React/Tauri canvas shell for the Praxis desktop module.              | Node/React app |
-| Praxis Adapters         | `app/PraxisAdapters`                   | TypeScript Graph/Storage/Worker adapter interfaces and DTOs.         | Node/TS pkg    |
-| Praxis DTOs             | `app/PraxisDtos`                       | Shared TypeScript DTOs that shape IPC and worker contracts.          | Node/TS pkg    |
-| Aideon Design System    | `app/AideonDesignSystem`               | Shared shadcn/ui + React Flow design system for React-based apps.    | Node/React pkg |
-| Praxis Host             | `crates/aideon_praxis_host`            | Tauri desktop host exposing typed commands and capabilities.         | Rust crate     |
-| Praxis Engine           | `crates/aideon_praxis_engine`          | Core time-aware graph/commit engine for the digital twin.            | Rust crate     |
-| Praxis Facade           | `crates/aideon_praxis_facade`          | Facade and orchestration layer over Praxis engine and adapters.      | Rust crate     |
-| Chrona Visualisation    | `crates/aideon_chrona_visualization`   | Temporal visualisation and `state_at`/`diff` helpers.                | Rust crate     |
-| Metis Analytics         | `crates/aideon_metis_analytics`        | Analytics jobs (shortest path, centrality, impact, TCO).             | Rust crate     |
-| Continuum Orchestrator  | `crates/aideon_continuum_orchestrator` | Scheduler/connectors and snapshot/layout persistence orchestration.  | Rust crate     |
-| Mneme Core              | `crates/aideon_mneme_core`             | Persistence layer (SQLite/other) and shared commit/ref/snapshot DTOs | Rust crate     |
+| Name                   | Path                                   | Responsibility                                                       | Type           |
+| ---------------------- | -------------------------------------- | -------------------------------------------------------------------- | -------------- |
+| Praxis Canvas          | `app/PraxisCanvas`                     | React/Tauri canvas shell for the Praxis desktop module.              | Node/React app |
+| Praxis Adapters        | `app/PraxisAdapters`                   | TypeScript Graph/Storage/Worker adapter interfaces and DTOs.         | Node/TS pkg    |
+| Praxis DTOs            | `app/PraxisDtos`                       | Shared TypeScript DTOs that shape IPC and worker contracts.          | Node/TS pkg    |
+| Aideon Design System   | `app/AideonDesignSystem`               | Shared shadcn/ui + React Flow design system for React-based apps.    | Node/React pkg |
+| Praxis Host            | `crates/aideon_praxis_host`            | Tauri desktop host exposing typed commands and capabilities.         | Rust crate     |
+| Praxis Engine          | `crates/aideon_praxis_engine`          | Core time-aware graph/commit engine for the digital twin.            | Rust crate     |
+| Praxis Facade          | `crates/aideon_praxis_facade`          | Facade and orchestration layer over Praxis engine and adapters.      | Rust crate     |
+| Chrona Visualisation   | `crates/aideon_chrona_visualization`   | Temporal visualisation and `state_at`/`diff` helpers.                | Rust crate     |
+| Metis Analytics        | `crates/aideon_metis_analytics`        | Analytics jobs (shortest path, centrality, impact, TCO).             | Rust crate     |
+| Continuum Orchestrator | `crates/aideon_continuum_orchestrator` | Scheduler/connectors and snapshot/layout persistence orchestration.  | Rust crate     |
+| Mneme Core             | `crates/aideon_mneme_core`             | Persistence layer (SQLite/other) and shared commit/ref/snapshot DTOs | Rust crate     |
 
 For module-level internal design, see each `<module>/DESIGN.md` (where present).
 

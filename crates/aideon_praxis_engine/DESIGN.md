@@ -19,6 +19,15 @@ validation. It implements the commit model and `state_at`/`diff` semantics descr
 - Public APIs for `commit`, `state_at`, `diff`, branch operations, and meta-model hydration.
 - Works against persistence traits provided by Mneme Core.
 
+## Implementation notes
+
+- Errors: `PraxisError` via `thiserror`, exported as `PraxisResult`.
+- Async: `tokio` for tests/integration; engine functions are `async` but keep logic synchronous where
+  possible.
+- Logging: prefer `tracing`/`log` macros for structured debug; avoid bespoke logging helpers.
+- Persistence: go through Mneme `Store` traits (`MemoryStore`, `SqliteDb`); no direct DB drivers in
+  this crate.
+
 ## Interactions
 
 - Called by Praxis Host and Praxis Facade to service IPC commands.

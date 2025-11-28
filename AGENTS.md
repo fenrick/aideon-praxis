@@ -1,12 +1,14 @@
 # AGENTS.md
 
 Guide for AI coding assistants (e.g., Claude, GPT/Codex) contributing to the **Aideon Suite**
-repository. The current implementation focus is the **Praxis** desktop module.
+repository. The current implementation focus is the **Praxis** desktop module. This is an
+**evergreen build**: upgrade to current patterns over preserving legacy seams.
 
 ## Purpose
 
 Describe how AI agents should work in this repo: what to read first, how to keep changes small and
-safe, and which boundaries and workflows must always be respected.
+safe, and which boundaries and workflows must always be respected. Default to refactoring legacy
+code toward the modern stack instead of extending old seams.
 
 Before making changes, agents should read:
 
@@ -16,6 +18,8 @@ Before making changes, agents should read:
 - `docs/CODING_STANDARDS.md` (coding rules and boundaries)
 - `docs/testing-strategy.md` (testing expectations)
 - The `README.md` and `DESIGN.md` for the module they are working in
+
+Before coding, skim any recent ADRs touching your area.
 
 > **Scope:** These instructions apply exclusively to the `aideon-praxis` codebase. Do not spend time optimising for downstream consumers, SDKs, or hypothetical adopters outside this repository unless explicitly directed in a task.
 
@@ -36,7 +40,21 @@ Before making changes, agents should read:
 - **Adapters, not entanglement:** Graph, Storage, Worker are interface‑driven. Backends swap without
   UI change.
 - **Evergreen:** Treat older patterns as candidates for upgrade; current ADRs and suite docs take
-  precedence over legacy notes.
+  precedence over legacy notes. Favour refactoring toward the current stack instead of extending
+  legacy seams.
+
+## Frameworks-first defaults (use these before inventing your own)
+
+- **TS/React:** React 18, shadcn/ui + Tailwind, React Flow/XYFlow for canvases, React Hook Form for
+  forms, Testing Library + Vitest for tests, pnpm 9, Node 24. Reach for TanStack Table when you
+  need tables; avoid bespoke component primitives.
+- **Rust:** tokio for async, serde for serialization, thiserror for typed errors, tracing + `log`
+  facade for logging, dirs/directories for platform paths, anyhow for internal glue only,
+  serde_json/bincode as defaults before adding new formats. Prefer established crates over custom
+  helpers.
+
+Do not build your own UI kits, form/state helpers, logging wrappers, or async executors unless an
+ADR requires it.
 
 ## Repository boundaries (monorepo)
 
@@ -62,6 +80,25 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 - Do not add new features on top of obviously legacy seams (e.g., pre-refactor patterns, deprecated UIs). Only maintain or migrate these; do not extend them.
 - After changing behaviour or design, update the relevant module `README.md`, `DESIGN.md`, and applicable ADRs. Remove or archive outdated doc sections rather than adding conflicting ones.
 - Minimise new `.md` files: only create new module `README.md`/`DESIGN.md` docs or ADRs. Prefer updating existing docs.
+
+## Checklists
+
+**Before you start a task**
+
+- Skim the docs listed at the top plus recent ADRs for your area.
+- Identify the target module (`app/PraxisCanvas`, host crate, engine crate, etc.) and open its
+  `README.md`/`DESIGN.md`.
+- If you touch legacy code, plan to migrate toward the current stack where safe.
+- Locate existing adapters/APIs to reuse; do not add new IPC/HTTP surfaces without need.
+
+**Before you submit changes**
+
+- Run relevant tests/lints: `pnpm run node:test` (or scoped), `pnpm run node:typecheck`, `pnpm run
+host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicable.
+- Check coverage impact (goal ≥80% on new code) and note any gaps.
+- Update docs you touched (module `README`/`DESIGN`, ADR references) and this file if behaviours
+  changed.
+- Re-verify boundaries and security: no renderer HTTP, no new ports, renderer uses typed IPC only.
 
 ## Task menu for agents (allowed)
 
@@ -155,26 +192,31 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 ## Per-module guidance (where to look)
 
 - **Praxis Canvas (`app/PraxisCanvas`)**
+
   - Read: `app/PraxisCanvas/README.md`, `app/PraxisCanvas/DESIGN.md`, `docs/canvas-architecture.md`.
   - Constraints: no backend logic; IPC only via Praxis adapters; treat the twin as source of truth.
   - Tests: JS/TS tests via `pnpm run node:test` (canvas is covered by Vitest suite).
 
 - **Praxis Desktop (legacy, `app/PraxisDesktop`)**
+
   - Read: `app/PraxisDesktop/README.md`, `docs/praxis-desktop-svelte-migration.md`.
   - Constraints: maintenance-only; do not add new features; keep Svelte UI stable during migration.
   - Tests: Svelte tests via `pnpm --filter @aideon/PraxisDesktop test`.
 
 - **Aideon Design System (`app/AideonDesignSystem`)**
+
   - Read: `app/AideonDesignSystem/README.md`, `app/AideonDesignSystem/DESIGN.md`, `docs/design-system.md`.
   - Constraints: generated components are read-only; extend via wrappers/blocks; shared tokens in `globals.css`.
   - Tests: design-system tests via `pnpm --filter @aideon/design-system test` if present.
 
 - **Praxis Adapters / DTOs (`app/PraxisAdapters`, `app/PraxisDtos`)**
+
   - Read: their `README.md` files, `docs/adr/0003-adapter-boundaries.md`.
   - Constraints: define TS interfaces/DTOs only; no IPC or business logic.
   - Tests: part of `pnpm run node:test` and `pnpm run node:typecheck`.
 
 - **Praxis Host (`crates/aideon_praxis_host`)**
+
   - Read: `crates/aideon_praxis_host/README.md`, `crates/aideon_praxis_host/DESIGN.md`, `docs/tauri-capabilities.md`, `docs/tauri-client-server-pivot.md`.
   - Constraints: no renderer HTTP; no open ports in desktop mode; typed commands only.
   - Tests: Rust tests via `cargo test -p aideon_praxis_host`; workspace checks via `pnpm run host:lint && pnpm run host:check`.

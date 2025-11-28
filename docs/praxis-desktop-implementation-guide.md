@@ -9,6 +9,11 @@ canvas; detailed architecture and boundaries live in `Architecture-Boundary.md` 
 
 We’re in an _evergreen build_ phase. There is no need to preserve legacy UI code or patterns. Existing SvelteKit artefacts can be treated as prototypes and replaced as we go, as long as we converge on a **stable, high-quality React + Tauri desktop app**.
 
+Frameworks-first: default to React 18, shadcn/ui + Tailwind, React Flow/XYFlow, React Hook Form, and
+Testing Library + Vitest on the renderer; use tokio, serde, thiserror, tracing/log, and
+dirs/directories on the host/engine side. Reach for these before inventing new helpers. Current docs
+and accepted ADRs override older notes.
+
 The agent must:
 
 - Work **phase by phase**, not attempt everything at once.
@@ -23,13 +28,16 @@ The agent must:
 The desktop app will be built on:
 
 - **Tauri** as the desktop shell
+
   - Tauri lets us build native desktop apps using a web UI (React) and a Rust backend. ([Tauri][1])
 
 - **React + TypeScript** for the frontend
 - **React Flow (XYFlow)** as the primary **node-based canvas engine**
+
   - React Flow is a React library for interactive node-based editors and diagrams (flow graphs, mind maps, workflow builders, etc.). ([React Flow][2])
 
 - **shadcn/ui + Tailwind CSS** for the design system, layout and shell
+
   - shadcn/ui is “the foundation for your design system”: open-code React components built with Radix and Tailwind that you copy into your repo and customise. ([Shadcn UI][3])
 
 - **Optional later:** tldraw as a freeform whiteboard / infinite canvas layer, once licensing is resolved
@@ -53,6 +61,7 @@ The desktop app will be built on:
 **Widgets**
 
 - Concrete instances of surfaces placed on the canvas:
+
   - Graph widget, hierarchy widget, catalogue widget, matrix widget, chart widget, legend widget, etc.
 
 - Each widget:
@@ -89,13 +98,16 @@ The desktop app will be built on:
 The agent must:
 
 1. **Respect the architecture above.**
+
    - Do not introduce separate, standalone UIs for catalogue/matrix/graph. They must be treated as _widgets_ on the canvas or docked panels that still use the same data layer.
 
 2. **Work in phases, in order.**
+
    - Complete a phase and its Definition of Done (DoD) before starting the next.
    - Avoid cross-phase scope creep.
 
 3. **Prefer clarity over cleverness.**
+
    - Strong typing, small components, clear function names, consistent conventions.
    - Follow existing linting/formatting/test patterns from the repo.
 
@@ -114,11 +126,14 @@ The agent must:
 **Tasks:**
 
 1. Identify existing docs (README, `/docs`, ADRs, architecture diagrams) that describe:
+
    - SvelteKit as the main UI,
    - older UI metaphors (single “page” reports, static diagrams, etc.).
 
 2. Add or update:
+
    - A short **“Praxis Desktop Overview”** doc explaining:
+
      - React + Tauri + shadcn/ui + React Flow stack,
      - the twin / surfaces / widgets / canvas runtime concepts (section 2.2 above).
 
@@ -141,14 +156,17 @@ The agent must:
 **Tasks:**
 
 1. **Create or confirm the Tauri + React project setup.**
+
    - Use `create-tauri-app` or an equivalent template to scaffold a React+Tauri project (keep the repo’s existing package manager and Tauri version consistent). ([Tauri][1])
 
 2. **Set up Tailwind CSS and shadcn/ui.**
+
    - Integrate Tailwind with the React app.
    - Install shadcn/ui and generate a minimal set of base components (Button, Input, Card, Tabs, Sidebar/Nav primitives). ([Shadcn UI][3])
    - Run `pnpm dlx shadcn@latest mcp init --client codex` to setup the mcp server support for adding into codex mcp support
 
 3. **Build a basic layout using shadcn/ui.**
+
    - Application frame with:
      - Left sidebar (placeholder navigation + sections),
      - Main content area (empty placeholder),
@@ -160,6 +178,7 @@ The agent must:
 **Definition of Done (Phase 1):**
 
 - `tauri dev` (or equivalent) runs a desktop app with:
+
   - a working React UI,
   - shadcn-styled shell (no default CRA/boilerplate look),
   - a sidebar + main content layout.
@@ -180,11 +199,13 @@ The agent must:
 **Tasks:**
 
 1. Define TypeScript types for core twin concepts:
+
    - `Node`, `Edge`, `NodeType`, `EdgeType`,
    - `Commit`, `Scenario`, `TimeCursor`,
    - `ViewDefinition` (for graph/table/matrix/chart queries).
 
 2. Implement a `praxisApi` module (or similar) in TypeScript that wraps all Tauri calls, for example:
+
    - `getGraphView(viewDefinition): Promise<GraphViewModel>`
    - `getCatalogueView(viewDefinition): Promise<CatalogueViewModel>`
    - `getMatrixView(viewDefinition): Promise<MatrixViewModel>`
@@ -192,6 +213,7 @@ The agent must:
    - `listScenarios(): Promise<Scenario[]>`
 
 3. Implement matching Tauri commands on the Rust side that:
+
    - call into the existing Rust twin engine where possible,
    - or use placeholder implementations if the engine isn’t fully ready yet (but keep the contracts stable).
 
@@ -201,6 +223,7 @@ The agent must:
 
 - React app can call `praxisApi` methods from anywhere without knowing Tauri details.
 - Round-trip Rust ↔ React works for at least:
+
   - A simple graph view query,
   - A simple “mutating” operation (even if it’s a stub).
 
@@ -223,10 +246,12 @@ The agent must:
 1. Install and configure **React Flow (@xyflow/react)**. ([React Flow][2])
 
 2. Create a `CanvasRuntime` React component that:
+
    - Owns a list of widgets (for now, just one Graph widget).
    - Owns a global view state object (selection, filters, time cursor, scenario, active template).
 
 3. Define a `Widget` model in TypeScript:
+
    - `id: string`
    - `kind: "graph" | ...` (others added later)
    - `position: { x: number; y: number }`
@@ -235,8 +260,10 @@ The agent must:
    - `config: Record<string, unknown>` (for widget-specific settings).
 
 4. Implement a minimal **GraphWidget**:
+
    - Uses `<ReactFlow />` to render nodes and edges from a `GraphViewModel`. ([React Flow][5])
    - On mount:
+
      - calls `praxisApi.getGraphView(...)` to fetch initial data.
 
    - On interaction:
@@ -249,6 +276,7 @@ The agent must:
 
 - Desktop app opens to a canvas area with a working Graph widget.
 - Canvas supports at minimum:
+
   - pan, zoom, node selection (via React Flow defaults),
   - selection propagated to a simple sidebar “selection inspector” (name/id list is fine).
 
@@ -269,15 +297,19 @@ The agent must:
 **Tasks:**
 
 1. Extend the `Widget` model to include:
+
    - `"catalogue"` and `"matrix"` kinds.
 
 2. Implement **CatalogueWidget**:
+
    - Use shadcn/ui table patterns and the existing table engine in the repo (or TanStack Table if appropriate) to render rows/columns for nodes/edges. ([shadcn.io][6])
    - Data source: `praxisApi.getCatalogueView(viewDefinition)`.
    - Row selection updates global selection state and highlights corresponding nodes in GraphWidget.
 
 3. Implement **MatrixWidget**:
+
    - Render a grid where:
+
      - rows = a set of nodes/values,
      - columns = another set of nodes/values,
      - cells = presence/strength/attributes of relationships.
@@ -292,10 +324,12 @@ The agent must:
 **Definition of Done (Phase 4):**
 
 - User can:
+
   - see a catalogue widget **and** graph widget at the same time,
   - select a row in the catalogue and see matching nodes highlighted in the graph (and vice versa).
 
 - User can:
+
   - see a matrix widget **and** graph widget at the same time with a coherent mapping of selections.
 
 - All data for these widgets comes from the twin via `praxisApi` (no mock data in components).
@@ -315,7 +349,9 @@ The agent must:
 1. Choose a charting library suited to dashboards (e.g. Recharts) and integrate it into the React app.
 
 2. Implement **ChartWidget**:
+
    - Supports at least:
+
      - KPI card (single metric),
      - line/area chart,
      - bar chart.
@@ -323,13 +359,16 @@ The agent must:
    - Data source: `praxisApi.getChartView(viewDefinition)` (you can define this method as needed).
 
 3. Implement a simple **template** format:
+
    - A template is a JSON description of:
      - Widgets (types, positions, sizes),
      - Their viewDefinition bindings,
      - Any global settings (time window, filters).
 
 4. Seed two or more example templates:
+
    - “Executive overview” canvas:
+
      - a small number of metrics and high-level views.
 
    - “Explorer” canvas:
@@ -359,11 +398,13 @@ The agent must:
 **Tasks:**
 
 1. Add placeholder widget kinds / hooks:
+
    - `ChronaTimelineWidget` – time scrubber / commit history widget.
    - `MetisInsightWidget` – panel showing reasoning/insights about current selection.
    - `ContinuumControlWidget` – controls for running scenarios/automations.
 
 2. Wire:
+
    - Time cursor in global state to Chrona widget.
    - Selection and twin queries to Metis widget.
    - Scenario selection to Continuum widget.
@@ -382,11 +423,14 @@ The agent must:
 The agent must treat these as **non-negotiable** across all phases:
 
 1. **Type safety**
+
    - All new frontend code is in TypeScript with no `any` unless absolutely necessary (and commented).
    - Shared types for twin entities are defined once and reused.
 
 2. **Code organisation**
+
    - Clear separation between:
+
      - `praxisApi` (Tauri IPC and twin calls),
      - canvas runtime and widgets,
      - generic design system components (from shadcn/ui) vs Praxis-specific components.
@@ -401,6 +445,7 @@ The agent must treat these as **non-negotiable** across all phases:
   - Tailwind classes should be consistent with existing Tailwind config and design tokens.
 
 4. **Testing and linting**
+
    - All new code must pass existing lint and format checks.
    - Where test frameworks already exist, add at least basic unit or integration tests for:
      - `praxisApi` contracts,
@@ -408,6 +453,7 @@ The agent must treat these as **non-negotiable** across all phases:
      - critical widgets (GraphWidget, CatalogueWidget).
 
 5. **Documentation**
+
    - Each phase should add/update short docs as needed:
      - where the main React app entry is,
      - where `praxisApi` lives,
@@ -425,28 +471,35 @@ The agent must treat these as **non-negotiable** across all phases:
 When you (the coding agent) start work:
 
 1. **Read the updated docs first.**
+
    - This guide, plus the “Praxis Desktop Overview” and any architecture diagrams.
    - Align on terminology: twin, surfaces, widgets, canvas runtime, templates.
 
 2. **Identify the current phase.**
+
    - Do **not** start work on later phases until the current phase’s Definition of Done is fully met.
 
 3. **Plan before coding.**
+
    - For each phase, outline:
      - files/modules to add or modify,
      - interfaces to introduce,
      - risk points (e.g. IPC contracts, library integration).
 
 4. **Work in small, coherent steps.**
+
    - Prefer multiple small, self-contained changes over one large change that spans many concerns.
    - Keep each step buildable and testable.
 
 5. **Follow repository coding standards.**
+
    - Use the existing package manager, linting, formatting, and testing tools already defined.
    - Do not introduce new tooling unless there is a clear reason and it is documented.
 
 6. **Stay aligned with the canvas-first model.**
+
    - When in doubt:
+
      - ask: “Is this a projection over the twin?”
      - ask: “Can this be expressed as a widget on the canvas?”
 

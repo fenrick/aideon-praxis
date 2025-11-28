@@ -95,16 +95,19 @@ React UI (legacy Svelte prototype kept only for fallback)
 
 1. **Define ports (traits) once in Rust**
    `trait TemporalEngine { fn state_at(&self, q: StateAt) -> Stream<Chunk>; fn diff(&self, q: Diff) -> Stream<Chunk>; }`
+
    - \*_LocalEngine_- uses in-process Rust libs (petgraph/polars/etc.).
    - **RemoteEngine\*- uses an HTTP/WebSocket client and**Channels\*- to stream chunks to the UI. ([Tauri][1])
 
 1. \*_Keep DTOs identical_- to your current `/state_at`, `/diff`, `/tco` contracts. Use Arrow for large payloads.
 
 1. **Streaming strategy**
+
    - UI subscribes to a Channel per long-running command.
    - Server push → WebSocket → Rust → Channel → UI. Events only for small lifecycle signals. ([Tauri][5])
 
 1. **Security controls**
+
    - Capabilities: per-window, least privilege; add \*_remote API access_- only when in server mode.
    - \*_Command scopes_- for resource paths/host allow-lists; test the deny-paths.
    - Keep Isolation code validating payloads/schemas. ([Tauri][3])
