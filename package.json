@@ -47,6 +47,7 @@
     "host:lint": "cargo clippy --all-targets -- -D warnings",
     "host:check": "pnpm run host:lint",
     "host:fix": "cargo fix --allow-dirty",
+    "host:coverage": "cargo llvm-cov --workspace --all-features --lcov --output-path coverage/rust.lcov",
     "host:ci": "pnpm run host:clean && pnpm run host:fix && pnpm run host:lint && pnpm run host:format",
     "ci": "pnpm run node:ci && pnpm run host:ci",
     "release": "semantic-release",

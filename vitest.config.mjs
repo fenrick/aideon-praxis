@@ -132,6 +132,12 @@ export default defineConfig({
       provider: 'istanbul',
       reporter: ['text', 'lcov', 'html'],
       reportOnFailure: true,
+      thresholds: {
+        lines: 0.8,
+        functions: 0.8,
+        branches: 0.8,
+        statements: 0.8,
+      },
       include: [
         'app/PraxisCanvas/src/**/*.{ts,tsx}',
         'app/PraxisAdapters/src/**/*.{ts,tsx}',

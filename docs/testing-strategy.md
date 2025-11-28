@@ -1,5 +1,7 @@
 # Testing Strategy – Praxis Desktop (Rust + Tauri + React/TypeScript)
 
+> Doc update checklist: if you touch a public API, a cross-module boundary, or introduce a pattern that should become standard, update this file and the relevant module `DESIGN.md`/`README.md` in the same PR. If behaviour changes, update tests and the docs together.
+
 ## Purpose
 
 Describe how we test Aideon Suite, with a focus on the Praxis desktop module: which kinds of tests
@@ -9,6 +11,7 @@ specifically on testing practice.
 
 **Goal:** Maintain at least **80% automated test coverage** across the codebase (Rust + TypeScript),
 with tests that give real confidence in the behaviour of the digital twin engine and the desktop UI.
+Hard gate: pipelines must fail when coverage drops below the thresholds described below.
 
 This document explains:
 
@@ -72,9 +75,11 @@ We use four main kinds of tests:
 **Baseline commands (run from repo root):**
 
 - JS/TS unit + component tests: `pnpm run node:test`
-- JS/TS coverage: `pnpm run node:test:coverage`
+- JS/TS coverage (fails <80%): `pnpm run node:test:coverage`
 - JS/TS typecheck: `pnpm run node:typecheck`
 - Rust (engine + host + crates): `cargo test --all --all-targets`
+- Rust coverage (requires `cargo-llvm-cov` installed):
+  `pnpm run host:coverage` (writes `coverage/rust.lcov` and fails on errors)
 
 If the repo already has a preferred tool (e.g. Vitest vs Jest, Playwright vs something else), use
 that. Otherwise default to: Rust built-in `cargo test`; Vitest + React Testing Library for TS/React;
@@ -126,9 +131,9 @@ Rust unit tests must cover:
 
 ### 3.3. Coverage expectations for Rust
 
-- **Rust domain/engine code should target ≥ 90% line coverage.** This is where the most important
-  business logic lives; it must be very well covered.
-- Host/IPC crates should stay **≥ 80%** with explicit tests for error paths.
+- **Rust domain/engine code:** target ≥ 90% line coverage.
+- **Host/IPC crates:** ≥ 80% line coverage with explicit error-path assertions.
+- **Command:** `pnpm run host:coverage` (fails if tests fail; coverage reports are artefacts for CI).
 
 The overall project target is 80%, but we expect higher coverage in the engine than in UI code.
 
@@ -250,11 +255,11 @@ Note: do **not** depend on real Tauri in TS unit tests; mock it.
 
 ### 5.4. Coverage expectations for TS/React
 
+- **Hard threshold:** Vitest enforces ≥ 80% for lines/branches/functions/statements. `pnpm run node:test:coverage` fails if below.
 - **TS logic and state management:** aim for ≥ 90% line coverage.
-- **React components overall:** aim for ≥ 70% line coverage.
-  - Complex container components can be harder to cover; focus on important user paths and branching logic.
+- **React components overall:** aim for ≥ 70% line coverage (containers can be harder; prioritise branching logic and IPC interactions).
 
-Overall, the TS/React part of the codebase should average **≥ 80% line coverage**.
+Overall, the TS/React part of the codebase should average **≥ 80% line coverage**, with higher coverage for adapters/hooks than for purely presentational pieces.
 
 ---
 
