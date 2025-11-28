@@ -40,3 +40,11 @@ validation. It implements the commit model and `state_at`/`diff` semantics descr
 - Schema validation must pass before persistence.
 - Diff/merge semantics follow the rules documented in `Architecture-Boundary.md` (e.g. delete wins
   over update by default).
+
+## Patterns in use
+
+- Errors: `PraxisError` + `PraxisResult` (`thiserror`), mapped in host; no custom enums per module.
+- Logging: `tracing`/`log` macros with contextual ids; avoid bespoke log wrappers.
+- Async: `tokio` + async fns; keep heavy work sync where possible, but expose async APIs for host calls.
+- IO/persistence: go through Mneme store traits (`aideon_mneme_core::store`) and datastore helpers; never reach for raw SQL in this crate.
+- Golden examples: temporal ops (`state_at`, `diff`) and merge flow tests (`tests/merge_flow.rs`) show the expected layering (engine core → store → host facade).

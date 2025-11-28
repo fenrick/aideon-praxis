@@ -21,6 +21,11 @@ Before making changes, agents should read:
 
 Before coding, skim any recent ADRs touching your area.
 
+## Documentation index
+
+- **Canonical**: `README.md`, `docs/DESIGN.md`, `Architecture-Boundary.md`, `docs/CODING_STANDARDS.md`, `docs/testing-strategy.md`, `docs/design-system.md`, `docs/UX-DESIGN.md`, `docs/tauri-capabilities.md`, `docs/tauri-client-server-pivot.md`, module-level `README.md` + `DESIGN.md`, and accepted ADRs in `docs/adr/`.
+- **Context-only (legacy – do not extend)**: Svelte-era notes under `app/PraxisDesktop/` only; other legacy overview/implementation docs have been removed after migration.
+
 > **Scope:** These instructions apply exclusively to the `aideon-praxis` codebase. Do not spend time optimising for downstream consumers, SDKs, or hypothetical adopters outside this repository unless explicitly directed in a task.
 
 ## Who this is for
@@ -99,6 +104,28 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 - Update docs you touched (module `README`/`DESIGN`, ADR references) and this file if behaviours
   changed.
 - Re-verify boundaries and security: no renderer HTTP, no new ports, renderer uses typed IPC only.
+
+**Coverage guardrails (run before proposing changes)**
+
+- Always run: `pnpm run node:test:coverage` and `pnpm run host:coverage` (requires `cargo-llvm-cov`).
+- If coverage drops below thresholds, add tests or refactor until it passes (TS/React ≥80% lines/branches/functions/statements; Rust engine ≥90%, host ≥80%).
+
+**When touching a boundary (Rust ↔ host ↔ renderer)**
+
+- Update/validate DTO types on both sides (TS in `app/PraxisDtos`, Rust in `crates/aideon_mneme_core`).
+- Update `docs/contracts-and-schemas.md` when schemas or IPC error shapes change.
+- Ensure error structures are documented and consistent across layers before merging.
+
+**When adding or changing UI components (Praxis Canvas)**
+
+- Copy the golden pattern from the temporal panel/commit timeline stack: hooks expose `[state, actions]`, IPC via `praxis-api.ts`, shadcn cards for layout, alerts/skeletons for loading/error.
+- Use design-system components directly; avoid bespoke wrappers.
+- Ensure loading/error/empty states are covered by tests; mock IPC at the boundary.
+
+**When adding engine/host functionality**
+
+- Follow the patterns in `crates/aideon_praxis_engine/DESIGN.md` and `crates/aideon_praxis_host/DESIGN.md` (errors via `PraxisError`/`HostError`, logging with `log`/`tracing`, datastore via Mneme helpers).
+- Use `crates/aideon_praxis_host/src/temporal.rs` and `crates/aideon_praxis_engine/tests/merge_flow.rs` as golden paths for command wiring and engine flows.
 
 ## Task menu for agents (allowed)
 
@@ -193,13 +220,13 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 
 - **Praxis Canvas (`app/PraxisCanvas`)**
 
-  - Read: `app/PraxisCanvas/README.md`, `app/PraxisCanvas/DESIGN.md`, `docs/canvas-architecture.md`.
+  - Read: `app/PraxisCanvas/README.md`, `app/PraxisCanvas/DESIGN.md`.
   - Constraints: no backend logic; IPC only via Praxis adapters; treat the twin as source of truth.
   - Tests: JS/TS tests via `pnpm run node:test` (canvas is covered by Vitest suite).
 
 - **Praxis Desktop (legacy, `app/PraxisDesktop`)**
 
-  - Read: `app/PraxisDesktop/README.md`, `docs/praxis-desktop-svelte-migration.md`.
+  - Read: `app/PraxisDesktop/README.md`, `docs/praxis-desktop-svelte-migration.md` (legacy context only).
   - Constraints: maintenance-only; do not add new features; keep Svelte UI stable during migration.
   - Tests: Svelte tests via `pnpm --filter @aideon/PraxisDesktop test`.
 
@@ -233,7 +260,7 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 – Node 24, React 18. Strict TS config; ESLint + Prettier. The SvelteKit bundle is considered
 legacy/prototype; all new surface/canvas work targets the React + React Flow + shadcn/ui stack
 described in `docs/UX-DESIGN.md`, `docs/design-system.md`, and
-`docs/praxis-desktop-implementation-guide.md`.
+`app/PraxisCanvas/DESIGN.md`.
 
 - Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict
   plugin access. The host exposes typed commands only, and React components call the host through a

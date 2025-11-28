@@ -31,6 +31,14 @@ renderers.
 - PII redaction and security posture follow `docs/tauri-capabilities.md` and
   `docs/tauri-client-server-pivot.md`.
 
+## Patterns in use
+
+- Errors: map engine `PraxisError` to lightweight `HostError` codes (`temporal.rs` is the golden path; new commands should mirror it).
+- Logging/tracing: `log` macros with clear prefixes (`host:`) and timing where relevant; no custom loggers.
+- Async/runtime: `tokio` async, `tauri::State` for managed engines; avoid bespoke threading.
+- IO: use Tauri-provided paths (`app_data_dir`) and `mneme` datastore helpers; no ad-hoc file handles.
+- Examples: `temporal.rs` (state/diff/topology) and `health.rs` now serve as paired examples of the host command style.
+
 ## Implementation notes
 
 - Errors: propagate engine `PraxisError` into lightweight host codes; keep mapping in one place

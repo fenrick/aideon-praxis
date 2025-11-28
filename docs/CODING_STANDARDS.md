@@ -1,5 +1,7 @@
 # Coding Standards (v2)
 
+> Doc update checklist: when changing a public API, a cross-module boundary, or adding a pattern that should become standard, update this file plus the relevant module `DESIGN.md`/`README.md` in the same PR so guidance stays in sync.
+
 ## Purpose
 
 Define the shared coding rules, quality gates, and module boundary expectations for the **Aideon Suite**
