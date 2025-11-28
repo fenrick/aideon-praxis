@@ -82,23 +82,23 @@ export default defineConfig({
       },
       {
         find: '@aideon/design-system/components/ui',
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/components/ui'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/components/ui'),
       },
       {
         find: '@aideon/design-system/blocks',
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/blocks'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/blocks'),
       },
       {
         find: '@aideon/design-system/reactflow',
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/reactflow'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/reactflow'),
       },
       {
         find: '@aideon/design-system/lib/utils',
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/lib/utils.js'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/lib/utils.ts'),
       },
       {
         find: '@aideon/design-system/lib',
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/lib'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/lib'),
       },
       {
         find: '@aideon/design-system/styles',

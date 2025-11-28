@@ -17,6 +17,16 @@ declare module '@aideon/design-system/components/ui/badge' {
   export const Badge: ComponentType<any>;
 }
 
+declare module '@aideon/design-system/components/ui/alert' {
+  export const Alert: ComponentType<any>;
+  export const AlertDescription: ComponentType<any>;
+  export const AlertTitle: ComponentType<any>;
+}
+
+declare module '@aideon/design-system/components/ui/scroll-area' {
+  export const ScrollArea: ComponentType<any>;
+}
+
 declare module '@aideon/design-system/components/ui/input' {
   export const Input: ComponentType<any>;
 }
@@ -36,6 +46,15 @@ declare module '@aideon/design-system/components/ui/card' {
 }
 
 declare module '@aideon/design-system/ui/table' {
+  export const Table: ComponentType<any>;
+  export const TableBody: ComponentType<any>;
+  export const TableCell: ComponentType<any>;
+  export const TableHead: ComponentType<any>;
+  export const TableHeader: ComponentType<any>;
+  export const TableRow: ComponentType<any>;
+}
+
+declare module '@aideon/design-system/components/ui/table' {
   export const Table: ComponentType<any>;
   export const TableBody: ComponentType<any>;
   export const TableCell: ComponentType<any>;
@@ -64,6 +83,11 @@ declare module '@aideon/design-system/components/ui/select' {
 
 declare module '@aideon/design-system/components/ui/slider' {
   export const Slider: ComponentType<any>;
+}
+
+declare module '@aideon/design-system/components/ui/toggle-group' {
+  export const ToggleGroup: ComponentType<any>;
+  export const ToggleGroupItem: ComponentType<any>;
 }
 
 declare module '@aideon/design-system/components/ui/command' {

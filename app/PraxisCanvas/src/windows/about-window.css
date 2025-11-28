@@ -10,9 +10,8 @@
   --teal: #22e3d0;
   --vio: #7c5cff;
   --sun: #ff6a3d;
-  --ui:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Roboto, Ubuntu, Cantarell,
-    'Noto Sans', Arial, sans-serif;
+  --ui: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Roboto, Ubuntu,
+    Cantarell, 'Noto Sans', Arial, sans-serif;
 }
 body {
   margin: 0;

@@ -3,6 +3,8 @@ import { useMemo } from 'react';
 import type { TemporalCommitSummary, TemporalMergeConflict } from '@/praxis-api';
 import { useTemporalPanel } from '@/time/use-temporal-panel';
 
+import { Alert, AlertDescription, AlertTitle } from '@aideon/design-system/components/ui/alert';
+import { Badge } from '@aideon/design-system/components/ui/badge';
 import { Button } from '@aideon/design-system/components/ui/button';
 import {
   Card,
@@ -11,6 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@aideon/design-system/components/ui/card';
+import { ScrollArea } from '@aideon/design-system/components/ui/scroll-area';
+import { ToggleGroup, ToggleGroupItem } from '@aideon/design-system/components/ui/toggle-group';
 
 export function CommitTimelineCard() {
   const [state, actions] = useTemporalPanel();
@@ -87,28 +91,23 @@ function BranchList({
     return <p className="text-xs text-muted-foreground">No branches available.</p>;
   }
   return (
-    <div className="flex flex-wrap gap-2">
-      {branches.map((branch) => {
-        const isActive = branch === activeBranch;
-        return (
-          <button
-            key={branch}
-            type="button"
-            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-              isActive
-                ? 'border-primary/50 bg-primary/10 text-primary'
-                : 'border-border/70 text-muted-foreground hover:bg-muted/30'
-            }`}
-            disabled={loading}
-            onClick={() => {
-              onSelect(branch);
-            }}
-          >
-            {branch}
-          </button>
-        );
-      })}
-    </div>
+    <ToggleGroup
+      type="single"
+      value={activeBranch}
+      onValueChange={(value: string | undefined) => {
+        if (value) {
+          onSelect(value);
+        }
+      }}
+      className="flex flex-wrap gap-2"
+      disabled={loading}
+    >
+      {branches.map((branch) => (
+        <ToggleGroupItem key={branch} value={branch} className="capitalize">
+          {branch}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   );
 }
 
@@ -130,45 +129,50 @@ function CommitList({
     return <p className="text-xs text-muted-foreground">No commits on this branch.</p>;
   }
   return (
-    <div className="max-h-64 space-y-3 overflow-auto pr-2">
-      {commits.map((commit) => {
-        const isSelected = commit.id === selectedCommitId;
-        return (
-          <button
-            key={commit.id}
-            type="button"
-            className={`w-full rounded-2xl border px-3 py-2 text-left transition ${
-              isSelected
-                ? 'border-primary/60 bg-primary/10 text-primary'
-                : 'border-border/70 hover:bg-muted/20'
-            }`}
-            onClick={() => {
-              onSelectCommit(commit.id);
-            }}
-          >
-            <p className="text-sm font-medium">{commit.message}</p>
-            <p className="text-xs text-muted-foreground">
-              {commit.time ? new Date(commit.time).toLocaleString() : 'Unknown time'} ·{' '}
-              {commit.changeCount} changes
-            </p>
-          </button>
-        );
-      })}
-    </div>
+    <ScrollArea className="max-h-64 pr-2">
+      <div className="space-y-3">
+        {commits.map((commit) => {
+          const isSelected = commit.id === selectedCommitId;
+          return (
+            <Button
+              key={commit.id}
+              type="button"
+              variant={isSelected ? 'secondary' : 'ghost'}
+              className="w-full justify-start text-left"
+              onClick={() => {
+                onSelectCommit(commit.id);
+              }}
+            >
+              <div className="flex w-full flex-col items-start gap-1">
+                <span className="text-sm font-medium">{commit.message}</span>
+                <span className="text-xs text-muted-foreground">
+                  {commit.time ? new Date(commit.time).toLocaleString() : 'Unknown time'}
+                </span>
+                <Badge variant="outline" className="text-[11px]">
+                  {commit.changeCount} changes
+                </Badge>
+              </div>
+            </Button>
+          );
+        })}
+      </div>
+    </ScrollArea>
   );
 }
 
 function MergeConflicts({ conflicts }: { readonly conflicts: TemporalMergeConflict[] }) {
   return (
-    <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs">
-      <p className="font-semibold text-destructive">Merge conflicts</p>
-      <ul className="mt-2 space-y-1">
-        {conflicts.map((conflict, index) => (
-          <li key={`${conflict.reference}-${index.toString()}`}>
-            <span className="font-medium">{conflict.reference}</span>: {conflict.message}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Alert variant="destructive">
+      <AlertTitle>Merge conflicts</AlertTitle>
+      <AlertDescription>
+        <ul className="mt-1 space-y-1 text-xs">
+          {conflicts.map((conflict, index) => (
+            <li key={`${conflict.reference}-${index.toString()}`}>
+              <span className="font-medium">{conflict.reference}</span>: {conflict.message}
+            </li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
   );
 }
