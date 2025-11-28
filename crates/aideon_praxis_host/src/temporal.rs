@@ -154,7 +154,7 @@ pub struct HostError {
     message: String,
 }
 
-fn host_error(error: PraxisError) -> HostError {
+pub(crate) fn host_error(error: PraxisError) -> HostError {
     let code = match error.code() {
         PraxisErrorCode::UnknownBranch => "unknown_branch",
         PraxisErrorCode::UnknownCommit => "unknown_commit",
@@ -167,5 +167,26 @@ fn host_error(error: PraxisError) -> HostError {
     HostError {
         code,
         message: error.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn host_error_maps_codes() {
+        let err = PraxisError::ValidationFailed {
+            message: "bad".into(),
+        };
+        let mapped = host_error(err);
+        assert_eq!(mapped.code, "validation_failed");
+        assert!(mapped.message.contains("bad"));
+
+        let err = PraxisError::IntegrityViolation {
+            message: "dup".into(),
+        };
+        let mapped = host_error(err);
+        assert_eq!(mapped.code, "integrity_violation");
     }
 }
