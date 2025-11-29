@@ -1,12 +1,11 @@
-import { invoke } from '@tauri-apps/api/core';
 import type {
-  TemporalDiffMetrics,
   TemporalDiffParameters,
   TemporalDiffSnapshot,
   TemporalStateParameters,
   TemporalStateSnapshot,
   WorkerHealth,
 } from '@aideon/PraxisDtos';
+import { invoke } from '@tauri-apps/api/core';
 
 import { isTauri } from './platform';
 
@@ -24,8 +23,6 @@ const COMMANDS = {
   applyOperations: 'praxis_apply_operations',
   listScenarios: 'praxis_list_scenarios',
 } as const;
-
-export type { WorkerHealth };
 
 export interface TwinNode {
   id: string;
@@ -203,7 +200,6 @@ export interface TemporalCommitSummary {
 }
 
 export type TemporalDiffRequest = TemporalDiffParameters;
-export type { TemporalDiffMetrics, TemporalDiffSnapshot };
 
 export interface TemporalMergeConflict {
   reference: string;
@@ -831,3 +827,9 @@ function serializeStateAtArguments(request: StateAtRequest): Record<string, unkn
 function seededMetric(key: string): number {
   return randomScore(key) * 10;
 }
+
+export {
+  type TemporalDiffMetrics,
+  type TemporalDiffSnapshot,
+  type WorkerHealth,
+} from '@aideon/PraxisDtos';

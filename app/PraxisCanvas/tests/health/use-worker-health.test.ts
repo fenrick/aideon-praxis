@@ -5,8 +5,8 @@ vi.mock('@/praxis-api', () => ({
   getWorkerHealth: vi.fn(),
 }));
 
-import { getWorkerHealth } from '@/praxis-api';
 import { useWorkerHealth } from '@/health/use-worker-health';
+import { getWorkerHealth } from '@/praxis-api';
 
 describe('useWorkerHealth', () => {
   it('returns snapshot on success', async () => {
@@ -19,7 +19,7 @@ describe('useWorkerHealth', () => {
   });
 
   it('surfaces error messages on failure', async () => {
-    vi.mocked(getWorkerHealth).mockRejectedValue(new Error('down')); 
+    vi.mocked(getWorkerHealth).mockRejectedValue(new Error('down'));
 
     const { result } = renderHook(() => useWorkerHealth());
 
@@ -28,4 +28,3 @@ describe('useWorkerHealth', () => {
     expect(result.current[0].snapshot).toBeUndefined();
   });
 });
-

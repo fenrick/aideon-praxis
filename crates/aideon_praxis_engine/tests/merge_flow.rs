@@ -18,7 +18,9 @@ async fn merge_creates_commit_when_no_conflicts() {
     engine
         .create_branch(
             "feature/merge-demo".into(),
-            Some(aideon_mneme_core::temporal::CommitRef::Id(base_head.clone())),
+            Some(aideon_mneme_core::temporal::CommitRef::Id(
+                base_head.clone(),
+            )),
         )
         .await
         .expect("branch created");
@@ -31,12 +33,12 @@ async fn merge_creates_commit_when_no_conflicts() {
         message: "add feature node".into(),
         tags: vec!["merge-demo".into()],
         changes: aideon_mneme_core::temporal::ChangeSet {
-          node_creates: vec![aideon_mneme_core::temporal::NodeVersion {
-            id: "feature-node".into(),
-            r#type: Some("Capability".into()),
-            props: Some(json!({"name":"Feature"})),
-          }],
-          ..Default::default()
+            node_creates: vec![aideon_mneme_core::temporal::NodeVersion {
+                id: "feature-node".into(),
+                r#type: Some("Capability".into()),
+                props: Some(json!({"name":"Feature"})),
+            }],
+            ..Default::default()
         },
     };
 
@@ -54,14 +56,21 @@ async fn merge_creates_commit_when_no_conflicts() {
 
     let merged_id = response.result.expect("merge commit id");
     let merged = engine
-        .state_at(StateAtArgs::new(merged_id.clone(), Some("main".into()), None))
+        .state_at(StateAtArgs::new(
+            merged_id.clone(),
+            Some("main".into()),
+            None,
+        ))
         .await
         .expect("merged state");
 
     assert!(merged.nodes > 0, "merged state should contain nodes");
     assert_eq!(merged.scenario.as_deref(), Some("main"));
     assert_ne!(merged.as_of, base_head);
-    assert!(merged.as_of != feature_commit, "merge commit should differ from feature head");
+    assert!(
+        merged.as_of != feature_commit,
+        "merge commit should differ from feature head"
+    );
 }
 
 #[tokio::test]
@@ -100,14 +109,18 @@ async fn merge_returns_conflict_when_branches_diverge_on_same_node() {
     engine
         .create_branch(
             "feature/alpha".into(),
-            Some(aideon_mneme_core::temporal::CommitRef::Id(seeded_commit.clone())),
+            Some(aideon_mneme_core::temporal::CommitRef::Id(
+                seeded_commit.clone(),
+            )),
         )
         .await
         .expect("alpha branch");
     engine
         .create_branch(
             "feature/beta".into(),
-            Some(aideon_mneme_core::temporal::CommitRef::Id(seeded_commit.clone())),
+            Some(aideon_mneme_core::temporal::CommitRef::Id(
+                seeded_commit.clone(),
+            )),
         )
         .await
         .expect("beta branch");
@@ -162,7 +175,10 @@ async fn merge_returns_conflict_when_branches_diverge_on_same_node() {
         .await
         .expect("merge completes");
 
-    assert!(response.result.is_none(), "conflict should prevent auto-merge");
+    assert!(
+        response.result.is_none(),
+        "conflict should prevent auto-merge"
+    );
     let conflicts = response.conflicts.expect("expected conflicts");
     assert!(!conflicts.is_empty());
 }

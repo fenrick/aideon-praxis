@@ -5,8 +5,8 @@ vi.mock('@/praxis-api', () => ({
   getWorkerHealth: vi.fn(),
 }));
 
-import { getWorkerHealth } from '@/praxis-api';
 import { WorkerHealthCard } from '@/components/dashboard/worker-health-card';
+import { getWorkerHealth } from '@/praxis-api';
 
 describe('WorkerHealthCard', () => {
   it('renders operational status on healthy response', async () => {

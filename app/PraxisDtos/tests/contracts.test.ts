@@ -69,4 +69,3 @@ describe('contract DTOs', () => {
     expect(payload.message).toBe('degraded');
   });
 });
-

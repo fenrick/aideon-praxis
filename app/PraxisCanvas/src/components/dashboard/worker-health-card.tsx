@@ -1,4 +1,3 @@
-import { HeartPulse, RefreshCw } from 'lucide-react';
 import { useWorkerHealth } from '@/health/use-worker-health';
 import { Alert, AlertDescription, AlertTitle } from '@aideon/design-system/components/ui/alert';
 import { Badge } from '@aideon/design-system/components/ui/badge';
@@ -10,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@aideon/design-system/components/ui/card';
+import { HeartPulse, RefreshCw } from 'lucide-react';
 
 export function WorkerHealthCard() {
   const [state, actions] = useWorkerHealth();

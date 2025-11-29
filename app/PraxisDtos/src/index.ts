@@ -27,5 +27,5 @@ export type {
   MetaValidationRules,
 } from './meta';
 
-export type { PlanEvent, PlanEventEffect, PlanEventSource } from './plan-event';
 export type { WorkerHealth } from './health';
+export type { PlanEvent, PlanEventEffect, PlanEventSource } from './plan-event';

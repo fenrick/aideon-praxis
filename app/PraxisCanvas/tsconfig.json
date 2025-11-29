@@ -8,6 +8,8 @@
       "@/*": ["./src/*"],
       "@aideon/PraxisAdapters": ["../PraxisAdapters/src"],
       "@aideon/PraxisAdapters/*": ["../PraxisAdapters/src/*"],
+      "@aideon/PraxisDtos": ["../PraxisDtos/src"],
+      "@aideon/PraxisDtos/*": ["../PraxisDtos/src/*"],
       "@aideon/design-system": ["./src/types/shims-design-system.d.ts"],
       "@aideon/design-system/*": ["./src/types/shims-design-system.d.ts"]
     }

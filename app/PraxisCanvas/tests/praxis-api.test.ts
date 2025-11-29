@@ -50,7 +50,11 @@ describe('praxisApi tauri bridge', () => {
   it('returns worker health snapshot from host', async () => {
     invokeSpy.mockResolvedValue({ ok: true, timestamp_ms: 1234, message: 'ok' });
 
-    await expect(getWorkerHealth()).resolves.toEqual({ ok: true, timestamp_ms: 1234, message: 'ok' });
+    await expect(getWorkerHealth()).resolves.toEqual({
+      ok: true,
+      timestamp_ms: 1234,
+      message: 'ok',
+    });
     expect(invokeSpy).toHaveBeenCalledWith('worker_health', {});
   });
 

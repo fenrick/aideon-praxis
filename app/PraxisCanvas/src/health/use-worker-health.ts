@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { getWorkerHealth, type WorkerHealth } from '@/praxis-api';
 import { toErrorMessage } from '@/lib/errors';
+import { getWorkerHealth, type WorkerHealth } from '@/praxis-api';
 
 export interface WorkerHealthState {
   snapshot?: WorkerHealth;
@@ -36,4 +36,3 @@ export function useWorkerHealth(): [WorkerHealthState, WorkerHealthActions] {
 
   return [state, { refresh }];
 }
-
