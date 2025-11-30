@@ -219,31 +219,26 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 ## Per-module guidance (where to look)
 
 - **Praxis Canvas (`app/PraxisCanvas`)**
-
   - Read: `app/PraxisCanvas/README.md`, `app/PraxisCanvas/DESIGN.md`.
   - Constraints: no backend logic; IPC only via Praxis adapters; treat the twin as source of truth.
   - Tests: JS/TS tests via `pnpm run node:test` (canvas is covered by Vitest suite).
 
 - **Praxis Desktop (legacy, `app/PraxisDesktop`)**
-
   - Read: `app/PraxisDesktop/README.md`, `docs/praxis-desktop-svelte-migration.md` (legacy context only).
   - Constraints: maintenance-only; do not add new features; keep Svelte UI stable during migration.
   - Tests: Svelte tests via `pnpm --filter @aideon/PraxisDesktop test`.
 
 - **Aideon Design System (`app/AideonDesignSystem`)**
-
   - Read: `app/AideonDesignSystem/README.md`, `app/AideonDesignSystem/DESIGN.md`, `docs/design-system.md`.
   - Constraints: generated components are read-only; extend via wrappers/blocks; shared tokens in `globals.css`.
   - Tests: design-system tests via `pnpm --filter @aideon/design-system test` if present.
 
 - **Praxis Adapters / DTOs (`app/PraxisAdapters`, `app/PraxisDtos`)**
-
   - Read: their `README.md` files, `docs/adr/0003-adapter-boundaries.md`.
   - Constraints: define TS interfaces/DTOs only; no IPC or business logic.
   - Tests: part of `pnpm run node:test` and `pnpm run node:typecheck`.
 
 - **Praxis Host (`crates/aideon_praxis_host`)**
-
   - Read: `crates/aideon_praxis_host/README.md`, `crates/aideon_praxis_host/DESIGN.md`, `docs/tauri-capabilities.md`, `docs/tauri-client-server-pivot.md`.
   - Constraints: no renderer HTTP; no open ports in desktop mode; typed commands only.
   - Tests: Rust tests via `cargo test -p aideon_praxis_host`; workspace checks via `pnpm run host:lint && pnpm run host:check`.

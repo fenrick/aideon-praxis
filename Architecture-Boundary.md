@@ -9,7 +9,6 @@ and time-first constraints must hold across modules (Praxis, Chrona, Metis, Cont
 ## Layers
 
 - **Renderer**
-
   - React-based Praxis Canvas (with a legacy Svelte prototype kept only until cut-over) runs inside
     the Tauri shell.
   - Renders the canvas, dashboards, and inspectors; owns view state only (selection, filters, time).
@@ -17,19 +16,16 @@ and time-first constraints must hold across modules (Praxis, Chrona, Metis, Cont
     typed IPC bridge.
 
 - **Host (Tauri)**
-
   - Creates windows and binds typed commands that wrap engine traits.
   - Owns capabilities, CSP, window configuration, logging, and OS integration.
   - Enforces “no open TCP ports” in desktop mode; all work is in-process or over local IPC.
 
 - **Adapters (TypeScript)**
-
   - `GraphAdapter`, `StorageAdapter`, and `WorkerClient` define the renderer-facing contracts for
     graph access, snapshot persistence, and analytics/worker jobs.
   - Implementations remain backend-agnostic; renderer code depends on interfaces only.
 
 - **Engines (Rust crates)**
-
   - Praxis Engine, Chrona Visualisation, Metis Analytics, Continuum Orchestrator expose computation
     traits consumed by the host.
   - Desktop mode uses in-process adapters; future server mode swaps in remote adapters that honour
