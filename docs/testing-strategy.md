@@ -28,10 +28,12 @@ This document explains:
 Praxis Desktop has three main parts:
 
 1. **Rust Engine**
+
    - Owns the digital twin: nodes, edges, metamodel, commits, scenarios, time, etc.
    - Exposes functions the rest of the app calls.
 
 2. **Tauri Backend**
+
    - Wraps the Rust engine in Tauri commands (IPC).
    - Handles desktop-specific concerns (filesystem, configuration, etc.).
 
@@ -51,15 +53,18 @@ We test each layer separately, plus full end-to-end (E2E) flows.
 We use four main kinds of tests:
 
 1. **Rust unit tests**
+
    - Test pure functions and small modules in the engine.
    - Run with `cargo test`.
 
 2. **Rust integration tests (including Tauri commands)**
+
    - Test how multiple Rust modules work together.
    - Test Tauri commands (engine + IPC) without the GUI.
    - Run with `cargo test` in appropriate test crates/folders.
 
 3. **TypeScript/React unit & integration tests**
+
    - Test TS utilities, hooks, and React components.
    - Use a JS test runner (Vitest or Jest) + React Testing Library.
 
@@ -89,12 +94,14 @@ Playwright for E2E.
 Rust unit tests must cover:
 
 - **Core domain logic**
+
   - Node/edge creation and deletion.
   - Metamodel rules (valid types, allowed relationships).
   - Commit model and scenarios (branching, merging).
   - Time-based queries (what exists at time t).
 
 - **Validation and error handling**
+
   - Invalid inputs (bad IDs, illegal relationships).
   - Boundary conditions (empty graphs, maximum sizes, etc.).
 
@@ -139,6 +146,7 @@ The overall project target is 80%, but we expect higher coverage in the engine t
 Tauri backend tests must cover:
 
 - **Tauri commands**
+
   - Each public command (e.g. `get_graph_view`, `apply_operations`, `list_scenarios`, etc.) should have integration tests that:
     - construct a minimal Tauri context if needed,
     - call the command directly,
@@ -177,6 +185,7 @@ Tauri + Rust tests stop at the IPC boundary.
 Anything that doesn’t depend on the DOM should be treated like normal business logic and tested thoroughly:
 
 - View builders:
+
   - e.g. `buildGraphView`, `buildCatalogueView`, `buildMatrixView`.
 
 - Data transformers, selectors, and sorting/filtering functions.
@@ -202,8 +211,10 @@ Use hook testing helpers or small harness components to drive events and assert 
 For major components:
 
 - **GraphWidget**
+
   - Given a `GraphViewModel` prop, renders a set of nodes/edges.
   - Clicking a node:
+
     - fires a selection callback OR
     - updates global selection store.
 
@@ -211,11 +222,13 @@ For major components:
     - verify minimal expected behaviour (e.g. nodes appear, selection handler is called), without trying to exhaustively test React Flow library itself.
 
 - **CatalogueWidget**
+
   - Given a catalogue view, renders rows and columns.
   - Row selection updates selection store or invokes selection callback.
   - Bulk selection, basic filtering (if implemented).
 
 - **MatrixWidget**
+
   - Row/column rendering, cell interaction.
   - Ensure selection/edit events are fired correctly.
 
@@ -275,21 +288,26 @@ Assuming **Playwright** as default:
 At minimum, E2E should cover:
 
 1. **App startup**
+
    - Tauri app launches.
    - Main window renders sidebar + canvas.
 
 2. **Loading a default canvas/template**
+
    - On first open, a default template loads.
    - Graph widget appears with some nodes/edges.
    - No errors in the console/log.
 
 3. **Selection synchronisation**
+
    - Click a node on the canvas → selection is reflected in the sidebar/canvas.
    - Click a row in a catalogue widget → corresponding node is highlighted in the graph.
 
 4. **Simple edit flow**
+
    - Create/import a small set of elements.
    - Check that they appear in:
+
      - catalogue widget,
      - graph widget.
 
@@ -317,6 +335,7 @@ We target **≥ 80% overall line coverage** across Rust and TypeScript.
 In practice:
 
 - **Rust engine + Tauri**
+
   - Use coverage tooling compatible with the Rust toolchain (e.g. `cargo` coverage tools).
   - Target ≥ 85–90% for core engine modules, ≥ 80% overall.
 
@@ -341,10 +360,12 @@ We can relax thresholds slightly for auto-generated code or trivial glue, but **
 ### 8.2. Implementation
 
 - In Rust:
+
   - Create helper functions to build typical graphs and scenarios for tests.
   - Keep them in a shared `test_utils` or similar module.
 
 - In TypeScript:
+
   - Create fixture builders for:
     - view models (graph, catalogue, matrix, chart),
     - global state initialisations.
@@ -360,14 +381,17 @@ We can relax thresholds slightly for auto-generated code or trivial glue, but **
 Whenever new code is written or changed:
 
 1. **Rust engine / Tauri**
+
    - Any new function with non-trivial logic **must** have unit tests.
    - Any new Tauri command **must** have at least one integration test.
 
 2. **TypeScript logic**
+
    - Any new function that transforms data or holds business rules **must** have unit tests.
    - Any change that modifies branching logic or error handling **must** adjust existing tests or add new ones.
 
 3. **React components**
+
    - New components:
      - If they contain important interaction or state logic, write tests.
      - Pure presentational components may be lightly tested (or skipped), but keep them simple.
@@ -404,6 +428,7 @@ A pull request (or automated change set) is **not done** unless:
 
 - All relevant tests (Rust, TS, E2E where applicable) **pass**.
 - Coverage report still meets:
+
   - overall ≥ 80%,
   - Rust domain modules and TS logic modules ≥ 85–90% where practical.
 
@@ -421,13 +446,16 @@ A pull request (or automated change set) is **not done** unless:
 When you, as an automated coding agent, implement or change code:
 
 1. Identify which layer you are working in:
+
    - Rust engine, Tauri backend, TS logic, React components, or E2E flow.
 
 2. For each change:
+
    - Plan corresponding tests **before or alongside** implementation.
    - Keep tests small, focussed, and readable.
 
 3. Always ensure:
+
    - `cargo test` passes for Rust.
    - `npm/yarn/pnpm test` passes for TS/React.
    - Coverage thresholds are not breached.
