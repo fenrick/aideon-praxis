@@ -12,8 +12,9 @@ function windowAliasPlugin() {
   const rewrites = new Map<string, string>();
 
   for (const route of windowRoutes) {
-    rewrites.set(`/${route}/index.html`, `/${route}/`);
-    rewrites.set(`/${route}.html`, `/${route}/`);
+    rewrites.set(`/${route}`, `/${route}.html`);
+    rewrites.set(`/${route}/`, `/${route}.html`);
+    rewrites.set(`/${route}.html`, `/${route}.html`);
   }
 
   for (const route of spaRoutes) {
@@ -68,13 +69,22 @@ export default defineConfig({
     alias: [
       {
         find: /^@\/components\/ui\/(.*)$/,
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/components/ui/$1.js'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/components/ui/$1'),
+      },
+      {
+        find: '@aideon/design-system/reactflow',
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/components'),
+      },
+      {
+        find: '@/lib/utils',
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/lib/utils.ts'),
       },
       { find: '@', replacement: resolve(__dirname, 'src') },
       { find: '@aideon/PraxisAdapters', replacement: resolve(__dirname, '../PraxisAdapters/src') },
+      { find: '@aideon/PraxisDtos', replacement: resolve(__dirname, '../PraxisDtos/src') },
       {
         find: '@aideon/design-system/ui',
-        replacement: resolve(__dirname, '../AideonDesignSystem/dist/components/ui'),
+        replacement: resolve(__dirname, '../AideonDesignSystem/src/components/ui'),
       },
       {
         find: '@aideon/design-system/components/ui/tabs',
@@ -87,10 +97,6 @@ export default defineConfig({
       {
         find: '@aideon/design-system/blocks',
         replacement: resolve(__dirname, '../AideonDesignSystem/src/blocks'),
-      },
-      {
-        find: '@aideon/design-system/reactflow',
-        replacement: resolve(__dirname, '../AideonDesignSystem/src/reactflow'),
       },
       {
         find: '@aideon/design-system/lib/utils',
