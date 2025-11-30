@@ -53,7 +53,8 @@ mod tests {
 
     #[test]
     fn deserializes_expected_contract_shape() {
-        let payload = r#"{\"ok\":true,\"timestamp_ms\":1234}"#;
+        // Contract is camelCase; message omitted when healthy
+        let payload = r#"{"ok":true,"timestampMs":1234}"#;
         let back: WorkerHealth = serde_json::from_str(payload).expect("deserialize");
         assert!(back.ok);
         assert_eq!(back.timestamp_ms, 1234);
