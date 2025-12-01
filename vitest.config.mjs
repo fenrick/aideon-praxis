@@ -45,6 +45,10 @@ export default defineConfig({
         replacement: path.resolve(__dirname, 'app/AideonDesignSystem/src/components/ui/$1'),
       },
       {
+        find: '@/hooks/use-mobile',
+        replacement: path.resolve(__dirname, 'app/AideonDesignSystem/src/hooks/use-mobile.ts'),
+      },
+      {
         find: '@/lib/errors',
         replacement: path.resolve(__dirname, 'app/PraxisCanvas/src/lib/errors.ts'),
       },
