@@ -76,7 +76,10 @@ export function LegacyPraxisCanvasApp() {
 
   return (
     <div className="flex min-h-screen bg-muted/30 text-foreground">
-      <AppSidebar scenarios={experience.scenarioState.data} loading={experience.scenarioState.loading} />
+      <AppSidebar
+        scenarios={experience.scenarioState.data}
+        loading={experience.scenarioState.loading}
+      />
       <main className="flex flex-1 flex-col">
         <PraxisCanvasSurfaceView {...experience} />
       </main>
@@ -307,7 +310,7 @@ function PraxisCanvasSurfaceView({
           <ActivityFeedCard />
           <GlobalSearchCard
             onSelectNodes={handleCommandPaletteSelection}
-            onFocusMetaModel={(entry) => {
+            onFocusMetaModel={(entry: { id: string }) => {
               setFocusEntryId(entry.id);
             }}
             onShowTimeline={() => {

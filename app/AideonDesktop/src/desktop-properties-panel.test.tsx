@@ -7,7 +7,7 @@ describe('DesktopPropertiesPanel', () => {
   it('shows empty-state when nothing is selected', () => {
     render(<DesktopPropertiesPanel />);
 
-    expect(screen.getByText(/No selection yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/No selection yet/i)).toBeTruthy();
   });
 
   it('summarises node and edge counts', () => {
@@ -19,6 +19,6 @@ describe('DesktopPropertiesPanel', () => {
 
     expect(screen.getByText((_, node) => node?.textContent === 'Nodes selected: 2')).toBeTruthy();
     expect(screen.getByText((_, node) => node?.textContent === 'Edges selected: 1')).toBeTruthy();
-    expect(screen.getByText(/Source widget: test/)).toBeInTheDocument();
+    expect(screen.getByText(/Source widget: test/)).toBeTruthy();
   });
 });

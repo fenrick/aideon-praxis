@@ -8,7 +8,9 @@ export interface DesktopPropertiesPanelProperties {
 }
 
 export function DesktopPropertiesPanel({ selection }: DesktopPropertiesPanelProperties) {
-  const hasSelection = Boolean(selection && (selection.nodeIds.length > 0 || selection.edgeIds.length > 0));
+  const hasSelection = Boolean(
+    selection && (selection.nodeIds.length > 0 || selection.edgeIds.length > 0),
+  );
 
   return (
     <ScrollArea className="h-full">
@@ -21,10 +23,12 @@ export function DesktopPropertiesPanel({ selection }: DesktopPropertiesPanelProp
             {hasSelection ? (
               <>
                 <p>
-                  Nodes selected: <span className="text-foreground">{selection?.nodeIds.length}</span>
+                  Nodes selected:{' '}
+                  <span className="text-foreground">{selection?.nodeIds.length}</span>
                 </p>
                 <p>
-                  Edges selected: <span className="text-foreground">{selection?.edgeIds.length}</span>
+                  Edges selected:{' '}
+                  <span className="text-foreground">{selection?.edgeIds.length}</span>
                 </p>
                 {selection?.sourceWidgetId ? (
                   <p>Source widget: {selection.sourceWidgetId}</p>

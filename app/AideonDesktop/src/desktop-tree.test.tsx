@@ -4,9 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { SidebarProvider } from '@aideon/design-system';
 
 vi.mock('@aideon/PraxisCanvas', () => ({
-  listScenarios: vi.fn().mockResolvedValue([
-    { id: 'p1-w1', name: 'Workspace · Default', branch: 'main', updatedAt: '2025-11-01T00:00Z' },
-  ]),
+  listScenarios: vi
+    .fn()
+    .mockResolvedValue([
+      { id: 'p1-w1', name: 'Workspace · Default', branch: 'main', updatedAt: '2025-11-01T00:00Z' },
+    ]),
 }));
 
 import { listScenarios } from '@aideon/PraxisCanvas';
@@ -22,8 +24,8 @@ describe('DesktopTree', () => {
     );
 
     return waitFor(() => {
-      expect(screen.getByText('Scenarios')).toBeInTheDocument();
-      expect(screen.getByText('Workspace · Default')).toBeInTheDocument();
+      expect(screen.getByText('Scenarios')).toBeTruthy();
+      expect(screen.getByText('Workspace · Default')).toBeTruthy();
     });
   });
 
@@ -37,7 +39,7 @@ describe('DesktopTree', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Failed to load workspaces/i)).toBeInTheDocument();
+      expect(screen.getByText(/Failed to load workspaces/i)).toBeTruthy();
     });
   });
 });
