@@ -1,4 +1,5 @@
 import {
+  Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
@@ -12,7 +13,7 @@ import { Skeleton } from '@aideon/design-system/components/ui/skeleton';
 import { useWorkspaceTree, type WorkspaceTreeItem } from './hooks/useWorkspaceTree';
 
 export function DesktopTree() {
-  const { loading, items } = useWorkspaceTree();
+  const { loading, items, error } = useWorkspaceTree();
 
   return (
     <SidebarContent className="p-2">
@@ -25,10 +26,24 @@ export function DesktopTree() {
                 <Skeleton className="h-5 w-32" />
                 <Skeleton className="h-4 w-40" />
               </div>
+            ) : error ? (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  disabled
+                  className="text-left text-xs text-destructive hover:text-destructive"
+                >
+                  Failed to load workspaces: {error}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             ) : (
               items.map((item) => <TreeNode key={item.id} item={item} />)
             )}
           </SidebarMenu>
+          {!loading && !error && items.length === 0 ? (
+            <Sidebar className="mt-2 rounded-md border border-dashed border-border/70 bg-muted/30 p-2 text-xs text-muted-foreground">
+              No workspaces available yet.
+            </Sidebar>
+          ) : null}
         </SidebarGroupContent>
       </SidebarGroup>
     </SidebarContent>
