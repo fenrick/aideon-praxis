@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "description": "Praxis React migration shell (vanilla TS fallback)",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "scripts": {
     "dev": "vite dev --host 127.0.0.1 --port 1420",
     "build": "vite build && node scripts/postbuild-windows.mjs",

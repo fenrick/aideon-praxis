@@ -123,11 +123,14 @@ describe('GraphWidget', () => {
       expect(getGraphViewMock).toHaveBeenCalled();
       expect(latestSelectionHandler).toBeDefined();
     });
-    latestSelectionHandler?.({ nodes: [{ id: 'node-1' }], edges: [] });
-    expect(onSelectionChange).toHaveBeenCalledWith({
-      widgetId: 'graph-widget',
-      nodeIds: ['node-1'],
-      edgeIds: [],
+
+    await waitFor(() => {
+      latestSelectionHandler?.({ nodes: [{ id: 'node-1' }], edges: [] });
+      expect(onSelectionChange).toHaveBeenCalledWith({
+        widgetId: 'graph-widget',
+        nodeIds: ['node-1'],
+        edgeIds: [],
+      });
     });
   });
 

@@ -61,6 +61,10 @@ const SIDEBAR_ITEMS: SidebarTreeNode[] = [
 ];
 
 export default function App() {
+  return <LegacyPraxisCanvasApp />;
+}
+
+export function LegacyPraxisCanvasApp() {
   const path = globalThis.location.pathname.replace(/\/$/, '') || '/';
   const isCanvasRoute = path === '/canvas';
 
@@ -68,6 +72,41 @@ export default function App() {
     return <UnsupportedPage path={path} />;
   }
 
+  const experience = usePraxisCanvasState();
+
+  return (
+    <div className="flex min-h-screen bg-muted/30 text-foreground">
+      <AppSidebar scenarios={experience.scenarioState.data} loading={experience.scenarioState.loading} />
+      <main className="flex flex-1 flex-col">
+        <PraxisCanvasSurfaceView {...experience} />
+      </main>
+    </div>
+  );
+}
+
+export function PraxisCanvasSurface({
+  onSelectionChange,
+}: {
+  readonly onSelectionChange?: (selection: SelectionState) => void;
+} = {}) {
+  const experience = usePraxisCanvasState();
+
+  useEffect(() => {
+    if (onSelectionChange) {
+      onSelectionChange(experience.selection);
+    }
+  }, [experience.selection, onSelectionChange]);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-muted/30 text-foreground">
+      <PraxisCanvasSurfaceView {...experience} />
+    </div>
+  );
+}
+
+type PraxisCanvasExperience = ReturnType<typeof usePraxisCanvasState>;
+
+function usePraxisCanvasState() {
   const [scenarioState, setScenarioState] = useState<ScenarioState>({ loading: true, data: [] });
   const [selection, setSelection] = useState<SelectionState>(EMPTY_SELECTION);
   const [templates, setTemplates] = useState<CanvasTemplate[]>(BUILT_IN_TEMPLATES);
@@ -165,7 +204,7 @@ export default function App() {
     setSelection(EMPTY_SELECTION);
   }, []);
 
-  const handleSaveTemplate = useCallback(() => {
+  const handleTemplateSave = useCallback(() => {
     if (widgets.length === 0) {
       return;
     }
@@ -198,59 +237,94 @@ export default function App() {
     searchStore.setSidebarItems(SIDEBAR_ITEMS, handleSidebarSelect);
   }, [handleSidebarSelect]);
 
+  return {
+    scenarioState,
+    selection,
+    templates,
+    activeTemplateId,
+    activeTemplate,
+    activeScenario,
+    workspaceTab,
+    widgets,
+    focusEntryId,
+    handleSelectionChange,
+    handleMetaModelFocus,
+    handleCommandPaletteSelection,
+    handleTemplateChange,
+    handleTemplateSave,
+    setWorkspaceTab,
+    setFocusEntryId,
+  };
+}
+
+function PraxisCanvasSurfaceView({
+  scenarioState,
+  selection,
+  templates,
+  activeTemplateId,
+  activeTemplate,
+  activeScenario,
+  workspaceTab,
+  setWorkspaceTab,
+  widgets,
+  focusEntryId,
+  setFocusEntryId,
+  handleSelectionChange,
+  handleMetaModelFocus,
+  handleCommandPaletteSelection,
+  handleTemplateChange,
+  handleTemplateSave,
+}: PraxisCanvasExperience) {
   return (
-    <div className="flex min-h-screen bg-muted/30 text-foreground">
-      <AppSidebar scenarios={scenarioState.data} loading={scenarioState.loading} />
-      <main className="flex flex-1 flex-col">
-        <ShellHeader
-          scenarioName={activeScenario?.name}
-          templateName={activeTemplate?.name}
-          templates={templates}
-          activeTemplateId={activeTemplate?.id ?? ''}
-          onTemplateChange={handleTemplateChange}
-          onTemplateSave={handleSaveTemplate}
-        />
-        <div className="px-6 pt-3">
-          <SearchBar />
-        </div>
-        {scenarioState.error ? (
-          <p className="px-6 pt-2 text-sm text-destructive">{scenarioState.error}</p>
-        ) : null}
-        <div className="flex flex-1 flex-col gap-6 p-6 lg:flex-row">
-          <section className="flex-1">
-            <WorkspaceTabs
-              widgets={widgets}
-              selection={selection}
-              onSelectionChange={handleSelectionChange}
-              onRequestMetaModelFocus={handleMetaModelFocus}
-              value={workspaceTab}
-              onValueChange={setWorkspaceTab}
-            />
-          </section>
-          <section className="w-full space-y-6 lg:w-[360px]">
-            <TimeCursorCard />
-            <CommitTimelineCard />
-            <ActivityFeedCard />
-            <GlobalSearchCard
-              onSelectNodes={handleCommandPaletteSelection}
-              onFocusMetaModel={(entry) => {
-                setFocusEntryId(entry.id);
-              }}
-              onShowTimeline={() => {
-                setWorkspaceTab('timeline');
-              }}
-            />
-            <MetaModelPanel focusEntryId={focusEntryId} />
-            <SelectionInspectorCard
-              selection={selection}
-              widgets={widgets}
-              onSelectionChange={handleSelectionChange}
-            />
-            <WorkerHealthCard />
-            <PhaseCheckpointsCard />
-          </section>
-        </div>
-      </main>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ShellHeader
+        scenarioName={activeScenario?.name}
+        templateName={activeTemplate?.name}
+        templates={templates}
+        activeTemplateId={activeTemplate?.id ?? ''}
+        onTemplateChange={handleTemplateChange}
+        onTemplateSave={handleTemplateSave}
+      />
+      <div className="px-6 pt-3">
+        <SearchBar />
+      </div>
+      {scenarioState.error ? (
+        <p className="px-6 pt-2 text-sm text-destructive">{scenarioState.error}</p>
+      ) : null}
+      <div className="flex flex-1 flex-col gap-6 p-6 lg:flex-row">
+        <section className="flex-1">
+          <WorkspaceTabs
+            widgets={widgets}
+            selection={selection}
+            onSelectionChange={handleSelectionChange}
+            onRequestMetaModelFocus={handleMetaModelFocus}
+            value={workspaceTab}
+            onValueChange={setWorkspaceTab}
+          />
+        </section>
+        <section className="w-full space-y-6 lg:w-[360px]">
+          <TimeCursorCard />
+          <CommitTimelineCard />
+          <ActivityFeedCard />
+          <GlobalSearchCard
+            onSelectNodes={handleCommandPaletteSelection}
+            onFocusMetaModel={(entry) => {
+              setFocusEntryId(entry.id);
+            }}
+            onShowTimeline={() => {
+              setWorkspaceTab('timeline');
+            }}
+          />
+          <MetaModelPanel focusEntryId={focusEntryId} />
+          <SelectionInspectorCard
+            selection={selection}
+            widgets={widgets}
+            onSelectionChange={handleSelectionChange}
+          />
+          <WorkerHealthCard />
+          <PhaseCheckpointsCard />
+        </section>
+      </div>
     </div>
   );
 }
