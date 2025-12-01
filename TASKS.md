@@ -307,7 +307,7 @@ If any of these are missing, the agent should:
 
 ## Stage 6 – Implement the left tree panel (stub → real data)
 
-**Status:** ✅ Stub completed 2025-11-30. Real data hookup pending.
+**Status:** ✅ Completed 2025-12-01.
 
 ### 6.1 Stubbed tree using shadcn tree/sidebar
 
@@ -339,20 +339,18 @@ If any of these are missing, the agent should:
 
 **Code (second pass)**
 
-4. Once stub works, wire it to real data:
-   - Decide where to fetch/workspace/project lists (adapters/Tauri commands).
-   - Add a hook (e.g. `useWorkspaceTree`) in a dedicated data layer module.
-   - Use that hook inside `DesktopTree` to populate the tree from actual state.
+4. ✅ Wire to real data:
+   - Tree now uses `listScenarios` from the Praxis adapters (via `@aideon/PraxisCanvas`) and maps scenarios to workspace entries under a Scenarios project group.
+   - Added `useWorkspaceTree` hook with loading/error handling.
+   - `DesktopTree` renders loading skeletons, error state, and empty state.
 
 **Tests**
 
-- Add tests for `DesktopTree`:
-  - Stub the hook and assert items render correctly.
-  - For the real data phase, use mocked data to verify loading/error/empty states.
+- ✅ `DesktopTree` tests mock `listScenarios` to verify loaded items and error display.
 
 **Definition of done**
 
-- Left panel shows a working tree driven by real data (or at least by a single central source of truth).
+- Left panel shows a working tree driven by host data (scenarios as workspaces).
 - No other part of the app implements its own project/workspace tree.
 
 ---
@@ -400,7 +398,7 @@ If any of these are missing, the agent should:
 
 ## Stage 8 – Clean-up and harden the pattern
 
-Finally, once the shell is working end-to-end:
+**Status:** ✅ Completed 2025-12-01 (docs and examples added; legacy chrome kept only for legacy route).
 
 **Docs**
 

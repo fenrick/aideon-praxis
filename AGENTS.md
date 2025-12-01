@@ -142,6 +142,13 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 - Docs: module `README.md`/`DESIGN.md`, global README, `docs/DESIGN.md`, `Architecture‑Boundary.md`,
   ROADMAP, ADRs, C4 diagrams‑as‑code.
 
+## Examples (golden patterns)
+
+- Desktop shell composition: `app/AideonDesignSystem/src/desktop-shell/DesktopShell.tsx` and `app/AideonDesktop/src/root.tsx`.
+- Workspace navigation: `app/AideonDesktop/src/DesktopTree.tsx` (scenarios → workspaces).
+- Selection plumbing: `app/PraxisCanvas/src/app.tsx` (emits `SelectionState`) + `app/AideonDesktop/src/DesktopPropertiesPanel.tsx`.
+- Chrome-free canvas surface: `app/PraxisCanvas/src/app.tsx` exported as `PraxisCanvasSurface`.
+
 ## Issues, PRs & tracking
 
 ### GitHub as source of truth
