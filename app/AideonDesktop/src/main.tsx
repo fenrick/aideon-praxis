@@ -10,8 +10,80 @@ if (!container) {
   throw new Error('Unable to locate root element');
 }
 
+const path = window.location.pathname.replace(/\/$/, '') || '/';
+
+let view: React.ReactNode = <AideonDesktopRoot />;
+
+if (path === '/splash') {
+  view = <SplashScreen />;
+} else if (path === '/status') {
+  view = <StatusScreen />;
+} else if (path === '/about') {
+  view = <AboutScreen />;
+} else if (path === '/settings') {
+  view = <SettingsScreen />;
+} else if (path === '/styleguide') {
+  view = <StyleguideScreen />;
+}
+
 ReactDOM.createRoot(container).render(
   <React.StrictMode>
-    <AideonDesktopRoot />
+    {view}
   </React.StrictMode>,
 );
+
+function SplashScreen() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background via-muted to-background text-foreground">
+      <div className="space-y-4 text-center">
+        <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Aideon Praxis</p>
+        <h1 className="text-2xl font-semibold">Loading workspace…</h1>
+        <p className="text-sm text-muted-foreground">Initialising host services and adapters.</p>
+      </div>
+    </div>
+  );
+}
+
+function StatusScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+      <div className="rounded-lg border border-border/70 bg-card/90 px-6 py-4 shadow-md">
+        <p className="text-sm font-medium">Host status</p>
+        <p className="text-xs text-muted-foreground">All services initialising…</p>
+      </div>
+    </div>
+  );
+}
+
+function AboutScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+      <div className="space-y-2 rounded-lg border border-border/60 bg-card/90 px-6 py-5 shadow">
+        <h1 className="text-lg font-semibold">Aideon Praxis</h1>
+        <p className="text-sm text-muted-foreground">Desktop shell for Praxis Canvas and tools.</p>
+      </div>
+    </div>
+  );
+}
+
+function SettingsScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+      <div className="space-y-3 rounded-lg border border-border/60 bg-card/90 px-6 py-5 shadow">
+        <h1 className="text-lg font-semibold">Settings</h1>
+        <p className="text-sm text-muted-foreground">Settings UI coming soon.</p>
+      </div>
+    </div>
+  );
+}
+
+function StyleguideScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+      <div className="space-y-3 rounded-lg border border-border/60 bg-card/90 px-6 py-5 shadow">
+        <h1 className="text-lg font-semibold">Styleguide</h1>
+        <p className="text-sm text-muted-foreground">Design system documentation pending.</p>
+      </div>
+    </div>
+  );
+}
