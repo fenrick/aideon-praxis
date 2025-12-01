@@ -6,11 +6,27 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), tsconfigPaths()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        splash: path.resolve(__dirname, 'src/splash.html'),
+      },
+    },
+  },
   resolve: {
     alias: [
       {
         find: '@aideon/design-system/styles/globals.css',
         replacement: path.resolve(__dirname, '../AideonDesignSystem/src/styles/globals.css'),
+      },
+      {
+        find: '@/lib/utils',
+        replacement: path.resolve(__dirname, '../AideonDesignSystem/src/lib/utils.ts'),
+      },
+      {
+        find: /^@\/components\/ui\/(.*)$/,
+        replacement: path.resolve(__dirname, '../AideonDesignSystem/src/components/ui/$1'),
       },
     ],
   },
