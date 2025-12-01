@@ -309,6 +309,9 @@ importers:
       '@aideon/design-system':
         specifier: workspace:*
         version: link:../AideonDesignSystem
+      '@tauri-apps/api':
+        specifier: ^2.0.0
+        version: 2.9.0
       react:
         specifier: ^19.2.0
         version: 19.2.1
