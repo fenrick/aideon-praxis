@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { AideonDesktopRoot } from './root';
 import './styles.css';
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrent } from '@tauri-apps/api/window';
 
 const container = document.querySelector('#root');
 
@@ -11,28 +12,47 @@ if (!container) {
   throw new Error('Unable to locate root element');
 }
 
-const hashPath = window.location.hash.replace(/^#/, '');
-const path = hashPath || window.location.pathname.replace(/\/$/, '') || '/';
-
-let view: React.ReactNode = <AideonDesktopRoot />;
-
-if (path === '/splash') {
-  view = <SplashScreen />;
-} else if (path === '/status') {
-  view = <StatusScreen />;
-} else if (path === '/about') {
-  view = <AboutScreen />;
-} else if (path === '/settings') {
-  view = <SettingsScreen />;
-} else if (path === '/styleguide') {
-  view = <StyleguideScreen />;
-}
-
 ReactDOM.createRoot(container).render(
   <React.StrictMode>
-    <FrontendReady>{view}</FrontendReady>
+    <AppEntry />
   </React.StrictMode>,
 );
+
+function AppEntry() {
+  const [windowLabel, setWindowLabel] = React.useState<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    if ('__TAURI__' in window) {
+      void getCurrent()
+        .then((current) => setWindowLabel(current.label))
+        .catch(() => {
+          // fall back to hash path
+          setWindowLabel(undefined);
+        });
+    } else {
+      setWindowLabel(undefined);
+    }
+  }, []);
+
+  const hashPath = window.location.hash.replace(/^#/, '');
+  const path = hashPath || window.location.pathname.replace(/\/$/, '') || '/';
+  const route = windowLabel ?? path;
+
+  let view: React.ReactNode = <AideonDesktopRoot />;
+  if (route === 'splash' || route === '/splash') {
+    view = <SplashScreen />;
+  } else if (route === 'status' || route === '/status') {
+    view = <StatusScreen />;
+  } else if (route === 'about' || route === '/about') {
+    view = <AboutScreen />;
+  } else if (route === 'settings' || route === '/settings') {
+    view = <SettingsScreen />;
+  } else if (route === 'styleguide' || route === '/styleguide') {
+    view = <StyleguideScreen />;
+  }
+
+  return <FrontendReady>{view}</FrontendReady>;
+}
 
 function FrontendReady({ children }: { readonly children: React.ReactNode }) {
   React.useEffect(() => {
