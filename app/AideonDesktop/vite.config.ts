@@ -6,14 +6,6 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), tsconfigPaths()],
-  build: {
-    rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html'),
-        splash: path.resolve(__dirname, 'src/splash.html'),
-      },
-    },
-  },
   resolve: {
     alias: [
       {
