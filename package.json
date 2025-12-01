@@ -6,6 +6,7 @@
   "license": "MIT",
   "workspaces": [
     "app/AideonDesignSystem",
+    "app/AideonDesktop",
     "app/PraxisCanvas",
     "app/PraxisAdapters",
     "app/PraxisDtos"
@@ -29,7 +30,7 @@
     "node:lint:fix": "eslint --max-warnings=10 --ignore-pattern \"app/AideonDesignSystem/**\" \"app/**/src/**/*.{ts,tsx,js}\" --fix",
     "node:format": "prettier -w .",
     "node:format:check": "prettier -c .",
-    "node:typecheck": "pnpm --filter @aideon/PraxisCanvas run typecheck && pnpm --filter @aideon/PraxisAdapters run typecheck && pnpm --filter @aideon/PraxisDtos run typecheck",
+    "node:typecheck": "pnpm --filter @aideon/PraxisCanvas run typecheck && pnpm --filter @aideon/PraxisAdapters run typecheck && pnpm --filter @aideon/PraxisDtos run typecheck && pnpm --filter @aideon/desktop run typecheck",
     "design:guard": "node tools/design-system-guard.mjs",
     "node:ci": "pnpm run design:guard && pnpm run node:lint:fix && pnpm run node:typecheck && pnpm run node:test:coverage && pnpm run node:format",
     "tauri": "tauri",

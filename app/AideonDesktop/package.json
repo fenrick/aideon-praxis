@@ -1,0 +1,29 @@
+{
+  "name": "@aideon/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Aideon Desktop shell hosting Praxis workspaces",
+  "scripts": {
+    "dev": "vite dev --host 127.0.0.1 --port 1420",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aideon/PraxisCanvas": "workspace:*",
+    "@aideon/design-system": "workspace:*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.16",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vite-tsconfig-paths": "^4.1.1"
+  }
+}

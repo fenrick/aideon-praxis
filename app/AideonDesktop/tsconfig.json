@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@aideon/design-system": ["../AideonDesignSystem/src"],
+      "@aideon/design-system/*": ["../AideonDesignSystem/src/*"],
+      "@aideon/PraxisCanvas": ["../PraxisCanvas/src"],
+      "@aideon/PraxisCanvas/*": ["../PraxisCanvas/src/*"],
+      "@aideon/PraxisAdapters": ["../PraxisAdapters/src"],
+      "@aideon/PraxisAdapters/*": ["../PraxisAdapters/src/*"],
+      "@aideon/PraxisDtos": ["../PraxisDtos/src"],
+      "@aideon/PraxisDtos/*": ["../PraxisDtos/src/*"]
+    }
+  },
+  "include": ["src"]
+}
