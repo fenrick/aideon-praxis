@@ -35,7 +35,7 @@ function AppEntry() {
   }, []);
 
   const hashPath = window.location.hash.replace(/^#/, '');
-  const path = hashPath || window.location.pathname.replace(/\/$/, '') || '/';
+  const path = (hashPath || window.location.pathname || '/').replace(/\/$/, '') || '/';
   const route = windowLabel ?? path;
 
   let view: React.ReactNode = <AideonDesktopRoot />;
