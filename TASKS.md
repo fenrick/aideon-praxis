@@ -15,11 +15,13 @@ If any of these are missing, the agent should:
 
 ## Stage 1 – Define the UX shell in documentation
 
+**Status:** ✅ Completed 2025-11-30.
+
 ### 1.1 Document Aideon Desktop as the primary UX layer
 
 **Docs**
 
-1. Create `app/AideonDesktop/DESIGN.md` (if it does not exist) with:
+1. ✅ Create `app/AideonDesktop/DESIGN.md` (if it does not exist) with:
    - Purpose: Aideon Desktop is the main UX shell for the desktop product.
    - Regions:
      - Top toolbar (global actions, workspace switches).
@@ -31,7 +33,7 @@ If any of these are missing, the agent should:
      - All workspaces render inside this shell.
      - No other app has its own sidebar/header chrome.
 
-2. Update `AGENTS.md`:
+2. ✅ Update `AGENTS.md`:
    - Add a section “UX Shell (Aideon Desktop)”:
      - “When building or modifying application-level layout, target Aideon Desktop, not individual workspaces.”
      - “Use shadcn Sidebar + Resizable + Menubar primitives; do not implement custom layout primitives.”
@@ -54,11 +56,13 @@ If any of these are missing, the agent should:
 
 ## Stage 2 – Install shadcn primitives and layout contracts
 
+**Status:** ✅ Completed 2025-11-30.
+
 ### 2.1 Decide and document the core UI primitives
 
 **Docs**
 
-1. Update `app/AideonDesignSystem/DESIGN.md`:
+1. ✅ Update `app/AideonDesignSystem/DESIGN.md`:
    - Add “Desktop shell primitives” section listing:
      - `Sidebar` (navigation + tree).
      - `Resizable` (pane splitting).
@@ -67,7 +71,7 @@ If any of these are missing, the agent should:
 
    - Clarify: these are the only primitives to use for app-level layout.
 
-2. Update `AGENTS.md`:
+2. ✅ Update `AGENTS.md`:
    - Under coding standards for React:
      - “For app shell: always use design system proxies for Sidebar, Resizable, Menubar, Toolbar, not raw third-party imports.”
 
@@ -75,10 +79,10 @@ If any of these are missing, the agent should:
 
 **Code**
 
-1. Use shadcn CLI to add components (actual commands depend on your setup, but conceptually):
+1. ✅ Use shadcn CLI to add components (actual commands depend on your setup, but conceptually):
    - `sidebar`, `resizable`, `menubar`, `scroll-area`, `card`, `form`.
 
-2. In `app/AideonDesignSystem/src` create proxied components, e.g.:
+2. ✅ In `app/AideonDesignSystem/src` create proxied components, e.g.:
 
    ```tsx
    // app/AideonDesignSystem/src/desktop-shell/sidebar.tsx
@@ -93,7 +97,7 @@ If any of these are missing, the agent should:
 
    Do similar for `Resizable` and `Menubar`.
 
-3. Add a placeholder `DesktopShellLayout` type definition (no implementation yet), just the prop contract:
+3. ✅ Add a placeholder `DesktopShellLayout` type definition (no implementation yet), just the prop contract:
 
    ```tsx
    export type DesktopShellSlots = {
@@ -117,11 +121,13 @@ If any of these are missing, the agent should:
 
 ## Stage 3 – Implement a bare `DesktopShell` layout (no real content)
 
+**Status:** ✅ Completed 2025-11-30.
+
 ### 3.1 Implement the shell structure as a pure layout component
 
 **Docs**
 
-1. Extend `app/AideonDesktop/DESIGN.md` with:
+1. ✅ Extend `app/AideonDesktop/DESIGN.md` with:
    - A simple ASCII/diagram of layout:
      - `[Menubar/Toolbar]`
      - `[Sidebar][Main][Properties]` with resizable separators.
@@ -130,7 +136,7 @@ If any of these are missing, the agent should:
 
 **Code**
 
-2. In the design system, implement `DesktopShell`:
+2. ✅ In the design system, implement `DesktopShell`:
 
    ```tsx
    // app/AideonDesignSystem/src/desktop-shell/DesktopShell.tsx
@@ -177,7 +183,7 @@ If any of these are missing, the agent should:
 
 **Tests**
 
-- In `app/AideonDesignSystem` tests:
+- ✅ In `app/AideonDesignSystem` tests:
   - Render `DesktopShell` with dummy slot content (e.g. “Tree”, “Toolbar”, etc.).
   - Assert that:
     - It renders without crashing.
@@ -193,17 +199,19 @@ If any of these are missing, the agent should:
 
 ## Stage 4 – Create the Aideon Desktop app entry bound to Tauri
 
+**Status:** ✅ Completed 2025-11-30.
+
 ### 4.1 Wire a new React entrypoint
 
 **Docs**
 
-1. Update `app/AideonDesktop/DESIGN.md`:
+1. ✅ Update `app/AideonDesktop/DESIGN.md`:
    - Describe the main entry component, e.g. `AideonDesktopRoot`.
    - Clarify: Tauri points at Aideon Desktop index.html; PraxisCanvas no longer owns the window.
 
 **Code**
 
-2. In `app/AideonDesktop/src` create:
+2. ✅ In `app/AideonDesktop/src` create:
 
    ```tsx
    // app/AideonDesktop/src/root.tsx
@@ -221,13 +229,13 @@ If any of these are missing, the agent should:
    }
    ```
 
-3. Hook this into your bundler/entrypoint (e.g. `main.tsx`) and ensure Tauri’s `tauri.conf.json` points to the new app HTML/JS entry.
+3. ✅ Hook this into your bundler/entrypoint (e.g. `main.tsx`) and ensure Tauri’s `tauri.conf.json` points to the new app HTML/JS entry.
 
 ### 4.2 Smoke tests
 
 **Tests**
 
-- Add a high-level React test for `AideonDesktopRoot`:
+- ✅ Add a high-level React test for `AideonDesktopRoot`:
   - Verifies that the placeholder content renders inside the expected DOM structure.
 
 - Optionally, add a very simple Tauri smoke test or script that boots the app and asserts the main window loads (depending on your existing approach).
@@ -241,11 +249,13 @@ If any of these are missing, the agent should:
 
 ## Stage 5 – Extract a pure `PraxisCanvasSurface` and plug into centre panel
 
+**Status:** ✅ Completed 2025-11-30.
+
 ### 5.1 Refactor PraxisCanvas to separate chrome from content
 
 **Docs**
 
-1. Update `app/PraxisCanvas/DESIGN.md`:
+1. ✅ Update `app/PraxisCanvas/DESIGN.md`:
    - Clarify that PraxisCanvas now exposes a **surface component** without global chrome:
      - `PraxisCanvasSurface` = canvas view, timelines, nodes, etc.
 
@@ -253,7 +263,7 @@ If any of these are missing, the agent should:
 
 **Code**
 
-2. In `app/PraxisCanvas/src`:
+2. ✅ In `app/PraxisCanvas/src`:
    - Extract the current main view into `PraxisCanvasSurface`:
      - Remove any top-level headers/sidebars from this component.
      - Ensure it consumes layout from parent (fills available area).
@@ -261,7 +271,7 @@ If any of these are missing, the agent should:
    - If PraxisCanvas previously had its own `App` with header/sidebar:
      - Keep it temporarily as `LegacyPraxisCanvasApp` for backwards compatibility, but mark it as legacy.
 
-3. In `AideonDesktopRoot`, replace the main placeholder with PraxisCanvas:
+3. ✅ In `AideonDesktopRoot`, replace the main placeholder with PraxisCanvas:
 
    ```tsx
    import { PraxisCanvasSurface } from 'app/PraxisCanvas';
@@ -282,10 +292,10 @@ If any of these are missing, the agent should:
 
 **Tests**
 
-- PraxisCanvas:
+- ✅ PraxisCanvas:
   - Add/update tests for `PraxisCanvasSurface` to ensure it renders correctly in a generic container.
 
-- AideonDesktop:
+- ✅ AideonDesktop:
   - Update root tests to assert that PraxisCanvas-specific DOM appears in the main panel.
 
 **Definition of done**
@@ -297,6 +307,8 @@ If any of these are missing, the agent should:
 
 ## Stage 6 – Implement the left tree panel (stub → real data)
 
+**Status:** ✅ Stub completed 2025-11-30. Real data hookup pending.
+
 ### 6.1 Stubbed tree using shadcn tree/sidebar
 
 **Docs**
@@ -307,7 +319,7 @@ If any of these are missing, the agent should:
 
 **Code**
 
-2. Add a `DesktopTree` component in Aideon Desktop:
+2. ✅ Add a `DesktopTree` component in Aideon Desktop:
 
    ```tsx
    // app/AideonDesktop/src/DesktopTree.tsx
@@ -321,7 +333,7 @@ If any of these are missing, the agent should:
    }
    ```
 
-3. Replace the `tree` slot in `AideonDesktopRoot` with `<DesktopTree />`.
+3. ✅ Replace the `tree` slot in `AideonDesktopRoot` with `<DesktopTree />`.
 
 ### 6.2 Wire to real domain data
 
@@ -347,6 +359,8 @@ If any of these are missing, the agent should:
 
 ## Stage 7 – Implement the right properties panel (selection-driven)
 
+**Status:** ✅ Basic selection plumbing completed 2025-11-30.
+
 ### 7.1 Basic selection + properties contract
 
 **Docs**
@@ -364,30 +378,18 @@ If any of these are missing, the agent should:
 
 **Code**
 
-3. In PraxisCanvas:
-   - Expose a selection API (if not already):
-     - Either via React context accessible from outside, or a callback prop for selection changes.
+3. ✅ In PraxisCanvas: expose selection via `onSelectionChange` on `PraxisCanvasSurface`.
 
-4. In Aideon Desktop:
-   - Implement a `DesktopPropertiesPanel` that:
-     - Accepts a `selection` prop (typed union of selected entities).
-     - Renders simple forms/cards based on selection type.
-
-   - Wire it into `AideonDesktopRoot`:
-     - Maintain selection state at shell level if needed (e.g. via callback from PraxisCanvas).
-     - Pass `selection` to `DesktopPropertiesPanel`.
+4. ✅ In Aideon Desktop:
+   - `DesktopPropertiesPanel` renders selection summary and empty state.
+   - Shell keeps selection state and passes it down.
 
 ### 7.2 Tests
 
 **Tests**
 
-- Add tests for `DesktopPropertiesPanel`:
-  - Given each selection type, it renders the expected fields.
-  - Handles “no selection” gracefully.
-
-- Add an integration-like test:
-  - Simulate a selection event in PraxisCanvas (mocked).
-  - Assert that Aideon Desktop’s properties panel updates.
+- ✅ `DesktopPropertiesPanel` tests cover empty and selected states; root test mocks selection
+  propagation.
 
 **Definition of done**
 

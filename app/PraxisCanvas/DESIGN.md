@@ -6,12 +6,24 @@ Praxis Canvas is the React-based renderer for the Aideon Praxis desktop module. 
 workspace shell (canvas, sidebar, dashboards) and projects the time-first digital twin into widgets
 such as graph, catalogue, matrix, and timeline views.
 
+The primary export is `PraxisCanvasSurface`, a chrome-free surface intended to live inside the
+Aideon Desktop shell. The legacy `LegacyPraxisCanvasApp` keeps the old header/sidebar for standalone
+routes and should be considered transitional.
+
 ## Internal structure
 
 - React application entry that mounts the canvas shell inside the Tauri window.
 - Layout components for sidebar, main canvas, and dashboard cards.
 - State management for selection, filters, time cursor, and active template.
 - Integration points to Aideon Design System blocks and React Flow-based canvas primitives.
+- Surface component (`PraxisCanvasSurface`) renders only the workspace content; host shells provide
+  outer chrome (toolbar/sidebar/properties).
+
+## Selection contract
+
+- `PraxisCanvasSurface` accepts an optional `onSelectionChange` callback. The surface emits the
+  current `SelectionState` whenever it changes so host shells (e.g., Aideon Desktop) can render
+  properties panels.
 
 ## Time-first canvas behaviour
 

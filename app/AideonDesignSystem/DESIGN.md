@@ -14,6 +14,17 @@ tokens to keep renderers consistent.
 - `src/reactflow`: React Flow wrapper components for Praxis-specific nodes/edges.
 - `src/styles/globals.css`: CSS variables and Tailwind tokens shared by all consumers.
 
+## Desktop shell primitives
+
+For application-level layout, use only the proxied shadcn primitives exposed by the design system:
+
+- `Sidebar` (navigation + tree container).
+- `Resizable` (pane splitting between sidebar, main workspace, properties panel).
+- `Menubar` or `NavigationMenu` + `Toolbar` (top bar composition).
+- `ScrollArea`, `Card`, `Form` for properties panel content.
+
+No other primitives should be used for the app shell; keep layout composition consistent across modules.
+
 ### Wrapped components
 
 - We wrap shadcn primitives only when we need consistent variants or composition (e.g., `Panel` in

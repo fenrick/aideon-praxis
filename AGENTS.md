@@ -48,6 +48,11 @@ Before coding, skim any recent ADRs touching your area.
   precedence over legacy notes. Favour refactoring toward the current stack instead of extending
   legacy seams.
 
+## UX Shell (Aideon Desktop)
+
+- When building or modifying application-level layout, target the Aideon Desktop shell instead of giving individual workspaces their own chrome.
+- Use design-system proxies for Sidebar, Resizable, and Menubar/Toolbar primitives; do not implement custom layout primitives.
+
 ## Frameworks-first defaults (use these before inventing your own)
 
 - **TS/React:** React 18, shadcn/ui + Tailwind, React Flow/XYFlow for canvases, React Hook Form for
@@ -260,6 +265,8 @@ described in `docs/UX-DESIGN.md`, `docs/design-system.md`, and
 - Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict
   plugin access. The host exposes typed commands only, and React components call the host through a
   dedicated `praxisApi` wrapper rather than ad-hoc IPC.
+- For app shell layout, always use the design-system proxies for Sidebar, Resizable, Menubar, and
+  Toolbar instead of importing raw shadcn or react-resizable-panels primitives.
 - Never embed backend‑specific queries in renderer; call adapters or host APIs. React Flow widgets
   must treat the twin as the source of truth.
 
