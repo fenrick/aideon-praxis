@@ -11,8 +11,8 @@ import {
 import type { SelectionState } from '@aideon/PraxisCanvas';
 import { PraxisCanvasSurface } from '@aideon/PraxisCanvas';
 
-import { DesktopPropertiesPanel } from './DesktopPropertiesPanel';
-import { DesktopTree } from './DesktopTree';
+import { DesktopPropertiesPanel } from './desktop-properties-panel';
+import { DesktopTree } from './desktop-tree';
 
 export function AideonDesktopRoot() {
   const [selection, setSelection] = useState<SelectionState | undefined>();
@@ -34,13 +34,5 @@ export function AideonDesktopRoot() {
       main={<PraxisCanvasSurface onSelectionChange={setSelection} />}
       properties={<DesktopPropertiesPanel selection={selection} />}
     />
-  );
-}
-
-function Placeholder({ label }: { readonly label: string }) {
-  return (
-    <div className="flex h-full items-center justify-center px-4 text-sm text-muted-foreground">
-      {label} panel placeholder
-    </div>
   );
 }

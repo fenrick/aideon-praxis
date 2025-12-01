@@ -16,7 +16,7 @@ vi.mock('@aideon/PraxisCanvas', () => ({
   },
 }));
 
-vi.mock('./hooks/useWorkspaceTree', () => ({
+vi.mock('./hooks/use-workspace-tree', () => ({
   useWorkspaceTree: () => ({
     loading: false,
     items: [

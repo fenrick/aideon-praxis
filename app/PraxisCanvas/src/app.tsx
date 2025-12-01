@@ -261,7 +261,6 @@ function PraxisCanvasSurfaceView({
   scenarioState,
   selection,
   templates,
-  activeTemplateId,
   activeTemplate,
   activeScenario,
   workspaceTab,
@@ -274,7 +273,7 @@ function PraxisCanvasSurfaceView({
   handleCommandPaletteSelection,
   handleTemplateChange,
   handleTemplateSave,
-}: PraxisCanvasExperience) {
+}: Readonly<PraxisCanvasExperience>) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ShellHeader
