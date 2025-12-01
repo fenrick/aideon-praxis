@@ -24,19 +24,32 @@ function AppEntry() {
   React.useEffect(() => {
     if ('__TAURI__' in window) {
       void getCurrent()
-        .then((current) => setWindowLabel(current.label))
+        .then((current) => {
+          console.log('[desktop] window label', current.label);
+          setWindowLabel(current.label);
+        })
         .catch(() => {
-          // fall back to hash path
+          console.warn('[desktop] failed to read window label, falling back to path');
           setWindowLabel(undefined);
         });
     } else {
+      console.log('[desktop] non-tauri environment, using path routing');
       setWindowLabel(undefined);
     }
   }, []);
 
   const hashPath = window.location.hash.replace(/^#/, '');
+  const searchWindow = new URLSearchParams(window.location.search).get('window') ?? undefined;
   const path = (hashPath || window.location.pathname || '/').replace(/\/$/, '') || '/';
-  const route = windowLabel ?? path;
+  const route = windowLabel ?? searchWindow ?? path;
+  console.log('[desktop] route resolve', {
+    hashPath,
+    path,
+    windowLabel,
+    searchWindow,
+    route,
+    location: window.location.href,
+  });
 
   let view: React.ReactNode = <AideonDesktopRoot />;
   if (route === 'splash' || route === '/splash') {
@@ -57,9 +70,11 @@ function AppEntry() {
 function FrontendReady({ children }: { readonly children: React.ReactNode }) {
   React.useEffect(() => {
     if ('__TAURI__' in window) {
-      void invoke('set_complete', { task: 'frontend' }).catch((error) => {
-        console.warn('failed to notify frontend ready', error);
-      });
+      void invoke('set_complete', { task: 'frontend' })
+        .then(() => console.log('[desktop] notified host frontend ready'))
+        .catch((error) => {
+          console.warn('failed to notify frontend ready', error);
+        });
     }
   }, []);
   return <>{children}</>;
