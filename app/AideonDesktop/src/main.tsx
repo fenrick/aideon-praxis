@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 
 import { AideonDesktopRoot } from './root';
 import './styles.css';
+import { invoke } from '@tauri-apps/api/core';
 
 const container = document.querySelector('#root');
 
@@ -10,7 +11,8 @@ if (!container) {
   throw new Error('Unable to locate root element');
 }
 
-const path = window.location.pathname.replace(/\/$/, '') || '/';
+const hashPath = window.location.hash.replace(/^#/, '');
+const path = hashPath || window.location.pathname.replace(/\/$/, '') || '/';
 
 let view: React.ReactNode = <AideonDesktopRoot />;
 
@@ -28,9 +30,20 @@ if (path === '/splash') {
 
 ReactDOM.createRoot(container).render(
   <React.StrictMode>
-    {view}
+    <FrontendReady>{view}</FrontendReady>
   </React.StrictMode>,
 );
+
+function FrontendReady({ children }: { readonly children: React.ReactNode }) {
+  React.useEffect(() => {
+    if ('__TAURI__' in window) {
+      void invoke('set_complete', { task: 'frontend' }).catch((error) => {
+        console.warn('failed to notify frontend ready', error);
+      });
+    }
+  }, []);
+  return <>{children}</>;
+}
 
 function SplashScreen() {
   return (

@@ -3,7 +3,7 @@ use log::warn;
 use tauri::{App, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, Wry};
 
 pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
-    WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("splash/".into()))
+    WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("index.html#/splash".into()))
         .title("Aideon Praxis — Loading")
         .resizable(false)
         .decorations(false)
@@ -12,7 +12,7 @@ pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
         .build()
         .map_err(to_string)?;
 
-    let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("canvas/".into()))
+    let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html#/".into()))
         .title("Aideon Praxis")
         .visible(false)
         .inner_size(1060.0, 720.0)
@@ -42,7 +42,7 @@ pub fn open_settings(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("settings/".into()))
+    WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("index.html#/settings".into()))
         .title("Preferences")
         .resizable(false)
         .inner_size(520.0, 440.0)
@@ -59,7 +59,7 @@ pub fn open_about(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "about", WebviewUrl::App("about/".into()))
+    WebviewWindowBuilder::new(&app, "about", WebviewUrl::App("index.html#/about".into()))
         .title("About Aideon Praxis")
         .resizable(false)
         .inner_size(420.0, 300.0)
@@ -76,7 +76,7 @@ pub fn open_status(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "status", WebviewUrl::App("status/".into()))
+    WebviewWindowBuilder::new(&app, "status", WebviewUrl::App("index.html#/status".into()))
         .title("Status")
         .resizable(false)
         .always_on_top(true)
@@ -95,7 +95,7 @@ pub fn open_styleguide(app: AppHandle<Wry>) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "styleguide", WebviewUrl::App("styleguide/".into()))
+    WebviewWindowBuilder::new(&app, "styleguide", WebviewUrl::App("index.html#/styleguide".into()))
         .title("UI Style Guide")
         .resizable(true)
         .inner_size(900.0, 700.0)
