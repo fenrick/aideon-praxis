@@ -225,7 +225,7 @@ importers:
         specifier: ^1.2.8
         version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@tauri-apps/api':
-        specifier: ^2.0.0
+        specifier: ^2.9.1
         version: 2.9.1
       '@xyflow/react':
         specifier: ^12.9.3
@@ -264,7 +264,7 @@ importers:
         specifier: ^19.2.0
         version: 19.2.1(react@19.2.1)
       react-hook-form:
-        specifier: ^7.66.0
+        specifier: ^7.67.0
         version: 7.68.0(react@19.2.1)
       react-resizable-panels:
         specifier: ^3.0.6
@@ -282,14 +282,14 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       zod:
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: 4.1.13
     devDependencies:
       '@tailwindcss/vite':
-        specifier: ^4.1.16
+        specifier: ^4.1.17
         version: 4.1.17(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.8.1))
       '@types/react':
-        specifier: ^19.2.5
+        specifier: ^19.2.7
         version: 19.2.7
       '@types/react-dom':
         specifier: ^19.2.3
@@ -298,7 +298,7 @@ importers:
         specifier: ^5.1.1
         version: 5.1.1(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.8.1))
       shadcn:
-        specifier: ^3.5.0
+        specifier: ^3.5.1
         version: 3.5.1(@types/node@24.10.1)(typescript@5.9.3)
       tailwindcss:
         specifier: ^4.1.17
@@ -310,10 +310,10 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
       vite:
-        specifier: ^7.1.12
+        specifier: ^7.2.6
         version: 7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.8.1)
       vite-tsconfig-paths:
-        specifier: ^4.1.1
+        specifier: ^4.3.2
         version: 4.3.2(typescript@5.9.3)(vite@7.2.6(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.8.1))
 
 packages:
