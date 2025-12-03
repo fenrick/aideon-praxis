@@ -5,11 +5,7 @@
   "packageManager": "pnpm@10.19.0",
   "license": "MIT",
   "workspaces": [
-    "app/AideonDesignSystem",
-    "app/AideonDesktop",
-    "app/PraxisCanvas",
-    "app/PraxisAdapters",
-    "app/PraxisDtos"
+    "app/AideonDesktop"
   ],
   "pnpm": {
     "overrides": {
@@ -21,16 +17,15 @@
   },
   "scripts": {
     "preflight": "node tools/preflight.mjs",
-    "postinstall": "pnpm --filter @aideon/PraxisDtos run build",
-    "node:dev": "pnpm --filter @aideon/PraxisCanvas dev",
-    "node:build": "pnpm --filter @aideon/PraxisCanvas run build",
+    "node:dev": "pnpm --filter @aideon/desktop dev",
+    "node:build": "pnpm --filter @aideon/desktop run build",
     "node:test": "vitest run --reporter=default",
     "node:test:coverage": "vitest run --coverage.enabled=true --coverage.provider=istanbul --coverage.reporter=lcov --coverage.reporter=html --coverage.reporter=text",
-    "node:lint": "eslint --max-warnings=10 --ignore-pattern \"app/AideonDesignSystem/**\" \"app/**/src/**/*.{ts,tsx,js}\"",
-    "node:lint:fix": "eslint --max-warnings=10 --ignore-pattern \"app/AideonDesignSystem/**\" \"app/**/src/**/*.{ts,tsx,js}\" --fix",
+    "node:lint": "eslint --max-warnings=10 \"app/AideonDesktop/src/**/*.{ts,tsx,js}\" \"app/AideonDesktop/tests/**/*.{ts,tsx,js}\"",
+    "node:lint:fix": "eslint --max-warnings=10 \"app/AideonDesktop/src/**/*.{ts,tsx,js}\" \"app/AideonDesktop/tests/**/*.{ts,tsx,js}\" --fix",
     "node:format": "prettier -w .",
     "node:format:check": "prettier -c .",
-    "node:typecheck": "pnpm --filter @aideon/PraxisCanvas run typecheck && pnpm --filter @aideon/PraxisAdapters run typecheck && pnpm --filter @aideon/PraxisDtos run typecheck && pnpm --filter @aideon/desktop run typecheck",
+    "node:typecheck": "pnpm --filter @aideon/desktop run typecheck",
     "design:guard": "node tools/design-system-guard.mjs",
     "node:ci": "pnpm run design:guard && pnpm run node:lint:fix && pnpm run node:typecheck && pnpm run node:test:coverage && pnpm run node:format",
     "tauri": "tauri",

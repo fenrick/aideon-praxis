@@ -21,10 +21,7 @@ The table below lists the primary modules in this repo. See each module’s READ
 
 | Name                   | Path                                   | Responsibility                                                       | Type           |
 | ---------------------- | -------------------------------------- | -------------------------------------------------------------------- | -------------- |
-| Praxis Canvas          | `app/PraxisCanvas`                     | React/Tauri canvas shell for the Praxis desktop module.              | Node/React app |
-| Praxis Adapters        | `app/PraxisAdapters`                   | TypeScript Graph/Storage/Worker adapter interfaces and DTOs.         | Node/TS pkg    |
-| Praxis DTOs            | `app/PraxisDtos`                       | Shared TypeScript DTOs that shape IPC and worker contracts.          | Node/TS pkg    |
-| Aideon Design System   | `app/AideonDesignSystem`               | Shared shadcn/ui + React Flow design system for React-based apps.    | Node/React pkg |
+| Aideon Desktop         | `app/AideonDesktop`                    | React/Tauri desktop shell containing canvas, design system, adapters, and DTOs (flattened). | Node/React app |
 | Praxis Host            | `crates/aideon_praxis_host`            | Tauri desktop host exposing typed commands and capabilities.         | Rust crate     |
 | Praxis Engine          | `crates/aideon_praxis_engine`          | Core time-aware graph/commit engine for the digital twin.            | Rust crate     |
 | Praxis Facade          | `crates/aideon_praxis_facade`          | Facade and orchestration layer over Praxis engine and adapters.      | Rust crate     |

@@ -58,9 +58,9 @@ async function main() {
 
   const updatedFiles = [];
 
-  // Desktop renderer version file
+  // Desktop renderer version file (React). Legacy Svelte renderer removed.
   updatedFiles.push(
-    await writeTypeScriptVersion(path.join(repoRoot, 'app/PraxisDesktop/src/version.ts'), version),
+    await writeTypeScriptVersion(path.join(repoRoot, 'app/AideonDesktop/src/version.ts'), version),
   );
 
   // Optional worker version file(s)

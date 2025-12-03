@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@aideon/design-system/components/ui/card';
-import { ScrollArea } from '@aideon/design-system/components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from './design-system/components/ui/card';
+import { ScrollArea } from './design-system/components/ui/scroll-area';
 
-import type { SelectionState } from '@aideon/PraxisCanvas';
+import type { SelectionState } from './canvas';
 
 export interface DesktopPropertiesPanelProperties {
   readonly selection?: SelectionState;

@@ -7,9 +7,9 @@ import {
   MenubarItem,
   MenubarMenu,
   MenubarTrigger,
-} from '@aideon/design-system';
-import type { SelectionState } from '@aideon/PraxisCanvas';
-import { PraxisCanvasSurface } from '@aideon/PraxisCanvas';
+} from './design-system';
+import type { SelectionState } from './canvas';
+import { PraxisCanvasSurface } from './canvas';
 
 import { DesktopPropertiesPanel } from './desktop-properties-panel';
 import { DesktopTree } from './desktop-tree';

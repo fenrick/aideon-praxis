@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { listScenarios, type ScenarioSummary } from '@aideon/PraxisCanvas';
+import { listScenarios, type ScenarioSummary } from '../canvas';
 
 export interface WorkspaceTreeItem {
   id: string;

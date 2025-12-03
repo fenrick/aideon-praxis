@@ -68,7 +68,7 @@ Quality gates
 
 ## Repository structure
 
-- `app/PraxisDesktop` — legacy Svelte renderer bundle. Keep it green while we build the React + Tauri canvas runtime defined in `app/PraxisCanvas/DESIGN.md`.
+- Legacy Svelte renderer has been removed; React + Tauri desktop is now the only renderer.
 - `crates/aideon_praxis_host` — Rust desktop host (Tauri) and IPC surface.
 - `crates/{aideon_praxis_engine, aideon_chrona_visualization, aideon_metis_analytics, aideon_continuum_orchestrator, aideon_mneme_core}` — domain crates for graph/time/analytics, orchestration, and persistence.
 - `app/PraxisAdapters` — Shared TypeScript adapters (renderer ↔ host contracts).

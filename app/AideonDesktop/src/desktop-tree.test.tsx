@@ -1,9 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { SidebarProvider } from '@aideon/design-system';
+import { SidebarProvider } from './design-system';
 
-vi.mock('@aideon/PraxisCanvas', () => ({
+vi.mock('./canvas', () => ({
   listScenarios: vi
     .fn()
     .mockResolvedValue([
@@ -11,7 +11,7 @@ vi.mock('@aideon/PraxisCanvas', () => ({
     ]),
 }));
 
-import { listScenarios } from '@aideon/PraxisCanvas';
+import { listScenarios } from './canvas';
 
 import { DesktopTree } from './desktop-tree';
 

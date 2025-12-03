@@ -4,7 +4,7 @@ Before starting, the agent should assume:
 
 - Tauri + React + shadcn/ui are already wired in the repo.
 - `app/PraxisCanvas` exists and currently behaves like a standalone app (has its own header/layout).
-- `app/AideonDesignSystem` (or similar) exists and is where shadcn components are proxied.
+- `app/AideonDesktop/src/design-system` (or similar) exists and is where shadcn components are proxied.
 
 If any of these are missing, the agent should:
 
@@ -62,7 +62,7 @@ If any of these are missing, the agent should:
 
 **Docs**
 
-1. ✅ Update `app/AideonDesignSystem/DESIGN.md`:
+1. ✅ Update `app/AideonDesktop/src/design-system/DESIGN.md`:
    - Add “Desktop shell primitives” section listing:
      - `Sidebar` (navigation + tree).
      - `Resizable` (pane splitting).
@@ -82,10 +82,10 @@ If any of these are missing, the agent should:
 1. ✅ Use shadcn CLI to add components (actual commands depend on your setup, but conceptually):
    - `sidebar`, `resizable`, `menubar`, `scroll-area`, `card`, `form`.
 
-2. ✅ In `app/AideonDesignSystem/src` create proxied components, e.g.:
+2. ✅ In `app/AideonDesktop/src/design-system/src` create proxied components, e.g.:
 
    ```tsx
-   // app/AideonDesignSystem/src/desktop-shell/sidebar.tsx
+   // app/AideonDesktop/src/design-system/src/desktop-shell/sidebar.tsx
    export {
      Sidebar,
      SidebarProvider,
@@ -139,7 +139,7 @@ If any of these are missing, the agent should:
 2. ✅ In the design system, implement `DesktopShell`:
 
    ```tsx
-   // app/AideonDesignSystem/src/desktop-shell/DesktopShell.tsx
+   // app/AideonDesktop/src/design-system/src/desktop-shell/DesktopShell.tsx
    import {
      SidebarProvider,
      Sidebar,
@@ -183,7 +183,7 @@ If any of these are missing, the agent should:
 
 **Tests**
 
-- ✅ In `app/AideonDesignSystem` tests:
+- ✅ In `app/AideonDesktop/src/design-system` tests:
   - Render `DesktopShell` with dummy slot content (e.g. “Tree”, “Toolbar”, etc.).
   - Assert that:
     - It renders without crashing.
@@ -215,7 +215,7 @@ If any of these are missing, the agent should:
 
    ```tsx
    // app/AideonDesktop/src/root.tsx
-   import { DesktopShell } from 'app/AideonDesignSystem';
+   import { DesktopShell } from 'app/AideonDesktop/src/design-system';
 
    export function AideonDesktopRoot() {
      return (

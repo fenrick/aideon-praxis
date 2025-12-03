@@ -383,7 +383,7 @@ Whenever new code is written or changed:
   `crates/aideon_praxis_engine/tests/temporal_ops.rs` covers `state_at` and `diff` over real commits.
 - **Host/Tauri changes**: add or extend IPC/command tests in `crates/aideon_praxis_host/tests` (or
   crate-level `#[cfg(test)]` modules) to exercise payload shapes and error propagation.
-- **Canvas/React changes**: add Vitest + Testing Library tests under `app/PraxisCanvas/tests` that
+- **Canvas/React changes**: add Vitest + Testing Library tests under `app/AideonDesktop/tests/canvas` that
   mock IPC adapters and assert on rendered output and callbacks.
 
 ### 9.2. Golden vertical (time-first state/diff)
@@ -394,8 +394,8 @@ Use this as a template when adding new features:
   `state_at`/`diff_summary` results.
 - **Host**: `crates/aideon_praxis_host/tests/state_at_payload_camelcase.rs` ensures payload casing
   matches IPC expectations.
-- **React**: `app/PraxisCanvas/tests/components/commit-timeline-card.test.tsx` and
-  `app/PraxisCanvas/tests/time/use-temporal-panel.test.ts` show how to mock `praxisApi` and assert
+- **React**: `app/AideonDesktop/tests/canvas/components/commit-timeline-card.test.tsx` and
+  `app/AideonDesktop/tests/canvas/time/use-temporal-panel.test.ts` show how to mock `praxisApi` and assert
   time/commit UI reactions.
 
 ### 9.3. Definition of Done for a PR

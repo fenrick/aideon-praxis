@@ -9,7 +9,7 @@ vi.mock('react-resizable-panels', () => ({
   PanelResizeHandle: () => <div aria-label="Resize handle" />,
 }));
 
-vi.mock('@aideon/PraxisCanvas', () => ({
+vi.mock('./canvas', () => ({
   PraxisCanvasSurface: ({ onSelectionChange }: { readonly onSelectionChange?: () => void }) => {
     onSelectionChange?.();
     return <div>Praxis Canvas Surface</div>;

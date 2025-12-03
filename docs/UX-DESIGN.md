@@ -43,17 +43,17 @@ We will not lock into a single third-party kit; we compose small wrappers where 
 
 - Use vanilla shadcn components in their default theme so upstream updates remain easy to adopt and regression surfaces stay small.
 - Layer the Praxis design system on top by composing “blocks” (cards, inspectors, toolbars, command palettes) out of shadcn primitives plus our tokens, rather than forking the primitives themselves.
-- Sync the primitives before editing with `pnpm --filter @aideon/design-system run components:refresh`; the script pulls the vanilla shadcn kit plus the React Flow UI registry components so we can refresh or rebase without manual edits.
+- Sync the primitives before editing with `pnpm --filter @aideon/desktop run components:refresh`; the script pulls the vanilla shadcn kit plus the React Flow UI registry components so we can refresh or rebase without manual edits.
 - Build UX screens from those reusable blocks first, only reaching for raw shadcn elements when defining a new block; once a pattern appears twice, promote it to a block and document its props.
 - Keep Tailwind utility usage scoped inside the blocks; feature code should mostly consume block variants so the renderer remains consistent across React views.
 - Start from shadcn’s out-of-box blocks (e.g., Command palette, Sidebar/Nav, Dashboard cards) whenever they cover the UX layer; wrap them with Praxis tokens instead of recreating equivalent scaffolding.
 - React Flow’s UI registry already provides Base Node, Node Tooltip, Node Search, Button/animated edges, and other canvas affordances—import them as-is and compose Praxis-specific wrappers (forms, toolbars, modals, sidebars, inspectors) so we respect their vanilla behaviors.
-- Treat every imported primitive as a proxy: blocks now live under `app/AideonDesignSystem/src/blocks` (panels, toolbars, sidebars, modals) and React Flow wrappers live under `app/AideonDesignSystem/src/reactflow`. Wrap the vanilla component once, export it from `@aideon/design-system`, and consume those proxies everywhere so UX surfaces stay consistent.
+- Treat every imported primitive as a proxy: blocks now live under `app/AideonDesktop/src/design-system/src/blocks` (panels, toolbars, sidebars, modals) and React Flow wrappers live under `app/AideonDesktop/src/design-system/src/reactflow`. Wrap the vanilla component once, export it from `@aideon/design-system`, and consume those proxies everywhere so UX surfaces stay consistent.
 - Track concrete block implementations and compliance status in `docs/praxis-design-system-blocks.md`; update it whenever new blocks land or existing ones change roles.
 
 ## 3) Theming & Tokens
 
-- Tokens live in `app/AideonDesignSystem/src/styles/globals.css` and are consumed via `@aideon/design-system` wrappers; platform accents are previewed in the Praxis Canvas Style Guide window.
+- Tokens live in `app/AideonDesktop/src/design-system/src/styles/globals.css` and are consumed via `@aideon/design-system` wrappers; platform accents are previewed in the Praxis Canvas Style Guide window.
 - Primary token: `--color-accent` drives primary buttons, focus rings, selected state.
 - Platform dev-preview:
   - mac: `--color-accent: #0a84ff`

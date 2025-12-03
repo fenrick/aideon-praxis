@@ -24,7 +24,7 @@ Before coding, skim any recent ADRs touching your area.
 ## Documentation index
 
 - **Canonical**: `README.md`, `docs/DESIGN.md`, `Architecture-Boundary.md`, `docs/CODING_STANDARDS.md`, `docs/testing-strategy.md`, `docs/design-system.md`, `docs/UX-DESIGN.md`, `docs/tauri-capabilities.md`, `docs/tauri-client-server-pivot.md`, module-level `README.md` + `DESIGN.md`, and accepted ADRs in `docs/adr/`.
-- **Context-only (legacy – do not extend)**: Svelte-era notes under `app/PraxisDesktop/` only; other legacy overview/implementation docs have been removed after migration.
+- Legacy Svelte renderer (`app/PraxisDesktop/`) has been removed; ignore any remaining references to it.
 
 > **Scope:** These instructions apply exclusively to the `aideon-praxis` codebase. Do not spend time optimising for downstream consumers, SDKs, or hypothetical adopters outside this repository unless explicitly directed in a task.
 
@@ -96,7 +96,7 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 **Before you start a task**
 
 - Skim the docs listed at the top plus recent ADRs for your area.
-- Identify the target module (`app/PraxisCanvas`, host crate, engine crate, etc.) and open its
+- Identify the target module (`app/AideonDesktop/src/canvas`, host crate, engine crate, etc.) and open its
   `README.md`/`DESIGN.md`.
 - If you touch legacy code, plan to migrate toward the current stack where safe.
 - Locate existing adapters/APIs to reuse; do not add new IPC/HTTP surfaces without need.
@@ -144,10 +144,10 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 
 ## Examples (golden patterns)
 
-- Desktop shell composition: `app/AideonDesignSystem/src/desktop-shell/DesktopShell.tsx` and `app/AideonDesktop/src/root.tsx`.
+- Desktop shell composition: `app/AideonDesktop/src/design-system/src/desktop-shell/DesktopShell.tsx` and `app/AideonDesktop/src/root.tsx`.
 - Workspace navigation: `app/AideonDesktop/src/DesktopTree.tsx` (scenarios → workspaces).
-- Selection plumbing: `app/PraxisCanvas/src/app.tsx` (emits `SelectionState`) + `app/AideonDesktop/src/DesktopPropertiesPanel.tsx`.
-- Chrome-free canvas surface: `app/PraxisCanvas/src/app.tsx` exported as `PraxisCanvasSurface`.
+- Selection plumbing: `app/AideonDesktop/src/canvas/app.tsx` (emits `SelectionState`) + `app/AideonDesktop/src/DesktopPropertiesPanel.tsx`.
+- Chrome-free canvas surface: `app/AideonDesktop/src/canvas/app.tsx` exported as `PraxisCanvasSurface`.
 
 ## Issues, PRs & tracking
 
@@ -230,25 +230,10 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 
 ## Per-module guidance (where to look)
 
-- **Praxis Canvas (`app/PraxisCanvas`)**
-  - Read: `app/PraxisCanvas/README.md`, `app/PraxisCanvas/DESIGN.md`.
-  - Constraints: no backend logic; IPC only via Praxis adapters; treat the twin as source of truth.
-  - Tests: JS/TS tests via `pnpm run node:test` (canvas is covered by Vitest suite).
-
-- **Praxis Desktop (legacy, `app/PraxisDesktop`)**
-  - Read: `app/PraxisDesktop/README.md`, `docs/praxis-desktop-svelte-migration.md` (legacy context only).
-  - Constraints: maintenance-only; do not add new features; keep Svelte UI stable during migration.
-  - Tests: Svelte tests via `pnpm --filter @aideon/PraxisDesktop test`.
-
-- **Aideon Design System (`app/AideonDesignSystem`)**
-  - Read: `app/AideonDesignSystem/README.md`, `app/AideonDesignSystem/DESIGN.md`, `docs/design-system.md`.
-  - Constraints: generated components are read-only; extend via wrappers/blocks; shared tokens in `globals.css`.
-  - Tests: design-system tests via `pnpm --filter @aideon/design-system test` if present.
-
-- **Praxis Adapters / DTOs (`app/PraxisAdapters`, `app/PraxisDtos`)**
-  - Read: their `README.md` files, `docs/adr/0003-adapter-boundaries.md`.
-  - Constraints: define TS interfaces/DTOs only; no IPC or business logic.
-  - Tests: part of `pnpm run node:test` and `pnpm run node:typecheck`.
+- **Aideon Desktop (flattened) (`app/AideonDesktop`)**
+  - Read: `app/AideonDesktop/DESIGN.md`, canvas/docs under `app/AideonDesktop/docs/*` (canvas, adapters, dtos, design system).
+  - Contains the React canvas, design-system proxies, adapters, and DTOs in one package.
+  - Tests: JS/TS tests via `pnpm run node:test` (Vitest).
 
 - **Praxis Host (`crates/aideon_praxis_host`)**
   - Read: `crates/aideon_praxis_host/README.md`, `crates/aideon_praxis_host/DESIGN.md`, `docs/tauri-capabilities.md`, `docs/tauri-client-server-pivot.md`.
@@ -267,7 +252,7 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 – Node 24, React 18. Strict TS config; ESLint + Prettier. The SvelteKit bundle is considered
 legacy/prototype; all new surface/canvas work targets the React + React Flow + shadcn/ui stack
 described in `docs/UX-DESIGN.md`, `docs/design-system.md`, and
-`app/PraxisCanvas/DESIGN.md`.
+`app/AideonDesktop/docs/praxis-canvas/DESIGN.md`.
 
 - Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict
   plugin access. The host exposes typed commands only, and React components call the host through a

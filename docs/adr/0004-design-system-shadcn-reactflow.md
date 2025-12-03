@@ -22,9 +22,9 @@ We evaluated:
 ## Decision
 
 Adopt **shadcn/ui** as the base React component set and the **React Flow UI registry** for canvas
-elements, packaged as a dedicated design system module under `app/AideonDesignSystem`:
+elements, packaged as a dedicated design system module under `app/AideonDesktop/src/design-system`:
 
-- `app/AideonDesignSystem` becomes the **single source of truth** for React primitives, blocks, and
+- `app/AideonDesktop/src/design-system` becomes the **single source of truth** for React primitives, blocks, and
   tokens.
 - Generated components live in `src/components/ui` (shadcn + React Flow); they are treated as
   read-only and refreshed via `components.json` and the `components:refresh` script.
@@ -37,7 +37,7 @@ elements, packaged as a dedicated design system module under `app/AideonDesignSy
 
 - **Stability and flexibility:** shadcn/ui gives us copy-in components that we control while staying
   close to upstream. React Flow UI registry provides battle-tested canvas affordances.
-- **Single design system:** centralising primitives in `app/AideonDesignSystem` avoids divergence
+- **Single design system:** centralising primitives in `app/AideonDesktop/src/design-system` avoids divergence
   between Praxis Canvas and other React surfaces.
 - **Refactor-friendly:** by treating generated components as read-only and wrapping them in blocks,
   we can refresh or swap primitives with minimal impact on feature code.
@@ -53,6 +53,6 @@ elements, packaged as a dedicated design system module under `app/AideonDesignSy
 
 ## References
 
-- `docs/design-system.md` – structure and usage of `app/AideonDesignSystem`
+- `docs/design-system.md` – structure and usage of `app/AideonDesktop/src/design-system`
 - `docs/UX-DESIGN.md` – UX goals and layout principles
-- `app/AideonDesignSystem/DESIGN.md` – internal design of the design system module
+- `app/AideonDesktop/src/design-system/DESIGN.md` – internal design of the design system module

@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { AideonDesktopRoot } from './root';
 import './styles.css';
 import { invoke } from '@tauri-apps/api/core';
-import { getCurrent } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const container = document.querySelector('#root');
 
@@ -20,18 +20,18 @@ ReactDOM.createRoot(container).render(
 
 function AppEntry() {
   const [windowLabel, setWindowLabel] = React.useState<string | undefined>(undefined);
+  const isTauri = '__TAURI__' in window;
 
   React.useEffect(() => {
-    if ('__TAURI__' in window) {
-      void getCurrent()
-        .then((current) => {
-          console.log('[desktop] window label', current.label);
-          setWindowLabel(current.label);
-        })
-        .catch(() => {
-          console.warn('[desktop] failed to read window label, falling back to path');
-          setWindowLabel(undefined);
-        });
+    if (isTauri) {
+      try {
+        const currentWindow = getCurrentWindow();
+        console.log('[desktop] window label', currentWindow.label);
+        setWindowLabel(currentWindow.label);
+      } catch (error) {
+        console.warn('[desktop] failed to read window label, falling back to path', error);
+        setWindowLabel(undefined);
+      }
     } else {
       console.log('[desktop] non-tauri environment, using path routing');
       setWindowLabel(undefined);
@@ -41,26 +41,32 @@ function AppEntry() {
   const hashPath = window.location.hash.replace(/^#/, '');
   const searchWindow = new URLSearchParams(window.location.search).get('window') ?? undefined;
   const path = (hashPath || window.location.pathname || '/').replace(/\/$/, '') || '/';
-  const route = windowLabel ?? searchWindow ?? path;
+  // In dev/browser mode, avoid getting stuck on the splash route: prefer explicit query/hash/path.
+  const route = isTauri
+    ? (windowLabel ?? searchWindow ?? 'splash')
+    : (searchWindow ?? path ?? '/');
+  const wantsSplash = route === 'splash' || route === '/splash';
+  // Only bypass splash automatically in browser mode when it wasn't explicitly requested.
+  const normalizedRoute = !isTauri && wantsSplash && !searchWindow ? '/' : route;
   console.log('[desktop] route resolve', {
     hashPath,
     path,
     windowLabel,
     searchWindow,
-    route,
+    route: normalizedRoute,
     location: window.location.href,
   });
 
   let view: React.ReactNode = <AideonDesktopRoot />;
-  if (route === 'splash' || route === '/splash') {
+  if (normalizedRoute === 'splash' || normalizedRoute === '/splash') {
     view = <SplashScreen />;
-  } else if (route === 'status' || route === '/status') {
+  } else if (normalizedRoute === 'status' || normalizedRoute === '/status') {
     view = <StatusScreen />;
-  } else if (route === 'about' || route === '/about') {
+  } else if (normalizedRoute === 'about' || normalizedRoute === '/about') {
     view = <AboutScreen />;
-  } else if (route === 'settings' || route === '/settings') {
+  } else if (normalizedRoute === 'settings' || normalizedRoute === '/settings') {
     view = <SettingsScreen />;
-  } else if (route === 'styleguide' || route === '/styleguide') {
+  } else if (normalizedRoute === 'styleguide' || normalizedRoute === '/styleguide') {
     view = <StyleguideScreen />;
   }
 
@@ -81,12 +87,77 @@ function FrontendReady({ children }: { readonly children: React.ReactNode }) {
 }
 
 function SplashScreen() {
+  const loadLines = [
+    'Reticulating splines…',
+    'Weaving twin orbits…',
+    'Replaying future states…',
+    'Cooling hot paths…',
+    'Aligning decision matrices…',
+    'Seeding knowledge graph…',
+    'Collapsing branches to present…',
+    'Normalising capability models…',
+    'Hardening isolation layer…',
+    'Bootstrapping sidecar…',
+    'Calibrating maturity plateaus…',
+    'Scheduling time-dimension renders…',
+  ];
+
+  const [currentLine, setCurrentLine] = React.useState(loadLines[0]);
+
+  // Rotate status lines
+  React.useEffect(() => {
+    let ix = 0;
+    const interval = setInterval(() => {
+      setCurrentLine(loadLines[ix % loadLines.length] ?? '');
+      ix += 1;
+    }, 800);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Simulate frontend init and notify host
+  React.useEffect(() => {
+    let cancelled = false;
+    async function init() {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1800));
+        if (!cancelled) {
+          await invoke('set_complete', { task: 'frontend' });
+        }
+      } catch (error) {
+        console.warn('splash: init failed', error);
+      }
+    }
+    void init();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background via-muted to-background text-foreground">
-      <div className="space-y-4 text-center">
-        <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Aideon Praxis</p>
-        <h1 className="text-2xl font-semibold">Loading workspace…</h1>
-        <p className="text-sm text-muted-foreground">Initialising host services and adapters.</p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 text-slate-50">
+      <img
+        src="/splash.png"
+        alt="Aideon Praxis splash"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        aria-hidden
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/75 to-slate-950/90 backdrop-blur-sm" aria-hidden />
+      <div className="relative max-w-4xl rounded-2xl border border-white/12 bg-black/55 p-8 shadow-2xl backdrop-blur-xl md:p-10">
+        <div className="space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-200">Aideon Praxis</p>
+          <h1 className="text-3xl font-semibold leading-tight text-white">Loading workspace…</h1>
+          <p className="text-sm text-slate-100">Initialising host services and adapters.</p>
+          <div className="mt-4 space-y-3 rounded-lg border border-white/12 bg-white/10 p-4 backdrop-blur">
+            <div className="flex items-center gap-3 text-slate-50">
+              <span className="inline-flex h-3 w-3 animate-ping rounded-full bg-emerald-400" aria-hidden />
+              <span className="text-sm font-medium">Host connecting</span>
+            </div>
+            <div className="text-xs text-slate-100">{currentLine}</div>
+            <div className="relative mt-1 h-1.5 overflow-hidden rounded-full bg-white/20">
+              <span className="absolute inset-y-0 left-0 w-1/3 animate-[pulse_1.4s_ease-in-out_infinite] rounded-full bg-emerald-400/80" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -24,7 +24,7 @@ export default defineConfig(
       'dist/**',
       'build/**',
       'coverage/**',
-      'app/AideonDesignSystem/**',
+      'app/AideonDesktop/legacy/**',
       '**/.pnpm/**',
       '**/out/**',
     ]),

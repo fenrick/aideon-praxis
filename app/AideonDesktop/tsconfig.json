@@ -1,31 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["./src/*", "../AideonDesignSystem/src/*", "../PraxisCanvas/src/*"],
-      "@/components/*": [
-        "../AideonDesignSystem/src/components/*",
-        "../PraxisCanvas/src/components/*"
-      ],
-      "@/canvas/*": ["../PraxisCanvas/src/canvas/*"],
-      "@/lib/*": ["../PraxisCanvas/src/lib/*", "../AideonDesignSystem/src/lib/*"],
-      "@/platform": ["./src/types/platform.ts"],
-      "@/platform/*": ["./src/types/platform.ts"],
-      "@/praxis-api": ["../PraxisCanvas/src/praxis-api.ts"],
-      "@/templates": ["../PraxisCanvas/src/templates/index.ts"],
-      "@aideon/design-system/reactflow/node-search": ["./src/types/reactflow-node-search.tsx"],
-      "@aideon/design-system/reactflow/praxis-node": ["./src/types/reactflow-praxis-node.tsx"],
-      "@aideon/design-system/reactflow/timeline-edge": ["./src/types/reactflow-timeline-edge.tsx"],
-      "@aideon/design-system": ["../AideonDesignSystem/src"],
-      "@aideon/design-system/*": ["../AideonDesignSystem/src/*"],
-      "@aideon/PraxisCanvas": ["../PraxisCanvas/src"],
-      "@aideon/PraxisCanvas/*": ["../PraxisCanvas/src/*"],
-      "@aideon/PraxisAdapters": ["../PraxisAdapters/src"],
-      "@aideon/PraxisAdapters/*": ["../PraxisAdapters/src/*"],
-      "@aideon/PraxisDtos": ["../PraxisDtos/src"],
-      "@aideon/PraxisDtos/*": ["../PraxisDtos/src/*"]
-    }
+    "baseUrl": "./src",
+    "paths": {}
   },
   "include": ["src"]
 }

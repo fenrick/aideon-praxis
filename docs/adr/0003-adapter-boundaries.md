@@ -36,6 +36,6 @@ Constraints:
 
 ### Verification
 
-- Interfaces live at `app/PraxisAdapters/src/index.ts` with unit tests.
+- Interfaces live at `app/AideonDesktop/src/adapters/src/index.ts` with unit tests.
 - Boundary tests ensure renderer imports remain safe (`ipc-boundary.test.ts`).
 - Host commands remain thin wrappers delegating to worker engines.

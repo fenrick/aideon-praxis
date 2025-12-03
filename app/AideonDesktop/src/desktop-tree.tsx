@@ -7,8 +7,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@aideon/design-system';
-import { Skeleton } from '@aideon/design-system/components/ui/skeleton';
+} from './design-system';
+import { Skeleton } from './design-system/components/ui/skeleton';
 
 import { useWorkspaceTree, type WorkspaceTreeItem } from './hooks/use-workspace-tree';
 

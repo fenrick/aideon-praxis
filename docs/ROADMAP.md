@@ -33,7 +33,7 @@ with Chrona, Metis, Continuum, and Mneme evolving alongside it.
 
 > **Renderer migration:** The historical SvelteKit UI remains in the repo for continuity but all
 > roadmap items now assume the React + React Flow canvas runtime described in
-> Refer to `docs/DESIGN.md` and `app/PraxisCanvas/DESIGN.md` for the current desktop runtime; treat any remaining Svelte references as legacy unless explicitly noted.
+> Refer to `docs/DESIGN.md` and `app/AideonDesktop/docs/praxis-canvas/DESIGN.md` for the current desktop runtime; treat any remaining Svelte references as legacy unless explicitly noted.
 
 #### Acceptance
 

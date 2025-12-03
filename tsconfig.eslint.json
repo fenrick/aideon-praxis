@@ -7,7 +7,7 @@
     "**/out/**",
     "**/.pnpm/**",
     "**/node_modules/**",
-    "app/AideonDesignSystem/**",
+    "app/AideonDesktop/legacy/**",
     "app/**/tsconfig.tsbuildinfo"
   ]
 }

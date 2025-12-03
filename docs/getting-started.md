@@ -69,7 +69,7 @@ host logs appear in the DevTools console in addition to the terminal.
 
 ```bash
 # Terminal A — UI (React canvas shell)
-pnpm --filter @aideon/PraxisCanvas dev
+pnpm --filter @aideon/desktop dev
 
 # Terminal B — Host (Tauri). From repo root:
 pnpm tauri dev

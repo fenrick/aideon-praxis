@@ -14,12 +14,6 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "types": ["node", "vite/client"],
-    "paths": {
-      "@aideon/PraxisAdapters": ["app/PraxisAdapters/src"],
-      "@aideon/PraxisAdapters/*": ["app/PraxisAdapters/src/*"],
-      "@aideon/PraxisDtos": ["app/PraxisDtos/src"],
-      "@aideon/PraxisDtos/*": ["app/PraxisDtos/src/*"],
-      "@/*": ["app/PraxisCanvas/src/*"]
-    }
+    "paths": {}
   }
 }

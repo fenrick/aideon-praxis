@@ -68,7 +68,7 @@ For details, see:
 
 At runtime, Aideon Suite is organised into three layers:
 
-- **Renderer:** React/Tauri Praxis Canvas (and the legacy Svelte renderer during migration) render
+- **Renderer:** React/Tauri Praxis Canvas (legacy Svelte renderer removed) render
   the workspace UI using Aideon Design System components.
 - **Host:** The Tauri-based Praxis Host manages windows, IPC commands, OS integration, and security
   capabilities.
@@ -98,7 +98,7 @@ dashboards, inspectors) are built as widgets or panels within the same shell.
 
 Design system decisions:
 
-- React renderers use **Aideon Design System** (`app/AideonDesignSystem`), which wraps shadcn/ui and
+- React renderers use **Aideon Design System** (`app/AideonDesktop/src/design-system`), which wraps shadcn/ui and
   the React Flow UI registry into shared primitives and blocks.
 - All React surfaces import from `@aideon/design-system/*` instead of talking directly to shadcn or
   React Flow.

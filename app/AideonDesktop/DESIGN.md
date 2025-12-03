@@ -20,7 +20,7 @@
 
 ## Tree and properties panels
 
-- Left tree shows projects/workspaces using the design-system sidebar menus. `DesktopTree` now reads scenario/workspace summaries from the Praxis adapters (`listScenarios` via `@aideon/PraxisCanvas`) and renders them under a Scenarios project group.
+- Left tree shows projects/workspaces using the design-system sidebar menus. `DesktopTree` now reads scenario/workspace summaries from the Praxis adapters (`listScenarios` via the canvas module) and renders them under a Scenarios project group.
 - Right properties panel consumes selection propagated from PraxisCanvas via the shell. Shell owns selection state and passes it into `DesktopPropertiesPanel`.
 
 ## Shell layout contract
