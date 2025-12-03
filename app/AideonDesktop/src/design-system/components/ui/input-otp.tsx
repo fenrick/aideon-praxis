@@ -1,5 +1,5 @@
 import * as React from "react"
-import { OTPInput, OTPInputContext } from "input-otp"
+import { OTPInput, OTPInputContext } from "design-system/components/ui/input-otp"
 import { MinusIcon } from "lucide-react"
 
 import { cn } from "design-system/lib/utils"

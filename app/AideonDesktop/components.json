@@ -5,17 +5,17 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "src/styles/globals.css",
+    "css": "src/design-system/styles/globals.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""
   },
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "components": "design-system/components",
+    "utils": "design-systemlib/utils",
+    "ui": "design-system/components/ui",
+    "lib": "design-system/lib",
+    "hooks": "design-system/hooks"
   },
   "iconLibrary": "lucide",
   "registries": {

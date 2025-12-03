@@ -24,8 +24,8 @@ export function ZoomSlider({
 }) {
   const { zoom } = useViewport();
   const { zoomTo, zoomIn, zoomOut, fitView } = useReactFlow();
-  const minZoom = useStore((state) => state.minZoom) ?? 0.25;
-  const maxZoom = useStore((state) => state.maxZoom) ?? 4;
+  const minZoom = useStore((state) => state.minZoom);
+  const maxZoom = useStore((state) => state.maxZoom);
 
   return (
     <Panel
@@ -54,16 +54,11 @@ export function ZoomSlider({
             orientation === "horizontal" ? "w-[140px]" : "h-[140px]",
           )}
           orientation={orientation}
-          value={[zoom ?? 1]}
+          value={[zoom]}
           min={minZoom}
           max={maxZoom}
           step={0.01}
-          onValueChange={(values) => {
-            const [value] = values;
-            if (typeof value === 'number') {
-              zoomTo(value);
-            }
-          }}
+          onValueChange={(values) => zoomTo(values[0])}
         />
         <Button
           variant="ghost"
