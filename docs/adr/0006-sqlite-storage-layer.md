@@ -24,7 +24,7 @@ Use **SQLite 3 in WAL mode** as the default storage engine for Mneme Core in des
 - Use `INSERT ... ON CONFLICT ...` upserts and simple, portable indexes so the schema can be mapped
   to PostgreSQL-family databases later.
 
-Mneme Core (`crates/aideon_mneme_core`) is responsible for migrations and DDL; Praxis Engine and
+Mneme Core (`crates/mneme`) is responsible for migrations and DDL; Praxis Engine and
 other crates use only its repository-style APIs.
 
 ## Consequences
@@ -38,5 +38,5 @@ other crates use only its repository-style APIs.
 ## References
 
 - `docs/storage/sqlite.md` – schema and migration details
-- `crates/aideon_mneme_core/src/sqlite.rs` – SQLite-specific implementation
+- `crates/mneme/src/sqlite.rs` – SQLite-specific implementation
 - `docs/DESIGN.md` – high-level data/integration overview

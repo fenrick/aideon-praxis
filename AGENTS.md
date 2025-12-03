@@ -117,7 +117,7 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 
 **When touching a boundary (Rust ↔ host ↔ renderer)**
 
-- Update/validate DTO types on both sides (TS in `app/PraxisDtos`, Rust in `crates/aideon_mneme_core`).
+- Update/validate DTO types on both sides (TS in `app/PraxisDtos`, Rust in `crates/mneme`).
 - Update `docs/contracts-and-schemas.md` when schemas or IPC error shapes change.
 - Ensure error structures are documented and consistent across layers before merging.
 
@@ -129,8 +129,8 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 
 **When adding engine/host functionality**
 
-- Follow the patterns in `crates/aideon_praxis_engine/DESIGN.md` and `crates/aideon_praxis_host/DESIGN.md` (errors via `PraxisError`/`HostError`, logging with `log`/`tracing`, datastore via Mneme helpers).
-- Use `crates/aideon_praxis_host/src/temporal.rs` and `crates/aideon_praxis_engine/tests/merge_flow.rs` as golden paths for command wiring and engine flows.
+- Follow the patterns in `crates/engine/DESIGN.md` and `crates/desktop/DESIGN.md` (errors via `PraxisError`/`HostError`, logging with `log`/`tracing`, datastore via Mneme helpers).
+- Use `crates/desktop/src/temporal.rs` and `crates/engine/tests/merge_flow.rs` as golden paths for command wiring and engine flows.
 
 ## Task menu for agents (allowed)
 
@@ -235,12 +235,12 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
   - Contains the React canvas, design-system proxies, adapters, and DTOs in one package.
   - Tests: JS/TS tests via `pnpm run node:test` (Vitest).
 
-- **Praxis Host (`crates/aideon_praxis_host`)**
-  - Read: `crates/aideon_praxis_host/README.md`, `crates/aideon_praxis_host/DESIGN.md`, `docs/tauri-capabilities.md`, `docs/tauri-client-server-pivot.md`.
+- **Praxis Host (`crates/desktop`)**
+  - Read: `crates/desktop/README.md`, `crates/desktop/DESIGN.md`, `docs/tauri-capabilities.md`, `docs/tauri-client-server-pivot.md`.
   - Constraints: no renderer HTTP; no open ports in desktop mode; typed commands only.
-  - Tests: Rust tests via `cargo test -p aideon_praxis_host`; workspace checks via `pnpm run host:lint && pnpm run host:check`.
+  - Tests: Rust tests via `cargo test -p aideon_desktop`; workspace checks via `pnpm run host:lint && pnpm run host:check`.
 
-- **Engines (`crates/aideon_praxis_engine`, `aideon_chrona_visualization`, `aideon_metis_analytics`, `aideon_continuum_orchestrator`, `aideon_mneme_core`)**
+- **Engines (`crates/engine`, `crates/chrona`, `crates/metis`, `crates/continuum`, `crates/mneme`)**
   - Read: each crate’s `README.md`, `DESIGN.md` (where present), `docs/DESIGN.md`, `Architecture-Boundary.md`, relevant ADRs (`0005` meta-model, `0006` storage).
   - Constraints: no Tauri or UI dependencies; obey time-first commit model and adapter boundaries.
   - Tests: crate-level `cargo test -p <crate>` plus workspace Rust checks.
@@ -273,7 +273,7 @@ described in `docs/UX-DESIGN.md`, `docs/design-system.md`, and
 - Keep code paths single and explicit (server-only worker over UDS) to reduce maintenance cost.
   - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime. For React widgets, add Vitest + Testing Library smoke tests alongside the new runtime as soon as it exists.
 
-### Rust worker crates (crates/aideon_chrona_visualization, crates/aideon_metis_analytics, crates/aideon_praxis_engine, crates/aideon_continuum_orchestrator)
+### Rust worker crates (crates/chrona, crates/metis, crates/engine, crates/continuum)
 
 – Rust 2024 edition, `cargo fmt` + `cargo clippy --all-targets --all-features` clean.
 
@@ -371,7 +371,7 @@ The current worker jobs and time APIs are defined by engine contracts and ADRs:
 
 ## Example response template (use this shape)
 
-- Add `Temporal.TopologyDelta` trait to `crates/aideon_metis_analytics` with empty stub.
+- Add `Temporal.TopologyDelta` trait to `crates/metis` with empty stub.
 - Wire Tauri command to call the new trait via `WorkerState` adapter.
 - Extend the React canvas store to request topology delta and render placeholder counts.
 
@@ -379,7 +379,7 @@ PATCH
 
 - Unified diffs here, paths from repo root.
 
-- New unit tests for topology_delta stub in `crates/aideon_metis_analytics`; Vitest store smoke tests.
+- New unit tests for topology_delta stub in `crates/metis`; Vitest store smoke tests.
 
 RUN
 

@@ -21,7 +21,7 @@ linking effects) instead of editing JSON manually.
 
 ## Code-first seeding
 
-`crates/aideon_praxis_engine/src/meta_seed.rs` contains the code representation of this schema. When a new
+`crates/engine/src/meta_seed.rs` contains the code representation of this schema. When a new
 database is created, `PraxisEngine::ensure_seeded` calls `meta_model_seed_change_set` so the
 meta-model and relationship descriptors are built as regular nodes/edges via the commit APIs
 instead of reading the JSON at runtime. This dog-foots the same APIs the renderer uses and keeps
@@ -36,7 +36,7 @@ object types or constraints is handled by extending the dataset rather than edit
 
 ## SeaORM persistence
 
-The SQLite persistence layer now runs through SeaORM/SeaQuery 1.1.19 located in `crates/aideon_mneme_core`.
+The SQLite persistence layer now runs through SeaORM/SeaQuery 1.1.19 located in `crates/mneme`.
 Startup migrations create the `commits`, `refs`, `snapshots`, and readonly `metis_events` tables and
 the meta-model dataset is seeded via those tables so analytics can consume both the graph and the
 flattened Metis view without embedding schema logic in the renderer.

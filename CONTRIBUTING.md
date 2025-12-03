@@ -69,8 +69,8 @@ Quality gates
 ## Repository structure
 
 - Legacy Svelte renderer has been removed; React + Tauri desktop is now the only renderer.
-- `crates/aideon_praxis_host` — Rust desktop host (Tauri) and IPC surface.
-- `crates/{aideon_praxis_engine, aideon_chrona_visualization, aideon_metis_analytics, aideon_continuum_orchestrator, aideon_mneme_core}` — domain crates for graph/time/analytics, orchestration, and persistence.
+- `crates/desktop` — Rust desktop host (Tauri) and IPC surface.
+- `crates/{aideon_engine, aideon_chrona, aideon_metis, aideon_continuum, aideon_mneme}` — domain crates for graph/time/analytics, orchestration, and persistence.
 - `app/PraxisAdapters` — Shared TypeScript adapters (renderer ↔ host contracts).
 - `docs/` — Architecture content, ADRs, C4 diagrams.
 - `scripts/` — Minimal tooling entrypoints (issues.py). Legacy node scripts removed.

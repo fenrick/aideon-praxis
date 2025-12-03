@@ -43,7 +43,7 @@ CockroachDB later only requires replaying migrations + COPY/ingest.
 
 ## Migration + DDL management
 
-- Implemented with `rusqlite_migration`; see `run_migrations` in `crates/aideon_mneme_core/src/sqlite.rs`.
+- Implemented with `rusqlite_migration`; see `run_migrations` in `crates/mneme/src/sqlite.rs`.
 - Every schema change gets its own migration entry. Keep SQL portable and avoid SQLite-specific
   functions in production queries (other than `strftime('%s','now')` used for `updated_at`).
 
@@ -59,8 +59,8 @@ CockroachDB later only requires replaying migrations + COPY/ingest.
 ## File locations
 
 Desktop mode stores everything under `AppData/AideonPraxis/.praxis/praxis.sqlite`. The Tauri host
-(`crates/aideon_praxis_host/src/worker.rs`) creates the directory and opens the DB at startup via
-`aideon_mneme_core::SqliteDb::open`.
+(`crates/desktop/src/worker.rs`) creates the directory and opens the DB at startup via
+`aideon_mneme::SqliteDb::open`.
 
 For server/cloud deployments, point `PraxisEngine::with_sqlite` at any mounted volume or swap in a
 new `CommitStore` implementation (e.g., Postgres, FoundationDB) while keeping the same trait.

@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-aideon_continuum_orchestrator = { path = "../crates/aideon_continuum_orchestrator" }
-aideon_praxis_engine = { path = "../crates/aideon_praxis_engine" }
-aideon_mneme_core = { path = "../crates/aideon_mneme_core" }
+aideon_continuum = { path = "../crates/continuum" }
+aideon_engine = { path = "../crates/engine" }
+aideon_mneme = { path = "../crates/mneme" }
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }

@@ -5,25 +5,25 @@
 
 /// Re-export the Praxis domain crate under `aideon_praxis_facade::praxis`.
 pub mod praxis {
-    pub use aideon_praxis_engine::*;
+    pub use aideon_engine::*;
 }
 
 /// Re-export the Chrona temporal engine crate.
 pub mod chrona {
-    pub use aideon_chrona_visualization::*;
+    pub use aideon_chrona::*;
 }
 
 /// Re-export the Metis analytics crate.
 pub mod metis {
-    pub use aideon_metis_analytics::*;
+    pub use aideon_metis::*;
 }
 
 /// Re-export the Continuum orchestration crate.
 pub mod continuum {
-    pub use aideon_continuum_orchestrator::*;
+    pub use aideon_continuum::*;
 }
 
 /// Re-export Mneme (persistence + DTOs).
 pub mod mneme {
-    pub use aideon_mneme_core::*;
+    pub use aideon_mneme::*;
 }

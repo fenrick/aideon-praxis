@@ -49,7 +49,7 @@ docs/data/
 
 ## Quality gates
 
-- YAML is validated via serde with strict schemas inside `aideon_praxis_engine`.
+- YAML is validated via serde with strict schemas inside `aideon_engine`.
 - Every commit carries `baseline` tags so downstream tooling can distinguish
   imported history from user edits.
 - Importer dry-runs apply the dataset to an in-memory engine so attribute and

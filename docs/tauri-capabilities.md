@@ -24,7 +24,7 @@ focuses on how to apply that model in practice.
 - `uds-ipc` — open UNIX domain sockets for worker RPC only.
 - `clipboard` — optional, disabled by default.
 
-These will be referenced from `crates/aideon_praxis_host/tauri.conf.json` once implemented.
+These will be referenced from `crates/desktop/tauri.conf.json` once implemented.
 
 ## Security Defaults
 
@@ -34,6 +34,6 @@ These will be referenced from `crates/aideon_praxis_host/tauri.conf.json` once i
 
 ## Next Steps
 
-- Define capability TOML files under `crates/aideon_praxis_host/capabilities/`.
+- Define capability TOML files under `crates/desktop/capabilities/`.
 - Add a build-time check ensuring capabilities are referenced in `tauri.conf.json`.
 - Unit tests for deny-by-default behavior in preload IPC bridge.

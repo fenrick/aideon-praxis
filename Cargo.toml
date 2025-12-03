@@ -2,12 +2,12 @@
 resolver = "2"
 members = [
   "crates/aideon_praxis_facade",
-  "crates/aideon_praxis_host",
-  "crates/aideon_praxis_engine",
-  "crates/aideon_chrona_visualization",
-  "crates/aideon_metis_analytics",
-  "crates/aideon_continuum_orchestrator",
-  "crates/aideon_mneme_core",
+  "crates/desktop",
+  "crates/engine",
+  "crates/chrona",
+  "crates/metis",
+  "crates/continuum",
+  "crates/mneme",
   "aideon_xtask"
 ]
 

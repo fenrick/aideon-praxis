@@ -26,7 +26,7 @@ Constraints:
 - Renderer never imports DB/HTTP clients; the host exposes typed commands only.
 - Desktop mode opens no TCP ports. Host ↔ Worker use in-process modules now; later UDS/Named Pipes
   with JSON-RPC. Contracts unchanged across modes.
-- DTOs live in `crates/aideon_mneme_core` and are shared across host and worker crates.
+- DTOs live in `crates/mneme` and are shared across host and worker crates.
 
 ### Consequences
 
