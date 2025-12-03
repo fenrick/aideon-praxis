@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TemporalPanelState } time/use-temporal-panel';
+import type { TemporalPanelState } from '../../src/canvas/time/use-temporal-panel';
 
 const selectCommitSpy = vi.fn();
 const refreshBranchesSpy = vi.fn();
@@ -13,7 +13,7 @@ vi.mock('/time/use-temporal-panel', () => ({
 
 let mockState: TemporalPanelState;
 
-import { ActivityFeedCard } components/dashboard/activity-feed-card';
+import { ActivityFeedCard } from '../../src/canvas/components/dashboard/activity-feed-card';
 
 describe('ActivityFeedCard', () => {
   beforeEach(() => {

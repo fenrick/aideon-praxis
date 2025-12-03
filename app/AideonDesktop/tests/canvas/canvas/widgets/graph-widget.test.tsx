@@ -1,7 +1,7 @@
-import type { GraphWidgetConfig } canvas/types';
-import type { GraphViewModel } praxis-api';
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { GraphViewModel } from '../../src/canvas/praxis-api';
+import type { GraphWidgetConfig } from '../../src/canvas/types';
 
 const getGraphViewMock = vi.fn<
   Parameters<(typeof import('/praxis-api'))['getGraphView']>,
@@ -59,7 +59,7 @@ vi.mock('@xyflow/react', () => {
   };
 });
 
-import { GraphWidget } canvas/widgets/graph-widget';
+import { GraphWidget } from '../../src/canvas/widgets/graph-widget';
 
 const GRAPH_WIDGET: GraphWidgetConfig = {
   id: 'graph-widget',
@@ -106,7 +106,9 @@ describe('GraphWidget', () => {
 
     render(<GraphWidget widget={GRAPH_WIDGET} reloadVersion={0} onViewChange={onViewChange} />);
 
-    await waitFor(() => expect(onViewChange).toHaveBeenCalledWith(GRAPH_VIEW));
+    await waitFor(() => {
+      expect(onViewChange).toHaveBeenCalledWith(GRAPH_VIEW);
+    });
     expect(getGraphViewMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'view-graph' }));
     expect(screen.getByText('Customer Experience')).toBeInTheDocument();
   });

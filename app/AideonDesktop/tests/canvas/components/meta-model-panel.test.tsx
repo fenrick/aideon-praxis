@@ -11,8 +11,8 @@ vi.mock('/lib/meta-model', async () => {
   };
 });
 
-import { MetaModelPanel } components/dashboard/meta-model-panel';
-import type { MetaModelSchema } lib/meta-model';
+import type { MetaModelSchema } from 'lib/meta-model';
+import { MetaModelPanel } from '../../src/canvas/components/dashboard/meta-model-panel';
 
 const SAMPLE_SCHEMA: MetaModelSchema = {
   version: '1.0',

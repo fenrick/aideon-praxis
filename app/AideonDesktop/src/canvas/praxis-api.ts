@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import type {
   TemporalDiffParameters,
   TemporalDiffSnapshot,
@@ -5,7 +6,6 @@ import type {
   TemporalStateSnapshot,
   WorkerHealth,
 } from '../dtos';
-import { invoke } from '@tauri-apps/api/core';
 
 import { isTauri } from './platform';
 
@@ -828,8 +828,4 @@ function seededMetric(key: string): number {
   return randomScore(key) * 10;
 }
 
-export {
-  type TemporalDiffMetrics,
-  type TemporalDiffSnapshot,
-  type WorkerHealth,
-} from '../dtos';
+export { type TemporalDiffMetrics, type TemporalDiffSnapshot, type WorkerHealth } from '../dtos';

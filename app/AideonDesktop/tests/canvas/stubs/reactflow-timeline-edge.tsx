@@ -1,1 +1,1 @@
-export const TimelineEdge = (props: any) => <g data-testid="timeline-edge" {...props} />;
+export const TimelineEdge = (properties: any) => <g data-testid="timeline-edge" {...properties} />;

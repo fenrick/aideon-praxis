@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import type { SelectionState } from './canvas';
+import { PraxisCanvasSurface } from './canvas';
 import {
   DesktopShell,
   Menubar,
@@ -8,8 +10,6 @@ import {
   MenubarMenu,
   MenubarTrigger,
 } from './design-system';
-import type { SelectionState } from './canvas';
-import { PraxisCanvasSurface } from './canvas';
 
 import { DesktopPropertiesPanel } from './desktop-properties-panel';
 import { DesktopTree } from './desktop-tree';

@@ -5,8 +5,8 @@ import {
   fromWidgetSelection,
   isSelectionEmpty,
   selectionSummary,
-} canvas/selection';
-import { EMPTY_SELECTION } canvas/types';
+} from '../../src/canvas/selection';
+import { EMPTY_SELECTION } from '../../src/canvas/types';
 
 describe('canvas selection helpers', () => {
   it('deduplicates and strips empty identifiers', () => {

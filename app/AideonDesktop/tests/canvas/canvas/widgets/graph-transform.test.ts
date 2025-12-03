@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { GraphViewModel } praxis-api';
+import type { GraphViewModel } from '../../src/canvas/praxis-api';
 
-import { buildFlowEdges, buildFlowNodes } canvas/widgets/graph-transform';
+import { buildFlowEdges, buildFlowNodes } from '../../src/canvas/widgets/graph-transform';
 
 const SAMPLE_VIEW: GraphViewModel = {
   metadata: {

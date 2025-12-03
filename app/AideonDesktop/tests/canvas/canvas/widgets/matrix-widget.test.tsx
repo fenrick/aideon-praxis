@@ -1,7 +1,7 @@
-import type { MatrixWidgetConfig } canvas/types';
-import type { MatrixViewModel } praxis-api';
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MatrixViewModel } from '../../src/canvas/praxis-api';
+import type { MatrixWidgetConfig } from '../../src/canvas/types';
 
 const getMatrixViewMock = vi.fn<
   Parameters<(typeof import('/praxis-api'))['getMatrixView']>,
@@ -17,7 +17,7 @@ vi.mock('/praxis-api', async () => {
   };
 });
 
-import { MatrixWidget } canvas/widgets/matrix-widget';
+import { MatrixWidget } from '../../src/canvas/widgets/matrix-widget';
 
 const MATRIX_WIDGET: MatrixWidgetConfig = {
   id: 'matrix-widget',
@@ -66,7 +66,9 @@ describe('MatrixWidget', () => {
 
     render(<MatrixWidget widget={MATRIX_WIDGET} reloadVersion={0} />);
 
-    await waitFor(() => expect(getMatrixViewMock).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(getMatrixViewMock).toHaveBeenCalled();
+    });
     expect(screen.getByText('Capability A')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Production' })).toBeInTheDocument();
     expect(screen.getByText('80%')).toBeInTheDocument();

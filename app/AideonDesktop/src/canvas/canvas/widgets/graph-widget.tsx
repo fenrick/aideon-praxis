@@ -1,8 +1,6 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { toErrorMessage } from 'canvas/lib/errors';
-import { getGraphView, type GraphViewModel } from 'canvas/praxis-api';
 import {
   Background,
   BackgroundVariant,
@@ -17,11 +15,16 @@ import {
   type Node,
   type NodeTypes,
 } from '@xyflow/react';
+import { toErrorMessage } from 'canvas/lib/errors';
+import { getGraphView, type GraphViewModel } from 'canvas/praxis-api';
 
 import { Button } from '../../../design-system/components/ui/button';
 import { NodeSearchDialog } from '../../../design-system/reactflow/node-search';
 import { PraxisNode } from '../../../design-system/reactflow/praxis-node';
-import { TimelineEdge, type TimelineEdgeData } from '../../../design-system/reactflow/timeline-edge';
+import {
+  TimelineEdge,
+  type TimelineEdgeData,
+} from '../../../design-system/reactflow/timeline-edge';
 import type { GraphWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import type { GraphNodeData } from './graph-node-data';
 import { buildFlowEdges, buildFlowNodes } from './graph-transform';

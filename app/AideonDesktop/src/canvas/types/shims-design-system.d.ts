@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ComponentType } from 'react';
 
 declare module '../../design-system/components/ui/button' {

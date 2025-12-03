@@ -1,6 +1,6 @@
 # src/adapters – Aideon Suite module
 
-_Flatten note: adapters now live at `app/AideonDesktop/src/adapters` within the desktop package; import via relative or `src`-rooted paths (no aliases)._ 
+_Flatten note: adapters now live at `app/AideonDesktop/src/adapters` within the desktop package; import via relative or `src`-rooted paths (no aliases)._
 
 ## Purpose
 

@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
-import type { CanvasWidget, SelectionState } from 'canvas/types';
 import { ActivityTimelinePanel } from 'canvas/components/blocks/activity-timeline-panel';
 import { CommitTimelineList } from 'canvas/components/blocks/commit-timeline-list';
 import { CanvasRuntimeCard } from 'canvas/components/dashboard/canvas-runtime-card';
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
 import { useTemporalPanel } from 'canvas/time/use-temporal-panel';
+import type { CanvasWidget, SelectionState } from 'canvas/types';
 
+import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { Button } from '../../design-system/components/ui/button';
 import {
   Card,
@@ -16,7 +17,6 @@ import {
   CardHeader,
   CardTitle,
 } from '../../design-system/components/ui/card';
-import * as TabsPrimitive from '@radix-ui/react-tabs';
 
 export type WorkspaceTabValue = 'overview' | 'timeline' | 'canvas' | 'activity';
 

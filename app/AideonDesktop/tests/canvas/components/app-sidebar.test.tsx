@@ -1,8 +1,8 @@
-import type { ScenarioSummary } praxis-api';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { ScenarioSummary } from '../../src/canvas/praxis-api';
 
-import { AppSidebar } components/app-sidebar';
+import { AppSidebar } from '../../src/canvas/components/app-sidebar';
 
 const SCENARIOS: ScenarioSummary[] = [
   {

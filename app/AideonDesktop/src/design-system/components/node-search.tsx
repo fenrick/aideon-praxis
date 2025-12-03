@@ -1,11 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState } from 'react';
 
-import {
-  BuiltInEdge,
-  useReactFlow,
-  type Node,
-  type PanelProps,
-} from "@xyflow/react";
+import { BuiltInEdge, useReactFlow, type Node, type PanelProps } from '@xyflow/react';
 
 import {
   Command,
@@ -15,9 +10,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "design-system/components/ui/command";
+} from 'design-system/components/ui/command';
 
-export interface NodeSearchProps extends Omit<PanelProps, "children"> {
+export interface NodeSearchProperties extends Omit<PanelProps, 'children'> {
   // The function to search for nodes, should return an array of nodes that match the search string
   // By default, it will check for lowercase string inclusion.
   onSearch?: (searchString: string) => Node[];
@@ -34,19 +29,17 @@ export function NodeSearchInternal({
   onSelectNode,
   open,
   onOpenChange,
-  ...props
-}: NodeSearchProps) {
+  ...properties
+}: NodeSearchProperties) {
   const [searchResults, setSearchResults] = useState<Node[]>([]);
-  const [searchString, setSearchString] = useState<string>("");
+  const [searchString, setSearchString] = useState<string>('');
   const { getNodes, fitView, setNodes } = useReactFlow<Node, BuiltInEdge>();
 
   const defaultOnSearch = useCallback(
     (searchString: string) => {
       const nodes = getNodes();
       return nodes.filter((node) =>
-        (node.data.label as string)
-          .toLowerCase()
-          .includes(searchString.toLowerCase()),
+        (node.data.label as string).toLowerCase().includes(searchString.toLowerCase()),
       );
     },
     [getNodes],
@@ -66,9 +59,7 @@ export function NodeSearchInternal({
 
   const defaultOnSelectNode = useCallback(
     (node: Node) => {
-      setNodes((nodes) =>
-        nodes.map((n) => (n.id === node.id ? { ...n, selected: true } : n)),
-      );
+      setNodes((nodes) => nodes.map((n) => (n.id === node.id ? { ...n, selected: true } : n)));
       fitView({ nodes: [node], duration: 500 });
     },
     [fitView, setNodes],
@@ -77,7 +68,7 @@ export function NodeSearchInternal({
   const onSelect = useCallback(
     (node: Node) => {
       (onSelectNode || defaultOnSelectNode)?.(node);
-      setSearchString("");
+      setSearchString('');
       onOpenChange?.(false);
     },
     [onSelectNode, defaultOnSelectNode, onOpenChange],
@@ -100,7 +91,12 @@ export function NodeSearchInternal({
             <CommandGroup heading="Nodes">
               {searchResults.map((node) => {
                 return (
-                  <CommandItem key={node.id} onSelect={() => onSelect(node)}>
+                  <CommandItem
+                    key={node.id}
+                    onSelect={() => {
+                      onSelect(node);
+                    }}
+                  >
                     <span>{node.data.label as string}</span>
                   </CommandItem>
                 );
@@ -117,27 +113,24 @@ export function NodeSearch({
   className,
   onSearch,
   onSelectNode,
-  ...props
-}: NodeSearchProps) {
+  ...properties
+}: NodeSearchProperties) {
   const [open, setOpen] = useState(false);
   return (
-    <Command
-      shouldFilter={false}
-      className="rounded-lg border shadow-md md:min-w-[450px]"
-    >
+    <Command shouldFilter={false} className="rounded-lg border shadow-md md:min-w-[450px]">
       <NodeSearchInternal
         className={className}
         onSearch={onSearch}
         onSelectNode={onSelectNode}
         open={open}
         onOpenChange={setOpen}
-        {...props}
+        {...properties}
       />
     </Command>
   );
 }
 
-export interface NodeSearchDialogProps extends NodeSearchProps {
+export interface NodeSearchDialogProperties extends NodeSearchProperties {
   title?: string;
 }
 
@@ -147,9 +140,9 @@ export function NodeSearchDialog({
   onSelectNode,
   open,
   onOpenChange,
-  title = "Node Search",
-  ...props
-}: NodeSearchDialogProps) {
+  title = 'Node Search',
+  ...properties
+}: NodeSearchDialogProperties) {
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <NodeSearchInternal
@@ -158,7 +151,7 @@ export function NodeSearchDialog({
         onSelectNode={onSelectNode}
         open={open}
         onOpenChange={onOpenChange}
-        {...props}
+        {...properties}
       />
     </CommandDialog>
   );

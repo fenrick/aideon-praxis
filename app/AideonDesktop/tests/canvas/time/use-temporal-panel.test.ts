@@ -7,8 +7,11 @@ import type {
   TemporalBranchSummary,
   TemporalCommitSummary,
   TemporalMergeResult,
-} praxis-api';
-import type { TemporalPanelActions, TemporalPanelState } time/use-temporal-panel';
+} from '../../src/canvas/praxis-api';
+import type {
+  TemporalPanelActions,
+  TemporalPanelState,
+} from '../../src/canvas/time/use-temporal-panel';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -49,7 +52,7 @@ vi.mock('/praxis-api', () => ({
   mergeTemporalBranches: (...args: Parameters<typeof mergeSpy>) => mergeSpy(...args),
 }));
 
-import { useTemporalPanel } time/use-temporal-panel';
+import { useTemporalPanel } from '../../src/canvas/time/use-temporal-panel';
 
 const MAIN_COMMITS: TemporalCommitSummary[] = [
   {
@@ -110,7 +113,7 @@ const SNAPSHOTS: Record<string, StateAtSnapshot> = {
 
 function renderTemporalPanelHook() {
   const container = document.createElement('div');
-  document.body.appendChild(container);
+  document.body.append(container);
   const root = createRoot(container);
   let current: [TemporalPanelState, TemporalPanelActions] | undefined;
 
@@ -138,7 +141,9 @@ function renderTemporalPanelHook() {
       return getCurrent()[1];
     },
     unmount() {
-      act(() => root.unmount());
+      act(() => {
+        root.unmount();
+      });
       container.remove();
     },
   };

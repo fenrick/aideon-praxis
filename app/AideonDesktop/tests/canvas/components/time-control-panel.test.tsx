@@ -1,9 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { TemporalPanelActions, TemporalPanelState } time/use-temporal-panel';
+import type {
+  TemporalPanelActions,
+  TemporalPanelState,
+} from '../../src/canvas/time/use-temporal-panel';
 
-import { TimeControlPanel } components/blocks/time-control-panel';
+import { TimeControlPanel } from '../../src/canvas/components/blocks/time-control-panel';
 
 vi.mock('../../../src/design-system/components/ui/select', () => {
   const Select = ({ onValueChange, value, disabled, children }: any) => (

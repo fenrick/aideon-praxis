@@ -2,12 +2,11 @@ import type { ComponentPropsWithoutRef } from 'react';
 
 import { cn } from 'design-system/lib/utils';
 
-import type { DesktopShellSlots } from './types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './resizable';
 import { Sidebar, SidebarProvider } from './sidebar';
+import type { DesktopShellSlots } from './types';
 
-export type DesktopShellProperties = DesktopShellSlots &
-  Readonly<ComponentPropsWithoutRef<'div'>>;
+export type DesktopShellProperties = DesktopShellSlots & Readonly<ComponentPropsWithoutRef<'div'>>;
 
 export function DesktopShell({
   tree,
@@ -36,9 +35,7 @@ export function DesktopShell({
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={60} minSize={40} className="min-w-[320px]">
-            <div className="flex h-full flex-col overflow-hidden bg-background/80 p-4">
-              {main}
-            </div>
+            <div className="flex h-full flex-col overflow-hidden bg-background/80 p-4">{main}</div>
           </ResizablePanel>
 
           <ResizableHandle withHandle />

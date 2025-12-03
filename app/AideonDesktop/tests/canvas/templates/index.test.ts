@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CanvasWidget } canvas/types';
+import type { CanvasWidget } from '../../src/canvas/types';
 
-import { BUILT_IN_TEMPLATES, captureTemplateFromWidgets, instantiateTemplate } templates';
+import { BUILT_IN_TEMPLATES, captureTemplateFromWidgets, instantiateTemplate } from 'templates';
 
 describe('templates', () => {
   it('instantiates templates with current timestamps', () => {

@@ -1,5 +1,5 @@
-import { ensureIsoDateTime } from '../../src/dtos';
 import { describe, expect, test } from 'vitest';
+import { ensureIsoDateTime } from '../../src/dtos';
 
 describe('ensureIsoDateTime', () => {
   test('normalises UTC input strings', () => {

@@ -17,7 +17,7 @@ import {
   listTemporalBranches,
   listTemporalCommits,
   mergeTemporalBranches,
-} praxis-api';
+} from '../../src/canvas/praxis-api';
 
 const snapshot = {
   asOf: 'commit-main-002',

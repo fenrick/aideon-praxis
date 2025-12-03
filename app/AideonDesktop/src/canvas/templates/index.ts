@@ -1,10 +1,10 @@
-import type { CanvasWidget, WidgetSize } from 'canvas/types';
 import type {
   CatalogueViewDefinition,
   ChartViewDefinition,
   GraphViewDefinition,
   MatrixViewDefinition,
 } from 'canvas/praxis-api';
+import type { CanvasWidget, WidgetSize } from 'canvas/types';
 
 type GraphTemplateView = Omit<GraphViewDefinition, 'asOf' | 'scenario'>;
 type CatalogueTemplateView = Omit<CatalogueViewDefinition, 'asOf' | 'scenario'>;
@@ -92,13 +92,11 @@ function convertWidgetToTemplate(widget: CanvasWidget): TemplateWidgetConfig {
   return { id, title, size, kind: 'chart', view: withoutRuntimeFields(widget.view) };
 }
 
-function withoutRuntimeFields<T extends { asOf: string; scenario?: string }>(
-  view: T,
-): Omit<T, 'asOf' | 'scenario'> {
-  const rest = { ...view } as Partial<T>;
+function withoutRuntimeFields(view: any): any {
+  const rest = { ...view };
   delete rest.asOf;
   delete rest.scenario;
-  return rest as Omit<T, 'asOf' | 'scenario'>;
+  return rest;
 }
 
 const GRAPH_OVERVIEW: GraphTemplateView = {

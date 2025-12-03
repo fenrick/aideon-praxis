@@ -1,4 +1,5 @@
 import { useWorkerHealth } from 'canvas/health/use-worker-health';
+import { HeartPulse, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../../../design-system/components/ui/alert';
 import { Badge } from '../../../design-system/components/ui/badge';
 import { Button } from '../../../design-system/components/ui/button';
@@ -9,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '../../../design-system/components/ui/card';
-import { HeartPulse, RefreshCw } from 'lucide-react';
 
 export function WorkerHealthCard() {
   const [state, actions] = useWorkerHealth();

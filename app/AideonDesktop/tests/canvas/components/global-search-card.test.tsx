@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchMetaModel } lib/meta-model';
-import { getCatalogueView } praxis-api';
-import type { TemporalPanelState } time/use-temporal-panel';
+import { fetchMetaModel } from 'lib/meta-model';
+import { getCatalogueView } from '../../src/canvas/praxis-api';
+import type { TemporalPanelState } from '../../src/canvas/time/use-temporal-panel';
 
 const selectCommitSpy = vi.fn();
 const selectBranchSpy = vi.fn();
@@ -58,7 +58,7 @@ const getCatalogueViewMock = vi.mocked(getCatalogueView);
 
 let mockState: TemporalPanelState;
 
-import { GlobalSearchCard } components/dashboard/global-search-card';
+import { GlobalSearchCard } from '../../src/canvas/components/dashboard/global-search-card';
 
 describe('GlobalSearchCard', () => {
   beforeEach(() => {

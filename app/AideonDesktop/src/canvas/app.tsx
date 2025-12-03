@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { CanvasWidget, SelectionState } from 'canvas/types';
-import { EMPTY_SELECTION } from 'canvas/types';
+import { invoke } from '@tauri-apps/api/core';
 import { AppSidebar } from 'canvas/components/app-sidebar';
 import { ActivityFeedCard } from 'canvas/components/dashboard/activity-feed-card';
 import { CommitTimelineCard } from 'canvas/components/dashboard/commit-timeline-card';
@@ -25,8 +24,9 @@ import {
   instantiateTemplate,
   type CanvasTemplate,
 } from 'canvas/templates';
+import type { CanvasWidget, SelectionState } from 'canvas/types';
+import { EMPTY_SELECTION } from 'canvas/types';
 import { Button } from '../design-system/components/ui/button';
-import { invoke } from '@tauri-apps/api/core';
 
 interface ScenarioState {
   loading: boolean;

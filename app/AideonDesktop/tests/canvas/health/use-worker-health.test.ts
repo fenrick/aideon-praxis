@@ -5,8 +5,8 @@ vi.mock('/praxis-api', () => ({
   getWorkerHealth: vi.fn(),
 }));
 
-import { useWorkerHealth } health/use-worker-health';
-import { getWorkerHealth } praxis-api';
+import { useWorkerHealth } from '../../src/canvas/health/use-worker-health';
+import { getWorkerHealth } from '../../src/canvas/praxis-api';
 
 describe('useWorkerHealth', () => {
   it('returns snapshot on success', async () => {
@@ -14,7 +14,9 @@ describe('useWorkerHealth', () => {
 
     const { result } = renderHook(() => useWorkerHealth());
 
-    await waitFor(() => expect(result.current[0].loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current[0].loading).toBe(false);
+    });
     expect(result.current[0].snapshot).toEqual({ ok: true, timestamp_ms: 99 });
   });
 
@@ -23,7 +25,9 @@ describe('useWorkerHealth', () => {
 
     const { result } = renderHook(() => useWorkerHealth());
 
-    await waitFor(() => expect(result.current[0].loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current[0].loading).toBe(false);
+    });
     expect(result.current[0].error).toContain('down');
     expect(result.current[0].snapshot).toBeUndefined();
   });

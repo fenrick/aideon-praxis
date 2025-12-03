@@ -1,7 +1,7 @@
-import type { CatalogueWidgetConfig } canvas/types';
-import type { CatalogueViewModel } praxis-api';
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CatalogueViewModel } from '../../src/canvas/praxis-api';
+import type { CatalogueWidgetConfig } from '../../src/canvas/types';
 
 const getCatalogueViewMock = vi.fn<
   Parameters<(typeof import('/praxis-api'))['getCatalogueView']>,
@@ -17,7 +17,7 @@ vi.mock('/praxis-api', async () => {
   };
 });
 
-import { CatalogueWidget } canvas/widgets/catalogue-widget';
+import { CatalogueWidget } from '../../src/canvas/widgets/catalogue-widget';
 
 const CATALOGUE_WIDGET: CatalogueWidgetConfig = {
   id: 'catalogue-widget',
@@ -67,11 +67,13 @@ describe('CatalogueWidget', () => {
       />,
     );
 
-    await waitFor(() => expect(getCatalogueViewMock).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(getCatalogueViewMock).toHaveBeenCalled();
+    });
     expect(screen.getByText('Customer Onboarding')).toBeInTheDocument();
     const selectedRow = screen.getByText('Customer Onboarding').closest('tr');
     expect(selectedRow).not.toBeNull();
-    expect(selectedRow?.getAttribute('data-state')).toBe('selected');
+    expect(selectedRow?.dataset.state).toBe('selected');
   });
 
   it('shows API errors instead of an empty placeholder', async () => {

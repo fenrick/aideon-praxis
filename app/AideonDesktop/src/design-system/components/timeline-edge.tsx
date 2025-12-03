@@ -1,25 +1,25 @@
-import type { EdgeProps } from "@xyflow/react";
-import { BaseEdge, EdgeLabelRenderer, getBezierPath } from "@xyflow/react";
+import type { EdgeProps } from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react';
 
-export type TimelineEdgeData = {
+export interface TimelineEdgeData {
   label?: string;
-};
+}
 
-export function TimelineEdge(props: EdgeProps<TimelineEdgeData>) {
-  const { sourceX, sourceY, targetX, targetY, data } = props;
+export function TimelineEdge(properties: EdgeProps<TimelineEdgeData>) {
+  const { sourceX, sourceY, targetX, targetY, data } = properties;
   const [path, labelX, labelY] = getBezierPath({ sourceX, sourceY, targetX, targetY });
 
   return (
     <>
-      <BaseEdge {...props} path={path} />
+      <BaseEdge {...properties} path={path} />
       {data?.label ? (
         <EdgeLabelRenderer>
           <div
             data-slot="timeline-edge-label"
             style={{
-              position: "absolute",
-              transform: "translate(-50%, -50%)",
-              pointerEvents: "all",
+              position: 'absolute',
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'all',
               left: labelX,
               top: labelY,
             }}

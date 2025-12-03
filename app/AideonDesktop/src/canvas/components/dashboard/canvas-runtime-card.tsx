@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { CanvasRuntime } from 'canvas/canvas-runtime';
+import type { GraphViewModel } from 'canvas/praxis-api';
 import { fromWidgetSelection } from 'canvas/selection';
 import type {
   CanvasWidget,
@@ -9,7 +10,6 @@ import type {
   WidgetSelection,
   WidgetViewEvent,
 } from 'canvas/types';
-import type { GraphViewModel } from 'canvas/praxis-api';
 import { Button } from '../../../design-system/components/ui/button';
 import {
   Card,

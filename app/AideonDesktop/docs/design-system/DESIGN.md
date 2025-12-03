@@ -2,7 +2,7 @@
 
 _Flatten note (December 2025): this design system now lives inside `app/AideonDesktop/src/design-system`
 instead of a standalone workspace. Import directly from the `src/design-system` tree (no package
-aliases)._ 
+aliases)._
 
 ## Overview
 

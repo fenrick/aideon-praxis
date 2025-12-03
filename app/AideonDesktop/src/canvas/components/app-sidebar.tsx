@@ -13,8 +13,6 @@ import { cn } from 'canvas/lib/utilities';
 import type { ScenarioSummary } from 'canvas/praxis-api';
 import { Button } from '../../design-system/components/ui/button';
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
-
 const NAV_ITEMS = [
   { label: 'Overview', icon: LayoutPanelTop, active: true },
   { label: 'Workflows', icon: NotebookTabs },

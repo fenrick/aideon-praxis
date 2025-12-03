@@ -1,10 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import { AideonDesktopRoot } from './root';
-import './styles.css';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { AideonDesktopRoot } from './root';
+import './styles.css';
 
 const container = document.querySelector('#root');
 
@@ -19,8 +19,8 @@ ReactDOM.createRoot(container).render(
 );
 
 function AppEntry() {
-  const [windowLabel, setWindowLabel] = React.useState<string | undefined>(undefined);
-  const isTauri = '__TAURI__' in window;
+  const [windowLabel, setWindowLabel] = React.useState<string | undefined>();
+  const isTauri = '__TAURI__' in globalThis;
 
   React.useEffect(() => {
     if (isTauri) {
@@ -38,13 +38,11 @@ function AppEntry() {
     }
   }, []);
 
-  const hashPath = window.location.hash.replace(/^#/, '');
-  const searchWindow = new URLSearchParams(window.location.search).get('window') ?? undefined;
-  const path = (hashPath || window.location.pathname || '/').replace(/\/$/, '') || '/';
+  const hashPath = globalThis.location.hash.replace(/^#/, '');
+  const searchWindow = new URLSearchParams(globalThis.location.search).get('window') ?? undefined;
+  const path = (hashPath || globalThis.location.pathname || '/').replace(/\/$/, '') || '/';
   // In dev/browser mode, avoid getting stuck on the splash route: prefer explicit query/hash/path.
-  const route = isTauri
-    ? (windowLabel ?? searchWindow ?? 'splash')
-    : (searchWindow ?? path ?? '/');
+  const route = isTauri ? (windowLabel ?? searchWindow ?? 'splash') : (searchWindow ?? path ?? '/');
   const wantsSplash = route === 'splash' || route === '/splash';
   // Only bypass splash automatically in browser mode when it wasn't explicitly requested.
   const normalizedRoute = !isTauri && wantsSplash && !searchWindow ? '/' : route;
@@ -54,20 +52,42 @@ function AppEntry() {
     windowLabel,
     searchWindow,
     route: normalizedRoute,
-    location: window.location.href,
+    location: globalThis.location.href,
   });
 
   let view: React.ReactNode = <AideonDesktopRoot />;
-  if (normalizedRoute === 'splash' || normalizedRoute === '/splash') {
-    view = <SplashScreen />;
-  } else if (normalizedRoute === 'status' || normalizedRoute === '/status') {
-    view = <StatusScreen />;
-  } else if (normalizedRoute === 'about' || normalizedRoute === '/about') {
-    view = <AboutScreen />;
-  } else if (normalizedRoute === 'settings' || normalizedRoute === '/settings') {
-    view = <SettingsScreen />;
-  } else if (normalizedRoute === 'styleguide' || normalizedRoute === '/styleguide') {
-    view = <StyleguideScreen />;
+  switch (normalizedRoute) {
+    case 'splash':
+    case '/splash': {
+      view = <SplashScreen />;
+
+      break;
+    }
+    case 'status':
+    case '/status': {
+      view = <StatusScreen />;
+
+      break;
+    }
+    case 'about':
+    case '/about': {
+      view = <AboutScreen />;
+
+      break;
+    }
+    case 'settings':
+    case '/settings': {
+      view = <SettingsScreen />;
+
+      break;
+    }
+    case 'styleguide':
+    case '/styleguide': {
+      view = <StyleguideScreen />;
+
+      break;
+    }
+    // No default
   }
 
   return <FrontendReady>{view}</FrontendReady>;
@@ -75,9 +95,11 @@ function AppEntry() {
 
 function FrontendReady({ children }: { readonly children: React.ReactNode }) {
   React.useEffect(() => {
-    if ('__TAURI__' in window) {
+    if ('__TAURI__' in globalThis) {
       void invoke('set_complete', { task: 'frontend' })
-        .then(() => console.log('[desktop] notified host frontend ready'))
+        .then(() => {
+          console.log('[desktop] notified host frontend ready');
+        })
         .catch((error) => {
           console.warn('failed to notify frontend ready', error);
         });
@@ -111,7 +133,9 @@ function SplashScreen() {
       setCurrentLine(loadLines[ix % loadLines.length] ?? '');
       ix += 1;
     }, 800);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   // Simulate frontend init and notify host
@@ -141,15 +165,23 @@ function SplashScreen() {
         className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         aria-hidden
       />
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/75 to-slate-950/90 backdrop-blur-sm" aria-hidden />
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/75 to-slate-950/90 backdrop-blur-sm"
+        aria-hidden
+      />
       <div className="relative max-w-4xl rounded-2xl border border-white/12 bg-black/55 p-8 shadow-2xl backdrop-blur-xl md:p-10">
         <div className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-200">Aideon Praxis</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-200">
+            Aideon Praxis
+          </p>
           <h1 className="text-3xl font-semibold leading-tight text-white">Loading workspace…</h1>
           <p className="text-sm text-slate-100">Initialising host services and adapters.</p>
           <div className="mt-4 space-y-3 rounded-lg border border-white/12 bg-white/10 p-4 backdrop-blur">
             <div className="flex items-center gap-3 text-slate-50">
-              <span className="inline-flex h-3 w-3 animate-ping rounded-full bg-emerald-400" aria-hidden />
+              <span
+                className="inline-flex h-3 w-3 animate-ping rounded-full bg-emerald-400"
+                aria-hidden
+              />
               <span className="text-sm font-medium">Host connecting</span>
             </div>
             <div className="text-xs text-slate-100">{currentLine}</div>
