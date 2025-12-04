@@ -38,14 +38,11 @@ function AppEntry() {
     }
   }, []);
 
-  const hashPath = globalThis.location.hash.replace(/^#/, '');
-  const searchWindow = new URLSearchParams(globalThis.location.search).get('window') ?? undefined;
-  const path = (hashPath || globalThis.location.pathname || '/').replace(/\/$/, '') || '/';
-  // In dev/browser mode, avoid getting stuck on the splash route: prefer explicit query/hash/path.
-  const route = isTauri ? (windowLabel ?? searchWindow ?? 'splash') : (searchWindow ?? path ?? '/');
+  const hashPath = globalThis.location.hash.replace(/^#/, '').replace(/\/$/, '') || '/';
+  const route = isTauri ? windowLabel ?? 'splash' : hashPath;
   const wantsSplash = route === 'splash' || route === '/splash';
-  // Only bypass splash automatically in browser mode when it wasn't explicitly requested.
-  const normalizedRoute = !isTauri && wantsSplash && !searchWindow ? '/' : route;
+  // Only bypass splash automatically in browser mode when it wasn't explicitly requested in hash.
+  const normalizedRoute = !isTauri && wantsSplash && hashPath === '/splash' ? '/' : route;
   console.log('[desktop] route resolve', {
     hashPath,
     path,
