@@ -32,7 +32,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    # Minimal Rust gating (fmt/clippy) for crates/aideon_desktop only; no Tauri build yet.
+    # Minimal Rust gating (fmt/clippy) for crates/desktop only; no Tauri build yet.
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -82,49 +82,49 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            crates/aideon_desktop/target
-          key: ${{ runner.os }}-rust-${{ hashFiles('crates/aideon_desktop/Cargo.toml') }}
+            crates/desktop/target
+          key: ${{ runner.os }}-rust-${{ hashFiles('crates/desktop/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-rust-
 
       - name: Generate lockfile (for audit & caching)
-        working-directory: crates/aideon_desktop
+        working-directory: crates/desktop
         run: cargo generate-lockfile
 
       - name: Create placeholder sidecar (externalBin)
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p crates/aideon_desktop/binaries
+          mkdir -p crates/desktop/binaries
           case "${{ runner.os }}" in
             Linux)
-              touch crates/aideon_desktop/binaries/aideon-worker-x86_64-unknown-linux-gnu
-              chmod +x crates/aideon_desktop/binaries/aideon-worker-x86_64-unknown-linux-gnu
+              touch crates/desktop/binaries/aideon-worker-x86_64-unknown-linux-gnu
+              chmod +x crates/desktop/binaries/aideon-worker-x86_64-unknown-linux-gnu
               ;;
             macOS)
-              touch crates/aideon_desktop/binaries/aideon-worker-aarch64-apple-darwin
-              chmod +x crates/aideon_desktop/binaries/aideon-worker-aarch64-apple-darwin
+              touch crates/desktop/binaries/aideon-worker-aarch64-apple-darwin
+              chmod +x crates/desktop/binaries/aideon-worker-aarch64-apple-darwin
               ;;
             Windows)
               # create placeholder executable for Windows; chmod is a no-op under Git Bash
-              touch crates/aideon_desktop/binaries/aideon-worker-x86_64-pc-windows-msvc.exe
+              touch crates/desktop/binaries/aideon-worker-x86_64-pc-windows-msvc.exe
               ;;
           esac
 
       - name: Cargo fmt (check)
-        working-directory: crates/aideon_desktop
+        working-directory: crates/desktop
         run: cargo fmt --all --check
 
       - name: Cargo clippy (deny warnings)
-        working-directory: crates/aideon_desktop
+        working-directory: crates/desktop
         run: cargo clippy --all-targets -- -D warnings
 
       - name: Cargo check (typecheck)
-        working-directory: crates/aideon_desktop
+        working-directory: crates/desktop
         run: cargo check --all-targets --all-features
 
       - name: Cargo test
-        working-directory: crates/aideon_desktop
+        working-directory: crates/desktop
         run: cargo test --all --quiet
 
       - name: Install cargo-llvm-cov
@@ -135,7 +135,7 @@ jobs:
 
       - name: Rust coverage (LCOV)
         if: runner.os == 'Linux'
-        working-directory: crates/aideon_desktop
+        working-directory: crates/desktop
         shell: bash
         run: |
           set -euo pipefail
@@ -144,7 +144,7 @@ jobs:
 
       - name: Clippy JSON report (for Sonar import)
         if: runner.os == 'Linux'
-        working-directory: crates/aideon_desktop
+        working-directory: crates/desktop
         shell: bash
         run: |
           set -euo pipefail
@@ -160,7 +160,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
           path: |
-            crates/aideon_desktop/coverage
+            crates/desktop/coverage
 
       - name: Cache RustSec advisory DB
         uses: actions/cache@v4
@@ -176,7 +176,7 @@ jobs:
           tool: cargo-audit
 
       - name: Cargo audit (advisories)
-        working-directory: crates/aideon_desktop
+        working-directory: crates/desktop
         shell: bash
         run: |
           # Do not fail the pipeline on third-party advisory noise yet; surface as warnings
