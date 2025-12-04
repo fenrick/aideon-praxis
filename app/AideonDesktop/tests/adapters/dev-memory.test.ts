@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('DevMemoryGraph adapter', () => {
   it('stores snapshots and computes simple diffs', async () => {
-    const { DevelopmentMemoryGraph } = await import('../src/development-memory');
+    const { DevelopmentMemoryGraph } = await import('adapters/development-memory');
     const development = new DevelopmentMemoryGraph();
     const jan = '2025-01-01T00:00:00.000Z';
     const feb = '2025-02-01T00:00:00.000Z';

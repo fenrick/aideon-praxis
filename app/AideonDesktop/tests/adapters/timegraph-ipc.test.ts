@@ -61,7 +61,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 describe('IpcTemporalAdapter', () => {
   it('stateAt/commit/list/create stubs roundtrip', async () => {
-    const { IpcTemporalAdapter } = await import('../src/timegraph-ipc');
+    const { IpcTemporalAdapter } = await import('adapters/timegraph-ipc');
     const a = new IpcTemporalAdapter();
     const asOf = 'c1';
     const s = await a.stateAt({ asOf });
@@ -95,7 +95,7 @@ describe('IpcTemporalAdapter', () => {
 
   it('passes scope through diff IPC payload', async () => {
     callLog.length = 0;
-    const { IpcTemporalAdapter } = await import('../src/timegraph-ipc');
+    const { IpcTemporalAdapter } = await import('adapters/timegraph-ipc');
     const a = new IpcTemporalAdapter();
     await a.diff({ from: 'c0', to: 'c1', scope: 'capability' });
     const diffCall = callLog.find((entry) => entry.cmd === 'temporal_diff');

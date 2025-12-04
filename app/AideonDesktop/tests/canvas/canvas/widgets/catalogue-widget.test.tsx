@@ -1,15 +1,15 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import type { CatalogueViewModel } from 'canvas/praxis-api';
+import type { CatalogueWidgetConfig } from 'canvas/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CatalogueViewModel } from '../../src/canvas/praxis-api';
-import type { CatalogueWidgetConfig } from '../../src/canvas/types';
 
 const getCatalogueViewMock = vi.fn<
-  Parameters<(typeof import('/praxis-api'))['getCatalogueView']>,
-  ReturnType<(typeof import('/praxis-api'))['getCatalogueView']>
+  Parameters<(typeof import('canvas/praxis-api'))['getCatalogueView']>,
+  ReturnType<(typeof import('canvas/praxis-api'))['getCatalogueView']>
 >();
 
-vi.mock('/praxis-api', async () => {
-  const actual = await vi.importActual<typeof import('/praxis-api')>('/praxis-api');
+vi.mock('canvas/praxis-api', async () => {
+  const actual = await vi.importActual<typeof import('canvas/praxis-api')>('canvas/praxis-api');
   return {
     ...actual,
     getCatalogueView: (...args: Parameters<typeof actual.getCatalogueView>) =>
@@ -17,7 +17,7 @@ vi.mock('/praxis-api', async () => {
   };
 });
 
-import { CatalogueWidget } from '../../src/canvas/widgets/catalogue-widget';
+import { CatalogueWidget } from 'canvas/widgets/catalogue-widget';
 
 const CATALOGUE_WIDGET: CatalogueWidgetConfig = {
   id: 'catalogue-widget',

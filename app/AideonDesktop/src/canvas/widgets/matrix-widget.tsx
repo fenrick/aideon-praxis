@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../design-system/components/ui/table';
+} from 'design-system/components/ui/table';
 
 import type { MatrixWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import { WidgetToolbar } from './widget-toolbar';

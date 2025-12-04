@@ -1,7 +1,7 @@
 import type { Edge, Node } from '@xyflow/react';
 
 import type { GraphEdgeView, GraphNodeView, GraphViewModel } from 'canvas/praxis-api';
-import type { TimelineEdgeData } from '../../../design-system/reactflow/timeline-edge';
+import type { TimelineEdgeData } from 'design-system/components/timeline-edge';
 import type { GraphNodeData } from './graph-node-data';
 
 export function buildFlowNodes(view: GraphViewModel): Node<GraphNodeData>[] {

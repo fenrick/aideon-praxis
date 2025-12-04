@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchMetaModel } from 'lib/meta-model';
-import { getCatalogueView } from '../../src/canvas/praxis-api';
-import type { TemporalPanelState } from '../../src/canvas/time/use-temporal-panel';
+import { fetchMetaModel } from 'canvas/lib/meta-model';
+import { getCatalogueView } from 'canvas/praxis-api';
+import type { TemporalPanelState } from 'canvas/time/use-temporal-panel';
 
 const selectCommitSpy = vi.fn();
 const selectBranchSpy = vi.fn();
@@ -28,7 +28,7 @@ afterAll(() => {
   delete Element.prototype.scrollIntoView;
 });
 
-vi.mock('/time/use-temporal-panel', () => ({
+vi.mock('canvas/time/use-temporal-panel', () => ({
   useTemporalPanel: () =>
     [
       mockState,
@@ -40,14 +40,14 @@ vi.mock('/time/use-temporal-panel', () => ({
     ] as const,
 }));
 
-vi.mock('/lib/meta-model', () => ({
+vi.mock('canvas/lib/meta-model', () => ({
   fetchMetaModel: vi.fn(),
 }));
 
 const fetchMetaModelMock = vi.mocked(fetchMetaModel);
 
-vi.mock('/praxis-api', async () => {
-  const actual = await vi.importActual<typeof import('/praxis-api')>('/praxis-api');
+vi.mock('canvas/praxis-api', async () => {
+  const actual = await vi.importActual<typeof import('canvas/praxis-api')>('canvas/praxis-api');
   return {
     ...actual,
     getCatalogueView: vi.fn(),
@@ -58,7 +58,7 @@ const getCatalogueViewMock = vi.mocked(getCatalogueView);
 
 let mockState: TemporalPanelState;
 
-import { GlobalSearchCard } from '../../src/canvas/components/dashboard/global-search-card';
+import { GlobalSearchCard } from 'canvas/components/dashboard/global-search-card';
 
 describe('GlobalSearchCard', () => {
   beforeEach(() => {

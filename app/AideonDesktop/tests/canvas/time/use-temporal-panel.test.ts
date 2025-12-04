@@ -7,11 +7,8 @@ import type {
   TemporalBranchSummary,
   TemporalCommitSummary,
   TemporalMergeResult,
-} from '../../src/canvas/praxis-api';
-import type {
-  TemporalPanelActions,
-  TemporalPanelState,
-} from '../../src/canvas/time/use-temporal-panel';
+} from 'canvas/praxis-api';
+import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -45,14 +42,14 @@ const listCommitsSpy = vi.fn<Parameters<CommitsMock>, ReturnType<CommitsMock>>()
 const getSnapshotSpy = vi.fn<Parameters<SnapshotMock>, ReturnType<SnapshotMock>>();
 const mergeSpy = vi.fn<Parameters<MergeMock>, ReturnType<MergeMock>>();
 
-vi.mock('/praxis-api', () => ({
+vi.mock('canvas/praxis-api', () => ({
   listTemporalBranches: (...args: Parameters<typeof listBranchesSpy>) => listBranchesSpy(...args),
   listTemporalCommits: (...args: Parameters<typeof listCommitsSpy>) => listCommitsSpy(...args),
   getStateAtSnapshot: (...args: Parameters<typeof getSnapshotSpy>) => getSnapshotSpy(...args),
   mergeTemporalBranches: (...args: Parameters<typeof mergeSpy>) => mergeSpy(...args),
 }));
 
-import { useTemporalPanel } from '../../src/canvas/time/use-temporal-panel';
+import { useTemporalPanel } from 'canvas/time/use-temporal-panel';
 
 const MAIN_COMMITS: TemporalCommitSummary[] = [
   {

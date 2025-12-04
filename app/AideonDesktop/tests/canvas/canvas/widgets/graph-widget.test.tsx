@@ -1,15 +1,15 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import type { GraphViewModel } from 'canvas/praxis-api';
+import type { GraphWidgetConfig } from 'canvas/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { GraphViewModel } from '../../src/canvas/praxis-api';
-import type { GraphWidgetConfig } from '../../src/canvas/types';
 
 const getGraphViewMock = vi.fn<
-  Parameters<(typeof import('/praxis-api'))['getGraphView']>,
-  ReturnType<(typeof import('/praxis-api'))['getGraphView']>
+  Parameters<(typeof import('canvas/praxis-api'))['getGraphView']>,
+  ReturnType<(typeof import('canvas/praxis-api'))['getGraphView']>
 >();
 
-vi.mock('/praxis-api', async () => {
-  const actual = await vi.importActual<typeof import('/praxis-api')>('/praxis-api');
+vi.mock('canvas/praxis-api', async () => {
+  const actual = await vi.importActual<typeof import('canvas/praxis-api')>('canvas/praxis-api');
   return {
     ...actual,
     getGraphView: (...args: Parameters<typeof actual.getGraphView>) =>
@@ -17,7 +17,7 @@ vi.mock('/praxis-api', async () => {
   };
 });
 
-vi.mock('../../../../src/design-system/reactflow/node-search', () => ({
+vi.mock('design-system/components/node-search', () => ({
   NodeSearchDialog: () => null,
 }));
 
@@ -59,7 +59,7 @@ vi.mock('@xyflow/react', () => {
   };
 });
 
-import { GraphWidget } from '../../src/canvas/widgets/graph-widget';
+import { GraphWidget } from 'canvas/widgets/graph-widget';
 
 const GRAPH_WIDGET: GraphWidgetConfig = {
   id: 'graph-widget',

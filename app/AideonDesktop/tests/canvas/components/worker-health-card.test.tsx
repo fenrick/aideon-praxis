@@ -1,12 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('/praxis-api', () => ({
+vi.mock('canvas/praxis-api', () => ({
   getWorkerHealth: vi.fn(),
 }));
 
-import { WorkerHealthCard } from '../../src/canvas/components/dashboard/worker-health-card';
-import { getWorkerHealth } from '../../src/canvas/praxis-api';
+import { WorkerHealthCard } from 'canvas/components/dashboard/worker-health-card';
+import { getWorkerHealth } from 'canvas/praxis-api';
 
 describe('WorkerHealthCard', () => {
   it('renders operational status on healthy response', async () => {
@@ -14,7 +14,9 @@ describe('WorkerHealthCard', () => {
 
     render(<WorkerHealthCard />);
 
-    await waitFor(() => expect(screen.getByText('Operational')).toBeInTheDocument());
+    await waitFor(() => {
+      expect(screen.getByText('Operational')).toBeInTheDocument();
+    });
     expect(screen.getByText('Worker health')).toBeInTheDocument();
   });
 
@@ -23,7 +25,9 @@ describe('WorkerHealthCard', () => {
 
     render(<WorkerHealthCard />);
 
-    await waitFor(() => expect(screen.getByText(/disconnected/i)).toBeInTheDocument());
+    await waitFor(() => {
+      expect(screen.getByText(/disconnected/i)).toBeInTheDocument();
+    });
     const refreshButtons = screen.getAllByText('Refresh');
     expect(refreshButtons[0]).toBeEnabled();
   });

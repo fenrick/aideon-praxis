@@ -2,8 +2,27 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
+const srcRoot = path.resolve(__dirname, 'app/AideonDesktop/src');
+const testsRoot = path.resolve(__dirname, 'app/AideonDesktop/tests');
+
 export default defineConfig({
-  resolve: { alias: [] },
+  resolve: {
+    alias: [
+      { find: '@', replacement: srcRoot },
+      { find: 'canvas', replacement: path.join(srcRoot, 'canvas') },
+      {
+        find: 'design-system/reactflow',
+        replacement: path.join(srcRoot, 'design-system/components'),
+      },
+      { find: 'design-system', replacement: path.join(srcRoot, 'design-system') },
+      { find: 'adapters', replacement: path.join(srcRoot, 'adapters') },
+      { find: 'dtos', replacement: path.join(srcRoot, 'dtos') },
+      {
+        find: '@tauri-apps/api/core',
+        replacement: path.join(testsRoot, 'adapters/stubs/tauri-core.ts'),
+      },
+    ],
+  },
   plugins: [react()],
   test: {
     environment: 'jsdom',

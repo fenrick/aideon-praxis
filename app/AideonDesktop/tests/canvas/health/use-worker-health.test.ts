@@ -1,12 +1,12 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('/praxis-api', () => ({
+vi.mock('canvas/praxis-api', () => ({
   getWorkerHealth: vi.fn(),
 }));
 
-import { useWorkerHealth } from '../../src/canvas/health/use-worker-health';
-import { getWorkerHealth } from '../../src/canvas/praxis-api';
+import { useWorkerHealth } from 'canvas/health/use-worker-health';
+import { getWorkerHealth } from 'canvas/praxis-api';
 
 describe('useWorkerHealth', () => {
   it('returns snapshot on success', async () => {

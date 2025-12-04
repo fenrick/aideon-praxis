@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TemporalPanelState } from '../../src/canvas/time/use-temporal-panel';
+import type { TemporalPanelState } from 'canvas/time/use-temporal-panel';
 
-vi.mock('/time/use-temporal-panel', () => ({
+vi.mock('canvas/time/use-temporal-panel', () => ({
   useTemporalPanel: () => [mockState, mockActions] as const,
 }));
 
@@ -21,7 +21,7 @@ const mockActions = {
 
 let mockState: TemporalPanelState;
 
-import { CommitTimelineCard } from '../../src/canvas/components/dashboard/commit-timeline-card';
+import { CommitTimelineCard } from 'canvas/components/dashboard/commit-timeline-card';
 
 describe('CommitTimelineCard', () => {
   beforeEach(() => {

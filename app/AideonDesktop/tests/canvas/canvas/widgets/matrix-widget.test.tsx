@@ -1,15 +1,15 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import type { MatrixViewModel } from 'canvas/praxis-api';
+import type { MatrixWidgetConfig } from 'canvas/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MatrixViewModel } from '../../src/canvas/praxis-api';
-import type { MatrixWidgetConfig } from '../../src/canvas/types';
 
 const getMatrixViewMock = vi.fn<
-  Parameters<(typeof import('/praxis-api'))['getMatrixView']>,
-  ReturnType<(typeof import('/praxis-api'))['getMatrixView']>
+  Parameters<(typeof import('canvas/praxis-api'))['getMatrixView']>,
+  ReturnType<(typeof import('canvas/praxis-api'))['getMatrixView']>
 >();
 
-vi.mock('/praxis-api', async () => {
-  const actual = await vi.importActual<typeof import('/praxis-api')>('/praxis-api');
+vi.mock('canvas/praxis-api', async () => {
+  const actual = await vi.importActual<typeof import('canvas/praxis-api')>('canvas/praxis-api');
   return {
     ...actual,
     getMatrixView: (...args: Parameters<typeof actual.getMatrixView>) =>
@@ -17,7 +17,7 @@ vi.mock('/praxis-api', async () => {
   };
 });
 
-import { MatrixWidget } from '../../src/canvas/widgets/matrix-widget';
+import { MatrixWidget } from 'canvas/widgets/matrix-widget';
 
 const MATRIX_WIDGET: MatrixWidgetConfig = {
   id: 'matrix-widget',

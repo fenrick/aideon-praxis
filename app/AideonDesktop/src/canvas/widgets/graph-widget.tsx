@@ -18,13 +18,10 @@ import {
 import { toErrorMessage } from 'canvas/lib/errors';
 import { getGraphView, type GraphViewModel } from 'canvas/praxis-api';
 
-import { Button } from '../../../design-system/components/ui/button';
-import { NodeSearchDialog } from '../../../design-system/reactflow/node-search';
-import { PraxisNode } from '../../../design-system/reactflow/praxis-node';
-import {
-  TimelineEdge,
-  type TimelineEdgeData,
-} from '../../../design-system/reactflow/timeline-edge';
+import { NodeSearchDialog } from 'design-system/components/node-search';
+import { PraxisNode } from 'design-system/components/praxis-node';
+import { TimelineEdge, type TimelineEdgeData } from 'design-system/components/timeline-edge';
+import { Button } from 'design-system/components/ui/button';
 import type { GraphWidgetConfig, SelectionState, WidgetSelection } from '../types';
 import type { GraphNodeData } from './graph-node-data';
 import { buildFlowEdges, buildFlowNodes } from './graph-transform';

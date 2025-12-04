@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('/platform', () => ({
+vi.mock('canvas/platform', () => ({
   isTauri: () => true,
 }));
 
@@ -17,7 +17,7 @@ import {
   listTemporalBranches,
   listTemporalCommits,
   mergeTemporalBranches,
-} from '../../src/canvas/praxis-api';
+} from 'canvas/praxis-api';
 
 const snapshot = {
   asOf: 'commit-main-002',

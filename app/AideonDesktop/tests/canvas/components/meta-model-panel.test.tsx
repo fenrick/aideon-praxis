@@ -3,16 +3,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchMetaModelSpy = vi.fn();
 
-vi.mock('/lib/meta-model', async () => {
-  const actual = await vi.importActual<typeof import('/lib/meta-model')>('/lib/meta-model');
+vi.mock('canvas/lib/meta-model', async () => {
+  const actual =
+    await vi.importActual<typeof import('canvas/lib/meta-model')>('canvas/lib/meta-model');
   return {
     ...actual,
     fetchMetaModel: () => fetchMetaModelSpy(),
   };
 });
 
-import type { MetaModelSchema } from 'lib/meta-model';
-import { MetaModelPanel } from '../../src/canvas/components/dashboard/meta-model-panel';
+import { MetaModelPanel } from 'canvas/components/dashboard/meta-model-panel';
+import type { MetaModelSchema } from 'canvas/lib/meta-model';
 
 const SAMPLE_SCHEMA: MetaModelSchema = {
   version: '1.0',
