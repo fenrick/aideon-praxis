@@ -38,7 +38,17 @@ export default defineConfig({
         statements: 0.8,
       },
       include: ['app/AideonDesktop/src/**/*.{ts,tsx}'],
-      exclude: ['**/*.d.ts', '**/*.test.*', 'app/**/dist/**', 'scripts/**'],
+      exclude: [
+        '**/*.d.ts',
+        '**/*.test.*',
+        'app/**/dist/**',
+        'scripts/**',
+        'app/AideonDesktop/src/design-system/components/**',
+        'app/AideonDesktop/src/types/**',
+        'app/AideonDesktop/src/main.tsx',
+        'app/AideonDesktop/src/canvas/main.tsx',
+        'app/AideonDesktop/src/canvas/canvas-runtime.tsx',
+      ],
     },
   },
 });

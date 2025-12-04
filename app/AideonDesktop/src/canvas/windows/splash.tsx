@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { mountWindow } from './bootstrap';
 
 import './splash-window.css';
 
@@ -78,7 +78,6 @@ export default function SplashWindow() {
   );
 }
 
-const splashRoot = document.querySelector('#root');
-if (splashRoot) {
-  createRoot(splashRoot).render(<SplashWindow />);
+if (import.meta.env.MODE !== 'test') {
+  mountWindow(<SplashWindow />);
 }

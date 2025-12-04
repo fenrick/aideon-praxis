@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { mountWindow } from './bootstrap';
+
 import { Button } from '../../design-system/components/ui/button';
 import {
   Card,
@@ -51,7 +53,7 @@ function colorFromVariable(variable: string): string {
   return getComputedStyle(document.body).getPropertyValue(variable).trim() || variable;
 }
 
-function StyleguideWindow() {
+export function StyleguideWindow() {
   const [mode, setMode] = useState<ThemeMode>('system');
   const [accent, setAccent] = useState('--accent');
 
@@ -181,8 +183,6 @@ function StyleguideWindow() {
   );
 }
 
-const root = document.querySelector('#root');
-if (root) {
-  const { createRoot } = await import('react-dom/client');
-  createRoot(root).render(<StyleguideWindow />);
+if (import.meta.env.MODE !== 'test') {
+  mountWindow(<StyleguideWindow />);
 }

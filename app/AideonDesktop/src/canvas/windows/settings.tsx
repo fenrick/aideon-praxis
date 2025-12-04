@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { mountWindow } from './bootstrap';
 
 import './settings-window.css';
 
@@ -15,10 +15,10 @@ function applyTheme(mode: ThemeMode) {
   }
 }
 
-function SettingsWindow() {
+export function SettingsWindow() {
   const [mode, setMode] = useState<ThemeMode>(() => {
     const globalWindow = (globalThis as { window?: Window & typeof globalThis }).window;
-    if (!globalWindow) {
+    if (!globalWindow || !globalWindow.localStorage?.getItem) {
       return 'system';
     }
     const stored = globalWindow.localStorage.getItem('themeMode') as ThemeMode | null;
@@ -28,7 +28,7 @@ function SettingsWindow() {
   useEffect(() => {
     applyTheme(mode);
     const globalWindow = (globalThis as { window?: Window & typeof globalThis }).window;
-    if (!globalWindow) {
+    if (!globalWindow || !globalWindow.localStorage?.setItem) {
       return;
     }
     globalWindow.localStorage.setItem('themeMode', mode);
@@ -81,7 +81,6 @@ function SettingsWindow() {
   );
 }
 
-const settingsRoot = document.querySelector('#root');
-if (settingsRoot) {
-  createRoot(settingsRoot).render(<SettingsWindow />);
+if (import.meta.env.MODE !== 'test') {
+  mountWindow(<SettingsWindow />);
 }

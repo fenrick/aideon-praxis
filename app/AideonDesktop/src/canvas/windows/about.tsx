@@ -1,8 +1,8 @@
-import { createRoot } from 'react-dom/client';
+import { mountWindow } from './bootstrap';
 
 import './about-window.css';
 
-function AboutWindow() {
+export function AboutWindow() {
   return (
     <main className="about-shell">
       <div className="about-panel">
@@ -16,7 +16,6 @@ function AboutWindow() {
   );
 }
 
-const aboutRoot = document.querySelector('#root');
-if (aboutRoot) {
-  createRoot(aboutRoot).render(<AboutWindow />);
+if (import.meta.env.MODE !== 'test') {
+  mountWindow(<AboutWindow />);
 }

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { mountWindow } from './bootstrap';
 
 import './status-window.css';
 
-function StatusWindow() {
+export function StatusWindow() {
   const [version, setVersion] = useState('unknown');
 
   useEffect(() => {
@@ -24,7 +24,6 @@ function StatusWindow() {
   );
 }
 
-const statusRoot = document.querySelector('#root');
-if (statusRoot) {
-  createRoot(statusRoot).render(<StatusWindow />);
+if (import.meta.env.MODE !== 'test') {
+  mountWindow(<StatusWindow />);
 }
