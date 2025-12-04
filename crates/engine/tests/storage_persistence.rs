@@ -1,8 +1,8 @@
+use aideon_engine::{PraxisEngine, PraxisEngineConfig};
 use aideon_mneme::{
     SqliteDb, Store,
     temporal::{ChangeSet, CommitChangesRequest, NodeVersion},
 };
-use aideon_engine::{PraxisEngine, PraxisEngineConfig};
 use serde_json::json;
 use tempfile::tempdir;
 

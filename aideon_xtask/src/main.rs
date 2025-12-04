@@ -3,12 +3,12 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use aideon_engine::{
+    BaselineDataset, GraphSnapshot, MetaModelRegistry, PraxisEngine, PraxisEngineConfig,
+};
 use aideon_mneme::temporal::{ChangeSet, CommitSummary};
 use aideon_mneme::{
     MemoryStore, PersistedCommit, SqliteDb, Store, create_datastore, datastore_path,
-};
-use aideon_engine::{
-    BaselineDataset, GraphSnapshot, MetaModelRegistry, PraxisEngine, PraxisEngineConfig,
 };
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};

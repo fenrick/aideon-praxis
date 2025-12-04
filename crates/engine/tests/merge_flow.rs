@@ -1,5 +1,5 @@
-use aideon_mneme::temporal::{CommitChangesRequest, MergeRequest, StateAtArgs};
 use aideon_engine::PraxisEngine;
+use aideon_mneme::temporal::{CommitChangesRequest, MergeRequest, StateAtArgs};
 use serde_json::json;
 
 #[tokio::test]
@@ -18,9 +18,7 @@ async fn merge_creates_commit_when_no_conflicts() {
     engine
         .create_branch(
             "feature/merge-demo".into(),
-            Some(aideon_mneme::temporal::CommitRef::Id(
-                base_head.clone(),
-            )),
+            Some(aideon_mneme::temporal::CommitRef::Id(base_head.clone())),
         )
         .await
         .expect("branch created");
@@ -109,18 +107,14 @@ async fn merge_returns_conflict_when_branches_diverge_on_same_node() {
     engine
         .create_branch(
             "feature/alpha".into(),
-            Some(aideon_mneme::temporal::CommitRef::Id(
-                seeded_commit.clone(),
-            )),
+            Some(aideon_mneme::temporal::CommitRef::Id(seeded_commit.clone())),
         )
         .await
         .expect("alpha branch");
     engine
         .create_branch(
             "feature/beta".into(),
-            Some(aideon_mneme::temporal::CommitRef::Id(
-                seeded_commit.clone(),
-            )),
+            Some(aideon_mneme::temporal::CommitRef::Id(seeded_commit.clone())),
         )
         .await
         .expect("beta branch");
