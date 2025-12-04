@@ -43,11 +43,14 @@ function AppEntry() {
   const wantsSplash = route === 'splash' || route === '/splash';
   // Only bypass splash automatically in browser mode when it wasn't explicitly requested in hash.
   const normalizedRoute = !isTauri && wantsSplash && hashPath === '/splash' ? '/' : route;
+  const pathname = globalThis.location.pathname;
+  const search = globalThis.location.search;
+
   console.log('[desktop] route resolve', {
     hashPath,
-    path,
+    pathname,
+    search,
     windowLabel,
-    searchWindow,
     route: normalizedRoute,
     location: globalThis.location.href,
   });
