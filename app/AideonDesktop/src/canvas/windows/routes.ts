@@ -1,10 +1,4 @@
-export type WindowRoute =
-  | 'main'
-  | 'splash'
-  | 'status'
-  | 'about'
-  | 'settings'
-  | 'styleguide';
+export type WindowRoute = 'main' | 'splash' | 'status' | 'about' | 'settings' | 'styleguide';
 
 export const windowRoutes: WindowRoute[] = [
   'main',

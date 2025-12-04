@@ -39,7 +39,7 @@ function AppEntry() {
   }, []);
 
   const hashPath = globalThis.location.hash.replace(/^#/, '').replace(/\/$/, '') || '/';
-  const route = isTauri ? windowLabel ?? 'splash' : hashPath;
+  const route = isTauri ? (windowLabel ?? 'splash') : hashPath;
   const wantsSplash = route === 'splash' || route === '/splash';
   // Only bypass splash automatically in browser mode when it wasn't explicitly requested in hash.
   const normalizedRoute = !isTauri && wantsSplash && hashPath === '/splash' ? '/' : route;
