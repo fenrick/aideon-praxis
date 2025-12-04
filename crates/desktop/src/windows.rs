@@ -16,8 +16,8 @@ pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
         .decorations(false)
         .inner_size(520.0, 320.0)
         .center()
-    .build()
-    .map_err(to_string)?;
+        .build()
+        .map_err(to_string)?;
 
     let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::App(ROUTE_MAIN.into()))
         .title("Aideon Praxis")
@@ -54,9 +54,9 @@ pub fn open_settings(app: AppHandle<Wry>) -> Result<(), String> {
         .resizable(false)
         .inner_size(520.0, 440.0)
         .center()
-    .build()
-    .map(|_| ())
-    .map_err(to_string)
+        .build()
+        .map(|_| ())
+        .map_err(to_string)
 }
 
 #[tauri::command]
@@ -71,9 +71,9 @@ pub fn open_about(app: AppHandle<Wry>) -> Result<(), String> {
         .resizable(false)
         .inner_size(420.0, 300.0)
         .center()
-    .build()
-    .map(|_| ())
-    .map_err(to_string)
+        .build()
+        .map(|_| ())
+        .map_err(to_string)
 }
 
 #[tauri::command]
@@ -89,9 +89,9 @@ pub fn open_status(app: AppHandle<Wry>) -> Result<(), String> {
         .always_on_top(true)
         .inner_size(360.0, 140.0)
         .center()
-    .build()
-    .map(|_| ())
-    .map_err(to_string)
+        .build()
+        .map(|_| ())
+        .map_err(to_string)
 }
 
 #[tauri::command]
@@ -106,10 +106,10 @@ pub fn open_styleguide(app: AppHandle<Wry>) -> Result<(), String> {
         .title("UI Style Guide")
         .resizable(true)
         .inner_size(900.0, 700.0)
-    .center()
-    .build()
-    .map(|_| ())
-    .map_err(to_string)
+        .center()
+        .build()
+        .map(|_| ())
+        .map_err(to_string)
 }
 
 fn to_string<E: std::fmt::Display>(error: E) -> String {
