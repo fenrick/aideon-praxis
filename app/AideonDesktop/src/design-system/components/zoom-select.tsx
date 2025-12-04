@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Panel, useReactFlow, useStore, type PanelProps } from '@xyflow/react';
-import { useCallback } from 'react';
+import React, { useCallback } from "react";
+import { Panel, useReactFlow, useStore, type PanelProps } from "@xyflow/react";
 
 import {
   Select,
@@ -9,18 +9,21 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from 'design-system/components/ui/select';
-import { cn } from 'design-system/lib/utils';
+} from "design-system/components/ui/select";
+import { cn } from "design-system/lib/utils";
 
-export function ZoomSelect({ className, ...properties }: Omit<PanelProps, 'children'>) {
+export function ZoomSelect({
+  className,
+  ...props
+}: Omit<PanelProps, "children">) {
   const { zoomTo, fitView } = useReactFlow();
 
   const handleZoomChange = useCallback(
     (value: string) => {
-      if (value === 'best-fit') {
+      if (value === "best-fit") {
         fitView();
       } else {
-        const zoomValue = Number.parseFloat(value);
+        const zoomValue = parseFloat(value);
         if (!isNaN(zoomValue)) {
           zoomTo(zoomValue);
         }
@@ -35,18 +38,21 @@ export function ZoomSelect({ className, ...properties }: Omit<PanelProps, 'child
     const zoomIncrement = 50;
 
     for (
-      let index = Math.ceil(minZoom * 100);
-      index <= Math.floor(maxZoom * 100);
-      index += zoomIncrement
+      let i = Math.ceil(minZoom * 100);
+      i <= Math.floor(maxZoom * 100);
+      i += zoomIncrement
     ) {
-      levels.push((index / 100).toString());
+      levels.push((i / 100).toString());
     }
 
     return levels;
   });
 
   return (
-    <Panel className={cn('bg-primary-foreground text-foreground flex', className)} {...properties}>
+    <Panel
+      className={cn("bg-primary-foreground text-foreground flex", className)}
+      {...props}
+    >
       <Select onValueChange={handleZoomChange}>
         <SelectTrigger className="bg-primary-foreground w-[140px]">
           <SelectValue placeholder="Zoom" />
@@ -56,7 +62,7 @@ export function ZoomSelect({ className, ...properties }: Omit<PanelProps, 'child
           <div className="mx-2 my-1 border-t" />
           {zoomLevels.map((level) => (
             <SelectItem key={level} value={level}>
-              {`${(Number.parseFloat(level) * 100).toFixed(0)}%`}
+              {`${(parseFloat(level) * 100).toFixed(0)}%`}
             </SelectItem>
           ))}
         </SelectContent>

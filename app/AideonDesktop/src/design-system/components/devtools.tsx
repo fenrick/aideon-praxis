@@ -1,21 +1,27 @@
-'use client';
-
-import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+"use client";
 
 import {
-  Panel,
-  PanelPosition,
+  useEffect,
+  useState,
+  useCallback,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+
+import {
   useNodes,
-  useReactFlow,
+  Panel,
   useStore,
   useStoreApi,
   ViewportPortal,
-  type NodeChange,
+  useReactFlow,
+  PanelPosition,
   type OnNodesChange,
+  type NodeChange,
   type XYPosition,
-} from '@xyflow/react';
+} from "@xyflow/react";
 
-import { ToggleGroup, ToggleGroupItem } from 'design-system/components/ui/toggle-group';
+import { ToggleGroup, ToggleGroupItem } from "design-system/components/ui/toggle-group";
 
 export const ViewportLogger = () => {
   const viewport = useStore(
@@ -26,45 +32,47 @@ export const ViewportLogger = () => {
   return <div>{viewport}</div>;
 };
 
-interface ChangeLoggerProperties {
+interface ChangeLoggerProps {
   color?: string;
   limit?: number;
 }
 
-interface ChangeInfoProperties {
+interface ChangeInfoProps {
   change: NodeChange;
 }
 
-const ChangeInfo = ({ change }: ChangeInfoProperties) => {
-  const id = 'id' in change ? change.id : '-';
+const ChangeInfo = ({ change }: ChangeInfoProps) => {
+  const id = "id" in change ? change.id : "-";
   const { type } = change;
 
   return (
     <div className="mb-3">
       <div>node id: {id}</div>
       <div>
-        {type === 'add' ? JSON.stringify(change.item, null, 2) : null}
-        {type === 'dimensions'
+        {type === "add" ? JSON.stringify(change.item, null, 2) : null}
+        {type === "dimensions"
           ? `dimensions: ${change.dimensions?.width} × ${change.dimensions?.height}`
           : null}
-        {type === 'position'
+        {type === "position"
           ? `position: ${change.position?.x.toFixed(1)}, ${change.position?.y.toFixed(1)}`
           : null}
-        {type === 'remove' ? 'remove' : null}
-        {type === 'select' ? (change.selected ? 'select' : 'unselect') : null}
+        {type === "remove" ? "remove" : null}
+        {type === "select" ? (change.selected ? "select" : "unselect") : null}
       </div>
     </div>
   );
 };
 
-export const ChangeLogger = ({ limit = 20 }: ChangeLoggerProperties) => {
+export const ChangeLogger = ({ limit = 20 }: ChangeLoggerProps) => {
   const [changes, setChanges] = useState<NodeChange[]>([]);
   const store = useStoreApi();
 
   // Memoize the callback for handling node changes
   const handleNodeChanges: OnNodesChange = useCallback(
     (newChanges: NodeChange[]) => {
-      setChanges((previousChanges) => [...newChanges, ...previousChanges].slice(0, limit));
+      setChanges((prevChanges) =>
+        [...newChanges, ...prevChanges].slice(0, limit),
+      );
     },
     [limit],
   );
@@ -72,9 +80,7 @@ export const ChangeLogger = ({ limit = 20 }: ChangeLoggerProperties) => {
   useEffect(() => {
     store.setState({ onNodesChange: handleNodeChanges });
 
-    return () => {
-      store.setState({ onNodesChange: undefined });
-    };
+    return () => { store.setState({ onNodesChange: undefined }); };
   }, [handleNodeChanges, store]);
 
   const NoChanges = () => <div>No Changes Triggered</div>;
@@ -84,7 +90,9 @@ export const ChangeLogger = ({ limit = 20 }: ChangeLoggerProperties) => {
       {changes.length === 0 ? (
         <NoChanges />
       ) : (
-        changes.map((change, index) => <ChangeInfo key={index} change={change} />)
+        changes.map((change, index) => (
+          <ChangeInfo key={index} change={change} />
+        ))
       )}
     </>
   );
@@ -110,7 +118,7 @@ export const NodeInspector = () => {
               key={node.id}
               id={node.id}
               selected={!!node.selected}
-              type={node.type || 'default'}
+              type={node.type || "default"}
               position={node.position}
               absPosition={absPosition}
               width={node.measured?.width ?? 0}
@@ -124,7 +132,7 @@ export const NodeInspector = () => {
   );
 };
 
-interface NodeInfoProperties {
+interface NodeInfoProps {
   id: string;
   type: string;
   selected: boolean;
@@ -144,18 +152,18 @@ const NodeInfo = ({
   width,
   height,
   data,
-}: NodeInfoProperties) => {
+}: NodeInfoProps) => {
   if (!width || !height) return null;
 
   const absoluteTransform = `translate(${absPosition.x}px, ${absPosition.y + height}px)`;
   const formattedPosition = `${position.x.toFixed(1)}, ${position.y.toFixed(1)}`;
   const formattedDimensions = `${width} × ${height}`;
-  const selectionStatus = selected ? 'Selected' : 'Not Selected';
+  const selectionStatus = selected ? "Selected" : "Not Selected";
 
   return (
     <div
       style={{
-        position: 'absolute',
+        position: "absolute",
         transform: absoluteTransform,
         width: width * 2,
       }}
@@ -178,12 +186,12 @@ interface Tool {
   value: string;
 }
 
-interface DevelopmentToolsToggleProperties {
+interface DevToolsToggleProps {
   tools: Tool[];
   position: PanelPosition;
 }
 
-const DevToolsToggle = ({ tools, position }: DevelopmentToolsToggleProperties) => {
+const DevToolsToggle = ({ tools, position }: DevToolsToggleProps) => {
   return (
     <Panel position={position} className="bg-card rounded border p-1 shadow-xs">
       <ToggleGroup type="multiple">
@@ -191,9 +199,7 @@ const DevToolsToggle = ({ tools, position }: DevelopmentToolsToggleProperties) =
           <ToggleGroupItem
             key={value}
             value={value}
-            onClick={() => {
-              setActive((previous) => !previous);
-            }}
+            onClick={() => { setActive((prev) => !prev); }}
             aria-pressed={active}
             className="bg-card text-card-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors duration-300"
           >
@@ -205,11 +211,11 @@ const DevToolsToggle = ({ tools, position }: DevelopmentToolsToggleProperties) =
   );
 };
 
-interface DevelopmentToolsProperties {
+interface DevToolsProps {
   position: PanelPosition;
 }
 
-export const DevTools = ({ position }: DevelopmentToolsProperties) => {
+export const DevTools = ({ position }: DevToolsProps) => {
   const [nodeInspectorActive, setNodeInspectorActive] = useState(false);
   const [changeLoggerActive, setChangeLoggerActive] = useState(false);
   const [viewportLoggerActive, setViewportLoggerActive] = useState(false);
@@ -218,20 +224,20 @@ export const DevTools = ({ position }: DevelopmentToolsProperties) => {
     {
       active: nodeInspectorActive,
       setActive: setNodeInspectorActive,
-      label: 'Node Inspector',
-      value: 'node-inspector',
+      label: "Node Inspector",
+      value: "node-inspector",
     },
     {
       active: changeLoggerActive,
       setActive: setChangeLoggerActive,
-      label: 'Change Logger',
-      value: 'change-logger',
+      label: "Change Logger",
+      value: "change-logger",
     },
     {
       active: viewportLoggerActive,
       setActive: setViewportLoggerActive,
-      label: 'Viewport Logger',
-      value: 'viewport-logger',
+      label: "Viewport Logger",
+      value: "viewport-logger",
     },
   ];
 
@@ -258,4 +264,4 @@ export const DevTools = ({ position }: DevelopmentToolsProperties) => {
     </>
   );
 };
-DevTools.displayName = 'DevTools';
+DevTools.displayName = "DevTools";

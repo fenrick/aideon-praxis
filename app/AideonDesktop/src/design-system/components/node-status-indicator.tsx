@@ -1,19 +1,23 @@
-import { LoaderCircle } from 'lucide-react';
-import { type ReactNode } from 'react';
+import { type ReactNode } from "react";
+import { LoaderCircle } from "lucide-react";
 
-import { cn } from 'design-system/lib/utils';
+import { cn } from "design-system/lib/utils";
 
-export type NodeStatus = 'loading' | 'success' | 'error' | 'initial';
+export type NodeStatus = "loading" | "success" | "error" | "initial";
 
-export type NodeStatusVariant = 'overlay' | 'border';
+export type NodeStatusVariant = "overlay" | "border";
 
-export interface NodeStatusIndicatorProperties {
+export interface NodeStatusIndicatorProps {
   status?: NodeStatus;
   variant?: NodeStatusVariant;
   children: ReactNode;
 }
 
-export const SpinnerLoadingIndicator = ({ children }: { children: ReactNode }) => {
+export const SpinnerLoadingIndicator = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   return (
     <div className="relative">
       <StatusBorder className="border-blue-700/40">{children}</StatusBorder>
@@ -28,7 +32,11 @@ export const SpinnerLoadingIndicator = ({ children }: { children: ReactNode }) =
   );
 };
 
-export const BorderLoadingIndicator = ({ children }: { children: ReactNode }) => {
+export const BorderLoadingIndicator = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   return (
     <>
       <div className="absolute -top-px -left-px h-[calc(100%+2px)] w-[calc(100%+2px)]">
@@ -58,12 +66,18 @@ export const BorderLoadingIndicator = ({ children }: { children: ReactNode }) =>
   );
 };
 
-const StatusBorder = ({ children, className }: { children: ReactNode; className?: string }) => {
+const StatusBorder = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => {
   return (
     <>
       <div
         className={cn(
-          'absolute -top-px -left-px h-[calc(100%+2px)] w-[calc(100%+2px)] rounded-[9px] border-2',
+          "absolute -top-px -left-px h-[calc(100%+2px)] w-[calc(100%+2px)] rounded-[9px] border-2",
           className,
         )}
       />
@@ -74,16 +88,16 @@ const StatusBorder = ({ children, className }: { children: ReactNode; className?
 
 export const NodeStatusIndicator = ({
   status,
-  variant = 'border',
+  variant = "border",
   children,
-}: NodeStatusIndicatorProperties) => {
+}: NodeStatusIndicatorProps) => {
   switch (status) {
-    case 'loading': {
+    case "loading": {
       switch (variant) {
-        case 'overlay': {
+        case "overlay": {
           return <SpinnerLoadingIndicator>{children}</SpinnerLoadingIndicator>;
         }
-        case 'border': {
+        case "border": {
           return <BorderLoadingIndicator>{children}</BorderLoadingIndicator>;
         }
         default: {
@@ -91,10 +105,12 @@ export const NodeStatusIndicator = ({
         }
       }
     }
-    case 'success': {
-      return <StatusBorder className="border-emerald-600">{children}</StatusBorder>;
+    case "success": {
+      return (
+        <StatusBorder className="border-emerald-600">{children}</StatusBorder>
+      );
     }
-    case 'error': {
+    case "error": {
       return <StatusBorder className="border-red-400">{children}</StatusBorder>;
     }
     default: {

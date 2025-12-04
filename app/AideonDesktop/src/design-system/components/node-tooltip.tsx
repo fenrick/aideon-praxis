@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { NodeToolbar, type NodeToolbarProps } from '@xyflow/react';
 import React, {
   createContext,
   useCallback,
   useContext,
   useState,
   type ComponentProps,
-} from 'react';
+} from "react";
+import { NodeToolbar, type NodeToolbarProps } from "@xyflow/react";
 
-import { cn } from 'design-system/lib/utils';
+import { cn } from "design-system/lib/utils";
 
 /* TOOLTIP CONTEXT ---------------------------------------------------------- */
 
@@ -23,15 +23,11 @@ const TooltipContext = createContext<TooltipContextType | null>(null);
 
 /* TOOLTIP NODE ------------------------------------------------------------- */
 
-export function NodeTooltip({ children }: ComponentProps<'div'>) {
+export function NodeTooltip({ children }: ComponentProps<"div">) {
   const [isVisible, setIsVisible] = useState(false);
 
-  const showTooltip = useCallback(() => {
-    setIsVisible(true);
-  }, []);
-  const hideTooltip = useCallback(() => {
-    setIsVisible(false);
-  }, []);
+  const showTooltip = useCallback(() => { setIsVisible(true); }, []);
+  const hideTooltip = useCallback(() => { setIsVisible(false); }, []);
 
   return (
     <TooltipContext.Provider value={{ isVisible, showTooltip, hideTooltip }}>
@@ -42,30 +38,32 @@ export function NodeTooltip({ children }: ComponentProps<'div'>) {
 
 /* TOOLTIP TRIGGER ---------------------------------------------------------- */
 
-export function NodeTooltipTrigger(properties: ComponentProps<'div'>) {
+export function NodeTooltipTrigger(props: ComponentProps<"div">) {
   const tooltipContext = useContext(TooltipContext);
   if (!tooltipContext) {
-    throw new Error('NodeTooltipTrigger must be used within NodeTooltip');
+    throw new Error("NodeTooltipTrigger must be used within NodeTooltip");
   }
   const { showTooltip, hideTooltip } = tooltipContext;
 
   const onMouseEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      properties.onMouseEnter?.(e);
+      props.onMouseEnter?.(e);
       showTooltip();
     },
-    [properties, showTooltip],
+    [props, showTooltip],
   );
 
   const onMouseLeave = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      properties.onMouseLeave?.(e);
+      props.onMouseLeave?.(e);
       hideTooltip();
     },
-    [properties, hideTooltip],
+    [props, hideTooltip],
   );
 
-  return <div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} {...properties} />;
+  return (
+    <div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} {...props} />
+  );
 }
 
 /* TOOLTIP CONTENT ---------------------------------------------------------- */
@@ -78,11 +76,11 @@ export function NodeTooltipContent({
   children,
   position,
   className,
-  ...properties
+  ...props
 }: NodeToolbarProps) {
   const tooltipContext = useContext(TooltipContext);
   if (!tooltipContext) {
-    throw new Error('NodeTooltipContent must be used within NodeTooltip');
+    throw new Error("NodeTooltipContent must be used within NodeTooltip");
   }
   const { isVisible } = tooltipContext;
 
@@ -90,10 +88,13 @@ export function NodeTooltipContent({
     <div>
       <NodeToolbar
         isVisible={isVisible}
-        className={cn('bg-primary text-primary-foreground rounded-sm p-2', className)}
+        className={cn(
+          "bg-primary text-primary-foreground rounded-sm p-2",
+          className,
+        )}
         tabIndex={1}
         position={position}
-        {...properties}
+        {...props}
       >
         {children}
       </NodeToolbar>

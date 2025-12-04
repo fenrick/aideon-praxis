@@ -1,14 +1,16 @@
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
 import { BaseNode, BaseNodeContent, BaseNodeHeader, BaseNodeHeaderTitle } from './base-node';
 
-export interface PraxisNodeData {
+export interface PraxisNodeData extends Record<string, unknown> {
   label?: string;
   typeLabel?: string;
   meta?: string;
 }
 
-export function PraxisNode({ data, selected }: NodeProps<PraxisNodeData>) {
+export type PraxisNodeType = Node<PraxisNodeData, 'praxis-node'>;
+
+export function PraxisNode({ data, selected }: NodeProps<PraxisNodeType>) {
   return (
     <BaseNode className={selected ? 'ring-2 ring-primary/40' : undefined}>
       <BaseNodeHeader>
