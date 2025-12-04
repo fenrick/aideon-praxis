@@ -3,13 +3,14 @@
   "compilerOptions": {
     "baseUrl": "./src",
     "paths": {
+      "@/*": ["./*"],
       "canvas/*": ["canvas/*"],
-      "design-system/*": ["typings/design-system/index.d.ts"],
-      "design-system/reactflow/*": ["typings/design-system/index.d.ts"],
+      "design-system/*": ["design-system/*"],
+      "design-system/reactflow/*": ["design-system/components/*"],
       "adapters/*": ["adapters/*"],
       "dtos/*": ["dtos/*"]
     }
   },
   "include": ["src"],
-  "exclude": ["src/design-system/**/*"]
+  "exclude": ["src/design-system/components/**/*"]
 }

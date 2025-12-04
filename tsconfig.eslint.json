@@ -8,6 +8,7 @@
     "**/.pnpm/**",
     "**/node_modules/**",
     "app/AideonDesktop/legacy/**",
+    "app/AideonDesktop/src/design-system/components/**/*",
     "app/**/tsconfig.tsbuildinfo"
   ]
 }
