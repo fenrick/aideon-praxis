@@ -6,6 +6,10 @@ import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
 import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
+import stylistic from '@stylistic/eslint-plugin';
+import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
+import jsdoc from 'eslint-plugin-jsdoc';
+import noSecrets from 'eslint-plugin-no-secrets';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
@@ -17,7 +21,7 @@ const typedTsConfigs = [
 ].map((cfg) => ({ ...cfg, files: ['**/*.{ts,tsx}'] }));
 
 export default defineConfig(
-  // Global ignores first so they short‑circuit for all subsequent configs
+  // Global ignores first so they short-circuit for all subsequent configs
   [
     globalIgnores([
       'node_modules/**',
@@ -30,10 +34,9 @@ export default defineConfig(
       '**/out/**',
     ]),
   ],
+
   // Base JS rules roughly equivalent to the “core” checks Sonar also relies on
   js.configs.recommended,
-
-  // TypeScript: avoid applying typed configs globally; handled per-file below
 
   // Base language options for JS/MJS
   {
@@ -53,6 +56,61 @@ export default defineConfig(
 
   // Security hygiene rules (note: NOT equivalent to Sonar’s taint analysis)
   security.configs.recommended,
+
+  // Stylistic / formatting consistency (Sonar "consistent" attribute)
+  stylistic.configs.recommended,
+
+  // Safer eslint-disable usage, unused disables, etc.
+  comments.recommended,
+
+  // JSDoc / API documentation clarity
+  {
+    name: 'jsdoc-rules',
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: {
+      jsdoc,
+    },
+    rules: {
+      'jsdoc/check-alignment': 'error',
+      'jsdoc/check-indentation': 'warn',
+      'jsdoc/check-param-names': 'error',
+      'jsdoc/require-description': 'warn',
+      'jsdoc/require-returns-description': 'warn',
+      'jsdoc/require-jsdoc': [
+        'warn',
+        {
+          publicOnly: true,
+          require: {
+            ArrowFunctionExpression: false,
+            ClassDeclaration: true,
+            MethodDefinition: true,
+            FunctionDeclaration: true,
+          },
+        },
+      ],
+    },
+  },
+
+  // Structural / maintainability and secrets (Sonar "adaptable" + "responsible")
+  {
+    name: 'project-structure-and-secrets',
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: {
+      'no-secrets': noSecrets,
+    },
+    rules: {
+      // Maintainability / structure
+      complexity: ['warn', 10],
+      'max-lines-per-function': [
+        'warn',
+        { max: 80, skipBlankLines: true, skipComments: true },
+      ],
+      'max-depth': ['warn', 4],
+
+      // Responsible code – avoid committing credentials
+      'no-secrets/no-secrets': 'error',
+    },
+  },
 
   // Apply TS typed configs only to TS files
   ...typedTsConfigs,
@@ -124,46 +182,4 @@ export default defineConfig(
     },
   },
 
-  // Relax lint for the flattened desktop TS/React code while types are being aligned
-  {
-    files: ['app/AideonDesktop/src/**/*.{ts,tsx}', 'app/AideonDesktop/tests/**/*.{ts,tsx}'],
-    rules: {
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
-      '@typescript-eslint/no-redundant-type-constituents': 'off',
-      '@typescript-eslint/no-unnecessary-condition': 'off',
-      '@typescript-eslint/prefer-nullish-coalescing': 'off',
-      '@typescript-eslint/restrict-template-expressions': 'off',
-      '@typescript-eslint/restrict-plus-operands': 'off',
-      '@typescript-eslint/no-unnecessary-type-conversion': 'off',
-      '@typescript-eslint/consistent-type-imports': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/no-empty-function': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-floating-promises': 'off',
-      '@typescript-eslint/no-unused-expressions': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-deprecated': 'off',
-      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',
-      'unicorn/filename-case': 'off',
-      'unicorn/prevent-abbreviations': 'off',
-      'unicorn/explicit-length-check': 'off',
-      'unicorn/prefer-number-properties': 'off',
-      'unicorn/consistent-function-scoping': 'off',
-      'sonarjs/prefer-read-only-props': 'off',
-      'sonarjs/no-nested-conditional': 'off',
-      'sonarjs/table-header': 'off',
-      'sonarjs/void-use': 'off',
-      'sonarjs/function-return-type': 'off',
-      'sonarjs/cognitive-complexity': 'off',
-      'sonarjs/pseudo-random': 'off',
-      'sonarjs/deprecation': 'off',
-      'promise/always-return': 'off',
-      'security/detect-object-injection': 'off',
-    },
-  },
 );
