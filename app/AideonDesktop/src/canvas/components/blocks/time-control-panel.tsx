@@ -28,6 +28,14 @@ interface TimeControlPanelProperties {
   readonly actions: TemporalPanelActions;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.title
+ * @param root0.description
+ * @param root0.state
+ * @param root0.actions
+ */
 export function TimeControlPanel({
   title = 'Time cursor',
   description = 'Branch & commit selection for state_at snapshots.',
@@ -119,15 +127,17 @@ export function TimeControlPanel({
           edges={state.snapshot?.edges}
           loading={state.snapshotLoading || state.loading}
         />
-        {state.mergeConflicts && state.mergeConflicts.length > 0 ? (
+        {state.mergeConflicts && state.mergeConflicts.length > 0 && (
           <MergeConflicts conflicts={state.mergeConflicts} />
-        ) : null}
-        {state.error ? <p className="text-xs text-destructive">{state.error}</p> : null}
+        )}
+        {state.error && <p className="text-xs text-destructive">{state.error}</p>}
         <PanelToolbar>
           <Button
             variant="secondary"
             size="sm"
-            onClick={actions.refreshBranches}
+            onClick={() => {
+              void actions.refreshBranches();
+            }}
             disabled={state.loading}
           >
             Refresh branches
@@ -136,14 +146,20 @@ export function TimeControlPanel({
             variant="outline"
             size="sm"
             onClick={() => {
-              actions.selectCommit(state.commitId ?? null);
+              actions.selectCommit(state.commitId);
             }}
             disabled={state.snapshotLoading || !state.commitId}
           >
             Reload snapshot
           </Button>
           {state.branch && state.branch !== 'main' ? (
-            <Button size="sm" onClick={actions.mergeIntoMain} disabled={state.merging}>
+            <Button
+              size="sm"
+              onClick={() => {
+                void actions.mergeIntoMain();
+              }}
+              disabled={state.merging}
+            >
               {state.merging ? 'Merging…' : 'Merge into main'}
             </Button>
           ) : null}
@@ -153,6 +169,11 @@ export function TimeControlPanel({
   );
 }
 
+/**
+ *
+ * @param commitId
+ * @param commits
+ */
 function resolveSliderValue(commitId: string | undefined, commits: TemporalPanelState['commits']) {
   if (commits.length === 0) {
     return [0];
@@ -164,6 +185,12 @@ function resolveSliderValue(commitId: string | undefined, commits: TemporalPanel
   return [index === -1 ? commits.length - 1 : index];
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.commits
+ * @param root0.selectedCommitId
+ */
 function CommitSummary({
   commits,
   selectedCommitId,
@@ -182,6 +209,13 @@ function CommitSummary({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.nodes
+ * @param root0.edges
+ * @param root0.loading
+ */
 function SnapshotStats({
   nodes,
   edges,
@@ -204,6 +238,13 @@ function SnapshotStats({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.label
+ * @param root0.value
+ * @param root0.loading
+ */
 function Stat({
   label,
   value,
@@ -221,6 +262,11 @@ function Stat({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.conflicts
+ */
 function MergeConflicts({
   conflicts,
 }: {
@@ -232,7 +278,7 @@ function MergeConflicts({
       <ul className="mt-2 space-y-1">
         {conflicts.map((conflict, index) => (
           <li key={`${conflict.reference}-${index.toString()}`}>
-            <span className="font-medium">{conflict.reference}</span>: {conflict.message}
+            <span className="font-medium">{conflict.reference}</span>:{conflict.message}
           </li>
         ))}
       </ul>

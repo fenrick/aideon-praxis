@@ -44,6 +44,23 @@ export interface MetaModelCommandEntry {
   readonly kind: 'type' | 'relationship';
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.open
+ * @param root0.onOpenChange
+ * @param root0.branches
+ * @param root0.activeBranch
+ * @param root0.commits
+ * @param root0.loading
+ * @param root0.onSelectBranch
+ * @param root0.onSelectCommit
+ * @param root0.onRefreshBranches
+ * @param root0.catalogueEntries
+ * @param root0.metaModelEntries
+ * @param root0.onSelectCatalogueEntry
+ * @param root0.onSelectMetaModelEntry
+ */
 export function TemporalCommandMenu({
   open,
   onOpenChange,
@@ -110,11 +127,11 @@ export function TemporalCommandMenu({
                 }}
               >
                 <span className="flex-1 text-sm font-medium">{branch.name}</span>
-                {branch.name === activeBranch ? <CommandShortcut>Active</CommandShortcut> : null}
+                {branch.name === activeBranch && <CommandShortcut>Active</CommandShortcut>}
               </CommandItem>
             ))}
           </CommandGroup>
-        ) : null}
+        )}
         {commitItems.length > 0 ? (
           <>
             <CommandSeparator />
@@ -133,14 +150,14 @@ export function TemporalCommandMenu({
                   <div className="flex w-full flex-col text-left">
                     <span className="text-sm font-medium">{commit.message}</span>
                     <span className="text-xs text-muted-foreground">
-                      {commit.branch} · {formatCommitTime(commit.time)}
+                      {commit.branch} ·{formatCommitTime(commit.time)}
                     </span>
                   </div>
                 </CommandItem>
               ))}
             </CommandGroup>
           </>
-        ) : null}
+        )}
         {catalogueEntries.length > 0 ? (
           <>
             <CommandSeparator />
@@ -159,14 +176,14 @@ export function TemporalCommandMenu({
                   <div className="flex w-full flex-col text-left">
                     <span className="text-sm font-medium">{entry.label}</span>
                     <span className="text-xs text-muted-foreground">
-                      {entry.owner ?? 'Unassigned'} · {entry.state ?? 'No state'}
+                      {entry.owner ?? 'Unassigned'} ·{entry.state ?? 'No state'}
                     </span>
                   </div>
                 </CommandItem>
               ))}
             </CommandGroup>
           </>
-        ) : null}
+        )}
         {metaModelEntries.length > 0 ? (
           <>
             <CommandSeparator />
@@ -185,19 +202,23 @@ export function TemporalCommandMenu({
                   <div className="flex w-full flex-col text-left">
                     <span className="text-sm font-medium">{entry.label}</span>
                     <span className="text-xs text-muted-foreground">
-                      {entry.category} · {entry.kind === 'type' ? 'Type' : 'Relationship'}
+                      {entry.category} ·{entry.kind === 'type' ? 'Type' : 'Relationship'}
                     </span>
                   </div>
                 </CommandItem>
               ))}
             </CommandGroup>
           </>
-        ) : null}
+        )}
       </CommandList>
     </CommandDialog>
   );
 }
 
+/**
+ *
+ * @param value
+ */
 function formatCommitTime(value?: string) {
   if (!value) {
     return 'Unknown';
