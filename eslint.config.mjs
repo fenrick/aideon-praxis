@@ -1,15 +1,15 @@
 // ESLint v9 flat config (pure flat presets, no compat, TS type-checked)
+import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
+import stylistic from '@stylistic/eslint-plugin';
 import importPlugin from 'eslint-plugin-import';
+import jsdoc from 'eslint-plugin-jsdoc';
+import noSecrets from 'eslint-plugin-no-secrets';
 import promise from 'eslint-plugin-promise';
 import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
 import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
-import stylistic from '@stylistic/eslint-plugin';
-import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
-import jsdoc from 'eslint-plugin-jsdoc';
-import noSecrets from 'eslint-plugin-no-secrets';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
@@ -101,10 +101,7 @@ export default defineConfig(
     rules: {
       // Maintainability / structure
       complexity: ['warn', 10],
-      'max-lines-per-function': [
-        'warn',
-        { max: 80, skipBlankLines: true, skipComments: true },
-      ],
+      'max-lines-per-function': ['warn', { max: 80, skipBlankLines: true, skipComments: true }],
       'max-depth': ['warn', 4],
 
       // Responsible code – avoid committing credentials
@@ -181,5 +178,4 @@ export default defineConfig(
       'security/detect-non-literal-fs-filename': 'off',
     },
   },
-
 );
