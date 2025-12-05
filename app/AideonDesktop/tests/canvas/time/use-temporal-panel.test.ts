@@ -1,4 +1,4 @@
-import { act, createElement } from 'react';
+import { act, createElement, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,14 +10,23 @@ import type {
 } from 'canvas/praxis-api';
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+ (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
+/**
+ * Forces pending microtasks to flush within an act block.
+ * @returns {Promise<void>} resolves after microtasks flush
+ */
 async function flushMicrotasks(): Promise<void> {
   await act(async () => {
     await Promise.resolve();
   });
 }
 
+/**
+ * Waits until a predicate succeeds or retries are exhausted.
+ * @param {() => boolean} predicate condition to satisfy
+ * @param {number} retries maximum attempts (default 10)
+ */
 async function waitForState(predicate: () => boolean, retries = 10): Promise<void> {
   for (let attempt = 0; attempt < retries; attempt += 1) {
     await flushMicrotasks();
@@ -43,10 +52,13 @@ const getSnapshotSpy = vi.fn<Parameters<SnapshotMock>, ReturnType<SnapshotMock>>
 const mergeSpy = vi.fn<Parameters<MergeMock>, ReturnType<MergeMock>>();
 
 vi.mock('canvas/praxis-api', () => ({
-  listTemporalBranches: (...args: Parameters<typeof listBranchesSpy>) => listBranchesSpy(...args),
-  listTemporalCommits: (...args: Parameters<typeof listCommitsSpy>) => listCommitsSpy(...args),
-  getStateAtSnapshot: (...args: Parameters<typeof getSnapshotSpy>) => getSnapshotSpy(...args),
-  mergeTemporalBranches: (...args: Parameters<typeof mergeSpy>) => mergeSpy(...args),
+  listTemporalBranches: (...arguments_: Parameters<typeof listBranchesSpy>) =>
+    listBranchesSpy(...arguments_),
+  listTemporalCommits: (...arguments_: Parameters<typeof listCommitsSpy>) =>
+    listCommitsSpy(...arguments_),
+  getStateAtSnapshot: (...arguments_: Parameters<typeof getSnapshotSpy>) =>
+    getSnapshotSpy(...arguments_),
+  mergeTemporalBranches: (...arguments_: Parameters<typeof mergeSpy>) => mergeSpy(...arguments_),
 }));
 
 import { useTemporalPanel } from 'canvas/time/use-temporal-panel';
@@ -107,20 +119,37 @@ const SNAPSHOTS: Record<string, StateAtSnapshot> = {
     edges: 31,
   },
 };
+const SNAPSHOT_MAP = new Map<string, StateAtSnapshot>(Object.entries(SNAPSHOTS));
 
+/**
+ * Creates a harness exposing state and actions from useTemporalPanel.
+ * @returns {{state: TemporalPanelState, actions: TemporalPanelActions, unmount: () => void}} harness helpers
+ */
 function renderTemporalPanelHook() {
   const container = document.createElement('div');
   document.body.append(container);
   const root = createRoot(container);
   let current: [TemporalPanelState, TemporalPanelActions] | undefined;
 
-  function HookBridge() {
-    current = useTemporalPanel();
-    return null;
+  /**
+   * Bridge component that captures hook output and sends it to the harness.
+   * @param {{onValue: (value: [TemporalPanelState, TemporalPanelActions]) => void}} props callback sink
+   * @returns {ReturnType<typeof createElement>} inert element for rendering
+   */
+  function HookBridge({
+    onValue,
+  }: {
+    onValue: (value: [TemporalPanelState, TemporalPanelActions]) => void;
+  }) {
+    const value = useTemporalPanel();
+    useEffect(() => {
+      onValue(value);
+    }, [onValue, value]);
+    return createElement('div');
   }
 
   act(() => {
-    root.render(createElement(HookBridge));
+    root.render(createElement(HookBridge, { onValue: (value) => { current = value; } }));
   });
 
   const getCurrent = () => {
@@ -158,7 +187,7 @@ describe('useTemporalPanel', () => {
       { name: 'chronaplay', head: 'commit-feature-001' },
     ]);
 
-    listCommitsSpy.mockImplementation(async (branch: string) => {
+    listCommitsSpy.mockImplementation((branch: string) => {
       if (branch === 'main') {
         return MAIN_COMMITS;
       }
@@ -168,8 +197,8 @@ describe('useTemporalPanel', () => {
       return [];
     });
 
-    getSnapshotSpy.mockImplementation(async ({ asOf }) => {
-      const snapshot = SNAPSHOTS[asOf];
+    getSnapshotSpy.mockImplementation(({ asOf }: { asOf: string }) => {
+      const snapshot = SNAPSHOT_MAP.get(asOf);
       if (!snapshot) {
         throw new Error(`Missing snapshot for ${asOf}`);
       }
@@ -182,7 +211,7 @@ describe('useTemporalPanel', () => {
   it('loads branches, commits, and latest snapshot on mount', async () => {
     const harness = renderTemporalPanelHook();
     try {
-      await waitForState(() => harness.state.loading === false);
+      await waitForState(() => !harness.state.loading);
 
       expect(harness.state.branch).toBe('main');
       expect(harness.state.commitId).toBe('commit-main-002');
@@ -218,10 +247,10 @@ describe('useTemporalPanel', () => {
   it('surfaces merge conflicts when the worker rejects a merge', async () => {
     const harness = renderTemporalPanelHook();
     try {
-      await waitForState(() => harness.state.loading === false);
+      await waitForState(() => !harness.state.loading);
 
       act(() => {
-        harness.actions.selectBranch('chronaplay');
+          harness.actions.selectBranch('chronaplay');
       });
 
       await waitForState(() => harness.state.branch === 'chronaplay');
@@ -241,7 +270,7 @@ describe('useTemporalPanel', () => {
         harness.actions.mergeIntoMain();
       });
 
-      await waitForState(() => harness.state.merging === false);
+      await waitForState(() => !harness.state.merging);
       expect(mergeSpy).toHaveBeenCalledWith({ source: 'chronaplay', target: 'main' });
       expect(harness.state.mergeConflicts).toEqual([
         {
@@ -260,7 +289,7 @@ describe('useTemporalPanel', () => {
 
     const harness = renderTemporalPanelHook();
     try {
-      await waitForState(() => harness.state.loading === false);
+      await waitForState(() => !harness.state.loading);
       expect(harness.state.error).toContain('network down');
     } finally {
       harness.unmount();
