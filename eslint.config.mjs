@@ -1,6 +1,6 @@
-// ESLint v9 flat config (pure flat presets, no compat, TS type-checked)
+// ESLint v9 flat config (pure flat presets, TS type-checked)
 import js from '@eslint/js';
-import prettier from 'eslint-plugin-prettier';
+import prettierPlugin from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier/flat';
 import importPlugin from 'eslint-plugin-import';
 import promise from 'eslint-plugin-promise';
@@ -19,24 +19,20 @@ const typedTsConfigs = [
   ...tseslint.configs.recommendedTypeChecked,
 ].map((cfg) => ({ ...cfg, files: ['**/*.{ts,tsx}'] }));
 
-export default defineConfig(
-  // Global ignores first so they short‑circuit for all subsequent configs
-  [
-    globalIgnores([
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      'app/AideonDesktop/legacy/**',
-      'app/AideonDesktop/src/design-system/components/**',
-      '**/.pnpm/**',
-      '**/out/**',
-    ]),
-  ],
+const configs = [
+  globalIgnores([
+    'node_modules/**',
+    'dist/**',
+    'build/**',
+    'coverage/**',
+    'app/AideonDesktop/legacy/**',
+    'app/AideonDesktop/src/design-system/components/**',
+    '**/.pnpm/**',
+    '**/out/**',
+  ]),
+
   // Base JS rules roughly equivalent to the “core” checks Sonar also relies on
   js.configs.recommended,
-
-  // TypeScript: avoid applying typed configs globally; handled per-file below
 
   // Base language options for JS/MJS
   {
@@ -69,13 +65,10 @@ export default defineConfig(
   {
     name: 'project-overrides',
     rules: {
-      // Sonar-like maintainability signal
       'sonarjs/cognitive-complexity': ['error', 8],
-
-      // Keep noise down where packs overlap
-      'unicorn/no-null': 'off', // often too strict
-      'unicorn/prefer-module': 'off', // off if you still use CommonJS
-      'import/no-unresolved': 'off', // leave to TS when using path aliases
+      'unicorn/no-null': 'off',
+      'unicorn/prefer-module': 'off',
+      'import/no-unresolved': 'off',
     },
   },
 
@@ -127,7 +120,6 @@ export default defineConfig(
       'unicorn/consistent-function-scoping': 'off',
       'promise/param-names': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
-      // This specific test walks the renderer tree; non-literal fs args are expected
       'security/detect-non-literal-fs-filename': 'off',
     },
   },
@@ -139,7 +131,7 @@ export default defineConfig(
 
   // Enforce Prettier formatting (including JSX/TSX)
   {
-    plugins: { prettier },
+    plugins: { prettier: prettierPlugin },
     rules: {
       'prettier/prettier': [
         'error',
@@ -152,4 +144,6 @@ export default defineConfig(
       ],
     },
   },
-);
+];
+
+export default defineConfig(configs);
