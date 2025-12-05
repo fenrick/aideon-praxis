@@ -1,9 +1,9 @@
 // eslint.config.mjs
 // ESLint v9 flat config, ESM, TS-aware, Sonar-style clean code
+// Prettier handles formatting; ESLint handles correctness/clean-code.
 
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
-import stylistic from '@stylistic/eslint-plugin';
 import importPlugin from 'eslint-plugin-import';
 import jsdoc from 'eslint-plugin-jsdoc';
 import promise from 'eslint-plugin-promise';
@@ -18,6 +18,8 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import testingLibrary from 'eslint-plugin-testing-library';
+
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
 
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
@@ -55,7 +57,7 @@ export default defineConfig([
     },
   },
 
-  // Import hygiene (dead imports, ordering, cycles, etc.)
+  // Import hygiene (dead imports, cycles, etc.)
   importPlugin.flatConfigs.recommended,
   importPlugin.flatConfigs.typescript,
 
@@ -69,9 +71,6 @@ export default defineConfig([
 
   // Security hotspot checks (not taint analysis, but still valuable)
   security.configs.recommended,
-
-  // Consistent formatting / style (indent, spacing, etc.)
-  stylistic.configs.recommended,
 
   // ESLint comments hygiene
   comments.recommended,
@@ -131,6 +130,16 @@ export default defineConfig([
     },
   },
 
+  // Avoid ESLint trying to sort imports; Prettier (with prettier-plugin-organize-imports)
+  // is the single source of truth for import ordering.
+  {
+    name: 'no-eslint-import-sorting',
+    rules: {
+      'sort-imports': 'off',
+      'import/order': 'off',
+    },
+  },
+
   // Test files: Jest + Testing Library + jest-dom
   {
     files: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
@@ -145,4 +154,8 @@ export default defineConfig([
     // jest-dom assertions best practices
     ...jestDom.configs['flat/recommended'],
   },
+
+  // Put eslint-config-prettier LAST so it can disable any formatting rules
+  // from the above configs that would conflict with Prettier.
+  eslintConfigPrettier,
 ]);
