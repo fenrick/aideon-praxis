@@ -31,12 +31,12 @@ describe('desktop windows', () => {
   });
 
   it('lets users toggle theme in settings window', () => {
-    globalThis.localStorage?.clear?.();
+    globalThis.localStorage.clear()
     render(<SettingsWindow />);
-    const dark = screen.getByLabelText('Dark') as HTMLInputElement;
+    const dark = screen.getByLabelText('Dark');
     fireEvent.click(dark);
-    expect(dark.checked).toBe(true);
-    expect(document.body.classList.contains('theme-dark')).toBe(true);
+    expect(dark).toBeChecked();
+    expect(document.body).toHaveClass('theme-dark');
   });
 
   it('rotates splash load lines and calls init without crashing', async () => {

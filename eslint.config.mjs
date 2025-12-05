@@ -55,6 +55,16 @@ export default defineConfig([
       ecmaVersion: 'latest',
       sourceType: 'module',
     },
+    settings: {
+      // Allow import/no-unresolved to pick up TS path aliases in package tsconfigs.
+      'import/resolver': {
+        typescript: {
+          project: ['./tsconfig.eslint.json', './app/AideonDesktop/tsconfig.json'],
+          alwaysTryTypes: true,
+        },
+        node: true,
+      },
+    },
   },
 
   // Import hygiene (dead imports, cycles, etc.)
