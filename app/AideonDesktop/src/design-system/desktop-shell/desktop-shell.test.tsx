@@ -10,7 +10,7 @@ vi.mock('react-resizable-panels', () => ({
   PanelResizeHandle: () => <div aria-label="Resize handle" />,
 }));
 
-import { DesktopShell } from './DesktopShell';
+import { DesktopShell } from './desktop-shell';
 import {
   Menubar,
   ResizableHandle,

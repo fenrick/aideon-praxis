@@ -1,31 +1,29 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import type {
-  GraphAdapter,
   TemporalDiffParameters,
   TemporalDiffSnapshot,
   TemporalStateParameters,
   TemporalStateSnapshot,
   WorkerJobRequest,
   WorkerJobResult,
-} from '../src';
+} from '../../src/adapters';
 
 describe('adapter contracts', () => {
   it('enforces GraphAdapter stateAt contract', async () => {
-    const adapter: GraphAdapter = {
-      async stateAt(parameters) {
+    const adapter = {
+      stateAt(parameters: TemporalStateParameters): Promise<TemporalStateSnapshot> {
         expectTypeOf(parameters).toEqualTypeOf<TemporalStateParameters>();
-        const snapshot: TemporalStateSnapshot = {
+        return Promise.resolve({
           asOf: parameters.asOf,
           scenario: parameters.scenario,
           confidence: parameters.confidence,
           nodes: 0,
           edges: 0,
-        };
-        return snapshot;
+        });
       },
-      async diff(parameters) {
+      diff(parameters: TemporalDiffParameters): Promise<TemporalDiffSnapshot> {
         expectTypeOf(parameters).toEqualTypeOf<TemporalDiffParameters>();
-        const diff: TemporalDiffSnapshot = {
+        return Promise.resolve({
           from: parameters.from,
           to: parameters.to,
           metrics: {
@@ -36,8 +34,7 @@ describe('adapter contracts', () => {
             edgeMods: 0,
             edgeDels: 0,
           },
-        };
-        return diff;
+        });
       },
     };
 

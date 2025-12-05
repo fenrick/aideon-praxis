@@ -1,7 +1,7 @@
 import type { ComponentPropsWithoutRef } from 'react';
 import { forwardRef } from 'react';
 
-import { cn } from '../lib/utils';
+import { cn } from '../lib/utilities';
 
 export type SidebarShellProperties = Readonly<ComponentPropsWithoutRef<'aside'>>;
 
@@ -37,7 +37,7 @@ export const SidebarSection = forwardRef<HTMLDivElement, SidebarSectionPropertie
 export type SidebarHeadingProperties = Readonly<ComponentPropsWithoutRef<'h2'>>;
 
 export const SidebarHeading = forwardRef<HTMLHeadingElement, SidebarHeadingProperties>(
-  function SidebarHeading({ className, ...properties }, reference) {
+  function SidebarHeading({ className, children, ...properties }, reference) {
     return (
       <h2
         ref={reference}
@@ -46,7 +46,9 @@ export const SidebarHeading = forwardRef<HTMLHeadingElement, SidebarHeadingPrope
           className,
         )}
         {...properties}
-      />
+      >
+        {children}
+      </h2>
     );
   },
 );

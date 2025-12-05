@@ -250,7 +250,7 @@ describe('useTemporalPanel', () => {
       await waitForState(() => !harness.state.loading);
 
       act(() => {
-          harness.actions.selectBranch('chronaplay');
+        void harness.actions.selectBranch('chronaplay');
       });
 
       await waitForState(() => harness.state.branch === 'chronaplay');
@@ -265,9 +265,9 @@ describe('useTemporalPanel', () => {
           },
         ],
       });
-
+      
       act(() => {
-        harness.actions.mergeIntoMain();
+        void harness.actions.mergeIntoMain();
       });
 
       await waitForState(() => !harness.state.merging);

@@ -12,6 +12,9 @@ import { Skeleton } from './design-system/components/ui/skeleton';
 
 import { useWorkspaceTree, type WorkspaceTreeItem } from './hooks/use-workspace-tree';
 
+/**
+ *
+ */
 export function DesktopTree() {
   const { loading, items, error } = useWorkspaceTree();
 
@@ -45,13 +48,18 @@ export function DesktopTree() {
             <Sidebar className="mt-2 rounded-md border border-dashed border-border/70 bg-muted/30 p-2 text-xs text-muted-foreground">
               No workspaces available yet.
             </Sidebar>
-          ) : null}
+          ) : undefined}
         </SidebarGroupContent>
       </SidebarGroup>
     </SidebarContent>
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.item
+ */
 function TreeNode({ item }: { readonly item: WorkspaceTreeItem }) {
   return (
     <SidebarMenuItem>
@@ -60,9 +68,10 @@ function TreeNode({ item }: { readonly item: WorkspaceTreeItem }) {
           <span className="font-medium text-sm">{item.label}</span>
           {item.children ? (
             <div className="text-xs text-muted-foreground">
-              {item.children.length} workspace{item.children.length === 1 ? '' : 's'}
+              {item.children.length} workspace
+              {item.children.length === 1 ? '' : 's'}
             </div>
-          ) : null}
+          ) : undefined}
         </div>
       </SidebarMenuButton>
       {item.children ? (
@@ -73,7 +82,7 @@ function TreeNode({ item }: { readonly item: WorkspaceTreeItem }) {
             </SidebarMenuButton>
           ))}
         </div>
-      ) : null}
+      ) : undefined}
     </SidebarMenuItem>
   );
 }

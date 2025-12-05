@@ -7,6 +7,11 @@ export interface DesktopPropertiesPanelProperties {
   readonly selection?: SelectionState;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.selection
+ */
 export function DesktopPropertiesPanel({ selection }: DesktopPropertiesPanelProperties) {
   const hasSelection = Boolean(
     selection && (selection.nodeIds.length > 0 || selection.edgeIds.length > 0),
@@ -31,8 +36,11 @@ export function DesktopPropertiesPanel({ selection }: DesktopPropertiesPanelProp
                   <span className="text-foreground">{selection?.edgeIds.length}</span>
                 </p>
                 {selection?.sourceWidgetId ? (
-                  <p>Source widget: {selection.sourceWidgetId}</p>
-                ) : null}
+                  <p>
+                    Source widget:
+                    {selection.sourceWidgetId}
+                  </p>
+                ) : undefined}
               </>
             ) : (
               <p>No selection yet. Pick a node or edge to see details.</p>

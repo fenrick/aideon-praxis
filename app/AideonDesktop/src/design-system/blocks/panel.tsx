@@ -1,7 +1,7 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { forwardRef } from 'react';
 
-import { cn } from '../lib/utils';
+import { cn } from '../lib/utilities';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 export type PanelProperties = Readonly<ComponentPropsWithoutRef<typeof Card>>;
@@ -94,6 +94,15 @@ export interface PanelFieldProperties extends Readonly<ComponentPropsWithoutRef<
   readonly action?: ReactNode;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.label
+ * @param root0.helper
+ * @param root0.action
+ * @param root0.className
+ * @param root0.children
+ */
 export function PanelField({
   label,
   helper,
@@ -108,10 +117,10 @@ export function PanelField({
         <span>{label}</span>
         {action ? (
           <div className="text-[0.6rem] font-medium normal-case tracking-wide">{action}</div>
-        ) : null}
+        ) : undefined}
       </div>
       {children}
-      {helper ? <div className="text-xs text-muted-foreground">{helper}</div> : null}
+      {helper ? <div className="text-xs text-muted-foreground">{helper}</div> : undefined}
     </div>
   );
 }
@@ -120,6 +129,13 @@ export interface PanelToolbarProperties extends Readonly<ComponentPropsWithoutRe
   readonly align?: 'start' | 'end' | 'between';
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.align
+ * @param root0.className
+ * @param root0.children
+ */
 export function PanelToolbar({
   align = 'end',
   className,
@@ -141,6 +157,10 @@ export function PanelToolbar({
   );
 }
 
+/**
+ *
+ * @param alignment
+ */
 function resolveAlignmentClass(alignment: PanelToolbarProperties['align']): string {
   switch (alignment) {
     case 'start': {

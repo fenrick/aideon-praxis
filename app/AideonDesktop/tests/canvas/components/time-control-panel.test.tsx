@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import type * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
@@ -6,7 +7,13 @@ import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-t
 import { TimeControlPanel } from 'canvas/components/blocks/time-control-panel';
 
 vi.mock('../../../src/design-system/components/ui/select', () => {
-  const Select = ({ onValueChange, value, disabled, children }: any) => (
+  interface SelectProperties {
+    onValueChange?: (value: string) => void;
+    value?: string;
+    disabled?: boolean;
+    children?: React.ReactNode;
+  }
+  const Select = ({ onValueChange, value, disabled, children }: SelectProperties) => (
     <div>
       <button
         data-testid={`select-${value ?? 'unset'}`}
@@ -18,15 +25,15 @@ vi.mock('../../../src/design-system/components/ui/select', () => {
       {children}
     </div>
   );
-  const SelectTrigger = ({ children }: any) => <div>{children}</div>;
-  const SelectValue = (properties: any) => <div {...properties} />;
-  const SelectContent = ({ children }: any) => <div>{children}</div>;
-  const SelectItem = ({ children }: any) => <div>{children}</div>;
+  const SelectTrigger = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
+  const SelectValue = (properties: Record<string, unknown>) => <div {...properties} />;
+  const SelectContent = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
+  const SelectItem = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
   return { Select, SelectTrigger, SelectValue, SelectContent, SelectItem };
 });
 
 vi.mock('../../../src/design-system/components/ui/slider', () => ({
-  Slider: ({ onValueCommit }: any) => (
+  Slider: ({ onValueCommit }: { onValueCommit?: (values: number[]) => void }) => (
     <button data-testid="slider" onClick={() => onValueCommit?.([1])}>
       slider
     </button>

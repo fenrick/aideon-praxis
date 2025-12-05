@@ -29,12 +29,9 @@ interface TimeControlPanelProperties {
 }
 
 /**
- *
- * @param root0
- * @param root0.title
- * @param root0.description
- * @param root0.state
- * @param root0.actions
+ * Render the timeline controls for selecting branches and commits.
+ * @param root0 - Component properties including current state and actions.
+ * @returns JSX element containing branch/commit selectors and timeline slider.
  */
 export function TimeControlPanel({
   title = 'Time cursor',
@@ -57,14 +54,14 @@ export function TimeControlPanel({
         <PanelDescription>{description}</PanelDescription>
       </PanelHeader>
       <PanelContent>
-        <PanelField label="Branch">
-          <Select
-            value={state.branch ?? undefined}
-            disabled={state.loading || branchOptions.length === 0}
-            onValueChange={(value: string) => {
-              actions.selectBranch(value);
-            }}
-          >
+          <PanelField label="Branch">
+            <Select
+              value={state.branch ?? undefined}
+              disabled={state.loading || branchOptions.length === 0}
+              onValueChange={(value: string) => {
+                actions.selectBranch(value).catch(() => {});
+              }}
+            >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select branch" />
             </SelectTrigger>
@@ -85,7 +82,7 @@ export function TimeControlPanel({
             value={state.commitId ?? undefined}
             disabled={state.loading || state.commits.length === 0}
             onValueChange={(value: string) => {
-              actions.selectCommit(value);
+              actions.selectCommit(value).catch(() => {});
             }}
           >
             <SelectTrigger className="w-full">
@@ -162,7 +159,7 @@ export function TimeControlPanel({
             >
               {state.merging ? 'Merging…' : 'Merge into main'}
             </Button>
-          ) : null}
+          ) : undefined}
         </PanelToolbar>
       </PanelContent>
     </Panel>
@@ -170,9 +167,10 @@ export function TimeControlPanel({
 }
 
 /**
- *
- * @param commitId
- * @param commits
+ * Resolve the slider position index based on the selected commit.
+ * @param commitId - Current commit identifier from state.
+ * @param commits - Ordered commits for the active branch.
+ * @returns Single-element array containing the slider index.
  */
 function resolveSliderValue(commitId: string | undefined, commits: TemporalPanelState['commits']) {
   if (commits.length === 0) {
@@ -186,10 +184,9 @@ function resolveSliderValue(commitId: string | undefined, commits: TemporalPanel
 }
 
 /**
- *
- * @param root0
- * @param root0.commits
- * @param root0.selectedCommitId
+ * Show a short summary of the selected commit or the latest commit.
+ * @param root0 - Commit list and current selection.
+ * @returns JSX fragment describing the selected commit.
  */
 function CommitSummary({
   commits,
@@ -210,11 +207,9 @@ function CommitSummary({
 }
 
 /**
- *
- * @param root0
- * @param root0.nodes
- * @param root0.edges
- * @param root0.loading
+ * Present snapshot metrics for nodes and edges.
+ * @param root0 - Node/edge counts and loading flag.
+ * @returns Snapshot statistic tiles.
  */
 function SnapshotStats({
   nodes,
@@ -239,11 +234,9 @@ function SnapshotStats({
 }
 
 /**
- *
- * @param root0
- * @param root0.label
- * @param root0.value
- * @param root0.loading
+ * Generic stat tile used within the panel.
+ * @param root0 - Label/value pair with loading state.
+ * @returns JSX element displaying the metric.
  */
 function Stat({
   label,
@@ -263,9 +256,9 @@ function Stat({
 }
 
 /**
- *
- * @param root0
- * @param root0.conflicts
+ * Render a list of merge conflicts returned by the host.
+ * @param root0 - Conflict entries to display.
+ * @returns JSX list of conflicts.
  */
 function MergeConflicts({
   conflicts,

@@ -1,21 +1,24 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type * as MetaModelModule from 'canvas/lib/meta-model';
 
-const fetchMetaModelSpy = vi.fn();
+const fetchMetaModelSpy = vi.fn<
+  Promise<MetaModelModule.MetaModelSchema>,
+  Parameters<typeof MetaModelModule.fetchMetaModel>
+>();
 
 vi.mock('canvas/lib/meta-model', async () => {
-  const actual =
-    await vi.importActual<typeof import('canvas/lib/meta-model')>('canvas/lib/meta-model');
+  const actual = await vi.importActual<typeof MetaModelModule>('canvas/lib/meta-model');
   return {
     ...actual,
-    fetchMetaModel: () => fetchMetaModelSpy(),
+    fetchMetaModel: (...arguments_: Parameters<typeof actual.fetchMetaModel>) =>
+      fetchMetaModelSpy(...arguments_),
   };
 });
 
 import { MetaModelPanel } from 'canvas/components/dashboard/meta-model-panel';
-import type { MetaModelSchema } from 'canvas/lib/meta-model';
 
-const SAMPLE_SCHEMA: MetaModelSchema = {
+const SAMPLE_SCHEMA: MetaModelModule.MetaModelSchema = {
   version: '1.0',
   description: 'Test schema',
   types: [

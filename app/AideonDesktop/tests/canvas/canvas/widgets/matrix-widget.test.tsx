@@ -1,19 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import type { MatrixViewModel } from 'canvas/praxis-api';
 import type { MatrixWidgetConfig } from 'canvas/types';
+import type * as PraxisApi from 'canvas/praxis-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getMatrixViewMock = vi.fn<
-  Parameters<(typeof import('canvas/praxis-api'))['getMatrixView']>,
-  ReturnType<(typeof import('canvas/praxis-api'))['getMatrixView']>
+  Parameters<typeof PraxisApi.getMatrixView>,
+  ReturnType<typeof PraxisApi.getMatrixView>
 >();
 
 vi.mock('canvas/praxis-api', async () => {
-  const actual = await vi.importActual<typeof import('canvas/praxis-api')>('canvas/praxis-api');
+  const actual = await vi.importActual<typeof PraxisApi>('canvas/praxis-api');
   return {
     ...actual,
-    getMatrixView: (...args: Parameters<typeof actual.getMatrixView>) =>
-      getMatrixViewMock(...args) as ReturnType<typeof actual.getMatrixView>,
+    getMatrixView: (...arguments_: Parameters<typeof actual.getMatrixView>) =>
+      getMatrixViewMock(...arguments_),
   };
 });
 
@@ -33,7 +33,7 @@ const MATRIX_WIDGET: MatrixWidgetConfig = {
   },
 };
 
-const MATRIX_VIEW: MatrixViewModel = {
+const MATRIX_VIEW: PraxisApi.MatrixViewModel = {
   metadata: {
     id: 'matrix-view',
     name: 'Dependencies',

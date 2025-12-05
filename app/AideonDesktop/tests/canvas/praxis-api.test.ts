@@ -7,7 +7,7 @@ vi.mock('canvas/platform', () => ({
 const invokeSpy = vi.fn<[command: string, payload: Record<string, unknown>], Promise<unknown>>();
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: (...args: Parameters<typeof invokeSpy>) => invokeSpy(...args),
+  invoke: (...arguments_: Parameters<typeof invokeSpy>) => invokeSpy(...arguments_),
 }));
 
 import {
@@ -36,13 +36,13 @@ describe('praxisApi tauri bridge', () => {
     invokeSpy.mockResolvedValue({
       branches: [
         { name: 'main', head: 'commit-main-002' },
-        { name: 'chronaplay', head: null },
+        { name: 'chronaplay', head: undefined },
       ],
     });
 
     await expect(listTemporalBranches()).resolves.toEqual([
       { name: 'main', head: 'commit-main-002' },
-      { name: 'chronaplay', head: null },
+      { name: 'chronaplay', head: undefined },
     ]);
     expect(invokeSpy).toHaveBeenCalledWith('list_branches', {});
   });
@@ -92,15 +92,15 @@ describe('praxisApi tauri bridge', () => {
   it('serialises state_at payloads for tauri commands', async () => {
     invokeSpy.mockResolvedValue(snapshot);
     await expect(
-      getStateAtSnapshot({ asOf: snapshot.asOf, scenario: snapshot.scenario! }),
+      getStateAtSnapshot({ asOf: snapshot.asOf, scenario: snapshot.scenario }),
     ).resolves.toEqual(snapshot);
     expect(invokeSpy).toHaveBeenCalledWith('temporal_state_at', {
-      payload: {
-        asOf: snapshot.asOf,
-        scenario: snapshot.scenario,
-        confidence: null,
-      },
-    });
+        payload: {
+          asOf: snapshot.asOf,
+          scenario: snapshot.scenario,
+          confidence: undefined,
+        },
+      });
   });
 
   it('computes diff summaries via tauri', async () => {
@@ -162,7 +162,7 @@ describe('praxisApi tauri bridge', () => {
         },
         {
           // malformed conflict should be filtered out
-          reference: null,
+          reference: undefined,
         },
       ],
     });

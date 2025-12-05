@@ -113,7 +113,7 @@ export function TemporalCommandMenu({
             <CommandShortcut>R</CommandShortcut>
           </CommandItem>
         </CommandGroup>
-        {sortedBranches.length > 0 ? (
+        {sortedBranches.length > 0 && (
           <CommandGroup heading="Branches">
             {sortedBranches.map((branch) => (
               <CommandItem
@@ -132,7 +132,7 @@ export function TemporalCommandMenu({
             ))}
           </CommandGroup>
         )}
-        {commitItems.length > 0 ? (
+        {commitItems.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading="Commits">
@@ -158,7 +158,7 @@ export function TemporalCommandMenu({
             </CommandGroup>
           </>
         )}
-        {catalogueEntries.length > 0 ? (
+        {catalogueEntries.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading="Catalogue">
@@ -184,7 +184,7 @@ export function TemporalCommandMenu({
             </CommandGroup>
           </>
         )}
-        {metaModelEntries.length > 0 ? (
+        {metaModelEntries.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading="Meta-model">

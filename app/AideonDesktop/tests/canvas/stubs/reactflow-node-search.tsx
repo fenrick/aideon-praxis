@@ -1,5 +1,10 @@
 import type { ReactNode } from 'react';
 
-export function NodeSearchDialog({ children }: { children?: ReactNode }) {
+/**
+ *
+ * @param root0
+ * @param root0.children
+ */
+export function NodeSearchDialog({ children }: Readonly<{ children?: ReactNode }>) {
   return <div data-testid="node-search-dialog">{children}</div>;
 }

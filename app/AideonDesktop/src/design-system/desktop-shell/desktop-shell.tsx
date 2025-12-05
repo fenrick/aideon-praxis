@@ -1,6 +1,6 @@
 import type { ComponentPropsWithoutRef } from 'react';
 
-import { cn } from 'design-system/lib/utils';
+import { cn } from 'design-system/lib/utilities';
 
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './resizable';
 import { Sidebar, SidebarProvider } from './sidebar';
@@ -8,6 +8,15 @@ import type { DesktopShellSlots } from './types';
 
 export type DesktopShellProperties = DesktopShellSlots & Readonly<ComponentPropsWithoutRef<'div'>>;
 
+/**
+ *
+ * @param root0
+ * @param root0.tree
+ * @param root0.toolbar
+ * @param root0.main
+ * @param root0.properties
+ * @param root0.className
+ */
 export function DesktopShell({
   tree,
   toolbar,

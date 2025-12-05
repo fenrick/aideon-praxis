@@ -1,32 +1,35 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import type { GraphViewModel } from 'canvas/praxis-api';
 import type { GraphWidgetConfig } from 'canvas/types';
+import type * as PraxisApi from 'canvas/praxis-api';
+import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getGraphViewMock = vi.fn<
-  Parameters<(typeof import('canvas/praxis-api'))['getGraphView']>,
-  ReturnType<(typeof import('canvas/praxis-api'))['getGraphView']>
+  Parameters<typeof PraxisApi.getGraphView>,
+  ReturnType<typeof PraxisApi.getGraphView>
 >();
 
 vi.mock('canvas/praxis-api', async () => {
-  const actual = await vi.importActual<typeof import('canvas/praxis-api')>('canvas/praxis-api');
+  const actual = await vi.importActual<typeof PraxisApi>('canvas/praxis-api');
   return {
     ...actual,
-    getGraphView: (...args: Parameters<typeof actual.getGraphView>) =>
-      getGraphViewMock(...args) as ReturnType<typeof actual.getGraphView>,
+    getGraphView: (...arguments_: Parameters<typeof actual.getGraphView>) =>
+      getGraphViewMock(...arguments_),
   };
 });
 
 vi.mock('design-system/components/node-search', () => ({
-  NodeSearchDialog: () => null,
+  NodeSearchDialog: () => <div data-testid="node-search-dialog" />,
 }));
 
-let latestSelectionHandler:
-  | ((selection: { nodes?: { id: string }[]; edges?: { id: string }[] }) => void)
-  | undefined;
+interface Selection {
+  readonly nodes?: { id: string }[];
+  readonly edges?: { id: string }[];
+}
+
+let latestSelectionHandler: ((selection: Selection) => void) | undefined;
 
 vi.mock('@xyflow/react', () => {
-  const React = require('react');
   const { createElement } = React;
   return {
     ReactFlowProvider: ({ children }: { children?: React.ReactNode }) =>
@@ -36,10 +39,7 @@ vi.mock('@xyflow/react', () => {
       onSelectionChange,
     }: {
       children?: React.ReactNode;
-      onSelectionChange?: (selection: {
-        nodes?: { id: string }[];
-        edges?: { id: string }[];
-      }) => void;
+      onSelectionChange?: (selection: Selection) => void;
     }) => {
       latestSelectionHandler = onSelectionChange ?? undefined;
       return createElement('div', { 'data-testid': 'reactflow' }, children);
@@ -47,11 +47,19 @@ vi.mock('@xyflow/react', () => {
     Controls: () => createElement('div', { 'data-testid': 'controls' }),
     Background: () => createElement('div', { 'data-testid': 'background' }),
     BackgroundVariant: { Dots: 'dots' },
-    useNodesState: () => [[], vi.fn(), vi.fn()],
-    useEdgesState: () => [[], vi.fn(), vi.fn()],
+    useNodesState: (): [never[], (nodes: never[]) => void, (nodes: never[]) => void] => [
+      [],
+      vi.fn(),
+      vi.fn(),
+    ],
+    useEdgesState: (): [never[], (edges: never[]) => void, (edges: never[]) => void] => [
+      [],
+      vi.fn(),
+      vi.fn(),
+    ],
     useReactFlow: () => ({
-      getNodes: () => [],
-      setNodes: (updater: (nodes: []) => []) => updater([]),
+      getNodes: (): never[] => [],
+      setNodes: (updater: (nodes: never[]) => never[]) => updater([]),
       fitView: vi.fn(),
     }),
     Panel: ({ children }: { children?: React.ReactNode }) =>
@@ -73,7 +81,7 @@ const GRAPH_WIDGET: GraphWidgetConfig = {
   },
 };
 
-const GRAPH_VIEW: GraphViewModel = {
+const GRAPH_VIEW: PraxisApi.GraphViewModel = {
   metadata: {
     id: 'view-graph',
     name: 'Customer Experience',

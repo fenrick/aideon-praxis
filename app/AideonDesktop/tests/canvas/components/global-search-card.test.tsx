@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { fetchMetaModel } from 'canvas/lib/meta-model';
 import { getCatalogueView } from 'canvas/praxis-api';
 import type { TemporalPanelState } from 'canvas/time/use-temporal-panel';
+import type * as PraxisApi from 'canvas/praxis-api';
 
 const selectCommitSpy = vi.fn();
 const selectBranchSpy = vi.fn();
@@ -13,9 +14,9 @@ const focusMetaModelSpy = vi.fn();
 const scrollIntoViewMock = vi.fn();
 
 class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
 }
 
 beforeAll(() => {
@@ -47,7 +48,7 @@ vi.mock('canvas/lib/meta-model', () => ({
 const fetchMetaModelMock = vi.mocked(fetchMetaModel);
 
 vi.mock('canvas/praxis-api', async () => {
-  const actual = await vi.importActual<typeof import('canvas/praxis-api')>('canvas/praxis-api');
+  const actual = await vi.importActual<typeof PraxisApi>('canvas/praxis-api');
   return {
     ...actual,
     getCatalogueView: vi.fn(),

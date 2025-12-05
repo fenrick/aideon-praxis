@@ -197,6 +197,7 @@ export function StyleguideWindow() {
   );
 }
 
-if (import.meta.env.MODE !== 'test') {
+const runtimeMode = (import.meta as { env?: { MODE?: string } }).env?.MODE;
+if (runtimeMode !== 'test') {
   mountWindow(<StyleguideWindow />);
 }
