@@ -1,44 +1,53 @@
-// ESLint v9 flat config (pure flat presets, no compat, TS type-checked)
+// eslint.config.mjs
+// ESLint v9 flat config, ESM, TS-aware, Sonar-style clean code
+
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import importPlugin from 'eslint-plugin-import';
 import jsdoc from 'eslint-plugin-jsdoc';
-import noSecrets from 'eslint-plugin-no-secrets';
 import promise from 'eslint-plugin-promise';
 import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
 import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
+
+import jest from 'eslint-plugin-jest';
+import jestDom from 'eslint-plugin-jest-dom';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
+import testingLibrary from 'eslint-plugin-testing-library';
+
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
-// Constrain TS typed configs to only TS files in this repo
+// Constrain TS typed configs to TS/TSX only
 const typedTsConfigs = [
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   ...tseslint.configs.recommendedTypeChecked,
-].map((cfg) => ({ ...cfg, files: ['**/*.{ts,tsx}'] }));
+].map((cfg) => ({
+  ...cfg,
+  files: ['**/*.{ts,tsx}'],
+}));
 
-export default defineConfig(
-  // Global ignores first so they short-circuit for all subsequent configs
-  [
-    globalIgnores([
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      'app/AideonDesktop/legacy/**',
-      'app/AideonDesktop/src/design-system/components/**',
-      '**/.pnpm/**',
-      '**/out/**',
-    ]),
-  ],
+export default defineConfig([
+  // Global ignores
+  globalIgnores([
+    'node_modules/**',
+    'dist/**',
+    'build/**',
+    'coverage/**',
+    'app/AideonDesktop/src/design-system/components/**',
+    '**/.pnpm/**',
+    '**/out/**',
+  ]),
 
-  // Base JS rules roughly equivalent to the “core” checks Sonar also relies on
+  // Core JS recommendations (base for "clean code" checks)
   js.configs.recommended,
 
-  // Base language options for JS/MJS
+  // Base language options
   {
     languageOptions: {
       ecmaVersion: 'latest',
@@ -46,87 +55,54 @@ export default defineConfig(
     },
   },
 
-  // High-value community rule packs that cover areas Sonar also cares about
+  // Import hygiene (dead imports, ordering, cycles, etc.)
   importPlugin.flatConfigs.recommended,
   importPlugin.flatConfigs.typescript,
+
+  // Promises, regex, unicorn (modern JS/TS patterns)
   promise.configs['flat/recommended'],
   regexp.configs['flat/recommended'],
   unicorn.configs.recommended,
+
+  // Sonar-style code quality and complexity
   sonarjs.configs.recommended,
 
-  // Security hygiene rules (note: NOT equivalent to Sonar’s taint analysis)
+  // Security hotspot checks (not taint analysis, but still valuable)
   security.configs.recommended,
 
-  // Stylistic / formatting consistency (Sonar "consistent" attribute)
+  // Consistent formatting / style (indent, spacing, etc.)
   stylistic.configs.recommended,
 
-  // Safer eslint-disable usage, unused disables, etc.
+  // ESLint comments hygiene
   comments.recommended,
 
-  // JSDoc / API documentation clarity
-  {
-    name: 'jsdoc-rules',
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    plugins: {
-      jsdoc,
-    },
-    rules: {
-      'jsdoc/check-alignment': 'error',
-      'jsdoc/check-indentation': 'warn',
-      'jsdoc/check-param-names': 'error',
-      'jsdoc/require-description': 'warn',
-      'jsdoc/require-returns-description': 'warn',
-      'jsdoc/require-jsdoc': [
-        'warn',
-        {
-          publicOnly: true,
-          require: {
-            ArrowFunctionExpression: false,
-            ClassDeclaration: true,
-            MethodDefinition: true,
-            FunctionDeclaration: true,
-          },
-        },
-      ],
-    },
-  },
+  // JSDoc quality (recommended ruleset)
+  jsdoc.configs['flat/recommended'],
 
-  // Structural / maintainability and secrets (Sonar "adaptable" + "responsible")
-  {
-    name: 'project-structure-and-secrets',
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    plugins: {
-      'no-secrets': noSecrets,
-    },
-    rules: {
-      // Maintainability / structure
-      complexity: ['warn', 10],
-      'max-lines-per-function': ['warn', { max: 80, skipBlankLines: true, skipComments: true }],
-      'max-depth': ['warn', 4],
-
-      // Responsible code – avoid committing credentials
-      'no-secrets/no-secrets': 'error',
-    },
-  },
-
-  // Apply TS typed configs only to TS files
+  // TypeScript typed configs (type-aware rules)
   ...typedTsConfigs,
 
-  // Project-specific tweaks
-  {
-    name: 'project-overrides',
-    rules: {
-      // Sonar-like maintainability signal
-      'sonarjs/cognitive-complexity': ['error', 8],
+  // React + JSX (component-level clean code)
+  react.configs.flat.recommended,
+  react.configs.flat['jsx-runtime'],
 
-      // Keep noise down where packs overlap
-      'unicorn/no-null': 'off', // often too strict
-      'unicorn/prefer-module': 'off', // off if you still use CommonJS
-      'import/no-unresolved': 'off', // leave to TS when using path aliases
+  // Accessibility for JSX
+  jsxA11y.flatConfigs.recommended,
+
+  // React Hooks rules
+  {
+    plugins: {
+      'react-hooks': reactHooks,
+    },
+    rules: {
+      // Use the plugin's recommended rules
+      ...reactHooks.configs.recommended.rules,
+      // Tighten the most important one
+      'react-hooks/exhaustive-deps': 'error',
     },
   },
 
-  // TS parser + generic rules
+  // TS parser + TS-specific rules (on top of the typed presets)
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -145,37 +121,28 @@ export default defineConfig(
     },
   },
 
-  // Test files: relax unsafe + ergonomics rules that are noisy in mocks
+  // Project-level Sonar-style tightening
   {
-    files: ['**/*.test.{ts,tsx}', '**/tests/**/*.{ts,tsx}'],
-    languageOptions: {
-      parser: tseslint.parser,
-      parserOptions: {
-        projectService: false,
-        project: ['./tsconfig.eslint.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
     rules: {
-      '@typescript-eslint/require-await': 'off',
-      '@typescript-eslint/await-thenable': 'off',
-      '@typescript-eslint/no-floating-promises': 'off',
-      '@typescript-eslint/no-misused-promises': 'off',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
-      '@typescript-eslint/restrict-plus-operands': 'off',
-      '@typescript-eslint/restrict-template-expressions': 'off',
-      '@typescript-eslint/unbound-method': 'off',
-      '@typescript-eslint/prefer-readonly': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
-      'unicorn/consistent-function-scoping': 'off',
-      'promise/param-names': 'off',
-      '@typescript-eslint/prefer-nullish-coalescing': 'off',
-      // This specific test walks the renderer tree; non-literal fs args are expected
-      'security/detect-non-literal-fs-filename': 'off',
+      // Keep cognitive complexity under control
+      'sonarjs/cognitive-complexity': ['error', 8],
+      // Optional: avoid huge switches
+      'sonarjs/max-switch-cases': ['error', 10],
     },
   },
-);
+
+  // Test files: Jest + Testing Library + jest-dom
+  {
+    files: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
+
+    // Jest recommended + style rules
+    ...jest.configs['flat/recommended'],
+    ...jest.configs['flat/style'],
+
+    // React Testing Library best practices
+    ...testingLibrary.configs['flat/react'],
+
+    // jest-dom assertions best practices
+    ...jestDom.configs['flat/recommended'],
+  },
+]);
