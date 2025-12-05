@@ -65,7 +65,7 @@ export function useWorkspaceTree(): WorkspaceTreeState {
         }
       }
     }
-    void load();
+    load();
     return () => {
       cancelled = true;
     };

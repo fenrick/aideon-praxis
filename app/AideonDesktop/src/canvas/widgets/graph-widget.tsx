@@ -105,7 +105,7 @@ export function GraphWidget({
   }, [attachInspectHandlers, definition, onError, onViewChange, setEdges, setNodes]);
 
   useEffect(() => {
-    void loadView();
+    loadView();
   }, [loadView]);
 
   useEffect(() => {
@@ -190,7 +190,9 @@ export function GraphWidget({
         metadata={metadata}
         fallbackTitle={widget.title}
         loading={loading}
-        onRefresh={() => void loadView()}
+        onRefresh={() => {
+          loadView();
+        }}
       />
       <div className="h-[320px] w-full rounded-2xl border border-border/60 bg-muted/20">
         <ReactFlowProvider>

@@ -55,7 +55,9 @@ export function WorkerHealthCard() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => void actions.refresh()}
+            onClick={() => {
+              actions.refresh();
+            }}
             disabled={state.loading}
           >
             <RefreshCw className={state.loading ? 'mr-2 h-4 w-4 animate-spin' : 'mr-2 h-4 w-4'} />

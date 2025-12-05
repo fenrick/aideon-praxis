@@ -327,6 +327,14 @@ jobs:
         with:
           components: clippy
 
+      - name: Verify cargo on PATH
+        shell: bash
+        run: |
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          command -v cargo || { echo "::error ::cargo missing from PATH"; exit 1; }
+          cargo --version
+          rustup show
+
       - name: Download TS coverage
         uses: actions/download-artifact@v6
         with:

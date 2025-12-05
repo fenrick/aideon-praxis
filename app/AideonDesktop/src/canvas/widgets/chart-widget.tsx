@@ -37,7 +37,7 @@ export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
   }, [definition]);
 
   useEffect(() => {
-    void loadView();
+    loadView();
   }, [loadView]);
 
   let body: ReactNode = <p className="text-sm text-muted-foreground">Loading chart…</p>;
@@ -53,7 +53,9 @@ export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
         metadata={model?.metadata}
         fallbackTitle={widget.title}
         loading={loading}
-        onRefresh={() => void loadView()}
+        onRefresh={() => {
+          loadView();
+        }}
       />
       <div className="flex-1 rounded-2xl border border-border/60 bg-background/40 p-4">{body}</div>
     </div>

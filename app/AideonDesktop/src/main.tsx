@@ -96,7 +96,7 @@ function AppEntry() {
 function FrontendReady({ children }: { readonly children: React.ReactNode }) {
   React.useEffect(() => {
     if ('__TAURI__' in globalThis) {
-      void invoke('set_complete', { task: 'frontend' })
+      invoke('set_complete', { task: 'frontend' })
         .then(() => {
           console.log('[desktop] notified host frontend ready');
         })
@@ -151,7 +151,7 @@ function SplashScreen() {
         console.warn('splash: init failed', error);
       }
     }
-    void init();
+    init();
     return () => {
       cancelled = true;
     };

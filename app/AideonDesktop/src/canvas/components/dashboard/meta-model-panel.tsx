@@ -44,7 +44,7 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
   }, []);
 
   useEffect(() => {
-    void loadSchema();
+    loadSchema();
   }, [loadSchema]);
 
   return (
@@ -63,7 +63,7 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
             variant="outline"
             size="sm"
             onClick={() => {
-              void loadSchema();
+              loadSchema();
             }}
             disabled={status === 'loading'}
           >
@@ -76,7 +76,7 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
           error,
           focusEntryId,
           onRetry: () => {
-            void loadSchema();
+            loadSchema();
           },
         })}
       </CardContent>

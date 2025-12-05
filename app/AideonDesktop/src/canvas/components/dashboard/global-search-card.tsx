@@ -96,7 +96,7 @@ export function GlobalSearchCard({
         }
       }
     };
-    void loadAuxiliarySources();
+    loadAuxiliarySources();
     return () => {
       cancelled = true;
     };

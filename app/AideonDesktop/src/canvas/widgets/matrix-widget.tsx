@@ -61,7 +61,7 @@ export function MatrixWidget({
   }, [definition]);
 
   useEffect(() => {
-    void loadView();
+    loadView();
   }, [loadView]);
 
   const cellMap = useMemo(() => buildCellIndex(model?.cells ?? []), [model?.cells]);
@@ -107,7 +107,9 @@ export function MatrixWidget({
         metadata={model?.metadata}
         fallbackTitle={widget.title}
         loading={loading}
-        onRefresh={() => void loadView()}
+        onRefresh={() => {
+          loadView();
+        }}
       />
       <div className="flex-1 space-y-3 rounded-2xl border border-border/60 bg-background/40 p-3">
         {body}

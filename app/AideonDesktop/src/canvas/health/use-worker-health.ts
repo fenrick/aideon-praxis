@@ -31,7 +31,7 @@ export function useWorkerHealth(): [WorkerHealthState, WorkerHealthActions] {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    refresh();
   }, [refresh]);
 
   return [state, { refresh }];

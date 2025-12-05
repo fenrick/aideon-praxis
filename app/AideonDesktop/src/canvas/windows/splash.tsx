@@ -56,7 +56,7 @@ export default function SplashWindow() {
       }
     }
 
-    void init();
+    init();
     return () => {
       cancelled = true;
     };

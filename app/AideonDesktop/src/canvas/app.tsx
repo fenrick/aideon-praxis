@@ -152,15 +152,15 @@ function usePraxisCanvasState() {
           break;
         }
         case 'about': {
-          void openHostWindow('open_about');
+          openHostWindow('open_about');
           break;
         }
         case 'settings': {
-          void openHostWindow('open_settings');
+          openHostWindow('open_settings');
           break;
         }
         case 'status': {
-          void openHostWindow('open_status');
+          openHostWindow('open_status');
           break;
         }
         default: {
@@ -233,7 +233,7 @@ function usePraxisCanvasState() {
   }, []);
 
   useEffect(() => {
-    void refreshScenarios();
+    refreshScenarios();
   }, [refreshScenarios]);
 
   useEffect(() => {

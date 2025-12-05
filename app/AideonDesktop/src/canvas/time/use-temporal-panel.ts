@@ -95,7 +95,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
           loading: false,
           merging: false,
         }));
-        void loadDiff(commits);
+        loadDiff(commits);
       } catch (unknownError) {
         setState((previous) => ({
           ...previous,
@@ -162,7 +162,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         error: undefined,
         mergeConflicts: undefined,
       }));
-      void (async () => {
+      const loadSnapshot = async () => {
         try {
           const snapshot = await getStateAtSnapshot({ asOf: commitId, scenario: branch });
           setState((previous) => ({
@@ -180,13 +180,14 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
             mergeConflicts: undefined,
           }));
         }
-      })();
+      };
+      loadSnapshot();
     },
     [state.branch, state.commitId],
   );
 
   const refreshBranches = useCallback(() => {
-    void loadBranches();
+    loadBranches();
   }, [loadBranches]);
 
   const mergeIntoMain = useCallback(() => {
@@ -200,7 +201,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
       error: undefined,
       mergeConflicts: undefined,
     }));
-    void (async () => {
+    const merge = async () => {
       try {
         const result = await mergeTemporalBranches({ source: sourceBranch, target: 'main' });
         if (result.conflicts && result.conflicts.length > 0) {
@@ -226,16 +227,17 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
           error: toErrorMessage(unknownError),
         }));
       }
-    })();
+    };
+    merge();
   }, [loadBranches, state.branch]);
 
   useEffect(() => {
-    void loadBranches();
+    loadBranches();
   }, [loadBranches]);
 
   const selectBranchAction = useCallback(
     (branch: string) => {
-      void loadBranch(branch);
+      loadBranch(branch);
     },
     [loadBranch],
   );
