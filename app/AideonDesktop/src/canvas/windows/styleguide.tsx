@@ -36,6 +36,10 @@ const swatches = [
 
 type ThemeMode = 'system' | 'light' | 'dark';
 
+/**
+ *
+ * @param mode
+ */
 function applyTheme(mode: ThemeMode) {
   const body = document.body;
   body.classList.remove('theme-light', 'theme-dark');
@@ -46,6 +50,10 @@ function applyTheme(mode: ThemeMode) {
   }
 }
 
+/**
+ *
+ * @param variable
+ */
 function colorFromVariable(variable: string): string {
   if (typeof document === 'undefined') {
     return variable;
@@ -53,6 +61,9 @@ function colorFromVariable(variable: string): string {
   return getComputedStyle(document.body).getPropertyValue(variable).trim() || variable;
 }
 
+/**
+ *
+ */
 export function StyleguideWindow() {
   const [mode, setMode] = useState<ThemeMode>('system');
   const [accent, setAccent] = useState('--accent');
@@ -174,7 +185,10 @@ export function StyleguideWindow() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">Status · Ready</p>
-              <p className="text-xs text-muted-foreground">Accent token: {accent}</p>
+              <p className="text-xs text-muted-foreground">
+                Accent token:
+                {accent}
+              </p>
             </CardContent>
           </Card>
         </div>

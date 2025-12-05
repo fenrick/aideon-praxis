@@ -4,12 +4,13 @@ import { createRoot } from 'react-dom/client';
 /**
  * Mount a window payload to the #root element if it exists.
  * Keeps window entrypoints tiny and consistent.
+ * @param element
  */
 export function mountWindow(element: ReactElement) {
-  const rootEl = document.querySelector('#root');
-  if (!rootEl) {
+  const rootElement = document.querySelector('#root');
+  if (!rootElement) {
     console.warn('window mount skipped: #root missing');
     return;
   }
-  createRoot(rootEl).render(element);
+  createRoot(rootElement).render(element);
 }

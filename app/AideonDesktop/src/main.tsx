@@ -1,5 +1,5 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { StrictMode, useEffect, useMemo, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -12,18 +12,26 @@ if (!container) {
   throw new Error('Unable to locate root element');
 }
 
-ReactDOM.createRoot(container).render(
-  <React.StrictMode>
+createRoot(container).render(
+  <StrictMode>
     <AppEntry />
-  </React.StrictMode>,
+  </StrictMode>,
 );
 
+/**
+ *
+ */
 function AppEntry() {
-  const [windowLabel, setWindowLabel] = React.useState<string | undefined>();
+  const [windowLabel, setWindowLabel] = useState<string | undefined>();
   const isTauri = '__TAURI__' in globalThis;
 
-  React.useEffect(() => {
-    if (isTauri) {
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (!isTauri) {
+        console.log('[desktop] non-tauri environment, using path routing');
+        setWindowLabel(undefined);
+        return;
+      }
       try {
         const currentWindow = getCurrentWindow();
         console.log('[desktop] window label', currentWindow.label);
@@ -32,11 +40,8 @@ function AppEntry() {
         console.warn('[desktop] failed to read window label, falling back to path', error);
         setWindowLabel(undefined);
       }
-    } else {
-      console.log('[desktop] non-tauri environment, using path routing');
-      setWindowLabel(undefined);
-    }
-  }, []);
+    });
+  }, [isTauri]);
 
   const hashPath = globalThis.location.hash.replace(/^#/, '').replace(/\/$/, '') || '/';
   const route = isTauri ? (windowLabel ?? 'splash') : hashPath;
@@ -93,14 +98,20 @@ function AppEntry() {
   return <FrontendReady>{view}</FrontendReady>;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.children
+ */
 function FrontendReady({ children }: { readonly children: React.ReactNode }) {
-  React.useEffect(() => {
+  useEffect(() => {
     if ('__TAURI__' in globalThis) {
       invoke('set_complete', { task: 'frontend' })
         .then(() => {
           console.log('[desktop] notified host frontend ready');
+          return true;
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.warn('failed to notify frontend ready', error);
         });
     }
@@ -108,26 +119,32 @@ function FrontendReady({ children }: { readonly children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ *
+ */
 function SplashScreen() {
-  const loadLines = [
-    'Reticulating splines…',
-    'Weaving twin orbits…',
-    'Replaying future states…',
-    'Cooling hot paths…',
-    'Aligning decision matrices…',
-    'Seeding knowledge graph…',
-    'Collapsing branches to present…',
-    'Normalising capability models…',
-    'Hardening isolation layer…',
-    'Bootstrapping sidecar…',
-    'Calibrating maturity plateaus…',
-    'Scheduling time-dimension renders…',
-  ];
+  const loadLines = useMemo(
+    () => [
+      'Reticulating splines…',
+      'Weaving twin orbits…',
+      'Replaying future states…',
+      'Cooling hot paths…',
+      'Aligning decision matrices…',
+      'Seeding knowledge graph…',
+      'Collapsing branches to present…',
+      'Normalising capability models…',
+      'Hardening isolation layer…',
+      'Bootstrapping sidecar…',
+      'Calibrating maturity plateaus…',
+      'Scheduling time-dimension renders…',
+    ],
+    [],
+  );
 
-  const [currentLine, setCurrentLine] = React.useState(loadLines[0]);
+  const [currentLine, setCurrentLine] = useState<string>(loadLines[0]);
 
   // Rotate status lines
-  React.useEffect(() => {
+  useEffect(() => {
     let ix = 0;
     const interval = setInterval(() => {
       setCurrentLine(loadLines[ix % loadLines.length] ?? '');
@@ -136,11 +153,14 @@ function SplashScreen() {
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [loadLines]);
 
   // Simulate frontend init and notify host
-  React.useEffect(() => {
+  useEffect(() => {
     let cancelled = false;
+    /**
+     *
+     */
     async function init() {
       try {
         await new Promise((resolve) => setTimeout(resolve, 1800));
@@ -151,11 +171,11 @@ function SplashScreen() {
         console.warn('splash: init failed', error);
       }
     }
-    init();
+    void init();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadLines]);
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 text-slate-50">
@@ -195,6 +215,9 @@ function SplashScreen() {
   );
 }
 
+/**
+ *
+ */
 function StatusScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -206,6 +229,9 @@ function StatusScreen() {
   );
 }
 
+/**
+ *
+ */
 function AboutScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -217,6 +243,9 @@ function AboutScreen() {
   );
 }
 
+/**
+ *
+ */
 function SettingsScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -228,6 +257,9 @@ function SettingsScreen() {
   );
 }
 
+/**
+ *
+ */
 function StyleguideScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
