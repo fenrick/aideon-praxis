@@ -297,8 +297,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            crates/aideon_desktop/target
-          key: ${{ runner.os }}-tauri-build-${{ hashFiles('crates/aideon_desktop/Cargo.toml', 'pnpm-lock.yaml') }}
+            crates/desktop/target
+          key: ${{ runner.os }}-tauri-build-${{ hashFiles('crates/desktop/Cargo.toml', 'pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-tauri-build-
 
@@ -306,7 +306,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Tauri bundles
-        run: pnpm tauri build --ci --config crates/aideon_desktop/tauri.conf.json
+        run: pnpm tauri build --ci --config crates/desktop/tauri.conf.json
 
   sonar:
     name: SonarCloud
@@ -322,6 +322,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Rust (for SonarRust sensors)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
       - name: Download TS coverage
         uses: actions/download-artifact@v6
         with:
@@ -332,13 +337,13 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           name: coverage-rs
-          path: crates/aideon_desktop/coverage
+          path: crates/desktop/coverage
 
       - name: Normalize coverage paths
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p coverage crates/aideon_desktop/coverage
+          mkdir -p coverage crates/desktop/coverage
           # TS coverage (downloaded directly to coverage/)
           if [[ -f coverage/lcov.info ]]; then
             echo "TS coverage at coverage/lcov.info"
@@ -380,26 +385,26 @@ jobs:
 
           # Rust coverage (LCOV -> Generic Coverage XML)
           # Locate the LCOV file from the artifact
-          if [[ -f crates/aideon_desktop/coverage/lcov.info ]]; then
-            echo "Rust lcov at crates/aideon_desktop/coverage/lcov.info"
+          if [[ -f crates/desktop/coverage/lcov.info ]]; then
+            echo "Rust lcov at crates/desktop/coverage/lcov.info"
           elif [[ -f coverage-rs/lcov.info ]]; then
-            mv coverage-rs/lcov.info crates/aideon_desktop/coverage/lcov.info
-          elif [[ -f coverage-rs/crates/aideon_desktop/coverage/lcov.info ]]; then
-            mv coverage-rs/crates/aideon_desktop/coverage/lcov.info crates/aideon_desktop/coverage/lcov.info
+            mv coverage-rs/lcov.info crates/desktop/coverage/lcov.info
+          elif [[ -f coverage-rs/crates/desktop/coverage/lcov.info ]]; then
+            mv coverage-rs/crates/desktop/coverage/lcov.info crates/desktop/coverage/lcov.info
           else
             echo "[warn] Rust coverage lcov.info not found after artifact download" >&2
           fi
 
           # Normalize Rust LCOV paths to repo-relative to help Sonar resolve files
-          if [[ -f crates/aideon_desktop/coverage/lcov.info ]]; then
+          if [[ -f crates/desktop/coverage/lcov.info ]]; then
             sed -E 's#^(SF:)/home/runner/work/[^/]+/[^/]+/#+\1#; s#^(SF:)/github/workspace/#+\1#' \
-              crates/aideon_desktop/coverage/lcov.info > crates/aideon_desktop/coverage/lcov.norm && \
-              mv crates/aideon_desktop/coverage/lcov.norm crates/aideon_desktop/coverage/lcov.info
+              crates/desktop/coverage/lcov.info > crates/desktop/coverage/lcov.norm && \
+              mv crates/desktop/coverage/lcov.norm crates/desktop/coverage/lcov.info
           fi
 
           # No Rust XML conversion required; Sonar ingests LCOV directly via sonar.rust.lcov.reportPaths
           ls -l coverage || true
-          ls -l crates/aideon_desktop/coverage || true
+          ls -l crates/desktop/coverage || true
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2

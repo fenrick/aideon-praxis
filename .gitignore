@@ -146,8 +146,8 @@ vite.config.ts.timestamp-*
 __MACOSX/
 .AppleDouble
 .LSOverride
-Icon[
-]
+# macOS custom volume icon file (Icon\r). The '?' matches the carriage-return byte.
+Icon?
 
 # Thumbnails
 ._*
