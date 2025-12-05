@@ -1,7 +1,9 @@
 // ESLint v9 flat config (pure flat presets, no compat, TS type-checked)
 import js from '@eslint/js';
 import importPlugin from 'eslint-plugin-import';
+import prettierConfig from 'eslint-config-prettier';
 import promise from 'eslint-plugin-promise';
+import react from 'eslint-plugin-react';
 import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
 import sonarjs from 'eslint-plugin-sonarjs';
@@ -50,9 +52,14 @@ export default defineConfig(
   regexp.configs['flat/recommended'],
   unicorn.configs.recommended,
   sonarjs.configs.recommended,
+  react.configs['flat/recommended'],
+  react.configs['flat/jsx-runtime'],
 
   // Security hygiene rules (note: NOT equivalent to Sonar’s taint analysis)
   security.configs.recommended,
+
+  // Disable stylistic rules that conflict with Prettier formatting
+  prettierConfig,
 
   // Apply TS typed configs only to TS files
   ...typedTsConfigs,
@@ -127,43 +134,21 @@ export default defineConfig(
   // Relax lint for the flattened desktop TS/React code while types are being aligned
   {
     files: ['app/AideonDesktop/src/**/*.{ts,tsx}', 'app/AideonDesktop/tests/**/*.{ts,tsx}'],
+  },
+
+  // Enforce Prettier formatting (including JSX/TSX)
+  {
+    plugins: { prettier },
     rules: {
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
-      '@typescript-eslint/no-redundant-type-constituents': 'off',
-      '@typescript-eslint/no-unnecessary-condition': 'off',
-      '@typescript-eslint/prefer-nullish-coalescing': 'off',
-      '@typescript-eslint/restrict-template-expressions': 'off',
-      '@typescript-eslint/restrict-plus-operands': 'off',
-      '@typescript-eslint/no-unnecessary-type-conversion': 'off',
-      '@typescript-eslint/consistent-type-imports': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/no-empty-function': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-floating-promises': 'off',
-      '@typescript-eslint/no-unused-expressions': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-deprecated': 'off',
-      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',
-      'unicorn/filename-case': 'off',
-      'unicorn/prevent-abbreviations': 'off',
-      'unicorn/explicit-length-check': 'off',
-      'unicorn/prefer-number-properties': 'off',
-      'unicorn/consistent-function-scoping': 'off',
-      'sonarjs/prefer-read-only-props': 'off',
-      'sonarjs/no-nested-conditional': 'off',
-      'sonarjs/table-header': 'off',
-      'sonarjs/void-use': 'off',
-      'sonarjs/function-return-type': 'off',
-      'sonarjs/cognitive-complexity': 'off',
-      'sonarjs/pseudo-random': 'off',
-      'sonarjs/deprecation': 'off',
-      'promise/always-return': 'off',
-      'security/detect-object-injection': 'off',
+      'prettier/prettier': [
+        'error',
+        {
+          bracketSameLine: false,
+          singleQuote: true,
+          jsxSingleQuote: false,
+          trailingComma: 'all',
+        },
+      ],
     },
   },
 );
