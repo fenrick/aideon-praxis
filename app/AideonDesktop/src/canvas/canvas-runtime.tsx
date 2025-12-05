@@ -24,6 +24,11 @@ interface CanvasRuntimeProperties {
   readonly onRequestMetaModelFocus?: (types: string[]) => void;
 }
 
+/**
+ * Lay out and render multiple canvas widgets inside a responsive grid.
+ * @param parameters - Widget list and callbacks.
+ * @returns Canvas runtime surface.
+ */
 export const CanvasRuntime = memo(function CanvasRuntime({
   widgets,
   reloadVersion,
@@ -54,6 +59,11 @@ export const CanvasRuntime = memo(function CanvasRuntime({
   );
 });
 
+/**
+ * Render an individual widget with the correct component for its kind.
+ * @param parameters - Widget and associated callbacks.
+ * @returns JSX element for the widget.
+ */
 function renderWidget(parameters: {
   widget: CanvasWidget;
   reloadVersion: number;
@@ -112,6 +122,10 @@ function renderWidget(parameters: {
   );
 }
 
+/**
+ *
+ * @param widget
+ */
 function widgetColumnClass(widget: CanvasWidget): string {
   if (widget.size === 'half') {
     return 'col-span-1';

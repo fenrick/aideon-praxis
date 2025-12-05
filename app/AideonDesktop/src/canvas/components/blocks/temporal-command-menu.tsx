@@ -45,21 +45,22 @@ export interface MetaModelCommandEntry {
 }
 
 /**
- *
- * @param root0
- * @param root0.open
- * @param root0.onOpenChange
- * @param root0.branches
- * @param root0.activeBranch
- * @param root0.commits
- * @param root0.loading
- * @param root0.onSelectBranch
- * @param root0.onSelectCommit
- * @param root0.onRefreshBranches
- * @param root0.catalogueEntries
- * @param root0.metaModelEntries
- * @param root0.onSelectCatalogueEntry
- * @param root0.onSelectMetaModelEntry
+ * Command palette for time navigation and catalogue/meta-model search.
+ * @param root0 - Command menu properties.
+ * @param root0.open - Whether the dialog is open.
+ * @param root0.onOpenChange - Toggle handler.
+ * @param root0.branches - Available branches.
+ * @param root0.activeBranch - Current branch name.
+ * @param root0.commits - Commits to list.
+ * @param root0.loading - Loading indicator.
+ * @param root0.onSelectBranch - Handler when a branch is chosen.
+ * @param root0.onSelectCommit - Handler when a commit is chosen.
+ * @param root0.onRefreshBranches - Handler to refresh branches.
+ * @param root0.catalogueEntries - Catalogue entries to search.
+ * @param root0.metaModelEntries - Meta-model entries to search.
+ * @param root0.onSelectCatalogueEntry - Handler for catalogue selection.
+ * @param root0.onSelectMetaModelEntry - Handler for meta-model selection.
+ * @returns Command menu dialog element.
  */
 export function TemporalCommandMenu({
   open,

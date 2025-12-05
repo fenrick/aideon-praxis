@@ -6,6 +6,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export type PanelProperties = Readonly<ComponentPropsWithoutRef<typeof Card>>;
 
+/**
+ * Card-styled container for desktop panels.
+ * @param root0 - Panel properties.
+ * @returns Panel wrapper element.
+ */
 export const Panel = forwardRef<HTMLDivElement, PanelProperties>(function Panel(
   { className, ...properties },
   reference,
@@ -21,6 +26,11 @@ export const Panel = forwardRef<HTMLDivElement, PanelProperties>(function Panel(
 
 export type PanelHeaderProperties = Readonly<ComponentPropsWithoutRef<typeof CardHeader>>;
 
+/**
+ * Panel header with consistent padding and divider.
+ * @param root0 - Header properties.
+ * @returns Header element.
+ */
 export const PanelHeader = forwardRef<HTMLDivElement, PanelHeaderProperties>(function PanelHeader(
   { className, ...properties },
   reference,
@@ -36,6 +46,11 @@ export const PanelHeader = forwardRef<HTMLDivElement, PanelHeaderProperties>(fun
 
 export type PanelTitleProperties = Readonly<ComponentPropsWithoutRef<typeof CardTitle>>;
 
+/**
+ * Panel title text.
+ * @param root0 - Title properties.
+ * @returns Title element.
+ */
 export const PanelTitle = forwardRef<HTMLDivElement, PanelTitleProperties>(function PanelTitle(
   { className, ...properties },
   reference,
@@ -51,6 +66,11 @@ export const PanelTitle = forwardRef<HTMLDivElement, PanelTitleProperties>(funct
 
 export type PanelDescriptionProperties = Readonly<ComponentPropsWithoutRef<typeof CardDescription>>;
 
+/**
+ * Secondary description for a panel.
+ * @param root0 - Description properties.
+ * @returns Description element.
+ */
 export const PanelDescription = forwardRef<HTMLDivElement, PanelDescriptionProperties>(
   function PanelDescription({ className, ...properties }, reference) {
     return (
@@ -65,6 +85,11 @@ export const PanelDescription = forwardRef<HTMLDivElement, PanelDescriptionPrope
 
 export type PanelContentProperties = Readonly<ComponentPropsWithoutRef<typeof CardContent>>;
 
+/**
+ * Body content wrapper for panels.
+ * @param root0 - Content properties.
+ * @returns Content container.
+ */
 export const PanelContent = forwardRef<HTMLDivElement, PanelContentProperties>(
   function PanelContent({ className, ...properties }, reference) {
     return (
@@ -79,6 +104,11 @@ export const PanelContent = forwardRef<HTMLDivElement, PanelContentProperties>(
 
 export type PanelFooterProperties = Readonly<ComponentPropsWithoutRef<typeof CardFooter>>;
 
+/**
+ * Footer region for actions within a panel.
+ * @param root0 - Footer properties.
+ * @returns Footer element.
+ */
 export const PanelFooter = forwardRef<HTMLDivElement, PanelFooterProperties>(function PanelFooter(
   { className, ...properties },
   reference,
@@ -95,13 +125,9 @@ export interface PanelFieldProperties extends Readonly<ComponentPropsWithoutRef<
 }
 
 /**
- *
- * @param root0
- * @param root0.label
- * @param root0.helper
- * @param root0.action
- * @param root0.className
- * @param root0.children
+ * Labeled field section with optional helper and action slot.
+ * @param root0 - Field properties including label and helper.
+ * @returns Field wrapper element.
  */
 export function PanelField({
   label,
@@ -130,11 +156,9 @@ export interface PanelToolbarProperties extends Readonly<ComponentPropsWithoutRe
 }
 
 /**
- *
- * @param root0
- * @param root0.align
- * @param root0.className
- * @param root0.children
+ * Toolbar-like row within a panel.
+ * @param root0 - Toolbar properties including alignment.
+ * @returns Toolbar container element.
  */
 export function PanelToolbar({
   align = 'end',
@@ -158,8 +182,9 @@ export function PanelToolbar({
 }
 
 /**
- *
- * @param alignment
+ * Resolve flex alignment class for toolbar.
+ * @param alignment - Desired alignment token.
+ * @returns Tailwind class for justification.
  */
 function resolveAlignmentClass(alignment: PanelToolbarProperties['align']): string {
   switch (alignment) {

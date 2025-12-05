@@ -25,6 +25,13 @@ interface AppSidebarProperties {
   readonly loading: boolean;
 }
 
+/**
+ * Application sidebar with navigation and active scenario summary.
+ * @param root0 - Sidebar properties.
+ * @param root0.scenarios - Scenario summaries to display.
+ * @param root0.loading - Whether scenarios are still loading.
+ * @returns Sidebar element.
+ */
 export function AppSidebar({ scenarios, loading }: AppSidebarProperties) {
   const activeScenario = resolveActiveScenario(scenarios);
   const subtitle = loading
@@ -85,6 +92,14 @@ interface SidebarNavButtonProperties {
   readonly active?: boolean;
 }
 
+/**
+ * Single navigation button inside the sidebar.
+ * @param root0 - Button properties.
+ * @param root0.icon - Icon component to render.
+ * @param root0.children - Label contents.
+ * @param root0.active - Marks the button as active.
+ * @returns Button element.
+ */
 function SidebarNavButton({ icon: Icon, children, active }: SidebarNavButtonProperties) {
   return (
     <button
@@ -104,10 +119,20 @@ function SidebarNavButton({ icon: Icon, children, active }: SidebarNavButtonProp
   );
 }
 
+/**
+ * Resolve the first default scenario or fall back to the first entry.
+ * @param scenarios - Available scenarios.
+ * @returns Scenario to treat as active.
+ */
 function resolveActiveScenario(scenarios: ScenarioSummary[]): ScenarioSummary | undefined {
   return scenarios.find((scenario) => scenario.isDefault) ?? scenarios[0];
 }
 
+/**
+ * Format an ISO date string to a readable date or default text.
+ * @param value - ISO date string.
+ * @returns Localized date string or fallback.
+ */
 function formatDate(value: string | undefined): string {
   if (!value) {
     return 'recently';

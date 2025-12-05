@@ -1,10 +1,15 @@
 import type { ComponentPropsWithoutRef } from 'react';
 import { forwardRef } from 'react';
 
-import { cn } from '../lib/utils';
+import { cn } from '../lib/utilities';
 
 export type ToolbarProperties = Readonly<ComponentPropsWithoutRef<'div'>>;
 
+/**
+ * Toolbar container used across desktop chrome.
+ * @param root0 - Toolbar props.
+ * @returns Styled toolbar wrapper.
+ */
 export const Toolbar = forwardRef<HTMLDivElement, ToolbarProperties>(function Toolbar(
   { className, ...properties },
   reference,
@@ -40,10 +45,20 @@ export const ToolbarSection = forwardRef<HTMLDivElement, ToolbarSectionPropertie
 
 export type ToolbarSeparatorProperties = Readonly<ComponentPropsWithoutRef<'div'>>;
 
+/**
+ * Thin separator between toolbar groups.
+ * @param root0 - Separator props.
+ * @param root0.className - Optional custom classes.
+ */
 export function ToolbarSeparator({ className, ...properties }: ToolbarSeparatorProperties) {
   return <div className={cn('h-5 w-px bg-border/70', className)} {...properties} />;
 }
 
+/**
+ * Map justification option to flex utility.
+ * @param justify - Desired alignment.
+ * @returns Flex alignment class.
+ */
 function resolveJustification(justify: ToolbarSectionProperties['justify']): string {
   switch (justify) {
     case 'center': {

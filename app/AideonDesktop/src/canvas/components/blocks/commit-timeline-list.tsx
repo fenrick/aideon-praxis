@@ -7,6 +7,14 @@ interface CommitTimelineListProperties {
   readonly onSelect: (commitId: string | null) => void;
 }
 
+/**
+ * Render a vertical list of commits with quick-select actions.
+ * @param root0 - List properties.
+ * @param root0.commits - Commits to display.
+ * @param root0.activeCommitId - Currently selected commit id.
+ * @param root0.onSelect - Selection callback.
+ * @returns Ordered list element.
+ */
 export function CommitTimelineList({
   commits,
   activeCommitId,

@@ -16,10 +16,11 @@ interface ActivityTimelinePanelProperties {
 }
 
 /**
- *
- * @param root0
- * @param root0.title
- * @param root0.description
+ * Timeline panel surfacing branch commits with quick actions.
+ * @param root0 - Panel properties.
+ * @param root0.title - Heading text.
+ * @param root0.description - Helper text.
+ * @returns Activity timeline panel.
  */
 export function ActivityTimelinePanel({
   title = 'Activity & diagnostics',
