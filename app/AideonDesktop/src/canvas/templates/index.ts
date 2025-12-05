@@ -34,6 +34,11 @@ export interface TemplateContext {
   scenario?: string;
 }
 
+/**
+ *
+ * @param template
+ * @param context
+ */
 export function instantiateTemplate(
   template: CanvasTemplate,
   context: TemplateContext,
@@ -65,6 +70,12 @@ export function instantiateTemplate(
   });
 }
 
+/**
+ *
+ * @param name
+ * @param description
+ * @param widgets
+ */
 export function captureTemplateFromWidgets(
   name: string,
   description: string,
@@ -78,6 +89,10 @@ export function captureTemplateFromWidgets(
   };
 }
 
+/**
+ *
+ * @param widget
+ */
 function convertWidgetToTemplate(widget: CanvasWidget): TemplateWidgetConfig {
   const { size, title, id } = widget;
   if (widget.kind === 'graph') {
@@ -92,10 +107,23 @@ function convertWidgetToTemplate(widget: CanvasWidget): TemplateWidgetConfig {
   return { id, title, size, kind: 'chart', view: withoutRuntimeFields(widget.view) };
 }
 
-function withoutRuntimeFields(view: any): any {
-  const rest = { ...view };
-  delete rest.asOf;
-  delete rest.scenario;
+/**
+ *
+ * @param view
+ */
+function withoutRuntimeFields(view: GraphViewDefinition): GraphTemplateView;
+function withoutRuntimeFields(view: CatalogueViewDefinition): CatalogueTemplateView;
+function withoutRuntimeFields(view: MatrixViewDefinition): MatrixTemplateView;
+function withoutRuntimeFields(view: ChartViewDefinition): ChartTemplateView;
+function withoutRuntimeFields(
+  view:
+    | GraphViewDefinition
+    | CatalogueViewDefinition
+    | MatrixViewDefinition
+    | ChartViewDefinition,
+) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { asOf, scenario, ...rest } = view;
   return rest;
 }
 

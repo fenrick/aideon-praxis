@@ -29,6 +29,14 @@ interface MatrixWidgetProperties {
   readonly onSelectionChange?: (selection: WidgetSelection) => void;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.widget
+ * @param root0.reloadVersion
+ * @param root0.selection
+ * @param root0.onSelectionChange
+ */
 export function MatrixWidget({
   widget,
   reloadVersion,
@@ -44,7 +52,7 @@ export function MatrixWidget({
       ...widget.view,
       asOf: new Date().toISOString(),
     };
-  }, [widget.view, reloadVersion]);
+  }, [widget.view]);
 
   const loadView = useCallback(async () => {
     setLoading(true);
@@ -61,12 +69,14 @@ export function MatrixWidget({
   }, [definition]);
 
   useEffect(() => {
-    loadView();
-  }, [loadView]);
+    void loadView();
+  }, [loadView, reloadVersion]);
 
   const cellMap = useMemo(() => buildCellIndex(model?.cells ?? []), [model?.cells]);
-  const selectedIds = selection?.nodeIds ?? [];
-  const activeIds = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const activeIds = useMemo(
+    () => (selection?.nodeIds ? new Set(selection.nodeIds) : new Set<string>()),
+    [selection?.nodeIds],
+  );
 
   const emitSelection = useCallback(
     (nodeIds: string[]) => {
@@ -108,7 +118,7 @@ export function MatrixWidget({
         fallbackTitle={widget.title}
         loading={loading}
         onRefresh={() => {
-          loadView();
+          void loadView();
         }}
       />
       <div className="flex-1 space-y-3 rounded-2xl border border-border/60 bg-background/40 p-3">
@@ -118,6 +128,17 @@ export function MatrixWidget({
   );
 }
 
+/**
+ *
+ * @param parameters
+ * @param parameters.rows
+ * @param parameters.columns
+ * @param parameters.cellMap
+ * @param parameters.activeIds
+ * @param parameters.onRowSelect
+ * @param parameters.onColumnSelect
+ * @param parameters.onCellSelect
+ */
 function MatrixTable(parameters: {
   readonly rows: MatrixAxis[];
   readonly columns: MatrixAxis[];
@@ -194,6 +215,13 @@ function MatrixTable(parameters: {
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.cell
+ * @param root0.active
+ * @param root0.onClick
+ */
 function MatrixCellView({
   cell,
   active,
@@ -232,6 +260,9 @@ function MatrixCellView({
   );
 }
 
+/**
+ *
+ */
 function Legend() {
   return (
     <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
@@ -242,6 +273,12 @@ function Legend() {
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.colorClass
+ * @param root0.label
+ */
 function LegendItem({
   colorClass,
   label,
@@ -257,10 +294,20 @@ function LegendItem({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.message
+ */
 function Placeholder({ message }: { readonly message: string }) {
   return <p className="text-sm text-muted-foreground">{message}</p>;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.message
+ */
 function ErrorMessage({ message }: { readonly message: string }) {
   return (
     <p className="flex items-center gap-2 text-sm text-destructive">
@@ -270,6 +317,10 @@ function ErrorMessage({ message }: { readonly message: string }) {
   );
 }
 
+/**
+ *
+ * @param cells
+ */
 function buildCellIndex(cells: MatrixCell[]): Map<string, MatrixCell> {
   const map = new Map<string, MatrixCell>();
   for (const cell of cells) {
@@ -278,6 +329,11 @@ function buildCellIndex(cells: MatrixCell[]): Map<string, MatrixCell> {
   return map;
 }
 
+/**
+ *
+ * @param rowId
+ * @param columnId
+ */
 function cellKey(rowId: string, columnId: string): string {
   return `${rowId}::${columnId}`;
 }

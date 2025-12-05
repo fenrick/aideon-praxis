@@ -23,6 +23,14 @@ interface CatalogueWidgetProperties {
   readonly onSelectionChange?: (selection: WidgetSelection) => void;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.widget
+ * @param root0.reloadVersion
+ * @param root0.selection
+ * @param root0.onSelectionChange
+ */
 export function CatalogueWidget({
   widget,
   reloadVersion,
@@ -38,7 +46,7 @@ export function CatalogueWidget({
       ...widget.view,
       asOf: new Date().toISOString(),
     };
-  }, [widget.view, reloadVersion]);
+  }, [widget.view]);
 
   const loadView = useCallback(async () => {
     setLoading(true);
@@ -55,8 +63,8 @@ export function CatalogueWidget({
   }, [definition]);
 
   useEffect(() => {
-    loadView();
-  }, [loadView]);
+    void loadView();
+  }, [loadView, reloadVersion]);
 
   const handleRowActivate = useCallback(
     (row: CatalogueRow) => {
@@ -90,7 +98,7 @@ export function CatalogueWidget({
         fallbackTitle={widget.title}
         loading={loading}
         onRefresh={() => {
-          loadView();
+          void loadView();
         }}
       />
       <div className="flex-1 rounded-2xl border border-border/60 bg-background/40 p-3">{body}</div>
@@ -106,6 +114,15 @@ interface CatalogueTableProperties {
   readonly onRowActivate: (row: CatalogueRow) => void;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.rows
+ * @param root0.columns
+ * @param root0.activeRowIds
+ * @param root0.loading
+ * @param root0.onRowActivate
+ */
 function CatalogueTable({
   rows,
   columns,
@@ -162,6 +179,10 @@ function CatalogueTable({
   );
 }
 
+/**
+ *
+ * @param value
+ */
 function formatValue(value: string | number | boolean | null | undefined): string {
   if (typeof value === 'boolean') {
     return value ? 'Yes' : 'No';
@@ -172,10 +193,20 @@ function formatValue(value: string | number | boolean | null | undefined): strin
   return String(value);
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.message
+ */
 function Placeholder({ message }: { readonly message: string }) {
   return <p className="text-sm text-muted-foreground">{message}</p>;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.message
+ */
 function ErrorMessage({ message }: { readonly message: string }) {
   return (
     <p className="flex items-center gap-2 text-sm text-destructive">

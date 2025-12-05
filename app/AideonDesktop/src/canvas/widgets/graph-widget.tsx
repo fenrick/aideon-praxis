@@ -37,6 +37,17 @@ interface GraphWidgetProperties {
   readonly onRequestMetaModelFocus?: (types: string[]) => void;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.widget
+ * @param root0.reloadVersion
+ * @param root0.selection
+ * @param root0.onSelectionChange
+ * @param root0.onViewChange
+ * @param root0.onError
+ * @param root0.onRequestMetaModelFocus
+ */
 export function GraphWidget({
   widget,
   reloadVersion,
@@ -57,7 +68,7 @@ export function GraphWidget({
       ...widget.view,
       asOf: new Date().toISOString(),
     };
-  }, [widget.view, reloadVersion]);
+  }, [widget.view]);
 
   const attachInspectHandlers = useCallback(
     (flowNodes: Node<GraphNodeData>[]) => {
@@ -105,8 +116,8 @@ export function GraphWidget({
   }, [attachInspectHandlers, definition, onError, onViewChange, setEdges, setNodes]);
 
   useEffect(() => {
-    loadView();
-  }, [loadView]);
+    void loadView();
+  }, [loadView, reloadVersion]);
 
   useEffect(() => {
     setNodes((current) => attachInspectHandlers(current));
@@ -142,7 +153,7 @@ export function GraphWidget({
   );
 
   const [nodeSearchOpen, setNodeSearchOpen] = useState(false);
-  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | undefined>();
   const nodeTypes = useMemo<NodeTypes>(
     () => ({ 'praxis-node': PraxisNode as NodeTypes['praxis-node'] }),
     [],
@@ -174,7 +185,7 @@ export function GraphWidget({
       return;
     }
     const dismiss = () => {
-      setContextMenu(null);
+    setContextMenu(undefined);
     };
     document.addEventListener('click', dismiss);
     document.addEventListener('contextmenu', dismiss);
@@ -191,7 +202,7 @@ export function GraphWidget({
         fallbackTitle={widget.title}
         loading={loading}
         onRefresh={() => {
-          loadView();
+          void loadView();
         }}
       />
       <div className="h-[320px] w-full rounded-2xl border border-border/60 bg-muted/20">
@@ -207,10 +218,10 @@ export function GraphWidget({
             onSelectionChange={handleSelection}
             onNodeContextMenu={handleNodeContextMenu}
             onPaneClick={() => {
-              setContextMenu(null);
+    setContextMenu(undefined);
             }}
             onPaneContextMenu={() => {
-              setContextMenu(null);
+    setContextMenu(undefined);
             }}
           >
             <Background
@@ -238,18 +249,18 @@ export function GraphWidget({
             </Panel>
           </ReactFlow>
         </ReactFlowProvider>
-        {loading ? <GraphWidgetOverlay message="Loading graph" /> : null}
-        {error ? <GraphWidgetOverlay isError message={error} /> : null}
+        {loading ? <GraphWidgetOverlay message="Loading graph" /> : undefined}
+        {error ? <GraphWidgetOverlay isError message={error} /> : undefined}
         {contextMenu ? (
           <GraphContextMenu
             x={contextMenu.x}
             y={contextMenu.y}
             onFocus={() => {
               onRequestMetaModelFocus?.(contextMenu.types);
-              setContextMenu(null);
+              setContextMenu(undefined);
             }}
           />
-        ) : null}
+        ) : undefined}
       </div>
       <NodeSearchDialog
         open={nodeSearchOpen}
@@ -269,6 +280,10 @@ interface ContextMenuState {
   readonly types: string[];
 }
 
+/**
+ *
+ * @param node
+ */
 function resolveNodeType(node: Node<GraphNodeData>): string {
   const typeValue = node.data.typeLabel;
   if (typeof typeValue === 'string' && typeValue.trim()) {
@@ -283,6 +298,12 @@ interface GraphWidgetOverlayProperties {
   readonly isError?: boolean;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.message
+ * @param root0.isError
+ */
 function GraphWidgetOverlay({ message, isError }: GraphWidgetOverlayProperties) {
   return (
     <div
@@ -290,18 +311,28 @@ function GraphWidgetOverlay({ message, isError }: GraphWidgetOverlayProperties) 
         isError ? 'bg-red-100/80 text-red-800' : 'bg-background/80 text-muted-foreground'
       }`}
     >
-      {isError ? <AlertBadge /> : null}
+      {isError ? <AlertBadge /> : undefined}
       {message}
     </div>
   );
 }
 
+/**
+ *
+ */
 function AlertBadge() {
   return (
     <span className="mr-2 text-xs font-semibold uppercase tracking-wide text-red-700">Error</span>
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.x
+ * @param root0.y
+ * @param root0.onFocus
+ */
 function GraphContextMenu({
   x,
   y,
@@ -327,6 +358,10 @@ function GraphContextMenu({
   );
 }
 
+/**
+ *
+ * @param value
+ */
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }

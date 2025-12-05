@@ -13,6 +13,9 @@ const KIND_LABEL: Record<SearchResult['kind'], string> = {
 
 const DEBOUNCE_MS = 180;
 
+/**
+ *
+ */
 export function SearchBar() {
   const { results } = useSearchStoreState();
   const [query, setQuery] = useState('');
@@ -149,11 +152,11 @@ export function SearchBar() {
               <span className="font-semibold">{result.title}</span>
               {result.subtitle ? (
                 <span className="text-xs text-muted-foreground">{result.subtitle}</span>
-              ) : null}
+              ) : undefined}
             </button>
           ))}
         </div>
-      ) : null}
+      ) : undefined}
     </div>
   );
 }

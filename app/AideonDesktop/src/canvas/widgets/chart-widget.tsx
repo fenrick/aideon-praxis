@@ -13,6 +13,12 @@ interface ChartWidgetProperties {
   readonly reloadVersion: number;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.widget
+ * @param root0.reloadVersion
+ */
 export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
   const [model, setModel] = useState<ChartViewModel | undefined>();
   const [loading, setLoading] = useState(true);
@@ -20,7 +26,7 @@ export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
 
   const definition = useMemo(() => {
     return { ...widget.view, asOf: new Date().toISOString() };
-  }, [widget.view, reloadVersion]);
+  }, [widget.view]);
 
   const loadView = useCallback(async () => {
     setLoading(true);
@@ -37,8 +43,8 @@ export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
   }, [definition]);
 
   useEffect(() => {
-    loadView();
-  }, [loadView]);
+    void loadView();
+  }, [loadView, reloadVersion]);
 
   let body: ReactNode = <p className="text-sm text-muted-foreground">Loading chart…</p>;
   if (error) {
@@ -54,7 +60,7 @@ export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
         fallbackTitle={widget.title}
         loading={loading}
         onRefresh={() => {
-          loadView();
+          void loadView();
         }}
       />
       <div className="flex-1 rounded-2xl border border-border/60 bg-background/40 p-4">{body}</div>
@@ -62,6 +68,11 @@ export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.model
+ */
 function ChartContent({ model }: { readonly model: ChartViewModel }) {
   if (model.chartType === 'kpi' && model.kpi) {
     return <KpiPanel summary={model.kpi} />;
@@ -72,6 +83,11 @@ function ChartContent({ model }: { readonly model: ChartViewModel }) {
   return <BarChart series={model.series} />;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.message
+ */
 function ChartError({ message }: { readonly message: string }) {
   return (
     <p className="flex items-center gap-2 text-sm text-destructive">
@@ -81,9 +97,14 @@ function ChartError({ message }: { readonly message: string }) {
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.summary
+ */
 function KpiPanel({ summary }: { readonly summary: ChartViewModel['kpi'] }) {
   if (!summary) {
-    return null;
+    return <></>;
   }
   const trendUp = summary.trend !== 'down';
   const TrendIcon = trendUp ? ArrowUpRight : ArrowDownRight;
@@ -101,11 +122,16 @@ function KpiPanel({ summary }: { readonly summary: ChartViewModel['kpi'] }) {
           <TrendIcon className="mr-1 h-4 w-4" />
           {Math.abs(summary.delta)} vs last span
         </p>
-      ) : null}
+      ) : undefined}
     </div>
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.series
+ */
 function LineChart({ series }: { readonly series?: ChartViewModel['series'][number] }) {
   if (!series) {
     return <p className="text-sm text-muted-foreground">No data</p>;
@@ -133,7 +159,7 @@ function LineChart({ series }: { readonly series?: ChartViewModel['series'][numb
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
         {resolvedSeries.points.map((point) => (
           <span key={point.label}>
-            {point.label}: {point.value.toFixed(0)}
+            {point.label}:{point.value.toFixed(0)}
           </span>
         ))}
       </div>
@@ -141,6 +167,11 @@ function LineChart({ series }: { readonly series?: ChartViewModel['series'][numb
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.series
+ */
 function BarChart({ series }: { readonly series: ChartViewModel['series'] }) {
   if (series.length === 0) {
     return <p className="text-sm text-muted-foreground">No data</p>;
@@ -190,6 +221,14 @@ function BarChart({ series }: { readonly series: ChartViewModel['series'] }) {
   );
 }
 
+/**
+ *
+ * @param points
+ * @param viewBox
+ * @param viewBox.width
+ * @param viewBox.height
+ * @param viewBox.padding
+ */
 function normalisePoints(
   points: ChartPoint[],
   viewBox: { width: number; height: number; padding: number },

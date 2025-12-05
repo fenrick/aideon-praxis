@@ -11,6 +11,9 @@ import {
   CardTitle,
 } from '../../../design-system/components/ui/card';
 
+/**
+ *
+ */
 export function WorkerHealthCard() {
   const [state, actions] = useWorkerHealth();
 
@@ -56,7 +59,9 @@ export function WorkerHealthCard() {
             variant="secondary"
             size="sm"
             onClick={() => {
-              actions.refresh();
+              actions.refresh().catch((error: unknown) => {
+                console.error('Failed to refresh worker health', error);
+              });
             }}
             disabled={state.loading}
           >

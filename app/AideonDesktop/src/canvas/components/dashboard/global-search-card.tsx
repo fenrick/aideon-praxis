@@ -26,6 +26,13 @@ interface GlobalSearchCardProperties {
   readonly onShowTimeline?: () => void;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.onSelectNodes
+ * @param root0.onFocusMetaModel
+ * @param root0.onShowTimeline
+ */
 export function GlobalSearchCard({
   onSelectNodes,
   onFocusMetaModel,
@@ -35,8 +42,8 @@ export function GlobalSearchCard({
   const [commandOpen, setCommandOpen] = useState(false);
   const [catalogueEntries, setCatalogueEntries] = useState<CatalogueCommandEntry[]>([]);
   const [metaModelEntries, setMetaModelEntries] = useState<MetaModelCommandEntry[]>([]);
-  const [commandStatus, setCommandStatus] = useState<string | null>(null);
-  const [catalogueError, setCatalogueError] = useState<string | null>(null);
+  const [commandStatus, setCommandStatus] = useState<string | undefined>();
+  const [catalogueError, setCatalogueError] = useState<string | undefined>();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -77,7 +84,7 @@ export function GlobalSearchCard({
         setMetaModelEntries(buildMetaModelEntries(schema));
         const newCatalogueEntries = buildCatalogueEntries(catalogue.rows);
         setCatalogueEntries(newCatalogueEntries);
-        setCatalogueError(null);
+        setCatalogueError(undefined);
         searchStore.setCatalogEntities(
           newCatalogueEntries.map((entry) => ({
             id: entry.id,
@@ -96,7 +103,7 @@ export function GlobalSearchCard({
         }
       }
     };
-    loadAuxiliarySources();
+    void loadAuxiliarySources();
     return () => {
       cancelled = true;
     };
@@ -141,9 +148,9 @@ export function GlobalSearchCard({
           </div>
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Recent commits</p>
           {commandStatus ? (
-            <p className="text-xs text-muted-foreground">Last command · {commandStatus}</p>
-          ) : null}
-          {catalogueError ? <p className="text-xs text-destructive">{catalogueError}</p> : null}
+            <p className="text-xs text-muted-foreground">Last command ·{commandStatus}</p>
+          ) : undefined}
+          {catalogueError ? <p className="text-xs text-destructive">{catalogueError}</p> : undefined}
           {recentCommits.length === 0 ? (
             <p className="text-xs text-muted-foreground">
               No recent commits available. Start by creating a branch.
@@ -154,7 +161,9 @@ export function GlobalSearchCard({
                 <CommitPreview
                   key={commit.id}
                   commit={commit}
-                  onSelectBranch={actions.selectBranch}
+                  onSelectBranch={(branch) => {
+                    void actions.selectBranch(branch);
+                  }}
                   onSelectCommit={actions.selectCommit}
                 />
               ))}
@@ -169,11 +178,15 @@ export function GlobalSearchCard({
         activeBranch={state.branch}
         commits={state.commits}
         loading={state.loading}
-        onSelectBranch={actions.selectBranch}
+        onSelectBranch={(branch) => {
+          void actions.selectBranch(branch);
+        }}
         onSelectCommit={(commitId) => {
           actions.selectCommit(commitId);
         }}
-        onRefreshBranches={actions.refreshBranches}
+        onRefreshBranches={() => {
+          void actions.refreshBranches();
+        }}
         catalogueEntries={catalogueEntries}
         metaModelEntries={metaModelEntries}
         onSelectCatalogueEntry={(entry) => {
@@ -189,6 +202,10 @@ export function GlobalSearchCard({
   );
 }
 
+/**
+ *
+ * @param rows
+ */
 function buildCatalogueEntries(rows: CatalogueRow[]): CatalogueCommandEntry[] {
   return rows.map((row) => {
     const rawName = row.values.name;
@@ -203,6 +220,10 @@ function buildCatalogueEntries(rows: CatalogueRow[]): CatalogueCommandEntry[] {
   });
 }
 
+/**
+ *
+ * @param schema
+ */
 function buildMetaModelEntries(
   schema: Awaited<ReturnType<typeof fetchMetaModel>>,
 ): MetaModelCommandEntry[] {
@@ -221,6 +242,11 @@ function buildMetaModelEntries(
   return [...typeEntries, ...relationshipEntries];
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.keys
+ */
 function ShortcutHint({ keys }: { readonly keys: string[] }) {
   return (
     <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -236,6 +262,13 @@ function ShortcutHint({ keys }: { readonly keys: string[] }) {
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.commit
+ * @param root0.onSelectBranch
+ * @param root0.onSelectCommit
+ */
 function CommitPreview({
   commit,
   onSelectBranch,
@@ -243,13 +276,13 @@ function CommitPreview({
 }: {
   readonly commit: TemporalCommitSummary;
   readonly onSelectBranch: (branch: string) => void;
-  readonly onSelectCommit: (commitId: string | null) => void;
+  readonly onSelectCommit: (commitId: string | undefined) => void;
 }) {
   return (
     <div className="rounded-2xl border border-border/70 p-3">
       <p className="text-sm font-semibold">{commit.message}</p>
       <p className="text-xs text-muted-foreground">
-        {commit.branch} · {commit.tags.map((tag) => `#${tag}`).join(' ') || 'No tags'}
+        {commit.branch} ·{commit.tags.map((tag) => `#${tag}`).join(' ') || 'No tags'}
       </p>
       <div className="mt-2 flex gap-2">
         <Button
