@@ -8,6 +8,10 @@ import type {
   WorkerHealth,
 } from '../../src/dtos';
 
+/**
+ * Runtime guard to verify temporal state snapshot shapes.
+ * @param {unknown} value candidate snapshot object
+ */
 function assertTemporalStateSnapshot(value: unknown): asserts value is TemporalStateSnapshot {
   if (typeof value !== 'object' || value === null) {
     throw new Error('Snapshot must be an object');
@@ -18,6 +22,10 @@ function assertTemporalStateSnapshot(value: unknown): asserts value is TemporalS
   if (typeof snapshot.edges !== 'number') throw new Error('Missing edges');
 }
 
+/**
+ * Runtime guard ensuring WorkerHealth payloads match the contract.
+ * @param {unknown} value candidate health object
+ */
 function assertWorkerHealth(value: unknown): asserts value is WorkerHealth {
   if (typeof value !== 'object' || value === null) {
     throw new Error('Health payload must be an object');
@@ -30,7 +38,7 @@ function assertWorkerHealth(value: unknown): asserts value is WorkerHealth {
 describe('contract DTOs', () => {
   test('temporal state payload matches contract', () => {
     const request: TemporalStateParameters = { asOf: 'commit-123', scenario: 'main' };
-    expectTypeOf(request).toMatchTypeOf<TemporalStateParameters>();
+    expectTypeOf(request).toMatchObjectType<TemporalStateParameters>();
 
     const json = JSON.stringify({
       asOf: 'commit-123',
@@ -39,14 +47,14 @@ describe('contract DTOs', () => {
       nodes: 42,
       edges: 77,
     });
-    const parsed = JSON.parse(json);
+    const parsed = JSON.parse(json) as unknown;
     assertTemporalStateSnapshot(parsed);
     expect(parsed.scenario).toBe('main');
   });
 
   test('temporal diff payload mirrors schema', () => {
     const parameters: TemporalDiffParameters = { from: 'c1', to: 'c2', scope: 'capability' };
-    expectTypeOf(parameters).toMatchTypeOf<TemporalDiffParameters>();
+    expectTypeOf(parameters).toMatchObjectType<TemporalDiffParameters>();
 
     const summary: TemporalDiffSnapshot = {
       from: 'c1',
@@ -64,7 +72,7 @@ describe('contract DTOs', () => {
   });
 
   test('worker health payloads deserialize with optional message', () => {
-    const payload = JSON.parse('{"ok":false,"message":"degraded","timestamp_ms":1700}');
+    const payload: unknown = JSON.parse('{"ok":false,"message":"degraded","timestamp_ms":1700}');
     assertWorkerHealth(payload);
     expect(payload.message).toBe('degraded');
   });
