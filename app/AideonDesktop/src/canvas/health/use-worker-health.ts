@@ -17,6 +17,9 @@ const INITIAL_STATE: WorkerHealthState = {
   loading: true,
 };
 
+/**
+ *
+ */
 export function useWorkerHealth(): [WorkerHealthState, WorkerHealthActions] {
   const [state, setState] = useState<WorkerHealthState>(INITIAL_STATE);
 
@@ -31,7 +34,9 @@ export function useWorkerHealth(): [WorkerHealthState, WorkerHealthActions] {
   }, []);
 
   useEffect(() => {
-    refresh();
+    queueMicrotask(() => {
+      void refresh();
+    });
   }, [refresh]);
 
   return [state, { refresh }];

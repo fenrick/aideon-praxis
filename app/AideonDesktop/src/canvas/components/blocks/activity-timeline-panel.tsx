@@ -15,6 +15,12 @@ interface ActivityTimelinePanelProperties {
   readonly description?: string;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.title
+ * @param root0.description
+ */
 export function ActivityTimelinePanel({
   title = 'Activity & diagnostics',
   description = 'Jump between timeline, diff, and canvas views when chasing events.',
@@ -34,7 +40,9 @@ export function ActivityTimelinePanel({
           <Button
             size="sm"
             variant="secondary"
-            onClick={actions.refreshBranches}
+            onClick={() => {
+              void actions.refreshBranches();
+            }}
             disabled={state.loading}
           >
             Refresh timeline
@@ -43,7 +51,7 @@ export function ActivityTimelinePanel({
             size="sm"
             variant="ghost"
             onClick={() => {
-              actions.selectCommit(state.commitId ?? null);
+              actions.selectCommit(state.commitId);
             }}
             disabled={!state.commitId}
           >

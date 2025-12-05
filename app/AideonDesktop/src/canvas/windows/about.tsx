@@ -2,6 +2,9 @@ import { mountWindow } from './bootstrap';
 
 import './about-window.css';
 
+/**
+ *
+ */
 export function AboutWindow() {
   return (
     <main className="about-shell">
@@ -16,6 +19,21 @@ export function AboutWindow() {
   );
 }
 
-if (import.meta.env.MODE !== 'test') {
+function getRuntimeMode(): string {
+  const meta: unknown = import.meta;
+  if (
+    meta &&
+    typeof meta === 'object' &&
+    'env' in meta &&
+    (meta as { env?: { MODE?: unknown } }).env &&
+    typeof (meta as { env?: { MODE?: unknown } }).env?.MODE === 'string'
+  ) {
+    return (meta as { env?: { MODE?: unknown } }).env?.MODE as string;
+  }
+  return 'development';
+}
+
+const runtimeMode = getRuntimeMode();
+if (runtimeMode !== 'test') {
   mountWindow(<AboutWindow />);
 }

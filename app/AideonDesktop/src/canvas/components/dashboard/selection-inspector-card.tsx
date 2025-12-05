@@ -16,6 +16,13 @@ interface SelectionInspectorCardProperties {
   readonly onSelectionChange?: (selection: SelectionState) => void;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.selection
+ * @param root0.widgets
+ * @param root0.onSelectionChange
+ */
 export function SelectionInspectorCard({
   selection,
   widgets,
@@ -37,7 +44,12 @@ export function SelectionInspectorCard({
         <div>
           <CardTitle>Selection</CardTitle>
           <CardDescription>{selectionSummary(selection)}</CardDescription>
-          {empty ? null : <p className="text-xs text-muted-foreground">Source: {sourceLabel}</p>}
+          {!empty && (
+            <p className="text-xs text-muted-foreground">
+              Source:
+              {sourceLabel}
+            </p>
+          )}
         </div>
         <Button variant="ghost" size="sm" disabled={empty} onClick={handleClear}>
           Clear
@@ -57,6 +69,13 @@ export function SelectionInspectorCard({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.label
+ * @param root0.values
+ * @param root0.emptyLabel
+ */
 function SelectionList({
   label,
   values,

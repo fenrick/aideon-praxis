@@ -3,12 +3,14 @@ import { mountWindow } from './bootstrap';
 
 import './status-window.css';
 
+/**
+ *
+ */
 export function StatusWindow() {
-  const [version, setVersion] = useState('unknown');
+  const initialVersion = (globalThis as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
+  const [version] = useState(initialVersion);
 
   useEffect(() => {
-    const globalAideon = (globalThis as { aideon?: { version?: string } }).aideon;
-    setVersion(globalAideon?.version ?? 'unknown');
     console.info('status: window loaded');
   }, []);
 
@@ -19,11 +21,29 @@ export function StatusWindow() {
         <strong>Status:</strong>
         <span>Ready</span>
       </div>
-      <div className="bridge">Bridge: {version}</div>
+      <div className="bridge">
+        Bridge:
+        {version}
+      </div>
     </div>
   );
 }
 
-if (import.meta.env.MODE !== 'test') {
+function getRuntimeMode(): string {
+  const meta: unknown = import.meta;
+  if (
+    meta &&
+    typeof meta === 'object' &&
+    'env' in meta &&
+    (meta as { env?: { MODE?: unknown } }).env &&
+    typeof (meta as { env?: { MODE?: unknown } }).env?.MODE === 'string'
+  ) {
+    return (meta as { env?: { MODE?: unknown } }).env?.MODE as string;
+  }
+  return 'development';
+}
+
+const runtimeMode = getRuntimeMode();
+if (runtimeMode !== 'test') {
   mountWindow(<StatusWindow />);
 }

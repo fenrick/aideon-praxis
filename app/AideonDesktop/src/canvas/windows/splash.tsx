@@ -19,6 +19,9 @@ const loadLines = [
   'Scheduling time-dimension renders…',
 ];
 
+/**
+ *
+ */
 export default function SplashWindow() {
   const [currentLine, setCurrentLine] = useState(loadLines[0]);
   const isDevelopment = (() => {
@@ -40,6 +43,9 @@ export default function SplashWindow() {
   useEffect(() => {
     let cancelled = false;
 
+    /**
+     *
+     */
     async function init() {
       try {
         console.info('splash: frontend init start');
@@ -56,11 +62,11 @@ export default function SplashWindow() {
       }
     }
 
-    init();
+    void init();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isDevelopment]);
 
   return (
     <div className="splash">
@@ -78,6 +84,21 @@ export default function SplashWindow() {
   );
 }
 
-if (import.meta.env.MODE !== 'test') {
+function getRuntimeMode(): string {
+  const meta: unknown = import.meta;
+  if (
+    meta &&
+    typeof meta === 'object' &&
+    'env' in meta &&
+    (meta as { env?: { MODE?: unknown } }).env &&
+    typeof (meta as { env?: { MODE?: unknown } }).env?.MODE === 'string'
+  ) {
+    return (meta as { env?: { MODE?: unknown } }).env?.MODE as string;
+  }
+  return 'development';
+}
+
+const runtimeMode = getRuntimeMode();
+if (runtimeMode !== 'test') {
   mountWindow(<SplashWindow />);
 }

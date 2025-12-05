@@ -1,5 +1,5 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 
 import App from './app';
 import './styles.css';
@@ -10,8 +10,8 @@ if (!container) {
   throw new Error('Unable to locate root element');
 }
 
-ReactDOM.createRoot(container).render(
-  <React.StrictMode>
+createRoot(container).render(
+  <StrictMode>
     <App />
-  </React.StrictMode>,
+  </StrictMode>,
 );

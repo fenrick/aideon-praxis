@@ -24,14 +24,19 @@ interface MetaModelPanelProperties {
   readonly focusEntryId?: string;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.focusEntryId
+ */
 export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) {
   const [status, setStatus] = useState<Status>('idle');
-  const [schema, setSchema] = useState<MetaModelSchema | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [schema, setSchema] = useState<MetaModelSchema | undefined>();
+  const [error, setError] = useState<string | undefined>();
 
   const loadSchema = useCallback(async () => {
     setStatus('loading');
-    setError(null);
+    setError(undefined);
     try {
       const result = await fetchMetaModel();
       setSchema(result);
@@ -44,7 +49,9 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
   }, []);
 
   useEffect(() => {
-    loadSchema();
+    queueMicrotask(() => {
+      void loadSchema();
+    });
   }, [loadSchema]);
 
   return (
@@ -57,13 +64,13 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <Badge variant="secondary">Version · {schema?.version ?? 'loading'}</Badge>
+          <Badge variant="secondary">Version ·{schema?.version ?? 'loading'}</Badge>
           <Badge variant="outline">{status === 'ready' ? 'Live' : status}</Badge>
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
-              loadSchema();
+              void loadSchema();
             }}
             disabled={status === 'loading'}
           >
@@ -76,7 +83,7 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
           error,
           focusEntryId,
           onRetry: () => {
-            loadSchema();
+            void loadSchema();
           },
         })}
       </CardContent>
@@ -92,8 +99,8 @@ const renderSchemaState = ({
   onRetry,
 }: {
   readonly status: Status;
-  readonly schema: MetaModelSchema | null;
-  readonly error: string | null;
+  readonly schema: MetaModelSchema | undefined;
+  readonly error: string | undefined;
   readonly focusEntryId?: string;
   readonly onRetry: () => void;
 }) => {
@@ -117,6 +124,12 @@ const renderSchemaState = ({
   return <SchemaDetails schema={schema} focusEntryId={focusEntryId} />;
 };
 
+/**
+ *
+ * @param root0
+ * @param root0.schema
+ * @param root0.focusEntryId
+ */
 function SchemaDetails({
   schema,
   focusEntryId,
@@ -191,6 +204,12 @@ function SchemaDetails({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.label
+ * @param root0.value
+ */
 function StatBlock({ label, value }: { readonly label: string; readonly value: number }) {
   return (
     <div>
@@ -200,6 +219,16 @@ function StatBlock({ label, value }: { readonly label: string; readonly value: n
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.id
+ * @param root0.label
+ * @param root0.description
+ * @param root0.extra
+ * @param root0.focused
+ * @param root0.children
+ */
 function MetaModelEntryCard({
   id,
   label,
@@ -227,17 +256,22 @@ function MetaModelEntryCard({
           <p className="text-sm font-semibold">{label}</p>
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
-        {extra ? (
+        {extra && (
           <Badge variant="secondary" className="text-[0.6rem] uppercase tracking-[0.3em]">
             {extra}
           </Badge>
-        ) : null}
+        )}
       </div>
       {children}
     </article>
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.attributes
+ */
 function AttributesList({
   attributes,
 }: {
@@ -252,11 +286,11 @@ function AttributesList({
         <div key={attribute.name} className="flex justify-between gap-2">
           <dt className="font-medium">
             {attribute.name}
-            {attribute.required ? (
+            {attribute.required && (
               <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[0.65rem] text-destructive">
                 required
               </span>
-            ) : null}
+            )}
           </dt>
           <dd className="text-muted-foreground">
             {attribute.type}

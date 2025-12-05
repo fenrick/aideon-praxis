@@ -16,6 +16,9 @@ import {
 import { ScrollArea } from '../../../design-system/components/ui/scroll-area';
 import { ToggleGroup, ToggleGroupItem } from '../../../design-system/components/ui/toggle-group';
 
+/**
+ *
+ */
 export function CommitTimelineCard() {
   const [state, actions] = useTemporalPanel();
 
@@ -41,7 +44,7 @@ export function CommitTimelineCard() {
           activeBranch={state.branch}
           loading={state.loading}
           onSelect={(branch) => {
-            actions.selectBranch(branch);
+            void actions.selectBranch(branch);
           }}
         />
         <CommitList
@@ -50,22 +53,26 @@ export function CommitTimelineCard() {
           loading={state.loading}
           onSelectCommit={actions.selectCommit}
         />
-        {state.mergeConflicts && state.mergeConflicts.length > 0 ? (
+        {state.mergeConflicts && state.mergeConflicts.length > 0 && (
           <MergeConflicts conflicts={state.mergeConflicts} />
-        ) : null}
-        {state.error ? <p className="text-xs text-destructive">{state.error}</p> : null}
+        )}
+        {state.error && <p className="text-xs text-destructive">{state.error}</p>}
         <div className="flex justify-end gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={actions.refreshBranches}
+            onClick={() => {
+              void actions.refreshBranches();
+            }}
             disabled={state.loading}
           >
             Refresh
           </Button>
           <Button
             size="sm"
-            onClick={actions.mergeIntoMain}
+            onClick={() => {
+              void actions.mergeIntoMain();
+            }}
             disabled={!hasNonMainBranch || state.merging}
           >
             {state.merging ? 'Merging…' : 'Merge into main'}
@@ -76,6 +83,14 @@ export function CommitTimelineCard() {
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.branches
+ * @param root0.activeBranch
+ * @param root0.loading
+ * @param root0.onSelect
+ */
 function BranchList({
   branches,
   activeBranch,
@@ -111,6 +126,14 @@ function BranchList({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.commits
+ * @param root0.selectedCommitId
+ * @param root0.loading
+ * @param root0.onSelectCommit
+ */
 function CommitList({
   commits,
   selectedCommitId,
@@ -160,6 +183,11 @@ function CommitList({
   );
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.conflicts
+ */
 function MergeConflicts({ conflicts }: { readonly conflicts: TemporalMergeConflict[] }) {
   return (
     <Alert variant="destructive">
@@ -168,7 +196,7 @@ function MergeConflicts({ conflicts }: { readonly conflicts: TemporalMergeConfli
         <ul className="mt-1 space-y-1 text-xs">
           {conflicts.map((conflict, index) => (
             <li key={`${conflict.reference}-${index.toString()}`}>
-              <span className="font-medium">{conflict.reference}</span>: {conflict.message}
+              <span className="font-medium">{conflict.reference}</span>:{conflict.message}
             </li>
           ))}
         </ul>

@@ -287,6 +287,9 @@ interface TemporalMergeConflictPayload {
   message?: string;
 }
 
+/**
+ *
+ */
 export async function getWorkerHealth(): Promise<WorkerHealth> {
   if (!isTauri()) {
     return { ...MOCK_HEALTH, timestamp_ms: Date.now() };
@@ -294,24 +297,43 @@ export async function getWorkerHealth(): Promise<WorkerHealth> {
   return invoke<WorkerHealth>(COMMANDS.workerHealth, {});
 }
 
+/**
+ *
+ * @param definition
+ */
 export async function getGraphView(definition: GraphViewDefinition): Promise<GraphViewModel> {
   return callOrMock(COMMANDS.graphView, { definition }, () => mockGraphView(definition));
 }
 
+/**
+ *
+ * @param definition
+ */
 export async function getCatalogueView(
   definition: CatalogueViewDefinition,
 ): Promise<CatalogueViewModel> {
   return callOrMock(COMMANDS.catalogueView, { definition }, () => mockCatalogueView(definition));
 }
 
+/**
+ *
+ * @param definition
+ */
 export async function getMatrixView(definition: MatrixViewDefinition): Promise<MatrixViewModel> {
   return callOrMock(COMMANDS.matrixView, { definition }, () => mockMatrixView(definition));
 }
 
+/**
+ *
+ * @param definition
+ */
 export async function getChartView(definition: ChartViewDefinition): Promise<ChartViewModel> {
   return callOrMock(COMMANDS.chartView, { definition }, () => mockChartView(definition));
 }
 
+/**
+ *
+ */
 export async function listTemporalBranches(): Promise<TemporalBranchSummary[]> {
   const response = await callOrMock<ListBranchesResponse | TemporalBranchSummary[]>(
     COMMANDS.listBranches,
@@ -324,10 +346,14 @@ export async function listTemporalBranches(): Promise<TemporalBranchSummary[]> {
   const entries = Array.isArray(response.branches) ? response.branches : [];
   return entries.map((entry) => ({
     name: typeof entry.name === 'string' ? entry.name : '',
-    head: typeof entry.head === 'string' ? entry.head : null,
+    head: typeof entry.head === 'string' ? entry.head : undefined,
   }));
 }
 
+/**
+ *
+ * @param branch
+ */
 export async function listTemporalCommits(branch: string): Promise<TemporalCommitSummary[]> {
   const response = await callOrMock<ListCommitsResponse | TemporalCommitSummary[]>(
     COMMANDS.listCommits,
@@ -341,6 +367,10 @@ export async function listTemporalCommits(branch: string): Promise<TemporalCommi
   return commits.map((entry) => normalizeCommit(entry, branch));
 }
 
+/**
+ *
+ * @param request
+ */
 export async function getStateAtSnapshot(request: StateAtRequest): Promise<StateAtSnapshot> {
   const snapshot = await callOrMock<StateAtSnapshot>(
     COMMANDS.stateAt,
@@ -354,6 +384,10 @@ export async function getStateAtSnapshot(request: StateAtRequest): Promise<State
   };
 }
 
+/**
+ *
+ * @param request
+ */
 export async function getTemporalDiff(request: TemporalDiffRequest): Promise<TemporalDiffSnapshot> {
   const payload: Record<string, unknown> = {
     payload: {
@@ -381,6 +415,13 @@ export async function getTemporalDiff(request: TemporalDiffRequest): Promise<Tem
   };
 }
 
+/**
+ *
+ * @param request
+ * @param request.source
+ * @param request.target
+ * @param request.strategy
+ */
 export async function mergeTemporalBranches(request: {
   source: string;
   target: string;
@@ -394,7 +435,7 @@ export async function mergeTemporalBranches(request: {
   const conflicts = Array.isArray(response.conflicts)
     ? response.conflicts
         .map((conflict) => normalizeConflict(conflict))
-        .filter((conflict): conflict is TemporalMergeConflict => conflict !== null)
+        .filter((conflict): conflict is TemporalMergeConflict => conflict !== undefined)
     : undefined;
   return {
     result: response.result ?? (conflicts && conflicts.length > 0 ? 'conflicts' : 'ok'),
@@ -402,6 +443,10 @@ export async function mergeTemporalBranches(request: {
   };
 }
 
+/**
+ *
+ * @param operations
+ */
 export async function applyOperations(
   operations: PraxisOperation[],
 ): Promise<OperationBatchResult> {
@@ -410,10 +455,19 @@ export async function applyOperations(
   );
 }
 
+/**
+ *
+ */
 export async function listScenarios(): Promise<ScenarioSummary[]> {
   return callOrMock(COMMANDS.listScenarios, undefined, () => mockScenarios());
 }
 
+/**
+ *
+ * @param command
+ * @param payload
+ * @param fallback
+ */
 async function callOrMock<T>(
   command: string,
   payload: Record<string, unknown> | undefined,
@@ -430,6 +484,11 @@ async function callOrMock<T>(
   }
 }
 
+/**
+ *
+ * @param payload
+ * @param fallbackBranch
+ */
 function normalizeCommit(
   payload: TemporalCommitSummaryPayload,
   fallbackBranch: string,
@@ -452,9 +511,13 @@ function normalizeCommit(
   };
 }
 
-function normalizeConflict(payload: TemporalMergeConflictPayload): TemporalMergeConflict | null {
+/**
+ *
+ * @param payload
+ */
+function normalizeConflict(payload: TemporalMergeConflictPayload): TemporalMergeConflict | undefined {
   if (!payload.reference || typeof payload.reference !== 'string') {
-    return null;
+    return undefined;
   }
   return {
     reference: payload.reference,
@@ -471,6 +534,10 @@ const GRAPH_NODE_IDS = {
   identity: 'svc-auth',
 } as const;
 
+/**
+ *
+ * @param definition
+ */
 function mockGraphView(definition: GraphViewDefinition): GraphViewModel {
   const nodes: GraphNodeView[] = [
     {
@@ -534,6 +601,10 @@ function mockGraphView(definition: GraphViewDefinition): GraphViewModel {
   };
 }
 
+/**
+ *
+ * @param definition
+ */
 function mockCatalogueView(definition: CatalogueViewDefinition): CatalogueViewModel {
   const columns =
     definition.columns.length > 0
@@ -573,6 +644,10 @@ const MATRIX_AXIS_IDS = {
   search: 'svc-search',
 } as const;
 
+/**
+ *
+ * @param definition
+ */
 function mockMatrixView(definition: MatrixViewDefinition): MatrixViewModel {
   const rows: MatrixAxis[] = [
     { id: MATRIX_AXIS_IDS.onboarding, label: 'Customer Onboarding' },
@@ -606,6 +681,10 @@ function mockMatrixView(definition: MatrixViewDefinition): MatrixViewModel {
   };
 }
 
+/**
+ *
+ * @param definition
+ */
 function mockChartView(definition: ChartViewDefinition): ChartViewModel {
   const metadata = buildMetadata(definition);
   if (definition.chartType === 'kpi') {
@@ -666,6 +745,9 @@ function mockChartView(definition: ChartViewDefinition): ChartViewModel {
   };
 }
 
+/**
+ *
+ */
 function mockBranches(): TemporalBranchSummary[] {
   return [
     { name: 'main', head: 'commit-main-004' },
@@ -673,6 +755,10 @@ function mockBranches(): TemporalBranchSummary[] {
   ];
 }
 
+/**
+ *
+ * @param branch
+ */
 function mockCommits(branch: string): TemporalCommitSummary[] {
   if (branch === 'chronaplay') {
     return [
@@ -688,6 +774,10 @@ function mockCommits(branch: string): TemporalCommitSummary[] {
   ];
 }
 
+/**
+ *
+ * @param request
+ */
 function mockDiffSummary(request: TemporalDiffRequest): DiffSummaryResponse {
   return {
     from: request.from,
@@ -701,6 +791,12 @@ function mockDiffSummary(request: TemporalDiffRequest): DiffSummaryResponse {
   };
 }
 
+/**
+ *
+ * @param request
+ * @param request.source
+ * @param request.target
+ */
 function mockMerge(request: { source: string; target: string }): MergeResponsePayload {
   if (request.source === 'chronaplay' && request.target === 'main') {
     return {
@@ -717,6 +813,13 @@ function mockMerge(request: { source: string; target: string }): MergeResponsePa
   return { result: 'merged', conflicts: [] };
 }
 
+/**
+ *
+ * @param id
+ * @param branch
+ * @param message
+ * @param daysOffset
+ */
 function mockCommit(
   id: string,
   branch: string,
@@ -736,6 +839,10 @@ function mockCommit(
   };
 }
 
+/**
+ *
+ * @param request
+ */
 function mockStateAt(request: StateAtRequest): StateAtSnapshot {
   const asOf = request.asOf;
   const scenario = request.scenario ?? 'main';
@@ -751,6 +858,10 @@ function mockStateAt(request: StateAtRequest): StateAtSnapshot {
   };
 }
 
+/**
+ *
+ * @param operations
+ */
 function mockApplyOperations(operations: PraxisOperation[]): OperationBatchResult {
   if (operations.length === 0) {
     return { accepted: false, message: 'No operations provided' };
@@ -762,6 +873,9 @@ function mockApplyOperations(operations: PraxisOperation[]): OperationBatchResul
   };
 }
 
+/**
+ *
+ */
 function mockScenarios(): ScenarioSummary[] {
   const now = nowIso();
   return [
@@ -783,6 +897,10 @@ function mockScenarios(): ScenarioSummary[] {
   ];
 }
 
+/**
+ *
+ * @param definition
+ */
 function buildMetadata(definition: ViewDefinitionBase): ViewMetadata {
   return {
     id: definition.id,
@@ -802,10 +920,17 @@ const nextOperationId = (() => {
   };
 })();
 
+/**
+ *
+ */
 function nowIso(): string {
   return new Date().toISOString();
 }
 
+/**
+ *
+ * @param seed
+ */
 function randomScore(seed: string): number {
   let hash = 0;
   for (const character of seed) {
@@ -816,14 +941,22 @@ function randomScore(seed: string): number {
   return 60 + normalized;
 }
 
+/**
+ *
+ * @param request
+ */
 function serializeStateAtArguments(request: StateAtRequest): Record<string, unknown> {
   return {
     asOf: request.asOf,
-    scenario: request.scenario ?? null,
-    confidence: request.confidence ?? null,
+    scenario: request.scenario ?? undefined,
+    confidence: request.confidence ?? undefined,
   };
 }
 
+/**
+ *
+ * @param key
+ */
 function seededMetric(key: string): number {
   return randomScore(key) * 10;
 }

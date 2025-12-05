@@ -5,6 +5,10 @@ import './settings-window.css';
 
 type ThemeMode = 'system' | 'light' | 'dark';
 
+/**
+ *
+ * @param mode
+ */
 function applyTheme(mode: ThemeMode) {
   const body = document.body;
   body.classList.remove('theme-light', 'theme-dark');
@@ -15,23 +19,24 @@ function applyTheme(mode: ThemeMode) {
   }
 }
 
+/**
+ *
+ */
 export function SettingsWindow() {
   const [mode, setMode] = useState<ThemeMode>(() => {
-    const globalWindow = (globalThis as { window?: Window & typeof globalThis }).window;
-    if (!globalWindow || !globalWindow.localStorage?.getItem) {
+    if (typeof localStorage === 'undefined') {
       return 'system';
     }
-    const stored = globalWindow.localStorage.getItem('themeMode') as ThemeMode | null;
+    const stored = localStorage.getItem('themeMode') as ThemeMode | null;
     return stored ?? 'system';
   });
 
   useEffect(() => {
     applyTheme(mode);
-    const globalWindow = (globalThis as { window?: Window & typeof globalThis }).window;
-    if (!globalWindow || !globalWindow.localStorage?.setItem) {
+    if (typeof localStorage === 'undefined') {
       return;
     }
-    globalWindow.localStorage.setItem('themeMode', mode);
+    localStorage.setItem('themeMode', mode);
   }, [mode]);
 
   return (
@@ -81,6 +86,21 @@ export function SettingsWindow() {
   );
 }
 
-if (import.meta.env.MODE !== 'test') {
+function getRuntimeMode(): string {
+  const meta: unknown = import.meta;
+  if (
+    meta &&
+    typeof meta === 'object' &&
+    'env' in meta &&
+    (meta as { env?: { MODE?: unknown } }).env &&
+    typeof (meta as { env?: { MODE?: unknown } }).env?.MODE === 'string'
+  ) {
+    return (meta as { env?: { MODE?: unknown } }).env?.MODE as string;
+  }
+  return 'development';
+}
+
+const runtimeMode = getRuntimeMode();
+if (runtimeMode !== 'test') {
   mountWindow(<SettingsWindow />);
 }

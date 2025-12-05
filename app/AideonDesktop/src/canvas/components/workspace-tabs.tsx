@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { ActivityTimelinePanel } from 'canvas/components/blocks/activity-timeline-panel';
 import { CommitTimelineList } from 'canvas/components/blocks/commit-timeline-list';
@@ -41,6 +41,16 @@ const TabList = TabsPrimitive.List;
 const TabTrigger = TabsPrimitive.Trigger;
 const TabContent = TabsPrimitive.Content;
 
+/**
+ *
+ * @param root0
+ * @param root0.widgets
+ * @param root0.selection
+ * @param root0.onSelectionChange
+ * @param root0.onRequestMetaModelFocus
+ * @param root0.value
+ * @param root0.onValueChange
+ */
 export function WorkspaceTabs({
   widgets,
   selection,
@@ -49,19 +59,17 @@ export function WorkspaceTabs({
   value,
   onValueChange,
 }: WorkspaceTabsProperties) {
-  const [tab, setTab] = useState<WorkspaceTabValue>(value ?? 'overview');
+  const [internalTab, setInternalTab] = useState<WorkspaceTabValue>('overview');
   const [state, actions] = useTemporalPanel();
-
-  useEffect(() => {
-    if (value && value !== tab) {
-      setTab(value);
-    }
-  }, [value, tab]);
+  const tab = value ?? internalTab;
 
   const handleTabChange = (nextValue: string) => {
     const next = nextValue as WorkspaceTabValue;
-    setTab(next);
-    onValueChange?.(next);
+    if (onValueChange) {
+      onValueChange(next);
+    } else {
+      setInternalTab(next);
+    }
   };
 
   return (
@@ -104,6 +112,11 @@ interface OverviewTabProperties {
   readonly state: TemporalPanelState;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.state
+ */
 function OverviewTab({ state }: OverviewTabProperties) {
   if (state.loading && !state.snapshot) {
     return (
@@ -176,20 +189,20 @@ function OverviewTab({ state }: OverviewTabProperties) {
             </p>
           )}
         </div>
-        {state.mergeConflicts && state.mergeConflicts.length > 0 ? (
+        {state.mergeConflicts && state.mergeConflicts.length > 0 && (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-xs">
             <p className="text-destructive font-semibold">Merge conflicts detected</p>
             <ul className="mt-2 space-y-2">
               {state.mergeConflicts.map((conflict) => (
                 <li key={conflict.reference}>
-                  <strong>{conflict.kind}</strong> · {conflict.reference}
+                  <strong>{conflict.kind}</strong> ·{conflict.reference}
                   <p className="text-destructive/80">{conflict.message}</p>
                 </li>
               ))}
             </ul>
           </div>
-        ) : null}
-        {state.error ? <p className="text-xs text-destructive">{state.error}</p> : null}
+        )}
+        {state.error && <p className="text-xs text-destructive">{state.error}</p>}
       </CardContent>
     </Card>
   );
@@ -200,6 +213,12 @@ interface TimelineTabProperties {
   readonly actions: TemporalPanelActions;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.state
+ * @param root0.actions
+ */
 function TimelineTab({ state, actions }: TimelineTabProperties) {
   const hasCommits = state.commits.length > 0;
   let content: ReactNode;
@@ -228,14 +247,20 @@ function TimelineTab({ state, actions }: TimelineTabProperties) {
           <CardDescription>Select a commit to pivot the workspace.</CardDescription>
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
-          <Button size="sm" variant="secondary" onClick={actions.refreshBranches}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              void actions.refreshBranches();
+            }}
+          >
             Refresh timeline
           </Button>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => {
-              actions.selectCommit(state.commitId ?? null);
+              actions.selectCommit(state.commitId);
             }}
             disabled={!state.commitId}
           >
@@ -248,6 +273,9 @@ function TimelineTab({ state, actions }: TimelineTabProperties) {
   );
 }
 
+/**
+ *
+ */
 function ActivityTab() {
   return <ActivityTimelinePanel />;
 }
