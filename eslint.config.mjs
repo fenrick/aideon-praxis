@@ -1,7 +1,7 @@
 // ESLint v9 flat config (pure flat presets, no compat, TS type-checked)
 import js from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
+import prettierConfig from 'eslint-config-prettier/flat';
 import importPlugin from 'eslint-plugin-import';
 import promise from 'eslint-plugin-promise';
 import react from 'eslint-plugin-react';
