@@ -60,10 +60,18 @@ const SIDEBAR_ITEMS: SidebarTreeNode[] = [
   { id: 'status', label: 'Status' },
 ];
 
+/**
+ * Entry point for the Praxis canvas renderer.
+ * @returns {import('react').ReactElement} Canvas route content.
+ */
 export default function App() {
   return <LegacyPraxisCanvasApp />;
 }
 
+/**
+ * Router-aware wrapper that renders the canvas only on /canvas.
+ * @returns {import('react').ReactElement} Canvas experience or unsupported notice.
+ */
 export function LegacyPraxisCanvasApp() {
   const path = globalThis.location.pathname.replace(/\/$/, '') || '/';
   const isCanvasRoute = path === '/canvas';
@@ -72,6 +80,14 @@ export function LegacyPraxisCanvasApp() {
     return <UnsupportedPage path={path} />;
   }
 
+  return <PraxisCanvasPage />;
+}
+
+/**
+ * Canvas experience shell wiring state and layout.
+ * @returns {import('react').ReactElement} The canvas surface wrapped in sidebar + chrome.
+ */
+function PraxisCanvasPage() {
   const experience = usePraxisCanvasState();
 
   return (
@@ -87,6 +103,11 @@ export function LegacyPraxisCanvasApp() {
   );
 }
 
+/**
+ * Exposes the canvas surface for embedding; forwards selection changes.
+ * @param {{onSelectionChange?: (selection: SelectionState) => void}} props optional selection change handler
+ * @returns {import('react').ReactElement} Canvas surface element
+ */
 export function PraxisCanvasSurface({
   onSelectionChange,
 }: {
@@ -109,6 +130,10 @@ export function PraxisCanvasSurface({
 
 type PraxisCanvasExperience = ReturnType<typeof usePraxisCanvasState>;
 
+/**
+ * Central hook assembling state for the canvas experience.
+ * @returns {PraxisCanvasExperience} state and handlers used by the canvas UI
+ */
 function usePraxisCanvasState() {
   const [scenarioState, setScenarioState] = useState<ScenarioState>({ loading: true, data: [] });
   const [selection, setSelection] = useState<SelectionState>(EMPTY_SELECTION);
@@ -152,15 +177,15 @@ function usePraxisCanvasState() {
           break;
         }
         case 'about': {
-          openHostWindow('open_about');
+          void openHostWindow('open_about');
           break;
         }
         case 'settings': {
-          openHostWindow('open_settings');
+          void openHostWindow('open_settings');
           break;
         }
         case 'status': {
-          openHostWindow('open_status');
+          void openHostWindow('open_status');
           break;
         }
         default: {
@@ -233,7 +258,9 @@ function usePraxisCanvasState() {
   }, []);
 
   useEffect(() => {
-    refreshScenarios();
+    void (async () => {
+      await refreshScenarios();
+    })();
   }, [refreshScenarios]);
 
   useEffect(() => {
@@ -260,6 +287,11 @@ function usePraxisCanvasState() {
   };
 }
 
+/**
+ * Renders the main canvas layout with timeline widgets and sidebars.
+ * @param {PraxisCanvasExperience} props experience state + handlers
+ * @returns {import('react').ReactElement} layout for the canvas surface
+ */
 function PraxisCanvasSurfaceView({
   scenarioState,
   selection,
@@ -290,9 +322,9 @@ function PraxisCanvasSurfaceView({
       <div className="px-6 pt-3">
         <SearchBar />
       </div>
-      {scenarioState.error ? (
+      {scenarioState.error && (
         <p className="px-6 pt-2 text-sm text-destructive">{scenarioState.error}</p>
-      ) : null}
+      )}
       <div className="flex flex-1 flex-col gap-6 p-6 lg:flex-row">
         <section className="flex-1">
           <WorkspaceTabs
@@ -340,6 +372,11 @@ interface ShellHeaderProperties {
   readonly onTemplateSave: () => void;
 }
 
+/**
+ * Fallback page shown when the canvas route is accessed outside the Tauri shell.
+ * @param {{path: string}} props path info
+ * @returns {import('react').ReactElement} JSX explaining unsupported route
+ */
 function UnsupportedPage({ path }: { readonly path: string }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 text-foreground">
@@ -353,12 +390,20 @@ function UnsupportedPage({ path }: { readonly path: string }) {
           canvas at
           <span className="font-mono text-xs text-foreground"> /canvas </span>.
         </p>
-        <p className="text-xs font-mono text-muted-foreground">Requested route: {path}</p>
+        <p className="text-xs font-mono text-muted-foreground">
+          Requested route:
+          {path}
+        </p>
       </div>
     </div>
   );
 }
 
+/**
+ * Header component rendering template selectors and actions.
+ * @param {ShellHeaderProperties} props template and scenario metadata
+ * @returns {import('react').ReactElement} JSX header
+ */
 function ShellHeader({
   scenarioName,
   templateName,
