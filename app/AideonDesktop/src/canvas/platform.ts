@@ -1,3 +1,7 @@
+/**
+ * Detect whether the renderer is executing inside a Tauri host.
+ * @returns {boolean} `true` when Tauri internals are present on `window`; otherwise `false`.
+ */
 export function isTauri(): boolean {
   if (!('window' in globalThis)) {
     return false;
