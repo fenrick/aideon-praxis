@@ -428,8 +428,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          # Ensure the scanner container can see the toolchain we installed into the shared HOME mount
-          PATH: /github/home/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          # Ensure the scanner container can see both sonar-scanner (in /opt) and the Rust toolchain we installed into the shared HOME mount
+          PATH: /github/home/.cargo/bin:/opt/sonar-scanner/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
   # Note: C4 diagram generation removed from CI.
   # These are design-time artifacts; render locally if needed.
