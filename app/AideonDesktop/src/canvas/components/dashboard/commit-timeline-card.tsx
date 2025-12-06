@@ -141,7 +141,7 @@ function CommitList({
   onSelectCommit,
 }: {
   readonly commits: TemporalCommitSummary[];
-  readonly selectedCommitId?: string;
+  readonly selectedCommitId: string | null;
   readonly loading: boolean;
   readonly onSelectCommit: (commitId: string | null) => void;
 }) {

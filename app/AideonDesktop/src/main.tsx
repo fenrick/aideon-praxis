@@ -141,7 +141,7 @@ function SplashScreen() {
     [],
   );
 
-  const [currentLine, setCurrentLine] = useState<string>(loadLines[0]);
+  const [currentLine, setCurrentLine] = useState<string>(loadLines[0] ?? '');
 
   // Rotate status lines
   useEffect(() => {

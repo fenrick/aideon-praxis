@@ -3,7 +3,7 @@ import { Button } from '../../../design-system/components/ui/button';
 
 interface CommitTimelineListProperties {
   readonly commits: TemporalCommitSummary[];
-  readonly activeCommitId?: string;
+  readonly activeCommitId: string | null;
   readonly onSelect: (commitId: string | null) => void;
 }
 

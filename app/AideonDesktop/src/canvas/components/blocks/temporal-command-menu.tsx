@@ -22,7 +22,7 @@ interface TemporalCommandMenuProperties {
   readonly commits: TemporalCommitSummary[];
   readonly loading: boolean;
   readonly onSelectBranch: (branch: string) => void;
-  readonly onSelectCommit: (commitId: string) => void;
+  readonly onSelectCommit: (commitId: string | null) => void;
   readonly onRefreshBranches: () => void;
   readonly catalogueEntries?: CatalogueCommandEntry[];
   readonly metaModelEntries?: MetaModelCommandEntry[];

@@ -26,8 +26,8 @@ vi.mock('canvas/components/dashboard/global-search-card', () => ({
     onShowTimeline: () => void;
   }) => (
     <div>
-      <button onClick={() => onSelectNodes(['node-42'])}>select-node</button>
-      <button onClick={() => onFocusMetaModel({ id: 'meta-1' })}>focus-meta</button>
+      <button onClick={() => { onSelectNodes(['node-42']); }}>select-node</button>
+      <button onClick={() => { onFocusMetaModel({ id: 'meta-1' }); }}>focus-meta</button>
       <button onClick={onShowTimeline}>open-timeline</button>
     </div>
   ),
@@ -75,11 +75,11 @@ vi.mock('canvas/components/workspace-tabs', () => ({
   }) => (
     <div>
       <div data-testid="workspace-tab">{value}</div>
-      <button onClick={() => onSelectionChange({ ...selection, nodeIds: ['n1'] })}>
+      <button onClick={() => { onSelectionChange({ ...selection, nodeIds: ['n1'] }); }}>
         change-selection
       </button>
-      <button onClick={() => onRequestMetaModelFocus(['model-a'])}>focus-meta</button>
-      <button onClick={() => onValueChange(value === 'overview' ? 'canvas' : 'overview')}>
+      <button onClick={() => { onRequestMetaModelFocus(['model-a']); }}>focus-meta</button>
+      <button onClick={() => { onValueChange(value === 'overview' ? 'canvas' : 'overview'); }}>
         toggle-tab
       </button>
     </div>
@@ -125,7 +125,7 @@ describe('Praxis canvas app shell', () => {
   });
 
   it('shows unsupported page outside /canvas route', () => {
-    window.history.pushState({}, '', '/not-canvas');
+    globalThis.history.pushState({}, '', '/not-canvas');
 
     render(<LegacyPraxisCanvasApp />);
 
@@ -134,34 +134,34 @@ describe('Praxis canvas app shell', () => {
   });
 
   it('renders canvas experience on /canvas and fetches scenarios', async () => {
-    window.history.pushState({}, '', '/canvas');
+    globalThis.history.pushState({}, '', '/canvas');
 
     render(<App />);
 
-    await waitFor(() => expect(listScenariosMock).toHaveBeenCalled());
-    expect(screen.getByTestId('sidebar').textContent).toContain('scenarios:1');
+    await waitFor(() => { expect(listScenariosMock).toHaveBeenCalled(); });
+    expect(screen.getByTestId('sidebar')).toHaveTextContent(/scenarios:1/);
     expect(screen.getByText(/Active template/i)).toBeInTheDocument();
   });
 
   it('fires selection change callback from the surface', async () => {
-    window.history.pushState({}, '', '/canvas');
+    globalThis.history.pushState({}, '', '/canvas');
     const onSelectionChange = vi.fn();
 
     render(<PraxisCanvasSurface onSelectionChange={onSelectionChange} />);
 
-    await waitFor(() => expect(listScenariosMock).toHaveBeenCalled());
+    await waitFor(() => { expect(listScenariosMock).toHaveBeenCalled(); });
     fireEvent.click(screen.getAllByText('select-node')[0]);
 
-    await waitFor(() => expect(onSelectionChange).toHaveBeenCalled());
+    await waitFor(() => { expect(onSelectionChange).toHaveBeenCalled(); });
   });
 
   it('saves a new template when prompted and updates the select list', async () => {
-    window.history.pushState({}, '', '/canvas');
+    globalThis.history.pushState({}, '', '/canvas');
     const promptSpy = vi.spyOn(globalThis, 'prompt').mockReturnValue('My Saved Template');
 
     render(<App />);
 
-    await waitFor(() => expect(listScenariosMock).toHaveBeenCalled());
+    await waitFor(() => { expect(listScenariosMock).toHaveBeenCalled(); });
     fireEvent.click(screen.getAllByText('Save template')[0]);
 
     expect(promptSpy).toHaveBeenCalled();
@@ -169,17 +169,17 @@ describe('Praxis canvas app shell', () => {
   });
 
   it('invokes host windows when sidebar actions are selected inside Tauri', async () => {
-    window.history.pushState({}, '', '/canvas');
+    globalThis.history.pushState({}, '', '/canvas');
     isTauriMock.mockReturnValue(true);
-    invokeMock.mockResolvedValue(undefined);
+    invokeMock.mockResolvedValue();
 
     render(<App />);
 
-    await waitFor(() => expect(searchStore.getState().items.length).toBeGreaterThan(0));
+    await waitFor(() => { expect(searchStore.getState().items.length).toBeGreaterThan(0); });
     const statusEntry = searchStore.getState().items.find((item) => item.id === 'sidebar:status');
     expect(statusEntry?.run).toBeDefined();
     statusEntry?.run?.();
 
-    await waitFor(() => expect(invokeMock).toHaveBeenCalledWith('open_status'));
+    await waitFor(() => { expect(invokeMock).toHaveBeenCalledWith('open_status'); });
   });
 });

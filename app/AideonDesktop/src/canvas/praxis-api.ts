@@ -346,7 +346,7 @@ export async function listTemporalBranches(): Promise<TemporalBranchSummary[]> {
   const entries = Array.isArray(response.branches) ? response.branches : [];
   return entries.map((entry) => ({
     name: typeof entry.name === 'string' ? entry.name : '',
-    head: typeof entry.head === 'string' ? entry.head : undefined,
+    head: typeof entry.head === 'string' ? entry.head : null,
   }));
 }
 
