@@ -288,7 +288,7 @@ interface TemporalMergeConflictPayload {
 }
 
 /**
- *
+ * Return worker health, falling back to a mock payload when outside Tauri.
  */
 export async function getWorkerHealth(): Promise<WorkerHealth> {
   if (!isTauri()) {
@@ -298,16 +298,16 @@ export async function getWorkerHealth(): Promise<WorkerHealth> {
 }
 
 /**
- *
- * @param definition
+ * Fetch a time-sliced graph view from the host or return a mock for tests/dev.
+ * @param definition Graph view request parameters.
  */
 export async function getGraphView(definition: GraphViewDefinition): Promise<GraphViewModel> {
   return callOrMock(COMMANDS.graphView, { definition }, () => mockGraphView(definition));
 }
 
 /**
- *
- * @param definition
+ * Fetch catalogue rows/columns for the requested definition or a mock payload.
+ * @param definition catalogue view definition (columns, filters, pagination).
  */
 export async function getCatalogueView(
   definition: CatalogueViewDefinition,
@@ -316,23 +316,23 @@ export async function getCatalogueView(
 }
 
 /**
- *
- * @param definition
+ * Fetch a matrix view (row/column axes plus cells), defaulting to mock data.
+ * @param definition matrix view definition.
  */
 export async function getMatrixView(definition: MatrixViewDefinition): Promise<MatrixViewModel> {
   return callOrMock(COMMANDS.matrixView, { definition }, () => mockMatrixView(definition));
 }
 
 /**
- *
- * @param definition
+ * Fetch a chart view, returning mock KPI/line/bar data when not in Tauri.
+ * @param definition chart view definition.
  */
 export async function getChartView(definition: ChartViewDefinition): Promise<ChartViewModel> {
   return callOrMock(COMMANDS.chartView, { definition }, () => mockChartView(definition));
 }
 
 /**
- *
+ * List temporal branches (scenarios) from the host; mock when offline.
  */
 export async function listTemporalBranches(): Promise<TemporalBranchSummary[]> {
   const response = await callOrMock<ListBranchesResponse | TemporalBranchSummary[]>(
@@ -351,8 +351,8 @@ export async function listTemporalBranches(): Promise<TemporalBranchSummary[]> {
 }
 
 /**
- *
- * @param branch
+ * List commits for a branch, normalising host payloads into strict types.
+ * @param branch branch name to query.
  */
 export async function listTemporalCommits(branch: string): Promise<TemporalCommitSummary[]> {
   const response = await callOrMock<ListCommitsResponse | TemporalCommitSummary[]>(
@@ -368,8 +368,8 @@ export async function listTemporalCommits(branch: string): Promise<TemporalCommi
 }
 
 /**
- *
- * @param request
+ * Fetch a state-at snapshot for the given request; ensures optional fields are undefined when absent.
+ * @param request timestamp/scenario/confidence payload.
  */
 export async function getStateAtSnapshot(request: StateAtRequest): Promise<StateAtSnapshot> {
   const snapshot = await callOrMock<StateAtSnapshot>(
@@ -385,8 +385,8 @@ export async function getStateAtSnapshot(request: StateAtRequest): Promise<State
 }
 
 /**
- *
- * @param request
+ * Fetch diff summary metrics between two references; uses mock data outside Tauri.
+ * @param request diff request containing `from`, `to`, and optional scope.
  */
 export async function getTemporalDiff(request: TemporalDiffRequest): Promise<TemporalDiffSnapshot> {
   const payload: Record<string, unknown> = {
@@ -416,8 +416,8 @@ export async function getTemporalDiff(request: TemporalDiffRequest): Promise<Tem
 }
 
 /**
- *
- * @param request
+ * Merge source into target branch, returning conflicts when the host reports them.
+ * @param request merge parameters including strategy passthrough.
  * @param request.source
  * @param request.target
  * @param request.strategy
@@ -444,8 +444,9 @@ export async function mergeTemporalBranches(request: {
 }
 
 /**
- *
- * @param operations
+ * Apply a batch of graph operations; host handles commit creation.
+ * Falls back to a deterministic mock commit in dev.
+ * @param operations list of operations to apply.
  */
 export async function applyOperations(
   operations: PraxisOperation[],
@@ -456,17 +457,18 @@ export async function applyOperations(
 }
 
 /**
- *
+ * List available scenarios; returns mock scenarios when running outside Tauri.
  */
 export async function listScenarios(): Promise<ScenarioSummary[]> {
   return callOrMock(COMMANDS.listScenarios, undefined, () => mockScenarios());
 }
 
 /**
- *
- * @param command
- * @param payload
- * @param fallback
+ * Invoke a Tauri command when available; otherwise return a mock fallback.
+ * Wraps host errors with a readable message.
+ * @param command Tauri command name.
+ * @param payload optional payload for the command.
+ * @param fallback function returning mock data when not in Tauri.
  */
 async function callOrMock<T>(
   command: string,
@@ -485,9 +487,9 @@ async function callOrMock<T>(
 }
 
 /**
- *
- * @param payload
- * @param fallbackBranch
+ * Normalise a commit payload into the strict `TemporalCommitSummary` shape.
+ * @param payload raw host commit payload.
+ * @param fallbackBranch branch to use when host omits it.
  */
 function normalizeCommit(
   payload: TemporalCommitSummaryPayload,
@@ -512,8 +514,8 @@ function normalizeCommit(
 }
 
 /**
- *
- * @param payload
+ * Convert a host merge-conflict payload to a strongly typed object.
+ * @param payload raw conflict payload from host.
  */
 function normalizeConflict(
   payload: TemporalMergeConflictPayload,
@@ -537,7 +539,7 @@ const GRAPH_NODE_IDS = {
 } as const;
 
 /**
- *
+ * Mock graph view for offline/dev usage.
  * @param definition
  */
 function mockGraphView(definition: GraphViewDefinition): GraphViewModel {
@@ -604,7 +606,7 @@ function mockGraphView(definition: GraphViewDefinition): GraphViewModel {
 }
 
 /**
- *
+ * Mock catalogue view for offline/dev usage.
  * @param definition
  */
 function mockCatalogueView(definition: CatalogueViewDefinition): CatalogueViewModel {
@@ -647,7 +649,7 @@ const MATRIX_AXIS_IDS = {
 } as const;
 
 /**
- *
+ * Mock matrix view for offline/dev usage.
  * @param definition
  */
 function mockMatrixView(definition: MatrixViewDefinition): MatrixViewModel {
@@ -684,7 +686,7 @@ function mockMatrixView(definition: MatrixViewDefinition): MatrixViewModel {
 }
 
 /**
- *
+ * Mock chart view for offline/dev usage.
  * @param definition
  */
 function mockChartView(definition: ChartViewDefinition): ChartViewModel {
@@ -747,9 +749,7 @@ function mockChartView(definition: ChartViewDefinition): ChartViewModel {
   };
 }
 
-/**
- *
- */
+/** Provide deterministic mock branch list for offline/dev use. */
 function mockBranches(): TemporalBranchSummary[] {
   return [
     { name: 'main', head: 'commit-main-004' },
@@ -758,7 +758,7 @@ function mockBranches(): TemporalBranchSummary[] {
 }
 
 /**
- *
+ * Mock commit history for a branch with sensible timestamps and messages.
  * @param branch
  */
 function mockCommits(branch: string): TemporalCommitSummary[] {
@@ -777,7 +777,7 @@ function mockCommits(branch: string): TemporalCommitSummary[] {
 }
 
 /**
- *
+ * Fabricate diff summary metrics for mock mode.
  * @param request
  */
 function mockDiffSummary(request: TemporalDiffRequest): DiffSummaryResponse {
@@ -794,7 +794,7 @@ function mockDiffSummary(request: TemporalDiffRequest): DiffSummaryResponse {
 }
 
 /**
- *
+ * Simulate merge responses, injecting a conflict for a known branch pair.
  * @param request
  * @param request.source
  * @param request.target
@@ -816,7 +816,7 @@ function mockMerge(request: { source: string; target: string }): MergeResponsePa
 }
 
 /**
- *
+ * Create a mock commit with a timestamp offset for deterministic ordering.
  * @param id
  * @param branch
  * @param message
@@ -842,7 +842,7 @@ function mockCommit(
 }
 
 /**
- *
+ * Build a mock state-at snapshot with seeded node/edge counts.
  * @param request
  */
 function mockStateAt(request: StateAtRequest): StateAtSnapshot {
@@ -861,7 +861,7 @@ function mockStateAt(request: StateAtRequest): StateAtSnapshot {
 }
 
 /**
- *
+ * Stub operation application, issuing a deterministic mock commit id.
  * @param operations
  */
 function mockApplyOperations(operations: PraxisOperation[]): OperationBatchResult {
@@ -875,9 +875,7 @@ function mockApplyOperations(operations: PraxisOperation[]): OperationBatchResul
   };
 }
 
-/**
- *
- */
+/** Mock scenario list aligned with the desktop shell expectations. */
 function mockScenarios(): ScenarioSummary[] {
   const now = nowIso();
   return [
@@ -900,7 +898,7 @@ function mockScenarios(): ScenarioSummary[] {
 }
 
 /**
- *
+ * Build consistent metadata for mock and host view payloads.
  * @param definition
  */
 function buildMetadata(definition: ViewDefinitionBase): ViewMetadata {
@@ -922,15 +920,13 @@ const nextOperationId = (() => {
   };
 })();
 
-/**
- *
- */
+/** Generate a fresh ISO timestamp. Extracted for easier testing. */
 function nowIso(): string {
   return new Date().toISOString();
 }
 
 /**
- *
+ * Deterministic pseudo-random score generator used by mock data builders.
  * @param seed
  */
 function randomScore(seed: string): number {
@@ -944,7 +940,7 @@ function randomScore(seed: string): number {
 }
 
 /**
- *
+ * Serialize `stateAt` arguments for host invocation.
  * @param request
  */
 function serializeStateAtArguments(request: StateAtRequest): Record<string, unknown> {
@@ -956,7 +952,7 @@ function serializeStateAtArguments(request: StateAtRequest): Record<string, unkn
 }
 
 /**
- *
+ * Deterministic metric helper used by mocks to keep numbers stable.
  * @param key
  */
 function seededMetric(key: string): number {
