@@ -189,4 +189,42 @@ mod tests {
         let mapped = host_error(err);
         assert_eq!(mapped.code, "integrity_violation");
     }
+
+    #[test]
+    fn host_error_covers_all_codes() {
+        let cases = vec![
+            (
+                PraxisError::UnknownBranch {
+                    branch: "main".to_string(),
+                },
+                "unknown_branch",
+            ),
+            (
+                PraxisError::UnknownCommit {
+                    commit: "abc123".to_string(),
+                },
+                "unknown_commit",
+            ),
+            (
+                PraxisError::ConcurrencyConflict {
+                    branch: "dev".to_string(),
+                    expected: Some("a1".to_string()),
+                    actual: Some("b2".to_string()),
+                },
+                "concurrency_conflict",
+            ),
+            (
+                PraxisError::MergeConflict {
+                    message: "edge".to_string(),
+                },
+                "merge_conflict",
+            ),
+        ];
+
+        for (error, code) in cases {
+            let mapped = host_error(error);
+            assert_eq!(mapped.code, code);
+            assert!(mapped.message.contains(code.split('_').next().unwrap_or("")));
+        }
+    }
 }

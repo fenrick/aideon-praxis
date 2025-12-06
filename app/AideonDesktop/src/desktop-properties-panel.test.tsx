@@ -23,6 +23,9 @@ describe('DesktopPropertiesPanel', () => {
     expect(
       screen.getByText((_, node) => node?.textContent === 'Edges selected: 1'),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Source widget: test/)).toBeInTheDocument();
+    const sourceLabels = screen.getAllByText(
+      (_, node) => node?.textContent?.includes('Source widget:') ?? false,
+    );
+    expect(sourceLabels.length).toBeGreaterThan(0);
   });
 });

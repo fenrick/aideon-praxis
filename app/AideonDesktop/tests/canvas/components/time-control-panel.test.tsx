@@ -75,10 +75,10 @@ describe('TimeControlPanel', () => {
   } as TemporalPanelState;
 
   const actions: TemporalPanelActions = {
-    selectBranch: vi.fn(),
-    selectCommit: vi.fn(),
-    refreshBranches: vi.fn(),
-    mergeIntoMain: vi.fn(),
+    selectBranch: vi.fn().mockResolvedValue(undefined),
+    selectCommit: vi.fn().mockResolvedValue(undefined),
+    refreshBranches: vi.fn().mockResolvedValue(undefined),
+    mergeIntoMain: vi.fn().mockResolvedValue(undefined),
   };
 
   it('invokes actions from buttons and slider', () => {
