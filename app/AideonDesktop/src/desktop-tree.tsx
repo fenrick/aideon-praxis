@@ -58,6 +58,7 @@ export function DesktopTree() {
 
 /**
  * Render a single workspace node with its children.
+ * @param root0 component properties.
  * @param root0.item workspace or project node to render.
  */
 function TreeNode({ item }: { readonly item: WorkspaceTreeItem }) {

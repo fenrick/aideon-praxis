@@ -1,5 +1,7 @@
-import type { FC } from 'react';
+import type { ComponentPropsWithoutRef, FC } from 'react';
 
-export const PraxisNode: FC<any> = (properties) => (
+type PraxisNodeProperties = ComponentPropsWithoutRef<'div'> & Record<string, unknown>;
+
+export const PraxisNode: FC<PraxisNodeProperties> = (properties) => (
   <div data-testid="praxis-node" {...properties} />
 );
