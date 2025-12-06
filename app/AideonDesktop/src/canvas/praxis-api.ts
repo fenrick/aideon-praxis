@@ -185,7 +185,7 @@ export type StateAtSnapshot = TemporalStateSnapshot;
 
 export interface TemporalBranchSummary {
   name: string;
-  head: string | null;
+  head?: string;
 }
 
 export interface TemporalCommitSummary {
@@ -346,7 +346,7 @@ export async function listTemporalBranches(): Promise<TemporalBranchSummary[]> {
   const entries = Array.isArray(response.branches) ? response.branches : [];
   return entries.map((entry) => ({
     name: typeof entry.name === 'string' ? entry.name : '',
-    head: typeof entry.head === 'string' ? entry.head : null,
+    head: typeof entry.head === 'string' ? entry.head : undefined,
   }));
 }
 

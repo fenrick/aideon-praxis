@@ -23,9 +23,12 @@ describe('DesktopPropertiesPanel', () => {
     expect(
       screen.getByText((_, node) => node?.textContent === 'Edges selected: 1'),
     ).toBeInTheDocument();
-    const sourceLabels = screen.getAllByText(
-      (_, node) => node?.textContent?.includes('Source widget:') ?? false,
-    );
+    const sourceLabels = screen.getAllByText((_, node) => {
+      if (!node) {
+        return false;
+      }
+      return (node.textContent || '').includes('Source widget:');
+    });
     expect(sourceLabels.length).toBeGreaterThan(0);
   });
 });

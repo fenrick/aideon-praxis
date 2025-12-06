@@ -19,19 +19,19 @@ export interface TemporalPanelState {
   readonly branches: TemporalBranchSummary[];
   readonly branch?: string;
   readonly commits: TemporalCommitSummary[];
-  readonly commitId: string | null;
+  readonly commitId?: string;
   readonly snapshot?: StateAtSnapshot;
   readonly loading: boolean;
   readonly snapshotLoading: boolean;
   readonly error?: string;
   readonly mergeConflicts?: TemporalMergeConflict[];
   readonly merging: boolean;
-  readonly diff?: TemporalDiffSnapshot | null;
+  readonly diff?: TemporalDiffSnapshot;
 }
 
 export interface TemporalPanelActions {
   readonly selectBranch: (branch: string) => Promise<void>;
-  readonly selectCommit: (commitId: string | null) => void;
+  readonly selectCommit: (commitId?: string) => void;
   readonly refreshBranches: () => Promise<void>;
   readonly mergeIntoMain: () => Promise<void>;
 }
@@ -39,7 +39,6 @@ export interface TemporalPanelActions {
 const INITIAL_STATE: TemporalPanelState = {
   branches: [],
   commits: [],
-  commitId: null,
   loading: true,
   snapshotLoading: false,
   mergeConflicts: undefined,
@@ -76,7 +75,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         ...previous,
         branch,
         commits: [],
-        commitId: null,
+        commitId: undefined,
         snapshot: undefined,
         loading: true,
         error: undefined,
@@ -94,7 +93,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
           ...previous,
           branch,
           commits,
-          commitId: latest?.id ?? null,
+          commitId: latest?.id,
           snapshot,
           snapshotLoading: false,
           loading: false,
@@ -142,18 +141,18 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
   }, [loadBranch]);
 
   const selectCommit = useCallback(
-    (commitId: string | null) => {
+    (commitId?: string) => {
       const branch = state.branch;
       if (!branch) {
         return;
       }
-      if (commitId !== null && commitId === state.commitId) {
+      if (commitId !== undefined && commitId === state.commitId) {
         return;
       }
       if (!commitId) {
         setState((previous) => ({
           ...previous,
-          commitId: null,
+          commitId: undefined,
           snapshot: undefined,
           snapshotLoading: false,
           mergeConflicts: undefined,

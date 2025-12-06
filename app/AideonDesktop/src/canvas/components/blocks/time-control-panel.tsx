@@ -182,7 +182,7 @@ export function TimeControlPanel({
  * @param commits - Ordered commits for the active branch.
  * @returns Single-element array containing the slider index.
  */
-function resolveSliderValue(commitId: string | null, commits: TemporalPanelState['commits']) {
+function resolveSliderValue(commitId: string | undefined, commits: TemporalPanelState['commits']) {
   if (commits.length === 0) {
     return [0];
   }
@@ -205,7 +205,7 @@ function CommitSummary({
   selectedCommitId,
 }: {
   readonly commits: TemporalPanelState['commits'];
-  readonly selectedCommitId: string | null;
+  readonly selectedCommitId?: string;
 }) {
   if (commits.length === 0) {
     return <p className="text-xs text-muted-foreground">Load a branch to view commits.</p>;

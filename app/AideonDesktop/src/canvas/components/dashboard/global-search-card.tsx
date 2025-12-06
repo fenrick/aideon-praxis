@@ -278,7 +278,7 @@ function CommitPreview({
 }: {
   readonly commit: TemporalCommitSummary;
   readonly onSelectBranch: (branch: string) => void;
-  readonly onSelectCommit: (commitId: string | null) => void;
+  readonly onSelectCommit: (commitId?: string) => void;
 }) {
   return (
     <div className="rounded-2xl border border-border/70 p-3">

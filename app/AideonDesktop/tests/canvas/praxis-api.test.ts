@@ -15,6 +15,8 @@ import {
   listTemporalBranches,
   listTemporalCommits,
   mergeTemporalBranches,
+  type TemporalMergeConflict,
+  type TemporalMergeResult,
 } from 'canvas/praxis-api';
 
 const isTauriMock = vi.mocked(isTauri);
@@ -44,7 +46,7 @@ describe('praxis-api fallbacks and normalization', () => {
 
   it('normalizes branch payloads from the host', async () => {
     isTauriMock.mockReturnValue(true);
-    invokeMock.mockResolvedValue({ branches: [{ name: 'main', head: null }, { head: 'h1' }] });
+    invokeMock.mockResolvedValue({ branches: [{ name: 'main', head: undefined }, { head: 'h1' }] });
 
     const branches = await listTemporalBranches();
 
@@ -106,10 +108,19 @@ describe('praxis-api fallbacks and normalization', () => {
       ],
     });
 
-    const result = await mergeTemporalBranches({ source: 'chronaplay', target: 'main' });
+    const result: TemporalMergeResult = await mergeTemporalBranches({ source: 'chronaplay', target: 'main' });
 
     expect(result.result).toBe('conflicts');
-    expect(result.conflicts).toEqual([{ reference: 'cap-1', kind: 'unknown', message: expect.any(String) }]);
+    const rawConflicts: unknown[] = Array.isArray(result.conflicts) ? result.conflicts : [];
+    const conflicts: TemporalMergeConflict[] = rawConflicts.filter(
+      (conflict): conflict is TemporalMergeConflict =>
+        typeof (conflict as { reference?: unknown }).reference === 'string' &&
+        typeof (conflict as { kind?: unknown }).kind === 'string' &&
+        typeof (conflict as { message?: unknown }).message === 'string',
+    );
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0]).toMatchObject({ reference: 'cap-1', kind: 'unknown' });
+    expect(typeof conflicts[0].message).toBe('string');
   });
 
   it('rejects empty operation batches in mock mode', async () => {

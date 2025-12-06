@@ -141,9 +141,9 @@ function CommitList({
   onSelectCommit,
 }: {
   readonly commits: TemporalCommitSummary[];
-  readonly selectedCommitId: string | null;
+  readonly selectedCommitId?: string;
   readonly loading: boolean;
-  readonly onSelectCommit: (commitId: string | null) => void;
+  readonly onSelectCommit: (commitId?: string) => void;
 }) {
   if (loading && commits.length === 0) {
     return <p className="text-xs text-muted-foreground">Loading commits…</p>;

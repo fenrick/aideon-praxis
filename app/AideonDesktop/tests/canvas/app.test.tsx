@@ -3,7 +3,7 @@ import { describe, expect, it, beforeEach, vi, afterEach } from 'vitest';
 
 vi.mock('canvas/components/app-sidebar', () => ({
   AppSidebar: ({ scenarios, loading }: { scenarios: unknown[]; loading: boolean }) => (
-    <div data-testid="sidebar">{loading ? 'loading' : `scenarios:${scenarios.length}`}</div>
+    <div data-testid="sidebar">{loading ? 'loading' : `scenarios:${String(scenarios.length)}`}</div>
   ),
 }));
 
@@ -178,7 +178,10 @@ describe('Praxis canvas app shell', () => {
     await waitFor(() => { expect(searchStore.getState().items.length).toBeGreaterThan(0); });
     const statusEntry = searchStore.getState().items.find((item) => item.id === 'sidebar:status');
     expect(statusEntry?.run).toBeDefined();
-    statusEntry?.run?.();
+    const runOutcome = statusEntry?.run?.();
+    if (runOutcome instanceof Promise) {
+      await runOutcome;
+    }
 
     await waitFor(() => { expect(invokeMock).toHaveBeenCalledWith('open_status'); });
   });
