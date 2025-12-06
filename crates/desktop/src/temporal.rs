@@ -224,7 +224,11 @@ mod tests {
         for (error, code) in cases {
             let mapped = host_error(error);
             assert_eq!(mapped.code, code);
-            assert!(mapped.message.contains(code.split('_').next().unwrap_or("")));
+            assert!(
+                mapped
+                    .message
+                    .contains(code.split('_').next().unwrap_or(""))
+            );
         }
     }
 }
