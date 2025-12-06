@@ -169,9 +169,13 @@ describe('GlobalSearchCard', () => {
     fireEvent.click(openButton);
     const catalogueEntry = await screen.findByText('Customer Onboarding');
     fireEvent.click(catalogueEntry);
-    const lastCommandBadges = screen.getAllByText((_, node) => (node.textContent || '').includes('Last command'));
+    const lastCommandBadges = screen.getAllByText((_, node) =>
+      (node.textContent || '').includes('Last command'),
+    );
     expect(
-      lastCommandBadges.some((node) => (node.textContent || '').includes('Catalogue · Customer Onboarding')),
+      lastCommandBadges.some((node) =>
+        (node.textContent || '').includes('Catalogue · Customer Onboarding'),
+      ),
     ).toBe(true);
     expect(selectNodesSpy).toHaveBeenCalledWith(['cap-onboarding']);
 
@@ -179,7 +183,9 @@ describe('GlobalSearchCard', () => {
     const metaEntry = await screen.findByText('Business Capability');
     fireEvent.click(metaEntry);
     expect(
-      lastCommandBadges.some((node) => (node.textContent || '').includes('Meta-model · Business Capability')),
+      lastCommandBadges.some((node) =>
+        (node.textContent || '').includes('Meta-model · Business Capability'),
+      ),
     ).toBe(true);
     expect(focusMetaModelSpy).toHaveBeenCalledWith({
       id: 'Capability',

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas/platform', () => ({ isTauri: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -59,10 +59,7 @@ describe('praxis-api fallbacks and normalization', () => {
   it('normalizes commit payloads and falls back to branch name', async () => {
     isTauriMock.mockReturnValue(true);
     invokeMock.mockResolvedValue({
-      commits: [
-        { id: 'c1', parents: ['p1', 42], tags: ['t1', 99], change_count: 3 },
-        {},
-      ],
+      commits: [{ id: 'c1', parents: ['p1', 42], tags: ['t1', 99], change_count: 3 }, {}],
     });
 
     const commits = await listTemporalCommits('main');
@@ -102,13 +99,13 @@ describe('praxis-api fallbacks and normalization', () => {
   it('drops malformed merge conflicts and infers a conflicts result', async () => {
     isTauriMock.mockReturnValue(true);
     invokeMock.mockResolvedValue({
-      conflicts: [
-        { reference: 'cap-1', kind: 5 },
-        { kind: 'node' },
-      ],
+      conflicts: [{ reference: 'cap-1', kind: 5 }, { kind: 'node' }],
     });
 
-    const result: TemporalMergeResult = await mergeTemporalBranches({ source: 'chronaplay', target: 'main' });
+    const result: TemporalMergeResult = await mergeTemporalBranches({
+      source: 'chronaplay',
+      target: 'main',
+    });
 
     expect(result.result).toBe('conflicts');
     const rawConflicts: unknown[] = Array.isArray(result.conflicts) ? result.conflicts : [];

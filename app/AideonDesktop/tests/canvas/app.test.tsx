@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, beforeEach, vi, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas/components/app-sidebar', () => ({
   AppSidebar: ({ scenarios, loading }: { scenarios: unknown[]; loading: boolean }) => (
@@ -26,8 +26,20 @@ vi.mock('canvas/components/dashboard/global-search-card', () => ({
     onShowTimeline: () => void;
   }) => (
     <div>
-      <button onClick={() => { onSelectNodes(['node-42']); }}>select-node</button>
-      <button onClick={() => { onFocusMetaModel({ id: 'meta-1' }); }}>focus-meta</button>
+      <button
+        onClick={() => {
+          onSelectNodes(['node-42']);
+        }}
+      >
+        select-node
+      </button>
+      <button
+        onClick={() => {
+          onFocusMetaModel({ id: 'meta-1' });
+        }}
+      >
+        focus-meta
+      </button>
       <button onClick={onShowTimeline}>open-timeline</button>
     </div>
   ),
@@ -68,18 +80,36 @@ vi.mock('canvas/components/workspace-tabs', () => ({
     onValueChange,
   }: {
     selection: { nodeIds: string[]; edgeIds: string[] };
-    onSelectionChange: (next: { nodeIds: string[]; edgeIds: string[]; sourceWidgetId?: string }) => void;
+    onSelectionChange: (next: {
+      nodeIds: string[];
+      edgeIds: string[];
+      sourceWidgetId?: string;
+    }) => void;
     onRequestMetaModelFocus: (types: string[]) => void;
     value: string;
     onValueChange: (next: string) => void;
   }) => (
     <div>
       <div data-testid="workspace-tab">{value}</div>
-      <button onClick={() => { onSelectionChange({ ...selection, nodeIds: ['n1'] }); }}>
+      <button
+        onClick={() => {
+          onSelectionChange({ ...selection, nodeIds: ['n1'] });
+        }}
+      >
         change-selection
       </button>
-      <button onClick={() => { onRequestMetaModelFocus(['model-a']); }}>focus-meta</button>
-      <button onClick={() => { onValueChange(value === 'overview' ? 'canvas' : 'overview'); }}>
+      <button
+        onClick={() => {
+          onRequestMetaModelFocus(['model-a']);
+        }}
+      >
+        focus-meta
+      </button>
+      <button
+        onClick={() => {
+          onValueChange(value === 'overview' ? 'canvas' : 'overview');
+        }}
+      >
         toggle-tab
       </button>
     </div>
@@ -94,9 +124,9 @@ vi.mock('canvas/platform', () => ({ isTauri: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
 import { invoke } from '@tauri-apps/api/core';
-import { listScenarios } from 'canvas/praxis-api';
-import { isTauri } from 'canvas/platform';
 import { searchStore } from 'canvas/lib/search';
+import { isTauri } from 'canvas/platform';
+import { listScenarios } from 'canvas/praxis-api';
 
 import App, { LegacyPraxisCanvasApp, PraxisCanvasSurface } from 'canvas/app';
 
@@ -138,7 +168,9 @@ describe('Praxis canvas app shell', () => {
 
     render(<App />);
 
-    await waitFor(() => { expect(listScenariosMock).toHaveBeenCalled(); });
+    await waitFor(() => {
+      expect(listScenariosMock).toHaveBeenCalled();
+    });
     expect(screen.getByTestId('sidebar')).toHaveTextContent(/scenarios:1/);
     expect(screen.getByText(/Active template/i)).toBeInTheDocument();
   });
@@ -149,10 +181,14 @@ describe('Praxis canvas app shell', () => {
 
     render(<PraxisCanvasSurface onSelectionChange={onSelectionChange} />);
 
-    await waitFor(() => { expect(listScenariosMock).toHaveBeenCalled(); });
+    await waitFor(() => {
+      expect(listScenariosMock).toHaveBeenCalled();
+    });
     fireEvent.click(screen.getAllByText('select-node')[0]);
 
-    await waitFor(() => { expect(onSelectionChange).toHaveBeenCalled(); });
+    await waitFor(() => {
+      expect(onSelectionChange).toHaveBeenCalled();
+    });
   });
 
   it('saves a new template when prompted and updates the select list', async () => {
@@ -161,7 +197,9 @@ describe('Praxis canvas app shell', () => {
 
     render(<App />);
 
-    await waitFor(() => { expect(listScenariosMock).toHaveBeenCalled(); });
+    await waitFor(() => {
+      expect(listScenariosMock).toHaveBeenCalled();
+    });
     fireEvent.click(screen.getAllByText('Save template')[0]);
 
     expect(promptSpy).toHaveBeenCalled();
@@ -175,7 +213,9 @@ describe('Praxis canvas app shell', () => {
 
     render(<App />);
 
-    await waitFor(() => { expect(searchStore.getState().items.length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(searchStore.getState().items.length).toBeGreaterThan(0);
+    });
     const statusEntry = searchStore.getState().items.find((item) => item.id === 'sidebar:status');
     expect(statusEntry?.run).toBeDefined();
     const runOutcome = statusEntry?.run?.();
@@ -183,6 +223,8 @@ describe('Praxis canvas app shell', () => {
       await runOutcome;
     }
 
-    await waitFor(() => { expect(invokeMock).toHaveBeenCalledWith('open_status'); });
+    await waitFor(() => {
+      expect(invokeMock).toHaveBeenCalledWith('open_status');
+    });
   });
 });

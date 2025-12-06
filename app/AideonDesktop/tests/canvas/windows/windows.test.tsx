@@ -27,7 +27,9 @@ describe('desktop windows', () => {
     (globalThis as { aideon?: { version?: string } }).aideon = { version: 'v0.9.0' };
     render(<StatusWindow />);
     expect(screen.getByText(/Status:/)).toBeInTheDocument();
-    const bridgeBadges = screen.getAllByText((_, node) => (node.textContent || '').includes('Bridge:'));
+    const bridgeBadges = screen.getAllByText((_, node) =>
+      (node.textContent || '').includes('Bridge:'),
+    );
     expect(bridgeBadges.some((badge) => (badge.textContent || '').includes('v0.9.0'))).toBe(true);
   });
 
