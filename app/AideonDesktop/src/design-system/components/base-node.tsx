@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 
-import { cn } from "design-system/lib/utils";
+import { cn } from "design-system/lib/utilities";
 
 export function BaseNode({ className, ...props }: ComponentProps<"div">) {
   return (

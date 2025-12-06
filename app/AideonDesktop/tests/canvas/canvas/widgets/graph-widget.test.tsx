@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import type { GraphWidgetConfig } from 'canvas/types';
 import type * as PraxisApi from 'canvas/praxis-api';
+import type { GraphWidgetConfig } from 'canvas/types';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

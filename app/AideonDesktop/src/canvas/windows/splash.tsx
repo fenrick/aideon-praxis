@@ -44,6 +44,9 @@ export default function SplashWindow() {
   useEffect(() => {
     let cancelled = false;
 
+    /**
+     *
+     */
     async function init() {
       try {
         console.info('splash: frontend init start');

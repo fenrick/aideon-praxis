@@ -17,8 +17,8 @@ vi.mock('@tauri-apps/api/core', () => ({
       }
       case 'temporal_diff': {
         return Promise.resolve({
-          from: (arguments_ as any)?.payload?.from ?? 'from',
-          to: (arguments_ as any)?.payload?.to ?? 'to',
+          from: (arguments_?.payload as { from?: string } | undefined)?.from ?? 'from',
+          to: (arguments_?.payload as { to?: string } | undefined)?.to ?? 'to',
           node_adds: 1,
           node_mods: 0,
           node_dels: 0,
@@ -29,8 +29,8 @@ vi.mock('@tauri-apps/api/core', () => ({
       }
       case 'topology_delta': {
         return Promise.resolve({
-          from: (arguments_ as any)?.payload?.from ?? 'from',
-          to: (arguments_ as any)?.payload?.to ?? 'to',
+          from: (arguments_?.payload as { from?: string } | undefined)?.from ?? 'from',
+          to: (arguments_?.payload as { to?: string } | undefined)?.to ?? 'to',
           node_adds: 2,
           node_dels: 1,
           edge_adds: 3,
@@ -39,7 +39,7 @@ vi.mock('@tauri-apps/api/core', () => ({
       }
       case 'create_branch': {
         return Promise.resolve({
-          name: (arguments_ as any)?.payload?.name ?? 'feature/x',
+          name: (arguments_?.payload as { name?: string } | undefined)?.name ?? 'feature/x',
           head: 'c1',
         });
       }
@@ -48,9 +48,9 @@ vi.mock('@tauri-apps/api/core', () => ({
       }
       default: {
         return Promise.resolve({
-          asOf: (arguments_ as any)?.payload?.asOf ?? 'x',
-          scenario: (arguments_ as any)?.payload?.scenario ?? null,
-          confidence: (arguments_ as any)?.payload?.confidence ?? null,
+          asOf: (arguments_?.payload as { asOf?: string } | undefined)?.asOf ?? 'x',
+          scenario: (arguments_?.payload as { scenario?: string } | undefined)?.scenario,
+          confidence: (arguments_?.payload as { confidence?: number } | undefined)?.confidence,
           nodes: 0,
           edges: 0,
         });

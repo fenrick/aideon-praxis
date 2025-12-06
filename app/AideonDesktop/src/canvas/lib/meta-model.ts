@@ -29,6 +29,9 @@ export interface MetaModelAttribute {
   enum?: string[];
 }
 
+/**
+ *
+ */
 export async function fetchMetaModel(): Promise<MetaModelSchema> {
   await new Promise((resolve) => {
     setTimeout(resolve, 150);

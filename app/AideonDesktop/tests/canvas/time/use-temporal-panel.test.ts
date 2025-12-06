@@ -10,7 +10,7 @@ import type {
 } from 'canvas/praxis-api';
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
 
- (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 /**
  * Forces pending microtasks to flush within an act block.
@@ -149,7 +149,13 @@ function renderTemporalPanelHook() {
   }
 
   act(() => {
-    root.render(createElement(HookBridge, { onValue: (value) => { current = value; } }));
+    root.render(
+      createElement(HookBridge, {
+        onValue: (value) => {
+          current = value;
+        },
+      }),
+    );
   });
 
   const getCurrent = () => {
@@ -265,7 +271,7 @@ describe('useTemporalPanel', () => {
           },
         ],
       });
-      
+
       act(() => {
         void harness.actions.mergeIntoMain();
       });

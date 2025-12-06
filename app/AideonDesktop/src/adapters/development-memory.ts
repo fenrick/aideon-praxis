@@ -5,14 +5,14 @@ import type {
   TemporalDiffSnapshot,
   TemporalStateParameters,
   TemporalStateSnapshot,
-} from './index'
+} from './index';
 
 /**
  * In-memory dev adapter implementing minimal time semantics for the UI.
  * Not for production use; intended for local demos and tests.
  */
 export class DevelopmentMemoryGraph implements GraphAdapter {
-  private snapshots = new Map<string, GraphSnapshotMetrics>()
+  private snapshots = new Map<string, GraphSnapshotMetrics>();
 
   /**
    * Seeds the in-memory store with metric counts for a timestamp. This helper
@@ -22,8 +22,8 @@ export class DevelopmentMemoryGraph implements GraphAdapter {
    * @param {number} edges number of edges captured at the timestamp
    */
   put(asOf: string | Date, nodes: number, edges: number) {
-    const key = typeof asOf === 'string' ? asOf : asOf.toISOString()
-    this.snapshots.set(key, { nodeCount: nodes, edgeCount: edges })
+    const key = typeof asOf === 'string' ? asOf : asOf.toISOString();
+    this.snapshots.set(key, { nodeCount: nodes, edgeCount: edges });
   }
 
   /**
@@ -35,9 +35,9 @@ export class DevelopmentMemoryGraph implements GraphAdapter {
     const metrics: GraphSnapshotMetrics = this.snapshots.get(parameters.asOf) ?? {
       nodeCount: 0,
       edgeCount: 0,
-    }
+    };
     // Simulate async behaviour and ensure we never leak the stored reference.
-    return new Promise(resolve =>
+    return new Promise((resolve) =>
       setTimeout(() => {
         resolve({
           asOf: parameters.asOf,
@@ -45,9 +45,9 @@ export class DevelopmentMemoryGraph implements GraphAdapter {
           confidence: parameters.confidence,
           nodes: metrics.nodeCount,
           edges: metrics.edgeCount,
-        })
+        });
       }, 0),
-    )
+    );
   }
 
   /**
@@ -59,12 +59,12 @@ export class DevelopmentMemoryGraph implements GraphAdapter {
     const a: GraphSnapshotMetrics = this.lookupMetrics(parameters.from) ?? {
       nodeCount: 0,
       edgeCount: 0,
-    }
+    };
     const b: GraphSnapshotMetrics = this.lookupMetrics(parameters.to) ?? {
       nodeCount: 0,
       edgeCount: 0,
-    }
-    return new Promise(resolve =>
+    };
+    return new Promise((resolve) =>
       setTimeout(() => {
         resolve({
           from: parameters.from,
@@ -77,12 +77,12 @@ export class DevelopmentMemoryGraph implements GraphAdapter {
             edgeMods: 0,
             edgeDels: Math.max(0, a.edgeCount - b.edgeCount),
           },
-        })
+        });
       }, 0),
-    )
+    );
   }
 
   private lookupMetrics(reference: string): GraphSnapshotMetrics | undefined {
-    return this.snapshots.get(reference)
+    return this.snapshots.get(reference);
   }
 }

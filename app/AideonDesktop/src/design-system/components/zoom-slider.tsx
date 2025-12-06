@@ -13,7 +13,7 @@ import {
 
 import { Slider } from "design-system/components/ui/slider";
 import { Button } from "design-system/components/ui/button";
-import { cn } from "design-system/lib/utils";
+import { cn } from "design-system/lib/utilities";
 
 export function ZoomSlider({
   className,

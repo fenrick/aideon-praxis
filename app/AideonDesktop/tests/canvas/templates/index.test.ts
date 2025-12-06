@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CanvasWidget } from 'canvas/types';
-
 import {
   BUILT_IN_TEMPLATES,
   captureTemplateFromWidgets,
@@ -29,11 +27,7 @@ describe('templates', () => {
       return;
     }
     const widgets = instantiateTemplate(template, { scenario: 'main' });
-    const captured = captureTemplateFromWidgets(
-      'Snapshot',
-      'Saved layout',
-      widgets as CanvasWidget[],
-    );
+    const captured = captureTemplateFromWidgets('Snapshot', 'Saved layout', widgets);
     expect(captured.widgets.length).toBeGreaterThan(0);
     const firstWidget = captured.widgets[0];
     if (!firstWidget) {

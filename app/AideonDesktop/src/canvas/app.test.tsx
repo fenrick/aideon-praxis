@@ -43,8 +43,8 @@ describe('PraxisCanvasSurface', () => {
   it('renders canvas content without the legacy chrome', () => {
     render(<PraxisCanvasSurface />);
 
-    expect(screen.getByText(/Active template/i)).toBeTruthy();
-    expect(screen.getByText(/Save template/i)).toBeTruthy();
-    expect(screen.getByText(/Workspace Tabs/i)).toBeTruthy();
+    expect(screen.getByText(/Active template/i)).toBeInTheDocument();
+    expect(screen.getByText(/Save template/i)).toBeInTheDocument();
+    expect(screen.getByText(/Workspace Tabs/i)).toBeInTheDocument();
   });
 });

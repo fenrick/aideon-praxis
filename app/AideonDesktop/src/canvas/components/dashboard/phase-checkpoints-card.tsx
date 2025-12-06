@@ -16,6 +16,9 @@ const PHASES = [
   { title: 'Charts + templates', status: 'in-progress' },
 ];
 
+/**
+ *
+ */
 export function PhaseCheckpointsCard() {
   return (
     <Card>
@@ -43,6 +46,10 @@ export function PhaseCheckpointsCard() {
   );
 }
 
+/**
+ *
+ * @param status
+ */
 function statusIconClass(status: string): string {
   if (status === 'complete') {
     return 'h-4 w-4 text-emerald-500';

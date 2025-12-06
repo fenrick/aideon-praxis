@@ -4,14 +4,26 @@ import type { GraphEdgeView, GraphNodeView, GraphViewModel } from 'canvas/praxis
 import type { TimelineEdgeData } from 'design-system/components/timeline-edge';
 import type { GraphNodeData } from './graph-node-data';
 
+/**
+ *
+ * @param view
+ */
 export function buildFlowNodes(view: GraphViewModel): Node<GraphNodeData>[] {
   return view.nodes.map((node) => toFlowNode(node));
 }
 
+/**
+ *
+ * @param view
+ */
 export function buildFlowEdges(view: GraphViewModel): Edge<TimelineEdgeData>[] {
   return view.edges.map((edge, index) => toFlowEdge(edge, index));
 }
 
+/**
+ *
+ * @param node
+ */
 export function toFlowNode(node: GraphNodeView): Node<GraphNodeData> {
   return {
     id: node.id,
@@ -30,6 +42,11 @@ export function toFlowNode(node: GraphNodeView): Node<GraphNodeData> {
   };
 }
 
+/**
+ *
+ * @param edge
+ * @param index
+ */
 export function toFlowEdge(edge: GraphEdgeView, index: number): Edge<TimelineEdgeData> {
   return {
     id: edge.id ?? `${edge.from}-${edge.to}-${String(index)}`,
@@ -44,12 +61,20 @@ export function toFlowEdge(edge: GraphEdgeView, index: number): Edge<TimelineEdg
   };
 }
 
+/**
+ *
+ * @param node
+ */
 function resolveDescription(node: GraphNodeView): string | undefined {
   const metadata = (node as { metadata?: { description?: string } }).metadata;
   const description = metadata?.description;
   return typeof description === 'string' ? description : undefined;
 }
 
+/**
+ *
+ * @param node
+ */
 function resolveEntityTypes(node: GraphNodeView): string[] {
   const typeValue = node.type;
   if (typeof typeValue === 'string' && typeValue.trim()) {

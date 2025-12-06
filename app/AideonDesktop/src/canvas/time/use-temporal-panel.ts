@@ -62,12 +62,12 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
       TemporalCommitSummary,
     ];
     try {
-	      const diff = await getTemporalDiff({ from: fromCommit.id, to: toCommit.id });
-	      setState((previous) => ({ ...previous, diff }));
-	    } catch {
-	      setState((previous) => ({ ...previous, diff: undefined }));
-	    }
-	  }, []);
+      const diff = await getTemporalDiff({ from: fromCommit.id, to: toCommit.id });
+      setState((previous) => ({ ...previous, diff }));
+    } catch {
+      setState((previous) => ({ ...previous, diff: undefined }));
+    }
+  }, []);
 
   const loadBranch = useCallback(
     async (branch: string) => {
@@ -83,23 +83,23 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         mergeConflicts: undefined,
       }));
       try {
-	        const commits = await listTemporalCommits(branch);
-	        const latest = commits.at(-1);
-	        let snapshot: StateAtSnapshot | undefined;
-	        if (latest) {
-	          snapshot = await getStateAtSnapshot({ asOf: latest.id, scenario: branch });
-	        }
-	        setState((previous) => ({
-	          ...previous,
-	          branch,
-	          commits,
-	          commitId: latest?.id,
-	          snapshot,
-	          snapshotLoading: false,
-	          loading: false,
-	          merging: false,
-	        }));
-	        await loadDiff(commits);
+        const commits = await listTemporalCommits(branch);
+        const latest = commits.at(-1);
+        let snapshot: StateAtSnapshot | undefined;
+        if (latest) {
+          snapshot = await getStateAtSnapshot({ asOf: latest.id, scenario: branch });
+        }
+        setState((previous) => ({
+          ...previous,
+          branch,
+          commits,
+          commitId: latest?.id,
+          snapshot,
+          snapshotLoading: false,
+          loading: false,
+          merging: false,
+        }));
+        await loadDiff(commits);
       } catch (unknownError) {
         setState((previous) => ({
           ...previous,
@@ -166,7 +166,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         error: undefined,
         mergeConflicts: undefined,
       }));
-	      const loadSnapshot = async () => {
+      const loadSnapshot = async () => {
         try {
           const snapshot = await getStateAtSnapshot({ asOf: commitId, scenario: branch });
           setState((previous) => ({
@@ -185,7 +185,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
           }));
         }
       };
-	      void loadSnapshot();
+      void loadSnapshot();
     },
     [state.branch, state.commitId],
   );

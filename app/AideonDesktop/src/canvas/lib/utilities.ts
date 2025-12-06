@@ -1,1 +1,1 @@
-export { cn } from '../../design-system/lib/utils';
+export { cn } from '../../design-system/lib/utilities';

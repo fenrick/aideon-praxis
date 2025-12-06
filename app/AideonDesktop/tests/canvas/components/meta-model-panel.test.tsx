@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as MetaModelModule from 'canvas/lib/meta-model';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchMetaModelSpy = vi.fn<
   Promise<MetaModelModule.MetaModelSchema>,

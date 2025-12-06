@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import type { MatrixWidgetConfig } from 'canvas/types';
 import type * as PraxisApi from 'canvas/praxis-api';
+import type { MatrixWidgetConfig } from 'canvas/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getMatrixViewMock = vi.fn<

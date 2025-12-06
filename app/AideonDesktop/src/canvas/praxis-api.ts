@@ -515,7 +515,9 @@ function normalizeCommit(
  *
  * @param payload
  */
-function normalizeConflict(payload: TemporalMergeConflictPayload): TemporalMergeConflict | undefined {
+function normalizeConflict(
+  payload: TemporalMergeConflictPayload,
+): TemporalMergeConflict | undefined {
   if (!payload.reference || typeof payload.reference !== 'string') {
     return undefined;
   }

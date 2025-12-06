@@ -24,8 +24,8 @@ describe('DesktopTree', () => {
     );
 
     return waitFor(() => {
-      expect(screen.getByText('Scenarios')).toBeTruthy();
-      expect(screen.getByText('Workspace · Default')).toBeTruthy();
+      expect(screen.getByText('Scenarios')).toBeInTheDocument();
+      expect(screen.getByText('Workspace · Default')).toBeInTheDocument();
     });
   });
 
@@ -39,7 +39,7 @@ describe('DesktopTree', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Failed to load workspaces/i)).toBeTruthy();
+      expect(screen.getByText(/Failed to load workspaces/i)).toBeInTheDocument();
     });
   });
 });

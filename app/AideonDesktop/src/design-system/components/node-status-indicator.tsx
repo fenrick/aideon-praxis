@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { LoaderCircle } from "lucide-react";
 
-import { cn } from "design-system/lib/utils";
+import { cn } from "design-system/lib/utilities";
 
 export type NodeStatus = "loading" | "success" | "error" | "initial";
 

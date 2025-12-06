@@ -7,7 +7,7 @@
  * interfaces to guarantee interoperability between local and remote hosts.
  */
 
-export { ensureIsoDateTime } from '../dtos'
+export { ensureIsoDateTime } from '../dtos';
 export type {
   ConfidencePercent,
   GraphSnapshotMetrics,
@@ -34,7 +34,7 @@ export type {
   TemporalTopologyDeltaParameters,
   TemporalTopologyDeltaSnapshot,
   WorkerHealth,
-} from '../dtos'
+} from '../dtos';
 
 import type {
   IsoDateTime,
@@ -45,7 +45,7 @@ import type {
   TemporalStateSnapshot,
   TemporalTopologyDeltaParameters,
   TemporalTopologyDeltaSnapshot,
-} from '../dtos'
+} from '../dtos';
 
 /**
  * Analytics job definitions exposed by the WorkerClient. These mirror the job
@@ -53,49 +53,49 @@ import type {
  */
 export interface WorkerJobMap {
   'Analytics.ShortestPath': {
-    input: { from: string, to: string, maxHops: number }
+    input: { from: string; to: string; maxHops: number };
     output: {
-      path: string[]
-      hopCount: number
-    }
-  }
+      path: string[];
+      hopCount: number;
+    };
+  };
   'Analytics.Centrality': {
-    input: { algorithm: 'degree' | 'betweenness', scope?: Record<string, unknown> }
+    input: { algorithm: 'degree' | 'betweenness'; scope?: Record<string, unknown> };
     output: {
-      scores: { nodeRef: string, score: number }[]
-    }
-  }
+      scores: { nodeRef: string; score: number }[];
+    };
+  };
   'Analytics.Impact': {
-    input: { seedRefs: string[], filters?: Record<string, unknown> }
-    output: { impactedRefs: string[] }
-  }
+    input: { seedRefs: string[]; filters?: Record<string, unknown> };
+    output: { impactedRefs: string[] };
+  };
   'Temporal.StateAt': {
-    input: TemporalStateParameters
-    output: TemporalStateSnapshot
-  }
+    input: TemporalStateParameters;
+    output: TemporalStateSnapshot;
+  };
   'Temporal.Diff': {
-    input: TemporalDiffParameters
-    output: TemporalDiffSnapshot
-  }
+    input: TemporalDiffParameters;
+    output: TemporalDiffSnapshot;
+  };
   'Temporal.TopologyDelta': {
-    input: TemporalTopologyDeltaParameters
-    output: TemporalTopologyDeltaSnapshot
-  }
+    input: TemporalTopologyDeltaParameters;
+    output: TemporalTopologyDeltaSnapshot;
+  };
   'Finance.TCO': {
     input: {
-      scope: Record<string, unknown>
-      asOf: IsoDateTime
-      scenario?: ScenarioKey
-      policies?: string[]
-    }
-    output: { amount: number, currency: string }
-  }
+      scope: Record<string, unknown>;
+      asOf: IsoDateTime;
+      scenario?: ScenarioKey;
+      policies?: string[];
+    };
+    output: { amount: number; currency: string };
+  };
 }
 
 /** Discriminated union describing any known worker job. */
 export type WorkerJobRequest = {
-  [K in keyof WorkerJobMap]: { type: K, payload: WorkerJobMap[K]['input'] }
-}[keyof WorkerJobMap]
+  [K in keyof WorkerJobMap]: { type: K; payload: WorkerJobMap[K]['input'] };
+}[keyof WorkerJobMap];
 
 /** Maps a job request to the corresponding output payload. */
-export type WorkerJobResult<TJob extends WorkerJobRequest> = WorkerJobMap[TJob['type']]['output']
+export type WorkerJobResult<TJob extends WorkerJobRequest> = WorkerJobMap[TJob['type']]['output'];

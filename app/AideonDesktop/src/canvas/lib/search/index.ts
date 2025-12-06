@@ -27,6 +27,9 @@ const createState = (): SearchStoreState => ({
 
 type Subscriber = (state: SearchStoreState) => void;
 
+/**
+ *
+ */
 function createStore() {
   let state: SearchStoreState = createState();
   const subscribers = new Set<Subscriber>();
@@ -109,6 +112,9 @@ const store = createStore();
 
 export const searchStore = store;
 
+/**
+ *
+ */
 export function useSearchStoreState() {
   const [state, setState] = useState(store.getState());
   useEffect(() => {

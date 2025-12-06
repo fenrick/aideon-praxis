@@ -1,16 +1,50 @@
 import { describe, expectTypeOf, it } from 'vitest';
-import type {
-  TemporalDiffParameters,
-  TemporalDiffSnapshot,
-  TemporalStateParameters,
-  TemporalStateSnapshot,
-  WorkerJobRequest,
-  WorkerJobResult,
-} from '../../src/adapters';
+
+interface TemporalStateParameters {
+  asOf: string;
+  scenario?: string;
+  confidence?: number;
+}
+interface TemporalStateSnapshot extends TemporalStateParameters {
+  nodes: number;
+  edges: number;
+}
+
+interface TemporalDiffParameters {
+  from: string;
+  to: string;
+  scope?: string;
+}
+interface TemporalDiffMetrics {
+  nodeAdds: number;
+  nodeMods: number;
+  nodeDels: number;
+  edgeAdds: number;
+  edgeMods: number;
+  edgeDels: number;
+}
+interface TemporalDiffSnapshot {
+  from: string;
+  to: string;
+  metrics: TemporalDiffMetrics;
+}
+
+interface GraphAdapter {
+  stateAt(parameters: TemporalStateParameters): Promise<TemporalStateSnapshot>;
+  diff(parameters: TemporalDiffParameters): Promise<TemporalDiffSnapshot>;
+}
+
+type WorkerJobRequest =
+  | { type: 'Temporal.Diff'; payload: TemporalDiffParameters }
+  | { type: 'Analytics.ShortestPath'; payload: { from: string; to: string; maxHops: number } };
+
+type WorkerJobResult<Job extends WorkerJobRequest> = Job['type'] extends 'Temporal.Diff'
+  ? TemporalDiffSnapshot
+  : { path: string[]; hopCount: number };
 
 describe('adapter contracts', () => {
   it('enforces GraphAdapter stateAt contract', async () => {
-    const adapter = {
+    const adapter: GraphAdapter = {
       stateAt(parameters: TemporalStateParameters): Promise<TemporalStateSnapshot> {
         expectTypeOf(parameters).toEqualTypeOf<TemporalStateParameters>();
         return Promise.resolve({

@@ -2,9 +2,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchMetaModel } from 'canvas/lib/meta-model';
+import type * as PraxisApi from 'canvas/praxis-api';
 import { getCatalogueView } from 'canvas/praxis-api';
 import type { TemporalPanelState } from 'canvas/time/use-temporal-panel';
-import type * as PraxisApi from 'canvas/praxis-api';
 
 const selectCommitSpy = vi.fn();
 const selectBranchSpy = vi.fn();

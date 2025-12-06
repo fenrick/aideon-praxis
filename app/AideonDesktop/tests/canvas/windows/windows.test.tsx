@@ -31,7 +31,7 @@ describe('desktop windows', () => {
   });
 
   it('lets users toggle theme in settings window', () => {
-    globalThis.localStorage.clear()
+    globalThis.localStorage.clear();
     render(<SettingsWindow />);
     const dark = screen.getByLabelText('Dark');
     fireEvent.click(dark);

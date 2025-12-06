@@ -36,9 +36,9 @@ describe('AideonDesktopRoot', () => {
   it('renders the desktop shell placeholders', () => {
     render(<AideonDesktopRoot />);
 
-    expect(screen.getByText('Workspace')).toBeTruthy();
-    expect(screen.getByText(/Project Alpha/)).toBeTruthy();
-    expect(screen.getByText(/Praxis Canvas Surface/i)).toBeTruthy();
-    expect(screen.getByText(/Properties/)).toBeTruthy();
+    expect(screen.getByText('Workspace')).toBeInTheDocument();
+    expect(screen.getByText(/Project Alpha/)).toBeInTheDocument();
+    expect(screen.getByText(/Praxis Canvas Surface/i)).toBeInTheDocument();
+    expect(screen.getByText(/Properties/)).toBeInTheDocument();
   });
 });

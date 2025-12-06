@@ -1,9 +1,17 @@
 import { EMPTY_SELECTION, type SelectionState, type WidgetSelection } from './types';
 
+/**
+ *
+ * @param ids
+ */
 export function dedupeIds(ids: readonly string[]): string[] {
   return [...new Set(ids.filter((value): value is string => Boolean(value.trim())))];
 }
 
+/**
+ *
+ * @param selection
+ */
 export function fromWidgetSelection(selection?: WidgetSelection): SelectionState {
   if (!selection) {
     return EMPTY_SELECTION;
@@ -15,6 +23,10 @@ export function fromWidgetSelection(selection?: WidgetSelection): SelectionState
   };
 }
 
+/**
+ *
+ * @param selection
+ */
 export function isSelectionEmpty(selection?: SelectionState): boolean {
   if (!selection) {
     return true;
@@ -22,6 +34,10 @@ export function isSelectionEmpty(selection?: SelectionState): boolean {
   return selection.nodeIds.length === 0 && selection.edgeIds.length === 0;
 }
 
+/**
+ *
+ * @param selection
+ */
 export function selectionCounts(selection?: SelectionState): { nodes: number; edges: number } {
   return {
     nodes: selection?.nodeIds.length ?? 0,
@@ -29,6 +45,10 @@ export function selectionCounts(selection?: SelectionState): { nodes: number; ed
   };
 }
 
+/**
+ *
+ * @param selection
+ */
 export function selectionSummary(selection?: SelectionState): string {
   if (isSelectionEmpty(selection)) {
     return 'No selection';

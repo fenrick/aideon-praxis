@@ -62,6 +62,13 @@ export const CanvasRuntime = memo(function CanvasRuntime({
 /**
  * Render an individual widget with the correct component for its kind.
  * @param parameters - Widget and associated callbacks.
+ * @param parameters.widget
+ * @param parameters.reloadVersion
+ * @param parameters.selection
+ * @param parameters.onSelectionChange
+ * @param parameters.onGraphViewChange
+ * @param parameters.onGraphError
+ * @param parameters.onRequestMetaModelFocus
  * @returns JSX element for the widget.
  */
 function renderWidget(parameters: {

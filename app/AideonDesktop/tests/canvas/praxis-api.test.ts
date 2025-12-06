@@ -95,12 +95,12 @@ describe('praxisApi tauri bridge', () => {
       getStateAtSnapshot({ asOf: snapshot.asOf, scenario: snapshot.scenario }),
     ).resolves.toEqual(snapshot);
     expect(invokeSpy).toHaveBeenCalledWith('temporal_state_at', {
-        payload: {
-          asOf: snapshot.asOf,
-          scenario: snapshot.scenario,
-          confidence: undefined,
-        },
-      });
+      payload: {
+        asOf: snapshot.asOf,
+        scenario: snapshot.scenario,
+        confidence: undefined,
+      },
+    });
   });
 
   it('computes diff summaries via tauri', async () => {

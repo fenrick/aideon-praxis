@@ -127,6 +127,11 @@ export interface PanelFieldProperties extends Readonly<ComponentPropsWithoutRef<
 /**
  * Labeled field section with optional helper and action slot.
  * @param root0 - Field properties including label and helper.
+ * @param root0.label
+ * @param root0.helper
+ * @param root0.action
+ * @param root0.className
+ * @param root0.children
  * @returns Field wrapper element.
  */
 export function PanelField({
@@ -158,6 +163,9 @@ export interface PanelToolbarProperties extends Readonly<ComponentPropsWithoutRe
 /**
  * Toolbar-like row within a panel.
  * @param root0 - Toolbar properties including alignment.
+ * @param root0.align
+ * @param root0.className
+ * @param root0.children
  * @returns Toolbar container element.
  */
 export function PanelToolbar({
