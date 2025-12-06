@@ -322,6 +322,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Prepare shared home for scanner
+        shell: bash
+        run: |
+          # Use the runner-provided shared HOME mount so tools are available inside the Sonar scanner container
+          SHARED_HOME="${GITHUB_WORKSPACE%/*}/_temp/_github_home"
+          mkdir -p "$SHARED_HOME"
+          echo "HOME=$SHARED_HOME" >> "$GITHUB_ENV"
+          echo "CARGO_HOME=$SHARED_HOME/.cargo" >> "$GITHUB_ENV"
+
       - name: Set up Rust (for SonarRust sensors)
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -378,7 +387,7 @@ jobs:
               /^SF:/ {
                 path=$0; sub(/^SF:/, "", path);
                 npath=normalize(path);
-              keep=(npath ~ /^(app\/praxis-desktop\/src|app\/praxis-adapters\/src|app\/praxis-dtos\/src)\/.*\.(ts|tsx|js|jsx)$/);
+              keep=(npath ~ /^(app\/AideonDesktop\/src)\/.*\.(ts|tsx|js|jsx)$/);
                 if (keep) {
                   print "SF:" npath;
                   in_file=1;
@@ -419,6 +428,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          # Ensure the scanner container can see the toolchain we installed into the shared HOME mount
+          PATH: /github/home/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
   # Note: C4 diagram generation removed from CI.
   # These are design-time artifacts; render locally if needed.
