@@ -14,6 +14,10 @@ import {
 import { DesktopPropertiesPanel } from './desktop-properties-panel';
 import { DesktopTree } from './desktop-tree';
 
+/**
+ * Application root composing the desktop shell and canvas surface.
+ * @returns Root component for the Praxis desktop app.
+ */
 export function AideonDesktopRoot() {
   const [selection, setSelection] = useState<SelectionState | undefined>();
 
