@@ -10,6 +10,15 @@ interface WidgetToolbarProperties {
   readonly onRefresh: () => void;
 }
 
+/**
+ * Standard toolbar for widgets showing title, timestamp, and refresh.
+ * @param root0 - Toolbar properties.
+ * @param root0.metadata - Optional view metadata to display.
+ * @param root0.fallbackTitle - Title when metadata is missing.
+ * @param root0.loading - Whether a refresh is in progress.
+ * @param root0.onRefresh - Refresh handler.
+ * @returns Toolbar element.
+ */
 export function WidgetToolbar({
   metadata,
   fallbackTitle,

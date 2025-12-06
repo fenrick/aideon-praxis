@@ -13,6 +13,15 @@ interface NodeSearchDialogProperties {
   readonly onSelectNode?: (node: NodeSelect) => void;
 }
 
+/**
+ * Minimal node search dialog stub for tests.
+ * @param root0 - Dialog properties.
+ * @param root0.children - Optional content to render.
+ * @param root0.open - Whether the dialog is open.
+ * @param root0.onOpenChange - Handler for open state changes.
+ * @param root0.onSelectNode - Handler when a node is selected.
+ * @returns Dialog component stub.
+ */
 export function NodeSearchDialog({
   children,
   open,
