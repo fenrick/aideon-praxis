@@ -3,7 +3,8 @@ import { mountWindow } from './bootstrap';
 import './about-window.css';
 
 /**
- *
+ * About window showing app branding.
+ * @returns About window layout.
  */
 export function AboutWindow() {
   return (
@@ -19,6 +20,10 @@ export function AboutWindow() {
   );
 }
 
+/**
+ * Determine runtime mode from Vite import meta.
+ * @returns Runtime mode string.
+ */
 function getRuntimeMode(): string {
   const meta: unknown = import.meta;
   if (

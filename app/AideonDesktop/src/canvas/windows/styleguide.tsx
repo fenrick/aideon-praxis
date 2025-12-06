@@ -37,8 +37,8 @@ const swatches = [
 type ThemeMode = 'system' | 'light' | 'dark';
 
 /**
- *
- * @param mode
+ * Apply the selected theme class to the document body.
+ * @param mode - Theme mode to use.
  */
 function applyTheme(mode: ThemeMode) {
   const body = document.body;
@@ -51,8 +51,9 @@ function applyTheme(mode: ThemeMode) {
 }
 
 /**
- *
- * @param variable
+ * Resolve CSS variable value for display purposes.
+ * @param variable - CSS variable name (e.g., --accent).
+ * @returns The computed value or the variable name if not available.
  */
 function colorFromVariable(variable: string): string {
   if (typeof document === 'undefined') {
@@ -62,7 +63,8 @@ function colorFromVariable(variable: string): string {
 }
 
 /**
- *
+ * Styleguide host window for inspecting design tokens.
+ * @returns Styleguide layout component.
  */
 export function StyleguideWindow() {
   const [mode, setMode] = useState<ThemeMode>('system');

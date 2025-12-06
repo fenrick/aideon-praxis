@@ -4,10 +4,12 @@ import { mountWindow } from './bootstrap';
 import './status-window.css';
 
 /**
- *
+ * Status window showing bridge readiness.
+ * @returns Status window component.
  */
 export function StatusWindow() {
-  const initialVersion = (globalThis as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
+  const initialVersion =
+    (globalThis as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
   const [version] = useState(initialVersion);
 
   useEffect(() => {
@@ -29,6 +31,10 @@ export function StatusWindow() {
   );
 }
 
+/**
+ * Determine runtime mode from Vite import meta.
+ * @returns Runtime mode string.
+ */
 function getRuntimeMode(): string {
   const meta: unknown = import.meta;
   if (

@@ -31,6 +31,10 @@ interface TimeControlPanelProperties {
 /**
  * Render the timeline controls for selecting branches and commits.
  * @param root0 - Component properties including current state and actions.
+ * @param root0.title - Panel title.
+ * @param root0.description - Panel helper text.
+ * @param root0.state - Current temporal panel state.
+ * @param root0.actions - Actions that mutate the temporal panel.
  * @returns JSX element containing branch/commit selectors and timeline slider.
  */
 export function TimeControlPanel({
@@ -58,9 +62,11 @@ export function TimeControlPanel({
             <Select
               value={state.branch ?? undefined}
               disabled={state.loading || branchOptions.length === 0}
-              onValueChange={(value: string) => {
-                actions.selectBranch(value).catch(() => {});
-              }}
+            onValueChange={(value: string) => {
+              actions.selectBranch(value).catch((error: unknown) => {
+                console.error('Failed to select branch', error);
+              });
+            }}
             >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select branch" />
@@ -82,7 +88,7 @@ export function TimeControlPanel({
             value={state.commitId ?? undefined}
             disabled={state.loading || state.commits.length === 0}
             onValueChange={(value: string) => {
-              actions.selectCommit(value).catch(() => {});
+              actions.selectCommit(value);
             }}
           >
             <SelectTrigger className="w-full">
@@ -133,7 +139,9 @@ export function TimeControlPanel({
             variant="secondary"
             size="sm"
             onClick={() => {
-              void actions.refreshBranches();
+              actions.refreshBranches().catch((error: unknown) => {
+                console.error('Failed to refresh branches', error);
+              });
             }}
             disabled={state.loading}
           >
@@ -153,7 +161,9 @@ export function TimeControlPanel({
             <Button
               size="sm"
               onClick={() => {
-                void actions.mergeIntoMain();
+                actions.mergeIntoMain().catch((error: unknown) => {
+                  console.error('Merge into main failed', error);
+                });
               }}
               disabled={state.merging}
             >
@@ -186,6 +196,8 @@ function resolveSliderValue(commitId: string | undefined, commits: TemporalPanel
 /**
  * Show a short summary of the selected commit or the latest commit.
  * @param root0 - Commit list and current selection.
+ * @param root0.commits
+ * @param root0.selectedCommitId
  * @returns JSX fragment describing the selected commit.
  */
 function CommitSummary({
@@ -209,6 +221,9 @@ function CommitSummary({
 /**
  * Present snapshot metrics for nodes and edges.
  * @param root0 - Node/edge counts and loading flag.
+ * @param root0.nodes
+ * @param root0.edges
+ * @param root0.loading
  * @returns Snapshot statistic tiles.
  */
 function SnapshotStats({
@@ -236,6 +251,9 @@ function SnapshotStats({
 /**
  * Generic stat tile used within the panel.
  * @param root0 - Label/value pair with loading state.
+ * @param root0.label
+ * @param root0.value
+ * @param root0.loading
  * @returns JSX element displaying the metric.
  */
 function Stat({
@@ -258,6 +276,7 @@ function Stat({
 /**
  * Render a list of merge conflicts returned by the host.
  * @param root0 - Conflict entries to display.
+ * @param root0.conflicts
  * @returns JSX list of conflicts.
  */
 function MergeConflicts({

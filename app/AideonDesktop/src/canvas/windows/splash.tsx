@@ -20,7 +20,8 @@ const loadLines = [
 ];
 
 /**
- *
+ * Splash/loading window shown during startup.
+ * @returns Splash window component.
  */
 export default function SplashWindow() {
   const [currentLine, setCurrentLine] = useState(loadLines[0]);
@@ -43,9 +44,6 @@ export default function SplashWindow() {
   useEffect(() => {
     let cancelled = false;
 
-    /**
-     *
-     */
     async function init() {
       try {
         console.info('splash: frontend init start');
@@ -84,6 +82,10 @@ export default function SplashWindow() {
   );
 }
 
+/**
+ * Determine runtime mode from Vite import meta.
+ * @returns Runtime mode string.
+ */
 function getRuntimeMode(): string {
   const meta: unknown = import.meta;
   if (

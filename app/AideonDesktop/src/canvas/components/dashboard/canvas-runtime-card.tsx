@@ -26,6 +26,15 @@ interface CanvasRuntimeCardProperties {
   readonly onRequestMetaModelFocus?: (types: string[]) => void;
 }
 
+/**
+ * Dashboard card that embeds the canvas runtime surface.
+ * @param root0 - Card properties.
+ * @param root0.widgets - Widgets to render.
+ * @param root0.selection - Current selection shared across widgets.
+ * @param root0.onSelectionChange - Selection handler.
+ * @param root0.onRequestMetaModelFocus - Callback for meta-model focus requests.
+ * @returns Card element wrapping the runtime.
+ */
 export function CanvasRuntimeCard({
   widgets,
   selection,
@@ -81,7 +90,7 @@ export function CanvasRuntimeCard({
           <StatTile label="Nodes" value={stats?.nodes} />
           <StatTile label="Edges" value={stats?.edges} />
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <p className="text-sm text-destructive">{error}</p> : undefined}
         <div className="h-[380px] w-full">
           <CanvasRuntime
             widgets={widgets}
@@ -103,6 +112,12 @@ interface StatTileProperties {
   readonly value?: number;
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.label
+ * @param root0.value
+ */
 function StatTile({ label, value }: StatTileProperties) {
   return (
     <div className="rounded-2xl border border-border/70 bg-card px-4 py-3">

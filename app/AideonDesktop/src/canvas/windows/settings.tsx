@@ -6,8 +6,8 @@ import './settings-window.css';
 type ThemeMode = 'system' | 'light' | 'dark';
 
 /**
- *
- * @param mode
+ * Apply theme class to the document body.
+ * @param mode - Theme mode to apply.
  */
 function applyTheme(mode: ThemeMode) {
   const body = document.body;
@@ -20,7 +20,8 @@ function applyTheme(mode: ThemeMode) {
 }
 
 /**
- *
+ * Settings window to switch appearance modes.
+ * @returns Settings window component.
  */
 export function SettingsWindow() {
   const [mode, setMode] = useState<ThemeMode>(() => {
@@ -86,6 +87,10 @@ export function SettingsWindow() {
   );
 }
 
+/**
+ * Determine the current runtime mode from Vite import meta.
+ * @returns Runtime mode string.
+ */
 function getRuntimeMode(): string {
   const meta: unknown = import.meta;
   if (
