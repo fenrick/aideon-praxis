@@ -150,7 +150,9 @@ export function GlobalSearchCard({
           {commandStatus ? (
             <p className="text-xs text-muted-foreground">Last command ·{commandStatus}</p>
           ) : undefined}
-          {catalogueError ? <p className="text-xs text-destructive">{catalogueError}</p> : undefined}
+          {catalogueError ? (
+            <p className="text-xs text-destructive">{catalogueError}</p>
+          ) : undefined}
           {recentCommits.length === 0 ? (
             <p className="text-xs text-muted-foreground">
               No recent commits available. Start by creating a branch.

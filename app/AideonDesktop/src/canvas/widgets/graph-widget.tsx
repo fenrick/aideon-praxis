@@ -185,7 +185,7 @@ export function GraphWidget({
       return;
     }
     const dismiss = () => {
-    setContextMenu(undefined);
+      setContextMenu(undefined);
     };
     document.addEventListener('click', dismiss);
     document.addEventListener('contextmenu', dismiss);
@@ -218,10 +218,10 @@ export function GraphWidget({
             onSelectionChange={handleSelection}
             onNodeContextMenu={handleNodeContextMenu}
             onPaneClick={() => {
-    setContextMenu(undefined);
+              setContextMenu(undefined);
             }}
             onPaneContextMenu={() => {
-    setContextMenu(undefined);
+              setContextMenu(undefined);
             }}
           >
             <Background

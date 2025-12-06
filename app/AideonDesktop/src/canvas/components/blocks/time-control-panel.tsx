@@ -58,16 +58,16 @@ export function TimeControlPanel({
         <PanelDescription>{description}</PanelDescription>
       </PanelHeader>
       <PanelContent>
-          <PanelField label="Branch">
-            <Select
-              value={state.branch ?? undefined}
-              disabled={state.loading || branchOptions.length === 0}
+        <PanelField label="Branch">
+          <Select
+            value={state.branch ?? undefined}
+            disabled={state.loading || branchOptions.length === 0}
             onValueChange={(value: string) => {
               actions.selectBranch(value).catch((error: unknown) => {
                 console.error('Failed to select branch', error);
               });
             }}
-            >
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select branch" />
             </SelectTrigger>
