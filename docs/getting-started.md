@@ -1,8 +1,12 @@
 # Getting Started (Developer Setup)
 
-This guide walks through a clean local setup for Aideon Praxis with
-offline‑friendly defaults. It assumes macOS or Linux. Windows works with
-WSL2 or native shells (PowerShell or Git Bash).
+## Purpose
+
+Walk through a clean local setup for **Aideon Suite**, focusing on the **Praxis desktop module**:
+prerequisites, environment configuration, installing dependencies, running the desktop app in
+development, and using the issue/project helpers. This is the main entry point for new contributors.
+
+This guide assumes macOS or Linux. Windows works with WSL2 or native shells (PowerShell or Git Bash).
 
 ## Prerequisites
 
@@ -64,8 +68,8 @@ temporal engine in-process (desktop mode only, no TCP ports). Tauri injects a lo
 host logs appear in the DevTools console in addition to the terminal.
 
 ```bash
-# Terminal A — UI (SvelteKit)
-pnpm --filter @aideon/app dev
+# Terminal A — UI (React canvas shell)
+pnpm --filter @aideon/desktop dev
 
 # Terminal B — Host (Tauri). From repo root:
 pnpm tauri dev
@@ -75,9 +79,13 @@ pnpm run node:test && pnpm run node:lint && pnpm run node:typecheck
 pnpm run host:lint && pnpm run host:check
 ```
 
+See also `docs/commands.md` for a complete list of pnpm scripts used across JS/TS and the Rust
+workspace.
+
 What to expect:
 
-- A Tauri window serving the SvelteKit UI at http://localhost:1420.
+- A Tauri window serving the React canvas shell at http://127.0.0.1:1420.
+  available for reference by running the optional command above.
 - Desktop mode opens no TCP ports by default; all work happens via typed IPC in-process.
 - DevTools Console will show renderer logs (console) and host logs (tauri-plugin-log).
 - If you see a port conflict on 1420, stop any previous dev server and retry.

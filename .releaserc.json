@@ -11,15 +11,21 @@
       "@semantic-release/exec",
       { "prepareCmd": "node scripts/inject-version.mjs ${nextRelease.version}" }
     ],
-    ["@semantic-release/github"],
+    [
+      "@semantic-release/github",
+      {
+        "successComment": "✅ Release ${nextRelease.version} published. Tauri packaging workflow triggered to attach bundles automatically.",
+        "failComment": "⚠️ Release ${nextRelease.version} failed. Check the Semantic Release and Tauri packaging workflows."
+      }
+    ],
     [
       "@semantic-release/git",
       {
         "assets": [
           "CHANGELOG.md",
           "package.json",
-          "packages/app/src/version.ts",
-          "packages/worker/src/aideon_worker/_version.py"
+          "app/praxis-desktop/src/version.ts",
+          "crates/desktop/tauri.conf.json"
         ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }

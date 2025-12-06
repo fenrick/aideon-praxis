@@ -6,6 +6,7 @@ environment, and what we expect in issues and pull requests.
 ## Values
 
 - **Time-first, graph-native:** keep the meta-model and `state_at()` semantics authoritative.
+- **Commits define time:** follow the standards in `Architecture-Boundary.md#time-&-commit-model-—-authoring-standards` when modelling change history.
 - **Local-first, cloud-ready:** do not break desktop mode; design for a clean switch to server.
 - **Security by default:** safe IPC, PII redaction, least privilege.
 - **Evidence & tests:** measurable SLOs; PRs come with tests/docs.
@@ -67,10 +68,10 @@ Quality gates
 
 ## Repository structure
 
-- `app/desktop` — Svelte renderer bundle consumed by the Tauri host.
-- `crates/tauri` — Rust desktop host (Tauri) and IPC surface.
-- `crates/{praxis,chrona,metis,continuum,core_data}` — domain crates for graph/time/analytics orchestration.
-- `app/adapters` — Shared TypeScript adapters (renderer ↔ host contracts).
+- Legacy Svelte renderer has been removed; React + Tauri desktop is now the only renderer.
+- `crates/desktop` — Rust desktop host (Tauri) and IPC surface.
+- `crates/{aideon_engine, aideon_chrona, aideon_metis, aideon_continuum, aideon_mneme}` — domain crates for graph/time/analytics, orchestration, and persistence.
+- `app/PraxisAdapters` — Shared TypeScript adapters (renderer ↔ host contracts).
 - `docs/` — Architecture content, ADRs, C4 diagrams.
 - `scripts/` — Minimal tooling entrypoints (issues.py). Legacy node scripts removed.
 

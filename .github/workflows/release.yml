@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   release:
-    name: Build and Publish Release
+    name: Build and Publish Tauri Bundles
     uses: fenrick/aideon-praxis/.github/workflows/reusable-release.yml@main
     with:
       publish: true

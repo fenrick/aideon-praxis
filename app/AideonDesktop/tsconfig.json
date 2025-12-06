@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"],
+      "canvas/*": ["canvas/*"],
+      "design-system/*": ["design-system/*"],
+      "design-system/reactflow/*": ["design-system/components/*"],
+      "adapters/*": ["adapters/*"],
+      "dtos/*": ["dtos/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["src/design-system/components/**/*"]
+}

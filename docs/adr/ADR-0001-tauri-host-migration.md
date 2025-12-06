@@ -34,7 +34,7 @@ behind a Compute Facade. Packaging/signing handled via Tauri.
 
 ### Rollout Plan (tracked via child issues)
 
-1. Scaffold Tauri host crate (`crates/tauri`) [no UI wiring]
+1. Scaffold Tauri host crate (`crates/desktop`) [no UI wiring]
 2. Add Rust toolchain config and CI checks (fmt/clippy) [no packaging]
 3. Add preflight script to validate toolchain (corepack, rustup, uv, tauri)
 4. Update docs (getting-started) and CODEOWNERS

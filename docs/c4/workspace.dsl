@@ -3,8 +3,8 @@ workspace "Aideon Praxis" "Local‑first, time‑first EA platform" {
 
   model {
     user = person "EA Practitioner" "Explores portfolios and time‑sliced views"
-    aideon = softwareSystem "Aideon Praxis" "Desktop app with Tauri host, Svelte renderer, Rust worker crates" {
-      renderer = container "Renderer (Svelte in Tauri Webview)" "UI, no backend logic" "Svelte"
+    aideon = softwareSystem "Aideon Praxis" "Desktop app with Tauri host, React renderer, Rust worker crates" {
+      renderer = container "Renderer (React in Tauri Webview)" "UI, no backend logic" "React"
       host = container "Host (Tauri/Rust)" "Typed IPC, window mgmt, security, worker orchestration" "Rust"
       worker = container "Worker (Chrona/Metis/Praxis)" "Time API + analytics behind traits" "Rust"
     }
@@ -47,4 +47,3 @@ workspace "Aideon Praxis" "Local‑first, time‑first EA platform" {
     }
   }
 }
-

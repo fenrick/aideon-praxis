@@ -1,12 +1,20 @@
-# Aideon Praxis — Staged Implementation Roadmap
+# Aideon Suite — Staged Implementation Roadmap
 
-**Date:** 2025-10-14 **Goal:** Deliver a local-first, graph-native EA platform (Tauri + Python
-worker) that treats **time as a first-class dimension** (bitemporal + Plan Events), with a clean
-path to server mode.
+## Purpose
+
+Outline the forward-looking milestones and phases for Aideon Suite, showing how Praxis, Chrona,
+Metis, Continuum, and Mneme evolve over time. This document focuses on **what** we plan to deliver
+and in which stage, not on low-level architecture or design decisions.
+
+**Date:** 2025-10-14  
+**Goal:** Deliver **Aideon Suite**, a local-first, graph-native EA platform (Tauri + Python worker)
+that treats **time as a first-class dimension** (bitemporal + Plan Events), with a clean path to
+server mode. The current implementation focus is the **Praxis desktop module** (core digital twin),
+with Chrona, Metis, Continuum, and Mneme evolving alongside it.
 
 ## Guiding Principles
 
-- Clear separation: Tauri/Rust host & OS integration; Python worker for analytics/ML via RPC.
+- Clear separation: Tauri/Rust host & OS integration; engine crates (Praxis/Chrona/Metis/Continuum) behind typed traits.
 - Swap-friendly adapters: Graph, Storage, RPC are interfaces with reference impls.
 - Security by default: hardened IPC, PII redaction, least privilege.
 - Cloud-ready: Same components run local or remote by configuration.
@@ -23,6 +31,10 @@ path to server mode.
 - ADRs for RPC and adapter boundaries.
 - Interfaces: `GraphAdapter`, `StorageAdapter`, `WorkerClient`.
 
+> **Renderer migration:** The historical SvelteKit UI remains in the repo for continuity but all
+> roadmap items now assume the React + React Flow canvas runtime described in
+> Refer to `docs/DESIGN.md` and `app/AideonDesktop/docs/praxis-canvas/DESIGN.md` for the current desktop runtime; treat any remaining Svelte references as legacy unless explicitly noted.
+
 #### Acceptance
 
 - `pnpm run node:test` green on macOS/Windows/Linux; Rust host `cargo fmt/clippy/check/test` clean.
@@ -31,18 +43,17 @@ path to server mode.
 
 ### M1 — Local App MVP (Weeks 3–6)
 
-#### Outcomes
+#### Outcomes (updated)
 
-- SvelteKit renderer, preload API, in-memory GraphAdapter + file store (JSON/SQLite).
-- CSV import wizard v1 with mapping and de-dupe.
-- Viewpoints: Capability Map, Service Portfolio, Motivation.
-- Opt-in encryption-at-rest.
+- React + Tauri desktop shell (migrating away from the legacy SvelteKit renderer), typed IPC; in-memory time-graph engine (commit/branch/diff) behind Tauri.
+- Canvas with ELK layout, manual placement, save per asOf (JSON snapshots behind a traited store).
+- Reference adapters (TS): dev in-memory adapter and IPC adapter for temporal calls.
+- Pipeline hardening (coverage in CI, CSP checks, Sonar inputs).
 
-#### Acceptance
+#### Acceptance (updated)
 
-- Create/edit entities, save/reopen.
-- Import sample CSV → validated entities.
-- Views render from the same graph model.
+- User can scrub time and switch branches (M1.1), edit graph and undo/redo (M1.2), commit, compare and merge (M1.3).
+- CI: Node + Rust tests green; coverage ≥ 80% new code; CSP/windows test passes.
 
 ### M2 — Python Worker MVP (Weeks 7–10)
 
@@ -121,3 +132,28 @@ path to server mode.
 ## Non-Goals (MVP)
 
 - Full OWL/SHACL reasoning, marketplace plugins, AR/VR, multi-tenant SaaS.
+
+## Immediate Backlog (Prioritised)
+
+1. Prove the pipeline and harden
+
+- Persistence boundary (optional): keep `continuum::SnapshotStore` for canvas/layout data but rely on SQLite commits/nodes/edges plus `snapshot_tags` for temporal history instead of dumping JSON blobs.
+- E2E contract tests: Vitest against mocked Tauri bridge with golden JSON snapshots for `stateAt()` and `commit()`.
+- Coverage in CI: generate LCOV (Vitest) and Rust coverage (grcov); feed Sonar (ensure report paths).
+- Security checks: assert CSP and window permission caps in a prod build test.
+- Release dry run: produce dev artifacts for macOS/Windows/Linux; verify signing path (ad‑hoc certs locally acceptable).
+
+2. Time & Scenarios (M1.1)
+
+- Timebar (playhead/scrubber), commit ticks (tooltip), branch chips (switch), filters, compare toggle, status area for unsaved changes.
+  Acceptance: scrub, hover commit info, switch branches, enter compare in ≤2 clicks.
+
+3. Graph Edit & Inspect (M1.2)
+
+- Canvas affordances (pan/zoom, snap-to-grid, lasso, drag handles to create edges), context actions, inspector panel, keyboard shortcuts.
+  Acceptance: create two nodes, connect, edit labels, undo/redo in ≤30s.
+
+4. Commit, Diff & Merge (M1.3)
+
+- Commit drawer (message, tags, changed list), diff mode (overlay/split, badges, legend), merge flow (pick base/target, conflict tray, preview).
+  Acceptance: create branch, edit, commit, compare to main, complete merge with a conflict.
