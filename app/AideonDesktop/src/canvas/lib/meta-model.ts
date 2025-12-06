@@ -30,7 +30,9 @@ export interface MetaModelAttribute {
 }
 
 /**
- *
+ * Lightweight placeholder fetch that simulates loading a meta-model document.
+ * Intended for demos until wired to the host adapter.
+ * @returns {Promise<MetaModelSchema>} synthetic meta-model payload.
  */
 export async function fetchMetaModel(): Promise<MetaModelSchema> {
   await new Promise((resolve) => {

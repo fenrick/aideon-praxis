@@ -22,8 +22,9 @@ export interface WorkspaceTreeState {
 const FALLBACK_PROJECT_ID = 'project-scenarios';
 
 /**
- *
- * @param scenarios
+ * Convert scenario summaries into the workspace tree format expected by the sidebar.
+ * @param scenarios list of scenarios from the host.
+ * @returns single project node containing scenario-backed workspaces.
  */
 function buildTreeFromScenarios(scenarios: ScenarioSummary[]): WorkspaceTreeItem[] {
   return [
@@ -53,7 +54,7 @@ export function useWorkspaceTree(): WorkspaceTreeState {
   useEffect(() => {
     let cancelled = false;
     /**
-     *
+     * Load scenarios from the host and populate the workspace tree state.
      */
     async function load() {
       setLoading(true);

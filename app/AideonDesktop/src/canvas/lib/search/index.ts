@@ -28,7 +28,8 @@ const createState = (): SearchStoreState => ({
 type Subscriber = (state: SearchStoreState) => void;
 
 /**
- *
+ * Internal observable store for global search. Maintains index sources and results.
+ * Subscribers receive updates whenever the index is rebuilt or a query runs.
  */
 function createStore() {
   let state: SearchStoreState = createState();
@@ -113,7 +114,8 @@ const store = createStore();
 export const searchStore = store;
 
 /**
- *
+ * React hook that subscribes to the global search store and returns its state.
+ * @returns latest search query, index items, and results.
  */
 export function useSearchStoreState() {
   const [state, setState] = useState(store.getState());

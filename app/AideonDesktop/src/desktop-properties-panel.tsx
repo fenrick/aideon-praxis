@@ -8,9 +8,9 @@ export interface DesktopPropertiesPanelProperties {
 }
 
 /**
- *
- * @param root0
- * @param root0.selection
+ * Read-only properties panel for the desktop shell.
+ * Mirrors the current canvas selection counts and source widget id.
+ * @param root0.selection optional selection from the canvas.
  */
 export function DesktopPropertiesPanel({ selection }: DesktopPropertiesPanelProperties) {
   const hasSelection = Boolean(

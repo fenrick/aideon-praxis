@@ -5,24 +5,27 @@ import type { TimelineEdgeData } from 'design-system/components/timeline-edge';
 import type { GraphNodeData } from './graph-node-data';
 
 /**
- *
- * @param view
+ * Convert a graph view model into React Flow nodes.
+ * @param view domain view model from the Praxis API.
+ * @returns array of typed nodes ready for XYFlow consumption.
  */
 export function buildFlowNodes(view: GraphViewModel): Node<GraphNodeData>[] {
   return view.nodes.map((node) => toFlowNode(node));
 }
 
 /**
- *
- * @param view
+ * Convert a graph view model into React Flow edges.
+ * @param view domain view model from the Praxis API.
+ * @returns array of timeline edges for XYFlow.
  */
 export function buildFlowEdges(view: GraphViewModel): Edge<TimelineEdgeData>[] {
   return view.edges.map((edge, index) => toFlowEdge(edge, index));
 }
 
 /**
- *
- * @param node
+ * Map a domain node into the praxis-node XYFlow shape.
+ * @param node graph node view from the host.
+ * @returns XYFlow node with typed metadata.
  */
 export function toFlowNode(node: GraphNodeView): Node<GraphNodeData> {
   return {
@@ -43,9 +46,10 @@ export function toFlowNode(node: GraphNodeView): Node<GraphNodeData> {
 }
 
 /**
- *
- * @param edge
- * @param index
+ * Map a domain edge into the timeline edge type.
+ * @param edge graph edge view from the host.
+ * @param index fallback index for generating unique ids.
+ * @returns XYFlow edge configured for the timeline renderer.
  */
 export function toFlowEdge(edge: GraphEdgeView, index: number): Edge<TimelineEdgeData> {
   return {
@@ -62,8 +66,9 @@ export function toFlowEdge(edge: GraphEdgeView, index: number): Edge<TimelineEdg
 }
 
 /**
- *
- * @param node
+ * Extract a description from optional metadata if provided by the host.
+ * @param node graph node view.
+ * @returns description string when present; otherwise undefined.
  */
 function resolveDescription(node: GraphNodeView): string | undefined {
   const metadata = (node as { metadata?: { description?: string } }).metadata;
@@ -72,8 +77,9 @@ function resolveDescription(node: GraphNodeView): string | undefined {
 }
 
 /**
- *
- * @param node
+ * Derive the list of entity type labels for display.
+ * @param node graph node view.
+ * @returns array with at least one type; defaults to "Entity".
  */
 function resolveEntityTypes(node: GraphNodeView): string[] {
   const typeValue = node.type;

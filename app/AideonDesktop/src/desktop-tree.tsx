@@ -13,7 +13,8 @@ import { Skeleton } from './design-system/components/ui/skeleton';
 import { useWorkspaceTree, type WorkspaceTreeItem } from './hooks/use-workspace-tree';
 
 /**
- *
+ * Sidebar tree showing available workspaces/projects for the desktop shell.
+ * Fetches the tree via `useWorkspaceTree` and renders loading/empty states.
  */
 export function DesktopTree() {
   const { loading, items, error } = useWorkspaceTree();
@@ -56,9 +57,8 @@ export function DesktopTree() {
 }
 
 /**
- *
- * @param root0
- * @param root0.item
+ * Render a single workspace node with its children.
+ * @param root0.item workspace or project node to render.
  */
 function TreeNode({ item }: { readonly item: WorkspaceTreeItem }) {
   return (
