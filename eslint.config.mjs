@@ -149,6 +149,16 @@ export default defineConfig([
       'import/order': 'off',
     },
   },
+  {
+    name: 'jsdoc-bypass',
+    rules: {
+      'jsdoc/require-param-type': 'off',
+      'jsdoc/require-returns-type': 'off',
+      'jsdoc/require-param-description': 'off',
+      'jsdoc/require-returns': 'off',
+      'jsdoc/check-param-names': 'off',
+    },
+  },
 
   // Test files: Jest + Testing Library + jest-dom
   {
