@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 
 import { ActivityTimelinePanel } from 'canvas/components/blocks/activity-timeline-panel';
 import { CommitTimelineList } from 'canvas/components/blocks/commit-timeline-list';
@@ -21,6 +21,8 @@ interface OverviewTabsProperties {
   readonly timelineContent?: ReactNode;
   readonly activityContent?: ReactNode;
   readonly initialTab?: 'overview' | 'timeline' | 'activity';
+  readonly reloadSignal?: number;
+  readonly branchTriggerRef?: RefObject<HTMLButtonElement | null>;
 }
 
 /**
@@ -35,6 +37,8 @@ interface OverviewTabsProperties {
  * @param root0.timelineContent
  * @param root0.activityContent
  * @param root0.initialTab
+ * @param root0.reloadSignal
+ * @param root0.branchTriggerRef
  */
 export function OverviewTabs({
   state,
@@ -46,6 +50,8 @@ export function OverviewTabs({
   timelineContent,
   activityContent,
   initialTab = 'overview',
+  reloadSignal,
+  branchTriggerRef,
 }: OverviewTabsProperties) {
   const copy = templateScreenCopy.tabs;
 
@@ -60,13 +66,14 @@ export function OverviewTabs({
       <TabsContent value="overview" className="space-y-4">
         <div className="grid gap-4 lg:grid-cols-2">
           <SnapshotOverviewCard state={state} />
-          <TimeCursorCard state={state} actions={actions} />
+          <TimeCursorCard state={state} actions={actions} triggerRef={branchTriggerRef} />
         </div>
         <CanvasRuntimeCard
           widgets={widgets}
           selection={selection}
           onSelectionChange={onSelectionChange}
           onRequestMetaModelFocus={onRequestMetaModelFocus}
+          reloadSignal={reloadSignal}
         />
       </TabsContent>
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type RefObject } from 'react';
 
 import { templateScreenCopy } from 'canvas/copy/template-screen';
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
@@ -25,6 +25,7 @@ import { Slider } from 'design-system/components/ui/slider';
 interface TimeCursorCardProperties {
   readonly state?: TemporalPanelState;
   readonly actions?: TemporalPanelActions;
+  readonly triggerRef?: RefObject<HTMLButtonElement | null>;
 }
 
 /**
@@ -32,8 +33,9 @@ interface TimeCursorCardProperties {
  * @param root0
  * @param root0.state
  * @param root0.actions
+ * @param root0.triggerRef
  */
-export function TimeCursorCard({ state, actions }: TimeCursorCardProperties) {
+export function TimeCursorCard({ state, actions, triggerRef }: TimeCursorCardProperties) {
   const [hookState, hookActions] = useTemporalPanel();
   const viewState = state ?? hookState;
   const viewActions = actions ?? hookActions;
@@ -70,6 +72,7 @@ export function TimeCursorCard({ state, actions }: TimeCursorCardProperties) {
               id="branch-select"
               data-testid="branch-select"
               aria-label={copy.branchLabel}
+              ref={triggerRef}
             >
               <SelectValue placeholder="Select branch" />
             </SelectTrigger>

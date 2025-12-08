@@ -43,17 +43,26 @@ import { SelectionProvider, deriveSelectionKind, primarySelectionId, useSelectio
 
 const debugEnabled = ((import.meta as unknown as { env?: { MODE?: string } }).env?.MODE ?? '') === 'development';
 
+/**
+ *
+ * @param entry
+ * @param widgetId
+ */
 function createTemplateWidget(entry: WidgetRegistryEntry, widgetId: string): TemplateWidgetConfig {
   const base = { id: widgetId, title: entry.label, size: entry.defaultSize };
   switch (entry.defaultView.kind) {
-    case 'graph':
+    case 'graph': {
       return { ...base, kind: 'graph', view: entry.defaultView };
-    case 'catalogue':
+    }
+    case 'catalogue': {
       return { ...base, kind: 'catalogue', view: entry.defaultView };
-    case 'matrix':
+    }
+    case 'matrix': {
       return { ...base, kind: 'matrix', view: entry.defaultView };
-    default:
+    }
+    default: {
       return { ...base, kind: 'chart', view: entry.defaultView };
+    }
   }
 }
 
@@ -121,7 +130,7 @@ function PraxisCanvasExperience({
     },
   );
   const [debugVisible, setDebugVisible] = useState(false);
-  const branchSelectReference = useRef<HTMLButtonElement>(null!);
+  const branchSelectReference = useRef<HTMLButtonElement | null>(null);
   const commandStack = useCommandStack();
 
   const [temporalState, temporalActions] = useTemporalPanel();
