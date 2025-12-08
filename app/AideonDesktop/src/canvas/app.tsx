@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { DebugOverlay } from 'canvas/components/debug-overlay';
 import { OverviewTabs } from 'canvas/components/template-screen/overview-tabs';
 import { PraxisShellLayout } from 'canvas/components/template-screen/praxis-shell-layout';
 import { ProjectsSidebar } from 'canvas/components/template-screen/projects-sidebar';
@@ -9,14 +10,18 @@ import {
 } from 'canvas/components/template-screen/properties-inspector';
 import { ScenarioSearchBar } from 'canvas/components/template-screen/scenario-search-bar';
 import { TemplateHeader } from 'canvas/components/template-screen/template-header';
-import { DebugOverlay } from 'canvas/components/debug-overlay';
 import { templateScreenCopy } from 'canvas/copy/template-screen';
-import { listProjectsWithScenarios, listTemplatesFromHost, type ProjectSummary } from 'canvas/domain-data';
+import {
+  listProjectsWithScenarios,
+  listTemplatesFromHost,
+  type ProjectSummary,
+} from 'canvas/domain-data';
 import { useCommandStack } from 'canvas/hooks/use-command-stack';
 import { track } from 'canvas/lib/analytics';
 import { toErrorMessage } from 'canvas/lib/errors';
 import { isTauri } from 'canvas/platform';
 import { applyOperations, type ScenarioSummary } from 'canvas/praxis-api';
+import { dedupeIds } from 'canvas/selection';
 import {
   BUILT_IN_TEMPLATES,
   captureTemplateFromWidgets,
@@ -24,9 +29,8 @@ import {
   type CanvasTemplate,
   type TemplateWidgetConfig,
 } from 'canvas/templates';
-import { listWidgetRegistry, type WidgetRegistryEntry } from 'canvas/widgets/registry';
-import { dedupeIds } from 'canvas/selection';
 import type { CanvasWidget, SelectionState, WidgetKind } from 'canvas/types';
+import { listWidgetRegistry, type WidgetRegistryEntry } from 'canvas/widgets/registry';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from 'design-system';
 import { Badge } from 'design-system/components/ui/badge';
 import { Button } from 'design-system/components/ui/button';
@@ -38,10 +42,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from 'design-system/components/ui/dialog';
+import {
+  SelectionProvider,
+  deriveSelectionKind,
+  primarySelectionId,
+  useSelectionStore,
+  type SelectionProperties,
+} from './stores/selection-store';
 import { useTemporalPanel } from './time/use-temporal-panel';
-import { SelectionProvider, deriveSelectionKind, primarySelectionId, useSelectionStore, type SelectionProperties } from './stores/selection-store';
 
-const debugEnabled = ((import.meta as unknown as { env?: { MODE?: string } }).env?.MODE ?? '') === 'development';
+const debugEnabled =
+  ((import.meta as unknown as { env?: { MODE?: string } }).env?.MODE ?? '') === 'development';
 
 /**
  *
@@ -107,28 +118,42 @@ function PraxisCanvasExperience({
 }: {
   readonly onSelectionChange?: (selection: SelectionState) => void;
 }) {
-  const { state: selectionState, setFromWidget, setSelection, clear, updateProperties, resetProperties } =
-    useSelectionStore();
-  const [projectState, setProjectState] = useState<{ loading: boolean; data: ProjectSummary[]; error?: string }>({
+  const {
+    state: selectionState,
+    setFromWidget,
+    setSelection,
+    clear,
+    updateProperties,
+    resetProperties,
+  } = useSelectionStore();
+  const [projectState, setProjectState] = useState<{
+    loading: boolean;
+    data: ProjectSummary[];
+    error?: string;
+  }>({
     loading: true,
     data: [],
   });
   const [scenarioState, setScenarioState] = useState<ScenarioState>({ loading: true, data: [] });
-  const [templatesState, setTemplatesState] = useState<{ loading: boolean; data: CanvasTemplate[]; error?: string }>(
-    {
-      loading: true,
-      data: [],
-    },
-  );
+  const [templatesState, setTemplatesState] = useState<{
+    loading: boolean;
+    data: CanvasTemplate[];
+    error?: string;
+  }>({
+    loading: true,
+    data: [],
+  });
   const [activeTemplateId, setActiveTemplateId] = useState<string>('');
   const [activeScenarioId, setActiveScenarioId] = useState<string | undefined>();
   const [widgetLibraryOpen, setWidgetLibraryOpen] = useState(false);
-  const [propertyState, setPropertyState] = useState<{ saving: boolean; error?: string; reloadTick: number }>(
-    {
-      saving: false,
-      reloadTick: 0,
-    },
-  );
+  const [propertyState, setPropertyState] = useState<{
+    saving: boolean;
+    error?: string;
+    reloadTick: number;
+  }>({
+    saving: false,
+    reloadTick: 0,
+  });
   const [debugVisible, setDebugVisible] = useState(false);
   const branchSelectReference = useRef<HTMLButtonElement | null>(null);
   const commandStack = useCommandStack();
@@ -156,7 +181,11 @@ function PraxisCanvasExperience({
         setActiveTemplateId(templates[0]?.id ?? '');
       }
     } catch (unknownError) {
-      setTemplatesState({ loading: false, data: BUILT_IN_TEMPLATES, error: toErrorMessage(unknownError) });
+      setTemplatesState({
+        loading: false,
+        data: BUILT_IN_TEMPLATES,
+        error: toErrorMessage(unknownError),
+      });
       if (!activeTemplateId) {
         setActiveTemplateId(BUILT_IN_TEMPLATES[0]?.id ?? '');
       }
@@ -194,7 +223,9 @@ function PraxisCanvasExperience({
   }, [activeScenarioId, scenarioState.data]);
 
   const activeTemplate = useMemo(() => {
-    return templatesState.data.find((entry) => entry.id === activeTemplateId) ?? templatesState.data[0];
+    return (
+      templatesState.data.find((entry) => entry.id === activeTemplateId) ?? templatesState.data[0]
+    );
   }, [activeTemplateId, templatesState.data]);
 
   const widgets = useMemo<CanvasWidget[]>(() => {
@@ -221,8 +252,12 @@ function PraxisCanvasExperience({
       setSelection(normalised);
       commandStack.record({
         label: 'Selection change',
-        redo: () => { setSelection(normalised); },
-        undo: () => { setSelection(previous); },
+        redo: () => {
+          setSelection(normalised);
+        },
+        undo: () => {
+          setSelection(previous);
+        },
       });
       track('selection.change', {
         kind: deriveSelectionKind(normalised),
@@ -239,7 +274,15 @@ function PraxisCanvasExperience({
       const previous = activeTemplateId;
       setActiveTemplateId(templateId);
       clear();
-      commandStack.record({ label: 'Template change', redo: () => { setActiveTemplateId(templateId); }, undo: () => { setActiveTemplateId(previous); } });
+      commandStack.record({
+        label: 'Template change',
+        redo: () => {
+          setActiveTemplateId(templateId);
+        },
+        undo: () => {
+          setActiveTemplateId(previous);
+        },
+      });
       track('template.change', { templateId, scenarioId: activeScenario?.id });
     },
     [activeScenario?.id, activeTemplateId, clear, commandStack],
@@ -265,7 +308,15 @@ function PraxisCanvasExperience({
       const previous = activeScenarioId;
       setActiveScenarioId(scenarioId);
       clear();
-      commandStack.record({ label: 'Scenario change', redo: () => { setActiveScenarioId(scenarioId); }, undo: () => { setActiveScenarioId(previous); } });
+      commandStack.record({
+        label: 'Scenario change',
+        redo: () => {
+          setActiveScenarioId(scenarioId);
+        },
+        undo: () => {
+          setActiveScenarioId(previous);
+        },
+      });
     },
     [activeScenarioId, clear, commandStack],
   );
@@ -287,7 +338,9 @@ function PraxisCanvasExperience({
       };
       setTemplatesState((previous) => ({
         ...previous,
-        data: previous.data.map((template) => (template.id === activeTemplate.id ? newTemplate : template)),
+        data: previous.data.map((template) =>
+          template.id === activeTemplate.id ? newTemplate : template,
+        ),
       }));
       setActiveTemplateId(newTemplate.id);
       setFromWidget({ widgetId: newWidgetId, nodeIds: [], edgeIds: [] });
@@ -315,7 +368,10 @@ function PraxisCanvasExperience({
         try {
           if (kind === 'node') {
             await applyOperations([
-              { kind: 'updateNode', node: { id, props: { label: patch.name, dataSource: patch.dataSource } } },
+              {
+                kind: 'updateNode',
+                node: { id, props: { label: patch.name, dataSource: patch.dataSource } },
+              },
             ]);
             setPropertyState((previous) => ({ ...previous, reloadTick: previous.reloadTick + 1 }));
           }
@@ -344,7 +400,10 @@ function PraxisCanvasExperience({
         commandStack.undo();
         return true;
       }
-      if (((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'z') || event.key.toLowerCase() === 'y') {
+      if (
+        ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'z') ||
+        event.key.toLowerCase() === 'y'
+      ) {
         event.preventDefault();
         commandStack.redo();
         return true;
@@ -361,7 +420,9 @@ function PraxisCanvasExperience({
       if (offset === undefined) {
         return false;
       }
-      const index = temporalState.commits.findIndex((commit) => commit.id === temporalState.commitId);
+      const index = temporalState.commits.findIndex(
+        (commit) => commit.id === temporalState.commitId,
+      );
       const target = index === -1 ? undefined : temporalState.commits[index + offset];
       if (target) {
         temporalActions.selectCommit(target.id);
@@ -393,7 +454,9 @@ function PraxisCanvasExperience({
       sliderFocusShortcut(event);
     };
     globalThis.addEventListener('keydown', handleKeydown);
-    return () => { globalThis.removeEventListener('keydown', handleKeydown); };
+    return () => {
+      globalThis.removeEventListener('keydown', handleKeydown);
+    };
   }, [handleArrowNavigation, handleUndoRedo, sliderFocusShortcut]);
 
   return (
@@ -408,7 +471,9 @@ function PraxisCanvasExperience({
             error={projectState.error}
             activeScenarioId={activeScenario?.id}
             onSelectScenario={handleScenarioSelect}
-            onRetry={() => { void refreshProjects(); }}
+            onRetry={() => {
+              void refreshProjects();
+            }}
           />
         }
         content={
@@ -421,11 +486,15 @@ function PraxisCanvasExperience({
               activeTemplateId={activeTemplate?.id ?? ''}
               onTemplateChange={handleTemplateChange}
               onTemplateSave={handleTemplateSave}
-              onCreateWidget={() => { setWidgetLibraryOpen(true); }}
+              onCreateWidget={() => {
+                setWidgetLibraryOpen(true);
+              }}
               loading={templatesState.loading}
             />
             <ScenarioSearchBar />
-            {scenarioState.error && <p className="text-sm text-destructive">{scenarioState.error}</p>}
+            {scenarioState.error && (
+              <p className="text-sm text-destructive">{scenarioState.error}</p>
+            )}
             <OverviewTabs
               state={temporalState}
               actions={temporalActions}
@@ -443,11 +512,11 @@ function PraxisCanvasExperience({
           </div>
         }
         inspector={
-      <PropertiesInspector
-          key={selectionId ?? 'none'}
-          selectionKind={selectionKind as SelectionKind}
-          selectionId={selectionId}
-          properties={selectedProperties}
+          <PropertiesInspector
+            key={selectionId ?? 'none'}
+            selectionKind={selectionKind as SelectionKind}
+            selectionId={selectionId}
+            properties={selectedProperties}
             onSave={handleInspectorSave}
             onReset={handleInspectorReset}
             saving={propertyState.saving}
@@ -514,7 +583,12 @@ interface WidgetLibraryDialogProperties {
  * @param root0.registry
  * @param root0.onCreate
  */
-function WidgetLibraryDialog({ open, onOpenChange, registry, onCreate }: WidgetLibraryDialogProperties) {
+function WidgetLibraryDialog({
+  open,
+  onOpenChange,
+  registry,
+  onCreate,
+}: WidgetLibraryDialogProperties) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -544,7 +618,12 @@ function WidgetLibraryDialog({ open, onOpenChange, registry, onCreate }: WidgetL
           ) : undefined}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => { onOpenChange(false); }}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+          >
             Close
           </Button>
         </DialogFooter>

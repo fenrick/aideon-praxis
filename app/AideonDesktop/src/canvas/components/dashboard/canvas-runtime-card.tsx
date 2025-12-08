@@ -53,7 +53,9 @@ export function CanvasRuntimeCard({
   useEffect(() => {
     if (typeof reloadSignal === 'number' && reloadSignal !== lastReloadSignal.current) {
       if (lastReloadSignal.current !== undefined) {
-        queueMicrotask(() => { setReloadVersion((value) => value + 1); });
+        queueMicrotask(() => {
+          setReloadVersion((value) => value + 1);
+        });
       }
       lastReloadSignal.current = reloadSignal;
     }

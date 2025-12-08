@@ -40,8 +40,8 @@
 
 ## State matrix (Loading / Empty / Populated / Error)
 
-| Area      | Loading                                   | Empty                                            | Populated                                         | Error                                      |
-| --------- | ----------------------------------------- | ----------------------------------------------- | ------------------------------------------------- | ------------------------------------------ |
-| Sidebar   | Skeleton lines for projects/scenarios     | "No projects yet" with CTA to create/import    | Projects → scenarios list, active highlights      | Inline banner + Retry button              |
-| Centre    | Card skeletons for header + widgets       | "No template selected" with quick-create chips | Widgets grid rendered from template metadata      | Card-level alert with retry                |
-| Inspector | Placeholder text "Select something"      | Same as Loading (disabled controls)             | Inputs bound to selection properties + save/reset | Red text + keep controls enabled for retry |
+| Area      | Loading                               | Empty                                          | Populated                                         | Error                                      |
+| --------- | ------------------------------------- | ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------ |
+| Sidebar   | Skeleton lines for projects/scenarios | "No projects yet" with CTA to create/import    | Projects → scenarios list, active highlights      | Inline banner + Retry button               |
+| Centre    | Card skeletons for header + widgets   | "No template selected" with quick-create chips | Widgets grid rendered from template metadata      | Card-level alert with retry                |
+| Inspector | Placeholder text "Select something"   | Same as Loading (disabled controls)            | Inputs bound to selection properties + save/reset | Red text + keep controls enabled for retry |

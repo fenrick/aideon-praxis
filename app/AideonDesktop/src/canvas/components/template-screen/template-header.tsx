@@ -68,10 +68,18 @@ export function TemplateHeader({
             {scenarioName ? ` · ${scenarioName}` : ''}
           </p>
           <CardTitle className="text-3xl font-semibold leading-tight">
-            {loading ? <span className="inline-block h-7 w-48 animate-pulse rounded bg-muted" /> : templateName}
+            {loading ? (
+              <span className="inline-block h-7 w-48 animate-pulse rounded bg-muted" />
+            ) : (
+              templateName
+            )}
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
-            {loading ? <span className="inline-block h-4 w-64 animate-pulse rounded bg-muted" /> : description}
+            {loading ? (
+              <span className="inline-block h-4 w-64 animate-pulse rounded bg-muted" />
+            ) : (
+              description
+            )}
           </CardDescription>
         </div>
         <CardContent className="flex flex-col gap-3 p-0 lg:w-auto">

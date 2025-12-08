@@ -85,7 +85,12 @@ function normaliseProject(payload: ProjectPayload): ProjectSummary {
  * @param payload
  */
 function normaliseTemplate(payload: TemplatePayload): CanvasTemplate {
-  const fallback = BUILT_IN_TEMPLATES[0] ?? { id: 'template-default', name: 'Template', description: '', widgets: [] };
+  const fallback = BUILT_IN_TEMPLATES[0] ?? {
+    id: 'template-default',
+    name: 'Template',
+    description: '',
+    widgets: [],
+  };
   return {
     id: payload.id ?? cryptoRandomId('template'),
     name: payload.name?.trim() ?? fallback.name,

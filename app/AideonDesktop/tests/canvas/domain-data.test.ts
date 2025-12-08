@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas/platform', () => ({ isTauri: vi.fn() }));
 vi.mock('canvas/praxis-api', () => ({ listScenarios: vi.fn() }));

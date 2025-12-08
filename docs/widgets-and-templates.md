@@ -21,9 +21,9 @@ Each widget entry defines: `type`, `label`, `icon`, `description`, `defaultSize`
 
 ## Create widget flow
 
-1) User clicks **Create widget**.
-2) Library dialog lists registry entries; picking one inserts a widget into the active template with default props.
-3) Newly inserted widget becomes selected → inspector opens with editable defaults.
+1. User clicks **Create widget**.
+2. Library dialog lists registry entries; picking one inserts a widget into the active template with default props.
+3. Newly inserted widget becomes selected → inspector opens with editable defaults.
 
 ## Rendering path
 

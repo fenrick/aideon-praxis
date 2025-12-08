@@ -95,7 +95,9 @@ export function SelectionProvider({ children }: { readonly children: React.React
     });
   }, []);
 
-  const clear = useCallback(() => { dispatch({ type: 'clear' }); }, []);
+  const clear = useCallback(() => {
+    dispatch({ type: 'clear' });
+  }, []);
 
   const updateProperties = useCallback((id: string, patch: SelectionProperties) => {
     dispatch({ type: 'updateProps', id, patch });
@@ -128,7 +130,9 @@ export function useSelectionStore(): SelectionContextValue {
  *
  * @param selection
  */
-export function deriveSelectionKind(selection: SelectionState): 'widget' | 'node' | 'edge' | 'none' {
+export function deriveSelectionKind(
+  selection: SelectionState,
+): 'widget' | 'node' | 'edge' | 'none' {
   if (selection.nodeIds.length > 0) {
     return 'node';
   }

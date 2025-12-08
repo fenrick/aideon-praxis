@@ -22,9 +22,9 @@
 
 ## Data flow
 
-1) User selects **Scenario** → loads Branch + Commits → picks Commit via **time cursor** → fetches snapshot metrics.
-2) User selects **Template** → widgets render using Scenario + Commit context.
-3) Widget selection (Widget/Node/Edge) → **Selection store** updates → Inspector shows editable fields → apply operations back to the twin.
+1. User selects **Scenario** → loads Branch + Commits → picks Commit via **time cursor** → fetches snapshot metrics.
+2. User selects **Template** → widgets render using Scenario + Commit context.
+3. Widget selection (Widget/Node/Edge) → **Selection store** updates → Inspector shows editable fields → apply operations back to the twin.
 
 ## Source of truth
 

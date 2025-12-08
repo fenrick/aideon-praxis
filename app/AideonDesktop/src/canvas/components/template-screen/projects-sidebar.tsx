@@ -45,7 +45,9 @@ export function ProjectsSidebar({
   onSelectScenario,
   onRetry,
 }: ProjectsSidebarProperties) {
-  const projectList = projects?.length ? projects : [{ id: 'default', name: 'Projects', scenarios }];
+  const projectList = projects?.length
+    ? projects
+    : [{ id: 'default', name: 'Projects', scenarios }];
   return (
     <SidebarContent className="p-3">
       <SidebarGroup>
@@ -99,7 +101,10 @@ export function ProjectsSidebar({
                     <SidebarGroupContent>
                       {project.scenarios.length === 0 ? (
                         <SidebarMenuItem>
-                          <SidebarMenuButton disabled className="text-left text-xs text-muted-foreground">
+                          <SidebarMenuButton
+                            disabled
+                            className="text-left text-xs text-muted-foreground"
+                          >
                             No scenarios yet.
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -116,10 +121,13 @@ export function ProjectsSidebar({
                               >
                                 <div className="flex w-full items-center justify-between gap-2">
                                   <span className="text-sm font-semibold">{scenario.name}</span>
-                                  {scenario.isDefault ? <Badge variant="outline">Default</Badge> : undefined}
+                                  {scenario.isDefault ? (
+                                    <Badge variant="outline">Default</Badge>
+                                  ) : undefined}
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                  Branch {scenario.branch} · Updated {formatDate(scenario.updatedAt)}
+                                  Branch {scenario.branch} · Updated{' '}
+                                  {formatDate(scenario.updatedAt)}
                                 </p>
                               </SidebarMenuButton>
                             </SidebarMenuItem>

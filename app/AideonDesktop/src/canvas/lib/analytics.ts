@@ -8,7 +8,8 @@ export type AnalyticsEventName =
 
 export type AnalyticsSink = (event: AnalyticsEventName, payload?: Record<string, unknown>) => void;
 
-const ringBuffer: { event: AnalyticsEventName; payload?: Record<string, unknown>; at: number }[] = [];
+const ringBuffer: { event: AnalyticsEventName; payload?: Record<string, unknown>; at: number }[] =
+  [];
 const MAX_EVENTS = 50;
 
 const isDevelopment =
@@ -16,7 +17,6 @@ const isDevelopment =
 
 let sink: AnalyticsSink = (event, payload) => {
   if (isDevelopment) {
-     
     console.debug(`[analytics] ${event}`, payload ?? {});
   }
 };
@@ -45,7 +45,11 @@ export function track(event: AnalyticsEventName, payload?: Record<string, unknow
 /**
  *
  */
-export function recentAnalytics(): readonly { event: AnalyticsEventName; payload?: Record<string, unknown>; at: number }[] {
+export function recentAnalytics(): readonly {
+  event: AnalyticsEventName;
+  payload?: Record<string, unknown>;
+  at: number;
+}[] {
   return ringBuffer;
 }
 

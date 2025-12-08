@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useMemo } from 'react';
 
 import { ScrollArea } from 'design-system/components/ui/scroll-area';
 import {
@@ -91,7 +91,11 @@ export function PraxisShellLayout({
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={storedLayout?.[1] ?? 60} minSize={40} className="min-w-[360px]">
+          <ResizablePanel
+            defaultSize={storedLayout?.[1] ?? 60}
+            minSize={40}
+            className="min-w-[360px]"
+          >
             <ScrollArea className="h-full" data-testid="praxis-shell-content">
               <div className="min-h-full px-6 pb-10 pt-6">{content}</div>
             </ScrollArea>
@@ -99,7 +103,11 @@ export function PraxisShellLayout({
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={storedLayout?.[2] ?? 20} minSize={16} className="min-w-[260px] max-w-[520px]">
+          <ResizablePanel
+            defaultSize={storedLayout?.[2] ?? 20}
+            minSize={16}
+            className="min-w-[260px] max-w-[520px]"
+          >
             <ScrollArea
               className="h-full border-l border-border/60 bg-card/70"
               data-testid="praxis-shell-inspector"

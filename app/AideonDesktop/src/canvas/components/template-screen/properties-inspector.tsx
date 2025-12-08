@@ -73,7 +73,9 @@ export function PropertiesInspector({
             <Field label={copy.nameLabel}>
               <Input
                 value={formState.name}
-                onChange={(event) => { setFormState((previous) => ({ ...previous, name: event.target.value })); }}
+                onChange={(event) => {
+                  setFormState((previous) => ({ ...previous, name: event.target.value }));
+                }}
                 aria-label={copy.nameLabel}
                 disabled={disabled}
               />
@@ -83,9 +85,9 @@ export function PropertiesInspector({
                 value={formState.dataSource}
                 placeholder="Datasource or catalogue"
                 aria-label={copy.dataSourceLabel}
-                onChange={(event) =>
-                  { setFormState((previous) => ({ ...previous, dataSource: event.target.value })); }
-                }
+                onChange={(event) => {
+                  setFormState((previous) => ({ ...previous, dataSource: event.target.value }));
+                }}
                 disabled={disabled}
               />
             </Field>
@@ -95,7 +97,9 @@ export function PropertiesInspector({
                 placeholder="Layout hints or coordinates"
                 rows={2}
                 aria-label={copy.layoutLabel}
-                onChange={(event) => { setFormState((previous) => ({ ...previous, layout: event.target.value })); }}
+                onChange={(event) => {
+                  setFormState((previous) => ({ ...previous, layout: event.target.value }));
+                }}
                 disabled={disabled}
               />
             </Field>

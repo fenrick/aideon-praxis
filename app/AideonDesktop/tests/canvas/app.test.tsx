@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas/components/template-screen/projects-sidebar', () => ({
   ProjectsSidebar: ({ projects, scenarios }: { projects: unknown[]; scenarios: unknown[] }) => (
-    <div data-testid="projects-sidebar">{projects.length > 0 ? projects.length : scenarios.length} scenarios</div>
+    <div data-testid="projects-sidebar">
+      {projects.length > 0 ? projects.length : scenarios.length} scenarios
+    </div>
   ),
 }));
 
@@ -95,9 +97,9 @@ vi.mock('canvas/praxis-api', () => ({
 vi.mock('canvas/platform', () => ({ isTauri: vi.fn() }));
 
 import { PraxisCanvasSurface } from 'canvas/app';
+import { listProjectsWithScenarios, listTemplatesFromHost } from 'canvas/domain-data';
 import { searchStore } from 'canvas/lib/search';
 import { isTauri } from 'canvas/platform';
-import { listProjectsWithScenarios, listTemplatesFromHost } from 'canvas/domain-data';
 import { listScenarios } from 'canvas/praxis-api';
 
 const listScenariosMock = vi.mocked(listScenarios);

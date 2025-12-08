@@ -16,11 +16,11 @@
 
 ## Flow
 
-1) Widget emits `{ widgetId, nodeIds[], edgeIds[] }` → selection store normalises + dedupes.
-2) Selection store exposes derived `kind` (`widget|node|edge|none`) and `primaryId`.
-3) Inspector renders fields for the current kind. Only editable when a primary id exists.
-4) Saving in the inspector dispatches typed operations (e.g., `updateNode`) back through the adapters; success triggers a widget refresh.
-5) Undo/redo replays selection and edit commands from the command stack.
+1. Widget emits `{ widgetId, nodeIds[], edgeIds[] }` → selection store normalises + dedupes.
+2. Selection store exposes derived `kind` (`widget|node|edge|none`) and `primaryId`.
+3. Inspector renders fields for the current kind. Only editable when a primary id exists.
+4. Saving in the inspector dispatches typed operations (e.g., `updateNode`) back through the adapters; success triggers a widget refresh.
+5. Undo/redo replays selection and edit commands from the command stack.
 
 ## Inspector expectations
 

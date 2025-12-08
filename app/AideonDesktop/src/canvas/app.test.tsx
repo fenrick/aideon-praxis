@@ -37,9 +37,11 @@ vi.mock('canvas/domain-data', () => ({
       ],
     },
   ]),
-  listTemplatesFromHost: vi.fn().mockResolvedValue([
-    { id: 'template-1', name: 'Template 1', description: 'desc', widgets: [] },
-  ]),
+  listTemplatesFromHost: vi
+    .fn()
+    .mockResolvedValue([
+      { id: 'template-1', name: 'Template 1', description: 'desc', widgets: [] },
+    ]),
 }));
 
 vi.mock('canvas/praxis-api', () => ({
