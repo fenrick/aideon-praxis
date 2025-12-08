@@ -10,12 +10,12 @@ snapshots, scenarios, and schema validation for the digital twin.
 - Maintain the commit graph and snapshot materialisation for the twin.
 - Enforce the meta-model and relationship constraints.
 - Implement `state_at`, `diff`, and related temporal operations used by Chrona and the canvas.
-- Expose traits and types consumed by Praxis Host and other engine crates.
+- Expose traits and types consumed by Aideon Host and other engine crates.
 
 ## Relationships
 
 - **Depends on:** Mneme Core for persistence, shared DTOs for commits/refs/snapshots.
-- **Used by:** Praxis Host, Praxis Facade, Chrona Visualisation, Metis Analytics, Continuum Orchestrator.
+- **Used by:** Aideon Host, Praxis Facade, Chrona Visualisation, Metis Analytics, Continuum Orchestrator.
 
 ## Running and testing
 

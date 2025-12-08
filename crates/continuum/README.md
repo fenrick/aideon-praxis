@@ -15,7 +15,7 @@ checks.
 ## Relationships
 
 - **Depends on:** Praxis Engine, Mneme Core, external connector crates (as they appear).
-- **Used by:** Praxis Host, worker processes, and potential server mode.
+- **Used by:** Aideon Host, worker processes, and potential server mode.
 
 ## Running and testing
 

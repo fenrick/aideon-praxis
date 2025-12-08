@@ -1,4 +1,4 @@
-# ADR-0011: Tauri Capability Model for Praxis Host
+# ADR-0011: Tauri Capability Model for Aideon Host
 
 ## Status
 
@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The Tauri-based Praxis Host must enforce strict boundaries between renderer, host, and worker while
+The Tauri-based Aideon Host must enforce strict boundaries between renderer, host, and worker while
 remaining portable across desktop platforms. We need a clear capability model that:
 
 - Prevents the renderer from accessing the filesystem, network, or processes directly.
@@ -16,7 +16,7 @@ remaining portable across desktop platforms. We need a clear capability model th
 
 ## Decision
 
-Adopt a **capability-driven model** for the Praxis Host with these rules:
+Adopt a **capability-driven model** for the Aideon Host with these rules:
 
 - Capabilities are defined in per-window configuration and referenced from `tauri.conf.json`.
 - Only minimal capabilities are enabled in desktop mode:

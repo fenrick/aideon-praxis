@@ -1,8 +1,8 @@
-# Praxis Host – Aideon Suite module
+# Aideon Host – Aideon Suite module
 
 ## Purpose
 
-Praxis Host is the Tauri-based desktop host for Aideon Suite. It owns window management, OS
+Aideon Host is the Tauri-based desktop host for Aideon Suite. It owns window management, OS
 integration, capabilities, and the typed IPC surface that connects React/Svelte renderers to the
 Rust engines.
 

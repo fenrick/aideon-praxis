@@ -10,12 +10,12 @@ other clients.
 
 - Implement temporal summarisation APIs over Praxis Engine snapshots.
 - Provide data structures tailored to time sliders, timelines, and diff views.
-- Work with Praxis Host to expose Tauri commands for temporal queries.
+- Work with Aideon Host to expose Tauri commands for temporal queries.
 
 ## Relationships
 
 - **Depends on:** Praxis Engine and Mneme Core for raw state and commits.
-- **Used by:** Praxis Host, Praxis Canvas (via IPC), analytics layers that need temporal slices.
+- **Used by:** Aideon Host, Praxis Canvas (via IPC), analytics layers that need temporal slices.
 
 ## Running and testing
 

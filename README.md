@@ -22,7 +22,7 @@ The table below lists the primary modules in this repo. See each module’s READ
 | Name                   | Path                          | Responsibility                                                                              | Type           |
 | ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------------- | -------------- |
 | Aideon Desktop         | `app/AideonDesktop`           | React/Tauri desktop shell containing canvas, design system, adapters, and DTOs (flattened). | Node/React app |
-| Praxis Host            | `crates/desktop`              | Tauri desktop host exposing typed commands and capabilities.                                | Rust crate     |
+| Aideon Host            | `crates/desktop`              | Tauri desktop host exposing typed commands and capabilities.                                | Rust crate     |
 | Praxis Engine          | `crates/engine`               | Core time-aware graph/commit engine for the digital twin.                                   | Rust crate     |
 | Praxis Facade          | `crates/aideon_praxis_facade` | Facade and orchestration layer over Praxis engine and adapters.                             | Rust crate     |
 | Chrona Visualisation   | `crates/chrona`               | Temporal visualisation and `state_at`/`diff` helpers.                                       | Rust crate     |

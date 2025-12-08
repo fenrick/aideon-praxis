@@ -1,8 +1,8 @@
-# Praxis Host – Internal Design
+# Aideon Host – Internal Design
 
 ## Overview
 
-Praxis Host is the Tauri-based entrypoint for the desktop app. It owns window lifecycle, OS
+Aideon Host is the Tauri-based entrypoint for the desktop app. It owns window lifecycle, OS
 integration, capabilities, and the typed IPC surface for calling engine crates from React/Svelte
 renderers.
 

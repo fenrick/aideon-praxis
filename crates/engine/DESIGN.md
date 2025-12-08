@@ -30,7 +30,7 @@ validation. It implements the commit model and `state_at`/`diff` semantics descr
 
 ## Interactions
 
-- Called by Praxis Host and Praxis Facade to service IPC commands.
+- Called by Aideon Host and Praxis Facade to service IPC commands.
 - Supplies snapshots and diffs to Chrona Visualisation and Metis Analytics.
 - Reads/writes data exclusively through Mneme Core persistence interfaces.
 

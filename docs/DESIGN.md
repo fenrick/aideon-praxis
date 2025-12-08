@@ -70,7 +70,7 @@ At runtime, Aideon Suite is organised into three layers:
 
 - **Renderer:** React/Tauri Praxis Canvas (legacy Svelte renderer removed) render
   the workspace UI using Aideon Design System components.
-- **Host:** The Tauri-based Praxis Host manages windows, IPC commands, OS integration, and security
+- **Host:** The Tauri-based Aideon Host manages windows, IPC commands, OS integration, and security
   capabilities.
 - **Engines:** Rust engine crates (Praxis Engine, Chrona, Metis, Continuum, Mneme) implement graph,
   time, analytics, orchestration, and persistence.

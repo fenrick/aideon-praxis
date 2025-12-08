@@ -14,7 +14,7 @@ financial analytics (e.g. shortest path, centrality, impact, TCO) over the time-
 ## Relationships
 
 - **Depends on:** Praxis Engine, Mneme Core.
-- **Used by:** Praxis Host, Continuum Orchestrator, and downstream reporting surfaces.
+- **Used by:** Aideon Host, Continuum Orchestrator, and downstream reporting surfaces.
 
 ## Running and testing
 
