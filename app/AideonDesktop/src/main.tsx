@@ -23,7 +23,7 @@ createRoot(container).render(
  */
 function AppEntry() {
   const [windowLabel, setWindowLabel] = useState<string | undefined>();
-  const isTauri = '__TAURI__' in globalThis;
+  const isTauri = isTauriRuntime();
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -105,7 +105,7 @@ function AppEntry() {
  */
 function FrontendReady({ children }: { readonly children: React.ReactNode }) {
   useEffect(() => {
-    if ('__TAURI__' in globalThis) {
+    if (isTauriRuntime()) {
       invoke('set_complete', { task: 'frontend' })
         .then(() => {
           console.log('[desktop] notified host frontend ready');
@@ -117,6 +117,21 @@ function FrontendReady({ children }: { readonly children: React.ReactNode }) {
     }
   }, []);
   return <>{children}</>;
+}
+
+/**
+ * Detect whether the code is executing inside a Tauri runtime.
+ * Uses both the optional globals and the compile-time env flags so it works
+ * when `withGlobalTauri` is disabled (default in this repo).
+ */
+function isTauriRuntime(): boolean {
+  const metaEnvironment = (import.meta as { env?: { TAURI_PLATFORM?: string } }).env;
+  if (metaEnvironment?.TAURI_PLATFORM) {
+    return true;
+  }
+
+  const global = globalThis as { __TAURI__?: unknown; __TAURI_INTERNALS__?: unknown };
+  return Boolean(global.__TAURI__ ?? global.__TAURI_INTERNALS__);
 }
 
 /**

@@ -1,21 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { invoke } from '@tauri-apps/api/core';
-import { AppSidebar } from 'canvas/components/app-sidebar';
-import { ActivityFeedCard } from 'canvas/components/dashboard/activity-feed-card';
-import { CommitTimelineCard } from 'canvas/components/dashboard/commit-timeline-card';
-import { GlobalSearchCard } from 'canvas/components/dashboard/global-search-card';
-import { MetaModelPanel } from 'canvas/components/dashboard/meta-model-panel';
-import { PhaseCheckpointsCard } from 'canvas/components/dashboard/phase-checkpoints-card';
-import { SelectionInspectorCard } from 'canvas/components/dashboard/selection-inspector-card';
-import { TimeCursorCard } from 'canvas/components/dashboard/time-cursor-card';
-import { WorkerHealthCard } from 'canvas/components/dashboard/worker-health-card';
-import { SearchBar } from 'canvas/components/shell/search-bar';
-import type { WorkspaceTabValue } from 'canvas/components/workspace-tabs';
-import { WorkspaceTabs } from 'canvas/components/workspace-tabs';
+import { OverviewTabs } from 'canvas/components/template-screen/overview-tabs';
+import { PraxisShellLayout } from 'canvas/components/template-screen/praxis-shell-layout';
+import { ProjectsSidebar } from 'canvas/components/template-screen/projects-sidebar';
+import {
+  PropertiesInspector,
+  type SelectionKind,
+} from 'canvas/components/template-screen/properties-inspector';
+import { ScenarioSearchBar } from 'canvas/components/template-screen/scenario-search-bar';
+import { TemplateHeader } from 'canvas/components/template-screen/template-header';
+import { templateScreenCopy } from 'canvas/copy/template-screen';
 import { toErrorMessage } from 'canvas/lib/errors';
-import { searchStore } from 'canvas/lib/search';
-import type { SidebarTreeNode } from 'canvas/lib/search/types';
 import { isTauri } from 'canvas/platform';
 import { listScenarios, type ScenarioSummary } from 'canvas/praxis-api';
 import {
@@ -26,7 +21,8 @@ import {
 } from 'canvas/templates';
 import type { CanvasWidget, SelectionState } from 'canvas/types';
 import { EMPTY_SELECTION } from 'canvas/types';
-import { Button } from '../design-system/components/ui/button';
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from 'design-system';
+import { useTemporalPanel } from './time/use-temporal-panel';
 
 interface ScenarioState {
   loading: boolean;
@@ -34,73 +30,12 @@ interface ScenarioState {
   data: ScenarioSummary[];
 }
 
-const SIDEBAR_ITEMS: SidebarTreeNode[] = [
-  {
-    id: 'workspace',
-    label: 'Workspace',
-    children: [
-      { id: 'overview', label: 'Overview' },
-      { id: 'timeline', label: 'Timeline' },
-      { id: 'canvas', label: 'Canvas' },
-      { id: 'activity', label: 'Activity' },
-    ],
-  },
-  {
-    id: 'catalogues',
-    label: 'Catalogues',
-    children: [
-      { id: 'applications', label: 'Applications' },
-      { id: 'data', label: 'Data' },
-    ],
-  },
-  { id: 'metamodel', label: 'Meta-model' },
-  { id: 'visualisations', label: 'Visualisations' },
-  { id: 'about', label: 'About Praxis' },
-  { id: 'settings', label: 'Preferences' },
-  { id: 'status', label: 'Status' },
-];
-
 /**
  * Entry point for the Praxis canvas renderer.
  * @returns {import('react').ReactElement} Canvas route content.
  */
 export default function App() {
-  return <LegacyPraxisCanvasApp />;
-}
-
-/**
- * Router-aware wrapper that renders the canvas only on /canvas.
- * @returns {import('react').ReactElement} Canvas experience or unsupported notice.
- */
-export function LegacyPraxisCanvasApp() {
-  const path = globalThis.location.pathname.replace(/\/$/, '') || '/';
-  const isCanvasRoute = path === '/canvas';
-
-  if (!isCanvasRoute) {
-    return <UnsupportedPage path={path} />;
-  }
-
-  return <PraxisCanvasPage />;
-}
-
-/**
- * Canvas experience shell wiring state and layout.
- * @returns {import('react').ReactElement} The canvas surface wrapped in sidebar + chrome.
- */
-function PraxisCanvasPage() {
-  const experience = usePraxisCanvasState();
-
-  return (
-    <div className="flex min-h-screen bg-muted/30 text-foreground">
-      <AppSidebar
-        scenarios={experience.scenarioState.data}
-        loading={experience.scenarioState.loading}
-      />
-      <main className="flex flex-1 flex-col">
-        <PraxisCanvasSurfaceView {...experience} />
-      </main>
-    </div>
-  );
+  return <PraxisCanvasSurface />;
 }
 
 /**
@@ -121,11 +56,7 @@ export function PraxisCanvasSurface({
     }
   }, [experience.selection, onSelectionChange]);
 
-  return (
-    <div className="flex h-full min-h-0 flex-col bg-muted/30 text-foreground">
-      <PraxisCanvasSurfaceView {...experience} />
-    </div>
-  );
+  return <PraxisCanvasSurfaceView {...experience} />;
 }
 
 type PraxisCanvasExperience = ReturnType<typeof usePraxisCanvasState>;
@@ -139,67 +70,14 @@ function usePraxisCanvasState() {
   const [selection, setSelection] = useState<SelectionState>(EMPTY_SELECTION);
   const [templates, setTemplates] = useState<CanvasTemplate[]>(BUILT_IN_TEMPLATES);
   const [activeTemplateId, setActiveTemplateId] = useState<string>(BUILT_IN_TEMPLATES[0]?.id ?? '');
-  const [focusEntryId, setFocusEntryId] = useState<string | undefined>();
-  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTabValue>('overview');
+  const [activeScenarioId, setActiveScenarioId] = useState<string | undefined>();
 
-  const openHostWindow = useCallback(
-    async (command: 'open_settings' | 'open_about' | 'open_status' | 'open_styleguide') => {
-      if (!isTauri()) {
-        return;
-      }
-      try {
-        await invoke(command);
-      } catch (error) {
-        console.warn(`failed to open ${command}`, error);
-      }
-    },
-    [],
-  );
-
-  const handleSidebarSelect = useCallback(
-    (id: string) => {
-      switch (id) {
-        case 'overview':
-        case 'timeline':
-        case 'canvas':
-        case 'activity': {
-          setWorkspaceTab(id as WorkspaceTabValue);
-          break;
-        }
-        case 'visualisations':
-        case 'applications':
-        case 'data': {
-          setWorkspaceTab('canvas');
-          break;
-        }
-        case 'metamodel': {
-          setFocusEntryId('meta-model');
-          break;
-        }
-        case 'about': {
-          void openHostWindow('open_about');
-          break;
-        }
-        case 'settings': {
-          void openHostWindow('open_settings');
-          break;
-        }
-        case 'status': {
-          void openHostWindow('open_status');
-          break;
-        }
-        default: {
-          break;
-        }
-      }
-    },
-    [openHostWindow],
-  );
-
-  const activeScenario = useMemo(
-    () => scenarioState.data.find((scenario) => scenario.isDefault) ?? scenarioState.data[0],
-    [scenarioState.data],
-  );
+  const activeScenario = useMemo(() => {
+    const preferred =
+      scenarioState.data.find((scenario) => scenario.id === activeScenarioId) ??
+      scenarioState.data.find((scenario) => scenario.isDefault);
+    return preferred ?? scenarioState.data[0];
+  }, [activeScenarioId, scenarioState.data]);
 
   const activeTemplate = useMemo(() => {
     return templates.find((entry) => entry.id === activeTemplateId) ?? templates[0];
@@ -212,27 +90,16 @@ function usePraxisCanvasState() {
     return instantiateTemplate(activeTemplate, { scenario: activeScenario?.branch });
   }, [activeScenario?.branch, activeTemplate]);
 
-  const handleSelectionChange = useCallback((next: SelectionState) => {
+  const handleSelectionChange = (next: SelectionState) => {
     setSelection(next);
-  }, []);
+  };
 
-  const handleMetaModelFocus = useCallback((types: string[]) => {
-    const [primary] = types;
-    if (primary) {
-      setFocusEntryId(primary);
-    }
-  }, []);
-
-  const handleCommandPaletteSelection = useCallback((nodeIds: string[]) => {
-    setSelection({ sourceWidgetId: 'command-palette', nodeIds, edgeIds: [] });
-  }, []);
-
-  const handleTemplateChange = useCallback((templateId: string) => {
+  const handleTemplateChange = (templateId: string) => {
     setActiveTemplateId(templateId);
     setSelection(EMPTY_SELECTION);
-  }, []);
+  };
 
-  const handleTemplateSave = useCallback(() => {
+  const handleTemplateSave = () => {
     if (widgets.length === 0) {
       return;
     }
@@ -244,28 +111,33 @@ function usePraxisCanvasState() {
     const snapshot = captureTemplateFromWidgets(name.trim(), 'Saved from runtime', widgets);
     setTemplates((previous) => [...previous, snapshot]);
     setActiveTemplateId(snapshot.id);
-  }, [templates.length, widgets]);
+  };
+
+  const handleScenarioSelect = (scenarioId: string) => {
+    setActiveScenarioId(scenarioId);
+    setSelection(EMPTY_SELECTION);
+  };
 
   const refreshScenarios = useCallback(async () => {
     setScenarioState((previous) => ({ ...previous, loading: true, error: undefined }));
     try {
       const scenarios = await listScenarios();
       setScenarioState({ loading: false, data: scenarios });
+      if (!activeScenarioId) {
+        const defaultScenario = scenarios.find((scenario) => scenario.isDefault) ?? scenarios[0];
+        setActiveScenarioId(defaultScenario?.id);
+      }
     } catch (unknownError) {
       const message = toErrorMessage(unknownError);
       setScenarioState({ loading: false, data: [], error: message });
     }
-  }, []);
+  }, [activeScenarioId]);
 
   useEffect(() => {
     void (async () => {
       await refreshScenarios();
     })();
   }, [refreshScenarios]);
-
-  useEffect(() => {
-    searchStore.setSidebarItems(SIDEBAR_ITEMS, handleSidebarSelect);
-  }, [handleSidebarSelect]);
 
   return {
     scenarioState,
@@ -274,16 +146,11 @@ function usePraxisCanvasState() {
     activeTemplateId,
     activeTemplate,
     activeScenario,
-    workspaceTab,
     widgets,
-    focusEntryId,
     handleSelectionChange,
-    handleMetaModelFocus,
-    handleCommandPaletteSelection,
     handleTemplateChange,
     handleTemplateSave,
-    setWorkspaceTab,
-    setFocusEntryId,
+    handleScenarioSelect,
   };
 }
 
@@ -298,152 +165,118 @@ function PraxisCanvasSurfaceView({
   templates,
   activeTemplate,
   activeScenario,
-  workspaceTab,
-  setWorkspaceTab,
   widgets,
-  focusEntryId,
-  setFocusEntryId,
   handleSelectionChange,
-  handleMetaModelFocus,
-  handleCommandPaletteSelection,
   handleTemplateChange,
   handleTemplateSave,
+  handleScenarioSelect,
 }: Readonly<PraxisCanvasExperience>) {
+  const [temporalState, temporalActions] = useTemporalPanel();
+
+  const selectionKind = resolveSelectionKind(selection);
+  const selectionId = resolveSelectionId(selection);
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <ShellHeader
-        scenarioName={activeScenario?.name}
-        templateName={activeTemplate?.name}
-        templates={templates}
-        activeTemplateId={activeTemplate?.id ?? ''}
-        onTemplateChange={handleTemplateChange}
-        onTemplateSave={handleTemplateSave}
-      />
-      <div className="px-6 pt-3">
-        <SearchBar />
-      </div>
-      {scenarioState.error && (
-        <p className="px-6 pt-2 text-sm text-destructive">{scenarioState.error}</p>
-      )}
-      <div className="flex flex-1 flex-col gap-6 p-6 lg:flex-row">
-        <section className="flex-1">
-          <WorkspaceTabs
+    <PraxisShellLayout
+      toolbar={<PraxisToolbar />}
+      navigation={
+        <ProjectsSidebar
+          scenarios={scenarioState.data}
+          loading={scenarioState.loading}
+          error={scenarioState.error}
+          activeScenarioId={activeScenario?.id}
+          onSelectScenario={handleScenarioSelect}
+        />
+      }
+      content={
+        <div className="space-y-6">
+          <TemplateHeader
+            scenarioName={activeScenario?.name}
+            templateName={activeTemplate?.name}
+            templateDescription={activeTemplate?.description}
+            templates={templates}
+            activeTemplateId={activeTemplate?.id ?? ''}
+            onTemplateChange={handleTemplateChange}
+            onTemplateSave={handleTemplateSave}
+            onCreateWidget={() => {
+              console.info('[canvas] create widget placeholder');
+            }}
+          />
+          <ScenarioSearchBar />
+          {scenarioState.error && <p className="text-sm text-destructive">{scenarioState.error}</p>}
+          <OverviewTabs
+            state={temporalState}
+            actions={temporalActions}
             widgets={widgets}
             selection={selection}
             onSelectionChange={handleSelectionChange}
-            onRequestMetaModelFocus={handleMetaModelFocus}
-            value={workspaceTab}
-            onValueChange={setWorkspaceTab}
-          />
-        </section>
-        <section className="w-full space-y-6 lg:w-[360px]">
-          <TimeCursorCard />
-          <CommitTimelineCard />
-          <ActivityFeedCard />
-          <GlobalSearchCard
-            onSelectNodes={handleCommandPaletteSelection}
-            onFocusMetaModel={(entry: { id: string }) => {
-              setFocusEntryId(entry.id);
-            }}
-            onShowTimeline={() => {
-              setWorkspaceTab('timeline');
+            onRequestMetaModelFocus={(types) => {
+              if (types.length === 0) {
+                return;
+              }
+              // Placeholder hook into meta-model focus while integrating new shell.
             }}
           />
-          <MetaModelPanel focusEntryId={focusEntryId} />
-          <SelectionInspectorCard
-            selection={selection}
-            widgets={widgets}
-            onSelectionChange={handleSelectionChange}
-          />
-          <WorkerHealthCard />
-          <PhaseCheckpointsCard />
-        </section>
-      </div>
-    </div>
-  );
-}
-
-interface ShellHeaderProperties {
-  readonly scenarioName?: string;
-  readonly templateName?: string;
-  readonly templates: CanvasTemplate[];
-  readonly activeTemplateId: string;
-  readonly onTemplateChange: (templateId: string) => void;
-  readonly onTemplateSave: () => void;
-}
-
-/**
- * Fallback page shown when the canvas route is accessed outside the Tauri shell.
- * @param {{path: string}} props path info
- * @returns {import('react').ReactElement} JSX explaining unsupported route
- */
-function UnsupportedPage({ path }: { readonly path: string }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 text-foreground">
-      <div className="max-w-2xl space-y-6 rounded-3xl border border-border/60 bg-background/90 p-10 text-center shadow-2xl">
-        <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">Unsupported path</p>
-        <h1 className="text-3xl font-semibold text-foreground">
-          {path === '/' ? 'Launch Praxis Desktop' : 'Route unavailable outside Tauri'}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          This experience is shipped inside the Aideon Praxis desktop app. Open it to reach the
-          canvas at
-          <span className="font-mono text-xs text-foreground"> /canvas </span>.
-        </p>
-        <p className="text-xs font-mono text-muted-foreground">
-          Requested route:
-          {path}
-        </p>
-      </div>
-    </div>
+        </div>
+      }
+      inspector={<PropertiesInspector selectionKind={selectionKind} selectionId={selectionId} />}
+    />
   );
 }
 
 /**
- * Header component rendering template selectors and actions.
- * @param {ShellHeaderProperties} props template and scenario metadata
- * @returns {import('react').ReactElement} JSX header
+ *
+ * @param selection
  */
-function ShellHeader({
-  scenarioName,
-  templateName,
-  templates,
-  activeTemplateId,
-  onTemplateChange,
-  onTemplateSave,
-}: ShellHeaderProperties) {
+function resolveSelectionKind(selection: SelectionState): SelectionKind {
+  if (selection.nodeIds.length > 0) {
+    return 'node';
+  }
+  if (selection.edgeIds.length > 0) {
+    return 'edge';
+  }
+  if (selection.sourceWidgetId) {
+    return 'widget';
+  }
+  return 'none';
+}
+
+/**
+ *
+ * @param selection
+ */
+function resolveSelectionId(selection: SelectionState): string | undefined {
+  if (selection.nodeIds[0]) {
+    return selection.nodeIds[0];
+  }
+  if (selection.edgeIds[0]) {
+    return selection.edgeIds[0];
+  }
+  return selection.sourceWidgetId;
+}
+
+/**
+ * Simple menubar used as the toolbar slot for the Praxis shell layout.
+ */
+function PraxisToolbar() {
+  const isDesktop = isTauri();
+  const copy = templateScreenCopy;
+
   return (
-    <header className="flex flex-col gap-4 border-b border-border/70 px-6 py-5 md:flex-row md:items-center md:justify-between">
-      <div>
-        <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Active template</p>
-        <h1 className="text-2xl font-semibold">{templateName ?? 'Untitled canvas'}</h1>
-        <p className="text-sm text-muted-foreground">
-          {scenarioName ? `Scenario: ${scenarioName}` : 'Scenario data pending'} · Template-driven
-          canvases now pair graph, catalogue, matrix, and chart widgets.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-3">
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Template</span>
-          <select
-            className="rounded-lg border border-border/60 bg-background px-3 py-2 text-foreground"
-            value={activeTemplateId}
-            onChange={(event) => {
-              onTemplateChange(event.target.value);
-            }}
-          >
-            {templates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Button variant="secondary" onClick={onTemplateSave}>
-          Save template
-        </Button>
-        <Button>Create widget</Button>
-      </div>
-    </header>
+    <Menubar>
+      <MenubarMenu>
+        <MenubarTrigger>{copy.templateLabel}</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem>Praxis Canvas</MenubarItem>
+          <MenubarItem disabled>Tasks</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+      <MenubarMenu>
+        <MenubarTrigger>Mode</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem>{isDesktop ? 'Desktop' : 'Browser preview'}</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+    </Menubar>
   );
 }

@@ -1,50 +1,48 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('canvas/components/workspace-tabs', () => ({
-  WorkspaceTabs: () => <div>Workspace Tabs</div>,
+vi.mock('canvas/components/template-screen/template-header', () => ({
+  TemplateHeader: () => <div>Template Header</div>,
 }));
 
-vi.mock('canvas/components/dashboard/activity-feed-card', () => ({
-  ActivityFeedCard: () => <div>Activity Feed</div>,
+vi.mock('canvas/components/template-screen/scenario-search-bar', () => ({
+  ScenarioSearchBar: () => <div>Scenario Search</div>,
 }));
 
-vi.mock('canvas/components/dashboard/commit-timeline-card', () => ({
-  CommitTimelineCard: () => <div>Commit Timeline</div>,
+vi.mock('canvas/components/template-screen/overview-tabs', () => ({
+  OverviewTabs: () => <div>Overview Tabs</div>,
 }));
 
-vi.mock('canvas/components/dashboard/global-search-card', () => ({
-  GlobalSearchCard: () => <div>Global Search</div>,
+vi.mock('canvas/components/template-screen/projects-sidebar', () => ({
+  ProjectsSidebar: () => <div>Projects Sidebar</div>,
 }));
 
-vi.mock('canvas/components/dashboard/meta-model-panel', () => ({
-  MetaModelPanel: () => <div>Meta Model Panel</div>,
+vi.mock('canvas/components/template-screen/properties-inspector', () => ({
+  PropertiesInspector: () => <div>Properties Inspector</div>,
 }));
 
-vi.mock('canvas/components/dashboard/selection-inspector-card', () => ({
-  SelectionInspectorCard: () => <div>Selection Inspector</div>,
-}));
-
-vi.mock('canvas/components/dashboard/time-cursor-card', () => ({
-  TimeCursorCard: () => <div>Time Cursor</div>,
-}));
-
-vi.mock('canvas/components/dashboard/worker-health-card', () => ({
-  WorkerHealthCard: () => <div>Worker Health</div>,
-}));
-
-vi.mock('canvas/components/dashboard/phase-checkpoints-card', () => ({
-  PhaseCheckpointsCard: () => <div>Phase Checkpoints</div>,
+vi.mock('canvas/praxis-api', () => ({
+  listScenarios: vi.fn().mockResolvedValue([
+    {
+      id: 'main',
+      name: 'Main Scenario',
+      branch: 'main',
+      updatedAt: '2025-01-01T00:00:00Z',
+      isDefault: true,
+    },
+  ]),
 }));
 
 import { PraxisCanvasSurface } from './app';
 
 describe('PraxisCanvasSurface', () => {
-  it('renders canvas content without the legacy chrome', () => {
+  it('renders the new shell layout pieces', async () => {
     render(<PraxisCanvasSurface />);
 
-    expect(screen.getByText(/Active template/i)).toBeInTheDocument();
-    expect(screen.getByText(/Save template/i)).toBeInTheDocument();
-    expect(screen.getByText(/Workspace Tabs/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Projects Sidebar/)).toBeInTheDocument();
+    expect(screen.getByText(/Template Header/)).toBeInTheDocument();
+    expect(screen.getByText(/Scenario Search/)).toBeInTheDocument();
+    expect(screen.getByText(/Overview Tabs/)).toBeInTheDocument();
+    expect(screen.getByText(/Properties Inspector/)).toBeInTheDocument();
   });
 });

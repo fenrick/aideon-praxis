@@ -1,117 +1,75 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('canvas/components/app-sidebar', () => ({
-  AppSidebar: ({ scenarios, loading }: { scenarios: unknown[]; loading: boolean }) => (
-    <div data-testid="sidebar">{loading ? 'loading' : `scenarios:${String(scenarios.length)}`}</div>
+vi.mock('canvas/components/template-screen/projects-sidebar', () => ({
+  ProjectsSidebar: ({ scenarios }: { scenarios: unknown[] }) => (
+    <div data-testid="projects-sidebar">{scenarios.length} scenarios</div>
   ),
 }));
 
-vi.mock('canvas/components/dashboard/activity-feed-card', () => ({
-  ActivityFeedCard: () => <div data-testid="activity" />,
-}));
-
-vi.mock('canvas/components/dashboard/commit-timeline-card', () => ({
-  CommitTimelineCard: () => <div data-testid="timeline" />,
-}));
-
-vi.mock('canvas/components/dashboard/global-search-card', () => ({
-  GlobalSearchCard: ({
-    onSelectNodes,
-    onFocusMetaModel,
-    onShowTimeline,
+vi.mock('canvas/components/template-screen/template-header', () => ({
+  TemplateHeader: ({
+    onTemplateSave,
+    onTemplateChange,
+    templates,
+    activeTemplateId,
   }: {
-    onSelectNodes: (ids: string[]) => void;
-    onFocusMetaModel: (entry: { id: string }) => void;
-    onShowTimeline: () => void;
+    onTemplateSave: () => void;
+    onTemplateChange: (id: string) => void;
+    templates: { id: string }[];
+    activeTemplateId: string;
   }) => (
     <div>
+      <span data-testid="active-template">{activeTemplateId}</span>
+      <span data-testid="template-count">{templates.length}</span>
+      <button onClick={onTemplateSave}>Save template</button>
       <button
         onClick={() => {
-          onSelectNodes(['node-42']);
+          onTemplateChange('alt-template');
         }}
       >
-        select-node
+        Change template
       </button>
-      <button
-        onClick={() => {
-          onFocusMetaModel({ id: 'meta-1' });
-        }}
-      >
-        focus-meta
-      </button>
-      <button onClick={onShowTimeline}>open-timeline</button>
     </div>
   ),
 }));
 
-vi.mock('canvas/components/dashboard/meta-model-panel', () => ({
-  MetaModelPanel: ({ focusEntryId }: { focusEntryId?: string }) => (
-    <div data-testid="meta-model">{focusEntryId ?? 'none'}</div>
-  ),
+vi.mock('canvas/components/template-screen/scenario-search-bar', () => ({
+  ScenarioSearchBar: () => <div data-testid="search-bar" />,
 }));
 
-vi.mock('canvas/components/dashboard/phase-checkpoints-card', () => ({
-  PhaseCheckpointsCard: () => <div data-testid="phase-checkpoints" />,
-}));
-
-vi.mock('canvas/components/dashboard/selection-inspector-card', () => ({
-  SelectionInspectorCard: () => <div data-testid="selection-inspector" />,
-}));
-
-vi.mock('canvas/components/dashboard/time-cursor-card', () => ({
-  TimeCursorCard: () => <div data-testid="time-cursor" />,
-}));
-
-vi.mock('canvas/components/dashboard/worker-health-card', () => ({
-  WorkerHealthCard: () => <div data-testid="worker-health" />,
-}));
-
-vi.mock('canvas/components/shell/search-bar', () => ({
-  SearchBar: () => <div data-testid="search-bar" />,
-}));
-
-vi.mock('canvas/components/workspace-tabs', () => ({
-  WorkspaceTabs: ({
-    selection,
+vi.mock('canvas/components/template-screen/overview-tabs', () => ({
+  OverviewTabs: ({
     onSelectionChange,
-    onRequestMetaModelFocus,
-    value,
-    onValueChange,
   }: {
-    selection: { nodeIds: string[]; edgeIds: string[] };
-    onSelectionChange: (next: {
+    onSelectionChange: (selection: {
       nodeIds: string[];
       edgeIds: string[];
       sourceWidgetId?: string;
     }) => void;
-    onRequestMetaModelFocus: (types: string[]) => void;
-    value: string;
-    onValueChange: (next: string) => void;
   }) => (
     <div>
-      <div data-testid="workspace-tab">{value}</div>
       <button
         onClick={() => {
-          onSelectionChange({ ...selection, nodeIds: ['n1'] });
+          onSelectionChange({ nodeIds: ['n1'], edgeIds: [], sourceWidgetId: 'widget-1' });
         }}
       >
-        change-selection
+        simulate-selection
       </button>
-      <button
-        onClick={() => {
-          onRequestMetaModelFocus(['model-a']);
-        }}
-      >
-        focus-meta
-      </button>
-      <button
-        onClick={() => {
-          onValueChange(value === 'overview' ? 'canvas' : 'overview');
-        }}
-      >
-        toggle-tab
-      </button>
+    </div>
+  ),
+}));
+
+vi.mock('canvas/components/template-screen/properties-inspector', () => ({
+  PropertiesInspector: ({
+    selectionKind,
+    selectionId,
+  }: {
+    selectionKind: string;
+    selectionId?: string;
+  }) => (
+    <div data-testid="inspector">
+      {selectionKind}:{selectionId}
     </div>
   ),
 }));
@@ -121,18 +79,14 @@ vi.mock('canvas/praxis-api', () => ({
 }));
 
 vi.mock('canvas/platform', () => ({ isTauri: vi.fn() }));
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
-import { invoke } from '@tauri-apps/api/core';
+import { PraxisCanvasSurface } from 'canvas/app';
 import { searchStore } from 'canvas/lib/search';
 import { isTauri } from 'canvas/platform';
 import { listScenarios } from 'canvas/praxis-api';
 
-import App, { LegacyPraxisCanvasApp, PraxisCanvasSurface } from 'canvas/app';
-
 const listScenariosMock = vi.mocked(listScenarios);
 const isTauriMock = vi.mocked(isTauri);
-const invokeMock = vi.mocked(invoke);
 
 describe('Praxis canvas app shell', () => {
   beforeEach(() => {
@@ -146,7 +100,6 @@ describe('Praxis canvas app shell', () => {
       },
     ]);
     isTauriMock.mockReturnValue(false);
-    invokeMock.mockReset();
     searchStore.clear();
   });
 
@@ -154,29 +107,18 @@ describe('Praxis canvas app shell', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows unsupported page outside /canvas route', () => {
-    globalThis.history.pushState({}, '', '/not-canvas');
-
-    render(<LegacyPraxisCanvasApp />);
-
-    expect(screen.getByText(/Unsupported path/i)).toBeInTheDocument();
-    expect(screen.getByText(/not-canvas/)).toBeInTheDocument();
-  });
-
-  it('renders canvas experience on /canvas and fetches scenarios', async () => {
-    globalThis.history.pushState({}, '', '/canvas');
-
-    render(<App />);
+  it('renders the shell, fetches scenarios, and shows navigation + header', async () => {
+    render(<PraxisCanvasSurface />);
 
     await waitFor(() => {
       expect(listScenariosMock).toHaveBeenCalled();
     });
-    expect(screen.getByTestId('sidebar')).toHaveTextContent(/scenarios:1/);
-    expect(screen.getByText(/Active template/i)).toBeInTheDocument();
+    expect(screen.getByTestId('projects-sidebar')).toHaveTextContent('1 scenarios');
+    expect(screen.getByTestId('active-template')).toBeInTheDocument();
+    expect(screen.getByTestId('search-bar')).toBeInTheDocument();
   });
 
-  it('fires selection change callback from the surface', async () => {
-    globalThis.history.pushState({}, '', '/canvas');
+  it('forwards selection updates to parent callback', async () => {
     const onSelectionChange = vi.fn();
 
     render(<PraxisCanvasSurface onSelectionChange={onSelectionChange} />);
@@ -184,47 +126,28 @@ describe('Praxis canvas app shell', () => {
     await waitFor(() => {
       expect(listScenariosMock).toHaveBeenCalled();
     });
-    fireEvent.click(screen.getAllByText('select-node')[0]);
+    fireEvent.click(screen.getAllByText('simulate-selection')[0]);
 
     await waitFor(() => {
-      expect(onSelectionChange).toHaveBeenCalled();
+      expect(onSelectionChange.mock.calls.length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  it('saves a new template when prompted and updates the select list', async () => {
-    globalThis.history.pushState({}, '', '/canvas');
+  it('saves a template via header action', async () => {
     const promptSpy = vi.spyOn(globalThis, 'prompt').mockReturnValue('My Saved Template');
 
-    render(<App />);
+    render(<PraxisCanvasSurface />);
 
     await waitFor(() => {
       expect(listScenariosMock).toHaveBeenCalled();
     });
+    const initialCount = Number(screen.getAllByTestId('template-count')[0]?.textContent);
     fireEvent.click(screen.getAllByText('Save template')[0]);
 
+    await waitFor(() => {
+      const updated = Number(screen.getAllByTestId('template-count')[0]?.textContent);
+      expect(updated).toBeGreaterThan(initialCount);
+    });
     expect(promptSpy).toHaveBeenCalled();
-    expect(screen.getByDisplayValue(/My Saved Template/)).toBeInTheDocument();
-  });
-
-  it('invokes host windows when sidebar actions are selected inside Tauri', async () => {
-    globalThis.history.pushState({}, '', '/canvas');
-    isTauriMock.mockReturnValue(true);
-    invokeMock.mockResolvedValue();
-
-    render(<App />);
-
-    await waitFor(() => {
-      expect(searchStore.getState().items.length).toBeGreaterThan(0);
-    });
-    const statusEntry = searchStore.getState().items.find((item) => item.id === 'sidebar:status');
-    expect(statusEntry?.run).toBeDefined();
-    const runOutcome = statusEntry?.run?.();
-    if (runOutcome instanceof Promise) {
-      await runOutcome;
-    }
-
-    await waitFor(() => {
-      expect(invokeMock).toHaveBeenCalledWith('open_status');
-    });
   });
 });
