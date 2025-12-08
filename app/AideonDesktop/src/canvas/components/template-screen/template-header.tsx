@@ -29,6 +29,7 @@ interface TemplateHeaderProperties {
   readonly onTemplateChange: (templateId: string) => void;
   readonly onTemplateSave: () => void;
   readonly onCreateWidget: () => void;
+  readonly loading?: boolean;
 }
 
 /**
@@ -42,6 +43,7 @@ interface TemplateHeaderProperties {
  * @param root0.onTemplateChange
  * @param root0.onTemplateSave
  * @param root0.onCreateWidget
+ * @param root0.loading
  */
 export function TemplateHeader({
   scenarioName,
@@ -52,6 +54,7 @@ export function TemplateHeader({
   onTemplateChange,
   onTemplateSave,
   onCreateWidget,
+  loading = false,
 }: TemplateHeaderProperties) {
   const copy = templateScreenCopy;
   const description = templateDescription?.trim() ?? copy.templateDescriptionFallback;
@@ -64,9 +67,11 @@ export function TemplateHeader({
             {copy.scenarioLabel}
             {scenarioName ? ` · ${scenarioName}` : ''}
           </p>
-          <CardTitle className="text-3xl font-semibold leading-tight">{templateName}</CardTitle>
+          <CardTitle className="text-3xl font-semibold leading-tight">
+            {loading ? <span className="inline-block h-7 w-48 animate-pulse rounded bg-muted" /> : templateName}
+          </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
-            {description}
+            {loading ? <span className="inline-block h-4 w-64 animate-pulse rounded bg-muted" /> : description}
           </CardDescription>
         </div>
         <CardContent className="flex flex-col gap-3 p-0 lg:w-auto">
@@ -75,6 +80,7 @@ export function TemplateHeader({
           </Label>
           <Select
             value={activeTemplateId}
+            disabled={loading || templates.length === 0}
             onValueChange={(value) => {
               onTemplateChange(value);
             }}

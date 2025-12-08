@@ -13,9 +13,15 @@ describe('PropertiesInspector', () => {
   });
 
   it('renders widget fields when a widget is selected', () => {
-    render(<PropertiesInspector selectionKind="widget" selectionId="widget-1" />);
+    render(
+      <PropertiesInspector
+        selectionKind="widget"
+        selectionId="widget-1"
+        properties={{ name: 'Widget 1' }}
+      />,
+    );
 
     expect(screen.getByText(/widget properties/i)).toBeInTheDocument();
-    expect(screen.getByDisplayValue(/widget-1/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/Widget 1/i)).toBeInTheDocument();
   });
 });

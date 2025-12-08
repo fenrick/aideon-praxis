@@ -21,6 +21,27 @@ vi.mock('canvas/components/template-screen/properties-inspector', () => ({
   PropertiesInspector: () => <div>Properties Inspector</div>,
 }));
 
+vi.mock('canvas/domain-data', () => ({
+  listProjectsWithScenarios: vi.fn().mockResolvedValue([
+    {
+      id: 'p1',
+      name: 'Project One',
+      scenarios: [
+        {
+          id: 'main',
+          name: 'Main Scenario',
+          branch: 'main',
+          updatedAt: '2025-01-01T00:00:00Z',
+          isDefault: true,
+        },
+      ],
+    },
+  ]),
+  listTemplatesFromHost: vi.fn().mockResolvedValue([
+    { id: 'template-1', name: 'Template 1', description: 'desc', widgets: [] },
+  ]),
+}));
+
 vi.mock('canvas/praxis-api', () => ({
   listScenarios: vi.fn().mockResolvedValue([
     {
@@ -31,7 +52,10 @@ vi.mock('canvas/praxis-api', () => ({
       isDefault: true,
     },
   ]),
+  applyOperations: vi.fn(),
 }));
+
+vi.mock('canvas/platform', () => ({ isTauri: vi.fn(() => false) }));
 
 import { PraxisCanvasSurface } from './app';
 

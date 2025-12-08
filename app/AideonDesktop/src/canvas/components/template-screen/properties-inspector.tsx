@@ -1,5 +1,7 @@
+import { useState, type ReactNode } from 'react';
+
 import { templateScreenCopy } from 'canvas/copy/template-screen';
-import type { ReactNode } from 'react';
+import type { SelectionProperties } from 'canvas/stores/selection-store';
 
 import { Button } from 'design-system/components/ui/button';
 import {
@@ -19,6 +21,11 @@ export type SelectionKind = 'widget' | 'node' | 'edge' | 'none';
 export interface PropertiesInspectorProperties {
   readonly selectionKind: SelectionKind;
   readonly selectionId?: string;
+  readonly properties?: SelectionProperties;
+  readonly onSave?: (patch: Record<string, string | undefined>) => void | Promise<void>;
+  readonly onReset?: () => void;
+  readonly saving?: boolean;
+  readonly error?: string;
 }
 
 /**
@@ -26,10 +33,31 @@ export interface PropertiesInspectorProperties {
  * @param root0
  * @param root0.selectionKind
  * @param root0.selectionId
+ * @param root0.properties
+ * @param root0.onSave
+ * @param root0.onReset
+ * @param root0.saving
+ * @param root0.error
  */
-export function PropertiesInspector({ selectionKind, selectionId }: PropertiesInspectorProperties) {
+export function PropertiesInspector({
+  selectionKind,
+  selectionId,
+  properties,
+  onSave,
+  onReset,
+  saving,
+  error,
+}: PropertiesInspectorProperties) {
   const copy = templateScreenCopy.properties;
   const heading = resolveHeading(selectionKind, copy);
+  const [formState, setFormState] = useState({
+    name: properties?.name ?? selectionId ?? '',
+    dataSource: properties?.dataSource ?? '',
+    layout: properties?.layout ?? '',
+    description: properties?.description ?? '',
+  });
+
+  const disabled = selectionKind === 'none' || !selectionId;
 
   return (
     <Card className="border-border/60 bg-card/90 shadow-sm">
@@ -43,25 +71,62 @@ export function PropertiesInspector({ selectionKind, selectionId }: PropertiesIn
         ) : (
           <>
             <Field label={copy.nameLabel}>
-              <Input defaultValue={selectionId ?? ''} aria-label={copy.nameLabel} />
+              <Input
+                value={formState.name}
+                onChange={(event) => { setFormState((previous) => ({ ...previous, name: event.target.value })); }}
+                aria-label={copy.nameLabel}
+                disabled={disabled}
+              />
             </Field>
             <Field label={copy.dataSourceLabel}>
-              <Input placeholder="Datasource or catalogue" aria-label={copy.dataSourceLabel} />
+              <Input
+                value={formState.dataSource}
+                placeholder="Datasource or catalogue"
+                aria-label={copy.dataSourceLabel}
+                onChange={(event) =>
+                  { setFormState((previous) => ({ ...previous, dataSource: event.target.value })); }
+                }
+                disabled={disabled}
+              />
             </Field>
             <Field label={copy.layoutLabel}>
               <Textarea
+                value={formState.layout}
                 placeholder="Layout hints or coordinates"
                 rows={2}
                 aria-label={copy.layoutLabel}
+                onChange={(event) => { setFormState((previous) => ({ ...previous, layout: event.target.value })); }}
+                disabled={disabled}
               />
             </Field>
             <Separator />
             <div className="flex flex-wrap gap-2">
-              <Button size="sm">Save changes</Button>
-              <Button size="sm" variant="outline">
+              <Button
+                size="sm"
+                onClick={() => {
+                  const result = onSave?.(formState);
+                  if (result && typeof (result as Promise<unknown>).then === 'function') {
+                    (result as Promise<unknown>).catch(() => {
+                      /* ignored */
+                    });
+                  }
+                }}
+                disabled={disabled || saving}
+              >
+                {saving ? 'Saving…' : 'Save changes'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  onReset?.();
+                }}
+                disabled={disabled}
+              >
                 Reset
               </Button>
             </div>
+            {error ? <p className="text-xs text-destructive">{error}</p> : undefined}
           </>
         )}
       </CardContent>

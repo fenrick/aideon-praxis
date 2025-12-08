@@ -2,8 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas/components/template-screen/projects-sidebar', () => ({
-  ProjectsSidebar: ({ scenarios }: { scenarios: unknown[] }) => (
-    <div data-testid="projects-sidebar">{scenarios.length} scenarios</div>
+  ProjectsSidebar: ({ projects, scenarios }: { projects: unknown[]; scenarios: unknown[] }) => (
+    <div data-testid="projects-sidebar">{projects.length > 0 ? projects.length : scenarios.length} scenarios</div>
   ),
 }));
 
@@ -13,15 +13,18 @@ vi.mock('canvas/components/template-screen/template-header', () => ({
     onTemplateChange,
     templates,
     activeTemplateId,
+    loading,
   }: {
     onTemplateSave: () => void;
     onTemplateChange: (id: string) => void;
     templates: { id: string }[];
     activeTemplateId: string;
+    loading?: boolean;
   }) => (
     <div>
       <span data-testid="active-template">{activeTemplateId}</span>
       <span data-testid="template-count">{templates.length}</span>
+      {loading ? <span>loading</span> : undefined}
       <button onClick={onTemplateSave}>Save template</button>
       <button
         onClick={() => {
@@ -41,12 +44,14 @@ vi.mock('canvas/components/template-screen/scenario-search-bar', () => ({
 vi.mock('canvas/components/template-screen/overview-tabs', () => ({
   OverviewTabs: ({
     onSelectionChange,
+    reloadSignal,
   }: {
     onSelectionChange: (selection: {
       nodeIds: string[];
       edgeIds: string[];
       sourceWidgetId?: string;
     }) => void;
+    reloadSignal?: number;
   }) => (
     <div>
       <button
@@ -56,6 +61,7 @@ vi.mock('canvas/components/template-screen/overview-tabs', () => ({
       >
         simulate-selection
       </button>
+      <span data-testid="reload-signal">{reloadSignal ?? 0}</span>
     </div>
   ),
 }));
@@ -64,18 +70,26 @@ vi.mock('canvas/components/template-screen/properties-inspector', () => ({
   PropertiesInspector: ({
     selectionKind,
     selectionId,
+    saving,
   }: {
     selectionKind: string;
     selectionId?: string;
+    saving?: boolean;
   }) => (
     <div data-testid="inspector">
-      {selectionKind}:{selectionId}
+      {selectionKind}:{selectionId}:{saving ? 'saving' : 'idle'}
     </div>
   ),
 }));
 
+vi.mock('canvas/domain-data', () => ({
+  listProjectsWithScenarios: vi.fn(),
+  listTemplatesFromHost: vi.fn(),
+}));
+
 vi.mock('canvas/praxis-api', () => ({
   listScenarios: vi.fn(),
+  applyOperations: vi.fn(),
 }));
 
 vi.mock('canvas/platform', () => ({ isTauri: vi.fn() }));
@@ -83,9 +97,12 @@ vi.mock('canvas/platform', () => ({ isTauri: vi.fn() }));
 import { PraxisCanvasSurface } from 'canvas/app';
 import { searchStore } from 'canvas/lib/search';
 import { isTauri } from 'canvas/platform';
+import { listProjectsWithScenarios, listTemplatesFromHost } from 'canvas/domain-data';
 import { listScenarios } from 'canvas/praxis-api';
 
 const listScenariosMock = vi.mocked(listScenarios);
+const listProjectsMock = vi.mocked(listProjectsWithScenarios);
+const listTemplatesMock = vi.mocked(listTemplatesFromHost);
 const isTauriMock = vi.mocked(isTauri);
 
 describe('Praxis canvas app shell', () => {
@@ -97,6 +114,37 @@ describe('Praxis canvas app shell', () => {
         branch: 'main',
         updatedAt: '2025-01-01T00:00:00Z',
         isDefault: true,
+      },
+    ]);
+    listProjectsMock.mockResolvedValue([
+      {
+        id: 'project-1',
+        name: 'Project 1',
+        scenarios: [
+          {
+            id: 'mainline',
+            name: 'Mainline FY25',
+            branch: 'main',
+            updatedAt: '2025-01-01T00:00:00Z',
+            isDefault: true,
+          },
+        ],
+      },
+    ]);
+    listTemplatesMock.mockResolvedValue([
+      {
+        id: 'template-a',
+        name: 'Template A',
+        description: 'desc',
+        widgets: [
+          {
+            id: 'widget-1',
+            kind: 'graph',
+            title: 'Graph',
+            size: 'full',
+            view: { id: 'graph-default', name: 'Graph', kind: 'graph', filters: {} },
+          },
+        ],
       },
     ]);
     isTauriMock.mockReturnValue(false);
@@ -111,7 +159,8 @@ describe('Praxis canvas app shell', () => {
     render(<PraxisCanvasSurface />);
 
     await waitFor(() => {
-      expect(listScenariosMock).toHaveBeenCalled();
+      expect(listProjectsMock).toHaveBeenCalled();
+      expect(listTemplatesMock).toHaveBeenCalled();
     });
     expect(screen.getByTestId('projects-sidebar')).toHaveTextContent('1 scenarios');
     expect(screen.getByTestId('active-template')).toBeInTheDocument();
@@ -123,9 +172,6 @@ describe('Praxis canvas app shell', () => {
 
     render(<PraxisCanvasSurface onSelectionChange={onSelectionChange} />);
 
-    await waitFor(() => {
-      expect(listScenariosMock).toHaveBeenCalled();
-    });
     fireEvent.click(screen.getAllByText('simulate-selection')[0]);
 
     await waitFor(() => {
@@ -138,9 +184,6 @@ describe('Praxis canvas app shell', () => {
 
     render(<PraxisCanvasSurface />);
 
-    await waitFor(() => {
-      expect(listScenariosMock).toHaveBeenCalled();
-    });
     const initialCount = Number(screen.getAllByTestId('template-count')[0]?.textContent);
     fireEvent.click(screen.getAllByText('Save template')[0]);
 
