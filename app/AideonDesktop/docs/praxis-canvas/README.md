@@ -21,8 +21,8 @@ catalogue, matrix, and timeline views over the time-first digital twin.
 
 ## Relationships
 
-- **Depends on:** Aideon Design System, Praxis Adapters, Praxis DTOs, Praxis Host IPC.
-- **Used by:** Aideon Suite desktop app (Tauri shell via Praxis Host).
+- **Depends on:** Aideon Design System, Praxis Adapters, Praxis DTOs, Aideon Host IPC.
+- **Used by:** Aideon Suite desktop app (Tauri shell via Aideon Host).
 
 ## Running and testing
 

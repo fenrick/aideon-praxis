@@ -235,7 +235,7 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
   - Contains the React canvas, design-system proxies, adapters, and DTOs in one package.
   - Tests: JS/TS tests via `pnpm run node:test` (Vitest).
 
-- **Praxis Host (`crates/desktop`)**
+- **Aideon Host (`crates/desktop`)**
   - Read: `crates/desktop/README.md`, `crates/desktop/DESIGN.md`, `docs/tauri-capabilities.md`, `docs/tauri-client-server-pivot.md`.
   - Constraints: no renderer HTTP; no open ports in desktop mode; typed commands only.
   - Tests: Rust tests via `cargo test -p aideon_desktop`; workspace checks via `pnpm run host:lint && pnpm run host:check`.

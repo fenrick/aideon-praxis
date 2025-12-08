@@ -14,7 +14,7 @@ orchestrates common operations so the host and tools can work with a simpler API
 ## Relationships
 
 - **Depends on:** Praxis Engine, Mneme Core, and other engine crates as they mature.
-- **Used by:** Praxis Host and potential future server/CLI entry points.
+- **Used by:** Aideon Host and potential future server/CLI entry points.
 
 ## Running and testing
 

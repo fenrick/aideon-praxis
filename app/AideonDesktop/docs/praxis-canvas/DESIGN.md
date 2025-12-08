@@ -39,7 +39,7 @@ routes and should be considered transitional.
 
 ## Interactions
 
-- Renderer ↔ Host: IPC commands exposed by Praxis Host (see `Architecture-Boundary.md`).
+- Renderer ↔ Host: IPC commands exposed by Aideon Host (see `Architecture-Boundary.md`).
 - Renderer ↔ Engines: indirect, via host commands (no direct engine or DB access).
 - Renderer ↔ Design system: components and tokens from `app/AideonDesktop/src/design-system`.
 
