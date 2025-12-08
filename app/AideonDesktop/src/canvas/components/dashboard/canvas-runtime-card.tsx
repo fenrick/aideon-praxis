@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { CanvasRuntime } from 'canvas/canvas-runtime';
 import type { GraphViewModel } from 'canvas/praxis-api';
@@ -24,6 +24,7 @@ interface CanvasRuntimeCardProperties {
   readonly selection: SelectionState;
   readonly onSelectionChange?: (selection: SelectionState) => void;
   readonly onRequestMetaModelFocus?: (types: string[]) => void;
+  readonly reloadSignal?: number;
 }
 
 /**
@@ -33,6 +34,7 @@ interface CanvasRuntimeCardProperties {
  * @param root0.selection - Current selection shared across widgets.
  * @param root0.onSelectionChange - Selection handler.
  * @param root0.onRequestMetaModelFocus - Callback for meta-model focus requests.
+ * @param root0.reloadSignal
  * @returns Card element wrapping the runtime.
  */
 export function CanvasRuntimeCard({
@@ -40,11 +42,22 @@ export function CanvasRuntimeCard({
   selection,
   onSelectionChange,
   onRequestMetaModelFocus,
+  reloadSignal,
 }: CanvasRuntimeCardProperties) {
   const [reloadVersion, setReloadVersion] = useState(0);
   const [metadata, setMetadata] = useState<GraphViewModel['metadata'] | undefined>();
   const [stats, setStats] = useState<GraphViewModel['stats'] | undefined>();
   const [error, setError] = useState<string | undefined>();
+  const lastReloadSignal = useRef<number | undefined>(reloadSignal);
+
+  useEffect(() => {
+    if (typeof reloadSignal === 'number' && reloadSignal !== lastReloadSignal.current) {
+      if (lastReloadSignal.current !== undefined) {
+        queueMicrotask(() => { setReloadVersion((value) => value + 1); });
+      }
+      lastReloadSignal.current = reloadSignal;
+    }
+  }, [reloadSignal]);
 
   const handleGraphViewChange = useCallback((event: WidgetViewEvent) => {
     setMetadata(event.view.metadata);
