@@ -12,15 +12,18 @@ describe('useIsMobile', () => {
     changeHandler = undefined;
     removeChangeListener.mockClear();
 
-    vi.stubGlobal('matchMedia', vi.fn().mockImplementation(() => ({
-      matches: window.innerWidth < 768,
-      addEventListener: (_event: string, handler: (event: MediaQueryListEvent) => void) => {
-        changeHandler = handler;
-      },
-      removeEventListener: (_event: string, handler: (event: MediaQueryListEvent) => void) => {
-        removeChangeListener(handler);
-      },
-    })));
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation(() => ({
+        matches: window.innerWidth < 768,
+        addEventListener: (_event: string, handler: (event: MediaQueryListEvent) => void) => {
+          changeHandler = handler;
+        },
+        removeEventListener: (_event: string, handler: (event: MediaQueryListEvent) => void) => {
+          removeChangeListener(handler);
+        },
+      })),
+    );
   });
 
   afterEach(() => {
