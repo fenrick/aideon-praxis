@@ -4,15 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as canvasModule from '../../src/canvas';
 import { useWorkspaceTree } from '../../src/hooks/use-workspace-tree';
 
+vi.mock('../../src/canvas');
+
 describe('useWorkspaceTree', () => {
-  let listScenariosSpy: vi.SpyInstance<
-    ReturnType<typeof canvasModule.listScenarios>,
-    Parameters<typeof canvasModule.listScenarios>
-  >;
+  const listScenariosMock = vi.mocked(canvasModule.listScenarios);
 
   beforeEach(() => {
-    listScenariosSpy = vi.spyOn(canvasModule, 'listScenarios');
-    listScenariosSpy.mockResolvedValue([
+    listScenariosMock.mockResolvedValue([
       {
         id: 's-default',
         name: '',
@@ -31,12 +29,15 @@ describe('useWorkspaceTree', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    listScenariosMock.mockReset();
   });
 
   it('maps host scenarios into workspace tree items and keeps metadata', async () => {
     const { result } = renderHook(() => useWorkspaceTree());
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     expect(result.current.error).toBeUndefined();
     expect(result.current.items).toHaveLength(1);
@@ -60,32 +61,38 @@ describe('useWorkspaceTree', () => {
   });
 
   it('surfaces errors when scenario loading fails', async () => {
-    listScenariosSpy.mockRejectedValueOnce(new Error('offline'));
+    listScenariosMock.mockRejectedValueOnce(new Error('offline'));
 
     const { result } = renderHook(() => useWorkspaceTree());
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     expect(result.current.error).toBe('offline');
     expect(result.current.items[0]?.children).toHaveLength(0);
   });
 
   it('uses the fallback error message when the thrown value is empty', async () => {
-    listScenariosSpy.mockRejectedValueOnce('');
+    listScenariosMock.mockRejectedValueOnce('');
 
     const { result } = renderHook(() => useWorkspaceTree());
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     expect(result.current.error).toBe('Failed to load workspaces');
   });
 
   it('returns an empty workspace list when no scenarios are available', async () => {
-    listScenariosSpy.mockResolvedValueOnce([]);
+    listScenariosMock.mockResolvedValueOnce([]);
 
     const { result } = renderHook(() => useWorkspaceTree());
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     expect(result.current.items).toHaveLength(1);
     expect(result.current.items[0]?.children).toEqual([]);

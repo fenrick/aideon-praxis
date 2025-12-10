@@ -33,14 +33,18 @@ describe('useIsMobile', () => {
   it('tracks viewport changes around the mobile breakpoint', async () => {
     const { result, unmount } = renderHook(() => useIsMobile());
 
-    await waitFor(() => expect(result.current).toBe(false));
+    await waitFor(() => {
+      expect(result.current).toBe(false);
+    });
 
     act(() => {
       window.innerWidth = 640;
       changeHandler?.({ matches: true } as MediaQueryListEvent);
     });
 
-    await waitFor(() => expect(result.current).toBe(true));
+    await waitFor(() => {
+      expect(result.current).toBe(true);
+    });
 
     unmount();
 
