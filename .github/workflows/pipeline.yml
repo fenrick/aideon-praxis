@@ -139,12 +139,6 @@ jobs:
         working-directory: crates/desktop
         run: pnpm run host:test
 
-      - name: Install cargo-llvm-cov
-        if: runner.os == 'Linux'
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-llvm-cov
-
       - name: Cache RustSec advisory DB
         uses: actions/cache@v4
         with:
@@ -214,17 +208,7 @@ jobs:
         run: pnpm run node:typecheck
 
       - name: JS Tests + Coverage
-        run: pnpm run node:test:coverage
-
-      - name: Upload TS coverage
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v5
-        with:
-          name: coverage-ts
-          if-no-files-found: warn
-          retention-days: 7
-          path: |
-            coverage/lcov.info
+        run: pnpm run node:test
 
   tauri_build:
     name: Tauri Build (${{ matrix.os }})
@@ -369,12 +353,6 @@ jobs:
           command -v cargo || { echo "::error ::cargo missing from PATH"; exit 1; }
           cargo --version
           rustup show
-
-      - name: Download TS coverage
-        uses: actions/download-artifact@v6
-        with:
-          name: coverage-ts
-          path: coverage
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
