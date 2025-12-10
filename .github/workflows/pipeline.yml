@@ -100,51 +100,21 @@ jobs:
         uses: actions-rust-lang/rustfmt@v1
 
       - name: Cargo clippy (deny warnings)
-        working-directory: crates/desktop
-        run: cargo clippy --all-targets -- -D warnings
+        run: pnpm run host:lint
 
       - name: Cargo check (typecheck)
         working-directory: crates/desktop
-        run: cargo check --all-targets --all-features
+        run: pnpm run host:check
 
       - name: Cargo test
         working-directory: crates/desktop
-        run: cargo test --all --quiet
+        run: pnpm run host:test
 
       - name: Install cargo-llvm-cov
         if: runner.os == 'Linux'
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov
-
-      - name: Rust coverage (LCOV)
-        if: runner.os == 'Linux'
-        working-directory: crates/desktop
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p coverage
-          cargo llvm-cov --lcov --output-path coverage/lcov.info --all-targets
-
-      - name: Clippy JSON report (for Sonar import)
-        if: runner.os == 'Linux'
-        working-directory: crates/desktop
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p coverage
-          # Generate Clippy JSON without -D warnings (warnings already denied above)
-          cargo clippy --message-format=json -q > coverage/clippy.json || true
-
-      - name: Upload Rust coverage
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v5
-        with:
-          name: coverage-rs
-          if-no-files-found: warn
-          retention-days: 7
-          path: |
-            crates/desktop/coverage
 
       - name: Cache RustSec advisory DB
         uses: actions/cache@v4
