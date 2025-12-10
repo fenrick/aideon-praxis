@@ -35,7 +35,9 @@ describe('useWorkspaceTree', () => {
   it('maps host scenarios into workspace tree items and keeps metadata', async () => {
     const { result } = renderHook(() => useWorkspaceTree());
 
-    await waitFor(() => { expect(result.current.loading).toBe(false); });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     expect(result.current.error).toBeUndefined();
     expect(result.current.items).toHaveLength(1);
@@ -63,7 +65,9 @@ describe('useWorkspaceTree', () => {
 
     const { result } = renderHook(() => useWorkspaceTree());
 
-    await waitFor(() => { expect(result.current.loading).toBe(false); });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     expect(result.current.error).toBe('offline');
     expect(result.current.items[0]?.children).toHaveLength(0);
@@ -74,7 +78,9 @@ describe('useWorkspaceTree', () => {
 
     const { result } = renderHook(() => useWorkspaceTree());
 
-    await waitFor(() => { expect(result.current.loading).toBe(false); });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     expect(result.current.error).toBe('Failed to load workspaces');
   });
@@ -84,7 +90,9 @@ describe('useWorkspaceTree', () => {
 
     const { result } = renderHook(() => useWorkspaceTree());
 
-    await waitFor(() => { expect(result.current.loading).toBe(false); });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     expect(result.current.items).toHaveLength(1);
     expect(result.current.items[0]?.children).toEqual([]);
