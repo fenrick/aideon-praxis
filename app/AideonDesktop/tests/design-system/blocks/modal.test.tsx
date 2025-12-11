@@ -1,9 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-const withTestId =
-  (testId: string) =>
-  function WithTestId({
+function withTestId(testId: string) {
+  return function WithTestId({
     className,
     children,
     ...properties
@@ -14,6 +13,7 @@ const withTestId =
       </div>
     );
   };
+}
 
 vi.mock('design-system/ui/dialog', () => {
   const Dialog = ({ children, ...properties }: { children: React.ReactNode }) => (
