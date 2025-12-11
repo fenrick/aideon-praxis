@@ -32,7 +32,9 @@ describe('selection-store extra coverage', () => {
     });
     expect(result.current.state.properties.n1).toBeUndefined();
 
-    act(() => { result.current.clear(); });
+    act(() => {
+      result.current.clear();
+    });
     expect(result.current.state.selection).toEqual(EMPTY_SELECTION);
   });
 

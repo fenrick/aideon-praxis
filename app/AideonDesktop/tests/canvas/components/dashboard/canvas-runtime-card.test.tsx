@@ -2,7 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 interface MockGraphView {
-  view?: { metadata: { asOf: string; scenario?: string }; stats?: { nodes?: number; edges?: number } };
+  view?: {
+    metadata: { asOf: string; scenario?: string };
+    stats?: { nodes?: number; edges?: number };
+  };
 }
 
 vi.mock('canvas/canvas-runtime', () => ({
@@ -15,7 +18,11 @@ vi.mock('canvas/canvas-runtime', () => ({
     reloadVersion: number;
     onGraphViewChange?: (view: MockGraphView) => void;
     onGraphError?: (error: { message: string }) => void;
-    onSelectionChange?: (selection: { nodeIds: string[]; edgeIds: string[]; widgetId: string }) => void;
+    onSelectionChange?: (selection: {
+      nodeIds: string[];
+      edgeIds: string[];
+      widgetId: string;
+    }) => void;
   }) => (
     <div data-testid="canvas-runtime" data-reload={reloadVersion}>
       <button
@@ -82,10 +89,7 @@ describe('CanvasRuntimeCard', () => {
     unmount();
 
     const { container: container2, getAllByTestId } = render(
-      <CanvasRuntimeCard
-        widgets={[{ id: 'w1' }]}
-        selection={{ nodeIds: [], edgeIds: [] }}
-      />,
+      <CanvasRuntimeCard widgets={[{ id: 'w1' }]} selection={{ nodeIds: [], edgeIds: [] }} />,
     );
     const refresh = [...container2.querySelectorAll('button')].find((button) =>
       /Refresh graph/i.test(button.textContent),

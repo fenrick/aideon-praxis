@@ -43,7 +43,11 @@ vi.mock('canvas/components/template-screen/template-header', () => ({
   ),
 }));
 vi.mock('canvas/components/template-screen/scenario-search-bar', () => ({
-  ScenarioSearchBar: ({ onScenarioChange }: { onScenarioChange?: (scenarioId: string) => void }) => (
+  ScenarioSearchBar: ({
+    onScenarioChange,
+  }: {
+    onScenarioChange?: (scenarioId: string) => void;
+  }) => (
     <button onClick={() => onScenarioChange?.('alt')} data-testid="scenario-change">
       scenario
     </button>
@@ -54,7 +58,11 @@ vi.mock('canvas/components/template-screen/overview-tabs', () => ({
     onSelectionChange,
     reloadSignal,
   }: {
-    onSelectionChange: (selection: { nodeIds: string[]; edgeIds: string[]; sourceWidgetId?: string }) => void;
+    onSelectionChange: (selection: {
+      nodeIds: string[];
+      edgeIds: string[];
+      sourceWidgetId?: string;
+    }) => void;
     reloadSignal?: number;
   }) => (
     <div>
@@ -174,7 +182,9 @@ describe('PraxisCanvasSurface (coverage)', () => {
     const onSelectionChange = vi.fn();
     render(<PraxisCanvasSurface onSelectionChange={onSelectionChange} debug />);
 
-    await waitFor(() => { expect(listTemplatesFromHost).toHaveBeenCalled(); });
+    await waitFor(() => {
+      expect(listTemplatesFromHost).toHaveBeenCalled();
+    });
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('select-node'));
@@ -185,12 +195,16 @@ describe('PraxisCanvasSurface (coverage)', () => {
     });
 
     fireEvent.click(screen.getByTestId('save-template'));
-    await waitFor(() => { expect(listTemplatesFromHost).toHaveBeenCalledTimes(2); });
+    await waitFor(() => {
+      expect(listTemplatesFromHost).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('changes scenarios', async () => {
     render(<PraxisCanvasSurface />);
-    await waitFor(() => { expect(listProjectsWithScenarios).toHaveBeenCalled(); });
+    await waitFor(() => {
+      expect(listProjectsWithScenarios).toHaveBeenCalled();
+    });
     fireEvent.click(screen.getAllByTestId('scenario-change')[0]);
     expect(screen.getAllByTestId('reload-signal')[0]).toHaveTextContent('0');
   });
@@ -211,11 +225,15 @@ describe('PraxisCanvasSurface (coverage)', () => {
   it('invokes inspector save and applies operations for node selection', async () => {
     const { applyOperations } = await import('canvas/praxis-api');
     render(<PraxisCanvasSurface />);
-    await waitFor(() => { expect(listProjectsWithScenarios).toHaveBeenCalled(); });
+    await waitFor(() => {
+      expect(listProjectsWithScenarios).toHaveBeenCalled();
+    });
     fireEvent.click(screen.getAllByTestId('select-node')[0]);
     const [inspectorSaveButton] = await screen.findAllByTestId('inspector-save');
     fireEvent.click(inspectorSaveButton);
-    await waitFor(() => { expect(applyOperations).toHaveBeenCalled(); });
+    await waitFor(() => {
+      expect(applyOperations).toHaveBeenCalled();
+    });
   });
 
   // negative paths covered in dedicated files; keep this focused on happy-path wiring

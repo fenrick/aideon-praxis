@@ -1,12 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+/**
+ *
+ * @param testId
+ */
 function withTestId(testId: string) {
   return function WithTestId({
     className,
     children,
     ...properties
-  }: { className?: string; children?: React.ReactNode }) {
+  }: {
+    className?: string;
+    children?: React.ReactNode;
+  }) {
     return (
       <div data-testid={testId} data-class={className} {...properties}>
         {children}

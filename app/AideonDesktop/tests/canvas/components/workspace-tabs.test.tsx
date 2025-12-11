@@ -36,7 +36,9 @@ vi.mock('@radix-ui/react-tabs', () => {
     value,
     children,
     ...properties
-  }: React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement> & { value: string }>) => {
+  }: React.PropsWithChildren<
+    React.ButtonHTMLAttributes<HTMLButtonElement> & { value: string }
+  >) => {
     const context = React.useContext(TabsContext);
     const handleClick = () => context.onChange?.(value);
     return (
@@ -90,7 +92,13 @@ const baseSelection: SelectionState = { nodeIds: [], edgeIds: [] };
 describe('WorkspaceTabs', () => {
   it('shows loading state when snapshot is pending', () => {
     mockUseTemporalPanel.mockReturnValue([
-      { loading: true, snapshot: undefined, branch: undefined, diff: undefined, mergeConflicts: undefined },
+      {
+        loading: true,
+        snapshot: undefined,
+        branch: undefined,
+        diff: undefined,
+        mergeConflicts: undefined,
+      },
       {},
     ] as unknown as [
       {

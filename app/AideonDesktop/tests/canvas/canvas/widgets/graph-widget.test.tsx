@@ -188,7 +188,9 @@ describe('GraphWidget', () => {
       />,
     );
 
-    await waitFor(() => { expect(getGraphViewMock).toHaveBeenCalled(); });
+    await waitFor(() => {
+      expect(getGraphViewMock).toHaveBeenCalled();
+    });
 
     rerender(
       <GraphWidget
@@ -199,9 +201,15 @@ describe('GraphWidget', () => {
       />,
     );
 
-    await waitFor(() => { expect(latestContextMenuHandler).toBeDefined(); });
+    await waitFor(() => {
+      expect(latestContextMenuHandler).toBeDefined();
+    });
     latestContextMenuHandler?.(
-      { preventDefault: () => { /* noop */ } },
+      {
+        preventDefault: () => {
+          /* noop */
+        },
+      },
       { id: 'node-1', data: { entityTypes: ['Capability'] }, selected: true },
     );
     const menuButton = await screen.findByText(/View meta-model entry/);

@@ -3,7 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas/time/use-temporal-panel', () => ({
   useTemporalPanel: () => [
-    { loading: false, snapshot: undefined, branch: undefined, diff: undefined, mergeConflicts: undefined },
+    {
+      loading: false,
+      snapshot: undefined,
+      branch: undefined,
+      diff: undefined,
+      mergeConflicts: undefined,
+    },
     { refresh: vi.fn() },
   ],
 }));
