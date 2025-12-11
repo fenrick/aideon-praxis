@@ -112,7 +112,7 @@ import { listProjectsWithScenarios, listTemplatesFromHost } from 'canvas/domain-
 describe('PraxisCanvasSurface (coverage)', () => {
   it('loads projects/templates, wires selection and saves templates', async () => {
     const onSelectionChange = vi.fn();
-    render(<PraxisCanvasSurface onSelectionChange={onSelectionChange} />);
+    render(<PraxisCanvasSurface onSelectionChange={onSelectionChange} debug />);
 
     await waitFor(() => expect(listTemplatesFromHost).toHaveBeenCalled());
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
@@ -126,6 +126,7 @@ describe('PraxisCanvasSurface (coverage)', () => {
 
     fireEvent.click(screen.getByTestId('save-template'));
     await waitFor(() => expect(listTemplatesFromHost).toHaveBeenCalledTimes(2));
+    expect(screen.getByText('debug')).toBeInTheDocument();
   });
 
   it('changes scenarios', async () => {
