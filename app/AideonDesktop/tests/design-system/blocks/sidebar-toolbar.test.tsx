@@ -7,11 +7,7 @@ import {
   SidebarSection,
   SidebarShell,
 } from 'design-system/blocks/sidebar';
-import {
-  Toolbar,
-  ToolbarSection,
-  ToolbarSeparator,
-} from 'design-system/blocks/toolbar';
+import { Toolbar, ToolbarSection, ToolbarSeparator } from 'design-system/blocks/toolbar';
 
 describe('Sidebar blocks', () => {
   it('compose shell, section, heading and nav with defaults', () => {

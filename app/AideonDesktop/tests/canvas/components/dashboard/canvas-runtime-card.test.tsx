@@ -2,12 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas/canvas-runtime', () => ({
-  CanvasRuntime: ({
-    reloadVersion,
-    onGraphViewChange,
-    onGraphError,
-    onSelectionChange,
-  }: any) => (
+  CanvasRuntime: ({ reloadVersion, onGraphViewChange, onGraphError, onSelectionChange }: any) => (
     <div data-testid="canvas-runtime" data-reload={reloadVersion}>
       <button
         data-testid="emit-view"
@@ -23,9 +18,7 @@ vi.mock('canvas/canvas-runtime', () => ({
       <button data-testid="emit-error" onClick={() => onGraphError?.({ message: 'boom' })} />
       <button
         data-testid="emit-selection"
-        onClick={() =>
-    onSelectionChange?.({ nodeIds: ['n1'], edgeIds: [], widgetId: 'w1' })
-        }
+        onClick={() => onSelectionChange?.({ nodeIds: ['n1'], edgeIds: [], widgetId: 'w1' })}
       />
     </div>
   ),
@@ -75,7 +68,10 @@ describe('CanvasRuntimeCard', () => {
     unmount();
 
     const { container: container2, getAllByTestId } = render(
-      <CanvasRuntimeCard widgets={[{ id: 'w1' } as any]} selection={{ nodeIds: [], edgeIds: [] }} />,
+      <CanvasRuntimeCard
+        widgets={[{ id: 'w1' } as any]}
+        selection={{ nodeIds: [], edgeIds: [] }}
+      />,
     );
     const refresh = Array.from(container2.querySelectorAll('button')).find((btn) =>
       /Refresh graph/i.test(btn.textContent ?? ''),

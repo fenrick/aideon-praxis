@@ -9,9 +9,15 @@ vi.mock('@radix-ui/react-tabs', () => {
   const React = require('react');
   const TabsContext = React.createContext<{ value?: string; onChange?: (v: string) => void }>({});
   const Root = ({ value, onValueChange, children }: any) => (
-    <TabsContext.Provider value={{ value, onChange: onValueChange }}>{children}</TabsContext.Provider>
+    <TabsContext.Provider value={{ value, onChange: onValueChange }}>
+      {children}
+    </TabsContext.Provider>
   );
-  const List = ({ children, ...props }: any) => <div role="tablist" {...props}>{children}</div>;
+  const List = ({ children, ...props }: any) => (
+    <div role="tablist" {...props}>
+      {children}
+    </div>
+  );
   const Trigger = ({ value, children, ...props }: any) => {
     const ctx = React.useContext(TabsContext);
     return (
@@ -48,8 +54,8 @@ vi.mock('canvas/components/dashboard/canvas-runtime-card', () => ({
   ),
 }));
 
-import { useTemporalPanel } from 'canvas/time/use-temporal-panel';
 import { WorkspaceTabs } from 'canvas/components/workspace-tabs';
+import { useTemporalPanel } from 'canvas/time/use-temporal-panel';
 import type { SelectionState } from 'canvas/types';
 
 const mockUseTemporalPanel = vi.mocked(useTemporalPanel);
@@ -81,7 +87,9 @@ describe('WorkspaceTabs', () => {
         loading: false,
         snapshot: { nodes: 10, edges: 5, confidence: 0.42, scenario: 'Test' },
         branch: 'dev',
-        diff: { metrics: { nodeAdds: 1, nodeMods: 2, nodeDels: 0, edgeAdds: 3, edgeMods: 0, edgeDels: 1 } },
+        diff: {
+          metrics: { nodeAdds: 1, nodeMods: 2, nodeDels: 0, edgeAdds: 3, edgeMods: 0, edgeDels: 1 },
+        },
         mergeConflicts: [{ kind: 'edge', reference: 'e1', message: 'conflict' }],
       },
       { refresh: vi.fn() },

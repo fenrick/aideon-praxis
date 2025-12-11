@@ -8,12 +8,12 @@ vi.mock('design-system/ui/dialog', () => {
     </div>
   );
   const withTestId =
-    (testId: string) => ({ className, children, ...props }: any) =>
-      (
-        <div data-testid={testId} data-class={className} {...props}>
-          {children}
-        </div>
-      );
+    (testId: string) =>
+    ({ className, children, ...props }: any) => (
+      <div data-testid={testId} data-class={className} {...props}>
+        {children}
+      </div>
+    );
   return {
     Dialog,
     DialogContent: withTestId('dialog-content'),
