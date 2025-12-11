@@ -153,7 +153,7 @@ describe('GlobalSearchCard', () => {
     });
   });
 
-  it('uses the command palette to trigger actions', { timeout: 15000 }, async () => {
+  it('uses the command palette to trigger actions', { timeout: 15_000 }, async () => {
     render(
       <GlobalSearchCard onSelectNodes={selectNodesSpy} onFocusMetaModel={focusMetaModelSpy} />,
     );

@@ -13,7 +13,7 @@ vi.mock('canvas/lib/analytics', () => ({
 describe('DebugOverlay', () => {
   it('hides when not visible', () => {
     const { container } = render(<DebugOverlay visible={false} />);
-    expect(container.firstChild).toBeNull();
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('renders selection info and recent analytics', () => {

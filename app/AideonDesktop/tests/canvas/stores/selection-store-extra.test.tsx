@@ -30,9 +30,9 @@ describe('selection-store extra coverage', () => {
       result.current.updateProperties('n1', { name: 'Node 1', description: 'desc' });
       result.current.resetProperties('n1');
     });
-    expect(result.current.state.properties['n1']).toBeUndefined();
+    expect(result.current.state.properties.n1).toBeUndefined();
 
-    act(() => result.current.clear());
+    act(() => { result.current.clear(); });
     expect(result.current.state.selection).toEqual(EMPTY_SELECTION);
   });
 
