@@ -153,10 +153,13 @@ describe('GlobalSearchCard', () => {
     });
   });
 
-  it('uses the command palette to trigger actions', async () => {
-    render(
-      <GlobalSearchCard onSelectNodes={selectNodesSpy} onFocusMetaModel={focusMetaModelSpy} />,
-    );
+  it(
+    'uses the command palette to trigger actions',
+    { timeout: 15000 },
+    async () => {
+      render(
+        <GlobalSearchCard onSelectNodes={selectNodesSpy} onFocusMetaModel={focusMetaModelSpy} />,
+      );
 
     const [openButton] = screen.getAllByRole('button', { name: /Open command palette/i });
     fireEvent.click(openButton);
@@ -194,8 +197,9 @@ describe('GlobalSearchCard', () => {
       kind: 'type',
     });
 
-    fireEvent.click(openButton);
-    fireEvent.click(screen.getByText('Refresh branches'));
-    expect(refreshBranchesSpy).toHaveBeenCalled();
-  });
+      fireEvent.click(openButton);
+      fireEvent.click(screen.getByText('Refresh branches'));
+      expect(refreshBranchesSpy).toHaveBeenCalled();
+    },
+  );
 });

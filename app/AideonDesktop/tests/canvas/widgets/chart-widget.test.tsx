@@ -1,12 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { getChartView } from 'canvas/praxis-api';
 import { ChartWidget } from 'canvas/widgets/chart-widget';
 
 vi.mock('canvas/praxis-api', () => ({
   getChartView: vi.fn(),
 }));
-import { getChartView } from 'canvas/praxis-api';
 const mockedGetChartView = vi.mocked(getChartView);
 
 const widget = {

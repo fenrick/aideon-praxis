@@ -28,6 +28,12 @@ interface Selection {
 }
 
 let latestSelectionHandler: ((selection: Selection) => void) | undefined;
+let latestContextMenuHandler:
+  | ((
+      event: { preventDefault: () => void },
+      node: { id: string; data: any; selected?: boolean },
+    ) => void)
+  | undefined;
 
 vi.mock('@xyflow/react', () => {
   const { createElement } = React;
@@ -37,26 +43,27 @@ vi.mock('@xyflow/react', () => {
     ReactFlow: ({
       children,
       onSelectionChange,
+      onNodeContextMenu,
     }: {
       children?: React.ReactNode;
       onSelectionChange?: (selection: Selection) => void;
+      onNodeContextMenu?: (event: any, node: any) => void;
     }) => {
       latestSelectionHandler = onSelectionChange ?? undefined;
+      latestContextMenuHandler = onNodeContextMenu ?? undefined;
       return createElement('div', { 'data-testid': 'reactflow' }, children);
     },
     Controls: () => createElement('div', { 'data-testid': 'controls' }),
     Background: () => createElement('div', { 'data-testid': 'background' }),
     BackgroundVariant: { Dots: 'dots' },
-    useNodesState: (): [never[], (nodes: never[]) => void, (nodes: never[]) => void] => [
-      [],
-      vi.fn(),
-      vi.fn(),
-    ],
-    useEdgesState: (): [never[], (edges: never[]) => void, (edges: never[]) => void] => [
-      [],
-      vi.fn(),
-      vi.fn(),
-    ],
+    useNodesState: () => {
+      const [nodes, setNodes] = React.useState<any[]>([]);
+      return [nodes, setNodes, vi.fn()];
+    },
+    useEdgesState: () => {
+      const [edges, setEdges] = React.useState<any[]>([]);
+      return [edges, setEdges, vi.fn()];
+    },
     useReactFlow: () => ({
       getNodes: (): never[] => [],
       setNodes: (updater: (nodes: never[]) => never[]) => updater([]),
@@ -152,5 +159,50 @@ describe('GraphWidget', () => {
 
     expect(await screen.findByText('IPC offline')).toBeInTheDocument();
     expect(onError).toHaveBeenCalledWith('IPC offline');
+  });
+
+  it('opens context menu and triggers meta-model focus', async () => {
+    getGraphViewMock.mockResolvedValue({
+      ...GRAPH_VIEW,
+      nodes: [
+        {
+          id: 'node-1',
+          label: 'Cap',
+          type: 'Capability',
+          position: { x: 0, y: 0 },
+          entityTypes: ['Capability'],
+        },
+      ],
+      edges: [],
+    });
+    const onRequestMetaModelFocus = vi.fn();
+
+    const { rerender } = render(
+      <GraphWidget
+        widget={GRAPH_WIDGET}
+        reloadVersion={0}
+        onRequestMetaModelFocus={onRequestMetaModelFocus}
+      />,
+    );
+
+    await waitFor(() => expect(getGraphViewMock).toHaveBeenCalled());
+
+    rerender(
+      <GraphWidget
+        widget={GRAPH_WIDGET}
+        reloadVersion={0}
+        onRequestMetaModelFocus={onRequestMetaModelFocus}
+        selection={{ nodeIds: ['node-1'], edgeIds: [], sourceWidgetId: undefined }}
+      />,
+    );
+
+    await waitFor(() => expect(latestContextMenuHandler).toBeDefined());
+    latestContextMenuHandler?.(
+      { preventDefault: () => {} },
+      { id: 'node-1', data: { entityTypes: ['Capability'] }, selected: true },
+    );
+    const menuButton = await screen.findByText(/View meta-model entry/);
+    menuButton.click();
+    expect(onRequestMetaModelFocus).toHaveBeenCalledWith(['Capability']);
   });
 });

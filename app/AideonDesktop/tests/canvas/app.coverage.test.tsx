@@ -23,7 +23,9 @@ vi.mock('canvas/components/template-screen/overview-tabs', () => ({
     <div>
       <button
         data-testid="select-node"
-        onClick={() => onSelectionChange({ nodeIds: ['n1'], edgeIds: [], sourceWidgetId: undefined })}
+        onClick={() =>
+          onSelectionChange({ nodeIds: ['n1'], edgeIds: [], sourceWidgetId: undefined })
+        }
       >
         select
       </button>
@@ -33,7 +35,9 @@ vi.mock('canvas/components/template-screen/overview-tabs', () => ({
 }));
 vi.mock('canvas/components/template-screen/properties-inspector', () => ({
   PropertiesInspector: ({ selectionKind, selectionId }: any) => (
-    <div data-testid="selection-kind">{selectionKind}:{selectionId ?? ''}</div>
+    <div data-testid="selection-kind">
+      {selectionKind}:{selectionId ?? ''}
+    </div>
   ),
 }));
 vi.mock('canvas/components/template-screen/praxis-shell-layout', () => ({
@@ -58,7 +62,10 @@ vi.mock('canvas/components/template-screen/properties-inspector', () => ({
 }));
 vi.mock('canvas/templates', async () => {
   const actual = await vi.importActual<typeof import('canvas/templates')>('canvas/templates');
-  return { ...actual, BUILT_IN_TEMPLATES: [{ id: 't1', name: 'Template 1', description: '', widgets: [] }] };
+  return {
+    ...actual,
+    BUILT_IN_TEMPLATES: [{ id: 't1', name: 'Template 1', description: '', widgets: [] }],
+  };
 });
 vi.mock('canvas/widgets/registry', () => ({
   listWidgetRegistry: () => [
@@ -66,29 +73,41 @@ vi.mock('canvas/widgets/registry', () => ({
   ],
 }));
 vi.mock('canvas/praxis-api', () => {
-  const listScenarios = vi.fn().mockResolvedValue([
-    { id: 's1', name: 'Scenario 1', branch: 'main', updatedAt: '', isDefault: true },
-  ]);
+  const listScenarios = vi
+    .fn()
+    .mockResolvedValue([
+      { id: 's1', name: 'Scenario 1', branch: 'main', updatedAt: '', isDefault: true },
+    ]);
   const applyOperations = vi.fn().mockResolvedValue(undefined);
   return { listScenarios, applyOperations };
 });
 vi.mock('canvas/domain-data', () => ({
-  listProjectsWithScenarios: vi.fn().mockResolvedValue([
-    { id: 'p1', name: 'Proj', scenarios: [{ id: 's1', name: 'Scenario 1', branch: 'main', updatedAt: '', isDefault: true }] },
-  ]),
-  listTemplatesFromHost: vi.fn().mockResolvedValue([
-    { id: 't1', name: 'Template 1', description: '', widgets: [] },
-  ]),
+  listProjectsWithScenarios: vi
+    .fn()
+    .mockResolvedValue([
+      {
+        id: 'p1',
+        name: 'Proj',
+        scenarios: [
+          { id: 's1', name: 'Scenario 1', branch: 'main', updatedAt: '', isDefault: true },
+        ],
+      },
+    ]),
+  listTemplatesFromHost: vi
+    .fn()
+    .mockResolvedValue([{ id: 't1', name: 'Template 1', description: '', widgets: [] }]),
 }));
 vi.mock('canvas/platform', () => ({ isTauri: vi.fn(() => false) }));
 vi.mock('canvas/time/use-temporal-panel', () => ({
-  useTemporalPanel: () => [{ branch: 'main', commitId: undefined, loading: false }, { refresh: vi.fn() }],
+  useTemporalPanel: () => [
+    { branch: 'main', commitId: undefined, loading: false },
+    { refresh: vi.fn() },
+  ],
 }));
 vi.mock('canvas/lib/analytics', () => ({ track: vi.fn() }));
 
 import { PraxisCanvasSurface } from 'canvas/app';
 import { listProjectsWithScenarios, listTemplatesFromHost } from 'canvas/domain-data';
-import { applyOperations } from 'canvas/praxis-api';
 
 describe('PraxisCanvasSurface (coverage)', () => {
   it('loads projects/templates, wires selection and saves templates', async () => {
@@ -99,7 +118,11 @@ describe('PraxisCanvasSurface (coverage)', () => {
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('select-node'));
-    expect(onSelectionChange).toHaveBeenCalledWith({ nodeIds: ['n1'], edgeIds: [], sourceWidgetId: undefined });
+    expect(onSelectionChange).toHaveBeenCalledWith({
+      nodeIds: ['n1'],
+      edgeIds: [],
+      sourceWidgetId: undefined,
+    });
 
     fireEvent.click(screen.getByTestId('save-template'));
     await waitFor(() => expect(listTemplatesFromHost).toHaveBeenCalledTimes(2));

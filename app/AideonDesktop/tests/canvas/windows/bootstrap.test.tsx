@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { mountWindow } from 'canvas/windows/bootstrap';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('mountWindow', () => {
   it('warns when root is missing', () => {
