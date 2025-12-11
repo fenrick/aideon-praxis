@@ -5,8 +5,8 @@ import { useCommandStack } from 'canvas/hooks/use-command-stack';
 
 describe('useCommandStack', () => {
   it('records commands and supports undo/redo with async fallbacks', async () => {
-    const undo = vi.fn().mockResolvedValue(undefined);
-    const redo = vi.fn().mockResolvedValue(undefined);
+    const undo = vi.fn().mockResolvedValue();
+    const redo = vi.fn().mockResolvedValue();
 
     const { result } = renderHook(() => useCommandStack());
 
@@ -18,6 +18,7 @@ describe('useCommandStack', () => {
 
     await act(async () => {
       result.current.undo();
+      await Promise.resolve();
     });
     expect(undo).toHaveBeenCalled();
     expect(result.current.canUndo).toBe(false);
@@ -25,6 +26,7 @@ describe('useCommandStack', () => {
 
     await act(async () => {
       result.current.redo();
+      await Promise.resolve();
     });
     expect(redo).toHaveBeenCalled();
     expect(result.current.canUndo).toBe(true);

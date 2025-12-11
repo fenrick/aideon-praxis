@@ -28,11 +28,14 @@ interface Selection {
 }
 
 let latestSelectionHandler: ((selection: Selection) => void) | undefined;
+interface ContextMenuNode {
+  id: string;
+  data: { entityTypes?: string[] };
+  selected?: boolean;
+}
+
 let latestContextMenuHandler:
-  | ((
-      event: { preventDefault: () => void },
-      node: { id: string; data: any; selected?: boolean },
-    ) => void)
+  | ((event: { preventDefault: () => void }, node: ContextMenuNode) => void)
   | undefined;
 
 vi.mock('@xyflow/react', () => {
@@ -47,7 +50,7 @@ vi.mock('@xyflow/react', () => {
     }: {
       children?: React.ReactNode;
       onSelectionChange?: (selection: Selection) => void;
-      onNodeContextMenu?: (event: any, node: any) => void;
+      onNodeContextMenu?: (event: { preventDefault: () => void }, node: ContextMenuNode) => void;
     }) => {
       latestSelectionHandler = onSelectionChange ?? undefined;
       latestContextMenuHandler = onNodeContextMenu ?? undefined;
@@ -57,11 +60,11 @@ vi.mock('@xyflow/react', () => {
     Background: () => createElement('div', { 'data-testid': 'background' }),
     BackgroundVariant: { Dots: 'dots' },
     useNodesState: () => {
-      const [nodes, setNodes] = React.useState<any[]>([]);
+      const [nodes, setNodes] = React.useState<unknown[]>([]);
       return [nodes, setNodes, vi.fn()];
     },
     useEdgesState: () => {
-      const [edges, setEdges] = React.useState<any[]>([]);
+      const [edges, setEdges] = React.useState<unknown[]>([]);
       return [edges, setEdges, vi.fn()];
     },
     useReactFlow: () => ({
@@ -185,7 +188,7 @@ describe('GraphWidget', () => {
       />,
     );
 
-    await waitFor(() => expect(getGraphViewMock).toHaveBeenCalled());
+    await waitFor(() => { expect(getGraphViewMock).toHaveBeenCalled(); });
 
     rerender(
       <GraphWidget
@@ -196,9 +199,9 @@ describe('GraphWidget', () => {
       />,
     );
 
-    await waitFor(() => expect(latestContextMenuHandler).toBeDefined());
+    await waitFor(() => { expect(latestContextMenuHandler).toBeDefined(); });
     latestContextMenuHandler?.(
-      { preventDefault: () => {} },
+      { preventDefault: () => { /* noop */ } },
       { id: 'node-1', data: { entityTypes: ['Capability'] }, selected: true },
     );
     const menuButton = await screen.findByText(/View meta-model entry/);

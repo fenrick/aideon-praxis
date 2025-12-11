@@ -25,7 +25,7 @@ describe('SearchBar', () => {
     cleanup();
   });
 
-  it('debounces search input and shows results', async () => {
+  it('debounces search input and shows results', () => {
     const searchSpy = vi.spyOn(searchStore, 'search');
     render(<SearchBar />);
 

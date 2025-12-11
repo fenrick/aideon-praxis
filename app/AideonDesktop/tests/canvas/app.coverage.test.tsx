@@ -1,11 +1,23 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+interface Project {
+  id: string;
+  name: string;
+  scenarios: { id: string; name: string; branch: string; updatedAt: string; isDefault: boolean }[];
+}
+
+interface ProjectsSidebarProperties {
+  projects: Project[];
+  error?: string;
+  onRetry?: () => void;
+}
+
 vi.mock('canvas/components/template-screen/projects-sidebar', () => ({
-  ProjectsSidebar: ({ projects, error, onRetry }: any) => (
+  ProjectsSidebar: ({ projects, error, onRetry }: ProjectsSidebarProperties) => (
     <div>
       <div data-testid="projects-count">{projects.length}</div>
-      {error ? <div data-testid="projects-error">{error}</div> : null}
+      {error ? <div data-testid="projects-error">{error}</div> : undefined}
       <button data-testid="retry-projects" onClick={() => onRetry?.()}>
         retry
       </button>
@@ -13,7 +25,13 @@ vi.mock('canvas/components/template-screen/projects-sidebar', () => ({
   ),
 }));
 vi.mock('canvas/components/template-screen/template-header', () => ({
-  TemplateHeader: ({ onTemplateSave, onCreateWidget }: any) => (
+  TemplateHeader: ({
+    onTemplateSave,
+    onCreateWidget,
+  }: {
+    onTemplateSave?: () => void;
+    onCreateWidget?: () => void;
+  }) => (
     <div>
       <button onClick={() => onTemplateSave?.()} data-testid="save-template">
         save
@@ -25,20 +43,26 @@ vi.mock('canvas/components/template-screen/template-header', () => ({
   ),
 }));
 vi.mock('canvas/components/template-screen/scenario-search-bar', () => ({
-  ScenarioSearchBar: ({ onScenarioChange }: any) => (
+  ScenarioSearchBar: ({ onScenarioChange }: { onScenarioChange?: (scenarioId: string) => void }) => (
     <button onClick={() => onScenarioChange?.('alt')} data-testid="scenario-change">
       scenario
     </button>
   ),
 }));
 vi.mock('canvas/components/template-screen/overview-tabs', () => ({
-  OverviewTabs: ({ onSelectionChange, reloadSignal }: any) => (
+  OverviewTabs: ({
+    onSelectionChange,
+    reloadSignal,
+  }: {
+    onSelectionChange: (selection: { nodeIds: string[]; edgeIds: string[]; sourceWidgetId?: string }) => void;
+    reloadSignal?: number;
+  }) => (
     <div>
       <button
         data-testid="select-node"
-        onClick={() =>
-          onSelectionChange({ nodeIds: ['n1'], edgeIds: [], sourceWidgetId: undefined })
-        }
+        onClick={() => {
+          onSelectionChange({ nodeIds: ['n1'], edgeIds: [], sourceWidgetId: undefined });
+        }}
       >
         select
       </button>
@@ -47,7 +71,17 @@ vi.mock('canvas/components/template-screen/overview-tabs', () => ({
   ),
 }));
 vi.mock('canvas/components/template-screen/properties-inspector', () => ({
-  PropertiesInspector: ({ selectionKind, selectionId, onSave, onReset }: any) => (
+  PropertiesInspector: ({
+    selectionKind,
+    selectionId,
+    onSave,
+    onReset,
+  }: {
+    selectionKind: string;
+    selectionId?: string;
+    onSave?: (payload: { name: string; dataSource: string }) => void;
+    onReset?: () => void;
+  }) => (
     <div data-testid="inspector">
       <div data-testid="selection-kind">
         {selectionKind}:{selectionId ?? ''}
@@ -65,7 +99,17 @@ vi.mock('canvas/components/template-screen/properties-inspector', () => ({
   ),
 }));
 vi.mock('canvas/components/template-screen/praxis-shell-layout', () => ({
-  PraxisShellLayout: ({ navigation, toolbar, content, inspector }: any) => (
+  PraxisShellLayout: ({
+    navigation,
+    toolbar,
+    content,
+    inspector,
+  }: {
+    navigation: React.ReactNode;
+    toolbar: React.ReactNode;
+    content: React.ReactNode;
+    inspector: React.ReactNode;
+  }) => (
     <div data-testid="layout">
       <div data-testid="toolbar">{toolbar}</div>
       <div data-testid="sidebar">{navigation}</div>
@@ -75,10 +119,11 @@ vi.mock('canvas/components/template-screen/praxis-shell-layout', () => ({
   ),
 }));
 vi.mock('canvas/components/debug-overlay', () => ({
-  DebugOverlay: ({ visible }: any) => (visible ? <div data-testid="debug">debug</div> : null),
+  DebugOverlay: ({ visible }: { visible: boolean }) =>
+    visible ? <div data-testid="debug">debug</div> : undefined,
 }));
 vi.mock('canvas/templates', async () => {
-  const actual = await vi.importActual<typeof import('canvas/templates')>('canvas/templates');
+  const actual = await vi.importActual('canvas/templates');
   return {
     ...actual,
     BUILT_IN_TEMPLATES: [{ id: 't1', name: 'Template 1', description: '', widgets: [] }],
@@ -97,7 +142,7 @@ vi.mock('canvas/praxis-api', () => {
     .mockResolvedValue([
       { id: 's1', name: 'Scenario 1', branch: 'main', updatedAt: '', isDefault: true },
     ]);
-  const applyOperations = vi.fn().mockResolvedValue(undefined);
+  const applyOperations = vi.fn().mockResolvedValue();
   return { listScenarios, applyOperations };
 });
 vi.mock('canvas/domain-data', () => ({
@@ -129,7 +174,7 @@ describe('PraxisCanvasSurface (coverage)', () => {
     const onSelectionChange = vi.fn();
     render(<PraxisCanvasSurface onSelectionChange={onSelectionChange} debug />);
 
-    await waitFor(() => expect(listTemplatesFromHost).toHaveBeenCalled());
+    await waitFor(() => { expect(listTemplatesFromHost).toHaveBeenCalled(); });
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('select-node'));
@@ -140,12 +185,12 @@ describe('PraxisCanvasSurface (coverage)', () => {
     });
 
     fireEvent.click(screen.getByTestId('save-template'));
-    await waitFor(() => expect(listTemplatesFromHost).toHaveBeenCalledTimes(2));
+    await waitFor(() => { expect(listTemplatesFromHost).toHaveBeenCalledTimes(2); });
   });
 
   it('changes scenarios', async () => {
     render(<PraxisCanvasSurface />);
-    await waitFor(() => expect(listProjectsWithScenarios).toHaveBeenCalled());
+    await waitFor(() => { expect(listProjectsWithScenarios).toHaveBeenCalled(); });
     fireEvent.click(screen.getAllByTestId('scenario-change')[0]);
     expect(screen.getAllByTestId('reload-signal')[0]).toHaveTextContent('0');
   });
@@ -166,10 +211,11 @@ describe('PraxisCanvasSurface (coverage)', () => {
   it('invokes inspector save and applies operations for node selection', async () => {
     const { applyOperations } = await import('canvas/praxis-api');
     render(<PraxisCanvasSurface />);
-    await waitFor(() => expect(listProjectsWithScenarios).toHaveBeenCalled());
+    await waitFor(() => { expect(listProjectsWithScenarios).toHaveBeenCalled(); });
     fireEvent.click(screen.getAllByTestId('select-node')[0]);
-    fireEvent.click((await screen.findAllByTestId('inspector-save'))[0]);
-    await waitFor(() => expect(applyOperations).toHaveBeenCalled());
+    const [inspectorSaveButton] = await screen.findAllByTestId('inspector-save');
+    fireEvent.click(inspectorSaveButton);
+    await waitFor(() => { expect(applyOperations).toHaveBeenCalled(); });
   });
 
   // negative paths covered in dedicated files; keep this focused on happy-path wiring

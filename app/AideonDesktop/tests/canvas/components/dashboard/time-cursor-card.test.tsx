@@ -2,11 +2,14 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas/time/use-temporal-panel', () => ({
-  useTemporalPanel: () => [{ loading: false, snapshot: null }, { refresh: vi.fn() }],
+  useTemporalPanel: () => [
+    { loading: false, snapshot: undefined, branch: undefined, diff: undefined, mergeConflicts: undefined },
+    { refresh: vi.fn() },
+  ],
 }));
 
 vi.mock('canvas/components/blocks/time-control-panel', () => ({
-  TimeControlPanel: ({ state }: any) => (
+  TimeControlPanel: ({ state }: { state: { loading: boolean } }) => (
     <div data-testid="time-control" data-loading={state.loading} />
   ),
 }));

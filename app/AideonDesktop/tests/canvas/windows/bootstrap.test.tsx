@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 describe('mountWindow', () => {
   it('warns when root is missing', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      return;
+    });
     mountWindow(<div>hello</div>);
     expect(warn).toHaveBeenCalledWith('window mount skipped: #root missing');
     warn.mockRestore();
@@ -12,8 +14,10 @@ describe('mountWindow', () => {
   it('creates a root when #root exists', async () => {
     const container = document.createElement('div');
     container.id = 'root';
-    document.body.appendChild(container);
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    document.body.append(container);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      return;
+    });
 
     mountWindow(<div>ready</div>);
     await Promise.resolve();

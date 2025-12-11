@@ -5,7 +5,7 @@ import { ScenarioSearchBar } from 'canvas/components/template-screen/scenario-se
 import { searchStore } from 'canvas/lib/search';
 
 describe('ScenarioSearchBar', () => {
-  it('exposes an accessible search input and propagates queries', async () => {
+  it('exposes an accessible search input and propagates queries', () => {
     const handleSearch = vi.fn();
 
     vi.useFakeTimers();

@@ -1,8 +1,22 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+interface MockGraphView {
+  view?: { metadata: { asOf: string; scenario?: string }; stats?: { nodes?: number; edges?: number } };
+}
+
 vi.mock('canvas/canvas-runtime', () => ({
-  CanvasRuntime: ({ reloadVersion, onGraphViewChange, onGraphError, onSelectionChange }: any) => (
+  CanvasRuntime: ({
+    reloadVersion,
+    onGraphViewChange,
+    onGraphError,
+    onSelectionChange,
+  }: {
+    reloadVersion: number;
+    onGraphViewChange?: (view: MockGraphView) => void;
+    onGraphError?: (error: { message: string }) => void;
+    onSelectionChange?: (selection: { nodeIds: string[]; edgeIds: string[]; widgetId: string }) => void;
+  }) => (
     <div data-testid="canvas-runtime" data-reload={reloadVersion}>
       <button
         data-testid="emit-view"
@@ -32,7 +46,7 @@ describe('CanvasRuntimeCard', () => {
 
     render(
       <CanvasRuntimeCard
-        widgets={[{ id: 'w1' } as any]}
+        widgets={[{ id: 'w1' }]}
         selection={{ nodeIds: [], edgeIds: [] }}
         onSelectionChange={onSelectionChange}
       />,
@@ -61,23 +75,26 @@ describe('CanvasRuntimeCard', () => {
     const { container, unmount } = render(
       <CanvasRuntimeCard widgets={[]} selection={{ nodeIds: [], edgeIds: [] }} />,
     );
-    const refreshButtons = Array.from(container.querySelectorAll('button')).filter((btn) =>
-      /Refresh graph/i.test(btn.textContent ?? ''),
+    const refreshButtons = [...container.querySelectorAll('button')].filter((button) =>
+      /Refresh graph/i.test(button.textContent),
     );
     expect(refreshButtons.some((button) => button.hasAttribute('disabled'))).toBe(true);
     unmount();
 
     const { container: container2, getAllByTestId } = render(
       <CanvasRuntimeCard
-        widgets={[{ id: 'w1' } as any]}
+        widgets={[{ id: 'w1' }]}
         selection={{ nodeIds: [], edgeIds: [] }}
       />,
     );
-    const refresh = Array.from(container2.querySelectorAll('button')).find((btn) =>
-      /Refresh graph/i.test(btn.textContent ?? ''),
+    const refresh = [...container2.querySelectorAll('button')].find((button) =>
+      /Refresh graph/i.test(button.textContent),
     );
-    fireEvent.click(refresh!);
+    if (!refresh) {
+      throw new Error('refresh button missing');
+    }
+    fireEvent.click(refresh);
     const runtimes = getAllByTestId('canvas-runtime');
-    expect(runtimes.some((el) => el.getAttribute('data-reload') === '1')).toBe(true);
+    expect(runtimes.some((element) => element.dataset.reload === '1')).toBe(true);
   });
 });

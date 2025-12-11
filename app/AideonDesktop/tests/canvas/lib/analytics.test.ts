@@ -7,8 +7,8 @@ describe('analytics', () => {
     const sink = vi.fn();
     setAnalyticsSink(sink);
 
-    for (let i = 0; i < 55; i += 1) {
-      track('selection.change', { idx: i, fn: () => {} });
+    for (let index = 0; index < 55; index += 1) {
+      track('selection.change', { idx: index, fn: () => 'noop' });
     }
 
     expect(sink).toHaveBeenCalled();

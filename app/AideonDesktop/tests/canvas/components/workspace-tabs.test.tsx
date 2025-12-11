@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('canvas/time/use-temporal-panel', () => ({
@@ -6,37 +7,61 @@ vi.mock('canvas/time/use-temporal-panel', () => ({
 }));
 
 vi.mock('@radix-ui/react-tabs', () => {
-  const React = require('react');
-  const TabsContext = React.createContext<{ value?: string; onChange?: (v: string) => void }>({});
-  const Root = ({ value, onValueChange, children }: any) => (
+  interface TabsContextValue {
+    value?: string;
+    onChange?: (value: string) => void;
+  }
+  const TabsContext = React.createContext<TabsContextValue>({});
+
+  const Root = ({
+    value,
+    onValueChange,
+    children,
+  }: React.PropsWithChildren<{ value?: string; onValueChange?: (value: string) => void }>) => (
     <TabsContext.Provider value={{ value, onChange: onValueChange }}>
       {children}
     </TabsContext.Provider>
   );
-  const List = ({ children, ...props }: any) => (
-    <div role="tablist" {...props}>
+
+  const List = ({
+    children,
+    ...properties
+  }: React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) => (
+    <div role="tablist" {...properties}>
       {children}
     </div>
   );
-  const Trigger = ({ value, children, ...props }: any) => {
-    const ctx = React.useContext(TabsContext);
+
+  const Trigger = ({
+    value,
+    children,
+    ...properties
+  }: React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement> & { value: string }>) => {
+    const context = React.useContext(TabsContext);
+    const handleClick = () => context.onChange?.(value);
     return (
-      <button role="tab" onClick={() => ctx.onChange?.(value)} {...props}>
+      <button role="tab" onClick={handleClick} {...properties}>
         {children}
       </button>
     );
   };
-  const Content = ({ value, children, ...props }: any) => {
-    const ctx = React.useContext(TabsContext);
-    if (ctx.value !== value) {
-      return <div hidden {...props} />;
+
+  const Content = ({
+    value,
+    children,
+    ...properties
+  }: React.PropsWithChildren<{ value: string } & React.HTMLAttributes<HTMLDivElement>>) => {
+    const context = React.useContext(TabsContext);
+    if (context.value !== value) {
+      return <div hidden {...properties} />;
     }
     return (
-      <div role="tabpanel" {...props}>
+      <div role="tabpanel" {...properties}>
         {children}
       </div>
     );
   };
+
   return { Root, List, Trigger, Content };
 });
 
@@ -65,9 +90,18 @@ const baseSelection: SelectionState = { nodeIds: [], edgeIds: [] };
 describe('WorkspaceTabs', () => {
   it('shows loading state when snapshot is pending', () => {
     mockUseTemporalPanel.mockReturnValue([
-      { loading: true, snapshot: null, branch: null, diff: null, mergeConflicts: null },
+      { loading: true, snapshot: undefined, branch: undefined, diff: undefined, mergeConflicts: undefined },
       {},
-    ] as any);
+    ] as unknown as [
+      {
+        loading: boolean;
+        snapshot?: unknown;
+        branch?: string;
+        diff?: unknown;
+        mergeConflicts?: unknown;
+      },
+      Record<string, unknown>,
+    ]);
 
     render(
       <WorkspaceTabs
@@ -93,10 +127,19 @@ describe('WorkspaceTabs', () => {
         mergeConflicts: [{ kind: 'edge', reference: 'e1', message: 'conflict' }],
       },
       { refresh: vi.fn() },
-    ] as any);
+    ] as unknown as [
+      {
+        loading: boolean;
+        snapshot?: { nodes: number; edges: number; confidence: number; scenario: string };
+        branch?: string;
+        diff?: { metrics: Record<string, number> };
+        mergeConflicts?: { kind: string; reference: string; message: string }[];
+      },
+      { refresh: () => void },
+    ]);
     render(
       <WorkspaceTabs
-        widgets={[{ id: 'w1' } as any]}
+        widgets={[{ id: 'w1' }]}
         selection={baseSelection}
         onSelectionChange={vi.fn()}
         onRequestMetaModelFocus={vi.fn()}

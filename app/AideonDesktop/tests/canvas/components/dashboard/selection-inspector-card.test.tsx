@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SelectionInspectorCard } from 'canvas/components/dashboard/selection-inspector-card';
@@ -10,7 +10,7 @@ const sampleSelection: SelectionState = {
   sourceWidgetId: 'w1',
 };
 
-const widgets = [{ id: 'w1', title: 'Graph', kind: 'graph' } as any];
+const widgets = [{ id: 'w1', title: 'Graph', kind: 'graph' }];
 
 describe('SelectionInspectorCard', () => {
   it('shows empty state and disables clear', () => {
@@ -40,7 +40,10 @@ describe('SelectionInspectorCard', () => {
     expect(screen.getByText('n1')).toBeInTheDocument();
     expect(screen.getByText('e1')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Clear/ }).find((btn) => !btn.disabled)!);
+    const clearButton = screen
+      .getAllByRole('button', { name: /Clear/ })
+      .find((button) => !button.disabled);
+    clearButton?.click();
     expect(onSelectionChange).toHaveBeenCalledWith({
       nodeIds: [],
       edgeIds: [],

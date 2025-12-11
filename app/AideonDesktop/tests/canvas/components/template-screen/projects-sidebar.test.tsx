@@ -38,7 +38,7 @@ describe('ProjectsSidebar', () => {
       </SidebarProvider>,
     );
 
-    const featureButton = screen.getByText('Feature').closest('button') as HTMLButtonElement;
+    const featureButton = screen.getByRole('button', { name: 'Feature' });
     expect(featureButton.dataset.state).toBe('active');
     fireEvent.click(featureButton);
     expect(onSelect).toHaveBeenCalledWith('s2');
