@@ -17,13 +17,20 @@ describe('praxis-api negative paths', () => {
   });
 
   it('normalises host branch/commit payloads from invoke responses', async () => {
-    const invokeMock = vi.fn()
+    const invokeMock = vi
+      .fn()
       // listBranches
       .mockResolvedValueOnce({ branches: [{ name: 'main' }, { head: 'abc' }] })
       // listCommits
       .mockResolvedValueOnce({
         commits: [
-          { id: undefined, parents: ['p1'], tags: ['tag', 1], message: undefined, change_count: 'x' },
+          {
+            id: undefined,
+            parents: ['p1'],
+            tags: ['tag', 1],
+            message: undefined,
+            change_count: 'x',
+          },
         ],
       });
     vi.doMock('canvas/platform', () => ({ isTauri: () => true }));

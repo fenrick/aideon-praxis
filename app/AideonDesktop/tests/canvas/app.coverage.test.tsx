@@ -101,17 +101,13 @@ vi.mock('canvas/praxis-api', () => {
   return { listScenarios, applyOperations };
 });
 vi.mock('canvas/domain-data', () => ({
-  listProjectsWithScenarios: vi
-    .fn()
-    .mockResolvedValue([
-      {
-        id: 'p1',
-        name: 'Proj',
-        scenarios: [
-          { id: 's1', name: 'Scenario 1', branch: 'main', updatedAt: '', isDefault: true },
-        ],
-      },
-    ]),
+  listProjectsWithScenarios: vi.fn().mockResolvedValue([
+    {
+      id: 'p1',
+      name: 'Proj',
+      scenarios: [{ id: 's1', name: 'Scenario 1', branch: 'main', updatedAt: '', isDefault: true }],
+    },
+  ]),
   listTemplatesFromHost: vi
     .fn()
     .mockResolvedValue([{ id: 't1', name: 'Template 1', description: '', widgets: [] }]),
