@@ -11,8 +11,8 @@ describe('IpcTemporalAdapter', () => {
     const adapter = new IpcTemporalAdapter();
     invokeMock.mockResolvedValueOnce({
       asOf: '2025-01-01',
-      scenario: null,
-      confidence: null,
+      scenario: undefined,
+      confidence: undefined,
       nodes: 1,
       edges: 2,
     });

@@ -6,17 +6,19 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { AideonDesktopRoot } from './root';
 import './styles.css';
 
-const container = document.querySelector('#root');
+const isVitest = Boolean((import.meta as { env?: { VITEST?: boolean } }).env?.VITEST);
+if (!isVitest) {
+  const container = document.querySelector('#root');
+  if (!container) {
+    throw new Error('Unable to locate root element');
+  }
 
-if (!container) {
-  throw new Error('Unable to locate root element');
+  createRoot(container).render(
+    <StrictMode>
+      <AppEntry />
+    </StrictMode>,
+  );
 }
-
-createRoot(container).render(
-  <StrictMode>
-    <AppEntry />
-  </StrictMode>,
-);
 
 /**
  *

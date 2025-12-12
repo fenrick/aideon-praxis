@@ -8,10 +8,9 @@ describe('main.tsx routing', () => {
     vi.resetModules();
     document.body.innerHTML = '<div id="root"></div>';
     // Ensure non-Tauri environment so hash-based routing is used
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (globalThis as any).__TAURI__ = undefined;
+    (globalThis as { __TAURI__?: unknown }).__TAURI__ = undefined;
     // Hash route to status window
-    window.location.hash = '#/status';
+    globalThis.location.hash = '#/status';
   });
 
   it('renders status screen when hash route is /status in browser mode', async () => {
@@ -20,6 +19,6 @@ describe('main.tsx routing', () => {
     await Promise.resolve();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(document.body.textContent ?? '').toContain('Host status');
+    expect(document.body.textContent || '').toContain('Host status');
   });
 });
