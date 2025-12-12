@@ -442,12 +442,17 @@ fn build_change_set(target_snapshot: &GraphSnapshot, patch: &DiffPatch) -> Chang
             .cloned(),
     );
 
-    changes.node_updates.extend(patch.node_mods.iter().filter_map(|node| {
-        match target_snapshot.node(&node.id) {
-            Some(existing) if existing == node => None,
-            _ => Some(node.clone()),
-        }
-    }));
+    changes
+        .node_updates
+        .extend(
+            patch
+                .node_mods
+                .iter()
+                .filter_map(|node| match target_snapshot.node(&node.id) {
+                    Some(existing) if existing == node => None,
+                    _ => Some(node.clone()),
+                }),
+        );
 
     changes.node_deletes.extend(
         patch
@@ -467,12 +472,17 @@ fn build_change_set(target_snapshot: &GraphSnapshot, patch: &DiffPatch) -> Chang
             .cloned(),
     );
 
-    changes.edge_updates.extend(patch.edge_mods.iter().filter_map(|edge| {
-        match target_snapshot.edge(edge) {
-            Some(existing) if existing == edge => None,
-            _ => Some(edge.clone()),
-        }
-    }));
+    changes
+        .edge_updates
+        .extend(
+            patch
+                .edge_mods
+                .iter()
+                .filter_map(|edge| match target_snapshot.edge(edge) {
+                    Some(existing) if existing == edge => None,
+                    _ => Some(edge.clone()),
+                }),
+        );
 
     changes.edge_deletes.extend(
         patch
