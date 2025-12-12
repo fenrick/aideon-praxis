@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { act } from 'react-dom/test-utils';
+import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./styles.css', () => ({}), { virtual: true });
@@ -33,7 +33,7 @@ describe('main entry', () => {
     (globalThis as { __TAURI__?: unknown }).__TAURI__ = {};
     const module = await import('./main');
     const { invoke } = await import('@tauri-apps/api/core');
-    await act(async () => {
+    await act(() => {
       render(
         <module.FrontendReady>
           <div>ready</div>
