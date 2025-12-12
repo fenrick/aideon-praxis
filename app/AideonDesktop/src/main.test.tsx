@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('./styles.css', () => ({}), { virtual: true });
+vi.mock('./styles.css', () => ({}));
 vi.mock('./root', () => ({ AideonDesktopRoot: () => <div>Root</div> }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn().mockResolvedValue(true) }));
 
