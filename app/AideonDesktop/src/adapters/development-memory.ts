@@ -12,7 +12,7 @@ import type {
  * Not for production use; intended for local demos and tests.
  */
 export class DevelopmentMemoryGraph implements GraphAdapter {
-  private snapshots = new Map<string, GraphSnapshotMetrics>();
+  private readonly snapshots = new Map<string, GraphSnapshotMetrics>();
 
   /**
    * Seeds the in-memory store with metric counts for a timestamp. This helper

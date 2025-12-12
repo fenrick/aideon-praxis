@@ -143,85 +143,119 @@ fn attribute_value_ok(
 ) -> PraxisResult<()> {
     match attr.value_type {
         MetaAttributeKind::String | MetaAttributeKind::Text => {
-            let text = value
-                .as_str()
-                .ok_or_else(|| PraxisError::ValidationFailed {
-                    message: format_error("expected string".into()),
-                })?;
-            let max = if attr.value_type == MetaAttributeKind::Text {
-                rules.text_max
-            } else {
-                rules.string_max
-            };
-            if let Some(limit) = max
-                && text.chars().count() > limit
-            {
-                return Err(PraxisError::ValidationFailed {
-                    message: format_error(format!(
-                        "exceeds max length {} ({} chars)",
-                        limit,
-                        text.chars().count()
-                    )),
-                });
-            }
+            validate_text(attr, value, rules, format_error)?
         }
-        MetaAttributeKind::Number => {
-            if !value.is_number() {
-                return Err(PraxisError::ValidationFailed {
-                    message: format_error("expected number".into()),
-                });
-            }
-        }
-        MetaAttributeKind::Boolean => {
-            if !value.is_boolean() {
-                return Err(PraxisError::ValidationFailed {
-                    message: format_error("expected boolean".into()),
-                });
-            }
-        }
-        MetaAttributeKind::Enum => {
-            let text = value
-                .as_str()
-                .ok_or_else(|| PraxisError::ValidationFailed {
-                    message: format_error("expected string value for enum".into()),
-                })?;
-            let case_sensitive = rules.enum_case_sensitive;
-            let matches = attr.enum_values.iter().any(|variant| {
-                if case_sensitive {
-                    variant == text
-                } else {
-                    variant.eq_ignore_ascii_case(text)
-                }
-            });
-            if !matches {
-                return Err(PraxisError::ValidationFailed {
-                    message: format_error(format!(
-                        "value '{}' not in [{}]",
-                        text,
-                        attr.enum_values.join(", ")
-                    )),
-                });
-            }
-        }
-        MetaAttributeKind::Datetime => {
-            let text = value
-                .as_str()
-                .ok_or_else(|| PraxisError::ValidationFailed {
-                    message: format_error("expected ISO-8601 string".into()),
-                })?;
-            if OffsetDateTime::parse(text, &Rfc3339).is_err() {
-                return Err(PraxisError::ValidationFailed {
-                    message: format_error("invalid RFC3339 timestamp".into()),
-                });
-            }
-        }
-        MetaAttributeKind::Blob => {
-            if !value.is_string() && !value.is_object() && !value.is_array() {
-                return Err(PraxisError::ValidationFailed {
-                    message: format_error("expected string/structured blob".into()),
-                });
-            }
-        }
+        MetaAttributeKind::Number => validate_number(value, &format_error)?,
+        MetaAttributeKind::Boolean => validate_boolean(value, &format_error)?,
+        MetaAttributeKind::Enum => validate_enum(attr, value, rules, format_error)?,
+        MetaAttributeKind::Datetime => validate_datetime(value, format_error)?,
+        MetaAttributeKind::Blob => validate_blob(value, format_error)?,
     }
     Ok(())
+}
+
+fn validate_text(
+    attr: &MetaAttribute,
+    value: &Value,
+    rules: &AttributeRuleSet,
+    format_error: impl Fn(String) -> String,
+) -> PraxisResult<()> {
+    let text = value
+        .as_str()
+        .ok_or_else(|| PraxisError::ValidationFailed {
+            message: format_error("expected string".into()),
+        })?;
+    let max = if attr.value_type == MetaAttributeKind::Text {
+        rules.text_max
+    } else {
+        rules.string_max
+    };
+    if let Some(limit) = max
+        && text.chars().count() > limit
+    {
+        return Err(PraxisError::ValidationFailed {
+            message: format_error(format!(
+                "exceeds max length {} ({} chars)",
+                limit,
+                text.chars().count()
+            )),
+        });
+    }
+    Ok(())
+}
+
+fn validate_number(value: &Value, format_error: &impl Fn(String) -> String) -> PraxisResult<()> {
+    if value.is_number() {
+        Ok(())
+    } else {
+        Err(PraxisError::ValidationFailed {
+            message: format_error("expected number".into()),
+        })
+    }
+}
+
+fn validate_boolean(value: &Value, format_error: &impl Fn(String) -> String) -> PraxisResult<()> {
+    if value.is_boolean() {
+        Ok(())
+    } else {
+        Err(PraxisError::ValidationFailed {
+            message: format_error("expected boolean".into()),
+        })
+    }
+}
+
+fn validate_enum(
+    attr: &MetaAttribute,
+    value: &Value,
+    rules: &AttributeRuleSet,
+    format_error: impl Fn(String) -> String,
+) -> PraxisResult<()> {
+    let text = value
+        .as_str()
+        .ok_or_else(|| PraxisError::ValidationFailed {
+            message: format_error("expected string value for enum".into()),
+        })?;
+    let case_sensitive = rules.enum_case_sensitive;
+    let matches = attr.enum_values.iter().any(|variant| {
+        if case_sensitive {
+            variant == text
+        } else {
+            variant.eq_ignore_ascii_case(text)
+        }
+    });
+    if matches {
+        Ok(())
+    } else {
+        Err(PraxisError::ValidationFailed {
+            message: format_error(format!(
+                "value '{}' not in [{}]",
+                text,
+                attr.enum_values.join(", ")
+            )),
+        })
+    }
+}
+
+fn validate_datetime(value: &Value, format_error: impl Fn(String) -> String) -> PraxisResult<()> {
+    let text = value
+        .as_str()
+        .ok_or_else(|| PraxisError::ValidationFailed {
+            message: format_error("expected ISO-8601 string".into()),
+        })?;
+    if OffsetDateTime::parse(text, &Rfc3339).is_err() {
+        return Err(PraxisError::ValidationFailed {
+            message: format_error("invalid RFC3339 timestamp".into()),
+        });
+    }
+    Ok(())
+}
+
+fn validate_blob(value: &Value, format_error: impl Fn(String) -> String) -> PraxisResult<()> {
+    if value.is_string() || value.is_object() || value.is_array() {
+        Ok(())
+    } else {
+        Err(PraxisError::ValidationFailed {
+            message: format_error("expected string/structured blob".into()),
+        })
+    }
 }

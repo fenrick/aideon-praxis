@@ -62,114 +62,8 @@ impl GraphSnapshot {
         registry: &MetaModelRegistry,
     ) -> PraxisResult<GraphSnapshot> {
         let mut next = self.clone();
-
-        // Node deletes first — we will validate edges afterwards to forbid dangling refs.
-        for tombstone in &change.node_deletes {
-            if next.nodes.remove(&tombstone.id).is_none() {
-                return Err(PraxisError::ValidationFailed {
-                    message: format!("node '{}' does not exist for delete", tombstone.id),
-                });
-            }
-        }
-
-        // Node creates
-        for node in &change.node_creates {
-            registry.validate_node(node)?;
-            if next.nodes.contains_key(&node.id) {
-                return Err(PraxisError::ValidationFailed {
-                    message: format!("node '{}' already exists", node.id),
-                });
-            }
-            next.nodes.insert(node.id.clone(), sanitize_node(node));
-        }
-
-        // Node updates are replace-by-id for now (TODO: support partial updates with schema merge).
-        for node in &change.node_updates {
-            registry.validate_node(node)?;
-            if !next.nodes.contains_key(&node.id) {
-                return Err(PraxisError::ValidationFailed {
-                    message: format!("node '{}' missing for update", node.id),
-                });
-            }
-            next.nodes.insert(node.id.clone(), sanitize_node(node));
-        }
-
-        // Edge deletes
-        for tombstone in &change.edge_deletes {
-            remove_edges_matching(&mut next.edges, tombstone)?;
-        }
-
-        // Edge creates
-        for edge in &change.edge_creates {
-            ensure_endpoints_exist(&next.nodes, edge)?;
-            let from_type = node_type(&next.nodes, &edge.from)?;
-            let to_type = node_type(&next.nodes, &edge.to)?;
-            registry.validate_edge(edge, &from_type, &to_type)?;
-            let key = EdgeKey::new(edge);
-            if next.edges.contains_key(&key) {
-                return Err(PraxisError::ValidationFailed {
-                    message: format!(
-                        "edge '{}' already exists",
-                        edge.id
-                            .clone()
-                            .unwrap_or_else(|| format!("{}->{}", edge.from, edge.to))
-                    ),
-                });
-            }
-            let rel_type = relationship_type(edge)?;
-            if !registry.allows_duplicate(rel_type) {
-                assert_no_duplicate_edge(&next.edges, edge, rel_type)?;
-            }
-            next.edges.insert(key, sanitize_edge(edge));
-        }
-
-        // Edge updates — replace existing entry by id when present, otherwise resolve by endpoints.
-        for edge in &change.edge_updates {
-            ensure_endpoints_exist(&next.nodes, edge)?;
-            let key = if let Some(id) = &edge.id {
-                next.edges
-                    .keys()
-                    .find(|k| k.id.as_deref() == Some(id.as_str()))
-                    .cloned()
-                    .ok_or_else(|| PraxisError::ValidationFailed {
-                        message: format!("edge '{}' missing for update", id),
-                    })?
-            } else {
-                // Resolve by endpoints; require a single match to maintain determinism.
-                let mut matches: Vec<EdgeKey> = next
-                    .edges
-                    .keys()
-                    .filter(|k| k.from == edge.from && k.to == edge.to)
-                    .cloned()
-                    .collect();
-                if matches.is_empty() {
-                    return Err(PraxisError::ValidationFailed {
-                        message: format!("edge '{}->{}' missing for update", edge.from, edge.to),
-                    });
-                }
-                if matches.len() > 1 {
-                    return Err(PraxisError::ValidationFailed {
-                        message: format!(
-                            "edge '{}->{}' update is ambiguous ({} matches)",
-                            edge.from,
-                            edge.to,
-                            matches.len()
-                        ),
-                    });
-                }
-                matches.pop().expect("single match")
-            };
-            next.edges.remove(&key);
-            let from_type = node_type(&next.nodes, &edge.from)?;
-            let to_type = node_type(&next.nodes, &edge.to)?;
-            registry.validate_edge(edge, &from_type, &to_type)?;
-            let rel_type = relationship_type(edge)?;
-            if !registry.allows_duplicate(rel_type) {
-                assert_no_duplicate_edge(&next.edges, edge, rel_type)?;
-            }
-            next.edges.insert(EdgeKey::new(edge), sanitize_edge(edge));
-        }
-
+        apply_node_changes(&mut next, change, registry)?;
+        apply_edge_changes(&mut next, change, registry)?;
         next.validate()?;
         Ok(next)
     }
@@ -261,6 +155,133 @@ fn sanitize_node(node: &NodeVersion) -> NodeVersion {
         copy.props = None;
     }
     copy
+}
+
+fn apply_node_changes(
+    snapshot: &mut GraphSnapshot,
+    change: &ChangeSet,
+    registry: &MetaModelRegistry,
+) -> PraxisResult<()> {
+    // Node deletes first — we will validate edges afterwards to forbid dangling refs.
+    for tombstone in &change.node_deletes {
+        if snapshot.nodes.remove(&tombstone.id).is_none() {
+            return Err(PraxisError::ValidationFailed {
+                message: format!("node '{}' does not exist for delete", tombstone.id),
+            });
+        }
+    }
+
+    for node in &change.node_creates {
+        registry.validate_node(node)?;
+        if snapshot.nodes.contains_key(&node.id) {
+            return Err(PraxisError::ValidationFailed {
+                message: format!("node '{}' already exists", node.id),
+            });
+        }
+        snapshot.nodes.insert(node.id.clone(), sanitize_node(node));
+    }
+
+    // Node updates are replace-by-id for now (TODO: support partial updates with schema merge).
+    for node in &change.node_updates {
+        registry.validate_node(node)?;
+        if !snapshot.nodes.contains_key(&node.id) {
+            return Err(PraxisError::ValidationFailed {
+                message: format!("node '{}' missing for update", node.id),
+            });
+        }
+        snapshot.nodes.insert(node.id.clone(), sanitize_node(node));
+    }
+    Ok(())
+}
+
+fn apply_edge_changes(
+    snapshot: &mut GraphSnapshot,
+    change: &ChangeSet,
+    registry: &MetaModelRegistry,
+) -> PraxisResult<()> {
+    // Edge deletes
+    for tombstone in &change.edge_deletes {
+        remove_edges_matching(&mut snapshot.edges, tombstone)?;
+    }
+
+    for edge in &change.edge_creates {
+        ensure_endpoints_exist(&snapshot.nodes, edge)?;
+        let from_type = node_type(&snapshot.nodes, &edge.from)?;
+        let to_type = node_type(&snapshot.nodes, &edge.to)?;
+        registry.validate_edge(edge, &from_type, &to_type)?;
+        let key = EdgeKey::new(edge);
+        if snapshot.edges.contains_key(&key) {
+            return Err(PraxisError::ValidationFailed {
+                message: format!(
+                    "edge '{}' already exists",
+                    edge.id
+                        .clone()
+                        .unwrap_or_else(|| format!("{}->{}", edge.from, edge.to))
+                ),
+            });
+        }
+        let rel_type = relationship_type(edge)?;
+        if !registry.allows_duplicate(rel_type) {
+            assert_no_duplicate_edge(&snapshot.edges, edge, rel_type)?;
+        }
+        snapshot.edges.insert(key, sanitize_edge(edge));
+    }
+
+    // Edge updates — replace existing entry by id when present, otherwise resolve by endpoints.
+    for edge in &change.edge_updates {
+        ensure_endpoints_exist(&snapshot.nodes, edge)?;
+        let key = resolve_edge_key(&snapshot.edges, edge)?;
+        snapshot.edges.remove(&key);
+        let from_type = node_type(&snapshot.nodes, &edge.from)?;
+        let to_type = node_type(&snapshot.nodes, &edge.to)?;
+        registry.validate_edge(edge, &from_type, &to_type)?;
+        let rel_type = relationship_type(edge)?;
+        if !registry.allows_duplicate(rel_type) {
+            assert_no_duplicate_edge(&snapshot.edges, edge, rel_type)?;
+        }
+        snapshot
+            .edges
+            .insert(EdgeKey::new(edge), sanitize_edge(edge));
+    }
+    Ok(())
+}
+
+fn resolve_edge_key(
+    edges: &BTreeMap<EdgeKey, EdgeVersion>,
+    edge: &EdgeVersion,
+) -> PraxisResult<EdgeKey> {
+    if let Some(id) = &edge.id {
+        return edges
+            .keys()
+            .find(|k| k.id.as_deref() == Some(id.as_str()))
+            .cloned()
+            .ok_or_else(|| PraxisError::ValidationFailed {
+                message: format!("edge '{}' missing for update", id),
+            });
+    }
+
+    // Resolve by endpoints; require a single match to maintain determinism.
+    let mut matches: Vec<EdgeKey> = edges
+        .keys()
+        .filter(|k| k.from == edge.from && k.to == edge.to)
+        .cloned()
+        .collect();
+    if matches.is_empty() {
+        return Err(PraxisError::ValidationFailed {
+            message: format!("edge '{}->{}' missing for update", edge.from, edge.to),
+        });
+    }
+    if matches.len() > 1 {
+        return Err(PraxisError::ValidationFailed {
+            message: format!(
+                "edge '{}->{}' update is ambiguous ({} matches)",
+                edge.from,
+                edge.to,
+                matches.len()
+            ),
+        });
+    }
+    Ok(matches.pop().expect("single match"))
 }
 
 fn sanitize_edge(edge: &EdgeVersion) -> EdgeVersion {

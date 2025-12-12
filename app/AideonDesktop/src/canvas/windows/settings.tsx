@@ -55,7 +55,7 @@ export function SettingsWindow() {
               setMode('system');
             }}
           />
-          System
+          <span className="ml-2">System</span>
         </label>
         <label>
           <input
@@ -67,7 +67,7 @@ export function SettingsWindow() {
               setMode('light');
             }}
           />
-          Light
+          <span className="ml-2">Light</span>
         </label>
         <label>
           <input
@@ -79,7 +79,7 @@ export function SettingsWindow() {
               setMode('dark');
             }}
           />
-          Dark
+          <span className="ml-2">Dark</span>
         </label>
       </fieldset>
       <p className="helper">Accent color follows system (AccentColor).</p>

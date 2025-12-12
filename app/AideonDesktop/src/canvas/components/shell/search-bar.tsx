@@ -60,7 +60,7 @@ export function SearchBar() {
     }
   };
 
-  const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
+  const handleBlur = (event: FocusEvent<HTMLFormElement>) => {
     const next = event.relatedTarget as HTMLElement | null;
     if (next?.closest('.search-results')) {
       return;
@@ -123,7 +123,7 @@ export function SearchBar() {
   };
 
   return (
-    <div className="relative w-full" onBlur={handleBlur}>
+    <form className="relative w-full" role="search" onBlur={handleBlur}>
       <Input
         ref={inputReference}
         placeholder="Search branches, nodes, catalogues…"
@@ -157,6 +157,6 @@ export function SearchBar() {
           ))}
         </div>
       ) : undefined}
-    </div>
+    </form>
   );
 }

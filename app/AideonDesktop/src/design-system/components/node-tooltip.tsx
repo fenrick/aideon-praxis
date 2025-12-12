@@ -28,9 +28,13 @@ export function NodeTooltip({ children }: ComponentProps<"div">) {
 
   const showTooltip = useCallback(() => { setIsVisible(true); }, []);
   const hideTooltip = useCallback(() => { setIsVisible(false); }, []);
+  const contextValue = React.useMemo(
+    () => ({ isVisible, showTooltip, hideTooltip }),
+    [isVisible, showTooltip, hideTooltip],
+  );
 
   return (
-    <TooltipContext.Provider value={{ isVisible, showTooltip, hideTooltip }}>
+    <TooltipContext.Provider value={contextValue}>
       <div>{children}</div>
     </TooltipContext.Provider>
   );
@@ -62,7 +66,19 @@ export function NodeTooltipTrigger(props: ComponentProps<"div">) {
   );
 
   return (
-    <div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} {...props} />
+    <div
+      role="button"
+      tabIndex={0}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          showTooltip();
+        }
+      }}
+      {...props}
+    />
   );
 }
 
@@ -92,7 +108,7 @@ export function NodeTooltipContent({
           "bg-primary text-primary-foreground rounded-sm p-2",
           className,
         )}
-        tabIndex={1}
+        tabIndex={0}
         position={position}
         {...props}
       >

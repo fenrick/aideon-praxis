@@ -145,7 +145,6 @@ function LineChart({ series }: { readonly series?: ChartViewModel['series'][numb
       <p className="text-sm font-semibold text-foreground">{resolvedSeries.label}</p>
       <svg
         viewBox={`0 0 ${viewBox.width.toString()} ${viewBox.height.toString()}`}
-        role="img"
         className="h-32 w-full"
         aria-label={`${resolvedSeries.label} trend`}
       >

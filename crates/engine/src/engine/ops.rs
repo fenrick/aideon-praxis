@@ -340,6 +340,17 @@ pub(super) async fn merge(inner: &mut Inner, request: MergeRequest) -> PraxisRes
 fn detect_conflicts(source: &DiffPatch, target: &DiffPatch) -> Vec<MergeConflict> {
     let mut conflicts = Vec::new();
 
+    detect_node_conflicts(source, target, &mut conflicts);
+    detect_edge_conflicts(source, target, &mut conflicts);
+
+    conflicts
+}
+
+fn detect_node_conflicts(
+    source: &DiffPatch,
+    target: &DiffPatch,
+    conflicts: &mut Vec<MergeConflict>,
+) {
     let target_mod_nodes: HashSet<&str> = target
         .node_mods
         .iter()
@@ -379,7 +390,13 @@ fn detect_conflicts(source: &DiffPatch, target: &DiffPatch) -> Vec<MergeConflict
             });
         }
     }
+}
 
+fn detect_edge_conflicts(
+    source: &DiffPatch,
+    target: &DiffPatch,
+    conflicts: &mut Vec<MergeConflict>,
+) {
     let edge_key = |edge: &EdgeVersion| (edge.from.clone(), edge.to.clone());
     let target_mod_edges: HashSet<(String, String)> =
         target.edge_mods.iter().map(edge_key).collect();
@@ -412,8 +429,6 @@ fn detect_conflicts(source: &DiffPatch, target: &DiffPatch) -> Vec<MergeConflict
             });
         }
     }
-
-    conflicts
 }
 
 fn build_change_set(target_snapshot: &GraphSnapshot, patch: &DiffPatch) -> ChangeSet {
