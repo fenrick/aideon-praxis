@@ -33,7 +33,7 @@ describe('main entry', () => {
     (globalThis as { __TAURI__?: unknown }).__TAURI__ = {};
     const module = await import('./main');
     const { invoke } = await import('@tauri-apps/api/core');
-    await act(() => {
+    act(() => {
       render(
         <module.FrontendReady>
           <div>ready</div>
