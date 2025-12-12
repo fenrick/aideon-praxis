@@ -56,7 +56,8 @@ main {
   font-size: 0.75rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(248, 250, 252, 0.6);
+  /* Increase opacity for WCAG-compliant contrast against dark card background */
+  color: rgba(248, 250, 252, 0.82);
 }
 
 .theme-card .swatch {

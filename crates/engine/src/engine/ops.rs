@@ -434,48 +434,56 @@ fn detect_edge_conflicts(
 fn build_change_set(target_snapshot: &GraphSnapshot, patch: &DiffPatch) -> ChangeSet {
     let mut changes = ChangeSet::default();
 
-    for node in &patch.node_adds {
-        if !target_snapshot.has_node(&node.id) {
-            changes.node_creates.push(node.clone());
-        }
-    }
+    changes.node_creates.extend(
+        patch
+            .node_adds
+            .iter()
+            .filter(|node| !target_snapshot.has_node(&node.id))
+            .cloned(),
+    );
 
-    for node in &patch.node_mods {
+    changes.node_updates.extend(patch.node_mods.iter().filter_map(|node| {
         match target_snapshot.node(&node.id) {
-            Some(existing) if existing == node => {}
-            _ => changes.node_updates.push(node.clone()),
+            Some(existing) if existing == node => None,
+            _ => Some(node.clone()),
         }
-    }
+    }));
 
-    for tomb in &patch.node_dels {
-        if target_snapshot.has_node(&tomb.id) {
-            changes.node_deletes.push(NodeTombstone {
+    changes.node_deletes.extend(
+        patch
+            .node_dels
+            .iter()
+            .filter(|tomb| target_snapshot.has_node(&tomb.id))
+            .map(|tomb| NodeTombstone {
                 id: tomb.id.clone(),
-            });
-        }
-    }
+            }),
+    );
 
-    for edge in &patch.edge_adds {
-        if !target_snapshot.has_edge(edge) {
-            changes.edge_creates.push(edge.clone());
-        }
-    }
+    changes.edge_creates.extend(
+        patch
+            .edge_adds
+            .iter()
+            .filter(|edge| !target_snapshot.has_edge(edge))
+            .cloned(),
+    );
 
-    for edge in &patch.edge_mods {
+    changes.edge_updates.extend(patch.edge_mods.iter().filter_map(|edge| {
         match target_snapshot.edge(edge) {
-            Some(existing) if existing == edge => {}
-            _ => changes.edge_updates.push(edge.clone()),
+            Some(existing) if existing == edge => None,
+            _ => Some(edge.clone()),
         }
-    }
+    }));
 
-    for tomb in &patch.edge_dels {
-        if target_snapshot.has_edge_tombstone(tomb) {
-            changes.edge_deletes.push(EdgeTombstone {
+    changes.edge_deletes.extend(
+        patch
+            .edge_dels
+            .iter()
+            .filter(|tomb| target_snapshot.has_edge_tombstone(tomb))
+            .map(|tomb| EdgeTombstone {
                 from: tomb.from.clone(),
                 to: tomb.to.clone(),
-            });
-        }
-    }
+            }),
+    );
 
     changes
 }
