@@ -59,9 +59,7 @@ export function WorkerHealthCard() {
             variant="secondary"
             size="sm"
             onClick={() => {
-              actions.refresh().catch((error: unknown) => {
-                console.error('Failed to refresh worker health', error);
-              });
+              actions.refresh().catch(() => false);
             }}
             disabled={state.loading}
           >

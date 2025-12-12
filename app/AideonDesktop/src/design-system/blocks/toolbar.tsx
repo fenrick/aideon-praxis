@@ -67,6 +67,12 @@ function resolveJustification(justify: ToolbarSectionProperties['justify']): str
     case 'end': {
       return 'justify-end';
     }
+    case 'start': {
+      return 'justify-start';
+    }
+    case undefined: {
+      return 'justify-start';
+    }
     default: {
       return 'justify-start';
     }

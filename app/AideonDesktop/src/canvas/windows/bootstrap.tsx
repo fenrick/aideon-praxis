@@ -9,7 +9,6 @@ import { createRoot } from 'react-dom/client';
 export function mountWindow(element: ReactElement) {
   const rootElement = document.querySelector('#root');
   if (!rootElement) {
-    console.warn('window mount skipped: #root missing');
     return;
   }
   createRoot(rootElement).render(element);

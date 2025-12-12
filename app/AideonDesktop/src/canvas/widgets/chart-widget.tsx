@@ -104,7 +104,7 @@ function ChartError({ message }: { readonly message: string }) {
  */
 function KpiPanel({ summary }: { readonly summary: ChartViewModel['kpi'] }) {
   if (!summary) {
-    return <></>;
+    return;
   }
   const trendUp = summary.trend !== 'down';
   const TrendIcon = trendUp ? ArrowUpRight : ArrowDownRight;

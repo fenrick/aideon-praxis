@@ -172,7 +172,7 @@ function resolveHeading(
     case 'edge': {
       return copy.edgeHeading;
     }
-    default: {
+    case 'none': {
       return copy.empty;
     }
   }

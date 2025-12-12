@@ -63,9 +63,7 @@ export function TimeControlPanel({
             value={state.branch ?? undefined}
             disabled={state.loading || branchOptions.length === 0}
             onValueChange={(value: string) => {
-              actions.selectBranch(value).catch((error: unknown) => {
-                console.error('Failed to select branch', error);
-              });
+              actions.selectBranch(value).catch(() => false);
             }}
           >
             <SelectTrigger className="w-full">
@@ -139,9 +137,7 @@ export function TimeControlPanel({
             variant="secondary"
             size="sm"
             onClick={() => {
-              actions.refreshBranches().catch((error: unknown) => {
-                console.error('Failed to refresh branches', error);
-              });
+              actions.refreshBranches().catch(() => false);
             }}
             disabled={state.loading}
           >
@@ -161,9 +157,7 @@ export function TimeControlPanel({
             <Button
               size="sm"
               onClick={() => {
-                actions.mergeIntoMain().catch((error: unknown) => {
-                  console.error('Merge into main failed', error);
-                });
+                actions.mergeIntoMain().catch(() => false);
               }}
               disabled={state.merging}
             >

@@ -35,7 +35,6 @@ export function ScenarioSearchBar({ onSearch }: ScenarioSearchBarProperties) {
       <Input
         id="scenario-search"
         type="search"
-        role="searchbox"
         aria-label={copy.searchLabel}
         placeholder={copy.searchLabel}
         value={query}

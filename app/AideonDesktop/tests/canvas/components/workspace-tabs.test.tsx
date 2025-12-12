@@ -17,11 +17,13 @@ vi.mock('@radix-ui/react-tabs', () => {
     value,
     onValueChange,
     children,
-  }: React.PropsWithChildren<{ value?: string; onValueChange?: (value: string) => void }>) => (
-    <TabsContext.Provider value={{ value, onChange: onValueChange }}>
-      {children}
-    </TabsContext.Provider>
-  );
+  }: React.PropsWithChildren<{ value?: string; onValueChange?: (value: string) => void }>) => {
+    const memoValue = React.useMemo(
+      () => ({ value, onChange: onValueChange }),
+      [onValueChange, value],
+    );
+    return <TabsContext.Provider value={memoValue}>{children}</TabsContext.Provider>;
+  };
 
   const List = ({
     children,

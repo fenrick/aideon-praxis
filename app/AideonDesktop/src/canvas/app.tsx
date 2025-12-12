@@ -65,6 +65,9 @@ function createTemplateWidget(entry: WidgetRegistryEntry, widgetId: string): Tem
     case 'graph': {
       return { ...base, kind: 'graph', view: entry.defaultView };
     }
+    case 'chart': {
+      return { ...base, kind: 'chart', view: entry.defaultView };
+    }
     case 'catalogue': {
       return { ...base, kind: 'catalogue', view: entry.defaultView };
     }
@@ -293,11 +296,8 @@ function PraxisCanvasExperience({
       return;
     }
     const nextIndexLabel = (templatesState.data.length + 1).toString();
-    const name = globalThis.prompt('Template name', `Template ${nextIndexLabel}`);
-    if (!name?.trim()) {
-      return;
-    }
-    const snapshot = captureTemplateFromWidgets(name.trim(), 'Saved from runtime', widgets);
+    const name = `Template ${nextIndexLabel}`;
+    const snapshot = captureTemplateFromWidgets(name, 'Saved from runtime', widgets);
     setTemplatesState((previous) => ({ ...previous, data: [...previous.data, snapshot] }));
     setActiveTemplateId(snapshot.id);
     track('template.change', { templateId: snapshot.id, scenarioId: activeScenario?.id });

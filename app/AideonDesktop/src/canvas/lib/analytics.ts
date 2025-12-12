@@ -12,14 +12,7 @@ const ringBuffer: { event: AnalyticsEventName; payload?: Record<string, unknown>
   [];
 const MAX_EVENTS = 50;
 
-const isDevelopment =
-  ((import.meta as unknown as { env?: { MODE?: string } }).env?.MODE ?? '') === 'development';
-
-let sink: AnalyticsSink = (event, payload) => {
-  if (isDevelopment) {
-    console.debug(`[analytics] ${event}`, payload ?? {});
-  }
-};
+let sink: AnalyticsSink = (_event, _payload) => false;
 
 /**
  *

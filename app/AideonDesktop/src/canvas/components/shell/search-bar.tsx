@@ -112,9 +112,7 @@ export function SearchBar() {
     }
     const outcome = item.run?.();
     if (outcome instanceof Promise) {
-      outcome.catch((error: unknown) => {
-        console.error('Search result run handler rejected', error);
-      });
+      outcome.catch(() => false);
     }
     searchStore.clear();
     setQuery('');

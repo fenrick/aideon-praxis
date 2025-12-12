@@ -25,11 +25,6 @@ const loadLines = [
  */
 export default function SplashWindow() {
   const [currentLine, setCurrentLine] = useState(loadLines[0]);
-  const isDevelopment = (() => {
-    const environment = (import.meta as unknown as { env?: { DEV?: boolean } }).env;
-    return environment?.DEV === true;
-  })();
-
   useEffect(() => {
     let ix = 0;
     const interval = setInterval(() => {
@@ -49,25 +44,21 @@ export default function SplashWindow() {
      */
     async function init() {
       try {
-        console.info('splash: frontend init start');
         await new Promise((resolve) => setTimeout(resolve, 3000));
-        console.info('splash: frontend init complete');
         if (cancelled) {
           return;
         }
         await invoke('set_complete', { task: 'frontend' });
-      } catch (error) {
-        if (isDevelopment) {
-          console.warn('splash: init failed', error);
-        }
+      } catch {
+        cancelled = true;
       }
     }
 
-    void init();
+    init().catch(() => false);
     return () => {
       cancelled = true;
     };
-  }, [isDevelopment]);
+  }, []);
 
   return (
     <div className="splash">

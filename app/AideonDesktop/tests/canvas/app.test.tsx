@@ -182,8 +182,6 @@ describe('Praxis canvas app shell', () => {
   });
 
   it('saves a template via header action', async () => {
-    const promptSpy = vi.spyOn(globalThis, 'prompt').mockReturnValue('My Saved Template');
-
     render(<PraxisCanvasSurface />);
 
     const initialCount = Number(screen.getAllByTestId('template-count')[0]?.textContent);
@@ -193,6 +191,5 @@ describe('Praxis canvas app shell', () => {
       const updated = Number(screen.getAllByTestId('template-count')[0]?.textContent);
       expect(updated).toBeGreaterThan(initialCount);
     });
-    expect(promptSpy).toHaveBeenCalled();
   });
 });

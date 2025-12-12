@@ -199,8 +199,14 @@ function resolveAlignmentClass(alignment: PanelToolbarProperties['align']): stri
     case 'start': {
       return 'justify-start';
     }
+    case 'end': {
+      return 'justify-end';
+    }
     case 'between': {
       return 'justify-between';
+    }
+    case undefined: {
+      return 'justify-end';
     }
     default: {
       return 'justify-end';

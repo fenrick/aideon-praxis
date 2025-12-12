@@ -32,19 +32,22 @@ const COMMANDS = {
  */
 export async function listProjectsWithScenarios(): Promise<ProjectSummary[]> {
   if (!isTauri()) {
-    return await fallbackProjects();
+    const fallback = await fallbackProjects();
+    return fallback;
   }
 
   try {
     const payload = await invoke<ProjectPayload[]>(COMMANDS.listProjects);
     const projects = Array.isArray(payload) ? payload : [];
     if (projects.length === 0) {
-      return await fallbackProjects();
+      const fallback = await fallbackProjects();
+      return fallback;
     }
     return projects.map((entry) => normaliseProject(entry));
   } catch (error) {
-    console.warn('[domain-data] listProjectsWithScenarios fallback', toErrorMessage(error));
-    return await fallbackProjects();
+    toErrorMessage(error);
+    const fallback = await fallbackProjects();
+    return fallback;
   }
 }
 
@@ -63,7 +66,7 @@ export async function listTemplatesFromHost(): Promise<CanvasTemplate[]> {
     }
     return templates.map((template) => normaliseTemplate(template));
   } catch (error) {
-    console.warn('[domain-data] listTemplatesFromHost fallback', toErrorMessage(error));
+    toErrorMessage(error);
     return BUILT_IN_TEMPLATES;
   }
 }

@@ -476,10 +476,11 @@ async function callOrMock<T>(
   fallback: () => T | Promise<T>,
 ): Promise<T> {
   if (!isTauri()) {
-    return await fallback();
+    return fallback();
   }
   try {
-    return await invoke<T>(command, payload ?? {});
+    const result = await invoke<T>(command, payload ?? {});
+    return result;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Host command '${command}' failed: ${message}`);

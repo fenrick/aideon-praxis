@@ -92,9 +92,7 @@ export const buildCommitIndex = (
           ? () => {
               const outcome = onSelect(commit.id);
               if (outcome instanceof Promise) {
-                outcome.catch((error: unknown) => {
-                  console.error('Commit search handler rejected', error);
-                });
+                outcome.catch(() => false);
               }
             }
           : undefined,

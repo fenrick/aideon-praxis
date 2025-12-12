@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { mountWindow } from './bootstrap';
 
 import './status-window.css';
@@ -8,13 +7,7 @@ import './status-window.css';
  * @returns Status window component.
  */
 export function StatusWindow() {
-  const initialVersion =
-    (globalThis as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
-  const [version] = useState(initialVersion);
-
-  useEffect(() => {
-    console.info('status: window loaded');
-  }, []);
+  const version = (globalThis as { aideon?: { version?: string } }).aideon?.version ?? 'unknown';
 
   return (
     <div className="status">

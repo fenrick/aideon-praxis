@@ -1,5 +1,3 @@
-import { Fragment } from 'react';
-
 import { templateScreenCopy } from 'canvas/copy/template-screen';
 import type { CanvasTemplate } from 'canvas/templates';
 
@@ -116,12 +114,10 @@ export function TemplateHeader({
           </div>
         </CardContent>
       </CardHeader>
-      {templates.length === 0 ? (
+      {templates.length === 0 && (
         <CardContent className="text-sm text-muted-foreground">
           No templates available. Add one to begin exploring the scenario.
         </CardContent>
-      ) : (
-        <Fragment />
       )}
     </Card>
   );

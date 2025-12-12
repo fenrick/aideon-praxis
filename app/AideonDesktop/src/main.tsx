@@ -28,16 +28,13 @@ function AppEntry() {
   useEffect(() => {
     queueMicrotask(() => {
       if (!isTauri) {
-        console.log('[desktop] non-tauri environment, using path routing');
         setWindowLabel(undefined);
         return;
       }
       try {
         const currentWindow = getCurrentWindow();
-        console.log('[desktop] window label', currentWindow.label);
         setWindowLabel(currentWindow.label);
-      } catch (error) {
-        console.warn('[desktop] failed to read window label, falling back to path', error);
+      } catch {
         setWindowLabel(undefined);
       }
     });
@@ -48,17 +45,6 @@ function AppEntry() {
   const wantsSplash = route === 'splash' || route === '/splash';
   // Only bypass splash automatically in browser mode when it wasn't explicitly requested in hash.
   const normalizedRoute = !isTauri && wantsSplash && hashPath === '/splash' ? '/' : route;
-  const pathname = globalThis.location.pathname;
-  const search = globalThis.location.search;
-
-  console.log('[desktop] route resolve', {
-    hashPath,
-    pathname,
-    search,
-    windowLabel,
-    route: normalizedRoute,
-    location: globalThis.location.href,
-  });
 
   let view: React.ReactNode = <AideonDesktopRoot />;
   switch (normalizedRoute) {
@@ -103,20 +89,19 @@ function AppEntry() {
  * @param root0
  * @param root0.children
  */
-function FrontendReady({ children }: { readonly children: React.ReactNode }) {
+function FrontendReady({
+  children,
+}: {
+  readonly children: React.ReactNode;
+}): React.ReactElement | null {
   useEffect(() => {
     if (isTauriRuntime()) {
       invoke('set_complete', { task: 'frontend' })
-        .then(() => {
-          console.log('[desktop] notified host frontend ready');
-          return true;
-        })
-        .catch((error: unknown) => {
-          console.warn('failed to notify frontend ready', error);
-        });
+        .then(() => true)
+        .catch(() => false);
     }
   }, []);
-  return <>{children}</>;
+  return children as React.ReactElement | null;
 }
 
 /**
@@ -182,11 +167,11 @@ function SplashScreen() {
         if (!cancelled) {
           await invoke('set_complete', { task: 'frontend' });
         }
-      } catch (error) {
-        console.warn('splash: init failed', error);
+      } catch {
+        cancelled = true;
       }
     }
-    void init();
+    init().catch(() => false);
     return () => {
       cancelled = true;
     };

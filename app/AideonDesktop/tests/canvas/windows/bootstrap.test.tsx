@@ -2,13 +2,9 @@ import { mountWindow } from 'canvas/windows/bootstrap';
 import { describe, expect, it, vi } from 'vitest';
 
 describe('mountWindow', () => {
-  it('warns when root is missing', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
-      return;
-    });
+  it('is a no-op when root is missing', () => {
     mountWindow(<div>hello</div>);
-    expect(warn).toHaveBeenCalledWith('window mount skipped: #root missing');
-    warn.mockRestore();
+    expect(document.querySelector('#root')).toBeNull();
   });
 
   it('creates a root when #root exists', async () => {
