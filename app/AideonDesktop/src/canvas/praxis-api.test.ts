@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
+import { describe, expect, it, vi } from 'vitest';
 import * as platform from './platform';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -41,9 +41,7 @@ describe('praxis-api callOrMock flows', () => {
     vi.spyOn(platform, 'isTauri').mockReturnValue(true);
     const { listTemporalCommits } = await import('./praxis-api');
     invokeMock.mockResolvedValueOnce({
-      commits: [
-        { id: 'c1', parents: ['p1'], branch: 'dev', message: 'Commit', change_count: 2 },
-      ],
+      commits: [{ id: 'c1', parents: ['p1'], branch: 'dev', message: 'Commit', change_count: 2 }],
     });
 
     const commits = await listTemporalCommits('dev');
