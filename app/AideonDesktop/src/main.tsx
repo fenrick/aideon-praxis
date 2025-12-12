@@ -21,7 +21,7 @@ createRoot(container).render(
 /**
  *
  */
-function AppEntry() {
+export function AppEntry() {
   const [windowLabel, setWindowLabel] = useState<string | undefined>();
   const isTauri = isTauriRuntime();
 
@@ -89,7 +89,7 @@ function AppEntry() {
  * @param root0
  * @param root0.children
  */
-function FrontendReady({
+export function FrontendReady({
   children,
 }: {
   readonly children: React.ReactNode;
@@ -109,7 +109,7 @@ function FrontendReady({
  * Uses both the optional globals and the compile-time env flags so it works
  * when `withGlobalTauri` is disabled (default in this repo).
  */
-function isTauriRuntime(): boolean {
+export function isTauriRuntime(): boolean {
   const metaEnvironment = (import.meta as { env?: { TAURI_PLATFORM?: string } }).env;
   if (metaEnvironment?.TAURI_PLATFORM) {
     return true;
