@@ -56,8 +56,8 @@ main {
   font-size: 0.75rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  /* Increase opacity for WCAG-compliant contrast against dark card background */
-  color: rgba(248, 250, 252, 0.82);
+  /* High-contrast label on dark swatch cards */
+  color: #cbd5e1;
 }
 
 .theme-card .swatch {
