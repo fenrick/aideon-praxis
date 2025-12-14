@@ -116,7 +116,9 @@ export function GraphWidget({
   }, [attachInspectHandlers, definition, onError, onViewChange, setEdges, setNodes]);
 
   useEffect(() => {
-    void loadView();
+    loadView().catch((_ignoredError: unknown) => {
+      return;
+    });
   }, [loadView, reloadVersion]);
 
   useEffect(() => {
@@ -202,7 +204,9 @@ export function GraphWidget({
         fallbackTitle={widget.title}
         loading={loading}
         onRefresh={() => {
-          void loadView();
+          loadView().catch((_ignoredError: unknown) => {
+            return;
+          });
         }}
       />
       <div className="h-[320px] w-full rounded-2xl border border-border/60 bg-muted/20">

@@ -185,7 +185,9 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
           }));
         }
       };
-      void loadSnapshot();
+      loadSnapshot().catch((_ignoredError: unknown) => {
+        return;
+      });
     },
     [state.branch, state.commitId],
   );
@@ -233,7 +235,9 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
   }, [loadBranches, state.branch]);
 
   useEffect(() => {
-    void loadBranches();
+    loadBranches().catch((_ignoredError: unknown) => {
+      return;
+    });
   }, [loadBranches]);
 
   const selectBranchAction = useCallback(

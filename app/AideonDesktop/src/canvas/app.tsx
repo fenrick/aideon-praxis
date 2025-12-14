@@ -214,8 +214,12 @@ function PraxisCanvasExperience({
   }, [activeScenarioId]);
 
   useEffect(() => {
-    void refreshTemplates();
-    void refreshProjects();
+    refreshTemplates().catch((_ignoredError: unknown) => {
+      return;
+    });
+    refreshProjects().catch((_ignoredError: unknown) => {
+      return;
+    });
   }, [refreshProjects, refreshTemplates]);
 
   const activeScenario = useMemo(() => {
@@ -472,7 +476,9 @@ function PraxisCanvasExperience({
             activeScenarioId={activeScenario?.id}
             onSelectScenario={handleScenarioSelect}
             onRetry={() => {
-              void refreshProjects();
+              refreshProjects().catch((_ignoredError: unknown) => {
+                return;
+              });
             }}
           />
         }

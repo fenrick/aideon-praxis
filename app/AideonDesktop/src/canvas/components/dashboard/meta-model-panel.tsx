@@ -50,7 +50,9 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
 
   useEffect(() => {
     queueMicrotask(() => {
-      void loadSchema();
+      loadSchema().catch((_ignoredError: unknown) => {
+        return;
+      });
     });
   }, [loadSchema]);
 
@@ -70,7 +72,9 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
             variant="outline"
             size="sm"
             onClick={() => {
-              void loadSchema();
+              loadSchema().catch((_ignoredError: unknown) => {
+                return;
+              });
             }}
             disabled={status === 'loading'}
           >
@@ -83,7 +87,9 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
           error,
           focusEntryId,
           onRetry: () => {
-            void loadSchema();
+            loadSchema().catch((_ignoredError: unknown) => {
+              return;
+            });
           },
         })}
       </CardContent>

@@ -35,7 +35,9 @@ export function useWorkerHealth(): [WorkerHealthState, WorkerHealthActions] {
 
   useEffect(() => {
     queueMicrotask(() => {
-      void refresh();
+      refresh().catch((_ignoredError: unknown) => {
+        return;
+      });
     });
   }, [refresh]);
 

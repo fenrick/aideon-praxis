@@ -69,7 +69,9 @@ export function MatrixWidget({
   }, [definition]);
 
   useEffect(() => {
-    void loadView();
+    loadView().catch((_ignoredError: unknown) => {
+      return;
+    });
   }, [loadView, reloadVersion]);
 
   const cellMap = useMemo(() => buildCellIndex(model?.cells ?? []), [model?.cells]);
@@ -118,7 +120,9 @@ export function MatrixWidget({
         fallbackTitle={widget.title}
         loading={loading}
         onRefresh={() => {
-          void loadView();
+          loadView().catch((_ignoredError: unknown) => {
+            return;
+          });
         }}
       />
       <div className="flex-1 space-y-3 rounded-2xl border border-border/60 bg-background/40 p-3">
