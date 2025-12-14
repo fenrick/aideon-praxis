@@ -68,7 +68,14 @@
       "exclude": [
         "**/*.d.ts",
         "**/*.test.*",
+        "node_modules/**",
+        "dist/**",
+        "build/**",
+        "coverage/**",
         "app/**/dist/**",
+        "target/**",
+        "**/.pnpm/**",
+        "**/out/**",
         "scripts/**",
         "app/AideonDesktop/src/design-system/components/**"
       ]
