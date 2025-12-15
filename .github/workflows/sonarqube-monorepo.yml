@@ -109,12 +109,4 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >-
-            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
-            -Dsonar.projectName=${{ vars.SONAR_PROJECT_NAME }}
-            -Dsonar.sources=.
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.rust.lcov.reportPaths=coverage/rust.lcov
-            -Dsonar.exclusions=node_modules/**,dist/**,build/**,coverage/**,app/AideonDesktop/src/design-system/components/**,**/.pnpm/**,**/out/**,target/**
-            -Dsonar.qualitygate.wait=true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
