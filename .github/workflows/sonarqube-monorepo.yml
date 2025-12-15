@@ -105,8 +105,15 @@ jobs:
       - name: Verify Rust coverage report
         run: test -f coverage/rust.lcov
 
+      - name: Generate Clippy JSON report
+        run: pnpm run host:clippy:report
+
       - name: Run SonarQube scan
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: >
+            -Dsonar.rust.clippy.enable=false
+            -Dsonar.rust.clippy.reportPaths=coverage/clippy.json

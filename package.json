@@ -46,6 +46,7 @@
     "host:test": "cargo test --all --quiet",
     "host:audit": "cargo audit -D warnings",
     "host:coverage": "TOOLCHAIN=$(rustup which rustc | sed 's#/bin/rustc##'); LLVM_COV=$TOOLCHAIN/lib/rustlib/$(rustc -vV | sed -n 's/^host: //p')/bin/llvm-cov LLVM_PROFDATA=$TOOLCHAIN/lib/rustlib/$(rustc -vV | sed -n 's/^host: //p')/bin/llvm-profdata cargo llvm-cov --workspace --all-features --lcov --output-path coverage/rust.lcov",
+    "host:clippy:report": "mkdir -p coverage && cargo clippy --workspace --all-targets --all-features --message-format=json > coverage/clippy.json",
     "host:ci": "pnpm run host:clean && pnpm run host:lint && pnpm run host:fix && pnpm run host:check && pnpm run host:coverage && pnpm run host:format",
     "ci": "pnpm run node:ci && pnpm run host:ci",
     "release": "semantic-release",

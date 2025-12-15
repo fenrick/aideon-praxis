@@ -311,6 +311,8 @@ Run these locally before every commit (CI enforces the same):
 
 - CI uses pnpm 9 and Cargo; ensure `rustfmt` and `clippy` components are
   installed in the build environment
+- Clippy analysis is produced by `pnpm run host:clippy:report` so Sonar ingests the JSON
+  report instead of rerunning Clippy on the MUSL runner.
 - Sonar analyzes both Node/TS and Rust; coverage reports are uploaded from
   Vitest (lcov) and Rust coverage tooling (lcov). CI waits for the Sonar Quality Gate
 - Fail‑fast ordering in CI: lint/type before unit tests; heavier jobs (coverage,
