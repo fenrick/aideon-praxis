@@ -34,10 +34,14 @@ pnpm install
 
 ### Run
 
-#### Electron + renderer
+#### Tauri host + renderer
 
 ```bash
-pnpm run dev
+# Terminal A — React UI
+pnpm run node:dev
+
+# Terminal B — Tauri host
+pnpm tauri dev
 ```
 
 ### Test, Lint & Coverage
@@ -45,9 +49,9 @@ pnpm run dev
 #### TS/JS
 
 ```bash
-pnpm run test
-pnpm run lint
-pnpm run typecheck
+pnpm run node:test
+pnpm run node:lint
+pnpm run node:typecheck
 ```
 
 #### Rust
@@ -70,8 +74,8 @@ Quality gates
 
 - Legacy Svelte renderer has been removed; React + Tauri desktop is now the only renderer.
 - `crates/desktop` — Rust desktop host (Tauri) and IPC surface.
-- `crates/{aideon_engine, aideon_chrona, aideon_metis, aideon_continuum, aideon_mneme}` — domain crates for graph/time/analytics, orchestration, and persistence.
-- `app/PraxisAdapters` — Shared TypeScript adapters (renderer ↔ host contracts).
+- `crates/{engine, chrona, metis, continuum, mneme, aideon_praxis_facade}` — domain crates for graph/time/analytics, orchestration, persistence, and the facade.
+- `app/AideonDesktop` — React/Tauri renderer (canvas, design system, adapters, DTOs).
 - `docs/` — Architecture content, ADRs, C4 diagrams.
 - `scripts/` — Minimal tooling entrypoints (issues.py). Legacy node scripts removed.
 
@@ -138,6 +142,8 @@ Use labels (`type/*`, `area/*`, `module/*`, `priority/*`) and assign the **miles
 - Never open worker TCP ports in desktop mode.
 - IPC over pipes/UDS with per-launch token.
 - Redact PII on exports by default.
+- “No renderer HTTP” means no renderer-initiated backend/network calls in desktop mode; the dev
+  toolchain may use a loopback dev server for HMR.
 - Report vulnerabilities privately: <security@yourdomain.tld> (replace with project address).
 
 ## Releases
@@ -148,7 +154,7 @@ Use labels (`type/*`, `area/*`, `module/*`, `priority/*`) and assign the **miles
 
 ## License and CLA
 
-- License: TBD (confirm with maintainers).
+- License: MIT — see `LICENSE`.
 - CLA: not required at this time.
 
 Thanks for helping build Aideon Praxis!

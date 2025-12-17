@@ -9,8 +9,7 @@ and time-first constraints must hold across modules (Praxis, Chrona, Metis, Cont
 ## Layers
 
 - **Renderer**
-  - React-based Praxis Canvas (with a legacy Svelte prototype kept only until cut-over) runs inside
-    the Tauri shell.
+  - React-based Praxis Canvas runs inside the Tauri shell.
   - Renders the canvas, dashboards, and inspectors; owns view state only (selection, filters, time).
   - No Node integration; strict CSP; no direct DB or network access; all backend calls go through a
     typed IPC bridge.

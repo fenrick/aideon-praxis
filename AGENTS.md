@@ -55,8 +55,8 @@ Before coding, skim any recent ADRs touching your area.
 
 ## Frameworks-first defaults (use these before inventing your own)
 
-- **TS/React:** React 18, shadcn/ui + Tailwind, React Flow/XYFlow for canvases, React Hook Form for
-  forms, Testing Library + Vitest for tests, pnpm 9, Node 24. Reach for TanStack Table when you
+- **TS/React:** React 19, shadcn/ui + Tailwind, React Flow/XYFlow for canvases, React Hook Form for
+  forms, Testing Library + Vitest for tests, pnpm 10, Node 24. Reach for TanStack Table when you
   need tables; avoid bespoke component primitives.
 - **Rust:** tokio for async, serde for serialization, thiserror for typed errors, tracing + `log`
   facade for logging, dirs/directories for platform paths, anyhow for internal glue only,
@@ -249,8 +249,8 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 
 ### TypeScript / React (Praxis Canvas, app/PraxisAdapters)
 
-– Node 24, React 18. Strict TS config; ESLint + Prettier. The SvelteKit bundle is considered
-legacy/prototype; all new surface/canvas work targets the React + React Flow + shadcn/ui stack
+– Node 24, React 19. Strict TS config; ESLint + Prettier. All new surface/canvas work targets the
+React + React Flow + shadcn/ui stack
 described in `docs/UX-DESIGN.md`, `docs/design-system.md`, and
 `app/AideonDesktop/docs/praxis-canvas/DESIGN.md`.
 

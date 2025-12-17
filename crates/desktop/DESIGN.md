@@ -3,8 +3,8 @@
 ## Overview
 
 Aideon Host is the Tauri-based entrypoint for the desktop app. It owns window lifecycle, OS
-integration, capabilities, and the typed IPC surface for calling engine crates from React/Svelte
-renderers.
+integration, capabilities, and the typed IPC surface for calling engine crates from the React
+renderer.
 
 ## Internal structure
 
