@@ -128,3 +128,66 @@ impl ContinuumSnapshotStore for MemorySnapshotStore {
             .ok_or_else(|| format!("snapshot '{key}' not found"))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::temporal::{ChangeSet, CommitSummary};
+
+    fn commit(id: &str) -> PersistedCommit {
+        PersistedCommit {
+            summary: CommitSummary {
+                id: id.into(),
+                parents: Vec::new(),
+                branch: "main".into(),
+                author: None,
+                time: None,
+                message: "msg".into(),
+                tags: Vec::new(),
+                change_count: 0,
+            },
+            change_set: ChangeSet::default(),
+        }
+    }
+
+    #[tokio::test]
+    async fn put_commit_rejects_duplicates() {
+        let store = MemoryStore::default();
+        store.put_commit(&commit("c1")).await.unwrap();
+        let err = store.put_commit(&commit("c1")).await.unwrap_err();
+        assert!(matches!(err, MnemeError::Storage { .. }));
+    }
+
+    #[tokio::test]
+    async fn compare_and_swap_branch_detects_conflicts() {
+        let store = MemoryStore::default();
+        store.ensure_branch("main").await.unwrap();
+        store
+            .compare_and_swap_branch("main", None, Some("c1"))
+            .await
+            .unwrap();
+        let err = store
+            .compare_and_swap_branch("main", None, Some("c2"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, MnemeError::ConcurrencyConflict { .. }));
+    }
+
+    #[tokio::test]
+    async fn list_branches_is_sorted() {
+        let store = MemoryStore::default();
+        store.ensure_branch("b").await.unwrap();
+        store.ensure_branch("a").await.unwrap();
+        let list = store.list_branches().await.unwrap();
+        assert_eq!(list[0].0, "a");
+        assert_eq!(list[1].0, "b");
+    }
+
+    #[test]
+    fn snapshot_store_put_get_roundtrip_and_missing() {
+        let store = MemorySnapshotStore::default();
+        store.put("k1", b"hello").unwrap();
+        assert_eq!(store.get("k1").unwrap(), b"hello");
+        assert!(store.get("missing").unwrap_err().contains("not found"));
+    }
+}

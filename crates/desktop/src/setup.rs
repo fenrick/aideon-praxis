@@ -19,6 +19,31 @@ impl SetupState {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SetupTask {
+    Frontend,
+    Backend,
+}
+
+fn parse_task(task: &str) -> Option<SetupTask> {
+    match task {
+        "frontend" => Some(SetupTask::Frontend),
+        "backend" => Some(SetupTask::Backend),
+        _ => None,
+    }
+}
+
+fn mark_complete(state: &mut SetupState, task: SetupTask) {
+    match task {
+        SetupTask::Frontend => state.frontend_task = true,
+        SetupTask::Backend => state.backend_task = true,
+    }
+}
+
+fn all_complete(state: &SetupState) -> bool {
+    state.backend_task && state.frontend_task
+}
+
 #[derive(Serialize)]
 pub struct SetupFlags {
     frontend: bool,
@@ -33,22 +58,14 @@ pub async fn set_complete(
 ) -> Result<(), String> {
     let mut state_lock = state.lock().unwrap();
 
-    match task.as_str() {
-        "frontend" => {
-            info!("host: set_complete(frontend)");
-            state_lock.frontend_task = true;
-        }
-        "backend" => {
-            info!("host: set_complete(backend)");
-            state_lock.backend_task = true;
-        }
-        other => {
-            warn!("host: set_complete called with invalid task '{other}'");
-            return Err("invalid task".into());
-        }
-    }
+    let parsed = parse_task(task.as_str()).ok_or_else(|| {
+        warn!("host: set_complete called with invalid task '{task}'");
+        "invalid task".to_string()
+    })?;
+    info!("host: set_complete({task})");
+    mark_complete(&mut state_lock, parsed);
 
-    if state_lock.backend_task && state_lock.frontend_task {
+    if all_complete(&state_lock) {
         info!("host: setup complete; closing splash and showing main window");
         if let Some(splash) = app.get_webview_window("splash") {
             let _ = splash.close();
@@ -94,4 +111,26 @@ pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_task_accepts_known_values() {
+        assert_eq!(parse_task("frontend"), Some(SetupTask::Frontend));
+        assert_eq!(parse_task("backend"), Some(SetupTask::Backend));
+        assert_eq!(parse_task("unknown"), None);
+    }
+
+    #[test]
+    fn marking_tasks_tracks_completion() {
+        let mut state = SetupState::new();
+        assert!(!all_complete(&state));
+        mark_complete(&mut state, SetupTask::Frontend);
+        assert!(!all_complete(&state));
+        mark_complete(&mut state, SetupTask::Backend);
+        assert!(all_complete(&state));
+    }
 }

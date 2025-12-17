@@ -44,10 +44,17 @@ pub async fn canvas_save_layout(payload: CanvasLayoutSaveRequest) -> Result<(), 
 
 #[cfg(test)]
 mod tests {
-    use super::canvas_store_key;
+    use super::*;
+
     #[test]
     fn store_key_is_stable() {
         let key = canvas_store_key("doc1", "2025-01-01");
         assert_eq!(key, "canvas/doc1/layout-2025-01-01.json");
+    }
+
+    #[tokio::test]
+    async fn canvas_scene_returns_shapes() {
+        let shapes = canvas_scene(None).await.unwrap();
+        assert!(!shapes.is_empty());
     }
 }

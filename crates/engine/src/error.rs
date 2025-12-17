@@ -73,3 +73,73 @@ impl From<MnemeError> for PraxisError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn codes_are_stable() {
+        assert_eq!(
+            PraxisError::UnknownBranch {
+                branch: "main".into()
+            }
+            .code(),
+            PraxisErrorCode::UnknownBranch
+        );
+        assert_eq!(
+            PraxisError::UnknownCommit {
+                commit: "c1".into()
+            }
+            .code(),
+            PraxisErrorCode::UnknownCommit
+        );
+        assert_eq!(
+            PraxisError::ConcurrencyConflict {
+                branch: "dev".into(),
+                expected: Some("a".into()),
+                actual: Some("b".into())
+            }
+            .code(),
+            PraxisErrorCode::ConcurrencyConflict
+        );
+        assert_eq!(
+            PraxisError::ValidationFailed {
+                message: "x".into()
+            }
+            .code(),
+            PraxisErrorCode::ValidationFailed
+        );
+        assert_eq!(
+            PraxisError::IntegrityViolation {
+                message: "x".into()
+            }
+            .code(),
+            PraxisErrorCode::IntegrityViolation
+        );
+        assert_eq!(
+            PraxisError::MergeConflict {
+                message: "x".into()
+            }
+            .code(),
+            PraxisErrorCode::MergeConflict
+        );
+    }
+
+    #[test]
+    fn mneme_errors_map_to_praxis_errors() {
+        let err: PraxisError = MnemeError::Storage {
+            message: "disk".into(),
+        }
+        .into();
+        assert!(matches!(err, PraxisError::IntegrityViolation { .. }));
+
+        let err: PraxisError = MnemeError::ConcurrencyConflict {
+            branch: "main".into(),
+            expected: Some("a".into()),
+            actual: Some("b".into()),
+        }
+        .into();
+        assert!(matches!(err, PraxisError::ConcurrencyConflict { .. }));
+    }
+}
