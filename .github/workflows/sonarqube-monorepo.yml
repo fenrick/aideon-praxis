@@ -105,25 +105,6 @@ jobs:
       - name: Verify Rust coverage report
         run: test -f coverage/rust.lcov
 
-      - name: Rust toolchain diagnostics
-        if: failure()
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "rustc: $(rustc -Vv)"
-          echo "cargo: $(cargo -V)"
-          echo "rustup: $(rustup -V)"
-          echo "installed components:"
-          rustup component list --installed | sort
-          echo "workspace metadata:"
-          cargo metadata --format-version 1 --no-deps > /dev/null
-          echo "coverage directory:"
-          ls -la coverage || true
-
-      - name: Ensure coverage directory exists
-        shell: bash
-        run: mkdir -p coverage
-
       - name: Run SonarQube scan
         uses: SonarSource/sonarqube-scan-action@v7
         env:
@@ -132,29 +113,3 @@ jobs:
           # Sonar's Clippy sensor runs `cargo clippy`; avoid inheriting repo/runner
           # defaults that turn all warnings into hard errors and fail with exit code 101.
           RUSTFLAGS: ''
-        with:
-          args: >
-            -Dsonar.verbose=false
-
-      - name: Collect Sonar scanner metadata
-        if: failure()
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "=== .scannerwork/report-task.txt ==="
-          if [[ -f .scannerwork/report-task.txt ]]; then
-            cat .scannerwork/report-task.txt
-          else
-            echo "[warn] .scannerwork/report-task.txt not found"
-          fi
-          echo "=== .scannerwork contents (top-level) ==="
-          ls -la .scannerwork || true
-
-      - name: Upload Sonar scanner metadata
-        if: failure()
-        uses: actions/upload-artifact@v5
-        with:
-          name: sonar-scanner-metadata
-          path: |
-            .scannerwork/report-task.txt
-          if-no-files-found: ignore
