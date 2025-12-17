@@ -106,6 +106,7 @@ jobs:
         run: test -f coverage/rust.lcov
 
       - name: Rust toolchain diagnostics
+        if: failure()
         shell: bash
         run: |
           set -euo pipefail
@@ -128,13 +129,15 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Sonar's Clippy sensor runs `cargo clippy`; avoid inheriting repo/runner
+          # defaults that turn all warnings into hard errors and fail with exit code 101.
+          RUSTFLAGS: ''
         with:
           args: >
-            -X
-            -Dsonar.verbose=true
+            -Dsonar.verbose=false
 
       - name: Collect Sonar scanner metadata
-        if: always()
+        if: failure()
         shell: bash
         run: |
           set -euo pipefail
@@ -148,7 +151,7 @@ jobs:
           ls -la .scannerwork || true
 
       - name: Upload Sonar scanner metadata
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v5
         with:
           name: sonar-scanner-metadata
