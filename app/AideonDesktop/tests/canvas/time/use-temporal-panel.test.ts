@@ -6,6 +6,7 @@ import type {
   StateAtSnapshot,
   TemporalBranchSummary,
   TemporalCommitSummary,
+  TemporalDiffSnapshot,
   TemporalMergeResult,
 } from 'canvas/praxis-api';
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
@@ -40,6 +41,7 @@ async function waitForState(predicate: () => boolean, retries = 10): Promise<voi
 type BranchesMock = () => Promise<TemporalBranchSummary[]>;
 type CommitsMock = (branch: string) => Promise<TemporalCommitSummary[]>;
 type SnapshotMock = (request: { asOf: string; scenario?: string }) => Promise<StateAtSnapshot>;
+type DiffMock = (request: { from: string; to: string }) => Promise<TemporalDiffSnapshot>;
 type MergeMock = (request: {
   source: string;
   target: string;
@@ -49,6 +51,7 @@ type MergeMock = (request: {
 const listBranchesSpy = vi.fn<Parameters<BranchesMock>, ReturnType<BranchesMock>>();
 const listCommitsSpy = vi.fn<Parameters<CommitsMock>, ReturnType<CommitsMock>>();
 const getSnapshotSpy = vi.fn<Parameters<SnapshotMock>, ReturnType<SnapshotMock>>();
+const getDiffSpy = vi.fn<Parameters<DiffMock>, ReturnType<DiffMock>>();
 const mergeSpy = vi.fn<Parameters<MergeMock>, ReturnType<MergeMock>>();
 
 vi.mock('canvas/praxis-api', () => ({
@@ -58,6 +61,7 @@ vi.mock('canvas/praxis-api', () => ({
     listCommitsSpy(...arguments_),
   getStateAtSnapshot: (...arguments_: Parameters<typeof getSnapshotSpy>) =>
     getSnapshotSpy(...arguments_),
+  getTemporalDiff: (...arguments_: Parameters<typeof getDiffSpy>) => getDiffSpy(...arguments_),
   mergeTemporalBranches: (...arguments_: Parameters<typeof mergeSpy>) => mergeSpy(...arguments_),
 }));
 
@@ -186,6 +190,7 @@ describe('useTemporalPanel', () => {
     listBranchesSpy.mockReset();
     listCommitsSpy.mockReset();
     getSnapshotSpy.mockReset();
+    getDiffSpy.mockReset();
     mergeSpy.mockReset();
 
     listBranchesSpy.mockResolvedValue([
@@ -209,6 +214,19 @@ describe('useTemporalPanel', () => {
         throw new Error(`Missing snapshot for ${asOf}`);
       }
       return snapshot;
+    });
+
+    getDiffSpy.mockResolvedValue({
+      from: 'commit-main-001',
+      to: 'commit-main-002',
+      metrics: {
+        nodeAdds: 1,
+        nodeMods: 0,
+        nodeDels: 0,
+        edgeAdds: 1,
+        edgeMods: 0,
+        edgeDels: 0,
+      },
     });
 
     mergeSpy.mockResolvedValue({ result: 'merged' });
@@ -299,6 +317,110 @@ describe('useTemporalPanel', () => {
       expect(harness.state.error).toContain('network down');
     } finally {
       harness.unmount();
+    }
+  });
+
+  it('handles empty branches and avoids calling commits/snapshots', async () => {
+    listBranchesSpy.mockResolvedValueOnce([]);
+
+    const harness = renderTemporalPanelHook();
+    try {
+      await waitForState(() => !harness.state.loading);
+      expect(harness.state.branch).toBeUndefined();
+      expect(listCommitsSpy).not.toHaveBeenCalled();
+      expect(getSnapshotSpy).not.toHaveBeenCalled();
+    } finally {
+      harness.unmount();
+    }
+  });
+
+  it('surfaces errors when commit loading fails', async () => {
+    listCommitsSpy.mockRejectedValueOnce(new Error('commit fetch failed'));
+
+    const harness = renderTemporalPanelHook();
+    try {
+      await waitForState(() => !harness.state.loading);
+      expect(harness.state.error).toContain('commit fetch failed');
+    } finally {
+      harness.unmount();
+    }
+  });
+
+  it('does nothing when selecting commits without a branch or repeating the same commit', async () => {
+    listBranchesSpy.mockResolvedValueOnce([]);
+
+    const harness = renderTemporalPanelHook();
+    try {
+      await waitForState(() => !harness.state.loading);
+      act(() => {
+        harness.actions.selectCommit('commit-main-001');
+      });
+      expect(getSnapshotSpy).not.toHaveBeenCalled();
+    } finally {
+      harness.unmount();
+    }
+
+    const harness2 = renderTemporalPanelHook();
+    try {
+      await waitForState(() => harness2.state.commitId === 'commit-main-002');
+      getSnapshotSpy.mockClear();
+      act(() => {
+        harness2.actions.selectCommit('commit-main-002');
+      });
+      await flushMicrotasks();
+      expect(getSnapshotSpy).not.toHaveBeenCalled();
+    } finally {
+      harness2.unmount();
+    }
+  });
+
+  it('clears snapshots when selecting an empty commit id', async () => {
+    const harness = renderTemporalPanelHook();
+    try {
+      await waitForState(() => harness.state.commitId === 'commit-main-002');
+      act(() => {
+        harness.actions.selectCommit();
+      });
+      await waitForState(() => harness.state.commitId === undefined);
+      expect(harness.state.snapshot).toBeUndefined();
+    } finally {
+      harness.unmount();
+    }
+  });
+
+  it('does not merge when already on main; merges and reloads when successful', async () => {
+    const harness = renderTemporalPanelHook();
+    try {
+      await waitForState(() => harness.state.branch === 'main');
+      act(() => {
+        void harness.actions.mergeIntoMain();
+      });
+      await flushMicrotasks();
+      expect(mergeSpy).not.toHaveBeenCalled();
+    } finally {
+      harness.unmount();
+    }
+
+    const harness2 = renderTemporalPanelHook();
+    try {
+      await waitForState(() => !harness2.state.loading);
+      act(() => {
+        void harness2.actions.selectBranch('chronaplay');
+      });
+      await waitForState(() => harness2.state.branch === 'chronaplay');
+
+      mergeSpy.mockResolvedValueOnce({ result: 'merged', conflicts: [] });
+
+      act(() => {
+        void harness2.actions.mergeIntoMain();
+      });
+
+      await waitForState(() => !harness2.state.merging);
+      expect(mergeSpy).toHaveBeenCalledWith({ source: 'chronaplay', target: 'main' });
+      expect(listBranchesSpy.mock.calls.length).toBeGreaterThan(1);
+      expect(harness2.state.mergeConflicts).toBeUndefined();
+    } finally {
+      harness2.unmount();
     }
   });
 });

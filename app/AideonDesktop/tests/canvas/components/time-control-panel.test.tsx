@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type * as React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
 
@@ -33,14 +33,42 @@ vi.mock('../../../src/design-system/components/ui/select', () => {
 });
 
 vi.mock('../../../src/design-system/components/ui/slider', () => ({
-  Slider: ({ onValueCommit }: { onValueCommit?: (values: number[]) => void }) => (
-    <button data-testid="slider" onClick={() => onValueCommit?.([1])}>
-      slider
-    </button>
+  Slider: ({
+    onValueCommit,
+    disabled,
+    value,
+  }: {
+    onValueCommit?: (values: number[]) => void;
+    disabled?: boolean;
+    value?: number[];
+  }) => (
+    <div>
+      <button
+        data-testid="slider-valid"
+        disabled={disabled}
+        data-value={JSON.stringify(value ?? [])}
+        onClick={() => onValueCommit?.([1])}
+      >
+        slider
+      </button>
+      <button data-testid="slider-negative" onClick={() => onValueCommit?.([-1])}>
+        slider-negative
+      </button>
+      <button
+        data-testid="slider-non-number"
+        onClick={() => onValueCommit?.([undefined as unknown as number])}
+      >
+        slider-non-number
+      </button>
+    </div>
   ),
 }));
 
 describe('TimeControlPanel', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   const state: TemporalPanelState = {
     branches: [
       { name: 'main', head: 'a1' },
@@ -93,7 +121,42 @@ describe('TimeControlPanel', () => {
     fireEvent.click(screen.getByText('Merge into main'));
     expect(actions.mergeIntoMain).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByTestId('slider'));
+    fireEvent.click(screen.getByTestId('slider-valid'));
     expect(actions.selectCommit).toHaveBeenCalledWith('c2');
+  });
+
+  it('handles empty commit lists, main branch, and invalid slider events', () => {
+    const localActions: TemporalPanelActions = {
+      selectBranch: vi.fn().mockResolvedValue(),
+      selectCommit: vi.fn().mockResolvedValue(),
+      refreshBranches: vi.fn().mockResolvedValue(),
+      mergeIntoMain: vi.fn().mockResolvedValue(),
+    };
+    const localState: TemporalPanelState = {
+      branches: [],
+      branch: 'main',
+      commits: [],
+      commitId: undefined,
+      snapshot: undefined,
+      loading: true,
+      snapshotLoading: true,
+      error: 'Boom',
+      mergeConflicts: [{ reference: 'r1', kind: 'node', message: 'conflict' }],
+      merging: true,
+      diff: undefined,
+    };
+
+    render(<TimeControlPanel state={localState} actions={localActions} />);
+
+    expect(screen.getByText(/Load a branch to view commits/i)).toBeInTheDocument();
+    expect(screen.getByText('Boom')).toBeInTheDocument();
+    expect(screen.queryByText(/Merge into main/i)).not.toBeInTheDocument();
+
+    expect(screen.getByText('Refresh branches')).toBeDisabled();
+    expect(screen.getByText('Reload snapshot')).toBeDisabled();
+
+    fireEvent.click(screen.getByTestId('slider-negative'));
+    fireEvent.click(screen.getByTestId('slider-non-number'));
+    expect(localActions.selectCommit).not.toHaveBeenCalled();
   });
 });

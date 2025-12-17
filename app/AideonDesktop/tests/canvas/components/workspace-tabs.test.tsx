@@ -18,10 +18,22 @@ vi.mock('@radix-ui/react-tabs', () => {
     onValueChange,
     children,
   }: React.PropsWithChildren<{ value?: string; onValueChange?: (value: string) => void }>) => {
+    const [internal, setInternal] = React.useState<string | undefined>(value);
+    React.useEffect(() => {
+      setInternal(value);
+    }, [value]);
+
     const memoValue = React.useMemo(
-      () => ({ value, onChange: onValueChange }),
-      [onValueChange, value],
+      () => ({
+        value: internal,
+        onChange: (next: string) => {
+          setInternal(next);
+          onValueChange?.(next);
+        },
+      }),
+      [internal, onValueChange],
     );
+
     return <TabsContext.Provider value={memoValue}>{children}</TabsContext.Provider>;
   };
 
@@ -165,5 +177,80 @@ describe('WorkspaceTabs', () => {
     fireEvent.click(canvasTab);
 
     await waitFor(() => expect(screen.getByTestId('canvas-runtime')).toBeInTheDocument());
+  });
+
+  it('supports controlled tabs and timeline states', async () => {
+    const onValueChange = vi.fn();
+    mockUseTemporalPanel.mockReturnValue([
+      {
+        loading: true,
+        snapshot: { nodes: 0, edges: 0, scenario: undefined, confidence: undefined },
+        branch: undefined,
+        commits: [],
+        commitId: undefined,
+        diff: undefined,
+        mergeConflicts: undefined,
+        error: 'Boom',
+      },
+      { selectCommit: vi.fn() },
+    ] as unknown as [Record<string, unknown>, Record<string, unknown>]);
+
+    render(
+      <WorkspaceTabs
+        widgets={[]}
+        selection={baseSelection}
+        onSelectionChange={vi.fn()}
+        onRequestMetaModelFocus={vi.fn()}
+        value="timeline"
+        onValueChange={onValueChange}
+      />,
+    );
+
+    expect(screen.getByText(/Loading commits/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('tab', { name: 'Canvas' })[0]);
+    await waitFor(() => {
+      expect(screen.getByTestId('canvas-runtime')).toBeInTheDocument();
+    });
+
+    render(
+      <WorkspaceTabs
+        widgets={[]}
+        selection={baseSelection}
+        onSelectionChange={vi.fn()}
+        onRequestMetaModelFocus={vi.fn()}
+        value="overview"
+        onValueChange={onValueChange}
+      />,
+    );
+    expect(screen.getAllByText('Boom').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Temporal branches pending/).length).toBeGreaterThan(0);
+
+    mockUseTemporalPanel.mockReturnValueOnce([
+      {
+        loading: false,
+        snapshot: { nodes: 0, edges: 0, scenario: undefined, confidence: undefined },
+        branch: 'main',
+        commits: [],
+        commitId: undefined,
+        diff: undefined,
+        mergeConflicts: undefined,
+        error: undefined,
+      },
+      {},
+    ] as unknown as [Record<string, unknown>, Record<string, unknown>]);
+
+    render(
+      <WorkspaceTabs
+        widgets={[]}
+        selection={baseSelection}
+        onSelectionChange={vi.fn()}
+        onRequestMetaModelFocus={vi.fn()}
+        value="timeline"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/No commits recorded yet/i)).toBeInTheDocument();
+    });
   });
 });

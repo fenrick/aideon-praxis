@@ -1,5 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
 
 interface Project {
   id: string;
@@ -57,6 +59,7 @@ vi.mock('canvas/components/template-screen/overview-tabs', () => ({
   OverviewTabs: ({
     onSelectionChange,
     reloadSignal,
+    branchTriggerRef,
   }: {
     onSelectionChange: (selection: {
       nodeIds: string[];
@@ -64,8 +67,12 @@ vi.mock('canvas/components/template-screen/overview-tabs', () => ({
       sourceWidgetId?: string;
     }) => void;
     reloadSignal?: number;
+    branchTriggerRef?: React.RefObject<HTMLButtonElement | null>;
   }) => (
     <div>
+      <button ref={branchTriggerRef} data-testid="branch-trigger">
+        branch trigger
+      </button>
       <button
         data-testid="select-node"
         onClick={() => {
@@ -166,11 +173,19 @@ vi.mock('canvas/domain-data', () => ({
     .mockResolvedValue([{ id: 't1', name: 'Template 1', description: '', widgets: [] }]),
 }));
 vi.mock('canvas/platform', () => ({ isTauri: vi.fn(() => false) }));
+const useTemporalPanelMock = vi.hoisted(() =>
+  vi.fn<[], [TemporalPanelState, TemporalPanelActions]>(),
+);
 vi.mock('canvas/time/use-temporal-panel', () => ({
-  useTemporalPanel: () => [
-    { branch: 'main', commitId: undefined, loading: false },
-    { refresh: vi.fn() },
-  ],
+  useTemporalPanel: () => useTemporalPanelMock(),
+}));
+const commandStackMock = vi.hoisted(() => ({
+  record: vi.fn(),
+  undo: vi.fn(),
+  redo: vi.fn(),
+}));
+vi.mock('canvas/hooks/use-command-stack', () => ({
+  useCommandStack: () => commandStackMock,
 }));
 vi.mock('canvas/lib/analytics', () => ({ track: vi.fn() }));
 
@@ -178,7 +193,21 @@ import { PraxisCanvasSurface } from 'canvas/app';
 import { listProjectsWithScenarios, listTemplatesFromHost } from 'canvas/domain-data';
 
 describe('PraxisCanvasSurface (coverage)', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('loads projects/templates, wires selection and saves templates', async () => {
+    useTemporalPanelMock.mockReturnValue([
+      { branch: 'main', commitId: undefined, loading: false, commits: [] },
+      {
+        refreshBranches: vi.fn(),
+        selectCommit: vi.fn(),
+        selectBranch: vi.fn(),
+        mergeIntoMain: vi.fn(),
+      },
+    ]);
+
     const onSelectionChange = vi.fn();
     render(<PraxisCanvasSurface onSelectionChange={onSelectionChange} debug />);
 
@@ -201,6 +230,15 @@ describe('PraxisCanvasSurface (coverage)', () => {
   });
 
   it('changes scenarios', async () => {
+    useTemporalPanelMock.mockReturnValue([
+      { branch: 'main', commitId: undefined, loading: false, commits: [] },
+      {
+        refreshBranches: vi.fn(),
+        selectCommit: vi.fn(),
+        selectBranch: vi.fn(),
+        mergeIntoMain: vi.fn(),
+      },
+    ]);
     render(<PraxisCanvasSurface />);
     await waitFor(() => {
       expect(listProjectsWithScenarios).toHaveBeenCalled();
@@ -210,6 +248,15 @@ describe('PraxisCanvasSurface (coverage)', () => {
   });
 
   it('opens widget library and creates widgets; handles empty registry', async () => {
+    useTemporalPanelMock.mockReturnValue([
+      { branch: 'main', commitId: undefined, loading: false, commits: [] },
+      {
+        refreshBranches: vi.fn(),
+        selectCommit: vi.fn(),
+        selectBranch: vi.fn(),
+        mergeIntoMain: vi.fn(),
+      },
+    ]);
     render(<PraxisCanvasSurface />);
     await waitFor(() => expect(screen.getAllByTestId('layout')[0]).toBeInTheDocument());
 
@@ -223,6 +270,22 @@ describe('PraxisCanvasSurface (coverage)', () => {
   });
 
   it('invokes inspector save and applies operations for node selection', async () => {
+    useTemporalPanelMock.mockReturnValue([
+      {
+        branch: 'main',
+        commitId: 'c1',
+        loading: false,
+        commits: [
+          { id: 'c1', branch: 'main', parents: [], message: 'm', tags: [], changeCount: 0 },
+        ],
+      },
+      {
+        refreshBranches: vi.fn(),
+        selectCommit: vi.fn(),
+        selectBranch: vi.fn(),
+        mergeIntoMain: vi.fn(),
+      },
+    ]);
     const { applyOperations } = await import('canvas/praxis-api');
     render(<PraxisCanvasSurface />);
     await waitFor(() => {
@@ -234,6 +297,51 @@ describe('PraxisCanvasSurface (coverage)', () => {
     await waitFor(() => {
       expect(applyOperations).toHaveBeenCalled();
     });
+  });
+
+  it('covers error paths and keyboard shortcuts', async () => {
+    const temporalSelectCommit = vi.fn();
+    useTemporalPanelMock.mockReturnValue([
+      {
+        branch: 'main',
+        commitId: 'c1',
+        loading: false,
+        commits: [
+          { id: 'c0', branch: 'main', parents: [], message: 'c0', tags: [], changeCount: 0 },
+          { id: 'c1', branch: 'main', parents: [], message: 'c1', tags: [], changeCount: 0 },
+          { id: 'c2', branch: 'main', parents: [], message: 'c2', tags: [], changeCount: 0 },
+        ],
+      },
+      {
+        refreshBranches: vi.fn(),
+        selectCommit: temporalSelectCommit,
+        selectBranch: vi.fn(),
+        mergeIntoMain: vi.fn(),
+      },
+    ]);
+
+    vi.mocked(listTemplatesFromHost).mockRejectedValueOnce(new Error('templates down'));
+    vi.mocked(listProjectsWithScenarios).mockRejectedValueOnce(new Error('projects down'));
+
+    render(<PraxisCanvasSurface />);
+    await waitFor(() => {
+      expect(listTemplatesFromHost).toHaveBeenCalled();
+    });
+
+    fireEvent.keyDown(globalThis, { key: 'z', ctrlKey: true });
+    fireEvent.keyDown(globalThis, { key: 'z', ctrlKey: true, shiftKey: true });
+    fireEvent.keyDown(globalThis, { key: 'y', ctrlKey: true });
+    expect(commandStackMock.undo).toHaveBeenCalled();
+    expect(commandStackMock.redo).toHaveBeenCalled();
+
+    fireEvent.keyDown(globalThis, { key: 'ArrowRight' });
+    expect(temporalSelectCommit).toHaveBeenCalledWith('c2');
+
+    fireEvent.keyDown(globalThis, { key: 'ArrowLeft' });
+    expect(temporalSelectCommit).toHaveBeenCalledWith('c0');
+
+    fireEvent.keyDown(globalThis, { key: ' ', shiftKey: true });
+    expect(screen.getByTestId('branch-trigger')).toHaveFocus();
   });
 
   // negative paths covered in dedicated files; keep this focused on happy-path wiring

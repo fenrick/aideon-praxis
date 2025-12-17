@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getChartView } from 'canvas/praxis-api';
@@ -20,6 +20,7 @@ const widget = {
 describe('ChartWidget', () => {
   afterEach(() => {
     vi.clearAllMocks();
+    cleanup();
   });
 
   it('renders KPI summary', async () => {
@@ -33,6 +34,31 @@ describe('ChartWidget', () => {
     render(<ChartWidget widget={widget} reloadVersion={0} />);
     await waitFor(() => expect(screen.getByText(/4,200 %/)).toBeInTheDocument());
     expect(screen.getByText(/vs last span/i)).toBeInTheDocument();
+  });
+
+  it('renders KPI without delta and with a down trend', async () => {
+    mockedGetChartView.mockResolvedValue({
+      chartType: 'kpi',
+      kpi: { value: 10, trend: 'down', units: undefined, delta: undefined },
+      series: [],
+      metadata: { title: 'KPI' },
+    });
+
+    render(<ChartWidget widget={widget} reloadVersion={10} />);
+    await waitFor(() => expect(screen.getByText(/10/)).toBeInTheDocument());
+    expect(screen.queryByText(/vs last span/i)).not.toBeInTheDocument();
+  });
+
+  it('handles KPI models without a KPI payload', async () => {
+    mockedGetChartView.mockResolvedValue({
+      chartType: 'kpi',
+      kpi: undefined,
+      series: [],
+      metadata: {},
+    });
+
+    render(<ChartWidget widget={widget} reloadVersion={11} />);
+    await waitFor(() => expect(screen.getByText(/No data/i)).toBeInTheDocument());
   });
 
   it('shows line chart series', async () => {
@@ -56,6 +82,28 @@ describe('ChartWidget', () => {
     expect(screen.getByText(/Jan:10/)).toBeInTheDocument();
   });
 
+  it('shows no data when the line series is missing or empty', async () => {
+    mockedGetChartView.mockResolvedValueOnce({
+      chartType: 'line',
+      series: [],
+      metadata: {},
+    });
+
+    render(<ChartWidget widget={{ ...widget, view: { chartType: 'line' } }} reloadVersion={12} />);
+    await waitFor(() => expect(screen.getByText(/No data/i)).toBeInTheDocument());
+
+    cleanup();
+
+    mockedGetChartView.mockResolvedValueOnce({
+      chartType: 'line',
+      series: [{ id: 's1', label: 'Empty', points: [], color: '#000' }],
+      metadata: {},
+    });
+
+    render(<ChartWidget widget={{ ...widget, view: { chartType: 'line' } }} reloadVersion={13} />);
+    await waitFor(() => expect(screen.getByLabelText(/Empty trend/)).toBeInTheDocument());
+  });
+
   it('falls back to bar chart for other types', async () => {
     mockedGetChartView.mockResolvedValue({
       chartType: 'bar',
@@ -76,6 +124,42 @@ describe('ChartWidget', () => {
     render(<ChartWidget widget={{ ...widget, view: { chartType: 'bar' } }} reloadVersion={2} />);
     await waitFor(() => expect(screen.getByText('Q1')).toBeInTheDocument());
     expect(screen.getByText('Capex')).toBeInTheDocument();
+  });
+
+  it('shows no data for empty bar series and handles missing points', async () => {
+    mockedGetChartView.mockResolvedValueOnce({
+      chartType: 'bar',
+      series: [],
+      metadata: {},
+    });
+    render(<ChartWidget widget={{ ...widget, view: { chartType: 'bar' } }} reloadVersion={14} />);
+    await waitFor(() => expect(screen.getByText(/No data/i)).toBeInTheDocument());
+
+    cleanup();
+
+    mockedGetChartView.mockResolvedValueOnce({
+      chartType: 'bar',
+      series: [
+        {
+          id: 's1',
+          label: 'Primary',
+          points: [
+            { label: 'Q1', value: 1000 },
+            { label: 'Q2', value: 1 },
+          ],
+        },
+        {
+          id: 's2',
+          label: 'Secondary',
+          points: [{ label: 'Q1', value: 50 }],
+        },
+      ],
+      metadata: {},
+    });
+    render(<ChartWidget widget={{ ...widget, view: { chartType: 'bar' } }} reloadVersion={15} />);
+    await waitFor(() => expect(screen.getByText('Primary')).toBeInTheDocument());
+    expect(screen.getByText('Secondary')).toBeInTheDocument();
+    expect(screen.getByText('Q2')).toBeInTheDocument();
   });
 
   it('renders errors from host', async () => {

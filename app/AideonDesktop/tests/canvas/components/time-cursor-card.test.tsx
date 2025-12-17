@@ -1,10 +1,17 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type * as React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
 
 import { TimeCursorCard } from 'canvas/components/template-screen/time-cursor-card';
+
+const useTemporalPanelMock = vi.hoisted(() =>
+  vi.fn<[], [TemporalPanelState, TemporalPanelActions]>(),
+);
+vi.mock('canvas/time/use-temporal-panel', () => ({
+  useTemporalPanel: () => useTemporalPanelMock(),
+}));
 
 vi.mock('design-system/components/ui/select', () => {
   interface SelectProperties {
@@ -43,14 +50,46 @@ vi.mock('design-system/components/ui/select', () => {
 });
 
 vi.mock('design-system/components/ui/slider', () => ({
-  Slider: ({ onValueCommit }: { onValueCommit?: (values: number[]) => void }) => (
-    <button data-testid="timeline-slider" onClick={() => onValueCommit?.([1])}>
-      slider
-    </button>
+  Slider: ({
+    onValueCommit,
+    disabled,
+    value,
+  }: {
+    onValueCommit?: (values: number[]) => void;
+    disabled?: boolean;
+    value?: number[];
+  }) => (
+    <div>
+      <button
+        data-testid="timeline-slider"
+        disabled={disabled}
+        data-value={JSON.stringify(value ?? [])}
+        onClick={() => onValueCommit?.([1])}
+      >
+        slider
+      </button>
+      <button data-testid="timeline-slider-negative" onClick={() => onValueCommit?.([-1])}>
+        slider-negative
+      </button>
+      <button
+        data-testid="timeline-slider-non-number"
+        onClick={() => onValueCommit?.([undefined as unknown as number])}
+      >
+        slider-non-number
+      </button>
+    </div>
   ),
 }));
 
 describe('TimeCursorCard', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  beforeEach(() => {
+    useTemporalPanelMock.mockReset();
+  });
+
   const state: TemporalPanelState = {
     branches: [
       { name: 'main', head: 'a1' },
@@ -92,6 +131,7 @@ describe('TimeCursorCard', () => {
   };
 
   it('emits branch, commit, and slider changes', () => {
+    useTemporalPanelMock.mockReturnValue([state, actions]);
     render(<TimeCursorCard state={state} actions={actions} />);
 
     fireEvent.click(screen.getByTestId('branch-select'));
@@ -102,5 +142,37 @@ describe('TimeCursorCard', () => {
 
     fireEvent.click(screen.getByTestId('timeline-slider'));
     expect(actions.selectCommit).toHaveBeenCalledWith('c2');
+  });
+
+  it('uses hook defaults and handles empty commits + invalid slider inputs', () => {
+    const hookActions: TemporalPanelActions = {
+      selectBranch: vi.fn().mockResolvedValue(),
+      selectCommit: vi.fn().mockResolvedValue(),
+      refreshBranches: vi.fn().mockResolvedValue(),
+      mergeIntoMain: vi.fn().mockResolvedValue(),
+    };
+    const hookState: TemporalPanelState = {
+      branches: [{ name: 'main', head: 'c1' }],
+      branch: 'main',
+      commits: [],
+      commitId: undefined,
+      snapshot: undefined,
+      loading: true,
+      snapshotLoading: true,
+      error: 'No branch loaded',
+      mergeConflicts: undefined,
+      merging: false,
+      diff: undefined,
+    };
+    useTemporalPanelMock.mockReturnValue([hookState, hookActions]);
+
+    render(<TimeCursorCard />);
+
+    expect(screen.getByText(/No branch loaded/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Merge into main/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('timeline-slider-negative'));
+    fireEvent.click(screen.getByTestId('timeline-slider-non-number'));
+    expect(hookActions.selectCommit).not.toHaveBeenCalled();
   });
 });

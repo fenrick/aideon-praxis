@@ -198,4 +198,24 @@ describe('GlobalSearchCard', () => {
     fireEvent.click(screen.getByText('Refresh branches'));
     expect(refreshBranchesSpy).toHaveBeenCalled();
   });
+
+  it('shows empty commits and surfaces catalogue errors', async () => {
+    mockState = { ...mockState, commits: [] };
+    getCatalogueViewMock.mockRejectedValueOnce(new Error('catalogue down'));
+
+    render(<GlobalSearchCard />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/No recent commits available/i)).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/catalogue down/i)).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(globalThis, { key: 'k', ctrlKey: true });
+    await waitFor(() => {
+      expect(screen.getAllByText('chronaplay').length).toBeGreaterThan(0);
+    });
+  });
 });
