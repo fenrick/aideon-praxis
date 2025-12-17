@@ -119,6 +119,10 @@ jobs:
           echo "coverage directory:"
           ls -la coverage || true
 
+      - name: Ensure coverage directory exists
+        shell: bash
+        run: mkdir -p coverage
+
       - name: Run SonarQube scan
         uses: SonarSource/sonarqube-scan-action@v7
         env:
@@ -141,3 +145,11 @@ jobs:
           else
             echo "[warn] sonar scanner dump not found at coverage/sonar-scanner-dump.txt"
           fi
+
+      - name: Upload Sonar scanner dump
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: sonar-scanner-dump
+          path: coverage/sonar-scanner-dump.txt
+          if-no-files-found: ignore
