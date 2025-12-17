@@ -105,8 +105,19 @@ jobs:
       - name: Verify Rust coverage report
         run: test -f coverage/rust.lcov
 
-      - name: Generate Clippy JSON report
-        run: pnpm run host:clippy:report
+      - name: Rust toolchain diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "rustc: $(rustc -Vv)"
+          echo "cargo: $(cargo -V)"
+          echo "rustup: $(rustup -V)"
+          echo "installed components:"
+          rustup component list --installed | sort
+          echo "workspace metadata:"
+          cargo metadata --format-version 1 --no-deps > /dev/null
+          echo "coverage directory:"
+          ls -la coverage || true
 
       - name: Run SonarQube scan
         uses: SonarSource/sonarqube-scan-action@v7
@@ -115,5 +126,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: >
-            -Dsonar.rust.clippy.enable=false
-            -Dsonar.rust.clippy.reportPaths=coverage/clippy.json
+            -X
+            -Dsonar.verbose=true
+            -Dsonar.scanner.dumpToFile=coverage/sonar-scanner-dump.txt
+
+      - name: Show Sonar scanner dump (tail)
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f coverage/sonar-scanner-dump.txt ]]; then
+            echo "=== coverage/sonar-scanner-dump.txt (last 200 lines) ==="
+            tail -n 200 coverage/sonar-scanner-dump.txt
+          else
+            echo "[warn] sonar scanner dump not found at coverage/sonar-scanner-dump.txt"
+          fi
