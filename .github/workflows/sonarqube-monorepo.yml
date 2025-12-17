@@ -132,24 +132,26 @@ jobs:
           args: >
             -X
             -Dsonar.verbose=true
-            -Dsonar.scanner.dumpToFile=coverage/sonar-scanner-dump.txt
 
-      - name: Show Sonar scanner dump (tail)
+      - name: Collect Sonar scanner metadata
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -f coverage/sonar-scanner-dump.txt ]]; then
-            echo "=== coverage/sonar-scanner-dump.txt (last 200 lines) ==="
-            tail -n 200 coverage/sonar-scanner-dump.txt
+          echo "=== .scannerwork/report-task.txt ==="
+          if [[ -f .scannerwork/report-task.txt ]]; then
+            cat .scannerwork/report-task.txt
           else
-            echo "[warn] sonar scanner dump not found at coverage/sonar-scanner-dump.txt"
+            echo "[warn] .scannerwork/report-task.txt not found"
           fi
+          echo "=== .scannerwork contents (top-level) ==="
+          ls -la .scannerwork || true
 
-      - name: Upload Sonar scanner dump
+      - name: Upload Sonar scanner metadata
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: sonar-scanner-dump
-          path: coverage/sonar-scanner-dump.txt
+          name: sonar-scanner-metadata
+          path: |
+            .scannerwork/report-task.txt
           if-no-files-found: ignore
