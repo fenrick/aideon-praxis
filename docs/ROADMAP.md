@@ -31,9 +31,10 @@ with Chrona, Metis, Continuum, and Mneme evolving alongside it.
 - ADRs for RPC and adapter boundaries.
 - Interfaces: `GraphAdapter`, `StorageAdapter`, `WorkerClient`.
 
-> **Renderer migration:** The historical SvelteKit UI remains in the repo for continuity but all
-> roadmap items now assume the React + React Flow canvas runtime described in
-> Refer to `docs/DESIGN.md` and `app/AideonDesktop/docs/praxis-canvas/DESIGN.md` for the current desktop runtime; treat any remaining Svelte references as legacy unless explicitly noted.
+> **Renderer migration:** The legacy Svelte renderer has been removed. All roadmap items assume
+> the React + React Flow canvas runtime described in `docs/DESIGN.md` and
+> `app/AideonDesktop/docs/praxis-canvas/DESIGN.md`. Any remaining Svelte references (primarily in
+> mirrored historical issue docs) are informational only.
 
 #### Acceptance
 
@@ -45,7 +46,7 @@ with Chrona, Metis, Continuum, and Mneme evolving alongside it.
 
 #### Outcomes (updated)
 
-- React + Tauri desktop shell (migrating away from the legacy SvelteKit renderer), typed IPC; in-memory time-graph engine (commit/branch/diff) behind Tauri.
+- React + Tauri desktop shell (typed IPC); in-memory time-graph engine (commit/branch/diff) behind Tauri.
 - Canvas with ELK layout, manual placement, save per asOf (JSON snapshots behind a traited store).
 - Reference adapters (TS): dev in-memory adapter and IPC adapter for temporal calls.
 - Pipeline hardening (coverage in CI, CSP checks, Sonar inputs).

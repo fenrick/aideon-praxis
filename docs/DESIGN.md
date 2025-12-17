@@ -68,7 +68,7 @@ For details, see:
 
 At runtime, Aideon Suite is organised into three layers:
 
-- **Renderer:** React/Tauri Praxis Canvas (legacy Svelte renderer removed) render
+- **Renderer:** React/Tauri Praxis Canvas (legacy Svelte renderer removed) renders
   the workspace UI using Aideon Design System components.
 - **Host:** The Tauri-based Aideon Host manages windows, IPC commands, OS integration, and security
   capabilities.
@@ -77,8 +77,8 @@ At runtime, Aideon Suite is organised into three layers:
 
 Cross-cutting rules:
 
-- Renderer never talks to databases or raw HTTP; it only calls the host via a typed bridge and
-  `@aideon/PraxisAdapters`.
+- Renderer never talks to databases or raw HTTP; it only calls the host via a typed bridge (for
+  example the `praxisApi` wrapper under `app/AideonDesktop/src/adapters`).
 - Engines expose traits and DTOs; the host selects local or remote implementations (future server
   mode) without changing renderer contracts.
 - Desktop mode keeps all engine calls in-process with no open ports; server mode reuses the same
@@ -102,8 +102,7 @@ Design system decisions:
   the React Flow UI registry into shared primitives and blocks.
 - All React surfaces import from `@aideon/design-system/*` instead of talking directly to shadcn or
   React Flow.
-- Legacy Svelte design system code is frozen for migration purposes; new work targets the React
-  design system.
+- The legacy Svelte renderer has been removed; new work targets the React design system.
 
 For UX and design details, see:
 

@@ -25,8 +25,8 @@ Recommended installs:
 ## 1) Clone and bootstrap
 
 ```bash
-git clone https://github.com/fenrick/aideon-praxis.git
-cd aideon-praxis
+git clone https://github.com/fenrick/aideon-desktop.git
+cd aideon-desktop
 
 # Enable pnpm via Corepack
 corepack enable
@@ -69,7 +69,7 @@ host logs appear in the DevTools console in addition to the terminal.
 
 ```bash
 # Terminal A — UI (React canvas shell)
-pnpm --filter @aideon/desktop dev
+pnpm run node:dev
 
 # Terminal B — Host (Tauri). From repo root:
 pnpm tauri dev
@@ -84,9 +84,9 @@ workspace.
 
 What to expect:
 
-- A Tauri window serving the React canvas shell at http://127.0.0.1:1420.
-  available for reference by running the optional command above.
-- Desktop mode opens no TCP ports by default; all work happens via typed IPC in-process.
+- In dev, Tauri typically loads the UI from a loopback Vite dev server (e.g. `http://127.0.0.1:1420`).
+  Packaged desktop builds should load UI assets without requiring any network ports.
+- Packaged desktop mode opens no TCP ports by default; all work happens via typed IPC in-process.
 - DevTools Console will show renderer logs (console) and host logs (tauri-plugin-log).
 - If you see a port conflict on 1420, stop any previous dev server and retry.
 

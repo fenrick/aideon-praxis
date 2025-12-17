@@ -12,7 +12,7 @@ additional background and concrete examples.
 
 ## Bottom line
 
-Moving to a **React (UX) + Rust (host/compute)** desktop app (replacing the older Svelte prototype)
+Moving to a **React (UX) + Rust (host/compute)** desktop app
 actually makes the client-server pivot easier—provided you keep the renderer
 speaking a **single, typed command surface**, and hide locality (local vs remote) behind **Rust service adapters**. Tauri’s
 IPC already mirrors client-server message passing (Commands for request/response, Events for pub/sub, Channels for streaming),
@@ -80,7 +80,7 @@ path to cloud/server mode in M5.
 ## Reference architecture (client ↔ server, unchanged UI)
 
 ```bash
-React UI (legacy Svelte prototype kept only for fallback)
+React UI
   └─ TypeScript port helpers (invoke)
        └─ Tauri Command: Temporal/Analytics/TCO
             ├─ LocalAdapter (default): Rust modules (graph_core, time_engine, analytics)

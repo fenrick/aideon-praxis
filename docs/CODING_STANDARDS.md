@@ -8,7 +8,7 @@ Define the shared coding rules, quality gates, and module boundary expectations 
 monorepo. Praxis is the current primary desktop module, but these standards apply to all modules
 (Chrona, Metis, Continuum, Mneme) unless explicitly scoped.
 
-- Stacks: Node 24 (TS/React canvas runtime replacing the legacy SvelteKit prototype), Rust 2024 (host + engines)
+- Stacks: Node 24 (TS/React canvas runtime), Rust 2024 (host + engines)
 - Monorepo: pnpm workspaces; Cargo workspace for Rust crates
 - Runtime posture: typed adapters over IPC; no renderer HTTP and no open TCP
   ports in desktop mode
@@ -18,7 +18,7 @@ areas to the current stack instead of preserving them.
 
 **Frameworks-first defaults:**
 
-- TS/React: React 18, shadcn/ui + Tailwind, React Flow/XYFlow for canvas graphs, React Hook Form for
+- TS/React: React 19, shadcn/ui + Tailwind, React Flow/XYFlow for canvas graphs, React Hook Form for
   forms, Testing Library + Vitest for tests. Use TanStack Table when you need tables; do not build
   bespoke UI primitives if a standard component exists.
 - Rust: tokio for async, serde for serialization, thiserror for typed errors, tracing + `log` facade
@@ -68,8 +68,8 @@ refer to `Architecture-Boundary.md`. The notes below focus on product/module nam
 
 ## TypeScript / React (Praxis Desktop)
 
-- Tooling: ESLint + Prettier; Vitest for unit tests; React compiler/runtime checks. The Svelte
-  compiler remains only for the legacy UI and should not receive new features.
+- Tooling: ESLint + Prettier; Vitest for unit tests; React compiler/runtime checks. The legacy
+  Svelte renderer has been removed; do not introduce new Svelte surfaces.
 - Environment: Node 24, pnpm 10; strict TS config
 - Rules
   - No inline rule suppressions (no `eslint-disable`, `ts-ignore`, etc.). If absolutely necessary,
@@ -114,14 +114,14 @@ refer to `Architecture-Boundary.md`. The notes below focus on product/module nam
 
 4. **Naming**
 
-- Folders/packages: `kebab-case`; files: `kebab-case` (except Svelte `.svelte`).
+- Folders/packages: `kebab-case`; files: `kebab-case`.
 - Variables/functions: `camelCase`; types/classes/interfaces: `PascalCase`.
 - Suffixes by role: `*.service.ts`, `*.repo.ts`, `*.schema.ts`, `*.handler.ts`, `*.adapter.ts`.
 - Avoid abbreviations and generic labels.
 
 5. **Visibility & API shaping**
 
-- Prefer **named exports** for libraries; avoid default exports (Svelte components are the exception).
+- Prefer **named exports** for libraries; avoid default exports.
 - Surface a tidy API via `index.ts` with selective re‑exports; do not leak folder structure.
 - Do not deep‑import across packages (`pkg/internal/…`).
 

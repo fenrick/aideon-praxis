@@ -3,7 +3,7 @@
 ## Purpose
 
 Aideon Host is the Tauri-based desktop host for Aideon Suite. It owns window management, OS
-integration, capabilities, and the typed IPC surface that connects React/Svelte renderers to the
+integration, capabilities, and the typed IPC surface that connects the React renderer to the
 Rust engines.
 
 ## Responsibilities
