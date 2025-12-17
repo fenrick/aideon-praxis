@@ -1,6 +1,6 @@
 use tauri::{
     App, AppHandle, Manager, Wry,
-    menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu},
+    menu::{Menu, MenuEvent, PredefinedMenuItem, Submenu},
 };
 
 use crate::windows::{open_about, open_settings, open_styleguide};
@@ -114,12 +114,17 @@ fn append_window_items(
 
 #[cfg(target_os = "macos")]
 mod mac {
-    use super::*;
+    use tauri::{
+        App, Wry,
+        menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
+    };
+
+    use super::{MenuIds, append_edit_items, append_window_items, to_string};
 
     pub(super) fn install(
         app: &App<Wry>,
         menu: &Menu<Wry>,
-        ids: &mut super::MenuIds,
+        ids: &mut MenuIds,
     ) -> Result<(), String> {
         let app_sub = Submenu::new(app, "Aideon Praxis", true).map_err(to_string)?;
         app_sub
@@ -157,12 +162,17 @@ mod mac {
 
 #[cfg(not(target_os = "macos"))]
 mod desktop {
-    use super::*;
+    use tauri::{
+        App, Wry,
+        menu::{Menu, MenuItem, Submenu},
+    };
+
+    use super::{MenuIds, append_edit_items, append_window_items, to_string};
 
     pub(super) fn install(
         app: &App<Wry>,
         menu: &Menu<Wry>,
-        ids: &mut super::MenuIds,
+        ids: &mut MenuIds,
     ) -> Result<(), String> {
         let file = Submenu::new(app, "File", false).map_err(to_string)?;
         file.append(&MenuItem::new(app, "file.quit", true, None::<&str>).map_err(to_string)?)
