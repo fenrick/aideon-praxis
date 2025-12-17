@@ -55,10 +55,10 @@ npm run dev
 ## Architecture
 
 ### Frontend Stack
-- React 19 with TypeScript
+- React 18.3 with TypeScript (downgraded from 19 for Radix UI compatibility)
 - Vite 7 for build tooling
 - Tailwind CSS 4 for styling
-- shadcn/ui components
+- shadcn/ui components with Radix UI primitives
 - @xyflow/react for graph visualization
 - Recharts for charts
 
@@ -72,6 +72,12 @@ The `isTauri()` function in `canvas/platform.ts` detects the runtime environment
 - Space Grotesk / Inter font family
 
 ## Recent Changes
+- Dec 17, 2025: Fixed React 19 / Radix UI compatibility issue
+  - Downgraded from React 19 to React 18.3.1 to fix "Maximum update depth exceeded" error
+  - The issue was caused by React 19's ref callback cleanup feature being incompatible with Radix UI's compose-refs utility
+  - Updated @types/react and @types/react-dom to matching 18.x versions
+  - Added React deduplication in Vite config to prevent multiple React copies in monorepo structure
+  - Added ErrorBoundary component for better error diagnostics
 - Dec 17, 2025: Initial import to Replit environment
   - Configured Vite to run on port 5000 with 0.0.0.0 host
   - Enabled allowedHosts for Replit proxy support
