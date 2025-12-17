@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { ErrorBoundary } from './error-boundary';
 import { AideonDesktopRoot } from './root';
 import './styles.css';
 
@@ -14,9 +15,9 @@ if (!isVitest) {
   }
 
   createRoot(container).render(
-    <StrictMode>
+    <ErrorBoundary>
       <AppEntry />
-    </StrictMode>,
+    </ErrorBoundary>,
   );
 }
 

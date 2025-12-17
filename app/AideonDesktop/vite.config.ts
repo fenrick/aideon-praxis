@@ -6,6 +6,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [tailwindcss(), react()],
   resolve: {
+    dedupe: ['react', 'react-dom'],
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
       { find: 'canvas', replacement: resolve(__dirname, './src/canvas') },
@@ -16,6 +17,8 @@ export default defineConfig({
       },
       { find: 'adapters', replacement: resolve(__dirname, './src/adapters') },
       { find: 'dtos', replacement: resolve(__dirname, './src/dtos') },
+      { find: 'react', replacement: resolve(__dirname, 'node_modules/react') },
+      { find: 'react-dom', replacement: resolve(__dirname, 'node_modules/react-dom') },
     ],
   },
   server: {
