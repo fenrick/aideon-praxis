@@ -70,7 +70,7 @@ refer to `Architecture-Boundary.md`. The notes below focus on product/module nam
 
 - Tooling: ESLint + Prettier; Vitest for unit tests; React compiler/runtime checks. The Svelte
   compiler remains only for the legacy UI and should not receive new features.
-- Environment: Node 24, pnpm 9; strict TS config
+- Environment: Node 24, pnpm 10; strict TS config
 - Rules
   - No inline rule suppressions (no `eslint-disable`, `ts-ignore`, etc.). If absolutely necessary,
     require an issue reference and a TODO explaining removal criteria.
@@ -309,10 +309,10 @@ Run these locally before every commit (CI enforces the same):
 
 ## CI & Sonar
 
-- CI uses pnpm 9 and Cargo; ensure `rustfmt` and `clippy` components are
+- CI uses pnpm 10 and Cargo; ensure `rustfmt` and `clippy` components are
   installed in the build environment
-- Clippy analysis is produced by `pnpm run host:clippy:report` so Sonar ingests the JSON
-  report instead of rerunning Clippy on the MUSL runner.
+- Sonar runs Clippy as part of Rust analysis; keep the CI environment’s Rust toolchain
+  consistent and include `clippy` to avoid scan-time failures.
 - Sonar analyzes both Node/TS and Rust; coverage reports are uploaded from
   Vitest (lcov) and Rust coverage tooling (lcov). CI waits for the Sonar Quality Gate
 - Fail‑fast ordering in CI: lint/type before unit tests; heavier jobs (coverage,
