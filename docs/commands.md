@@ -1,7 +1,10 @@
 # pnpm Command Guide
 
-This guide lists the common pnpm scripts for Aideon Praxis and how they map to JS/TS and Rust
-engine tasks. Use these for local dev and CI to keep things consistent across layers.
+## Purpose
+
+List the common pnpm scripts for **Aideon Suite** and show how they map to JS/TS and Rust tasks
+across modules (with Praxis as the current focus). Use this as a reference when running builds,
+tests, and CI pipelines.
 
 ## JS/TS (app + adapters)
 
@@ -34,10 +37,4 @@ engine tasks. Use these for local dev and CI to keep things consistent across la
 ## Notes
 
 - Rust engines run in-process during dev. Remote/server adapters will follow the same contracts.
-  Quality & Coverage
-
-- Targets: Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code.
-- Verify locally:
-  - App (JS/TS): `pnpm run node:test:coverage`
-  - Rust crates: `cargo test --all --all-targets`
-    See `docs/CODING_STANDARDS.md` for the full standards and CI rules.
+- For quality gates and coverage targets, see `docs/CODING_STANDARDS.md`.

@@ -1,2 +1,6 @@
 packages:
-  - 'app/*'
+  - app/AideonDesktop
+
+ignoredBuiltDependencies:
+  - esbuild
+  - msw

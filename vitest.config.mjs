@@ -1,45 +1,53 @@
-import { svelte } from '@sveltejs/vite-plugin-svelte';
+import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
+const srcRoot = path.resolve(__dirname, 'app/AideonDesktop/src');
+const testsRoot = path.resolve(__dirname, 'app/AideonDesktop/tests');
+
 export default defineConfig({
   resolve: {
-    alias: {
-      // Stubs to keep tests offline and avoid Vite resolution failures
-      '@fluentui/web-components': path.resolve(
-        __dirname,
-        'app/desktop/tests/stubs/fluentui.web-components.ts',
-      ),
-      '@tauri-apps/api/core': path.resolve(__dirname, 'app/desktop/tests/stubs/tauri-api-core.ts'),
-      '@tauri-apps/plugin-log': path.resolve(
-        __dirname,
-        'app/desktop/tests/stubs/tauri-plugin-log.ts',
-      ),
-    },
-  },
-  plugins: [
-    svelte({
-      compilerOptions: {
-        runes: true,
-        hmr: false,
+    alias: [
+      { find: '@', replacement: srcRoot },
+      { find: 'canvas', replacement: path.join(srcRoot, 'canvas') },
+      {
+        find: 'design-system/reactflow',
+        replacement: path.join(srcRoot, 'design-system/components'),
       },
-    }),
-  ],
+      { find: 'design-system', replacement: path.join(srcRoot, 'design-system') },
+      { find: 'adapters', replacement: path.join(srcRoot, 'adapters') },
+      { find: 'dtos', replacement: path.join(srcRoot, 'dtos') },
+      {
+        find: '@tauri-apps/api/core',
+        replacement: path.join(testsRoot, 'adapters/stubs/tauri-core.ts'),
+      },
+    ],
+  },
+  plugins: [react()],
   test: {
     environment: 'jsdom',
-    setupFiles: ['app/desktop/tests/setup.ts'],
+    setupFiles: [path.resolve(__dirname, 'tests/setup.ts')],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'lcov', 'html'],
       reportOnFailure: true,
-      include: ['app/desktop/src/lib/**/*.{ts,tsx}', 'app/adapters/src/**/*.{ts,tsx}'],
+      thresholds: {
+        lines: 0.8,
+        functions: 0.8,
+        branches: 0.8,
+        statements: 0.8,
+      },
+      include: ['app/AideonDesktop/src/**/*.{ts,tsx}'],
       exclude: [
         '**/*.d.ts',
         '**/*.test.*',
         'app/**/dist/**',
         'scripts/**',
-        'app/desktop/src/version.ts',
-        'app/desktop/src/routes/**',
+        'app/AideonDesktop/src/design-system/components/**',
+        'app/AideonDesktop/src/types/**',
+        'app/AideonDesktop/src/main.tsx',
+        'app/AideonDesktop/src/canvas/main.tsx',
+        'app/AideonDesktop/src/canvas/canvas-runtime.tsx',
       ],
     },
   },

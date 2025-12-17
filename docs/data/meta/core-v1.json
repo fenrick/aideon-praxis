@@ -1,0 +1,187 @@
+{
+  "version": "1.0.0",
+  "description": "Canonical Aideon Praxis meta-model aligned to ArchiMate-style concepts.",
+  "types": [
+    {
+      "id": "ValueStreamStage",
+      "label": "Value Stream Stage",
+      "category": "Business",
+      "extends": "Stage",
+      "attributes": [
+        { "name": "name", "type": "string", "required": true },
+        { "name": "purpose", "type": "string", "required": false },
+        { "name": "owner", "type": "string", "required": false }
+      ]
+    },
+    {
+      "id": "Capability",
+      "label": "Capability",
+      "category": "Business",
+      "attributes": [
+        { "name": "name", "type": "string", "required": true },
+        {
+          "name": "tier",
+          "type": "enum",
+          "enum": ["Strategic", "Core", "Supporting"],
+          "required": false
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum",
+          "enum": ["Target", "Current", "Retire"],
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "BusinessProcess",
+      "label": "Process",
+      "category": "Business",
+      "attributes": [
+        { "name": "name", "type": "string", "required": true },
+        { "name": "description", "type": "text", "required": false },
+        {
+          "name": "criticality",
+          "type": "enum",
+          "enum": ["High", "Medium", "Low"],
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "Application",
+      "label": "Application",
+      "category": "Application",
+      "attributes": [
+        { "name": "name", "type": "string", "required": true },
+        { "name": "vendor", "type": "string", "required": false },
+        {
+          "name": "disposition",
+          "type": "enum",
+          "enum": ["Invest", "Tolerate", "Migrate", "Eliminate"],
+          "required": false
+        },
+        {
+          "name": "lifecycle",
+          "type": "enum",
+          "enum": ["Plan", "Build", "Run", "Retire"],
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "DataEntity",
+      "label": "Data Entity",
+      "category": "Information",
+      "attributes": [
+        { "name": "name", "type": "string", "required": true },
+        {
+          "name": "sensitivity",
+          "type": "enum",
+          "enum": ["Public", "Internal", "Confidential"],
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "TechnologyComponent",
+      "label": "Technology Component",
+      "category": "Technology",
+      "attributes": [
+        { "name": "name", "type": "string", "required": true },
+        { "name": "provider", "type": "string", "required": false },
+        {
+          "name": "deployment",
+          "type": "enum",
+          "enum": ["On-Prem", "IaaS", "PaaS", "SaaS"],
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "PlanEvent",
+      "label": "Plan Event",
+      "category": "Planning",
+      "attributes": [
+        { "name": "name", "type": "string", "required": true },
+        { "name": "effective_at", "type": "datetime", "required": true },
+        { "name": "confidence", "type": "number", "required": false },
+        { "name": "source.priority", "type": "enum", "enum": ["P0", "P1", "P2"], "required": false }
+      ],
+      "effectTypes": ["create", "update", "delete", "link", "unlink"]
+    },
+    {
+      "id": "MetaModelEntry",
+      "label": "Meta-model Entry",
+      "category": "Design",
+      "attributes": [
+        { "name": "name", "type": "string", "required": true },
+        { "name": "description", "type": "text", "required": false },
+        { "name": "payload", "type": "text", "required": true }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "serves",
+      "label": "Serves",
+      "from": ["Capability"],
+      "to": ["ValueStreamStage"],
+      "directed": true,
+      "multiplicity": { "from": "many", "to": "many" }
+    },
+    {
+      "id": "realises",
+      "label": "Realises",
+      "from": ["Application", "TechnologyComponent"],
+      "to": ["Capability", "BusinessProcess"],
+      "directed": true,
+      "multiplicity": { "from": "many", "to": "many" }
+    },
+    {
+      "id": "accesses",
+      "label": "Accesses",
+      "from": ["BusinessProcess", "Application"],
+      "to": ["DataEntity"],
+      "directed": true,
+      "attributes": [
+        { "name": "mode", "type": "enum", "enum": ["read", "write", "readwrite"], "required": true }
+      ]
+    },
+    {
+      "id": "hosts",
+      "label": "Hosts",
+      "from": ["TechnologyComponent"],
+      "to": ["Application"],
+      "directed": true,
+      "multiplicity": { "from": "many", "to": "many" }
+    },
+    {
+      "id": "plan_effect",
+      "label": "Plan Event Effect",
+      "from": ["PlanEvent"],
+      "to": ["Capability", "BusinessProcess", "Application", "TechnologyComponent"],
+      "directed": true,
+      "attributes": [
+        {
+          "name": "op",
+          "type": "enum",
+          "enum": ["create", "update", "delete", "link", "unlink"],
+          "required": true
+        },
+        { "name": "target_ref", "type": "string", "required": true }
+      ]
+    }
+  ],
+  "validation": {
+    "attributes": {
+      "string": { "maxLength": 256 },
+      "text": { "maxLength": 4096 },
+      "enum": { "caseSensitive": false }
+    },
+    "relationships": {
+      "serves": { "allowSelf": false },
+      "accesses": { "allowDuplicate": false }
+    }
+  }
+}

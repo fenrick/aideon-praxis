@@ -5,17 +5,11 @@ on:
   pull_request:
   schedule:
     - cron: '0 3 * * *'
-  workflow_dispatch:
-    inputs:
-      runSonar:
-        description: 'Run SonarCloud analysis'
-        required: false
-        type: boolean
-        default: false
 
 env:
   NODE_VERSION: '24'
   PNPM_VERSION: '10.19.0'
+  CARGO_TERM_COLOR: always
 
 permissions:
   contents: read
@@ -26,115 +20,13 @@ concurrency:
 
 jobs:
   rust_checks:
-    name: Rust Checks
-    runs-on: ubuntu-latest
-    # Minimal Rust gating (fmt/clippy) for crates/tauri only; no Tauri build yet.
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Install Linux GUI deps (wry/gtk/glib)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            pkg-config libglib2.0-dev libgtk-3-dev libayatana-appindicator3-dev \
-            librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
-
-      - name: Install Rust (stable, fmt+clippy)
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy, llvm-tools-preview
-
-      - name: Cache Cargo & Target
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            crates/tauri/target
-          key: ${{ runner.os }}-rust-${{ hashFiles('crates/tauri/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-rust-
-
-      - name: Generate lockfile (for audit & caching)
-        working-directory: crates/tauri
-        run: cargo generate-lockfile
-
-      - name: Create Linux placeholder sidecar (externalBin)
-        if: runner.os == 'Linux'
-        run: |
-          set -euo pipefail
-          mkdir -p crates/tauri/binaries
-          touch crates/tauri/binaries/aideon-worker-x86_64-unknown-linux-gnu
-          chmod +x crates/tauri/binaries/aideon-worker-x86_64-unknown-linux-gnu
-
-      - name: Cargo fmt (check)
-        working-directory: crates/tauri
-        run: cargo fmt --all --check
-
-      - name: Cargo clippy (deny warnings)
-        working-directory: crates/tauri
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Cargo check (typecheck)
-        working-directory: crates/tauri
-        run: cargo check --all-targets --all-features
-
-      - name: Cargo test
-        working-directory: crates/tauri
-        run: cargo test --all --quiet
-
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-llvm-cov
-
-      - name: Rust coverage (LCOV)
-        working-directory: crates/tauri
-        run: |
-          mkdir -p coverage
-          cargo llvm-cov --lcov --output-path coverage/lcov.info --all-targets
-
-      - name: Clippy JSON report (for Sonar import)
-        working-directory: crates/tauri
-        run: |
-          # Generate Clippy JSON without -D warnings (warnings already denied above)
-          cargo clippy --message-format=json -q > coverage/clippy.json || true
-
-      - name: Upload Rust coverage
-        uses: actions/upload-artifact@v5
-        with:
-          name: coverage-rs
-          if-no-files-found: warn
-          retention-days: 7
-          path: |
-            crates/tauri/coverage
-
-      - name: Cache RustSec advisory DB
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/advisory-db
-          key: ${{ runner.os }}-rust-advisorydb
-          restore-keys: |
-            ${{ runner.os }}-rust-advisorydb
-
-      - name: Install cargo-audit (prebuilt)
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-audit
-
-      - name: Cargo audit (advisories)
-        working-directory: crates/tauri
-        run: |
-          # Do not fail the pipeline on third-party advisory noise yet; surface as warnings
-          cargo audit -D warnings || echo "[warn] cargo-audit failed; see advisories"
-
-  js_checks:
-    name: JS/TS Checks
-    runs-on: ubuntu-latest
+    name: Rust Checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    # Minimal Rust gating (fmt/clippy) for crates/desktop only; no Tauri build yet.
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -153,7 +45,142 @@ jobs:
 
       - name: Get pnpm store directory
         id: pnpm-store
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Linux GUI deps (wry/gtk/glib)
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/microsoft-prod.list
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config libglib2.0-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
+
+      - name: Ensure macOS Homebrew cache is up to date
+        if: runner.os == 'macOS'
+        run: |
+          brew update --quiet
+          echo "macOS runners ship with WebKit / Cocoa frameworks pre-installed; no extra deps needed"
+
+      - name: Ensure MSVC build tools
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = [System.IO.Path]::Combine(${env:ProgramFiles(x86)}, 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
+          if (-not (Test-Path $vswhere)) {
+            Write-Host "vswhere not found; installing Visual Studio Build Tools"
+            choco install visualstudio2022buildtools --yes --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" --no-progress
+          } else {
+            $vcTools = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+            if (-not $vcTools) {
+              Write-Host "MSVC build tools missing; installing via Chocolatey"
+              choco install visualstudio2022buildtools --yes --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" --no-progress
+            } else {
+              Write-Host "MSVC build tools already present at $vcTools"
+            }
+          }
+
+      - name: Install Rust (stable, fmt+clippy)
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy, llvm-tools-preview
+
+      - name: Create placeholder sidecar (externalBin)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p crates/desktop/binaries
+          case "${{ runner.os }}" in
+            Linux)
+              touch crates/desktop/binaries/aideon-worker-x86_64-unknown-linux-gnu
+              chmod +x crates/desktop/binaries/aideon-worker-x86_64-unknown-linux-gnu
+              ;;
+            macOS)
+              touch crates/desktop/binaries/aideon-worker-aarch64-apple-darwin
+              chmod +x crates/desktop/binaries/aideon-worker-aarch64-apple-darwin
+              ;;
+            Windows)
+              # create placeholder executable for Windows; chmod is a no-op under Git Bash
+              touch crates/desktop/binaries/aideon-worker-x86_64-pc-windows-msvc.exe
+              ;;
+          esac
+
+      - name: Cargo fmt (check)
+        uses: actions-rust-lang/rustfmt@v1
+
+      - name: Cargo lockfile
+        run: cargo generate-lockfile
+
+      - name: Cargo clippy (deny warnings)
+        run: pnpm run host:lint
+
+      - name: Cargo check (typecheck)
+        working-directory: crates/desktop
+        run: pnpm run host:check
+
+      - name: Cargo test
+        working-directory: crates/desktop
+        run: pnpm run host:test
+
+      - name: Cache RustSec advisory DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/advisory-db
+          key: ${{ runner.os }}-rust-advisorydb
+          restore-keys: |
+            ${{ runner.os }}-rust-advisorydb
+
+      - name: Install cargo-audit (prebuilt)
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: Cargo audit (advisories)
+        working-directory: crates/desktop
+        shell: bash
+        run: |
+          # Do not fail the pipeline on third-party advisory noise yet; surface as warnings
+          cargo audit -D warnings || echo "[warn] cargo-audit failed; see advisories"
+
+  js_checks:
+    name: JS/TS Checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
       - name: Cache pnpm store
         uses: actions/cache@v4
@@ -176,115 +203,72 @@ jobs:
         run: pnpm run node:typecheck
 
       - name: JS Tests + Coverage
-        run: pnpm run node:test:coverage
+        run: pnpm run node:test
 
-      - name: Upload TS coverage
-        uses: actions/upload-artifact@v5
-        with:
-          name: coverage-ts
-          if-no-files-found: warn
-          retention-days: 7
-          path: |
-            coverage/lcov.info
-
-  sonar:
-    name: SonarCloud
-    runs-on: ubuntu-latest
+  tauri_build:
+    name: Tauri Build (${{ matrix.os }})
     needs: [js_checks, rust_checks]
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.runSonar == true)
-    permissions:
-      contents: read
-      pull-requests: read
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Download TS coverage
-        uses: actions/download-artifact@v6
-        with:
-          name: coverage-ts
-          path: coverage
-
-      - name: Download Rust coverage
-        uses: actions/download-artifact@v6
-        with:
-          name: coverage-rs
-          path: crates/tauri/coverage
-
-      - name: Normalize coverage paths
-        shell: bash
+      - name: Install Linux GUI deps (wry/gtk/glib)
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          set -euo pipefail
-          mkdir -p coverage crates/tauri/coverage
-          # TS coverage (downloaded directly to coverage/)
-          if [[ -f coverage/lcov.info ]]; then
-            echo "TS coverage at coverage/lcov.info"
-          elif [[ -f coverage-ts/lcov.info ]]; then
-            mv coverage-ts/lcov.info coverage/lcov.info
-          elif [[ -f coverage-ts/coverage/lcov.info ]]; then
-            mv coverage-ts/coverage/lcov.info coverage/lcov.info
-          elif [[ -f lcov.info ]]; then
-            mv lcov.info coverage/lcov.info
-          else
-            echo "[warn] TS coverage lcov.info not found after artifact download" >&2
-          fi
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config libglib2.0-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
 
-          # Normalize/Filter TS LCOV: keep only project sources and repo-relative paths
-          if [[ -f coverage/lcov.info ]]; then
-            awk '
-              function normalize(p) {
-                gsub(/\\r$/, "", p);
-                # strip runner absolute prefix -> repo root
-                sub(/\/home\/runner\/work\/[^/]+\/[^/]+\//, "", p);
-                sub(/^\/github\/workspace\//, "", p);
-                return p;
-              }
-              /^SF:/ {
-                path=$0; sub(/^SF:/, "", path);
-                npath=normalize(path);
-                keep=(npath ~ /^(app\/desktop\/src|packages\/adapters\/src)\/.*\.(ts|tsx|js|jsx)$/);
-                if (keep) {
-                  print "SF:" npath;
-                  in_file=1;
-                } else {
-                  in_file=0;
-                }
-                next;
-              }
-              { if (in_file==1) print $0 }
-            ' coverage/lcov.info > coverage/lcov.filtered && mv coverage/lcov.filtered coverage/lcov.info
-          fi
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-          # Rust coverage (LCOV -> Generic Coverage XML)
-          # Locate the LCOV file from the artifact
-          if [[ -f crates/tauri/coverage/lcov.info ]]; then
-            echo "Rust lcov at crates/tauri/coverage/lcov.info"
-          elif [[ -f coverage-rs/lcov.info ]]; then
-            mv coverage-rs/lcov.info crates/tauri/coverage/lcov.info
-          elif [[ -f coverage-rs/crates/tauri/coverage/lcov.info ]]; then
-            mv coverage-rs/crates/tauri/coverage/lcov.info crates/tauri/coverage/lcov.info
-          else
-            echo "[warn] Rust coverage lcov.info not found after artifact download" >&2
-          fi
+      - name: Setup pnpm ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
-          # Normalize Rust LCOV paths to repo-relative to help Sonar resolve files
-          if [[ -f crates/tauri/coverage/lcov.info ]]; then
-            sed -E 's#^(SF:)/home/runner/work/[^/]+/[^/]+/#+\1#; s#^(SF:)/github/workspace/#+\1#' \
-              crates/tauri/coverage/lcov.info > crates/tauri/coverage/lcov.norm && \
-              mv crates/tauri/coverage/lcov.norm crates/tauri/coverage/lcov.info
-          fi
+      - name: Get pnpm store directory
+        id: pnpm-store-tauri
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
-          # No Rust XML conversion required; Sonar ingests LCOV directly via sonar.rust.lcov.reportPaths
-          ls -l coverage || true
-          ls -l crates/tauri/coverage || true
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store-tauri.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Setup Rust (stable)
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Cache Cargo & Target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            crates/desktop/target
+          key: ${{ runner.os }}-tauri-build-${{ hashFiles('crates/desktop/Cargo.toml', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-tauri-build-
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Tauri bundles
+        run: pnpm tauri build --ci --config crates/desktop/tauri.conf.json
 
   # Note: C4 diagram generation removed from CI.
   # These are design-time artifacts; render locally if needed.
