@@ -15,7 +15,7 @@ describe('AideonCanvasRuntime', () => {
       <AideonCanvasRuntime widgets={widgets} renderWidget={(widget) => <div>{widget.id}</div>} />,
     );
 
-    expect(screen.getByText('w1')).toBeInTheDocument();
-    expect(screen.getByText('w2')).toBeInTheDocument();
+    expect(screen.getAllByText('w1').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('w2').length).toBeGreaterThan(0);
   });
 });

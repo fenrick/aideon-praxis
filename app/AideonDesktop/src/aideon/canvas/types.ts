@@ -2,7 +2,10 @@ export type WidgetSize = 'full' | 'half';
 
 export interface CanvasWidgetLayout {
   id: string;
+  title?: string;
   size?: WidgetSize;
+  position?: { x: number; y: number };
+  dimensions?: { width: number; height: number };
 }
 
 export interface WidgetSelection {

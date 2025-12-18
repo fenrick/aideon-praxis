@@ -18,6 +18,109 @@ import { CatalogueWidget } from 'praxis/widgets/catalogue-widget';
 import { ChartWidget } from 'praxis/widgets/chart-widget';
 import { GraphWidget } from 'praxis/widgets/graph-widget';
 import { MatrixWidget } from 'praxis/widgets/matrix-widget';
+import type { ReactElement } from 'react';
+
+interface RenderPraxisWidgetParameters {
+  readonly widget: PraxisCanvasWidget;
+  readonly reloadVersion: number;
+  readonly selection: SelectionState;
+  readonly onSelection: (event: WidgetSelection) => void;
+  readonly onGraphViewChange: (event: PraxisWidgetViewEvent) => void;
+  readonly onGraphError: (event: PraxisWidgetErrorEvent) => void;
+  readonly onRequestMetaModelFocus?: (types: string[]) => void;
+}
+
+/**
+ * Renders a single Praxis widget into the canvas runtime.
+ * @param root0
+ * @param root0.widget
+ * @param root0.reloadVersion
+ * @param root0.selection
+ * @param root0.onSelection
+ * @param root0.onGraphViewChange
+ * @param root0.onGraphError
+ * @param root0.onRequestMetaModelFocus
+ */
+function renderPraxisWidget({
+  widget,
+  reloadVersion,
+  selection,
+  onSelection,
+  onGraphViewChange,
+  onGraphError,
+  onRequestMetaModelFocus,
+}: RenderPraxisWidgetParameters): ReactElement {
+  switch (widget.kind) {
+    case 'graph': {
+      return (
+        <GraphWidget
+          widget={widget}
+          reloadVersion={reloadVersion}
+          selection={selection}
+          onSelectionChange={onSelection}
+          onViewChange={(view: GraphViewModel) => {
+            onGraphViewChange({ widgetId: widget.id, view });
+          }}
+          onError={(message: string) => {
+            onGraphError({ widgetId: widget.id, message });
+          }}
+          onRequestMetaModelFocus={onRequestMetaModelFocus}
+        />
+      );
+    }
+    case 'catalogue': {
+      return (
+        <CatalogueWidget
+          widget={widget}
+          reloadVersion={reloadVersion}
+          selection={selection}
+          onSelectionChange={onSelection}
+        />
+      );
+    }
+    case 'chart': {
+      return <ChartWidget widget={widget} reloadVersion={reloadVersion} />;
+    }
+    case 'matrix': {
+      return (
+        <MatrixWidget
+          widget={widget}
+          reloadVersion={reloadVersion}
+          selection={selection}
+          onSelectionChange={onSelection}
+        />
+      );
+    }
+  }
+}
+
+/**
+ * Manages a local reload counter that can be bumped by signals or user action.
+ * @param reloadSignal
+ */
+function useReloadVersion(reloadSignal?: number) {
+  const [reloadVersion, setReloadVersion] = useState(0);
+  const lastReloadSignal = useRef<number | undefined>(reloadSignal);
+
+  useEffect(() => {
+    if (typeof reloadSignal !== 'number' || reloadSignal === lastReloadSignal.current) {
+      return;
+    }
+
+    if (lastReloadSignal.current !== undefined) {
+      queueMicrotask(() => {
+        setReloadVersion((value) => value + 1);
+      });
+    }
+    lastReloadSignal.current = reloadSignal;
+  }, [reloadSignal]);
+
+  const triggerReload = useCallback(() => {
+    setReloadVersion((value) => value + 1);
+  }, []);
+
+  return { reloadVersion, triggerReload };
+}
 
 export interface PraxisCanvasWorkspaceProperties {
   readonly widgets: PraxisCanvasWidget[];
@@ -43,22 +146,11 @@ export function PraxisCanvasWorkspace({
   onRequestMetaModelFocus,
   reloadSignal,
 }: PraxisCanvasWorkspaceProperties) {
-  const [reloadVersion, setReloadVersion] = useState(0);
+  const { reloadVersion, triggerReload } = useReloadVersion(reloadSignal);
   const [metadata, setMetadata] = useState<GraphViewModel['metadata'] | undefined>();
   const [stats, setStats] = useState<GraphViewModel['stats'] | undefined>();
   const [error, setError] = useState<string | undefined>();
-  const lastReloadSignal = useRef<number | undefined>(reloadSignal);
-
-  useEffect(() => {
-    if (typeof reloadSignal === 'number' && reloadSignal !== lastReloadSignal.current) {
-      if (lastReloadSignal.current !== undefined) {
-        queueMicrotask(() => {
-          setReloadVersion((value) => value + 1);
-        });
-      }
-      lastReloadSignal.current = reloadSignal;
-    }
-  }, [reloadSignal]);
+  const [showPageBreaks, setShowPageBreaks] = useState(false);
 
   const handleGraphViewChange = useCallback((event: PraxisWidgetViewEvent) => {
     setMetadata(event.view.metadata);
@@ -78,6 +170,9 @@ export function PraxisCanvasWorkspace({
   );
 
   const timestamp = metadata?.asOf ? new Date(metadata.asOf).toLocaleString() : undefined;
+  const pageBreakToggle = showPageBreaks
+    ? { variant: 'default' as const, label: 'Hide Pages' }
+    : { variant: 'secondary' as const, label: 'Show Pages' };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -98,11 +193,18 @@ export function PraxisCanvasWorkspace({
             Edges {typeof stats?.edges === 'number' ? stats.edges.toLocaleString() : '—'}
           </Badge>
           <Button
-            variant="secondary"
+            variant={pageBreakToggle.variant}
             size="sm"
             onClick={() => {
-              setReloadVersion((value) => value + 1);
+              setShowPageBreaks((previous) => !previous);
             }}
+          >
+            {pageBreakToggle.label}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={triggerReload}
             disabled={widgets.length === 0}
           >
             Refresh
@@ -112,49 +214,21 @@ export function PraxisCanvasWorkspace({
 
       {error ? <p className="text-sm text-destructive">{error}</p> : undefined}
 
-      <div className="h-[72vh] min-h-[520px] w-full overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-        <AideonCanvasRuntime
+      <div className="flex-1 overflow-hidden">
+        <AideonCanvasRuntime<PraxisCanvasWidget>
           widgets={widgets}
-          renderWidget={(widget) => {
-            if (widget.kind === 'graph') {
-              return (
-                <GraphWidget
-                  widget={widget}
-                  reloadVersion={reloadVersion}
-                  selection={selection}
-                  onSelectionChange={handleSelection}
-                  onViewChange={(view: GraphViewModel) => {
-                    handleGraphViewChange({ widgetId: widget.id, view });
-                  }}
-                  onError={(message: string) => {
-                    handleGraphError({ widgetId: widget.id, message });
-                  }}
-                  onRequestMetaModelFocus={onRequestMetaModelFocus}
-                />
-              );
-            }
-            if (widget.kind === 'catalogue') {
-              return (
-                <CatalogueWidget
-                  widget={widget}
-                  reloadVersion={reloadVersion}
-                  selection={selection}
-                  onSelectionChange={handleSelection}
-                />
-              );
-            }
-            if (widget.kind === 'chart') {
-              return <ChartWidget widget={widget} reloadVersion={reloadVersion} />;
-            }
-            return (
-              <MatrixWidget
-                widget={widget}
-                reloadVersion={reloadVersion}
-                selection={selection}
-                onSelectionChange={handleSelection}
-              />
-            );
-          }}
+          showPageBreaks={showPageBreaks}
+          renderWidget={(widget: PraxisCanvasWidget) =>
+            renderPraxisWidget({
+              widget,
+              reloadVersion,
+              selection,
+              onSelection: handleSelection,
+              onGraphViewChange: handleGraphViewChange,
+              onGraphError: handleGraphError,
+              onRequestMetaModelFocus,
+            })
+          }
         />
       </div>
     </div>
