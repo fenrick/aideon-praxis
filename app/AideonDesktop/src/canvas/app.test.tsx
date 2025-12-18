@@ -1,12 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('canvas/components/template-screen/template-header', () => ({
-  TemplateHeader: () => <div>Template Header</div>,
-}));
-
-vi.mock('canvas/components/template-screen/scenario-search-bar', () => ({
-  ScenarioSearchBar: () => <div>Scenario Search</div>,
+vi.mock('canvas/components/template-screen/praxis-toolbar', () => ({
+  PraxisToolbar: () => <div>Praxis Toolbar</div>,
 }));
 
 vi.mock('canvas/components/template-screen/overview-tabs', () => ({
@@ -66,8 +62,7 @@ describe('PraxisCanvasSurface', () => {
     render(<PraxisCanvasSurface />);
 
     expect(await screen.findByText(/Projects Sidebar/)).toBeInTheDocument();
-    expect(screen.getByText(/Template Header/)).toBeInTheDocument();
-    expect(screen.getByText(/Scenario Search/)).toBeInTheDocument();
+    expect(screen.getByText(/Praxis Toolbar/)).toBeInTheDocument();
     expect(screen.getByText(/Overview Tabs/)).toBeInTheDocument();
     expect(screen.getByText(/Properties Inspector/)).toBeInTheDocument();
   });

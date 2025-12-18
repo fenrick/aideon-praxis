@@ -1,3 +1,5 @@
+import { useMemo, useState } from 'react';
+
 import { Badge } from 'design-system/components/ui/badge';
 import { Skeleton } from 'design-system/components/ui/skeleton';
 import {
@@ -5,9 +7,12 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from 'design-system/desktop-shell';
 
 import type { ProjectSummary } from 'canvas/domain-data';
@@ -45,15 +50,51 @@ export function ProjectsSidebar({
   onSelectScenario,
   onRetry,
 }: ProjectsSidebarProperties) {
-  const projectList = projects?.length
-    ? projects
-    : [{ id: 'default', name: 'Projects', scenarios }];
+  const projectList = useMemo(() => {
+    return projects?.length ? projects : [{ id: 'default', name: 'Projects', scenarios }];
+  }, [projects, scenarios]);
+
+  const [query, setQuery] = useState('');
+  const filteredProjects = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) {
+      return projectList;
+    }
+    return projectList
+      .map((project) => {
+        const nextScenarios = project.scenarios.filter((scenario) => {
+          const haystack = `${scenario.name} ${scenario.branch}`.toLowerCase();
+          return haystack.includes(trimmed);
+        });
+        return { ...project, scenarios: nextScenarios };
+      })
+      .filter((project) => project.scenarios.length > 0);
+  }, [projectList, query]);
+
+  const scenarioCount = projectList.reduce((sum, project) => sum + project.scenarios.length, 0);
+
   return (
-    <SidebarContent className="p-3">
-      <SidebarGroup>
-        <SidebarGroupLabel>Projects</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
+    <>
+      <SidebarHeader className="p-3">
+        <SidebarGroupLabel className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+          Scenarios
+        </SidebarGroupLabel>
+        <SidebarInput
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+          }}
+          placeholder={`Filter ${scenarioCount.toString()} scenarios…`}
+          aria-label="Filter scenarios"
+          className="bg-background/70"
+        />
+        <SidebarSeparator className="my-3" />
+      </SidebarHeader>
+      <SidebarContent className="p-3 pt-0">
+        <SidebarGroup>
+          <SidebarGroupLabel>Projects</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
             {loading && (
               <div className="space-y-2 p-1">
                 <Skeleton className="h-5 w-32" />
@@ -92,8 +133,16 @@ export function ProjectsSidebar({
               </SidebarMenuItem>
             )}
 
+            {!loading && !errorMessage && query.trim() && filteredProjects.length === 0 ? (
+              <SidebarMenuItem>
+                <SidebarMenuButton disabled className="text-left text-sm text-muted-foreground">
+                  No scenarios match “{query.trim()}”.
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ) : undefined}
+
             {!loading && !errorMessage
-              ? projectList.map((project) => (
+              ? filteredProjects.map((project) => (
                   <SidebarGroup key={project.id} className="pb-2">
                     <SidebarGroupLabel className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
                       {project.name}
@@ -115,7 +164,7 @@ export function ProjectsSidebar({
                             <SidebarMenuItem key={scenario.id}>
                               <SidebarMenuButton
                                 size="sm"
-                                className="flex flex-col items-start gap-1 text-left"
+                                className="flex flex-col items-start gap-1 text-left data-[state=active]:bg-primary/10 data-[state=active]:text-foreground"
                                 onClick={() => onSelectScenario?.(scenario.id)}
                                 data-state={active ? 'active' : undefined}
                               >
@@ -138,10 +187,11 @@ export function ProjectsSidebar({
                   </SidebarGroup>
                 ))
               : undefined}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    </SidebarContent>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </>
   );
 }
 

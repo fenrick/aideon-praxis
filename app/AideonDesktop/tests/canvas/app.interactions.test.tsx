@@ -53,27 +53,34 @@ vi.mock('canvas/time/use-temporal-panel', () => ({
 const templateError = vi.fn<[], boolean>();
 const projectError = vi.fn<[], boolean>();
 
+const listProjectsWithScenariosMock = vi.hoisted(() => vi.fn(() => Promise.resolve()));
+const listTemplatesFromHostMock = vi.hoisted(() => vi.fn(() => Promise.resolve()));
+
 vi.mock('canvas/domain-data', () => ({
-  listProjectsWithScenarios: () => {
-    const shouldFail = Boolean(projectError());
-    if (shouldFail) {
-      return Promise.reject(new Error('projects-failed'));
-    }
-    return Promise.resolve([
-      {
-        id: 'p1',
-        name: 'Proj',
-        scenarios: [{ id: 's1', name: 'Scenario', branch: 'main', updatedAt: '', isDefault: true }],
-      },
-    ]);
-  },
-  listTemplatesFromHost: () => {
-    const shouldFail = Boolean(templateError());
-    if (shouldFail) {
-      return Promise.reject(new Error('templates-failed'));
-    }
-    return Promise.resolve([{ id: 't1', name: 'Template 1', description: '', widgets: [] }]);
-  },
+  listProjectsWithScenarios: () =>
+    listProjectsWithScenariosMock().then(() => {
+      const shouldFail = Boolean(projectError());
+      if (shouldFail) {
+        return Promise.reject(new Error('projects-failed'));
+      }
+      return Promise.resolve([
+        {
+          id: 'p1',
+          name: 'Proj',
+          scenarios: [
+            { id: 's1', name: 'Scenario', branch: 'main', updatedAt: '', isDefault: true },
+          ],
+        },
+      ]);
+    }),
+  listTemplatesFromHost: () =>
+    listTemplatesFromHostMock().then(() => {
+      const shouldFail = Boolean(templateError());
+      if (shouldFail) {
+        return Promise.reject(new Error('templates-failed'));
+      }
+      return Promise.resolve([{ id: 't1', name: 'Template 1', description: '', widgets: [] }]);
+    }),
 }));
 
 const templateSpy = vi.fn<(templates: { id: string; name: string }[]) => void>();
@@ -117,8 +124,8 @@ vi.mock('canvas/components/template-screen/projects-sidebar', () => ({
   ),
 }));
 
-vi.mock('canvas/components/template-screen/template-header', () => ({
-  TemplateHeader: ({
+vi.mock('canvas/components/template-screen/praxis-toolbar', () => ({
+  PraxisToolbar: ({
     onTemplateChange,
     templates = [],
   }: {
@@ -155,6 +162,8 @@ describe('PraxisCanvasSurface interactions', () => {
     selectCommit.mockClear();
     resetProperties.mockClear();
     templateSpy.mockClear();
+    listProjectsWithScenariosMock.mockClear();
+    listTemplatesFromHostMock.mockClear();
     templateError.mockReturnValue(false);
     projectError.mockReturnValue(false);
   });
@@ -178,7 +187,7 @@ describe('PraxisCanvasSurface interactions', () => {
     await screen.findByText(/projects-failed/);
     fireEvent.click(screen.getAllByTestId('retry-projects')[0]);
     await waitFor(() => {
-      expect(screen.queryByText(/projects-failed/)).not.toBeInTheDocument();
+      expect(listProjectsWithScenariosMock).toHaveBeenCalledTimes(2);
     });
   });
 

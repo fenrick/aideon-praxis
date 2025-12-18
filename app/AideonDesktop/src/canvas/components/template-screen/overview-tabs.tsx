@@ -2,12 +2,13 @@ import type { ReactNode, RefObject } from 'react';
 
 import { ActivityTimelinePanel } from 'canvas/components/blocks/activity-timeline-panel';
 import { CommitTimelineList } from 'canvas/components/blocks/commit-timeline-list';
-import { CanvasRuntimeCard } from 'canvas/components/dashboard/canvas-runtime-card';
 import { templateScreenCopy } from 'canvas/copy/template-screen';
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
 import type { CanvasWidget, SelectionState } from 'canvas/types';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'design-system/components/ui/tabs';
+import { cn } from 'design-system/lib/utilities';
+import { CanvasWorkspace } from './canvas-workspace';
 import { SnapshotOverviewCard } from './snapshot-overview-card';
 import { TimeCursorCard } from './time-cursor-card';
 
@@ -20,7 +21,8 @@ interface OverviewTabsProperties {
   readonly onRequestMetaModelFocus: (types: string[]) => void;
   readonly timelineContent?: ReactNode;
   readonly activityContent?: ReactNode;
-  readonly initialTab?: 'overview' | 'timeline' | 'activity';
+  readonly initialTab?: 'canvas' | 'overview' | 'timeline' | 'activity';
+  readonly className?: string;
   readonly reloadSignal?: number;
   readonly branchTriggerRef?: RefObject<HTMLButtonElement | null>;
 }
@@ -37,6 +39,7 @@ interface OverviewTabsProperties {
  * @param root0.timelineContent
  * @param root0.activityContent
  * @param root0.initialTab
+ * @param root0.className
  * @param root0.reloadSignal
  * @param root0.branchTriggerRef
  */
@@ -49,26 +52,24 @@ export function OverviewTabs({
   onRequestMetaModelFocus,
   timelineContent,
   activityContent,
-  initialTab = 'overview',
+  initialTab = 'canvas',
+  className,
   reloadSignal,
-  branchTriggerRef,
+  branchTriggerRef: _branchTriggerReference,
 }: OverviewTabsProperties) {
   const copy = templateScreenCopy.tabs;
 
   return (
-    <Tabs defaultValue={initialTab} className="space-y-6">
-      <TabsList className="grid grid-cols-3 gap-2 rounded-lg border border-border/70 bg-muted/40 p-1">
+    <Tabs defaultValue={initialTab} className={cn('flex min-h-0 flex-col gap-4', className)}>
+      <TabsList className="grid grid-cols-4 gap-2 rounded-xl border border-border/70 bg-muted/40 p-1">
+        <TabsTrigger value="canvas">Canvas</TabsTrigger>
         <TabsTrigger value="overview">{copy.overview}</TabsTrigger>
         <TabsTrigger value="timeline">{copy.timeline}</TabsTrigger>
         <TabsTrigger value="activity">{copy.activity}</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="overview" className="space-y-4">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <SnapshotOverviewCard state={state} />
-          <TimeCursorCard state={state} actions={actions} triggerRef={branchTriggerRef} />
-        </div>
-        <CanvasRuntimeCard
+      <TabsContent value="canvas" className="min-h-0 flex-1">
+        <CanvasWorkspace
           widgets={widgets}
           selection={selection}
           onSelectionChange={onSelectionChange}
@@ -77,7 +78,14 @@ export function OverviewTabs({
         />
       </TabsContent>
 
-      <TabsContent value="timeline">
+      <TabsContent value="overview" className="min-h-0 flex-1">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <SnapshotOverviewCard state={state} />
+          <TimeCursorCard />
+        </div>
+      </TabsContent>
+
+      <TabsContent value="timeline" className="min-h-0 flex-1">
         {timelineContent ?? (
           <CommitTimelineList
             commits={state.commits}
@@ -87,7 +95,9 @@ export function OverviewTabs({
         )}
       </TabsContent>
 
-      <TabsContent value="activity">{activityContent ?? <ActivityTimelinePanel />}</TabsContent>
+      <TabsContent value="activity" className="min-h-0 flex-1">
+        {activityContent ?? <ActivityTimelinePanel />}
+      </TabsContent>
     </Tabs>
   );
 }

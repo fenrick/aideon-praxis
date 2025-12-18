@@ -57,6 +57,7 @@ vi.mock('@xyflow/react', () => {
       return createElement('div', { 'data-testid': 'reactflow' }, children);
     },
     Controls: () => createElement('div', { 'data-testid': 'controls' }),
+    MiniMap: () => createElement('div', { 'data-testid': 'minimap' }),
     Background: () => createElement('div', { 'data-testid': 'background' }),
     BackgroundVariant: { Dots: 'dots' },
     useNodesState: () => {

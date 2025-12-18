@@ -13,21 +13,30 @@ interface ProjectsSidebarProperties {
   projects: Project[];
   error?: string;
   onRetry?: () => void;
+  onSelectScenario?: (scenarioId: string) => void;
 }
 
 vi.mock('canvas/components/template-screen/projects-sidebar', () => ({
-  ProjectsSidebar: ({ projects, error, onRetry }: ProjectsSidebarProperties) => (
+  ProjectsSidebar: ({ projects, error, onRetry, onSelectScenario }: ProjectsSidebarProperties) => (
     <div>
       <div data-testid="projects-count">{projects.length}</div>
       {error ? <div data-testid="projects-error">{error}</div> : undefined}
       <button data-testid="retry-projects" onClick={() => onRetry?.()}>
         retry
       </button>
+      <button
+        data-testid="scenario-change"
+        onClick={() => {
+          onSelectScenario?.('alt');
+        }}
+      >
+        scenario
+      </button>
     </div>
   ),
 }));
-vi.mock('canvas/components/template-screen/template-header', () => ({
-  TemplateHeader: ({
+vi.mock('canvas/components/template-screen/praxis-toolbar', () => ({
+  PraxisToolbar: ({
     onTemplateSave,
     onCreateWidget,
   }: {
@@ -42,17 +51,6 @@ vi.mock('canvas/components/template-screen/template-header', () => ({
         add
       </button>
     </div>
-  ),
-}));
-vi.mock('canvas/components/template-screen/scenario-search-bar', () => ({
-  ScenarioSearchBar: ({
-    onScenarioChange,
-  }: {
-    onScenarioChange?: (scenarioId: string) => void;
-  }) => (
-    <button onClick={() => onScenarioChange?.('alt')} data-testid="scenario-change">
-      scenario
-    </button>
   ),
 }));
 vi.mock('canvas/components/template-screen/overview-tabs', () => ({
@@ -225,7 +223,7 @@ describe('PraxisCanvasSurface (coverage)', () => {
 
     fireEvent.click(screen.getByTestId('save-template'));
     await waitFor(() => {
-      expect(listTemplatesFromHost).toHaveBeenCalledTimes(2);
+      expect(listTemplatesFromHost).toHaveBeenCalledTimes(1);
     });
   });
 

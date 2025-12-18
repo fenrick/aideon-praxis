@@ -1,6 +1,7 @@
 import { memo } from 'react';
 
 import type { GraphViewModel } from 'canvas/praxis-api';
+import { cn } from 'design-system/lib/utilities';
 
 import type {
   CanvasWidget,
@@ -42,7 +43,14 @@ export const CanvasRuntime = memo(function CanvasRuntime({
     <div className="relative h-full w-full overflow-hidden rounded-2xl border border-border/60 bg-card">
       <div className="grid h-full grid-cols-1 gap-4 p-4 lg:grid-cols-2">
         {widgets.map((widget) => (
-          <div key={widget.id} className={widgetColumnClass(widget)}>
+          <div
+            key={widget.id}
+            className={cn(
+              widgetColumnClass(widget),
+              widgetMinHeightClass(widget),
+              'flex min-h-0 flex-col',
+            )}
+          >
             {renderWidget({
               widget,
               reloadVersion,
@@ -138,4 +146,15 @@ function widgetColumnClass(widget: CanvasWidget): string {
     return 'col-span-1';
   }
   return 'col-span-1 lg:col-span-2';
+}
+
+/**
+ * Provide a minimum height per widget so the canvas remains usable when the viewport is tall.
+ * @param widget
+ */
+function widgetMinHeightClass(widget: CanvasWidget): string {
+  if (widget.size === 'half') {
+    return 'min-h-[420px]';
+  }
+  return 'min-h-[560px]';
 }

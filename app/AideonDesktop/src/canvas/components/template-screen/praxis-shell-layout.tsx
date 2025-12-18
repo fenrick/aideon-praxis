@@ -57,9 +57,14 @@ export function PraxisShellLayout({
 
   return (
     <SidebarProvider>
-      <div className={cn('flex min-h-screen flex-col bg-background text-foreground', className)}>
+      <div
+        className={cn(
+          'flex min-h-screen flex-col bg-gradient-to-br from-background via-muted/20 to-background text-foreground',
+          className,
+        )}
+      >
         {toolbar ? (
-          <header className="border-b border-border/70 bg-card/80 px-4 py-2 backdrop-blur">
+          <header className="border-b border-border/70 bg-card/70 px-4 py-3 backdrop-blur">
             {toolbar}
           </header>
         ) : undefined}

@@ -5,6 +5,7 @@ import {
   Background,
   BackgroundVariant,
   Controls,
+  MiniMap,
   Panel,
   ReactFlow,
   ReactFlowProvider,
@@ -209,7 +210,7 @@ export function GraphWidget({
           });
         }}
       />
-      <div className="h-[320px] w-full rounded-2xl border border-border/60 bg-muted/20">
+      <div className="h-full min-h-[360px] w-full rounded-2xl border border-border/60 bg-muted/20">
         <ReactFlowProvider>
           <ReactFlow
             nodes={nodes}
@@ -235,6 +236,12 @@ export function GraphWidget({
               size={1}
             />
             <Controls position="bottom-right" />
+            <MiniMap
+              position="top-right"
+              nodeColor={() => 'hsl(var(--primary) / 0.85)'}
+              maskColor="hsl(var(--background) / 0.85)"
+              className="rounded-xl border border-border/60 bg-background/80 shadow-sm"
+            />
             <Panel
               position="top-left"
               className="rounded-2xl border border-border/60 bg-background/90 p-3 text-xs text-muted-foreground shadow"

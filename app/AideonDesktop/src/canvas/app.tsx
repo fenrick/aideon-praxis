@@ -3,14 +3,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DebugOverlay } from 'canvas/components/debug-overlay';
 import { OverviewTabs } from 'canvas/components/template-screen/overview-tabs';
 import { PraxisShellLayout } from 'canvas/components/template-screen/praxis-shell-layout';
+import { PraxisToolbar } from 'canvas/components/template-screen/praxis-toolbar';
 import { ProjectsSidebar } from 'canvas/components/template-screen/projects-sidebar';
 import {
   PropertiesInspector,
   type SelectionKind,
 } from 'canvas/components/template-screen/properties-inspector';
-import { ScenarioSearchBar } from 'canvas/components/template-screen/scenario-search-bar';
-import { TemplateHeader } from 'canvas/components/template-screen/template-header';
-import { templateScreenCopy } from 'canvas/copy/template-screen';
 import {
   listProjectsWithScenarios,
   listTemplatesFromHost,
@@ -19,7 +17,6 @@ import {
 import { useCommandStack } from 'canvas/hooks/use-command-stack';
 import { track } from 'canvas/lib/analytics';
 import { toErrorMessage } from 'canvas/lib/errors';
-import { isTauri } from 'canvas/platform';
 import { applyOperations, type ScenarioSummary } from 'canvas/praxis-api';
 import { dedupeIds } from 'canvas/selection';
 import {
@@ -31,7 +28,6 @@ import {
 } from 'canvas/templates';
 import type { CanvasWidget, SelectionState, WidgetKind } from 'canvas/types';
 import { listWidgetRegistry, type WidgetRegistryEntry } from 'canvas/widgets/registry';
-import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from 'design-system';
 import { Badge } from 'design-system/components/ui/badge';
 import { Button } from 'design-system/components/ui/button';
 import {
@@ -180,20 +176,16 @@ function PraxisCanvasExperience({
     try {
       const templates = await listTemplatesFromHost();
       setTemplatesState({ loading: false, data: templates });
-      if (!activeTemplateId) {
-        setActiveTemplateId(templates[0]?.id ?? '');
-      }
+      setActiveTemplateId((previous) => previous || (templates[0]?.id ?? ''));
     } catch (unknownError) {
       setTemplatesState({
         loading: false,
         data: BUILT_IN_TEMPLATES,
         error: toErrorMessage(unknownError),
       });
-      if (!activeTemplateId) {
-        setActiveTemplateId(BUILT_IN_TEMPLATES[0]?.id ?? '');
-      }
+      setActiveTemplateId((previous) => previous || (BUILT_IN_TEMPLATES[0]?.id ?? ''));
     }
-  }, [activeTemplateId]);
+  }, []);
 
   const refreshProjects = useCallback(async () => {
     setProjectState((previous) => ({ ...previous, loading: true, error: undefined }));
@@ -202,16 +194,19 @@ function PraxisCanvasExperience({
       const scenarios = projects.flatMap((project) => project.scenarios);
       setProjectState({ loading: false, data: projects });
       setScenarioState({ loading: false, data: scenarios });
-      if (!activeScenarioId) {
+      setActiveScenarioId((previous) => {
+        if (previous) {
+          return previous;
+        }
         const defaultScenario = scenarios.find((scenario) => scenario.isDefault) ?? scenarios[0];
-        setActiveScenarioId(defaultScenario?.id);
-      }
+        return defaultScenario?.id;
+      });
     } catch (unknownError) {
       const message = toErrorMessage(unknownError);
       setProjectState({ loading: false, data: [], error: message });
       setScenarioState({ loading: false, data: [], error: message });
     }
-  }, [activeScenarioId]);
+  }, []);
 
   useEffect(() => {
     refreshTemplates().catch((_ignoredError: unknown) => {
@@ -466,7 +461,24 @@ function PraxisCanvasExperience({
   return (
     <>
       <PraxisShellLayout
-        toolbar={<PraxisToolbar />}
+        toolbar={
+          <PraxisToolbar
+            scenarioName={activeScenario?.name}
+            templateName={activeTemplate?.name}
+            templates={templatesState.data}
+            activeTemplateId={activeTemplate?.id ?? ''}
+            onTemplateChange={handleTemplateChange}
+            onTemplateSave={handleTemplateSave}
+            onCreateWidget={() => {
+              setWidgetLibraryOpen(true);
+            }}
+            temporalState={temporalState}
+            temporalActions={temporalActions}
+            timeTriggerRef={branchSelectReference}
+            loading={templatesState.loading}
+            error={scenarioState.error}
+          />
+        }
         navigation={
           <ProjectsSidebar
             projects={projectState.data}
@@ -484,23 +496,6 @@ function PraxisCanvasExperience({
         }
         content={
           <div className="space-y-6">
-            <TemplateHeader
-              scenarioName={activeScenario?.name}
-              templateName={activeTemplate?.name}
-              templateDescription={activeTemplate?.description}
-              templates={templatesState.data}
-              activeTemplateId={activeTemplate?.id ?? ''}
-              onTemplateChange={handleTemplateChange}
-              onTemplateSave={handleTemplateSave}
-              onCreateWidget={() => {
-                setWidgetLibraryOpen(true);
-              }}
-              loading={templatesState.loading}
-            />
-            <ScenarioSearchBar />
-            {scenarioState.error && (
-              <p className="text-sm text-destructive">{scenarioState.error}</p>
-            )}
             <OverviewTabs
               state={temporalState}
               actions={temporalActions}
@@ -545,32 +540,6 @@ function PraxisCanvasExperience({
         onCreate={handleWidgetCreate}
       />
     </>
-  );
-}
-
-/**
- * Simple menubar used as the toolbar slot for the Praxis shell layout.
- */
-function PraxisToolbar() {
-  const isDesktop = isTauri();
-  const copy = templateScreenCopy;
-
-  return (
-    <Menubar>
-      <MenubarMenu>
-        <MenubarTrigger>{copy.templateLabel}</MenubarTrigger>
-        <MenubarContent>
-          <MenubarItem>Praxis Canvas</MenubarItem>
-          <MenubarItem disabled>Tasks</MenubarItem>
-        </MenubarContent>
-      </MenubarMenu>
-      <MenubarMenu>
-        <MenubarTrigger>Mode</MenubarTrigger>
-        <MenubarContent>
-          <MenubarItem>{isDesktop ? 'Desktop' : 'Browser preview'}</MenubarItem>
-        </MenubarContent>
-      </MenubarMenu>
-    </Menubar>
   );
 }
 

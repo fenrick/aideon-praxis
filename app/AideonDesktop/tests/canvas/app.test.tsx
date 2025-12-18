@@ -9,21 +9,21 @@ vi.mock('canvas/components/template-screen/projects-sidebar', () => ({
   ),
 }));
 
-vi.mock('canvas/components/template-screen/template-header', () => ({
-  TemplateHeader: ({
-    onTemplateSave,
-    onTemplateChange,
+vi.mock('canvas/components/template-screen/praxis-toolbar', () => ({
+  PraxisToolbar: ({
     templates,
     activeTemplateId,
+    onTemplateSave,
+    onTemplateChange,
     loading,
   }: {
-    onTemplateSave: () => void;
-    onTemplateChange: (id: string) => void;
     templates: { id: string }[];
     activeTemplateId: string;
+    onTemplateSave: () => void;
+    onTemplateChange: (id: string) => void;
     loading?: boolean;
   }) => (
-    <div>
+    <div data-testid="praxis-toolbar">
       <span data-testid="active-template">{activeTemplateId}</span>
       <span data-testid="template-count">{templates.length}</span>
       {loading ? <span>loading</span> : undefined}
@@ -37,10 +37,6 @@ vi.mock('canvas/components/template-screen/template-header', () => ({
       </button>
     </div>
   ),
-}));
-
-vi.mock('canvas/components/template-screen/scenario-search-bar', () => ({
-  ScenarioSearchBar: () => <div data-testid="search-bar" />,
 }));
 
 vi.mock('canvas/components/template-screen/overview-tabs', () => ({
@@ -166,7 +162,7 @@ describe('Praxis canvas app shell', () => {
     });
     expect(screen.getByTestId('projects-sidebar')).toHaveTextContent('1 scenarios');
     expect(screen.getByTestId('active-template')).toBeInTheDocument();
-    expect(screen.getByTestId('search-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('praxis-toolbar')).toBeInTheDocument();
   });
 
   it('forwards selection updates to parent callback', async () => {

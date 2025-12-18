@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('canvas/components/dashboard/canvas-runtime-card', () => ({
-  CanvasRuntimeCard: () => <div>Canvas runtime</div>,
+vi.mock('canvas/components/template-screen/canvas-workspace', () => ({
+  CanvasWorkspace: () => <div>Canvas workspace</div>,
 }));
 
 import type { TemporalPanelActions, TemporalPanelState } from 'canvas/time/use-temporal-panel';
@@ -48,6 +48,7 @@ describe('OverviewTabs', () => {
       />,
     );
 
+    expect(screen.getByRole('tab', { name: /canvas/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /overview/i })).toBeInTheDocument();
     expect(screen.getByText(/activity content/i)).toBeInTheDocument();
   });
