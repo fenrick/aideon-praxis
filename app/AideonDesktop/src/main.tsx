@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, StrictMode, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { invoke } from '@tauri-apps/api/core';
@@ -17,8 +17,11 @@ if (!isVitest) {
     throw new Error('Unable to locate root element');
   }
 
+  const useStrictMode = !isTauriRuntime();
+  const RootWrapper = useStrictMode ? StrictMode : Fragment;
+
   createRoot(container).render(
-    <StrictMode>
+    <RootWrapper>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <ErrorBoundary>
           <>
@@ -27,7 +30,7 @@ if (!isVitest) {
           </>
         </ErrorBoundary>
       </ThemeProvider>
-    </StrictMode>,
+    </RootWrapper>,
   );
 }
 
