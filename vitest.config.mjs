@@ -9,7 +9,8 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: srcRoot },
-      { find: 'canvas', replacement: path.join(srcRoot, 'canvas') },
+      { find: 'aideon', replacement: path.join(srcRoot, 'aideon') },
+      { find: 'praxis', replacement: path.join(srcRoot, 'praxis') },
       {
         find: 'design-system/reactflow',
         replacement: path.join(srcRoot, 'design-system/components'),
@@ -46,8 +47,7 @@ export default defineConfig({
         'app/AideonDesktop/src/design-system/components/**',
         'app/AideonDesktop/src/types/**',
         'app/AideonDesktop/src/main.tsx',
-        'app/AideonDesktop/src/canvas/main.tsx',
-        'app/AideonDesktop/src/canvas/canvas-runtime.tsx',
+        'app/AideonDesktop/src/praxis/main.tsx',
       ],
     },
   },

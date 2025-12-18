@@ -16,12 +16,13 @@ export default defineConfig(({ mode }) => {
       dedupe: ['react', 'react-dom'],
       alias: [
         { find: '@', replacement: resolve(__dirname, './src') },
-        { find: 'canvas', replacement: resolve(__dirname, './src/canvas') },
-        { find: 'design-system', replacement: resolve(__dirname, './src/design-system') },
+        { find: 'aideon', replacement: resolve(__dirname, './src/aideon') },
+        { find: 'praxis', replacement: resolve(__dirname, './src/praxis') },
         {
           find: 'design-system/reactflow',
           replacement: resolve(__dirname, './src/design-system/components'),
         },
+        { find: 'design-system', replacement: resolve(__dirname, './src/design-system') },
         { find: 'adapters', replacement: resolve(__dirname, './src/adapters') },
         { find: 'dtos', replacement: resolve(__dirname, './src/dtos') },
       ],

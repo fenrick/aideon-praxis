@@ -4,8 +4,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["app/AideonDesktop/src/*"],
-      "canvas/*": ["app/AideonDesktop/src/canvas/*"],
+      "aideon/*": ["app/AideonDesktop/src/aideon/*"],
+      "praxis/*": ["app/AideonDesktop/src/praxis/*"],
       "design-system/*": ["app/AideonDesktop/src/design-system/*"],
+      "design-system/reactflow/*": ["app/AideonDesktop/src/design-system/components/*"],
       "adapters/*": ["app/AideonDesktop/src/adapters/*"],
       "dtos/*": ["app/AideonDesktop/src/dtos/*"]
     }

@@ -1,0 +1,124 @@
+import { useMemo, useState } from 'react';
+import type { RefObject } from 'react';
+
+import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
+
+import { isTauri } from 'praxis/platform';
+import { searchStore } from 'praxis/lib/search';
+import type { CanvasTemplate } from 'praxis/templates';
+
+import { AideonToolbar } from 'aideon/shell/aideon-toolbar';
+import { Button } from 'design-system/components/ui/button';
+import { Input } from 'design-system/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from 'design-system/components/ui/popover';
+import { TimeControlPanel } from '../blocks/time-control-panel';
+import { TemplateToolbar } from './template-toolbar';
+
+export interface PraxisToolbarProperties {
+  readonly scenarioName?: string;
+  readonly templates: CanvasTemplate[];
+  readonly activeTemplateId: string;
+  readonly templateName?: string;
+  readonly onTemplateChange: (templateId: string) => void;
+  readonly onTemplateSave: () => void;
+  readonly onCreateWidget: () => void;
+  readonly temporalState: TemporalPanelState;
+  readonly temporalActions: TemporalPanelActions;
+  readonly timeTriggerRef?: RefObject<HTMLButtonElement | null>;
+  readonly loading?: boolean;
+  readonly error?: string;
+}
+
+/**
+ * Top toolbar for the Praxis canvas shell: app menu, scenario/template controls, search, and time.
+ * @param root0
+ * @param root0.scenarioName
+ * @param root0.templates
+ * @param root0.activeTemplateId
+ * @param root0.templateName
+ * @param root0.onTemplateChange
+ * @param root0.onTemplateSave
+ * @param root0.onCreateWidget
+ * @param root0.temporalState
+ * @param root0.temporalActions
+ * @param root0.timeTriggerRef
+ * @param root0.loading
+ * @param root0.error
+ */
+export function PraxisToolbar({
+  scenarioName,
+  templates,
+  activeTemplateId,
+  templateName,
+  onTemplateChange,
+  onTemplateSave,
+  onCreateWidget,
+  temporalState,
+  temporalActions,
+  timeTriggerRef,
+  loading = false,
+  error,
+}: PraxisToolbarProperties) {
+  const isDesktop = isTauri();
+  const modeLabel = isDesktop ? 'Desktop' : 'Browser preview';
+  const trimmedScenarioName = scenarioName?.trim();
+  const scenarioLabel =
+    trimmedScenarioName && trimmedScenarioName.length > 0 ? trimmedScenarioName : 'Scenario';
+
+  const [query, setQuery] = useState('');
+  const placeholder = useMemo(() => {
+    return `Search ${scenarioLabel.toLowerCase()}…`;
+  }, [scenarioLabel]);
+
+  return (
+    <AideonToolbar
+      title="Aideon"
+      subtitle={scenarioName ? `Praxis · ${scenarioName}` : 'Praxis workspace'}
+      modeLabel={modeLabel}
+      statusMessage={error}
+      center={
+        <Input
+          type="search"
+          aria-label="Search"
+          placeholder={placeholder}
+          value={query}
+          onChange={(event) => {
+            const value = event.target.value;
+            setQuery(value);
+            if (value.trim()) {
+              searchStore.search(value);
+            } else {
+              searchStore.clear();
+            }
+          }}
+          className="h-9 bg-background/80"
+        />
+      }
+      end={
+        <>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button ref={timeTriggerRef} variant="outline" size="sm">
+                Time
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[380px] p-0">
+              <TimeControlPanel state={temporalState} actions={temporalActions} />
+            </PopoverContent>
+          </Popover>
+
+          <TemplateToolbar
+            scenarioName={scenarioName}
+            templateName={templateName}
+            templates={templates}
+            activeTemplateId={activeTemplateId}
+            onTemplateChange={onTemplateChange}
+            onTemplateSave={onTemplateSave}
+            onCreateWidget={onCreateWidget}
+            loading={loading}
+          />
+        </>
+      }
+    />
+  );
+}

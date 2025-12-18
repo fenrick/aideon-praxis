@@ -10,7 +10,8 @@ Aideon Praxis is a desktop application built with Tauri (Rust backend + React/Ty
 │   └── AideonDesktop/       # React frontend application
 │       ├── src/
 │       │   ├── adapters/    # IPC and platform adapters
-│       │   ├── canvas/      # Main canvas app components and logic
+│       │   ├── aideon/      # Desktop shell + platform canvas primitives
+│       │   ├── praxis/      # Praxis workspace (widgets, templates, time UI)
 │       │   ├── design-system/ # UI components (shadcn/ui based)
 │       │   ├── dtos/        # Data transfer objects/types
 │       │   ├── hooks/       # Custom React hooks
@@ -71,7 +72,7 @@ pnpm run dev:replit
 ### Tauri Integration
 When running as a desktop app, the frontend communicates with the Rust backend via Tauri's IPC. In browser mode (Replit preview), the app uses mock data providers for all backend calls.
 
-The `isTauri()` function in `canvas/platform.ts` detects the runtime environment and falls back to mock data when not in Tauri.
+The `isTauri()` function in `app/AideonDesktop/src/praxis/platform.ts` detects the runtime environment and falls back to mock data when not in Tauri.
 
 ## User Preferences
 - Uses light color scheme by default

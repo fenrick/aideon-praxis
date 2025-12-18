@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { listScenarios, type ScenarioSummary } from '../canvas';
+import { listScenarios, type ScenarioSummary } from '../praxis';
 
 export interface WorkspaceTreeItem {
   id: string;
