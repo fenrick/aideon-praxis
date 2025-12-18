@@ -114,14 +114,12 @@ export function AideonShellLayout({
   return (
     <SidebarProvider>
       <AideonShellControlsProvider value={{ inspectorCollapsed, toggleInspector }}>
-        <div
-          className={cn(
-            'flex min-h-screen flex-col bg-gradient-to-br from-background via-muted/15 to-background text-foreground',
-            className,
-          )}
-        >
+        <div className={cn('flex min-h-screen flex-col bg-background text-foreground', className)}>
           {toolbar ? (
-            <header className="border-b border-border/70 bg-background/70 px-4 py-3 backdrop-blur-xl">
+            <header
+              data-tauri-drag-region
+              className="border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+            >
               {toolbar}
             </header>
           ) : undefined}
@@ -147,7 +145,7 @@ export function AideonShellLayout({
             >
               <Sidebar
                 collapsible="icon"
-                className="h-full border-r border-border/60 bg-sidebar/85 text-sidebar-foreground shadow-sm"
+                className="h-full border-r border-border bg-sidebar text-sidebar-foreground shadow-none"
               >
                 <ScrollArea className="h-full" data-testid="aideon-shell-navigation">
                   {navigation}
@@ -188,7 +186,7 @@ export function AideonShellLayout({
               data-testid="aideon-shell-panel-inspector"
             >
               <ScrollArea
-                className="h-full border-l border-border/60 bg-sidebar/70 text-sidebar-foreground shadow-sm"
+                className="h-full border-l border-border bg-sidebar text-sidebar-foreground shadow-none"
                 data-testid="aideon-shell-inspector"
               >
                 <div

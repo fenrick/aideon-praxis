@@ -62,12 +62,12 @@ function renderProjectScenarioMenuItems(parameters: {
         <SidebarMenuItem key={scenario.id}>
           <SidebarMenuButton
             size="sm"
-            className="flex flex-col items-start gap-1 text-left data-[state=active]:bg-primary/10 data-[state=active]:text-foreground"
+            className="flex flex-col items-start gap-1 text-left data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground"
             onClick={() => onSelectScenario?.(scenario.id)}
             data-state={active ? 'active' : undefined}
           >
             <div className="flex w-full items-center justify-between gap-2">
-              <span className="text-sm font-semibold">{scenario.name}</span>
+              <span className="text-sm font-medium">{scenario.name}</span>
               {scenario.isDefault ? <Badge variant="outline">Default</Badge> : undefined}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -234,11 +234,11 @@ export function ProjectsSidebar({
     <>
       <SidebarHeader className="space-y-3 p-3">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <LayersIcon className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tracking-tight">Praxis</p>
+            <p className="truncate text-sm font-medium leading-tight">Praxis</p>
             <p className="truncate text-xs text-muted-foreground">Workspace scenarios</p>
           </div>
         </div>
@@ -249,7 +249,7 @@ export function ProjectsSidebar({
           }}
           placeholder={`Filter ${scenarioCount.toString()} scenarios…`}
           aria-label="Filter scenarios"
-          className="bg-background/70"
+          className="bg-background"
         />
         <SidebarSeparator className="my-3" />
       </SidebarHeader>
