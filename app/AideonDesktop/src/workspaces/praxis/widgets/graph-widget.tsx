@@ -24,6 +24,7 @@ import { NodeSearchDialog } from 'design-system/components/node-search';
 import { PraxisNode } from 'design-system/components/praxis-node';
 import { TimelineEdge, type TimelineEdgeData } from 'design-system/components/timeline-edge';
 import { Button } from 'design-system/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from 'design-system/components/ui/toggle-group';
 import type {
   PraxisGraphWidgetConfig as GraphWidgetConfig,
   SelectionState,
@@ -68,6 +69,9 @@ export function GraphWidget({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const [metadata, setMetadata] = useState<GraphViewModel['metadata'] | undefined>();
+  const [background, setBackground] = useState<'dots' | 'lines' | 'cross'>('dots');
+  const [showMiniMap, setShowMiniMap] = useState(true);
+  const [showControls, setShowControls] = useState(true);
 
   const definition = useMemo(() => {
     return {
@@ -236,26 +240,72 @@ export function GraphWidget({
           >
             <Background
               color="hsl(var(--muted-foreground))"
-              variant={BackgroundVariant.Dots}
+              variant={resolveBackgroundVariant(background)}
               gap={16}
               size={1}
             />
-            <Controls position="bottom-right" />
-            <MiniMap
-              position="top-right"
-              nodeColor={() => 'hsl(var(--primary) / 0.85)'}
-              maskColor="hsl(var(--background) / 0.85)"
-              className="rounded-xl border border-border/60 bg-background/80 shadow-sm"
-            />
+            {showControls ? <Controls position="bottom-right" /> : undefined}
+            {showMiniMap ? (
+              <MiniMap
+                position="top-right"
+                nodeColor={() => 'hsl(var(--primary) / 0.85)'}
+                maskColor="hsl(var(--background) / 0.85)"
+                className="rounded-xl border border-border/60 bg-background/80 shadow-sm"
+              />
+            ) : undefined}
             <Panel
               position="top-left"
               className="rounded-2xl border border-border/60 bg-background/90 p-3 text-xs text-muted-foreground shadow"
             >
-              <p className="mb-1">Use node search or right-click selection for meta actions.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <ToggleGroup
+                  type="single"
+                  value={background}
+                  onValueChange={(value) => {
+                    if (value === 'dots' || value === 'lines' || value === 'cross') {
+                      setBackground(value);
+                    }
+                  }}
+                  className="gap-1"
+                >
+                  <ToggleGroupItem value="dots" aria-label="Dots background" className="h-7 px-2">
+                    Dots
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="lines" aria-label="Lines background" className="h-7 px-2">
+                    Lines
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="cross" aria-label="Cross background" className="h-7 px-2">
+                    Cross
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                <Button
+                  variant={showMiniMap ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => {
+                    setShowMiniMap((previous) => !previous);
+                  }}
+                >
+                  Mini map
+                </Button>
+                <Button
+                  variant={showControls ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => {
+                    setShowControls((previous) => !previous);
+                  }}
+                >
+                  Controls
+                </Button>
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground/90">
+                Use node search or right-click selection for meta actions.
+              </p>
               <Button
                 variant="ghost"
                 size="sm"
-                className="px-0 text-xs"
+                className="mt-1 px-0 text-xs"
                 onClick={() => {
                   setNodeSearchOpen(true);
                 }}
@@ -312,6 +362,25 @@ function resolveNodeType(node: Node<GraphNodeData>): string {
 interface GraphWidgetOverlayProperties {
   readonly message: string;
   readonly isError?: boolean;
+}
+
+/**
+ * Map a background selection to the XYFlow variant enum.
+ * @param background - Selected background type.
+ * @returns Background variant.
+ */
+function resolveBackgroundVariant(background: 'dots' | 'lines' | 'cross'): BackgroundVariant {
+  switch (background) {
+    case 'dots': {
+      return BackgroundVariant.Dots;
+    }
+    case 'lines': {
+      return BackgroundVariant.Lines;
+    }
+    case 'cross': {
+      return BackgroundVariant.Cross;
+    }
+  }
 }
 
 /**

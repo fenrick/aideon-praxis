@@ -8,6 +8,7 @@ import { isTauri } from 'praxis/platform';
 import type { CanvasTemplate } from 'praxis/templates';
 
 import { AideonToolbar } from 'aideon/shell/aideon-toolbar';
+import { WorkspaceSwitcher } from 'aideon/shell/workspace-switcher';
 import { Button } from 'design-system/components/ui/button';
 import { Input } from 'design-system/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from 'design-system/components/ui/popover';
@@ -76,6 +77,17 @@ export function PraxisToolbar({
       subtitle={scenarioName ? `Praxis · ${scenarioName}` : 'Praxis workspace'}
       modeLabel={modeLabel}
       statusMessage={error}
+      start={
+        <WorkspaceSwitcher
+          currentId="praxis"
+          options={[
+            { id: 'praxis', label: 'Praxis', disabled: false },
+            { id: 'chrona', label: 'Chrona', disabled: true },
+            { id: 'metis', label: 'Metis', disabled: true },
+            { id: 'continuum', label: 'Continuum', disabled: true },
+          ]}
+        />
+      }
       center={
         <Input
           type="search"

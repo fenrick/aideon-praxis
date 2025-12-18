@@ -26,6 +26,7 @@ import { useAideonShellControls } from './shell-controls';
 
 import { useSidebar } from 'design-system/desktop-shell';
 import { AideonCommandPalette, type AideonCommandItem } from './command-palette';
+import { KeyboardShortcutsDialog } from './keyboard-shortcuts-dialog';
 
 export interface AideonToolbarProperties extends Readonly<ComponentPropsWithoutRef<'div'>> {
   readonly title: string;
@@ -254,10 +255,22 @@ export function AideonToolbar({
   const shell = useAideonShellControls();
   const isTauri = isTauriRuntime();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const theme = useOptionalTheme();
 
   const commands = useMemo(() => {
-    return buildShellCommands({ sidebar, shell, theme, workspaceCommands });
+    const shellCommands = buildShellCommands({ sidebar, shell, theme, workspaceCommands });
+    return [
+      ...shellCommands,
+      {
+        id: 'help.shortcuts',
+        group: 'Help',
+        label: 'Keyboard shortcuts…',
+        onSelect: () => {
+          setShortcutsOpen(true);
+        },
+      },
+    ] satisfies AideonCommandItem[];
   }, [shell, sidebar, theme, workspaceCommands]);
 
   useEffect(() => {
@@ -368,13 +381,15 @@ export function AideonToolbar({
               )}
             </Button>
           ) : undefined}
-          {start ?? (
-            <AppMenu
-              onOpenCommandPalette={() => {
-                setCommandPaletteOpen(true);
-              }}
-            />
-          )}
+          <AppMenu
+            onOpenCommandPalette={() => {
+              setCommandPaletteOpen(true);
+            }}
+            onOpenShortcuts={() => {
+              setShortcutsOpen(true);
+            }}
+          />
+          {start}
           <Button
             type="button"
             variant="outline"
@@ -471,6 +486,8 @@ export function AideonToolbar({
         onOpenChange={setCommandPaletteOpen}
         commands={commands}
       />
+
+      <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>
   );
 }
@@ -479,8 +496,15 @@ export function AideonToolbar({
  * Placeholder menubar for desktop shell actions.
  * @param root0 - Menu properties.
  * @param root0.onOpenCommandPalette - Opens the command palette.
+ * @param root0.onOpenShortcuts - Opens the keyboard shortcuts dialog.
  */
-function AppMenu({ onOpenCommandPalette }: { readonly onOpenCommandPalette: () => void }) {
+function AppMenu({
+  onOpenCommandPalette,
+  onOpenShortcuts,
+}: {
+  readonly onOpenCommandPalette: () => void;
+  readonly onOpenShortcuts: () => void;
+}) {
   const sidebar = useOptionalSidebar();
   const shell = useAideonShellControls();
 
@@ -527,7 +551,7 @@ function AppMenu({ onOpenCommandPalette }: { readonly onOpenCommandPalette: () =
         <MenubarContent>
           <MenubarItem
             onSelect={() => {
-              onOpenCommandPalette();
+              onOpenShortcuts();
             }}
           >
             Keyboard shortcuts…
