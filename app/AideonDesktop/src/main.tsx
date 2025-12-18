@@ -1,9 +1,10 @@
-import { StrictMode, useEffect, useMemo, useState } from 'react';
+import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { ThemeProvider } from 'next-themes';
+import { SplashScreen as PraxisSplashScreen } from './components/splash/splash-screen';
 import { Toaster } from './design-system/components/ui/sonner';
 import { ErrorBoundary } from './error-boundary';
 import { AideonDesktopRoot } from './root';
@@ -62,7 +63,7 @@ export function AppEntry() {
   switch (normalizedRoute) {
     case 'splash':
     case '/splash': {
-      view = <SplashScreen />;
+      view = <SplashRoute />;
 
       break;
     }
@@ -93,26 +94,37 @@ export function AppEntry() {
     // No default
   }
 
-  return <FrontendReady>{view}</FrontendReady>;
+  const shouldSignalFrontendReady = isTauri && windowLabel === 'main';
+  return <FrontendReady enabled={shouldSignalFrontendReady}>{view}</FrontendReady>;
 }
 
 /**
  *
  * @param root0
  * @param root0.children
+ * @param root0.enabled
  */
 export function FrontendReady({
   children,
+  enabled = true,
 }: {
   readonly children: React.ReactNode;
+  readonly enabled?: boolean;
 }): React.ReactElement | null {
+  const didSignal = useRef(false);
   useEffect(() => {
-    if (isTauriRuntime()) {
-      invoke('set_complete', { task: 'frontend' })
-        .then(() => true)
-        .catch(() => false);
+    if (!enabled || didSignal.current) {
+      return;
     }
-  }, []);
+    if (!isTauriRuntime()) {
+      return;
+    }
+    didSignal.current = true;
+
+    invoke('set_complete', { task: 'frontend' })
+      .then(() => true)
+      .catch(() => false);
+  }, [enabled]);
   return children as React.ReactElement | null;
 }
 
@@ -134,7 +146,7 @@ export function isTauriRuntime(): boolean {
 /**
  *
  */
-function SplashScreen() {
+function SplashRoute() {
   const loadLines = useMemo(
     () => [
       'Reticulating splines…',
@@ -167,62 +179,7 @@ function SplashScreen() {
     };
   }, [loadLines]);
 
-  // Simulate frontend init and notify host
-  useEffect(() => {
-    let cancelled = false;
-    /**
-     *
-     */
-    async function init() {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1800));
-        if (!cancelled) {
-          await invoke('set_complete', { task: 'frontend' });
-        }
-      } catch {
-        cancelled = true;
-      }
-    }
-    init().catch(() => false);
-    return () => {
-      cancelled = true;
-    };
-  }, [loadLines]);
-
-  return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 text-slate-50">
-      <img
-        src="/splash.png"
-        alt="Aideon splash"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-        aria-hidden
-      />
-      <div
-        className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/75 to-slate-950/90 backdrop-blur-sm"
-        aria-hidden
-      />
-      <div className="relative max-w-4xl rounded-2xl border border-white/12 bg-black/55 p-8 shadow-2xl backdrop-blur-xl md:p-10">
-        <div className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-200">Aideon</p>
-          <h1 className="text-3xl font-semibold leading-tight text-white">Loading workspace…</h1>
-          <p className="text-sm text-slate-100">Initialising host services and adapters.</p>
-          <div className="mt-4 space-y-3 rounded-lg border border-white/12 bg-white/10 p-4 backdrop-blur">
-            <div className="flex items-center gap-3 text-slate-50">
-              <span
-                className="inline-flex h-3 w-3 animate-ping rounded-full bg-emerald-400"
-                aria-hidden
-              />
-              <span className="text-sm font-medium">Host connecting</span>
-            </div>
-            <div className="text-xs text-slate-100">{currentLine}</div>
-            <div className="relative mt-1 h-1.5 overflow-hidden rounded-full bg-white/20">
-              <span className="absolute inset-y-0 left-0 w-1/3 animate-[pulse_1.4s_ease-in-out_infinite] rounded-full bg-emerald-400/80" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <PraxisSplashScreen line={currentLine} />;
 }
 
 /**
