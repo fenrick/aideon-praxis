@@ -1,9 +1,16 @@
+use serde::Serialize;
 use tauri::{
-    App, AppHandle, Manager, Wry,
+    App, AppHandle, Emitter, Manager, Wry,
     menu::{Menu, MenuEvent, PredefinedMenuItem, Submenu},
 };
 
 use crate::windows::{open_about, open_settings, open_styleguide};
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "kebab-case")]
+struct ShellCommandPayload {
+    command: String,
+}
 
 #[derive(Clone, Debug, Default)]
 pub struct MenuIds {
@@ -46,6 +53,12 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, event: MenuEvent) {
             log::info!("menu: help.about");
             let _ = open_about(app.clone());
         }
+        "view.toggle_navigation" => {
+            emit_shell_command(app, "toggle-navigation");
+        }
+        "view.toggle_inspector" => {
+            emit_shell_command(app, "toggle-inspector");
+        }
         "file.quit" => {
             log::info!("menu: file.quit");
             app.exit(0);
@@ -59,6 +72,17 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, event: MenuEvent) {
     if ev == ids.styleguide {
         log::info!("menu: open styleguide via resolved id");
         let _ = open_styleguide(app.clone());
+    }
+}
+
+fn emit_shell_command(app: &AppHandle<Wry>, command: &str) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.emit(
+            "aideon.shell.command",
+            ShellCommandPayload {
+                command: command.to_string(),
+            },
+        );
     }
 }
 
@@ -116,7 +140,7 @@ fn append_window_items(
 mod mac {
     use tauri::{
         App, Wry,
-        menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
+        menu::{Menu, MenuItemBuilder, PredefinedMenuItem, Submenu},
     };
 
     use super::{MenuIds, append_edit_items, append_window_items, to_string};
@@ -131,7 +155,11 @@ mod mac {
             .append(&PredefinedMenuItem::about(app, None, None).map_err(to_string)?)
             .map_err(to_string)?;
         app_sub
-            .append(&MenuItem::new(app, "preferences", true, None::<&str>).map_err(to_string)?)
+            .append(
+                &MenuItemBuilder::with_id("preferences", "Preferences…")
+                    .build(app)
+                    .map_err(to_string)?,
+            )
             .map_err(to_string)?;
         app_sub
             .append(&PredefinedMenuItem::quit(app, None).map_err(to_string)?)
@@ -146,11 +174,29 @@ mod mac {
         append_window_items(app, &window_menu, true)?;
         menu.append(&window_menu).map_err(to_string)?;
 
+        let view = Submenu::new(app, "View", true).map_err(to_string)?;
+        view.append(
+            &MenuItemBuilder::with_id("view.toggle_navigation", "Toggle Navigation")
+                .accelerator("CmdOrCtrl+B")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        view.append(
+            &MenuItemBuilder::with_id("view.toggle_inspector", "Toggle Inspector")
+                .accelerator("CmdOrCtrl+I")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        menu.append(&view).map_err(to_string)?;
+
         let help = Submenu::new(app, "Help", true).map_err(to_string)?;
         menu.append(&help).map_err(to_string)?;
 
         let debug = Submenu::new(app, "Debug", true).map_err(to_string)?;
-        let style_item = MenuItem::new(app, "debug_styleguide", true, Some("UI Style Guide"))
+        let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
+            .build(app)
             .map_err(to_string)?;
         ids.styleguide = style_item.id().as_ref().to_string();
         debug.append(&style_item).map_err(to_string)?;
@@ -164,7 +210,7 @@ mod mac {
 mod desktop {
     use tauri::{
         App, Wry,
-        menu::{Menu, MenuItem, Submenu},
+        menu::{Menu, MenuItemBuilder, Submenu},
     };
 
     use super::{MenuIds, append_edit_items, append_window_items, to_string};
@@ -175,15 +221,40 @@ mod desktop {
         ids: &mut MenuIds,
     ) -> Result<(), String> {
         let file = Submenu::new(app, "File", false).map_err(to_string)?;
-        file.append(&MenuItem::new(app, "file.quit", true, None::<&str>).map_err(to_string)?)
-            .map_err(to_string)?;
+        file.append(
+            &MenuItemBuilder::with_id("file.quit", "Quit")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
         menu.append(&file).map_err(to_string)?;
 
         let settings = Submenu::new(app, "Settings", false).map_err(to_string)?;
         settings
-            .append(&MenuItem::new(app, "preferences", true, None::<&str>).map_err(to_string)?)
+            .append(
+                &MenuItemBuilder::with_id("preferences", "Preferences…")
+                    .build(app)
+                    .map_err(to_string)?,
+            )
             .map_err(to_string)?;
         menu.append(&settings).map_err(to_string)?;
+
+        let view = Submenu::new(app, "View", false).map_err(to_string)?;
+        view.append(
+            &MenuItemBuilder::with_id("view.toggle_navigation", "Toggle Navigation")
+                .accelerator("CmdOrCtrl+B")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        view.append(
+            &MenuItemBuilder::with_id("view.toggle_inspector", "Toggle Inspector")
+                .accelerator("CmdOrCtrl+I")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        menu.append(&view).map_err(to_string)?;
 
         let edit = Submenu::new(app, "Edit", false).map_err(to_string)?;
         append_edit_items(app, &edit)?;
@@ -194,12 +265,17 @@ mod desktop {
         menu.append(&window_menu).map_err(to_string)?;
 
         let help = Submenu::new(app, "Help", false).map_err(to_string)?;
-        help.append(&MenuItem::new(app, "help.about", true, Some("About")).map_err(to_string)?)
-            .map_err(to_string)?;
+        help.append(
+            &MenuItemBuilder::with_id("help.about", "About")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
         menu.append(&help).map_err(to_string)?;
 
         let debug = Submenu::new(app, "Debug", false).map_err(to_string)?;
-        let style_item = MenuItem::new(app, "debug_styleguide", true, Some("UI Style Guide"))
+        let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
+            .build(app)
             .map_err(to_string)?;
         ids.styleguide = style_item.id().as_ref().to_string();
         debug.append(&style_item).map_err(to_string)?;

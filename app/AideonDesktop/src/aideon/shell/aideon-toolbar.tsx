@@ -38,6 +38,14 @@ function useOptionalSidebar() {
 }
 
 /**
+ * Detect whether we are running inside a Tauri runtime.
+ */
+function isTauriRuntime(): boolean {
+  const metaEnvironment = (import.meta as { env?: { TAURI_PLATFORM?: string } }).env;
+  return Boolean(metaEnvironment?.TAURI_PLATFORM);
+}
+
+/**
  * Application-level toolbar shell for Aideon Desktop.
  * Workspace modules provide `center` (search) and `end` (actions) content.
  * @param root0
@@ -63,8 +71,12 @@ export function AideonToolbar({
 }: AideonToolbarProperties) {
   const sidebar = useOptionalSidebar();
   const shell = useAideonShellControls();
+  const isTauri = isTauriRuntime();
 
   useEffect(() => {
+    if (isTauri) {
+      return;
+    }
     const handleKeydown = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey)) {
         return;
@@ -90,7 +102,46 @@ export function AideonToolbar({
     return () => {
       globalThis.removeEventListener('keydown', handleKeydown);
     };
-  }, [shell, sidebar]);
+  }, [isTauri, shell, sidebar]);
+
+  useEffect(() => {
+    if (!isTauri) {
+      return;
+    }
+    let cancelled = false;
+    let unlisten: undefined | (() => void);
+
+    const subscribe = async () => {
+      try {
+        const { listen } = await import('@tauri-apps/api/event');
+        if (cancelled) {
+          return;
+        }
+        unlisten = await listen<{ command?: string }>('aideon.shell.command', (event) => {
+          const command = event.payload.command;
+          if (command === 'toggle-navigation') {
+            sidebar?.toggleSidebar();
+          }
+          if (command === 'toggle-inspector') {
+            shell?.toggleInspector();
+          }
+        });
+      } catch {
+        // ignore missing tauri event module (browser preview)
+      }
+    };
+
+    subscribe().catch(() => {
+      return;
+    });
+
+    return () => {
+      cancelled = true;
+      if (unlisten) {
+        unlisten();
+      }
+    };
+  }, [isTauri, shell, sidebar]);
 
   return (
     <div className={cn('flex flex-col gap-2', className)} {...properties}>

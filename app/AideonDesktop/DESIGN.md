@@ -17,10 +17,11 @@
 - Every workspace renders inside the shell; no separate sidebars or headers per workspace.
 - Use design-system primitives for all shell structure (Sidebar, Resizable, Menubar/Toolbar). Do not introduce ad‑hoc layout components.
 - Keep the shell local-first and Tauri-friendly: no renderer HTTP, typed IPC only.
+- Desktop keyboard shortcuts should be registered in the Tauri native menu (accelerators) and dispatched to the renderer; browser preview keeps lightweight fallback handlers.
 
 ## Tree and properties panels
 
-- Left tree shows projects/workspaces using the design-system sidebar menus. `DesktopTree` now reads scenario/workspace summaries from the Praxis adapters (`listScenarios` via the canvas module) and renders them under a Scenarios project group.
+- Left tree shows projects/workspaces using the design-system sidebar menus. `DesktopTree` reads scenario/workspace summaries from Praxis APIs and renders them under a Scenarios project group.
 - Right properties panel consumes selection propagated from the Praxis workspace via the shell. Shell owns selection state and passes it into `DesktopPropertiesPanel`.
 
 ## Shell layout contract
