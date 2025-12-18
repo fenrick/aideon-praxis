@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from 'design-system/components/ui/dialog';
-import { PraxisToolbar } from 'praxis/components/chrome/praxis-toolbar';
+import { PraxisWorkspaceToolbar } from 'praxis/components/chrome/praxis-workspace-toolbar';
 import { DebugOverlay } from 'praxis/components/debug-overlay';
 import { OverviewTabs } from 'praxis/components/template-screen/overview-tabs';
 import { ProjectsSidebar } from 'praxis/components/template-screen/projects-sidebar';
@@ -466,7 +466,7 @@ function PraxisWorkspaceExperience({
     <>
       <AideonShellLayout
         toolbar={
-          <PraxisToolbar
+          <PraxisWorkspaceToolbar
             scenarioName={activeScenario?.name}
             templateName={activeTemplate?.name}
             templates={templatesState.data}

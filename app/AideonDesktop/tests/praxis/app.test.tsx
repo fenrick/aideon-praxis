@@ -9,8 +9,8 @@ vi.mock('praxis/components/template-screen/projects-sidebar', () => ({
   ),
 }));
 
-vi.mock('praxis/components/chrome/praxis-toolbar', () => ({
-  PraxisToolbar: ({
+vi.mock('praxis/components/chrome/praxis-workspace-toolbar', () => ({
+  PraxisWorkspaceToolbar: ({
     templates,
     activeTemplateId,
     onTemplateSave,

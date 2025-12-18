@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('praxis/components/chrome/praxis-toolbar', () => ({
-  PraxisToolbar: () => <div>Praxis Toolbar</div>,
+vi.mock('praxis/components/chrome/praxis-workspace-toolbar', () => ({
+  PraxisWorkspaceToolbar: () => <div>Praxis Workspace Toolbar</div>,
 }));
 
 vi.mock('praxis/components/template-screen/overview-tabs', () => ({
@@ -62,7 +62,7 @@ describe('PraxisWorkspaceSurface', () => {
     render(<PraxisWorkspaceSurface />);
 
     expect(await screen.findByText(/Projects Sidebar/)).toBeInTheDocument();
-    expect(screen.getByText(/Praxis Toolbar/)).toBeInTheDocument();
+    expect(screen.getByText(/Praxis Workspace Toolbar/)).toBeInTheDocument();
     expect(screen.getByText(/Overview Tabs/)).toBeInTheDocument();
     expect(screen.getByText(/Properties Inspector/)).toBeInTheDocument();
   });

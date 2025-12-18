@@ -31,7 +31,7 @@ export interface PraxisToolbarProperties {
 }
 
 /**
- * Top toolbar for the Praxis canvas shell: app menu, scenario/template controls, search, and time.
+ * Top toolbar for the Praxis workspace inside the Aideon shell.
  * @param root0
  * @param root0.scenarioName
  * @param root0.templates
@@ -46,7 +46,7 @@ export interface PraxisToolbarProperties {
  * @param root0.loading
  * @param root0.error
  */
-export function PraxisToolbar({
+export function PraxisWorkspaceToolbar({
   scenarioName,
   templates,
   activeTemplateId,
