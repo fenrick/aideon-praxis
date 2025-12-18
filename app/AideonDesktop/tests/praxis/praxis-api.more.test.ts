@@ -1,11 +1,11 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
-import { describe, expect, it, vi } from 'vitest';
 import {
   getChartView,
   listTemporalCommits,
   mergeTemporalBranches,
   type ChartViewModel,
 } from 'praxis/praxis-api';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 const invoke = vi.mocked(tauriInvoke);

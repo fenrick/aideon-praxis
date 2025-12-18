@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ProjectsSidebar } from 'praxis/components/template-screen/projects-sidebar';
 import { SidebarProvider } from 'design-system/components/ui/sidebar';
+import { ProjectsSidebar } from 'praxis/components/template-screen/projects-sidebar';
 
 const scenarios = [
   { id: 's1', name: 'Default', branch: 'main', updatedAt: '2024-01-02', isDefault: true },

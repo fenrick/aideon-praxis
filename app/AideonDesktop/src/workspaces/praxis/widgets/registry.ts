@@ -1,10 +1,10 @@
+import type { WidgetSize } from 'aideon/canvas/types';
 import type {
   CatalogueViewDefinition,
   ChartViewDefinition,
   GraphViewDefinition,
   MatrixViewDefinition,
 } from 'praxis/praxis-api';
-import type { WidgetSize } from 'aideon/canvas/types';
 import type { PraxisWidgetKind as WidgetKind } from 'praxis/types';
 
 export interface WidgetRegistryEntry {

@@ -1,9 +1,9 @@
 import type { ChangeEvent, FocusEvent, KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
+import { Input } from 'design-system/components/ui/input';
 import { searchStore, useSearchStoreState } from 'praxis/lib/search';
 import type { SearchResult } from 'praxis/lib/search/types';
-import { Input } from 'design-system/components/ui/input';
 
 const KIND_LABEL: Record<SearchResult['kind'], string> = {
   sidebar: 'Navigation',

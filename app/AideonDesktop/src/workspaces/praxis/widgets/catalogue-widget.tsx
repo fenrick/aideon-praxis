@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AlertTriangle } from 'lucide-react';
 
-import { toErrorMessage } from 'praxis/lib/errors';
-import { getCatalogueView, type CatalogueRow, type CatalogueViewModel } from 'praxis/praxis-api';
 import {
   Table,
   TableBody,
@@ -12,6 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from 'design-system/components/ui/table';
+import { toErrorMessage } from 'praxis/lib/errors';
+import { getCatalogueView, type CatalogueRow, type CatalogueViewModel } from 'praxis/praxis-api';
 
 import type {
   PraxisCatalogueWidgetConfig as CatalogueWidgetConfig,

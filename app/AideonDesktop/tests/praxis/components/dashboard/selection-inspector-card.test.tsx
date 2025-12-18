@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { SelectionInspectorCard } from 'praxis/components/dashboard/selection-inspector-card';
 import type { SelectionState } from 'aideon/canvas/types';
+import { SelectionInspectorCard } from 'praxis/components/dashboard/selection-inspector-card';
 
 const sampleSelection: SelectionState = {
   nodeIds: ['n1', 'n2', 'n3'],

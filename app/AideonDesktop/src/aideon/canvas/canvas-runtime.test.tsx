@@ -11,7 +11,9 @@ describe('AideonCanvasRuntime', () => {
   ];
 
   it('renders each widget via renderWidget callback', () => {
-    render(<AideonCanvasRuntime widgets={widgets} renderWidget={(widget) => <div>{widget.id}</div>} />);
+    render(
+      <AideonCanvasRuntime widgets={widgets} renderWidget={(widget) => <div>{widget.id}</div>} />,
+    );
 
     expect(screen.getByText('w1')).toBeInTheDocument();
     expect(screen.getByText('w2')).toBeInTheDocument();

@@ -67,7 +67,9 @@ export function AideonCommandPalette({
                 }}
               >
                 {command.label}
-                {command.shortcut ? <CommandShortcut>{command.shortcut}</CommandShortcut> : undefined}
+                {command.shortcut ? (
+                  <CommandShortcut>{command.shortcut}</CommandShortcut>
+                ) : undefined}
               </CommandItem>
             ))}
           </CommandGroup>

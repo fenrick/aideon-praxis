@@ -1,5 +1,4 @@
 import { isSelectionEmpty, selectionSummary } from 'aideon/canvas/selection';
-import type { PraxisCanvasWidget, SelectionState } from 'praxis/types';
 import { EMPTY_SELECTION } from 'aideon/canvas/types';
 import { Button } from 'design-system/components/ui/button';
 import {
@@ -9,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from 'design-system/components/ui/card';
+import type { PraxisCanvasWidget, SelectionState } from 'praxis/types';
 
 interface SelectionInspectorCardProperties {
   readonly selection: SelectionState;

@@ -1,9 +1,11 @@
 # Aideon Praxis
 
 ## Overview
+
 Aideon Praxis is a desktop application built with Tauri (Rust backend + React/TypeScript frontend). It provides a Praxis workspace for visualizing and managing scenarios, projects, and templates with graph-based, catalogue, matrix, and chart views.
 
 ## Project Structure
+
 ```
 /
 ├── app/
@@ -37,23 +39,27 @@ Aideon Praxis is a desktop application built with Tauri (Rust backend + React/Ty
 ## Development Setup
 
 ### Requirements
+
 - Node.js 24+
 - pnpm (package manager)
 - Rust toolchain (for Tauri backend, not needed for frontend-only development)
 
 ### Running the Frontend
+
 The frontend can run in two modes:
 
 - Local-first (default, matches `pnpm tauri dev`): `127.0.0.1:1420`
 - Replit UX mode (external webview): `0.0.0.0:5000`
 
 Replit UX mode runs on port 5000 with Vite:
+
 ```bash
 cd app/AideonDesktop
 pnpm run dev:replit
 ```
 
 ### Key Scripts
+
 - `pnpm run dev` - Start local dev server (port 1420)
 - `pnpm run dev:replit` - Start Replit dev server (port 5000)
 - `pnpm run build` - Build for production
@@ -62,6 +68,7 @@ pnpm run dev:replit
 ## Architecture
 
 ### Frontend Stack
+
 - React 18.3 with TypeScript (downgraded from 19 for Radix UI compatibility)
 - Vite 7 for build tooling
 - Tailwind CSS 4 for styling
@@ -70,15 +77,18 @@ pnpm run dev:replit
 - Recharts for charts
 
 ### Tauri Integration
+
 When running as a desktop app, the frontend communicates with the Rust backend via Tauri's IPC. In browser mode (Replit preview), the app uses mock data providers for all backend calls.
 
 The `isTauri()` function in `app/AideonDesktop/src/praxis/platform.ts` detects the runtime environment and falls back to mock data when not in Tauri.
 
 ## User Preferences
+
 - Uses light color scheme by default
 - Space Grotesk / Inter font family
 
 ## Recent Changes
+
 - Dec 17, 2025: Fixed React 19 / Radix UI compatibility issue
   - Downgraded from React 19 to React 18.3.1 to fix "Maximum update depth exceeded" error
   - The issue was caused by React 19's ref callback cleanup feature being incompatible with Radix UI's compose-refs utility

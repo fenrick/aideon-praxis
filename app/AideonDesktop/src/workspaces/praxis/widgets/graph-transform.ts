@@ -1,7 +1,7 @@
 import type { Edge, Node } from '@xyflow/react';
 
-import type { GraphEdgeView, GraphNodeView, GraphViewModel } from 'praxis/praxis-api';
 import type { TimelineEdgeData } from 'design-system/components/timeline-edge';
+import type { GraphEdgeView, GraphNodeView, GraphViewModel } from 'praxis/praxis-api';
 import type { GraphNodeData } from './graph-node-data';
 
 /**

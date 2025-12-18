@@ -1,7 +1,7 @@
 import { memo } from 'react';
 
-import { recentAnalytics } from 'praxis/lib/analytics';
 import type { SelectionState } from 'aideon/canvas/types';
+import { recentAnalytics } from 'praxis/lib/analytics';
 
 interface DebugOverlayProperties {
   readonly scenarioName?: string;

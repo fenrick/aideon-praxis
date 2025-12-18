@@ -1,5 +1,5 @@
-import type { TemporalCommitSummary } from 'praxis/praxis-api';
 import { Button } from 'design-system/components/ui/button';
+import type { TemporalCommitSummary } from 'praxis/praxis-api';
 
 interface CommitTimelineListProperties {
   readonly commits: TemporalCommitSummary[];

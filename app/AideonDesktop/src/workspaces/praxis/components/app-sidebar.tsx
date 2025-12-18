@@ -9,9 +9,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { Button } from 'design-system/components/ui/button';
 import { cn } from 'praxis/lib/utilities';
 import type { ScenarioSummary } from 'praxis/praxis-api';
-import { Button } from 'design-system/components/ui/button';
 
 const NAV_ITEMS = [
   { label: 'Overview', icon: LayoutPanelTop, active: true },

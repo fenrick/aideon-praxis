@@ -95,9 +95,9 @@ vi.mock('praxis/components/dashboard/canvas-runtime-card', () => ({
   ),
 }));
 
+import type { SelectionState } from 'aideon/canvas/types';
 import { WorkspaceTabs } from 'praxis/components/workspace-tabs';
 import { useTemporalPanel } from 'praxis/time/use-temporal-panel';
-import type { SelectionState } from 'aideon/canvas/types';
 
 const mockUseTemporalPanel = vi.mocked(useTemporalPanel);
 

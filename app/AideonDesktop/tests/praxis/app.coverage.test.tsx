@@ -187,8 +187,8 @@ vi.mock('praxis/hooks/use-command-stack', () => ({
 }));
 vi.mock('praxis/lib/analytics', () => ({ track: vi.fn() }));
 
-import { PraxisWorkspaceSurface } from 'praxis/workspace';
 import { listProjectsWithScenarios, listTemplatesFromHost } from 'praxis/domain-data';
+import { PraxisWorkspaceSurface } from 'praxis/workspace';
 
 describe('PraxisWorkspaceSurface (coverage)', () => {
   afterEach(() => {

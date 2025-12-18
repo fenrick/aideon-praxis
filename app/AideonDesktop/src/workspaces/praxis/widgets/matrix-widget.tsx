@@ -2,14 +2,6 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 
 import { AlertTriangle } from 'lucide-react';
 
-import { toErrorMessage } from 'praxis/lib/errors';
-import { cn } from 'praxis/lib/utilities';
-import {
-  getMatrixView,
-  type MatrixAxis,
-  type MatrixCell,
-  type MatrixViewModel,
-} from 'praxis/praxis-api';
 import {
   Table,
   TableBody,
@@ -18,6 +10,14 @@ import {
   TableHeader,
   TableRow,
 } from 'design-system/components/ui/table';
+import { toErrorMessage } from 'praxis/lib/errors';
+import { cn } from 'praxis/lib/utilities';
+import {
+  getMatrixView,
+  type MatrixAxis,
+  type MatrixCell,
+  type MatrixViewModel,
+} from 'praxis/praxis-api';
 
 import type {
   PraxisMatrixWidgetConfig as MatrixWidgetConfig,

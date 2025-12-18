@@ -1,10 +1,10 @@
+import type { WidgetSize } from 'aideon/canvas/types';
 import type {
   CatalogueViewDefinition,
   ChartViewDefinition,
   GraphViewDefinition,
   MatrixViewDefinition,
 } from 'praxis/praxis-api';
-import type { WidgetSize } from 'aideon/canvas/types';
 import type { PraxisCanvasWidget } from 'praxis/types';
 
 type GraphTemplateView = Omit<GraphViewDefinition, 'asOf' | 'scenario'>;

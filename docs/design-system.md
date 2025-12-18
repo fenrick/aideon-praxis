@@ -13,7 +13,6 @@ Centralize all vanilla shadcn/ui primitives, React Flow UI registry components, 
 proxy blocks so every renderer (Praxis workspace, legacy desktop, future apps) consumes the same
 layered design system.
 
-
 ## Structure
 
 The Tailwind tokens now live inside `src/styles/globals.css`; we removed the separate

@@ -9,9 +9,16 @@ vi.mock('praxis/widgets/graph-widget', () => ({
     onSelectionChange,
   }: {
     reloadVersion: number;
-    onViewChange?: (view: { metadata: { asOf: string; scenario?: string }; stats?: { nodes: number; edges: number } }) => void;
+    onViewChange?: (view: {
+      metadata: { asOf: string; scenario?: string };
+      stats?: { nodes: number; edges: number };
+    }) => void;
     onError?: (message: string) => void;
-    onSelectionChange?: (selection: { nodeIds: string[]; edgeIds: string[]; widgetId: string }) => void;
+    onSelectionChange?: (selection: {
+      nodeIds: string[];
+      edgeIds: string[];
+      widgetId: string;
+    }) => void;
   }) => (
     <div data-testid="graph-widget" data-reload={reloadVersion}>
       <button

@@ -44,7 +44,7 @@ export function TemplateToolbar({
 }: TemplateToolbarProperties) {
   const header = scenarioName?.trim()
     ? `${scenarioName} · ${templateName ?? 'Template'}`
-    : templateName ?? 'Template';
+    : (templateName ?? 'Template');
 
   return (
     <div className="flex items-center gap-2">
@@ -98,4 +98,3 @@ export function TemplateToolbar({
     </div>
   );
 }
-

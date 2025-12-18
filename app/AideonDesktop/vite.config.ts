@@ -5,7 +5,8 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => {
   const isReplitMode =
-    mode === 'replit' || Boolean(process.env.REPL_ID ?? process.env.REPLIT ?? process.env.REPLIT_DB_URL);
+    mode === 'replit' ||
+    Boolean(process.env.REPL_ID ?? process.env.REPLIT ?? process.env.REPLIT_DB_URL);
 
   const serverHost = isReplitMode ? '0.0.0.0' : '127.0.0.1';
   const serverPort = isReplitMode ? 5000 : 1420;

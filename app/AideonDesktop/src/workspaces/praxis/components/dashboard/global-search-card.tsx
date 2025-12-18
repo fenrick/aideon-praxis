@@ -6,11 +6,6 @@ import { searchStore } from 'praxis/lib/search';
 import { getCatalogueView, type CatalogueRow, type TemporalCommitSummary } from 'praxis/praxis-api';
 import { useTemporalPanel } from 'praxis/time/use-temporal-panel';
 
-import {
-  TemporalCommandMenu,
-  type CatalogueCommandEntry,
-  type MetaModelCommandEntry,
-} from 'praxis/components/blocks/temporal-command-menu';
 import { Button } from 'design-system/components/ui/button';
 import {
   Card,
@@ -19,6 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from 'design-system/components/ui/card';
+import {
+  TemporalCommandMenu,
+  type CatalogueCommandEntry,
+  type MetaModelCommandEntry,
+} from 'praxis/components/blocks/temporal-command-menu';
 
 interface GlobalSearchCardProperties {
   readonly onSelectNodes?: (nodeIds: string[]) => void;

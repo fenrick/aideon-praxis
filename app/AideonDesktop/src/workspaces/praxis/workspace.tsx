@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { dedupeIds } from 'aideon/canvas/selection';
+import { AideonShellLayout } from 'aideon/shell/aideon-shell-layout';
+import { Badge } from 'design-system/components/ui/badge';
+import { Button } from 'design-system/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from 'design-system/components/ui/dialog';
+import { PraxisToolbar } from 'praxis/components/chrome/praxis-toolbar';
 import { DebugOverlay } from 'praxis/components/debug-overlay';
 import { OverviewTabs } from 'praxis/components/template-screen/overview-tabs';
-import { AideonShellLayout } from 'aideon/shell/aideon-shell-layout';
-import { PraxisToolbar } from 'praxis/components/chrome/praxis-toolbar';
 import { ProjectsSidebar } from 'praxis/components/template-screen/projects-sidebar';
 import {
   PropertiesInspector,
@@ -18,7 +29,6 @@ import { useCommandStack } from 'praxis/hooks/use-command-stack';
 import { track } from 'praxis/lib/analytics';
 import { toErrorMessage } from 'praxis/lib/errors';
 import { applyOperations, type ScenarioSummary } from 'praxis/praxis-api';
-import { dedupeIds } from 'aideon/canvas/selection';
 import {
   BUILT_IN_TEMPLATES,
   captureTemplateFromWidgets,
@@ -26,18 +36,12 @@ import {
   type CanvasTemplate,
   type TemplateWidgetConfig,
 } from 'praxis/templates';
-import type { PraxisCanvasWidget as CanvasWidget, PraxisWidgetKind as WidgetKind, SelectionState } from 'praxis/types';
+import type {
+  PraxisCanvasWidget as CanvasWidget,
+  SelectionState,
+  PraxisWidgetKind as WidgetKind,
+} from 'praxis/types';
 import { listWidgetRegistry, type WidgetRegistryEntry } from 'praxis/widgets/registry';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from 'design-system/components/ui/dialog';
 import {
   SelectionProvider,
   deriveSelectionKind,

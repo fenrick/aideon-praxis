@@ -1,13 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { EMPTY_SELECTION } from 'aideon/canvas/types';
 import {
   SelectionProvider,
   deriveSelectionKind,
   primarySelectionId,
   useSelectionStore,
 } from 'praxis/stores/selection-store';
-import { EMPTY_SELECTION } from 'aideon/canvas/types';
 
 describe('selection-store extra coverage', () => {
   it('throws outside provider', () => {

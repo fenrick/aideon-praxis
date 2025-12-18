@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
 import type { RefObject } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
-import { isTauri } from 'praxis/platform';
 import { searchStore } from 'praxis/lib/search';
+import { isTauri } from 'praxis/platform';
 import type { CanvasTemplate } from 'praxis/templates';
 
 import { AideonToolbar } from 'aideon/shell/aideon-toolbar';

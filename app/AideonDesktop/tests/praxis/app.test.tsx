@@ -92,11 +92,11 @@ vi.mock('praxis/praxis-api', () => ({
 
 vi.mock('praxis/platform', () => ({ isTauri: vi.fn() }));
 
-import { PraxisWorkspaceSurface } from 'praxis/workspace';
 import { listProjectsWithScenarios, listTemplatesFromHost } from 'praxis/domain-data';
 import { searchStore } from 'praxis/lib/search';
 import { isTauri } from 'praxis/platform';
 import { listScenarios } from 'praxis/praxis-api';
+import { PraxisWorkspaceSurface } from 'praxis/workspace';
 
 const listScenariosMock = vi.mocked(listScenarios);
 const listProjectsMock = vi.mocked(listProjectsWithScenarios);

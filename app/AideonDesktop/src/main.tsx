@@ -199,9 +199,7 @@ function SplashScreen() {
       />
       <div className="relative max-w-4xl rounded-2xl border border-white/12 bg-black/55 p-8 shadow-2xl backdrop-blur-xl md:p-10">
         <div className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-200">
-            Aideon
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-200">Aideon</p>
           <h1 className="text-3xl font-semibold leading-tight text-white">Loading workspace…</h1>
           <p className="text-sm text-slate-100">Initialising host services and adapters.</p>
           <div className="mt-4 space-y-3 rounded-lg border border-white/12 bg-white/10 p-4 backdrop-blur">

@@ -15,10 +15,10 @@ import {
   SidebarSeparator,
 } from 'design-system/desktop-shell';
 
-import type { ProjectSummary } from 'praxis/domain-data';
-import type { ScenarioSummary } from 'praxis/praxis-api';
 import { Button } from 'design-system/components/ui/button';
 import { LayersIcon } from 'lucide-react';
+import type { ProjectSummary } from 'praxis/domain-data';
+import type { ScenarioSummary } from 'praxis/praxis-api';
 
 /**
  * Render menu items for a single project and its scenarios.

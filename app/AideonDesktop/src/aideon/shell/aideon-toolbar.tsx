@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
 
-import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarTrigger,
-} from 'design-system';
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from 'design-system';
 import { Toolbar, ToolbarSection, ToolbarSeparator } from 'design-system/blocks/toolbar';
 import { Badge } from 'design-system/components/ui/badge';
 import { Button } from 'design-system/components/ui/button';
@@ -18,7 +12,15 @@ import {
 } from 'design-system/components/ui/dropdown-menu';
 import { Kbd } from 'design-system/components/ui/kbd';
 import { cn } from 'design-system/lib/utilities';
-import { CommandIcon, LaptopIcon, MoonIcon, PanelLeftIcon, PanelRightClose, PanelRightOpen, SunIcon } from 'lucide-react';
+import {
+  CommandIcon,
+  LaptopIcon,
+  MoonIcon,
+  PanelLeftIcon,
+  PanelRightClose,
+  PanelRightOpen,
+  SunIcon,
+} from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAideonShellControls } from './shell-controls';
 
@@ -377,8 +379,8 @@ export function AideonToolbar({
 
         <ToolbarSection justify="end" className="gap-2">
           {end}
-	          {theme ? (
-	            <DropdownMenu>
+          {theme ? (
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   type="button"
@@ -386,17 +388,17 @@ export function AideonToolbar({
                   size="icon"
                   className="size-7"
                   aria-label="Theme"
-	                >
-	                  {(() => {
-	                    if (theme.resolvedTheme === 'dark') {
-	                      return <MoonIcon className="size-4" />;
-	                    }
-	                    if (theme.resolvedTheme === 'light') {
-	                      return <SunIcon className="size-4" />;
-	                    }
-	                    return <LaptopIcon className="size-4" />;
-	                  })()}
-	                </Button>
+                >
+                  {(() => {
+                    if (theme.resolvedTheme === 'dark') {
+                      return <MoonIcon className="size-4" />;
+                    }
+                    if (theme.resolvedTheme === 'light') {
+                      return <SunIcon className="size-4" />;
+                    }
+                    return <LaptopIcon className="size-4" />;
+                  })()}
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
@@ -465,7 +467,8 @@ function AppMenu({ onOpenCommandPalette }: { readonly onOpenCommandPalette: () =
               onOpenCommandPalette();
             }}
           >
-            Command palette <span className="ml-auto text-xs text-muted-foreground">{shortcutFor('K')}</span>
+            Command palette{' '}
+            <span className="ml-auto text-xs text-muted-foreground">{shortcutFor('K')}</span>
           </MenubarItem>
           <MenubarItem
             disabled={!sidebar}
