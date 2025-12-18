@@ -1,5 +1,7 @@
 import type { CanvasTemplate } from 'praxis/templates';
 
+import { isTauri } from 'praxis/platform';
+
 import { Button } from 'design-system/components/ui/button';
 import {
   Select,
@@ -8,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from 'design-system/components/ui/select';
+import { cn } from 'design-system/lib/utilities';
 
 export interface TemplateToolbarProperties {
   readonly scenarioName?: string;
@@ -46,6 +49,10 @@ export function TemplateToolbar({
     ? `${scenarioName} · ${templateName ?? 'Template'}`
     : (templateName ?? 'Template');
 
+  const shouldUseNativeSelect = isTauri();
+  const activeTemplateExists = templates.some((template) => template.id === activeTemplateId);
+  const templateSelectValue = activeTemplateExists ? activeTemplateId : '';
+
   return (
     <div className="flex items-center gap-2">
       <div className="hidden max-w-[220px] flex-col text-right lg:flex">
@@ -53,28 +60,54 @@ export function TemplateToolbar({
         <span className="truncate text-[0.7rem] text-muted-foreground">Template controls</span>
       </div>
 
-      <Select
-        value={activeTemplateId}
-        disabled={loading || templates.length === 0}
-        onValueChange={(value) => {
-          onTemplateChange(value);
-        }}
-        aria-label="Select template"
-      >
-        <SelectTrigger className="h-9 w-[210px] bg-background/80">
-          <SelectValue placeholder="Select template" />
-        </SelectTrigger>
-        <SelectContent>
+      {shouldUseNativeSelect ? (
+        <select
+          aria-label="Select template"
+          value={templateSelectValue}
+          disabled={loading || templates.length === 0}
+          onChange={(event) => {
+            const nextValue = event.target.value;
+            if (nextValue) {
+              onTemplateChange(nextValue);
+            }
+          }}
+          className={cn(
+            'h-9 w-[210px] rounded-md border border-input bg-background/80 px-3 text-sm text-foreground shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
+          )}
+        >
+          <option value="" disabled>
+            Select template
+          </option>
           {templates.map((template) => (
-            <SelectItem key={template.id} value={template.id}>
-              <div className="flex flex-col">
-                <span className="font-medium">{template.name}</span>
-                <span className="text-xs text-muted-foreground">{template.description}</span>
-              </div>
-            </SelectItem>
+            <option key={template.id} value={template.id}>
+              {template.name}
+            </option>
           ))}
-        </SelectContent>
-      </Select>
+        </select>
+      ) : (
+        <Select
+          value={templateSelectValue}
+          disabled={loading || templates.length === 0}
+          onValueChange={(value) => {
+            onTemplateChange(value);
+          }}
+          aria-label="Select template"
+        >
+          <SelectTrigger className="h-9 w-[210px] bg-background/80">
+            <SelectValue placeholder="Select template" />
+          </SelectTrigger>
+          <SelectContent>
+            {templates.map((template) => (
+              <SelectItem key={template.id} value={template.id}>
+                <div className="flex flex-col">
+                  <span className="font-medium">{template.name}</span>
+                  <span className="text-xs text-muted-foreground">{template.description}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       <Button
         variant="secondary"
