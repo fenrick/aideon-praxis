@@ -48,7 +48,7 @@ export function AppSidebar({ scenarios, loading }: AppSidebarProperties) {
           PX
         </div>
         <div>
-          <p className="text-sm uppercase tracking-wide text-white/70">Praxis Canvas</p>
+          <p className="text-sm uppercase tracking-wide text-white/70">Praxis Workspace</p>
           <p className="text-base font-semibold text-white">Digital Twin</p>
         </div>
       </div>
@@ -79,7 +79,7 @@ export function AppSidebar({ scenarios, loading }: AppSidebarProperties) {
           className="w-full justify-start gap-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10"
         >
           <Settings2 className="h-4 w-4" />
-          Canvas Settings
+          Workspace Settings
         </Button>
       </div>
     </aside>

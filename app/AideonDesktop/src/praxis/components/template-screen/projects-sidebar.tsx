@@ -18,6 +18,163 @@ import {
 import type { ProjectSummary } from 'praxis/domain-data';
 import type { ScenarioSummary } from 'praxis/praxis-api';
 import { Button } from 'design-system/components/ui/button';
+import { LayersIcon } from 'lucide-react';
+
+/**
+ * Render menu items for a single project and its scenarios.
+ * @param parameters
+ * @param parameters.project
+ * @param parameters.activeScenarioId
+ * @param parameters.onSelectScenario
+ */
+function renderProjectScenarioMenuItems(parameters: {
+  project: ProjectSummary;
+  activeScenarioId?: string;
+  onSelectScenario?: (scenarioId: string) => void;
+}) {
+  const { project, activeScenarioId, onSelectScenario } = parameters;
+  const headerId = `project-${project.id}`;
+
+  if (project.scenarios.length === 0) {
+    return [
+      <SidebarMenuItem key={headerId} className="mt-2">
+        <SidebarMenuButton disabled className="text-left text-xs font-semibold">
+          {project.name}
+        </SidebarMenuButton>
+      </SidebarMenuItem>,
+      <SidebarMenuItem key={`${project.id}-empty`}>
+        <SidebarMenuButton disabled className="text-left text-xs text-muted-foreground">
+          No scenarios yet.
+        </SidebarMenuButton>
+      </SidebarMenuItem>,
+    ];
+  }
+
+  return [
+    <SidebarMenuItem key={headerId} className="mt-2">
+      <SidebarMenuButton disabled className="text-left text-xs font-semibold">
+        {project.name}
+      </SidebarMenuButton>
+    </SidebarMenuItem>,
+    ...project.scenarios.map((scenario) => {
+      const active = scenario.id === activeScenarioId;
+      return (
+        <SidebarMenuItem key={scenario.id}>
+          <SidebarMenuButton
+            size="sm"
+            className="flex flex-col items-start gap-1 text-left data-[state=active]:bg-primary/10 data-[state=active]:text-foreground"
+            onClick={() => onSelectScenario?.(scenario.id)}
+            data-state={active ? 'active' : undefined}
+          >
+            <div className="flex w-full items-center justify-between gap-2">
+              <span className="text-sm font-semibold">{scenario.name}</span>
+              {scenario.isDefault ? <Badge variant="outline">Default</Badge> : undefined}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Branch {scenario.branch} · Updated {formatDate(scenario.updatedAt)}
+            </p>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      );
+    }),
+  ];
+}
+
+/**
+ * Render the scenario list area within the sidebar menu.
+ * @param parameters
+ * @param parameters.loading
+ * @param parameters.errorMessage
+ * @param parameters.projectList
+ * @param parameters.filteredProjects
+ * @param parameters.query
+ * @param parameters.activeScenarioId
+ * @param parameters.onSelectScenario
+ * @param parameters.onRetry
+ */
+function renderProjectsSidebarMenu(parameters: {
+  loading: boolean;
+  errorMessage?: string;
+  projectList: ProjectSummary[];
+  filteredProjects: ProjectSummary[];
+  query: string;
+  activeScenarioId?: string;
+  onSelectScenario?: (scenarioId: string) => void;
+  onRetry?: () => void;
+}) {
+  const {
+    loading,
+    errorMessage,
+    projectList,
+    filteredProjects,
+    query,
+    activeScenarioId,
+    onSelectScenario,
+    onRetry,
+  } = parameters;
+
+  if (loading) {
+    return (
+      <div className="space-y-2 p-1">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-28" />
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          disabled
+          className="text-left text-xs text-destructive hover:text-destructive"
+        >
+          Failed to load scenarios: {errorMessage}
+        </SidebarMenuButton>
+        {onRetry ? (
+          <Button
+            variant="link"
+            className="px-0 text-xs"
+            onClick={() => {
+              onRetry();
+            }}
+          >
+            Retry
+          </Button>
+        ) : undefined}
+      </SidebarMenuItem>
+    );
+  }
+
+  if (projectList.length === 0) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton disabled className="text-left text-sm text-muted-foreground">
+          No projects yet.
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
+
+  if (query.trim() && filteredProjects.length === 0) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton disabled className="text-left text-sm text-muted-foreground">
+          No scenarios match “{query.trim()}”.
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
+
+  return (
+    <>
+      {filteredProjects.flatMap((project) =>
+        renderProjectScenarioMenuItems({ project, activeScenarioId, onSelectScenario }),
+      )}
+    </>
+  );
+}
 
 interface ProjectsSidebarProperties {
   readonly projects?: ProjectSummary[];
@@ -75,10 +232,16 @@ export function ProjectsSidebar({
 
   return (
     <>
-      <SidebarHeader className="p-3">
-        <SidebarGroupLabel className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-          Scenarios
-        </SidebarGroupLabel>
+      <SidebarHeader className="space-y-3 p-3">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <LayersIcon className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold tracking-tight">Praxis</p>
+            <p className="truncate text-xs text-muted-foreground">Workspace scenarios</p>
+          </div>
+        </div>
         <SidebarInput
           value={query}
           onChange={(event) => {
@@ -92,101 +255,21 @@ export function ProjectsSidebar({
       </SidebarHeader>
       <SidebarContent className="p-3 pt-0">
         <SidebarGroup>
-          <SidebarGroupLabel>Projects</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            Projects
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-            {loading && (
-              <div className="space-y-2 p-1">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-28" />
-              </div>
-            )}
-
-            {!loading && errorMessage && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  disabled
-                  className="text-left text-xs text-destructive hover:text-destructive"
-                >
-                  Failed to load scenarios: {errorMessage}
-                </SidebarMenuButton>
-                {onRetry ? (
-                  <Button
-                    variant="link"
-                    className="px-0 text-xs"
-                    onClick={() => {
-                      onRetry();
-                    }}
-                  >
-                    Retry
-                  </Button>
-                ) : undefined}
-              </SidebarMenuItem>
-            )}
-
-            {!loading && !errorMessage && projectList.length === 0 && (
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled className="text-left text-sm text-muted-foreground">
-                  No projects yet.
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-
-            {!loading && !errorMessage && query.trim() && filteredProjects.length === 0 ? (
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled className="text-left text-sm text-muted-foreground">
-                  No scenarios match “{query.trim()}”.
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ) : undefined}
-
-            {!loading && !errorMessage
-              ? filteredProjects.map((project) => (
-                  <SidebarGroup key={project.id} className="pb-2">
-                    <SidebarGroupLabel className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                      {project.name}
-                    </SidebarGroupLabel>
-                    <SidebarGroupContent>
-                      {project.scenarios.length === 0 ? (
-                        <SidebarMenuItem>
-                          <SidebarMenuButton
-                            disabled
-                            className="text-left text-xs text-muted-foreground"
-                          >
-                            No scenarios yet.
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ) : (
-                        project.scenarios.map((scenario) => {
-                          const active = scenario.id === activeScenarioId;
-                          return (
-                            <SidebarMenuItem key={scenario.id}>
-                              <SidebarMenuButton
-                                size="sm"
-                                className="flex flex-col items-start gap-1 text-left data-[state=active]:bg-primary/10 data-[state=active]:text-foreground"
-                                onClick={() => onSelectScenario?.(scenario.id)}
-                                data-state={active ? 'active' : undefined}
-                              >
-                                <div className="flex w-full items-center justify-between gap-2">
-                                  <span className="text-sm font-semibold">{scenario.name}</span>
-                                  {scenario.isDefault ? (
-                                    <Badge variant="outline">Default</Badge>
-                                  ) : undefined}
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  Branch {scenario.branch} · Updated{' '}
-                                  {formatDate(scenario.updatedAt)}
-                                </p>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          );
-                        })
-                      )}
-                    </SidebarGroupContent>
-                  </SidebarGroup>
-                ))
-              : undefined}
+              {renderProjectsSidebarMenu({
+                loading,
+                errorMessage,
+                projectList,
+                filteredProjects,
+                query,
+                activeScenarioId,
+                onSelectScenario,
+                onRetry,
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

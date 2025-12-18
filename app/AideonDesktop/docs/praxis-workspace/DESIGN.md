@@ -1,27 +1,26 @@
-# Praxis Canvas – Internal Design
+# Praxis Workspace – Internal Design
 
 ## Overview
 
-Praxis Canvas is the React-based renderer for the Aideon Praxis desktop module. It hosts the
-workspace shell (canvas, sidebar, dashboards) and projects the time-first digital twin into widgets
-such as graph, catalogue, matrix, and timeline views.
+Praxis Workspace is the React-based renderer surface for the Aideon Praxis desktop module. It runs
+inside the Aideon Desktop shell and projects the time-first digital twin into widgets such as
+graph, catalogue, matrix, and timeline views.
 
-The primary export is `PraxisCanvasSurface`, a chrome-free surface intended to live inside the
-Aideon Desktop shell. The legacy `LegacyPraxisCanvasApp` keeps the old header/sidebar for standalone
-routes and should be considered transitional.
+The primary export is `PraxisWorkspaceSurface`, a chrome-free surface intended to mount inside the
+Aideon Desktop shell (toolbar/navigation/inspector live in the Aideon layer).
 
 ## Internal structure
 
-- React application entry that mounts the canvas shell inside the Tauri window.
-- Layout components for sidebar, main canvas, and dashboard cards.
+- React application entry that mounts the workspace surface inside the Tauri window.
+- Workspace composition (templates, widgets, time panel) and UI state (selection, time cursor).
 - State management for selection, filters, time cursor, and active template.
 - Integration points to Aideon Design System blocks and React Flow-based canvas primitives.
-- Surface component (`PraxisCanvasSurface`) renders only the workspace content; host shells provide
+- Surface component (`PraxisWorkspaceSurface`) renders only the workspace content; host shells provide
   outer chrome (toolbar/sidebar/properties).
 
 ## Selection contract
 
-- `PraxisCanvasSurface` accepts an optional `onSelectionChange` callback. The surface emits the
+- `PraxisWorkspaceSurface` accepts an optional `onSelectionChange` callback. The surface emits the
   current `SelectionState` whenever it changes so host shells (e.g., Aideon Desktop) can render
   properties panels.
 

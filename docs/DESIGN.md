@@ -30,7 +30,7 @@ See `Architecture-Boundary.md` for a deeper treatment of layering, adapters, and
 
 Aideon Suite is composed of several modules that share the same meta-model and time-first engine:
 
-- **Aideon Praxis** – core desktop module (Praxis Canvas renderer + Tauri host + engines).
+- **Aideon Praxis** – core desktop module (Praxis workspace renderer + Tauri host + engines).
 - **Aideon Chrona** – temporal visualisation over commits, snapshots, and plateaus.
 - **Aideon Metis** – analytics engine for graph algorithms and TCO/impact analysis.
 - **Aideon Continuum** – orchestration and connectors (scheduling, CMDB, cloud APIs).
@@ -68,7 +68,7 @@ For details, see:
 
 At runtime, Aideon Suite is organised into three layers:
 
-- **Renderer:** React/Tauri Praxis Canvas (legacy Svelte renderer removed) renders
+- **Renderer:** React/Tauri Praxis workspace (legacy Svelte renderer removed) renders
   the workspace UI using Aideon Design System components.
 - **Host:** The Tauri-based Aideon Host manages windows, IPC commands, OS integration, and security
   capabilities.
@@ -92,7 +92,7 @@ The full boundary and RPC design is covered in:
 
 ## 5. UX surfaces and design system
 
-The primary UX surface is the **Praxis Canvas**: a node-based workspace that hosts widgets such as
+The primary UX surface is the **Praxis workspace**: a node-based workspace that hosts widgets such as
 graph, catalogue, matrix, chart, and timeline views over the twin. Other surfaces (catalogues,
 dashboards, inspectors) are built as widgets or panels within the same shell.
 

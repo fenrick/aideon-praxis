@@ -1,10 +1,10 @@
-# Praxis Canvas – Design System Block Audit
+# Praxis Workspace – Design System Block Audit
 
 ## Purpose
 
-Capture the layered blocks that now live in `app/AideonDesktop/src/design-system`, confirm Praxis Canvas consumes
+Capture the layered blocks that now live in `app/AideonDesktop/src/design-system`, confirm Praxis workspace consumes
 them without forking vanilla shadcn/reactflow components, and highlight gaps left in the Svelte →
-React migration. This is an implementation audit for the Praxis Canvas module, not a general design
+React migration. This is an implementation audit for the Praxis workspace module, not a general design
 system specification.
 
 Date: 2025-11-16
@@ -23,7 +23,7 @@ Date: 2025-11-16
 - Vanilla-first blocks now live under `app/AideonDesktop/src/design-system/src/blocks` (panel, toolbar, sidebar,
   modal). They proxy the primitives so UX surfaces (forms, toolbars, modals, sidebars) can be
   assembled from consistent Lego pieces while keeping upstream code refreshable.
-- Praxis Canvas imports everything through `src/design-system`. Example: the
+- Praxis workspace imports everything through `src/design-system`. Example: the
   `TimeControlPanel` block now uses `Panel`, `PanelField`, and `PanelToolbar` rather than pulling
   shadcn cards directly, proving the proxy layer is working.
 - React Flow canvas nodes/edges (`PraxisNode`, `TimelineEdge`, `NodeSearchDialog`) are defined in the
@@ -39,9 +39,9 @@ Date: 2025-11-16
 | Panel stack (`Panel`, `PanelHeader`, `PanelTitle`, `PanelDescription`, `PanelContent`, `PanelField`, `PanelToolbar`) | `app/AideonDesktop/src/design-system/src/blocks/panel.tsx`   | shadcn `Card` primitives + Tailwind tokens | Canonical form block for cards, inspectors, and control panels. `TimeControlPanel` is the first adopter; roadmap is to migrate the remaining dashboard cards and inspector views. |
 | Modal shell (`Modal`, `ModalContent`, `ModalHeader`, `ModalTitle`, `ModalDescription`, `ModalFooter`)                | `app/AideonDesktop/src/design-system/src/blocks/modal.tsx`   | shadcn `Dialog` primitives                 | Provides default padding/radius for dialogs so command palette, exports, and confirmation prompts stay consistent. Ready for adoption as command/search modals are refreshed.     |
 | Toolbar (`Toolbar`, `ToolbarSection`, `ToolbarSeparator`)                                                            | `app/AideonDesktop/src/design-system/src/blocks/toolbar.tsx` | Tailwind layout + shadcn tokens            | Used for future canvas/tool controls; aligns with UX ask for vanilla shadcn blocks assembled into reusable toolbars. Pending wiring into the React shell toolbar.                 |
-| Sidebar (`SidebarShell`, `SidebarSection`, `SidebarHeading`, `SidebarNav`)                                           | `app/AideonDesktop/src/design-system/src/blocks/sidebar.tsx` | Semantic `aside` + shadcn tokens           | Provides the baseline for navigation and catalog inspectors; will replace the bespoke sidebar in Praxis Canvas once search wiring lands.                                          |
+| Sidebar (`SidebarShell`, `SidebarSection`, `SidebarHeading`, `SidebarNav`)                                           | `app/AideonDesktop/src/design-system/src/blocks/sidebar.tsx` | Semantic `aside` + shadcn tokens           | Provides the baseline for navigation and catalog inspectors; will replace bespoke sidebar patterns in the Praxis workspace once search wiring lands.                              |
 
-### Praxis Canvas adoption snapshot
+### Praxis workspace adoption snapshot
 
 | Surface                                                                                      | Consumed blocks                                                         | Status                                                                                             |
 | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
@@ -58,5 +58,5 @@ Date: 2025-11-16
 - Switch the command palette + context modals to the `Modal` shell and move the React sidebar onto
   the `Sidebar` block before removing the Svelte renderer.
 
-This file is an implementation audit for the Praxis Canvas module; the canonical description of UX
+This file is an implementation audit for the Praxis workspace module; the canonical description of UX
 and design system principles lives in `docs/UX-DESIGN.md` and `docs/design-system.md`.

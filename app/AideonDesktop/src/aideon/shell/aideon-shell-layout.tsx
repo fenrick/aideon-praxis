@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ScrollArea } from 'design-system/components/ui/scroll-area';
 import {
@@ -10,6 +10,9 @@ import {
   SidebarProvider,
 } from 'design-system/desktop-shell';
 import { cn } from 'design-system/lib/utilities';
+import { AideonShellControlsProvider } from './shell-controls';
+
+import type { ImperativePanelHandle } from 'react-resizable-panels';
 
 interface AideonShellLayoutProperties {
   readonly navigation: ReactNode;
@@ -36,6 +39,8 @@ export function AideonShellLayout({
   toolbar,
   className,
 }: AideonShellLayoutProperties) {
+  const inspectorPanelReference = useRef<ImperativePanelHandle>(null);
+
   const storedLayout = useMemo<number[] | undefined>(() => {
     const storage = (globalThis as unknown as { localStorage?: Storage }).localStorage;
     if (!storage || typeof storage.getItem !== 'function') {
@@ -55,73 +60,147 @@ export function AideonShellLayout({
     }
   }, []);
 
+  const inspectorCollapsedFromStorage = useMemo<boolean>(() => {
+    const storage = (globalThis as unknown as { localStorage?: Storage }).localStorage;
+    if (!storage || typeof storage.getItem !== 'function') {
+      return false;
+    }
+    try {
+      return storage.getItem('aideon-shell-inspector-collapsed') === '1';
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(inspectorCollapsedFromStorage);
+
+  const persistInspectorCollapsed = useCallback((next: boolean) => {
+    try {
+      const storage = (globalThis as unknown as { localStorage?: Storage }).localStorage;
+      if (storage && typeof storage.setItem === 'function') {
+        storage.setItem('aideon-shell-inspector-collapsed', next ? '1' : '0');
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const toggleInspector = useCallback(() => {
+    const handle = inspectorPanelReference.current;
+    if (!handle) {
+      setInspectorCollapsed((previous) => {
+        const next = !previous;
+        persistInspectorCollapsed(next);
+        return next;
+      });
+      return;
+    }
+    if (inspectorCollapsed) {
+      handle.expand();
+    } else {
+      handle.collapse();
+    }
+  }, [inspectorCollapsed, persistInspectorCollapsed]);
+
+  useEffect(() => {
+    if (!inspectorCollapsed) {
+      return;
+    }
+    queueMicrotask(() => {
+      inspectorPanelReference.current?.collapse();
+    });
+  }, [inspectorCollapsed]);
+
   return (
     <SidebarProvider>
-      <div
-        className={cn(
-          'flex min-h-screen flex-col bg-gradient-to-br from-background via-muted/20 to-background text-foreground',
-          className,
-        )}
-      >
-        {toolbar ? (
-          <header className="border-b border-border/70 bg-card/70 px-4 py-3 backdrop-blur">
-            {toolbar}
-          </header>
-        ) : undefined}
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="min-h-0 flex-1"
-          onLayout={(sizes) => {
-            try {
-              const storage = (globalThis as unknown as { localStorage?: Storage }).localStorage;
-              if (storage && typeof storage.setItem === 'function') {
-                storage.setItem('aideon-shell-panels', JSON.stringify(sizes));
-              }
-            } catch {
-              /* ignore */
-            }
-          }}
+      <AideonShellControlsProvider value={{ inspectorCollapsed, toggleInspector }}>
+        <div
+          className={cn(
+            'flex min-h-screen flex-col bg-gradient-to-br from-background via-muted/20 to-background text-foreground',
+            className,
+          )}
         >
-          <ResizablePanel
-            defaultSize={storedLayout?.[0] ?? 20}
-            minSize={14}
-            className="min-w-[220px] max-w-[420px]"
+          {toolbar ? (
+            <header className="border-b border-border/70 bg-card/70 px-4 py-3 backdrop-blur">
+              {toolbar}
+            </header>
+          ) : undefined}
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="min-h-0 flex-1"
+            onLayout={(sizes) => {
+              try {
+                const storage = (globalThis as unknown as { localStorage?: Storage }).localStorage;
+                if (storage && typeof storage.setItem === 'function') {
+                  storage.setItem('aideon-shell-panels', JSON.stringify(sizes));
+                }
+              } catch {
+                /* ignore */
+              }
+            }}
           >
-            <Sidebar collapsible="icon" className="h-full border-r border-border/60 bg-card/80">
-              <ScrollArea className="h-full" data-testid="aideon-shell-navigation">
-                {navigation}
-              </ScrollArea>
-            </Sidebar>
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          <ResizablePanel
-            defaultSize={storedLayout?.[1] ?? 60}
-            minSize={40}
-            className="min-w-[360px]"
-          >
-            <ScrollArea className="h-full" data-testid="aideon-shell-content">
-              <div className="min-h-full px-6 pb-10 pt-6">{content}</div>
-            </ScrollArea>
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          <ResizablePanel
-            defaultSize={storedLayout?.[2] ?? 20}
-            minSize={16}
-            className="min-w-[260px] max-w-[520px]"
-          >
-            <ScrollArea
-              className="h-full border-l border-border/60 bg-card/70"
-              data-testid="aideon-shell-inspector"
+            <ResizablePanel
+              defaultSize={storedLayout?.[0] ?? 20}
+              minSize={14}
+              className="min-w-[220px] max-w-[420px]"
+              data-testid="aideon-shell-panel-navigation"
             >
-              <div className="p-4">{inspector}</div>
-            </ScrollArea>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+              <Sidebar collapsible="icon" className="h-full border-r border-border/60 bg-card/80">
+                <ScrollArea className="h-full" data-testid="aideon-shell-navigation">
+                  {navigation}
+                </ScrollArea>
+              </Sidebar>
+            </ResizablePanel>
+
+            <ResizableHandle withHandle />
+
+            <ResizablePanel
+              defaultSize={storedLayout?.[1] ?? 60}
+              minSize={40}
+              className="min-w-[360px]"
+              data-testid="aideon-shell-panel-content"
+            >
+              <ScrollArea className="h-full" data-testid="aideon-shell-content">
+                <div className="min-h-full px-6 pb-10 pt-6">{content}</div>
+              </ScrollArea>
+            </ResizablePanel>
+
+            <ResizableHandle withHandle />
+
+            <ResizablePanel
+              ref={inspectorPanelReference}
+              defaultSize={storedLayout?.[2] ?? 20}
+              minSize={16}
+              collapsible
+              collapsedSize={0}
+              onCollapse={() => {
+                setInspectorCollapsed(true);
+                persistInspectorCollapsed(true);
+              }}
+              onExpand={() => {
+                setInspectorCollapsed(false);
+                persistInspectorCollapsed(false);
+              }}
+              className="min-w-[260px] max-w-[520px]"
+              data-testid="aideon-shell-panel-inspector"
+            >
+              <ScrollArea
+                className="h-full border-l border-border/60 bg-card/70"
+                data-testid="aideon-shell-inspector"
+              >
+                <div
+                  className={cn(
+                    'p-4',
+                    inspectorCollapsed ? 'pointer-events-none opacity-0' : undefined,
+                  )}
+                >
+                  {inspector}
+                </div>
+              </ScrollArea>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+      </AideonShellControlsProvider>
     </SidebarProvider>
   );
 }

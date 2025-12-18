@@ -19,7 +19,7 @@ specifics into the renderer boundary.
 ## Relationships
 
 - **Depends on:** TypeScript toolchain, `src/dtos` for shared DTOs.
-- **Used by:** Praxis Canvas, Praxis Desktop, host/worker adapter implementations.
+- **Used by:** Praxis workspace, Praxis Desktop, host/worker adapter implementations.
 
 ## Running and testing
 

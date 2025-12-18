@@ -83,8 +83,8 @@ interface ScenarioState {
 }
 
 /**
- * Entry point for the Praxis canvas renderer.
- * @returns {import('react').ReactElement} Canvas route content.
+ * Entry point for the Praxis workspace renderer.
+ * @returns {import('react').ReactElement} Workspace route content.
  */
 export default function App() {
   return <PraxisWorkspaceSurface />;
@@ -102,7 +102,7 @@ export function PraxisWorkspaceSurface({
 } = {}) {
   return (
     <SelectionProvider>
-      <PraxisCanvasExperience onSelectionChange={onSelectionChange} />
+      <PraxisWorkspaceExperience onSelectionChange={onSelectionChange} />
     </SelectionProvider>
   );
 }
@@ -112,7 +112,7 @@ export function PraxisWorkspaceSurface({
  * @param root0
  * @param root0.onSelectionChange
  */
-function PraxisCanvasExperience({
+function PraxisWorkspaceExperience({
   onSelectionChange,
 }: {
   readonly onSelectionChange?: (selection: SelectionState) => void;

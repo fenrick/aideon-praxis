@@ -10,8 +10,9 @@ consume them.
 ## Purpose
 
 Centralize all vanilla shadcn/ui primitives, React Flow UI registry components, and Praxis-specific
-proxy blocks so every renderer (Praxis Canvas, legacy desktop, future apps) consumes the same
+proxy blocks so every renderer (Praxis workspace, legacy desktop, future apps) consumes the same
 layered design system.
+
 
 ## Structure
 

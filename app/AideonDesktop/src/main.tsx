@@ -242,7 +242,9 @@ function AboutScreen() {
     <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
       <div className="space-y-2 rounded-lg border border-border/60 bg-card/90 px-6 py-5 shadow">
         <h1 className="text-lg font-semibold">Aideon Praxis</h1>
-        <p className="text-sm text-muted-foreground">Desktop shell for Praxis Canvas and tools.</p>
+        <p className="text-sm text-muted-foreground">
+          Desktop shell for Praxis workspace and tools.
+        </p>
       </div>
     </div>
   );

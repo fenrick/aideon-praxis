@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -33,6 +33,7 @@ vi.mock('design-system/lib/utilities', () => ({
 }));
 
 import { AideonShellLayout } from 'aideon/shell/aideon-shell-layout';
+import { useAideonShellControls } from 'aideon/shell/shell-controls';
 
 /**
  * Patch `globalThis.localStorage` for local layout tests.
@@ -94,6 +95,41 @@ describe('AideonShellLayout storage', () => {
       />,
     );
     expect(getItem).toHaveBeenCalledWith('aideon-shell-panels');
+  });
+
+  it('persists inspector collapse state when toggled', () => {
+    const getItem = vi.fn();
+    const setItem = vi.fn();
+    setLocalStorage({ getItem, setItem } as unknown as Storage);
+
+    /**
+     *
+     */
+    function ToggleInspector() {
+      const shell = useAideonShellControls();
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            shell?.toggleInspector();
+          }}
+        >
+          toggle
+        </button>
+      );
+    }
+
+    render(
+      <AideonShellLayout
+        navigation={<div>Nav</div>}
+        content={<div>Content</div>}
+        inspector={<div>Inspector</div>}
+        toolbar={<ToggleInspector />}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('toggle'));
+    expect(setItem).toHaveBeenCalledWith('aideon-shell-inspector-collapsed', '1');
   });
 
   it('writes layout sizes when storage allows, and ignores write failures', () => {

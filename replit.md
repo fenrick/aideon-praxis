@@ -1,7 +1,7 @@
 # Aideon Praxis
 
 ## Overview
-Aideon Praxis is a desktop application built with Tauri (Rust backend + React/TypeScript frontend). It provides a "Praxis Canvas" workspace for visualizing and managing scenarios, projects, and templates with graph-based, catalogue, matrix, and chart views.
+Aideon Praxis is a desktop application built with Tauri (Rust backend + React/TypeScript frontend). It provides a Praxis workspace for visualizing and managing scenarios, projects, and templates with graph-based, catalogue, matrix, and chart views.
 
 ## Project Structure
 ```
