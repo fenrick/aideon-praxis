@@ -60,7 +60,7 @@ jobs:
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.pnpm-store-app.outputs.STORE_PATH }}
           key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
@@ -193,14 +193,14 @@ jobs:
           fi
 
       - name: Upload Tauri bundles
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: aideon-praxis-${{ matrix.artifact-suffix }}-bundles
           path: artifacts/bundles/*
           if-no-files-found: error
 
       - name: Upload worker libraries
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: aideon-worker-${{ matrix.artifact-suffix }}
           path: artifacts/worker/files/*

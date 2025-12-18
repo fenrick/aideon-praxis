@@ -50,7 +50,7 @@ jobs:
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
           key: pnpm-${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
@@ -75,7 +75,7 @@ jobs:
             librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
 
       - name: Cache Cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cargo/registry
           key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
@@ -83,7 +83,7 @@ jobs:
             cargo-registry-${{ runner.os }}-
 
       - name: Cache Cargo git
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cargo/git
           key: cargo-git-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
