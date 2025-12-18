@@ -15,9 +15,11 @@ if (!isVitest) {
   }
 
   createRoot(container).render(
-    <ErrorBoundary>
-      <AppEntry />
-    </ErrorBoundary>,
+    <StrictMode>
+      <ErrorBoundary>
+        <AppEntry />
+      </ErrorBoundary>
+    </StrictMode>,
   );
 }
 

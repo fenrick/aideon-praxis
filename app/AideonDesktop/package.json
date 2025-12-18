@@ -5,9 +5,11 @@
   "type": "module",
   "description": "Aideon Desktop shell hosting Praxis workspaces",
   "scripts": {
-    "dev": "vite dev --host 0.0.0.0 --port 5000",
+    "dev": "vite dev",
+    "dev:replit": "vite dev --mode replit",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "preview:replit": "vite preview --mode replit --host 0.0.0.0 --port 5000",
     "typecheck": "tsc --noEmit",
     "components:refresh": "pnpm dlx shadcn@latest add --config components.json --all --overwrite --yes && pnpm dlx shadcn@latest add --config components.json @reactflow/node-search @reactflow/base-node @reactflow/node-tooltip @reactflow/animated-svg-edge @reactflow/node-status-indicator @reactflow/node-appendix @reactflow/placeholder-node @reactflow/labeled-group-node @reactflow/base-handle @reactflow/labeled-handle @reactflow/button-handle @reactflow/button-edge @reactflow/data-edge @reactflow/zoom-slider @reactflow/zoom-select @reactflow/devtools --overwrite --yes"
   },

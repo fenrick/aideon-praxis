@@ -23,7 +23,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd app/AideonDesktop && npm run dev"
+args = "corepack enable && pnpm install && pnpm --filter @aideon/desktop run dev:replit"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -35,5 +35,5 @@ externalPort = 80
 
 [deployment]
 deploymentTarget = "static"
-build = ["npm", "run", "--prefix", "app/AideonDesktop", "build"]
+build = ["pnpm", "--filter", "@aideon/desktop", "run", "build"]
 publicDir = "app/AideonDesktop/dist"

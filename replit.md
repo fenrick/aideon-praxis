@@ -41,16 +41,22 @@ Aideon Praxis is a desktop application built with Tauri (Rust backend + React/Ty
 - Rust toolchain (for Tauri backend, not needed for frontend-only development)
 
 ### Running the Frontend
-The frontend runs on port 5000 with Vite:
+The frontend can run in two modes:
+
+- Local-first (default, matches `pnpm tauri dev`): `127.0.0.1:1420`
+- Replit UX mode (external webview): `0.0.0.0:5000`
+
+Replit UX mode runs on port 5000 with Vite:
 ```bash
 cd app/AideonDesktop
-npm run dev
+pnpm run dev:replit
 ```
 
 ### Key Scripts
-- `npm run dev` - Start development server (port 5000)
-- `npm run build` - Build for production
-- `npm run typecheck` - Run TypeScript checks
+- `pnpm run dev` - Start local dev server (port 1420)
+- `pnpm run dev:replit` - Start Replit dev server (port 5000)
+- `pnpm run build` - Build for production
+- `pnpm run typecheck` - Run TypeScript checks
 
 ## Architecture
 
