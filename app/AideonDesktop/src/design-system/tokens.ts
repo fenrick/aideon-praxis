@@ -1,4 +1,4 @@
-// Central design tokens used across the Praxis desktop shell.
+// Central design tokens used across the Aideon desktop shell.
 // Keep values in sync with CSS variables defined in src/styles.css.
 
 export const tokens = {

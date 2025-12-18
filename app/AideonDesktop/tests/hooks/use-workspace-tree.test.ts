@@ -1,10 +1,10 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as praxisModule from '../../src/praxis';
+import * as praxisModule from 'praxis';
 import { useWorkspaceTree } from '../../src/hooks/use-workspace-tree';
 
-vi.mock('../../src/praxis');
+vi.mock('praxis');
 
 describe('useWorkspaceTree', () => {
   const listScenariosMock = vi.mocked(praxisModule.listScenarios);

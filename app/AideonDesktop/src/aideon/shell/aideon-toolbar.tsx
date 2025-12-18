@@ -1,4 +1,4 @@
-import { useEffect, type ComponentPropsWithoutRef, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
 
 import {
   Menubar,
@@ -10,11 +10,20 @@ import {
 import { Toolbar, ToolbarSection, ToolbarSeparator } from 'design-system/blocks/toolbar';
 import { Badge } from 'design-system/components/ui/badge';
 import { Button } from 'design-system/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from 'design-system/components/ui/dropdown-menu';
+import { Kbd } from 'design-system/components/ui/kbd';
 import { cn } from 'design-system/lib/utilities';
-import { PanelLeftIcon, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { CommandIcon, LaptopIcon, MoonIcon, PanelLeftIcon, PanelRightClose, PanelRightOpen, SunIcon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useAideonShellControls } from './shell-controls';
 
 import { useSidebar } from 'design-system/desktop-shell';
+import { AideonCommandPalette, type AideonCommandItem } from './command-palette';
 
 export interface AideonToolbarProperties extends Readonly<ComponentPropsWithoutRef<'div'>> {
   readonly title: string;
@@ -24,6 +33,7 @@ export interface AideonToolbarProperties extends Readonly<ComponentPropsWithoutR
   readonly center?: ReactNode;
   readonly end?: ReactNode;
   readonly statusMessage?: string;
+  readonly commands?: readonly AideonCommandItem[];
 }
 
 /**
@@ -43,6 +53,142 @@ function useOptionalSidebar() {
 function isTauriRuntime(): boolean {
   const metaEnvironment = (import.meta as { env?: { TAURI_PLATFORM?: string } }).env;
   return Boolean(metaEnvironment?.TAURI_PLATFORM);
+}
+
+/**
+ * Best-effort platform detection without deprecated `navigator.platform`.
+ */
+function isMacPlatform(): boolean {
+  const ua = navigator.userAgent.toLowerCase();
+  return ua.includes('mac') || ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod');
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!target || !(target instanceof HTMLElement)) {
+    return false;
+  }
+  const tag = target.tagName.toLowerCase();
+  return tag === 'input' || tag === 'textarea' || target.isContentEditable;
+}
+
+function shortcutFor(letter: string): string {
+  return isMacPlatform() ? `⌘${letter}` : `Ctrl+${letter}`;
+}
+
+function useOptionalTheme() {
+  try {
+    return useTheme();
+  } catch {
+    return;
+  }
+}
+
+function buildShellCommands({
+  sidebar,
+  shell,
+  theme,
+  workspaceCommands,
+}: {
+  readonly sidebar: ReturnType<typeof useOptionalSidebar>;
+  readonly shell: ReturnType<typeof useAideonShellControls>;
+  readonly theme: ReturnType<typeof useOptionalTheme>;
+  readonly workspaceCommands: readonly AideonCommandItem[];
+}): AideonCommandItem[] {
+  const viewCommands: AideonCommandItem[] = [
+    ...(sidebar
+      ? ([
+          {
+            id: 'toggle-navigation',
+            group: 'View',
+            label: 'Toggle navigation',
+            shortcut: shortcutFor('B'),
+            onSelect: () => {
+              sidebar.toggleSidebar();
+            },
+          },
+        ] satisfies AideonCommandItem[])
+      : []),
+    ...(shell
+      ? ([
+          {
+            id: 'toggle-inspector',
+            group: 'View',
+            label: 'Toggle inspector',
+            shortcut: shortcutFor('I'),
+            onSelect: () => {
+              shell.toggleInspector();
+            },
+          },
+        ] satisfies AideonCommandItem[])
+      : []),
+  ];
+
+  const themeCommands: AideonCommandItem[] = theme
+    ? ([
+        {
+          id: 'theme.system',
+          group: 'Theme',
+          label: 'Use system theme',
+          onSelect: () => {
+            theme.setTheme('system');
+          },
+        },
+        {
+          id: 'theme.light',
+          group: 'Theme',
+          label: 'Light theme',
+          onSelect: () => {
+            theme.setTheme('light');
+          },
+        },
+        {
+          id: 'theme.dark',
+          group: 'Theme',
+          label: 'Dark theme',
+          onSelect: () => {
+            theme.setTheme('dark');
+          },
+        },
+      ] satisfies AideonCommandItem[])
+    : [];
+
+  return [...viewCommands, ...themeCommands, ...workspaceCommands];
+}
+
+function handleBrowserShortcut({
+  key,
+  sidebar,
+  shell,
+  openCommandPalette,
+}: {
+  readonly key: string;
+  readonly sidebar: ReturnType<typeof useOptionalSidebar>;
+  readonly shell: ReturnType<typeof useAideonShellControls>;
+  readonly openCommandPalette: () => void;
+}): boolean {
+  switch (key) {
+    case 'b': {
+      if (!sidebar) {
+        return false;
+      }
+      sidebar.toggleSidebar();
+      return true;
+    }
+    case 'i': {
+      if (!shell) {
+        return false;
+      }
+      shell.toggleInspector();
+      return true;
+    }
+    case 'k': {
+      openCommandPalette();
+      return true;
+    }
+    default: {
+      return false;
+    }
+  }
 }
 
 /**
@@ -66,12 +212,19 @@ export function AideonToolbar({
   center,
   end,
   statusMessage,
+  commands: workspaceCommands = [],
   className,
   ...properties
 }: AideonToolbarProperties) {
   const sidebar = useOptionalSidebar();
   const shell = useAideonShellControls();
   const isTauri = isTauriRuntime();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const theme = useOptionalTheme();
+
+  const commands = useMemo(() => {
+    return buildShellCommands({ sidebar, shell, theme, workspaceCommands });
+  }, [shell, sidebar, theme, workspaceCommands]);
 
   useEffect(() => {
     if (isTauri) {
@@ -81,21 +234,20 @@ export function AideonToolbar({
       if (!(event.metaKey || event.ctrlKey)) {
         return;
       }
-      const key = event.key.toLowerCase();
-      if (key === 'b') {
-        if (!sidebar) {
-          return;
-        }
-        event.preventDefault();
-        sidebar.toggleSidebar();
+      if (isEditableTarget(event.target)) {
         return;
       }
-      if (key === 'i') {
-        if (!shell) {
-          return;
-        }
+      const key = event.key.toLowerCase();
+      const didHandle = handleBrowserShortcut({
+        key,
+        sidebar,
+        shell,
+        openCommandPalette: () => {
+          setCommandPaletteOpen(true);
+        },
+      });
+      if (didHandle) {
         event.preventDefault();
-        shell.toggleInspector();
       }
     };
     globalThis.addEventListener('keydown', handleKeydown);
@@ -125,14 +277,17 @@ export function AideonToolbar({
           if (command === 'toggle-inspector') {
             shell?.toggleInspector();
           }
+          if (command === 'open-command-palette') {
+            setCommandPaletteOpen(true);
+          }
         });
       } catch {
         // ignore missing tauri event module (browser preview)
       }
     };
 
-    subscribe().catch(() => {
-      return;
+    subscribe().catch((_ignoredError: unknown) => {
+      // ignore missing tauri event module (browser preview)
     });
 
     return () => {
@@ -179,7 +334,27 @@ export function AideonToolbar({
               )}
             </Button>
           ) : undefined}
-          {start ?? <AppMenu />}
+          {start ?? (
+            <AppMenu
+              onOpenCommandPalette={() => {
+                setCommandPaletteOpen(true);
+              }}
+            />
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="hidden h-8 gap-2 md:inline-flex"
+            aria-label="Open command palette"
+            onClick={() => {
+              setCommandPaletteOpen(true);
+            }}
+          >
+            <CommandIcon className="size-4" />
+            Commands
+            <Kbd className="ml-1">{shortcutFor('K')}</Kbd>
+          </Button>
           <ToolbarSeparator />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -202,6 +377,52 @@ export function AideonToolbar({
 
         <ToolbarSection justify="end" className="gap-2">
           {end}
+	          {theme ? (
+	            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  aria-label="Theme"
+	                >
+	                  {(() => {
+	                    if (theme.resolvedTheme === 'dark') {
+	                      return <MoonIcon className="size-4" />;
+	                    }
+	                    if (theme.resolvedTheme === 'light') {
+	                      return <SunIcon className="size-4" />;
+	                    }
+	                    return <LaptopIcon className="size-4" />;
+	                  })()}
+	                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() => {
+                    theme.setTheme('system');
+                  }}
+                >
+                  System
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    theme.setTheme('light');
+                  }}
+                >
+                  Light
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    theme.setTheme('dark');
+                  }}
+                >
+                  Dark
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : undefined}
         </ToolbarSection>
       </Toolbar>
 
@@ -210,6 +431,12 @@ export function AideonToolbar({
           {statusMessage}
         </div>
       ) : undefined}
+
+      <AideonCommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        commands={commands}
+      />
     </div>
   );
 }
@@ -217,7 +444,7 @@ export function AideonToolbar({
 /**
  * Placeholder menubar for desktop shell actions.
  */
-function AppMenu() {
+function AppMenu({ onOpenCommandPalette }: { readonly onOpenCommandPalette: () => void }) {
   const sidebar = useOptionalSidebar();
   const shell = useAideonShellControls();
 
@@ -233,6 +460,13 @@ function AppMenu() {
       <MenubarMenu>
         <MenubarTrigger className="px-2 py-1 text-sm font-medium">View</MenubarTrigger>
         <MenubarContent>
+          <MenubarItem
+            onSelect={() => {
+              onOpenCommandPalette();
+            }}
+          >
+            Command palette <span className="ml-auto text-xs text-muted-foreground">{shortcutFor('K')}</span>
+          </MenubarItem>
           <MenubarItem
             disabled={!sidebar}
             onSelect={() => {
@@ -254,7 +488,13 @@ function AppMenu() {
       <MenubarMenu>
         <MenubarTrigger className="px-2 py-1 text-sm font-medium">Help</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem disabled>Keyboard shortcuts</MenubarItem>
+          <MenubarItem
+            onSelect={() => {
+              onOpenCommandPalette();
+            }}
+          >
+            Keyboard shortcuts…
+          </MenubarItem>
           <MenubarItem disabled>About Aideon</MenubarItem>
         </MenubarContent>
       </MenubarMenu>

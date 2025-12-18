@@ -153,7 +153,7 @@ vi.mock('praxis/components/template-screen/properties-inspector', () => ({
   ),
 }));
 
-import { PraxisWorkspaceSurface } from '../../src/praxis/workspace';
+import { PraxisWorkspaceSurface } from 'praxis/workspace';
 
 describe('PraxisWorkspaceSurface interactions', () => {
   beforeEach(() => {

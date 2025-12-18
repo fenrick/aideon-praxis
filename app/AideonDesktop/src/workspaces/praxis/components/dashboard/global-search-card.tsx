@@ -11,14 +11,14 @@ import {
   type CatalogueCommandEntry,
   type MetaModelCommandEntry,
 } from 'praxis/components/blocks/temporal-command-menu';
-import { Button } from '../../../design-system/components/ui/button';
+import { Button } from 'design-system/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../design-system/components/ui/card';
+} from 'design-system/components/ui/card';
 
 interface GlobalSearchCardProperties {
   readonly onSelectNodes?: (nodeIds: string[]) => void;

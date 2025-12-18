@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from './design-system/components/ui/card';
 import { ScrollArea } from './design-system/components/ui/scroll-area';
 
-import type { SelectionState } from './praxis';
+import type { SelectionState } from 'praxis';
 
 export interface DesktopPropertiesPanelProperties {
   readonly selection?: SelectionState;

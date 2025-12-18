@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Praxis Workspace is the React/Tauri renderer surface for the **Aideon Praxis** desktop module. It
+Praxis Workspace is the React/Tauri renderer surface for the **Aideon Desktop** app. It
 hosts the primary workspace UI (widgets + time controls) and surfaces graph, catalogue, matrix, and
 chart views over the time-first digital twin.
 
@@ -10,7 +10,7 @@ chart views over the time-first digital twin.
 
 - Render the main workspace UI for Praxis inside the Aideon Desktop shell.
 - Manage widget composition, time/selection state, and template flows.
-- Talk to the Tauri host via typed APIs (`app/AideonDesktop/src/praxis/praxis-api.ts`).
+- Talk to the Tauri host via typed APIs (`app/AideonDesktop/src/workspaces/praxis/praxis-api.ts`).
 - Consume shared UI primitives from `app/AideonDesktop/src/design-system`.
 - Respect renderer boundaries (no direct filesystem/DB access; IPC only).
 

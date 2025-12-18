@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../design-system/components/ui/card';
+} from 'design-system/components/ui/card';
 
 const PHASES = [
   { title: 'Bootstrap shell', status: 'complete' },

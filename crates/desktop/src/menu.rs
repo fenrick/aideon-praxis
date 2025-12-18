@@ -59,6 +59,9 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, event: MenuEvent) {
         "view.toggle_inspector" => {
             emit_shell_command(app, "toggle-inspector");
         }
+        "view.command_palette" => {
+            emit_shell_command(app, "open-command-palette");
+        }
         "file.quit" => {
             log::info!("menu: file.quit");
             app.exit(0);
@@ -150,7 +153,7 @@ mod mac {
         menu: &Menu<Wry>,
         ids: &mut MenuIds,
     ) -> Result<(), String> {
-        let app_sub = Submenu::new(app, "Aideon Praxis", true).map_err(to_string)?;
+        let app_sub = Submenu::new(app, "Aideon", true).map_err(to_string)?;
         app_sub
             .append(&PredefinedMenuItem::about(app, None, None).map_err(to_string)?)
             .map_err(to_string)?;
@@ -175,6 +178,15 @@ mod mac {
         menu.append(&window_menu).map_err(to_string)?;
 
         let view = Submenu::new(app, "View", true).map_err(to_string)?;
+        view.append(
+            &MenuItemBuilder::with_id("view.command_palette", "Command Palette…")
+                .accelerator("CmdOrCtrl+K")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        view.append(&PredefinedMenuItem::separator(app).map_err(to_string)?)
+            .map_err(to_string)?;
         view.append(
             &MenuItemBuilder::with_id("view.toggle_navigation", "Toggle Navigation")
                 .accelerator("CmdOrCtrl+B")
@@ -240,6 +252,13 @@ mod desktop {
         menu.append(&settings).map_err(to_string)?;
 
         let view = Submenu::new(app, "View", false).map_err(to_string)?;
+        view.append(
+            &MenuItemBuilder::with_id("view.command_palette", "Command Palette…")
+                .accelerator("CmdOrCtrl+K")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
         view.append(
             &MenuItemBuilder::with_id("view.toggle_navigation", "Toggle Navigation")
                 .accelerator("CmdOrCtrl+B")

@@ -1,4 +1,4 @@
-import { PraxisWorkspaceSurface } from './praxis';
+import { PraxisWorkspaceSurface } from 'praxis';
 
 /**
  * Application root mounting the Praxis Scenario / Template experience.

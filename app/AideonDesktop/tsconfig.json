@@ -5,7 +5,8 @@
     "paths": {
       "@/*": ["./*"],
       "aideon/*": ["aideon/*"],
-      "praxis/*": ["praxis/*"],
+      "praxis": ["workspaces/praxis/index.ts"],
+      "praxis/*": ["workspaces/praxis/*"],
       "design-system/*": ["design-system/*"],
       "design-system/reactflow/*": ["design-system/components/*"],
       "adapters/*": ["adapters/*"],

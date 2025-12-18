@@ -5,12 +5,14 @@ import { defineConfig } from 'vitest/config';
 const srcRoot = path.resolve(__dirname, 'app/AideonDesktop/src');
 const testsRoot = path.resolve(__dirname, 'app/AideonDesktop/tests');
 
+const praxisRoot = path.join(srcRoot, 'workspaces/praxis');
+
 export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: srcRoot },
       { find: 'aideon', replacement: path.join(srcRoot, 'aideon') },
-      { find: 'praxis', replacement: path.join(srcRoot, 'praxis') },
+      { find: 'praxis', replacement: praxisRoot },
       {
         find: 'design-system/reactflow',
         replacement: path.join(srcRoot, 'design-system/components'),
@@ -47,7 +49,6 @@ export default defineConfig({
         'app/AideonDesktop/src/design-system/components/**',
         'app/AideonDesktop/src/types/**',
         'app/AideonDesktop/src/main.tsx',
-        'app/AideonDesktop/src/praxis/main.tsx',
       ],
     },
   },

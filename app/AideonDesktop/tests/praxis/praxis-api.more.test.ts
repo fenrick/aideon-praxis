@@ -5,7 +5,7 @@ import {
   listTemporalCommits,
   mergeTemporalBranches,
   type ChartViewModel,
-} from '../../src/praxis/praxis-api';
+} from 'praxis/praxis-api';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 const invoke = vi.mocked(tauriInvoke);

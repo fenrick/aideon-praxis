@@ -13,7 +13,7 @@ describe('praxis-api state/diff host calls', () => {
       nodes: 1,
       edges: 2,
     });
-    const { getStateAtSnapshot } = await import('../../src/praxis/praxis-api');
+    const { getStateAtSnapshot } = await import('praxis/praxis-api');
 
     const snapshot = await getStateAtSnapshot({ asOf: '2025-01-01' });
 
@@ -38,7 +38,7 @@ describe('praxis-api state/diff host calls', () => {
       edge_mods: 0,
       edge_dels: 0,
     });
-    const { getTemporalDiff } = await import('../../src/praxis/praxis-api');
+    const { getTemporalDiff } = await import('praxis/praxis-api');
 
     await getTemporalDiff({ from: 'a', to: 'b', scope: { nodeTypes: ['Capability'] } });
 

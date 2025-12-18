@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { SidebarProvider } from './design-system';
 
-vi.mock('./praxis', () => ({
+vi.mock('praxis', () => ({
   listScenarios: vi
     .fn()
     .mockResolvedValue([
@@ -11,7 +11,7 @@ vi.mock('./praxis', () => ({
     ]),
 }));
 
-import { listScenarios } from './praxis';
+import { listScenarios } from 'praxis';
 
 import { DesktopTree } from './desktop-tree';
 

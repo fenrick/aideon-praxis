@@ -2,7 +2,7 @@
 
 ## Overview
 
-Praxis Workspace is the React-based renderer surface for the Aideon Praxis desktop module. It runs
+Praxis Workspace is the React-based renderer surface for the Aideon Desktop app. It runs
 inside the Aideon Desktop shell and projects the time-first digital twin into widgets such as
 graph, catalogue, matrix, and timeline views.
 

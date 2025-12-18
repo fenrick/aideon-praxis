@@ -5,7 +5,8 @@
     "paths": {
       "@/*": ["app/AideonDesktop/src/*"],
       "aideon/*": ["app/AideonDesktop/src/aideon/*"],
-      "praxis/*": ["app/AideonDesktop/src/praxis/*"],
+      "praxis": ["app/AideonDesktop/src/workspaces/praxis/index.ts"],
+      "praxis/*": ["app/AideonDesktop/src/workspaces/praxis/*"],
       "design-system/*": ["app/AideonDesktop/src/design-system/*"],
       "design-system/reactflow/*": ["app/AideonDesktop/src/design-system/components/*"],
       "adapters/*": ["app/AideonDesktop/src/adapters/*"],

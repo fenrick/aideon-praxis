@@ -30,7 +30,7 @@ See `Architecture-Boundary.md` for a deeper treatment of layering, adapters, and
 
 Aideon Suite is composed of several modules that share the same meta-model and time-first engine:
 
-- **Aideon Praxis** – core desktop module (Praxis workspace renderer + Tauri host + engines).
+- **Aideon Desktop** – core desktop app (Aideon shell + Praxis workspace renderer + Tauri host + engines).
 - **Aideon Chrona** – temporal visualisation over commits, snapshots, and plateaus.
 - **Aideon Metis** – analytics engine for graph algorithms and TCO/impact analysis.
 - **Aideon Continuum** – orchestration and connectors (scheduling, CMDB, cloud APIs).

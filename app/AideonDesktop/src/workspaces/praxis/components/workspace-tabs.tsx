@@ -9,14 +9,14 @@ import { useTemporalPanel } from 'praxis/time/use-temporal-panel';
 import type { PraxisCanvasWidget, SelectionState } from 'praxis/types';
 
 import * as TabsPrimitive from '@radix-ui/react-tabs';
-import { Button } from '../../design-system/components/ui/button';
+import { Button } from 'design-system/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../design-system/components/ui/card';
+} from 'design-system/components/ui/card';
 
 export type WorkspaceTabValue = 'overview' | 'timeline' | 'canvas' | 'activity';
 

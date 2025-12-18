@@ -4,14 +4,14 @@ import type { GraphViewModel } from 'praxis/praxis-api';
 import { AideonCanvasRuntime } from 'aideon/canvas/canvas-runtime';
 import { fromWidgetSelection } from 'aideon/canvas/selection';
 import type { SelectionState, WidgetSelection } from 'aideon/canvas/types';
-import { Button } from '../../../design-system/components/ui/button';
+import { Button } from 'design-system/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../design-system/components/ui/card';
+} from 'design-system/components/ui/card';
 import type { PraxisCanvasWidget, PraxisWidgetErrorEvent, PraxisWidgetViewEvent } from 'praxis/types';
 import { CatalogueWidget } from 'praxis/widgets/catalogue-widget';
 import { ChartWidget } from 'praxis/widgets/chart-widget';

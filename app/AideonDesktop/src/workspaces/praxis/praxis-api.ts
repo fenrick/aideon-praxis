@@ -5,7 +5,7 @@ import type {
   TemporalStateParameters,
   TemporalStateSnapshot,
   WorkerHealth,
-} from '../dtos';
+} from '../../dtos';
 
 import { isTauri } from './platform';
 
@@ -960,4 +960,4 @@ function seededMetric(key: string): number {
   return randomScore(key) * 10;
 }
 
-export { type TemporalDiffMetrics, type TemporalDiffSnapshot, type WorkerHealth } from '../dtos';
+export { type TemporalDiffMetrics, type TemporalDiffSnapshot, type WorkerHealth } from '../../dtos';

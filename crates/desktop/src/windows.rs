@@ -11,7 +11,7 @@ const ROUTE_STYLEGUIDE: &str = "index.html#/styleguide";
 
 pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
     WebviewWindowBuilder::new(app, "splash", WebviewUrl::App(ROUTE_SPLASH.into()))
-        .title("Aideon Praxis — Loading")
+        .title("Aideon — Loading")
         .resizable(false)
         .decorations(false)
         .inner_size(520.0, 320.0)
@@ -20,7 +20,7 @@ pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
         .map_err(to_string)?;
 
     let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::App(ROUTE_MAIN.into()))
-        .title("Aideon Praxis")
+        .title("Aideon")
         .visible(false)
         .inner_size(1060.0, 720.0)
         .center();
@@ -67,7 +67,7 @@ pub fn open_about(app: AppHandle<Wry>) -> Result<(), String> {
     }
 
     WebviewWindowBuilder::new(&app, "about", WebviewUrl::App(ROUTE_ABOUT.into()))
-        .title("About Aideon Praxis")
+        .title("About Aideon")
         .resizable(false)
         .inner_size(420.0, 300.0)
         .center()

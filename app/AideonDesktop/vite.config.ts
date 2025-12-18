@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       alias: [
         { find: '@', replacement: resolve(__dirname, './src') },
         { find: 'aideon', replacement: resolve(__dirname, './src/aideon') },
-        { find: 'praxis', replacement: resolve(__dirname, './src/praxis') },
+        { find: 'praxis', replacement: resolve(__dirname, './src/workspaces/praxis') },
         {
           find: 'design-system/reactflow',
           replacement: resolve(__dirname, './src/design-system/components'),

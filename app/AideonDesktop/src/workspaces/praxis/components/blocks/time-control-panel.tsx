@@ -10,16 +10,16 @@ import {
   PanelHeader,
   PanelTitle,
   PanelToolbar,
-} from '../../../design-system/blocks/panel';
-import { Button } from '../../../design-system/components/ui/button';
+} from 'design-system/blocks/panel';
+import { Button } from 'design-system/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../design-system/components/ui/select';
-import { Slider } from '../../../design-system/components/ui/slider';
+} from 'design-system/components/ui/select';
+import { Slider } from 'design-system/components/ui/slider';
 
 interface TimeControlPanelProperties {
   readonly title?: string;
