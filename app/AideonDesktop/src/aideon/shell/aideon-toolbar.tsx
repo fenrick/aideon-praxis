@@ -65,6 +65,11 @@ function isMacPlatform(): boolean {
   return ua.includes('mac') || ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod');
 }
 
+/**
+ * Check whether an event target is a text-editable element.
+ * @param target - Event target from a keydown listener.
+ * @returns True when the target should receive text input.
+ */
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!target || !(target instanceof HTMLElement)) {
     return false;
@@ -73,10 +78,18 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return tag === 'input' || tag === 'textarea' || target.isContentEditable;
 }
 
+/**
+ * Format a typical app shortcut label for display.
+ * @param letter - Shortcut letter (e.g., "K").
+ * @returns Human-friendly shortcut string (macOS uses symbols).
+ */
 function shortcutFor(letter: string): string {
   return isMacPlatform() ? `⌘${letter}` : `Ctrl+${letter}`;
 }
 
+/**
+ * Safely read the theme context when present.
+ */
 function useOptionalTheme() {
   try {
     return useTheme();
@@ -85,6 +98,15 @@ function useOptionalTheme() {
   }
 }
 
+/**
+ * Build the command palette list from shell + workspace command sources.
+ * @param root0 - Inputs for command construction.
+ * @param root0.sidebar - Sidebar controls when available.
+ * @param root0.shell - Shell controls when available.
+ * @param root0.theme - Theme controls when available.
+ * @param root0.workspaceCommands - Workspace-provided commands.
+ * @returns Palette-ready command items.
+ */
 function buildShellCommands({
   sidebar,
   shell,
@@ -157,6 +179,15 @@ function buildShellCommands({
   return [...viewCommands, ...themeCommands, ...workspaceCommands];
 }
 
+/**
+ * Handle Cmd/Ctrl key combos in browser preview mode.
+ * @param root0 - Shortcut context.
+ * @param root0.key - Pressed key (lowercase).
+ * @param root0.sidebar - Sidebar controls when available.
+ * @param root0.shell - Shell controls when available.
+ * @param root0.openCommandPalette - Opens the command palette.
+ * @returns True when handled.
+ */
 function handleBrowserShortcut({
   key,
   sidebar,
@@ -204,6 +235,7 @@ function handleBrowserShortcut({
  * @param root0.center
  * @param root0.end
  * @param root0.statusMessage
+ * @param root0.commands
  * @param root0.className
  */
 export function AideonToolbar({
@@ -445,6 +477,8 @@ export function AideonToolbar({
 
 /**
  * Placeholder menubar for desktop shell actions.
+ * @param root0 - Menu properties.
+ * @param root0.onOpenCommandPalette - Opens the command palette.
  */
 function AppMenu({ onOpenCommandPalette }: { readonly onOpenCommandPalette: () => void }) {
   const sidebar = useOptionalSidebar();

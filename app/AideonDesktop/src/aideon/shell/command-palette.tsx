@@ -25,6 +25,11 @@ export interface AideonCommandPaletteProperties {
   readonly commands: readonly AideonCommandItem[];
 }
 
+/**
+ * Group commands into named buckets for rendering.
+ * @param commands - Flat list of command items.
+ * @returns Grouped command buckets.
+ */
 function groupCommands(commands: readonly AideonCommandItem[]) {
   const grouped = new Map<string, AideonCommandItem[]>();
   for (const command of commands) {
@@ -40,6 +45,14 @@ function groupCommands(commands: readonly AideonCommandItem[]) {
   }));
 }
 
+/**
+ * Global command palette surface for the Aideon shell.
+ * @param root0 - Component props.
+ * @param root0.open - Whether the palette is visible.
+ * @param root0.onOpenChange - Visibility setter.
+ * @param root0.commands - Commands to render.
+ * @returns Command palette dialog.
+ */
 export function AideonCommandPalette({
   open,
   onOpenChange,

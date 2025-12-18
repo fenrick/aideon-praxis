@@ -17,6 +17,7 @@ import {
   type NodeTypes,
 } from '@xyflow/react';
 import { toErrorMessage } from 'praxis/lib/errors';
+import { cn } from 'praxis/lib/utilities';
 import { getGraphView, type GraphViewModel } from 'praxis/praxis-api';
 
 import { NodeSearchDialog } from 'design-system/components/node-search';
@@ -322,9 +323,12 @@ interface GraphWidgetOverlayProperties {
 function GraphWidgetOverlay({ message, isError }: GraphWidgetOverlayProperties) {
   return (
     <div
-      className={`absolute inset-0 flex items-center justify-center rounded-2xl text-sm ${
-        isError ? 'bg-red-100/80 text-red-800' : 'bg-background/80 text-muted-foreground'
-      }`}
+      className={cn(
+        'absolute inset-0 flex items-center justify-center rounded-2xl text-sm backdrop-blur',
+        isError
+          ? 'bg-destructive/10 text-destructive'
+          : 'bg-background/70 text-muted-foreground',
+      )}
     >
       {isError ? <AlertBadge /> : undefined}
       {message}
