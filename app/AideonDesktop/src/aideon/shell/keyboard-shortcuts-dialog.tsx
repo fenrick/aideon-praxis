@@ -34,6 +34,9 @@ export interface KeyboardShortcutsDialogProperties {
  */
 function defaultShortcuts(): ShortcutRow[] {
   return [
+    { category: 'File', name: 'Open…', keys: ['CmdOrCtrl', 'O'] },
+    { category: 'File', name: 'Save As…', keys: ['CmdOrCtrl', 'Shift', 'S'] },
+    { category: 'File', name: 'Print…', keys: ['CmdOrCtrl', 'P'] },
     { category: 'Shell', name: 'Command palette', keys: ['CmdOrCtrl', 'K'] },
     { category: 'Shell', name: 'Toggle navigation', keys: ['CmdOrCtrl', 'B'] },
     { category: 'Shell', name: 'Toggle inspector', keys: ['CmdOrCtrl', 'I'] },

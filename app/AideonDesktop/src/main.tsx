@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { ThemeProvider } from 'next-themes';
+import { Toaster } from './design-system/components/ui/sonner';
 import { ErrorBoundary } from './error-boundary';
 import { AideonDesktopRoot } from './root';
 import './styles.css';
@@ -19,7 +20,10 @@ if (!isVitest) {
     <StrictMode>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <ErrorBoundary>
-          <AppEntry />
+          <>
+            <AppEntry />
+            <Toaster />
+          </>
         </ErrorBoundary>
       </ThemeProvider>
     </StrictMode>,

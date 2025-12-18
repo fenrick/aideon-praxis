@@ -1,8 +1,10 @@
 use serde::Serialize;
+use serde_json::json;
 use tauri::{
     App, AppHandle, Emitter, Manager, Wry,
     menu::{Menu, MenuEvent, PredefinedMenuItem, Submenu},
 };
+use tauri_plugin_dialog::DialogExt;
 
 use crate::windows::{open_about, open_settings, open_styleguide};
 
@@ -10,6 +12,8 @@ use crate::windows::{open_about, open_settings, open_styleguide};
 #[serde(rename_all = "kebab-case")]
 struct ShellCommandPayload {
     command: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    payload: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -62,6 +66,15 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, event: MenuEvent) {
         "view.command_palette" => {
             emit_shell_command(app, "open-command-palette");
         }
+        "file.open" => {
+            pick_open_file(app);
+        }
+        "file.save_as" => {
+            pick_save_file(app);
+        }
+        "file.print" => {
+            emit_shell_command(app, "file.print");
+        }
         "file.quit" => {
             log::info!("menu: file.quit");
             app.exit(0);
@@ -79,14 +92,43 @@ pub fn handle_menu_event(app: &AppHandle<Wry>, event: MenuEvent) {
 }
 
 fn emit_shell_command(app: &AppHandle<Wry>, command: &str) {
+    emit_shell_command_with_payload(app, command, None);
+}
+
+fn emit_shell_command_with_payload(
+    app: &AppHandle<Wry>,
+    command: &str,
+    payload: Option<serde_json::Value>,
+) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.emit(
             "aideon.shell.command",
             ShellCommandPayload {
                 command: command.to_string(),
+                payload,
             },
         );
     }
+}
+
+fn pick_open_file(app: &AppHandle<Wry>) {
+    let handle = app.clone();
+    handle.dialog().file().pick_file(move |file| {
+        if let Some(file) = file {
+            let path = file.to_string();
+            emit_shell_command_with_payload(&handle, "file.open", Some(json!({ "path": path })));
+        }
+    });
+}
+
+fn pick_save_file(app: &AppHandle<Wry>) {
+    let handle = app.clone();
+    handle.dialog().file().save_file(move |file| {
+        if let Some(file) = file {
+            let path = file.to_string();
+            emit_shell_command_with_payload(&handle, "file.save_as", Some(json!({ "path": path })));
+        }
+    });
 }
 
 fn to_string<E: std::fmt::Display>(error: E) -> String {
@@ -173,6 +215,34 @@ mod mac {
         append_edit_items(app, &edit)?;
         menu.append(&edit).map_err(to_string)?;
 
+        let file = Submenu::new(app, "File", true).map_err(to_string)?;
+        file.append(
+            &MenuItemBuilder::with_id("file.open", "Open…")
+                .accelerator("CmdOrCtrl+O")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        file.append(
+            &MenuItemBuilder::with_id("file.save_as", "Save As…")
+                .accelerator("CmdOrCtrl+Shift+S")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        file.append(
+            &MenuItemBuilder::with_id("file.print", "Print…")
+                .accelerator("CmdOrCtrl+P")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        file.append(&PredefinedMenuItem::separator(app).map_err(to_string)?)
+            .map_err(to_string)?;
+        file.append(&PredefinedMenuItem::close_window(app, None).map_err(to_string)?)
+            .map_err(to_string)?;
+        menu.append(&file).map_err(to_string)?;
+
         let window_menu = Submenu::new(app, "Window", true).map_err(to_string)?;
         append_window_items(app, &window_menu, true)?;
         menu.append(&window_menu).map_err(to_string)?;
@@ -233,6 +303,27 @@ mod desktop {
         ids: &mut MenuIds,
     ) -> Result<(), String> {
         let file = Submenu::new(app, "File", false).map_err(to_string)?;
+        file.append(
+            &MenuItemBuilder::with_id("file.open", "Open…")
+                .accelerator("CmdOrCtrl+O")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        file.append(
+            &MenuItemBuilder::with_id("file.save_as", "Save As…")
+                .accelerator("CmdOrCtrl+Shift+S")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
+        file.append(
+            &MenuItemBuilder::with_id("file.print", "Print…")
+                .accelerator("CmdOrCtrl+P")
+                .build(app)
+                .map_err(to_string)?,
+        )
+        .map_err(to_string)?;
         file.append(
             &MenuItemBuilder::with_id("file.quit", "Quit")
                 .build(app)

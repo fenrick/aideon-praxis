@@ -37,6 +37,7 @@ export interface AideonToolbarProperties extends Readonly<ComponentPropsWithoutR
   readonly end?: ReactNode;
   readonly statusMessage?: string;
   readonly commands?: readonly AideonCommandItem[];
+  readonly onShellCommand?: (command: string, payload?: unknown) => void;
 }
 
 /**
@@ -237,6 +238,7 @@ function handleBrowserShortcut({
  * @param root0.end
  * @param root0.statusMessage
  * @param root0.commands
+ * @param root0.onShellCommand
  * @param root0.className
  */
 export function AideonToolbar({
@@ -248,6 +250,7 @@ export function AideonToolbar({
   end,
   statusMessage,
   commands: workspaceCommands = [],
+  onShellCommand,
   className,
   ...properties
 }: AideonToolbarProperties) {
@@ -316,8 +319,10 @@ export function AideonToolbar({
         if (cancelled) {
           return;
         }
-        unlisten = await listen<{ command?: string }>('aideon.shell.command', (event) => {
+        unlisten = await listen<{ command?: string; payload?: unknown }>('aideon.shell.command', (event) => {
           const command = event.payload.command;
+          const payload = event.payload.payload;
+
           if (command === 'toggle-navigation') {
             sidebar?.toggleSidebar();
           }
@@ -326,6 +331,13 @@ export function AideonToolbar({
           }
           if (command === 'open-command-palette') {
             setCommandPaletteOpen(true);
+          }
+          if (command === 'file.print') {
+            globalThis.print();
+          }
+
+          if (command) {
+            onShellCommand?.(command, payload);
           }
         });
       } catch {
@@ -343,7 +355,7 @@ export function AideonToolbar({
         unlisten();
       }
     };
-  }, [isTauri, shell, sidebar]);
+  }, [isTauri, onShellCommand, shell, sidebar]);
 
   return (
     <div className={cn('flex flex-col gap-2', className)} {...properties}>

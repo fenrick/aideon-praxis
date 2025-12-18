@@ -12,6 +12,7 @@ import { WorkspaceSwitcher } from 'aideon/shell/workspace-switcher';
 import { Button } from 'design-system/components/ui/button';
 import { Input } from 'design-system/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from 'design-system/components/ui/popover';
+import { toast } from 'sonner';
 import { TimeControlPanel } from '../blocks/time-control-panel';
 import { TemplateToolbar } from './template-toolbar';
 
@@ -77,6 +78,16 @@ export function PraxisWorkspaceToolbar({
       subtitle={scenarioName ? `Praxis · ${scenarioName}` : 'Praxis workspace'}
       modeLabel={modeLabel}
       statusMessage={error}
+      onShellCommand={(command, payload) => {
+        if (command === 'file.open' || command === 'file.save_as') {
+          const path = (payload as { path?: unknown } | undefined)?.path;
+          if (typeof path === 'string' && path.trim()) {
+            toast.message(command === 'file.open' ? 'Selected file' : 'Save location', {
+              description: path,
+            });
+          }
+        }
+      }}
       start={
         <WorkspaceSwitcher
           currentId="praxis"
