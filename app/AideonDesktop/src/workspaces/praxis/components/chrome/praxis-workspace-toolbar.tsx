@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { TimeControlPanel } from '../blocks/time-control-panel';
 import { TemplateToolbar } from './template-toolbar';
 
-export interface PraxisToolbarProperties {
+export interface PraxisWorkspaceToolbarProperties {
   readonly scenarioName?: string;
   readonly templates: CanvasTemplate[];
   readonly activeTemplateId: string;
@@ -60,7 +60,7 @@ export function PraxisWorkspaceToolbar({
   timeTriggerRef,
   loading = false,
   error,
-}: PraxisToolbarProperties) {
+}: PraxisWorkspaceToolbarProperties) {
   const isDesktop = isTauri();
   const modeLabel = isDesktop ? 'Desktop' : 'Browser preview';
   const trimmedScenarioName = scenarioName?.trim();

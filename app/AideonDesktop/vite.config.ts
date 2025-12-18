@@ -11,6 +11,10 @@ export default defineConfig(({ mode }) => {
   const serverHost = isReplitMode ? '0.0.0.0' : '127.0.0.1';
   const serverPort = isReplitMode ? 5000 : 1420;
 
+  const allowedHosts = isReplitMode
+    ? ['.replit.dev', '.replit.app', '.replit.co', 'localhost', '127.0.0.1']
+    : ['localhost', '127.0.0.1'];
+
   return {
     plugins: [tailwindcss(), react()],
     resolve: {
@@ -32,7 +36,7 @@ export default defineConfig(({ mode }) => {
       host: serverHost,
       port: serverPort,
       strictPort: true,
-      allowedHosts: isReplitMode ? true : ['localhost', '127.0.0.1'],
+      allowedHosts,
     },
   };
 });

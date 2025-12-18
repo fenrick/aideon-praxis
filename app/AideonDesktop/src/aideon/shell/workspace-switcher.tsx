@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 
 import { CheckIcon, LayoutGridIcon } from 'lucide-react';
 
+import { Button } from 'design-system/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from 'design-system/components/ui/dropdown-menu';
-import { Button } from 'design-system/components/ui/button';
 import { cn } from 'design-system/lib/utilities';
 
 export interface WorkspaceOption {
@@ -69,11 +69,12 @@ export function WorkspaceSwitcher({
             }}
           >
             <span className="flex-1">{opt.label}</span>
-            {opt.id === currentId ? <CheckIcon className="size-4 text-muted-foreground" /> : undefined}
+            {opt.id === currentId ? (
+              <CheckIcon className="size-4 text-muted-foreground" />
+            ) : undefined}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-

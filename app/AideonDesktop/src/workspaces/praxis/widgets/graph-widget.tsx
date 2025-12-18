@@ -394,9 +394,7 @@ function GraphWidgetOverlay({ message, isError }: GraphWidgetOverlayProperties) 
     <div
       className={cn(
         'absolute inset-0 flex items-center justify-center rounded-2xl text-sm backdrop-blur',
-        isError
-          ? 'bg-destructive/10 text-destructive'
-          : 'bg-background/70 text-muted-foreground',
+        isError ? 'bg-destructive/10 text-destructive' : 'bg-background/70 text-muted-foreground',
       )}
     >
       {isError ? <AlertBadge /> : undefined}

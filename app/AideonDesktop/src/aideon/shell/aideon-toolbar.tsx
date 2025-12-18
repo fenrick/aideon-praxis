@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+} from 'react';
 
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from 'design-system';
 import { Toolbar, ToolbarSection, ToolbarSeparator } from 'design-system/blocks/toolbar';
@@ -57,6 +64,13 @@ function useOptionalSidebar() {
 function isTauriRuntime(): boolean {
   const metaEnvironment = (import.meta as { env?: { TAURI_PLATFORM?: string } }).env;
   return Boolean(metaEnvironment?.TAURI_PLATFORM);
+}
+
+/**
+ *
+ */
+function isDevelopmentBuild(): boolean {
+  return Boolean((import.meta as { env?: { DEV?: boolean } }).env?.DEV);
 }
 
 /**
@@ -257,9 +271,22 @@ export function AideonToolbar({
   const sidebar = useOptionalSidebar();
   const shell = useAideonShellControls();
   const isTauri = isTauriRuntime();
+  const isDevelopment = isDevelopmentBuild();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const theme = useOptionalTheme();
+
+  const openStyleguide = useCallback(() => {
+    if (isTauri) {
+      import('@tauri-apps/api/core')
+        .then(({ invoke }) => invoke('open_styleguide'))
+        .catch(() => {
+          globalThis.location.hash = '#/styleguide';
+        });
+      return;
+    }
+    globalThis.location.hash = '#/styleguide';
+  }, [isTauri]);
 
   const commands = useMemo(() => {
     const shellCommands = buildShellCommands({ sidebar, shell, theme, workspaceCommands });
@@ -273,8 +300,20 @@ export function AideonToolbar({
           setShortcutsOpen(true);
         },
       },
+      ...(isDevelopment
+        ? ([
+            {
+              id: 'debug.styleguide',
+              group: 'Debug',
+              label: 'UI Style Guide',
+              onSelect: () => {
+                openStyleguide();
+              },
+            },
+          ] satisfies AideonCommandItem[])
+        : []),
     ] satisfies AideonCommandItem[];
-  }, [shell, sidebar, theme, workspaceCommands]);
+  }, [isDevelopment, openStyleguide, shell, sidebar, theme, workspaceCommands]);
 
   useEffect(() => {
     if (isTauri) {
@@ -319,27 +358,30 @@ export function AideonToolbar({
         if (cancelled) {
           return;
         }
-        unlisten = await listen<{ command?: string; payload?: unknown }>('aideon.shell.command', (event) => {
-          const command = event.payload.command;
-          const payload = event.payload.payload;
+        unlisten = await listen<{ command?: string; payload?: unknown }>(
+          'aideon.shell.command',
+          (event) => {
+            const command = event.payload.command;
+            const payload = event.payload.payload;
 
-          if (command === 'toggle-navigation') {
-            sidebar?.toggleSidebar();
-          }
-          if (command === 'toggle-inspector') {
-            shell?.toggleInspector();
-          }
-          if (command === 'open-command-palette') {
-            setCommandPaletteOpen(true);
-          }
-          if (command === 'file.print') {
-            globalThis.print();
-          }
+            if (command === 'toggle-navigation') {
+              sidebar?.toggleSidebar();
+            }
+            if (command === 'toggle-inspector') {
+              shell?.toggleInspector();
+            }
+            if (command === 'open-command-palette') {
+              setCommandPaletteOpen(true);
+            }
+            if (command === 'file.print') {
+              globalThis.print();
+            }
 
-          if (command) {
-            onShellCommand?.(command, payload);
-          }
-        });
+            if (command) {
+              onShellCommand?.(command, payload);
+            }
+          },
+        );
       } catch {
         // ignore missing tauri event module (browser preview)
       }
@@ -400,6 +442,10 @@ export function AideonToolbar({
             onOpenShortcuts={() => {
               setShortcutsOpen(true);
             }}
+            onOpenStyleguide={() => {
+              openStyleguide();
+            }}
+            showDebugItems={isDevelopment}
           />
           {start}
           <Button
@@ -509,13 +555,19 @@ export function AideonToolbar({
  * @param root0 - Menu properties.
  * @param root0.onOpenCommandPalette - Opens the command palette.
  * @param root0.onOpenShortcuts - Opens the keyboard shortcuts dialog.
+ * @param root0.onOpenStyleguide
+ * @param root0.showDebugItems
  */
 function AppMenu({
   onOpenCommandPalette,
   onOpenShortcuts,
+  onOpenStyleguide,
+  showDebugItems = false,
 }: {
   readonly onOpenCommandPalette: () => void;
   readonly onOpenShortcuts: () => void;
+  readonly onOpenStyleguide: () => void;
+  readonly showDebugItems?: boolean;
 }) {
   const sidebar = useOptionalSidebar();
   const shell = useAideonShellControls();
@@ -568,6 +620,15 @@ function AppMenu({
           >
             Keyboard shortcuts…
           </MenubarItem>
+          {showDebugItems ? (
+            <MenubarItem
+              onSelect={() => {
+                onOpenStyleguide();
+              }}
+            >
+              UI Style Guide
+            </MenubarItem>
+          ) : undefined}
           <MenubarItem disabled>About Aideon</MenubarItem>
         </MenubarContent>
       </MenubarMenu>

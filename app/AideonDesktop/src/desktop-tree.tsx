@@ -8,8 +8,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from './design-system';
-import { Skeleton } from './design-system/components/ui/skeleton';
 import { Badge } from './design-system/components/ui/badge';
+import { Skeleton } from './design-system/components/ui/skeleton';
 
 import { useWorkspaceTree, type WorkspaceTreeItem } from './hooks/use-workspace-tree';
 

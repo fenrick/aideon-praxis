@@ -46,3 +46,8 @@ The implementation uses the design-system proxies for Sidebar, Resizable, and Me
 
 - `AideonDesktopRoot` is the React entry that composes `DesktopShell` with toolbar/tree/main/properties slots.
 - Tauri loads the `app/AideonDesktop` bundle (`index.html` → `src/main.tsx` → `AideonDesktopRoot`); Praxis workspace surfaces mount inside the centre slot rather than owning the window.
+
+## Style guide (dev)
+
+- A small UI Style Guide exists at `#/styleguide` to showcase shell/design-system primitives during UX iteration (including Replit browser preview).
+- Desktop builds can open it from the native menu (Debug → UI Style Guide) or from the command palette when running a development build.

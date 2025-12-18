@@ -1,6 +1,5 @@
 import type { ReactElement } from 'react';
 
-import { Kbd } from 'design-system/components/ui/kbd';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from 'design-system/components/ui/dialog';
+import { Kbd } from 'design-system/components/ui/kbd';
 import {
   Table,
   TableBody,
