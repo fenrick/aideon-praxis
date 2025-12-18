@@ -31,6 +31,7 @@ import type {
   WidgetSelection,
 } from 'praxis/types';
 import type { GraphNodeData } from './graph-node-data';
+import { areStringSetsEqual, selectionFromEvent } from './graph-selection';
 import { buildFlowEdges, buildFlowNodes } from './graph-transform';
 import { WidgetToolbar } from './widget-toolbar';
 
@@ -136,32 +137,60 @@ export function GraphWidget({
   }, [attachInspectHandlers, setNodes]);
 
   useEffect(() => {
-    if (!selection) {
-      setNodes((current) => current.map((node) => ({ ...node, selected: false })));
-      setEdges((current) => current.map((edge) => ({ ...edge, selected: false })));
-      return;
-    }
-    setNodes((current) =>
-      current.map((node) => ({ ...node, selected: selection.nodeIds.includes(node.id) })),
-    );
-    setEdges((current) =>
-      current.map((edge) => {
-        const edgeId = edge.id;
-        const isSelected = selection.edgeIds.includes(edgeId);
-        return { ...edge, selected: isSelected };
-      }),
-    );
+    const selectedNodeIds = selection?.nodeIds ?? [];
+    const selectedEdgeIds = selection?.edgeIds ?? [];
+    const selectedNodeIdSet = new Set(selectedNodeIds);
+    const selectedEdgeIdSet = new Set(selectedEdgeIds);
+
+    setNodes((current) => {
+      let didChange = false;
+      const next: typeof current = [];
+      for (const node of current) {
+        const isSelected = selectedNodeIdSet.has(node.id);
+        if (node.selected === isSelected) {
+          next.push(node);
+        } else {
+          didChange = true;
+          next.push({ ...node, selected: isSelected });
+        }
+      }
+      return didChange ? next : current;
+    });
+
+    setEdges((current) => {
+      let didChange = false;
+      const next: typeof current = [];
+      for (const edge of current) {
+        const isSelected = selectedEdgeIdSet.has(edge.id);
+        if (edge.selected === isSelected) {
+          next.push(edge);
+        } else {
+          didChange = true;
+          next.push({ ...edge, selected: isSelected });
+        }
+      }
+      return didChange ? next : current;
+    });
   }, [selection, setEdges, setNodes]);
 
   const handleSelection = useCallback(
     (nextSelection: { nodes?: Node[]; edges?: Edge[] }) => {
+      const snapshot = selectionFromEvent(nextSelection);
+      if (
+        selection &&
+        areStringSetsEqual(selection.nodeIds, snapshot.nodeIds) &&
+        areStringSetsEqual(selection.edgeIds, snapshot.edgeIds)
+      ) {
+        return;
+      }
+
       onSelectionChange?.({
         widgetId: widget.id,
-        nodeIds: (nextSelection.nodes ?? []).map((node) => node.id),
-        edgeIds: (nextSelection.edges ?? []).map((edge) => edge.id),
+        nodeIds: [...snapshot.nodeIds],
+        edgeIds: [...snapshot.edgeIds],
       });
     },
-    [onSelectionChange, widget.id],
+    [onSelectionChange, selection, widget.id],
   );
 
   const [nodeSearchOpen, setNodeSearchOpen] = useState(false);

@@ -28,7 +28,15 @@ function ResizablePanelGroup({
   ...props
 }: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) {
   if (isTauriRuntime()) {
-    const { children, direction, onLayout, ...rest } = props
+    const {
+      children,
+      direction,
+      onLayout,
+      autoSaveId: _autoSaveId,
+      storage: _storage,
+      keyboardResizeBy: _keyboardResizeBy,
+      ...rest
+    } = props
 
     React.useEffect(() => {
       if (!onLayout) {
@@ -89,10 +97,15 @@ const ResizablePanel = React.forwardRef<
     children,
     className,
     defaultSize,
+    minSize: _minSize,
+    maxSize: _maxSize,
+    order: _order,
+    onResize: _onResize,
     collapsible,
     collapsedSize,
     onCollapse,
     onExpand,
+    style: styleProp,
     ...rest
   } = props
 
@@ -147,6 +160,7 @@ const ResizablePanel = React.forwardRef<
         flexGrow: 0,
         flexShrink: 0,
         overflow: "hidden",
+        ...styleProp,
       }}
       {...(rest as React.ComponentProps<"div">)}
     >
@@ -165,6 +179,10 @@ function ResizableHandle({
   withHandle?: boolean
 }) {
   if (isTauriRuntime()) {
+    const { disabled: _disabled, hitAreaMargins: _hitAreaMargins, ...rest } = props as unknown as {
+      disabled?: boolean
+      hitAreaMargins?: unknown
+    }
     return (
       <div
         data-slot="resizable-handle"
@@ -172,7 +190,7 @@ function ResizableHandle({
           "bg-border relative flex w-px items-center justify-center data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full",
           className
         )}
-        {...(props as React.ComponentProps<"div">)}
+        {...(rest as React.ComponentProps<"div">)}
       >
         {withHandle && (
           <div className="bg-border z-10 flex h-4 w-3 items-center justify-center rounded-xs border">
