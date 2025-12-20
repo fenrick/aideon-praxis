@@ -36,9 +36,9 @@ export interface TemplateContext {
 }
 
 /**
- *
- * @param template
- * @param context
+ * Instantiate a canvas template for a specific runtime context.
+ * @param template - Template definition to materialize.
+ * @param context - Runtime context to apply (scenario, as-of).
  */
 export function instantiateTemplate(
   template: CanvasTemplate,
@@ -72,10 +72,10 @@ export function instantiateTemplate(
 }
 
 /**
- *
- * @param name
- * @param description
- * @param widgets
+ * Capture a template from runtime widgets.
+ * @param name - Display name for the template.
+ * @param description - Summary shown in template pickers.
+ * @param widgets - Runtime widgets to capture.
  */
 export function captureTemplateFromWidgets(
   name: string,
@@ -91,8 +91,8 @@ export function captureTemplateFromWidgets(
 }
 
 /**
- *
- * @param widget
+ * Convert a runtime widget into its template-safe shape.
+ * @param widget - Runtime widget to convert.
  */
 function convertWidgetToTemplate(widget: PraxisCanvasWidget): TemplateWidgetConfig {
   const { size, title, id } = widget;
@@ -109,20 +109,14 @@ function convertWidgetToTemplate(widget: PraxisCanvasWidget): TemplateWidgetConf
 }
 
 /**
- *
- * @param view
+ * Strip runtime-only fields from a view definition.
+ * @param view - View definition including runtime fields.
  */
-function withoutRuntimeFields(view: GraphViewDefinition): GraphTemplateView;
-function withoutRuntimeFields(view: CatalogueViewDefinition): CatalogueTemplateView;
-function withoutRuntimeFields(view: MatrixViewDefinition): MatrixTemplateView;
-function withoutRuntimeFields(view: ChartViewDefinition): ChartTemplateView;
-function withoutRuntimeFields(
-  view: GraphViewDefinition | CatalogueViewDefinition | MatrixViewDefinition | ChartViewDefinition,
-) {
-  const rest = { ...view };
-  delete rest.asOf;
-  delete rest.scenario;
-  return rest;
+function withoutRuntimeFields<T extends { asOf: string; scenario?: string }>(
+  view: T,
+): Omit<T, 'asOf' | 'scenario'> {
+  const entries = Object.entries(view).filter(([key]) => key !== 'asOf' && key !== 'scenario');
+  return Object.fromEntries(entries) as Omit<T, 'asOf' | 'scenario'>;
 }
 
 const GRAPH_OVERVIEW: GraphTemplateView = {
