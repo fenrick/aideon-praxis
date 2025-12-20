@@ -18,4 +18,3 @@ describe('graph-selection helpers', () => {
     expect(areStringSetsEqual(['a', 'b'], ['a', 'c'])).toBe(false);
   });
 });
-
