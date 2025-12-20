@@ -119,8 +119,9 @@ function withoutRuntimeFields(view: ChartViewDefinition): ChartTemplateView;
 function withoutRuntimeFields(
   view: GraphViewDefinition | CatalogueViewDefinition | MatrixViewDefinition | ChartViewDefinition,
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { asOf, scenario, ...rest } = view;
+  const rest = { ...view };
+  delete rest.asOf;
+  delete rest.scenario;
   return rest;
 }
 
