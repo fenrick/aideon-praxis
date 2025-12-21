@@ -24,7 +24,7 @@ interface OverviewTabsProperties {
   readonly initialTab?: 'canvas' | 'overview' | 'timeline' | 'activity';
   readonly className?: string;
   readonly reloadSignal?: number;
-  readonly branchTriggerRef?: RefObject<HTMLButtonElement | null>;
+  readonly branchTriggerRef?: RefObject<HTMLButtonElement>;
 }
 
 /**
@@ -55,7 +55,7 @@ export function OverviewTabs({
   initialTab = 'canvas',
   className,
   reloadSignal,
-  branchTriggerRef: _branchTriggerReference,
+  branchTriggerRef,
 }: OverviewTabsProperties) {
   const copy = templateScreenCopy.tabs;
 
@@ -81,7 +81,7 @@ export function OverviewTabs({
       <TabsContent value="overview" className="min-h-0 flex-1">
         <div className="grid gap-4 lg:grid-cols-2">
           <SnapshotOverviewCard state={state} />
-          <TimeCursorCard />
+          <TimeCursorCard triggerRef={branchTriggerRef} />
         </div>
       </TabsContent>
 

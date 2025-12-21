@@ -25,7 +25,7 @@ import { Slider } from 'design-system/components/ui/slider';
 interface TimeCursorCardProperties {
   readonly state?: TemporalPanelState;
   readonly actions?: TemporalPanelActions;
-  readonly triggerRef?: RefObject<HTMLButtonElement | null>;
+  readonly triggerRef?: RefObject<HTMLButtonElement>;
 }
 
 /**
@@ -72,7 +72,11 @@ export function TimeCursorCard({ state, actions, triggerRef }: TimeCursorCardPro
               id="branch-select"
               data-testid="branch-select"
               aria-label={copy.branchLabel}
-              ref={triggerRef}
+              ref={(node) => {
+                if (triggerRef) {
+                  triggerRef.current = node;
+                }
+              }}
             >
               <SelectValue placeholder="Select branch" />
             </SelectTrigger>

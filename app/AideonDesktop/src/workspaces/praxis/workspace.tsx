@@ -158,7 +158,7 @@ function PraxisWorkspaceExperience({
     reloadTick: 0,
   });
   const [debugVisible, setDebugVisible] = useState(false);
-  const branchSelectReference = useRef<HTMLButtonElement | null>(null);
+  const branchSelectReference = useRef<HTMLButtonElement>(null);
   const commandStack = useCommandStack();
 
   const [temporalState, temporalActions] = useTemporalPanel();
@@ -478,7 +478,6 @@ function PraxisWorkspaceExperience({
             }}
             temporalState={temporalState}
             temporalActions={temporalActions}
-            timeTriggerRef={branchSelectReference}
             loading={templatesState.loading}
             error={scenarioState.error}
           />
