@@ -26,7 +26,7 @@ export interface PraxisWorkspaceToolbarProperties {
   readonly onCreateWidget: () => void;
   readonly temporalState: TemporalPanelState;
   readonly temporalActions: TemporalPanelActions;
-  readonly timeTriggerRef?: RefObject<HTMLButtonElement | null>;
+  readonly timeTriggerRef?: RefObject<HTMLButtonElement>;
   readonly loading?: boolean;
   readonly error?: string;
 }

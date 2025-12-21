@@ -19,19 +19,23 @@ describe('main.tsx routing', () => {
     globalThis.location.hash = '#/status';
   });
 
-  it('renders status screen when hash route is /status in browser mode', async () => {
-    const module = await import('../../src/main');
-    const container = document.createElement('div');
-    render(<module.AppEntry />, { container });
-    // Allow queueMicrotask inside AppEntry to run
-    await Promise.resolve();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+  it(
+    'renders status screen when hash route is /status in browser mode',
+    async () => {
+      const module = await import('../../src/main');
+      const container = document.createElement('div');
+      render(<module.AppEntry />, { container });
+      // Allow queueMicrotask inside AppEntry to run
+      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
-    await waitFor(
-      () => {
-        expect(container.textContent || '').toContain('Host status');
-      },
-      { timeout: 10_000 },
-    );
-  }, 15_000);
+      await waitFor(
+        () => {
+          expect(container.textContent || '').toContain('Host status');
+        },
+        { timeout: 10_000 },
+      );
+    },
+    15_000,
+  );
 });

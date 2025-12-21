@@ -25,7 +25,7 @@ import { Slider } from 'design-system/components/ui/slider';
 interface TimeCursorCardProperties {
   readonly state?: TemporalPanelState;
   readonly actions?: TemporalPanelActions;
-  readonly triggerRef?: RefObject<HTMLButtonElement | null>;
+  readonly triggerRef?: RefObject<HTMLButtonElement>;
 }
 
 /**
