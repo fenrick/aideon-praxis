@@ -24,7 +24,7 @@ interface OverviewTabsProperties {
   readonly initialTab?: 'canvas' | 'overview' | 'timeline' | 'activity';
   readonly className?: string;
   readonly reloadSignal?: number;
-  readonly branchTriggerRef?: RefObject<HTMLButtonElement | null>;
+  readonly branchTriggerRef?: RefObject<HTMLButtonElement | undefined>;
 }
 
 /**
