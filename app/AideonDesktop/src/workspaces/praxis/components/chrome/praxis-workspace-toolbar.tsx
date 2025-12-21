@@ -26,7 +26,7 @@ export interface PraxisWorkspaceToolbarProperties {
   readonly onCreateWidget: () => void;
   readonly temporalState: TemporalPanelState;
   readonly temporalActions: TemporalPanelActions;
-  readonly timeTriggerRef?: RefObject<HTMLButtonElement>;
+  readonly timeTriggerRef?: RefObject<HTMLButtonElement | undefined>;
   readonly loading?: boolean;
   readonly error?: string;
 }
@@ -121,7 +121,15 @@ export function PraxisWorkspaceToolbar({
         <>
           <Popover>
             <PopoverTrigger asChild>
-              <Button ref={timeTriggerRef} variant="outline" size="sm">
+              <Button
+                ref={(node) => {
+                  if (timeTriggerRef) {
+                    timeTriggerRef.current = node ?? undefined;
+                  }
+                }}
+                variant="outline"
+                size="sm"
+              >
                 Time
               </Button>
             </PopoverTrigger>
