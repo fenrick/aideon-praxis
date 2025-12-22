@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 import { ActivityTimelinePanel } from 'praxis/components/blocks/activity-timeline-panel';
 import { CommitTimelineList } from 'praxis/components/blocks/commit-timeline-list';
@@ -24,7 +24,7 @@ interface OverviewTabsProperties {
   readonly initialTab?: 'canvas' | 'overview' | 'timeline' | 'activity';
   readonly className?: string;
   readonly reloadSignal?: number;
-  readonly branchTriggerRef?: RefObject<HTMLButtonElement | null>;
+  readonly branchTriggerRef?: Ref<HTMLButtonElement>;
 }
 
 /**

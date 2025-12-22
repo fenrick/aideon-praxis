@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefCallback } from 'react';
 
 import { dedupeIds } from 'aideon/canvas/selection';
 import { AideonShellLayout } from 'aideon/shell/aideon-shell-layout';
@@ -158,7 +158,10 @@ function PraxisWorkspaceExperience({
     reloadTick: 0,
   });
   const [debugVisible, setDebugVisible] = useState(false);
-  const branchSelectReference = useRef<HTMLButtonElement | null>(null);
+  const branchSelectReference = useRef<HTMLButtonElement | undefined>(undefined);
+  const branchSelectReferenceCallback: RefCallback<HTMLButtonElement> = useCallback((node) => {
+    branchSelectReference.current = node ?? undefined;
+  }, []);
   const commandStack = useCommandStack();
 
   const [temporalState, temporalActions] = useTemporalPanel();
@@ -478,7 +481,7 @@ function PraxisWorkspaceExperience({
             }}
             temporalState={temporalState}
             temporalActions={temporalActions}
-            timeTriggerRef={branchSelectReference}
+            timeTriggerRef={branchSelectReferenceCallback}
             loading={templatesState.loading}
             error={scenarioState.error}
           />
@@ -512,7 +515,7 @@ function PraxisWorkspaceExperience({
                 }
               }}
               reloadSignal={propertyState.reloadTick}
-              branchTriggerRef={branchSelectReference}
+              branchTriggerRef={branchSelectReferenceCallback}
             />
           </div>
         }

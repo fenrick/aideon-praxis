@@ -1,4 +1,4 @@
-import { useMemo, type RefObject } from 'react';
+import { useMemo, type Ref } from 'react';
 
 import { templateScreenCopy } from 'praxis/copy/template-screen';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
@@ -25,7 +25,7 @@ import { Slider } from 'design-system/components/ui/slider';
 interface TimeCursorCardProperties {
   readonly state?: TemporalPanelState;
   readonly actions?: TemporalPanelActions;
-  readonly triggerRef?: RefObject<HTMLButtonElement | null>;
+  readonly triggerRef?: Ref<HTMLButtonElement>;
 }
 
 /**
@@ -72,7 +72,7 @@ export function TimeCursorCard({ state, actions, triggerRef }: TimeCursorCardPro
               id="branch-select"
               data-testid="branch-select"
               aria-label={copy.branchLabel}
-              ref={triggerRef ?? undefined}
+              ref={triggerRef}
             >
               <SelectValue placeholder="Select branch" />
             </SelectTrigger>
