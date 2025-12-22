@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import type { Ref } from 'react';
 import { useMemo, useState } from 'react';
 
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
@@ -26,7 +26,7 @@ export interface PraxisWorkspaceToolbarProperties {
   readonly onCreateWidget: () => void;
   readonly temporalState: TemporalPanelState;
   readonly temporalActions: TemporalPanelActions;
-  readonly timeTriggerRef?: RefObject<HTMLButtonElement | null>;
+  readonly timeTriggerRef?: Ref<HTMLButtonElement>;
   readonly loading?: boolean;
   readonly error?: string;
 }
@@ -121,7 +121,7 @@ export function PraxisWorkspaceToolbar({
         <>
           <Popover>
             <PopoverTrigger asChild>
-              <Button ref={timeTriggerRef ?? undefined} variant="outline" size="sm">
+              <Button ref={timeTriggerRef} variant="outline" size="sm">
                 Time
               </Button>
             </PopoverTrigger>
