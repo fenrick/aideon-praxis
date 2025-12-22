@@ -18,7 +18,7 @@ describe('AppEntry routes', () => {
 
     render(<AppEntry />);
 
-    const about = await screen.findAllByText(/Desktop shell for Praxis Canvas and tools/i);
+    const about = await screen.findAllByText(/Desktop shell for Praxis workspace and tools/i);
     expect(about.length).toBeGreaterThan(0);
   });
 });

@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { useCommandStack } from 'canvas/hooks/use-command-stack';
+import { useCommandStack } from 'praxis/hooks/use-command-stack';
 
 describe('useCommandStack', () => {
   it('records commands and supports undo/redo with async fallbacks', async () => {

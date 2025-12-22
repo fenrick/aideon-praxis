@@ -3,20 +3,8 @@ import type { ComponentPropsWithoutRef } from 'react';
 import { cn } from 'design-system/lib/utilities';
 
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './resizable';
-import { Sidebar, SidebarProvider } from './sidebar';
-import type { DesktopShellSlots } from './types';
-
-export type DesktopShellProperties = DesktopShellSlots & Readonly<ComponentPropsWithoutRef<'div'>>;
-
-/**
- *
- * @param root0
- * @param root0.tree
- * @param root0.toolbar
- * @param root0.main
- * @param root0.properties
- * @param root0.className
- */
+import { Sidebar, SidebarProvider, useSidebar } from './sidebar';
+// ...
 export function DesktopShell({
   tree,
   toolbar,
@@ -25,18 +13,24 @@ export function DesktopShell({
   className,
   ...rest
 }: DesktopShellProperties) {
+  const { open } = useSidebar();
   return (
     <SidebarProvider>
       <div
         className={cn('flex min-h-screen flex-col bg-background text-foreground', className)}
         {...rest}
       >
-        <header className="border-b border-border/70 bg-card/80 px-4 py-2 backdrop-blur">
-          {toolbar}
-        </header>
+
         <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
-          <ResizablePanel defaultSize={20} minSize={12} className="min-w-[200px] max-w-[420px]">
-            <Sidebar collapsible="icon" className="h-full border-r border-border/60">
+          <ResizablePanel
+            defaultSize={20}
+            collapsedSize={4}
+            maxSize={25}
+            onCollapse={() => setOpen(false)}
+            onExpand={() => setOpen(true)}
+            className="border-r border-border/60"
+          >
+            <Sidebar collapsible="icon" className="h-full">
               {tree}
             </Sidebar>
           </ResizablePanel>
@@ -44,13 +38,13 @@ export function DesktopShell({
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={60} minSize={40} className="min-w-[320px]">
-            <div className="flex h-full flex-col overflow-hidden bg-background/80 p-4">{main}</div>
+            <div className="flex h-full flex-col overflow-hidden bg-background p-4">{main}</div>
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={20} minSize={15} className="min-w-[240px] max-w-[520px]">
-            <div className="h-full overflow-hidden border-l border-border/60 bg-card/70">
+            <div className="h-full overflow-hidden border-l border-border/60 bg-card">
               {properties}
             </div>
           </ResizablePanel>

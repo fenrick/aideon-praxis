@@ -40,7 +40,7 @@ For a full walkthrough (prerequisites, setup, dev workflow, and issues helpers),
 ### Common commands (quick reference)
 
 - Install deps: `corepack enable && pnpm install`
-- Dev (Praxis Canvas + Tauri host): see `docs/getting-started.md` for the recommended terminal layout.
+- Dev (Praxis workspace + Tauri host): see `docs/getting-started.md` for the recommended terminal layout.
 - Lint/typecheck/test (TS): `pnpm run node:lint && pnpm run node:typecheck && pnpm run node:test`
 - Rust checks: `pnpm run host:lint && pnpm run host:check`
 

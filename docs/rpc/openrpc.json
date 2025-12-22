@@ -1,7 +1,7 @@
 {
   "openrpc": "1.2.6",
   "info": {
-    "title": "Aideon Praxis Worker RPC",
+    "title": "Aideon Worker RPC",
     "version": "0.1.0",
     "description": "Versioned JSON-RPC methods over pipes/UDS in desktop mode"
   },

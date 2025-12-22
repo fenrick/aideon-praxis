@@ -33,7 +33,7 @@ with Chrona, Metis, Continuum, and Mneme evolving alongside it.
 
 > **Renderer migration:** The legacy Svelte renderer has been removed. All roadmap items assume
 > the React + React Flow canvas runtime described in `docs/DESIGN.md` and
-> `app/AideonDesktop/docs/praxis-canvas/DESIGN.md`. Any remaining Svelte references (primarily in
+> `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`. Any remaining Svelte references (primarily in
 > mirrored historical issue docs) are informational only.
 
 #### Acceptance

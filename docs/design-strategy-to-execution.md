@@ -24,7 +24,7 @@ reference when designing UX surfaces or back-end APIs; this section only summari
 ## 3. Time, colour, and story modes
 
 Time encoding, colour schemes, and story modes are defined in ADR
-`docs/adr/0009-time-encoding-and-story-modes.md`. Praxis Canvas and Chrona should treat that ADR as
+`docs/adr/0009-time-encoding-and-story-modes.md`. Praxis workspace and Chrona should treat that ADR as
 the normative reference for palettes, binning rules, and named story modes.
 
 ## 4. Viewpoint library (ISO 42010-aligned)

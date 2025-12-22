@@ -5,11 +5,44 @@ import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "design-system/lib/utilities"
 
+function isTauriRuntime() {
+  const metaEnvironment = (import.meta as { env?: { TAURI_PLATFORM?: string } }).env
+  if (metaEnvironment?.TAURI_PLATFORM) {
+    return true
+  }
+
+  const global = globalThis as {
+    __TAURI__?: unknown
+    __TAURI_INTERNALS__?: unknown
+    window?: Window
+  }
+  return Boolean(
+    global.__TAURI__ ??
+      global.__TAURI_INTERNALS__ ??
+      global.window?.__TAURI_INTERNALS__ ??
+      global.window?.__TAURI_METADATA__
+  )
+}
+
 function ScrollArea({
   className,
   children,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
+  if (isTauriRuntime()) {
+    return (
+      <div
+        data-slot="scroll-area"
+        className={cn("relative overflow-auto", className)}
+        {...(props as React.ComponentProps<"div">)}
+      >
+        <div data-slot="scroll-area-viewport" className="size-full">
+          {children}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
@@ -33,6 +66,10 @@ function ScrollBar({
   orientation = "vertical",
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>) {
+  if (isTauriRuntime()) {
+    return null
+  }
+
   return (
     <ScrollAreaPrimitive.ScrollAreaScrollbar
       data-slot="scroll-area-scrollbar"

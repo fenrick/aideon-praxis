@@ -45,7 +45,7 @@ No other primitives should be used for the app shell; keep layout composition co
 
 ## Interactions
 
-- Consumed by Praxis Canvas (and future React apps) as the single source of UI primitives/blocks.
+- Consumed by Praxis workspace (and future React apps) as the single source of UI primitives/blocks.
 - Refreshed via the `components:refresh` script, which updates generated components in
   `src/components/ui` from `components.json`.
 

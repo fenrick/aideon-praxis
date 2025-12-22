@@ -53,7 +53,7 @@ We will not lock into a single third-party kit; we compose small wrappers where 
 
 ## 3) Theming & Tokens
 
-- Tokens live in `app/AideonDesktop/src/design-system/src/styles/globals.css` and are consumed via `@aideon/design-system` wrappers; platform accents are previewed in the Praxis Canvas Style Guide window.
+- Tokens live in `app/AideonDesktop/src/design-system/src/styles/globals.css` and are consumed via `@aideon/design-system` wrappers; platform accents are previewed in the Praxis workspace Style Guide window.
 - Primary token: `--color-accent` drives primary buttons, focus rings, selected state.
 - Platform dev-preview:
   - mac: `--color-accent: #0a84ff`

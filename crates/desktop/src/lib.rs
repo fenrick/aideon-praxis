@@ -1,4 +1,4 @@
-//! Aideon Praxis Tauri host entrypoint and IPC commands.
+//! Aideon Tauri host entrypoint and IPC commands.
 
 mod app;
 mod commands;
