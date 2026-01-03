@@ -176,8 +176,8 @@ fn build_ipc_manifest() -> Result<IpcManifest> {
 
     let mut commands = std::collections::BTreeSet::<String>::new();
     for path in files {
-        let contents = fs::read_to_string(&path)
-            .with_context(|| format!("read {}", path.display()))?;
+        let contents =
+            fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
         for rename in extract_tauri_renames(&contents) {
             commands.insert(rename);
         }
@@ -202,8 +202,7 @@ async fn export_ipc_manifest(args: IpcManifestArgs) -> Result<()> {
     }
     let manifest = build_ipc_manifest()?;
     let json = serde_json::to_string_pretty(&manifest)?;
-    fs::write(&out, format!("{json}\n"))
-        .with_context(|| format!("write {}", out.display()))?;
+    fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
     println!("Wrote IPC manifest to {}", out.display());
     Ok(())
 }
@@ -337,10 +336,13 @@ mod tests {
         let repo = repo_root();
         let manifest = build_ipc_manifest().expect("build manifest");
         let path = repo.join("docs/contracts/ipc-manifest.json");
-        let raw = fs::read_to_string(&path)
-            .unwrap_or_else(|_| panic!("missing {}; run `cargo run -p aideon_xtask -- ipc-manifest` to generate it", path.display()));
-        let on_disk: IpcManifest =
-            serde_json::from_str(&raw).expect("parse ipc-manifest.json");
+        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run `cargo run -p aideon_xtask -- ipc-manifest` to generate it",
+                path.display()
+            )
+        });
+        let on_disk: IpcManifest = serde_json::from_str(&raw).expect("parse ipc-manifest.json");
         assert_eq!(
             on_disk, manifest,
             "ipc-manifest.json drifted; rerun `cargo run -p aideon_xtask -- ipc-manifest`"

@@ -2,8 +2,8 @@
 
 import fs from 'node:fs/promises';
 
-import { TIMEGRAPH_IPC_COMMANDS } from '@/adapters/timegraph-ipc';
 import { SYSTEM_IPC_COMMANDS } from '@/adapters/system-ipc';
+import { TIMEGRAPH_IPC_COMMANDS } from '@/adapters/timegraph-ipc';
 import { MNEME_IPC_COMMANDS } from '@/workspaces/mneme/mneme-api';
 import { PRAXIS_DOMAIN_IPC_COMMANDS } from '@/workspaces/praxis/domain-data';
 import { PRAXIS_IPC_COMMANDS } from '@/workspaces/praxis/praxis-api';

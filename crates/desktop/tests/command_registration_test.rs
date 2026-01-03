@@ -34,4 +34,3 @@ fn app_registers_core_ipc_commands() {
         );
     }
 }
-
