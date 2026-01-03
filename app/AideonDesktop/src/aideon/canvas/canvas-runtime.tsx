@@ -70,6 +70,7 @@ function syncWidgetPositions(
 /**
  * Merges sizes from storage into the current widget size state.
  * @param previous
+ * @param widgets
  */
 function syncWidgetSizes(
   previous: Record<string, WidgetSize>,
@@ -95,6 +96,8 @@ function syncWidgetSizes(
  * @param root0.renderWidget
  * @param root0.className
  * @param root0.showPageBreaks
+ * @param root0.layoutKey
+ * @param root0.layoutPersistence
  * @returns Canvas runtime surface.
  */
 function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({

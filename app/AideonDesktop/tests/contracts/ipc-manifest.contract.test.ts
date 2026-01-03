@@ -1,5 +1,3 @@
-/// <reference types="vite/client" />
-
 import fs from 'node:fs/promises';
 
 import { SYSTEM_IPC_COMMANDS } from '@/adapters/system-ipc';

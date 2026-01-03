@@ -251,6 +251,10 @@ export const BUILT_IN_TEMPLATES: CanvasTemplate[] = [
   },
 ];
 
+/**
+ * Create an opaque id for built-in template documents.
+ * @param prefix template slug
+ */
 function createDocumentId(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `${prefix}-${crypto.randomUUID()}`;

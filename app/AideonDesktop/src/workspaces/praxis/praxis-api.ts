@@ -145,6 +145,10 @@ export async function getMetaModelDocument(): Promise<MetaModelDocument> {
   return invokeIpc<MetaModelDocument>(COMMANDS.metaModel, {});
 }
 
+/**
+ * Fetch a persisted canvas layout snapshot for the given time context.
+ * @param request lookup key (doc + time)
+ */
 export async function getCanvasLayout(
   request: CanvasLayoutGetRequest,
 ): Promise<CanvasLayoutSnapshot | undefined> {
@@ -160,6 +164,10 @@ export async function getCanvasLayout(
   return result ?? undefined;
 }
 
+/**
+ * Persist a canvas layout snapshot to the host store.
+ * @param snapshot layout payload
+ */
 export async function saveCanvasLayout(snapshot: CanvasLayoutSnapshot): Promise<void> {
   if (!isTauri()) {
     return;

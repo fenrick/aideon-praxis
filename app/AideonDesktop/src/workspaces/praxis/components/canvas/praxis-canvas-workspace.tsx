@@ -156,6 +156,8 @@ const SUGGESTED_WIDGETS = ['KPI', 'Graph', 'Catalogue snapshot'] as const;
  * Full-height canvas surface with overlay stats and actions.
  * @param root0
  * @param root0.widgets
+ * @param root0.canvasLayoutKey
+ * @param root0.canvasLayoutPersistence
  * @param root0.selection
  * @param root0.onSelectionChange
  * @param root0.onRequestMetaModelFocus

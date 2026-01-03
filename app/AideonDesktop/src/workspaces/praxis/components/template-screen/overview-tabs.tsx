@@ -41,6 +41,8 @@ interface OverviewTabsProperties {
  * @param root0.state
  * @param root0.actions
  * @param root0.widgets
+ * @param root0.canvasLayoutKey
+ * @param root0.canvasLayoutPersistence
  * @param root0.selection
  * @param root0.onSelectionChange
  * @param root0.onRequestMetaModelFocus
