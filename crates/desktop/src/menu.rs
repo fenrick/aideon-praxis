@@ -1,7 +1,7 @@
 use serde::Serialize;
 use serde_json::json;
 use tauri::{
-    App, AppHandle, Emitter, Manager, Wry,
+    App, AppHandle, Emitter, Manager, Runtime,
     menu::{Menu, MenuEvent, PredefinedMenuItem, Submenu},
 };
 use tauri_plugin_dialog::DialogExt;
@@ -21,7 +21,35 @@ pub struct MenuIds {
     pub styleguide: String,
 }
 
-pub fn build_menu(app: &App<Wry>) -> Result<(), String> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MenuAction {
+    OpenAbout,
+    OpenSettings,
+    OpenStyleguide,
+    EmitShellCommand(&'static str),
+    PickOpenFile,
+    PickSaveFile,
+    Quit,
+    Noop,
+}
+
+fn classify_menu_event(event_id: &str, styleguide_id: &str) -> MenuAction {
+    match event_id {
+        "about" | "help.about" => MenuAction::OpenAbout,
+        "preferences" => MenuAction::OpenSettings,
+        "view.toggle_navigation" => MenuAction::EmitShellCommand("toggle-navigation"),
+        "view.toggle_inspector" => MenuAction::EmitShellCommand("toggle-inspector"),
+        "view.command_palette" => MenuAction::EmitShellCommand("open-command-palette"),
+        "file.open" => MenuAction::PickOpenFile,
+        "file.save_as" => MenuAction::PickSaveFile,
+        "file.print" => MenuAction::EmitShellCommand("file.print"),
+        "file.quit" => MenuAction::Quit,
+        _ if !styleguide_id.is_empty() && event_id == styleguide_id => MenuAction::OpenStyleguide,
+        _ => MenuAction::Noop,
+    }
+}
+
+pub fn build_menu<R: Runtime>(app: &App<R>) -> Result<(), String> {
     let menu = Menu::new(app).map_err(to_string)?;
     let mut ids = MenuIds::default();
 
@@ -40,63 +68,40 @@ pub fn build_menu(app: &App<Wry>) -> Result<(), String> {
     Ok(())
 }
 
-pub fn handle_menu_event(app: &AppHandle<Wry>, event: MenuEvent) {
+pub fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) {
     log::info!("menu: event id={:?}", event.id());
 
-    // Specific actions
-    match event.id().as_ref() {
-        "about" => {
+    let ids = app.state::<MenuIds>();
+    match classify_menu_event(event.id().as_ref(), &ids.styleguide) {
+        MenuAction::OpenAbout => {
             log::info!("menu: open about");
             let _ = open_about(app.clone());
         }
-        "preferences" => {
+        MenuAction::OpenSettings => {
             log::info!("menu: open settings");
             let _ = open_settings(app.clone());
         }
-        "help.about" => {
-            log::info!("menu: help.about");
-            let _ = open_about(app.clone());
+        MenuAction::OpenStyleguide => {
+            log::info!("menu: open styleguide via resolved id");
+            let _ = open_styleguide(app.clone());
         }
-        "view.toggle_navigation" => {
-            emit_shell_command(app, "toggle-navigation");
-        }
-        "view.toggle_inspector" => {
-            emit_shell_command(app, "toggle-inspector");
-        }
-        "view.command_palette" => {
-            emit_shell_command(app, "open-command-palette");
-        }
-        "file.open" => {
-            pick_open_file(app);
-        }
-        "file.save_as" => {
-            pick_save_file(app);
-        }
-        "file.print" => {
-            emit_shell_command(app, "file.print");
-        }
-        "file.quit" => {
+        MenuAction::EmitShellCommand(command) => emit_shell_command(app, command),
+        MenuAction::PickOpenFile => pick_open_file(app),
+        MenuAction::PickSaveFile => pick_save_file(app),
+        MenuAction::Quit => {
             log::info!("menu: file.quit");
             app.exit(0);
         }
-        _ => {}
-    }
-
-    // Fallback dispatch by discovered IDs (platforms may remap IDs)
-    let ids = app.state::<MenuIds>();
-    let ev = event.id().as_ref();
-    if ev == ids.styleguide {
-        log::info!("menu: open styleguide via resolved id");
-        let _ = open_styleguide(app.clone());
+        MenuAction::Noop => {}
     }
 }
 
-fn emit_shell_command(app: &AppHandle<Wry>, command: &str) {
+fn emit_shell_command<R: Runtime>(app: &AppHandle<R>, command: &str) {
     emit_shell_command_with_payload(app, command, None);
 }
 
-fn emit_shell_command_with_payload(
-    app: &AppHandle<Wry>,
+fn emit_shell_command_with_payload<R: Runtime>(
+    app: &AppHandle<R>,
     command: &str,
     payload: Option<serde_json::Value>,
 ) {
@@ -111,7 +116,7 @@ fn emit_shell_command_with_payload(
     }
 }
 
-fn pick_open_file(app: &AppHandle<Wry>) {
+fn pick_open_file<R: Runtime>(app: &AppHandle<R>) {
     let handle = app.clone();
     handle.dialog().file().pick_file(move |file| {
         if let Some(file) = file {
@@ -121,7 +126,7 @@ fn pick_open_file(app: &AppHandle<Wry>) {
     });
 }
 
-fn pick_save_file(app: &AppHandle<Wry>) {
+fn pick_save_file<R: Runtime>(app: &AppHandle<R>) {
     let handle = app.clone();
     handle.dialog().file().save_file(move |file| {
         if let Some(file) = file {
@@ -136,41 +141,10 @@ fn to_string<E: std::fmt::Display>(error: E) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{MenuIds, ShellCommandPayload, to_string};
-    use serde_json::json;
+#[path = "../tests/menu_tests.rs"]
+mod tests;
 
-    #[test]
-    fn menu_ids_default_is_empty() {
-        let ids = MenuIds::default();
-        assert!(ids.styleguide.is_empty());
-    }
-
-    #[test]
-    fn shell_command_payload_serializes() {
-        let payload = ShellCommandPayload {
-            command: "toggle-navigation".into(),
-            payload: None,
-        };
-        let encoded = serde_json::to_string(&payload).expect("serialize");
-        assert!(encoded.contains("toggle-navigation"));
-
-        let payload = ShellCommandPayload {
-            command: "file.open".into(),
-            payload: Some(json!({ "path": "/tmp/demo.txt" })),
-        };
-        let encoded = serde_json::to_string(&payload).expect("serialize");
-        assert!(encoded.contains("file.open"));
-        assert!(encoded.contains("demo.txt"));
-    }
-
-    #[test]
-    fn to_string_formats_errors() {
-        assert_eq!(to_string("err"), "err");
-    }
-}
-
-fn append_edit_items(app: &App<Wry>, edit: &Submenu<Wry>) -> Result<(), String> {
+fn append_edit_items<R: Runtime>(app: &App<R>, edit: &Submenu<R>) -> Result<(), String> {
     edit.append(&PredefinedMenuItem::undo(app, None).map_err(to_string)?)
         .map_err(to_string)?;
     edit.append(&PredefinedMenuItem::redo(app, None).map_err(to_string)?)
@@ -186,9 +160,9 @@ fn append_edit_items(app: &App<Wry>, edit: &Submenu<Wry>) -> Result<(), String> 
     Ok(())
 }
 
-fn append_window_items(
-    app: &App<Wry>,
-    window: &Submenu<Wry>,
+fn append_window_items<R: Runtime>(
+    app: &App<R>,
+    window: &Submenu<R>,
     include_visibility: bool,
 ) -> Result<(), String> {
     window
@@ -219,15 +193,15 @@ fn append_window_items(
 #[cfg(target_os = "macos")]
 mod mac {
     use tauri::{
-        App, Wry,
+        App, Runtime,
         menu::{Menu, MenuItemBuilder, PredefinedMenuItem, Submenu},
     };
 
     use super::{MenuIds, append_edit_items, append_window_items, to_string};
 
-    pub(super) fn install(
-        app: &App<Wry>,
-        menu: &Menu<Wry>,
+    pub(super) fn install<R: Runtime>(
+        app: &App<R>,
+        menu: &Menu<R>,
         ids: &mut MenuIds,
     ) -> Result<(), String> {
         let app_sub = Submenu::new(app, "Aideon", true).map_err(to_string)?;
@@ -326,15 +300,15 @@ mod mac {
 #[cfg(not(target_os = "macos"))]
 mod desktop {
     use tauri::{
-        App, Wry,
+        App, Runtime,
         menu::{Menu, MenuItemBuilder, Submenu},
     };
 
     use super::{MenuIds, append_edit_items, append_window_items, to_string};
 
-    pub(super) fn install(
-        app: &App<Wry>,
-        menu: &Menu<Wry>,
+    pub(super) fn install<R: Runtime>(
+        app: &App<R>,
+        menu: &Menu<R>,
         ids: &mut MenuIds,
     ) -> Result<(), String> {
         let file = Submenu::new(app, "File", false).map_err(to_string)?;

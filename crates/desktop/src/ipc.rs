@@ -7,6 +7,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::fmt;
+use std::future::Future;
 
 /// Stable error envelope returned by host commands.
 ///
@@ -117,51 +118,16 @@ impl<T> IpcResponse<T> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn ipc_request_deserializes_camel_case_envelope() {
-        let raw = json!({
-            "requestId": "req-1",
-            "payload": {}
-        });
-        let decoded: IpcRequest<EmptyPayload> =
-            serde_json::from_value(raw).expect("decode IpcRequest");
-        assert_eq!(decoded.request_id, "req-1");
-    }
-
-    #[test]
-    fn ipc_response_ok_serializes_camel_case_envelope() {
-        let response = IpcResponse::ok("req-1", json!({ "value": 1 }));
-        let value = serde_json::to_value(&response).expect("serialize IpcResponse");
-        assert_eq!(
-            value,
-            json!({
-                "requestId": "req-1",
-                "status": "ok",
-                "result": { "value": 1 }
-            })
-        );
-    }
-
-    #[test]
-    fn ipc_response_err_serializes_stable_error_envelope() {
-        let response: IpcResponse<()> = IpcResponse::err("req-2", HostError::invalid_input("bad"));
-        let value = serde_json::to_value(&response).expect("serialize IpcResponse");
-        assert_eq!(
-            value,
-            json!({
-                "requestId": "req-2",
-                "status": "error",
-                "error": {
-                    "code": "invalid_input",
-                    "message": "bad",
-                    "details": {}
-                }
-            })
-        );
+pub async fn ipc_handle<T, Fut>(request_id: String, fut: Fut) -> IpcResponse<T>
+where
+    Fut: Future<Output = Result<T, HostError>>,
+{
+    match fut.await {
+        Ok(result) => IpcResponse::ok(request_id, result),
+        Err(err) => IpcResponse::err(request_id, err),
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/ipc_tests.rs"]
+mod tests;

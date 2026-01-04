@@ -6,11 +6,5 @@ pub fn greet(name: String) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn greet_includes_name() {
-        assert_eq!(greet("Aideon".into()), "Hello Aideon from Rust!");
-    }
-}
+#[path = "../tests/commands_tests.rs"]
+mod tests;

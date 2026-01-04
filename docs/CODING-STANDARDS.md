@@ -220,7 +220,9 @@ refer to `ARCHITECTURE-BOUNDARY.md`. The notes below focus on product/module nam
 
 - One responsibility per file; split when a second reason to change appears.
 - Keep files short (aim ≤300–500 LOC).
-- Place unit tests alongside the code under `#[cfg(test)]`; put integration tests in `tests/`.
+- Place Rust tests under crate-level `tests/`. If a test needs crate-private access, include it as
+  a `#[cfg(test)] #[path = "../tests/<file>.rs"] mod <name>;` module from the owning source file
+  so test code stays out of `src/`.
 - Prefer file‑level `#[cfg(feature = "...")]` over scattered fine‑grained cfgs.
 
 4. **Naming**

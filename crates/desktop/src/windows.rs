@@ -1,7 +1,7 @@
 #[cfg(target_os = "windows")]
 use log::warn;
 use serde::Deserialize;
-use tauri::{App, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, Wry};
+use tauri::{App, AppHandle, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 
 use crate::ipc::{HostError, IpcRequest, IpcResponse};
 
@@ -12,7 +12,7 @@ const ROUTE_SETTINGS: &str = "settings/";
 const ROUTE_ABOUT: &str = "about/";
 const ROUTE_STYLEGUIDE: &str = "styleguide/";
 
-pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
+pub fn create_windows<R: Runtime>(app: &App<R>) -> Result<(), String> {
     WebviewWindowBuilder::new(app, "splash", WebviewUrl::App(ROUTE_SPLASH.into()))
         .title("Aideon — Loading")
         .resizable(false)
@@ -46,7 +46,7 @@ pub fn create_windows(app: &App<Wry>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn open_settings(app: AppHandle<Wry>) -> Result<(), HostError> {
+pub fn open_settings<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
     if let Some(window) = app.get_webview_window("settings") {
         let _ = window.set_focus();
         return Ok(());
@@ -63,7 +63,7 @@ pub fn open_settings(app: AppHandle<Wry>) -> Result<(), HostError> {
 }
 
 #[tauri::command]
-pub fn open_about(app: AppHandle<Wry>) -> Result<(), HostError> {
+pub fn open_about<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
     if let Some(window) = app.get_webview_window("about") {
         let _ = window.set_focus();
         return Ok(());
@@ -80,7 +80,7 @@ pub fn open_about(app: AppHandle<Wry>) -> Result<(), HostError> {
 }
 
 #[tauri::command]
-pub fn open_status(app: AppHandle<Wry>) -> Result<(), HostError> {
+pub fn open_status<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
     if let Some(window) = app.get_webview_window("status") {
         let _ = window.set_focus();
         return Ok(());
@@ -98,7 +98,7 @@ pub fn open_status(app: AppHandle<Wry>) -> Result<(), HostError> {
 }
 
 #[tauri::command]
-pub fn open_styleguide(app: AppHandle<Wry>) -> Result<(), HostError> {
+pub fn open_styleguide<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
     log::info!("host: open_styleguide requested");
     if let Some(window) = app.get_webview_window("styleguide") {
         let _ = window.set_focus();
@@ -121,34 +121,51 @@ pub struct OpenWindowPayload {
     pub window: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SystemWindowTarget {
+    Settings,
+    About,
+    Status,
+    Styleguide,
+}
+
+fn parse_window_target(value: &str) -> Result<SystemWindowTarget, HostError> {
+    match value {
+        "settings" => Ok(SystemWindowTarget::Settings),
+        "about" => Ok(SystemWindowTarget::About),
+        "status" => Ok(SystemWindowTarget::Status),
+        "styleguide" => Ok(SystemWindowTarget::Styleguide),
+        unknown => Err(HostError::invalid_input(format!(
+            "unknown window '{unknown}'"
+        ))),
+    }
+}
+
 /// Namespaced + requestId-wrapped window open command.
 #[tauri::command(rename = "system.window.open")]
-pub fn system_window_open(
-    app: AppHandle<Wry>,
+pub fn system_window_open<R: Runtime>(
+    app: AppHandle<R>,
     request: IpcRequest<OpenWindowPayload>,
 ) -> Result<IpcResponse<()>, HostError> {
     let request_id = request.request_id;
-    let response = match request.payload.window.as_str() {
-        "settings" => match open_settings(app) {
+    let response = match parse_window_target(&request.payload.window) {
+        Ok(SystemWindowTarget::Settings) => match open_settings(app) {
             Ok(()) => IpcResponse::ok(request_id, ()),
             Err(err) => IpcResponse::err(request_id, err),
         },
-        "about" => match open_about(app) {
+        Ok(SystemWindowTarget::About) => match open_about(app) {
             Ok(()) => IpcResponse::ok(request_id, ()),
             Err(err) => IpcResponse::err(request_id, err),
         },
-        "status" => match open_status(app) {
+        Ok(SystemWindowTarget::Status) => match open_status(app) {
             Ok(()) => IpcResponse::ok(request_id, ()),
             Err(err) => IpcResponse::err(request_id, err),
         },
-        "styleguide" => match open_styleguide(app) {
+        Ok(SystemWindowTarget::Styleguide) => match open_styleguide(app) {
             Ok(()) => IpcResponse::ok(request_id, ()),
             Err(err) => IpcResponse::err(request_id, err),
         },
-        unknown => IpcResponse::err(
-            request_id,
-            HostError::invalid_input(format!("unknown window '{unknown}'")),
-        ),
+        Err(err) => IpcResponse::err(request_id, err),
     };
     Ok(response)
 }
@@ -158,12 +175,5 @@ fn to_string<E: std::fmt::Display>(error: E) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::to_string;
-
-    #[test]
-    fn to_string_formats_errors() {
-        let value = to_string("boom");
-        assert_eq!(value, "boom");
-    }
-}
+#[path = "../tests/windows_tests.rs"]
+mod tests;

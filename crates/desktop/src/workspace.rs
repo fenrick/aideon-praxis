@@ -70,3 +70,7 @@ pub async fn workspace_templates_list(
     };
     Ok(response)
 }
+
+#[cfg(test)]
+#[path = "../tests/workspace_tests.rs"]
+mod tests;

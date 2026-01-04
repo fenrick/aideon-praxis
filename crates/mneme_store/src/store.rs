@@ -10038,114 +10038,8 @@ fn change_feed_payload(
 }
 
 #[cfg(test)]
-mod helper_tests {
-    use super::*;
-    use crate::DatabaseConfig;
-    use crate::LimitsConfig;
-    use crate::MnemeConfig;
-    use aideon_mneme_core::ops::WriteOptions;
-
-    #[test]
-    fn valid_bucket_divides_by_days() {
-        assert_eq!(valid_bucket(ValidTime(0)), 0);
-        assert_eq!(valid_bucket(ValidTime(MICROS_PER_DAY)), 1);
-        assert_eq!(valid_bucket(ValidTime(MICROS_PER_DAY * 3)), 3);
-    }
-
-    #[test]
-    fn retention_cutoff_is_not_future() {
-        let cutoff = retention_cutoff_hlc(1);
-        let now = Hlc::now().as_i64();
-        assert!(cutoff <= now);
-    }
-
-    #[test]
-    fn job_backoff_clamps_to_max() {
-        assert_eq!(job_backoff_millis(0), JOB_BACKOFF_BASE_MS);
-        assert_eq!(job_backoff_millis(1), JOB_BACKOFF_BASE_MS);
-        assert_eq!(job_backoff_millis(2), JOB_BACKOFF_BASE_MS * 2);
-        assert_eq!(job_backoff_millis(20), JOB_BACKOFF_MAX_MS);
-    }
-
-    #[test]
-    fn normalize_index_text_trims_and_lowercases() {
-        let normalized = normalize_index_text("  FoO Bar  ");
-        assert_eq!(normalized, "foo bar");
-    }
-
-    #[test]
-    fn check_value_limits_rejects_oversized_blob() {
-        let limits = MnemeLimits {
-            max_op_payload_bytes: 16,
-            max_blob_bytes: 1,
-            max_mv_values: 1,
-            max_pending_jobs: 1,
-            max_ingest_batch: 1,
-        };
-        let ok = check_value_limits(&Value::Blob(vec![1]), &limits);
-        assert!(ok.is_ok());
-        let err = check_value_limits(&Value::Blob(vec![1, 2]), &limits);
-        assert!(err.is_err());
-    }
-
-    #[test]
-    fn build_connection_url_supports_sqlite_and_postgres() {
-        let base = Path::new("/tmp");
-        let sqlite = MnemeConfig::default_sqlite("praxis.sqlite");
-        let sqlite_url = build_connection_url(&sqlite, base).expect("sqlite url");
-        assert!(sqlite_url.starts_with("sqlite://"));
-
-        let postgres = MnemeConfig {
-            database: DatabaseConfig::Postgres {
-                url: "postgres://localhost:5432/praxis".to_string(),
-            },
-            pool: None,
-            limits: Some(LimitsConfig::with_defaults()),
-            integrity: None,
-            validation_mode: None,
-            failpoints: None,
-        };
-        let pg_url = build_connection_url(&postgres, base).expect("pg url");
-        assert_eq!(pg_url, "postgres://localhost:5432/praxis");
-    }
-
-    #[test]
-    fn payload_helpers_resolve_scenario_and_bulk_mode() {
-        let scenario = ScenarioId(Id::new());
-        let payload = OpPayload::CreateNode(CreateNodeInput {
-            partition: PartitionId(Id::new()),
-            scenario_id: Some(scenario),
-            actor: ActorId(Id::new()),
-            asserted_at: Hlc::now(),
-            node_id: Id::new(),
-            type_id: None,
-            acl_group_id: None,
-            owner_actor_id: None,
-            visibility: None,
-            write_options: Some(WriteOptions { bulk_mode: true }),
-        });
-        let encoded = serde_json::to_vec(&payload).expect("payload");
-        let parsed = scenario_id_from_payload(&encoded).expect("scenario");
-        assert_eq!(parsed, Some(scenario));
-        assert_eq!(payload_scenario_id(&payload), Some(scenario));
-        assert!(payload_bulk_mode(&payload));
-    }
-
-    #[test]
-    fn change_feed_payload_tracks_entity_kinds() {
-        let payload = OpPayload::TombstoneEntity {
-            partition: PartitionId(Id::new()),
-            scenario_id: None,
-            actor: ActorId(Id::new()),
-            asserted_at: Hlc::now(),
-            entity_id: Id::new(),
-        };
-        let (kind, entity_id, extra) = change_feed_payload(&payload).expect("payload");
-        assert_eq!(kind, CHANGE_KIND_ENTITY);
-        assert!(entity_id.is_some());
-        assert!(extra.is_none());
-    }
-}
+#[path = "../tests/store_helper_tests.rs"]
+mod helper_tests;
 
 async fn insert_property_fact(
     tx: &sea_orm::DatabaseTransaction,
@@ -11933,13 +11827,22 @@ fn resolve_property(
             }))
         }
         MergePolicy::OrSet => {
+            let mut tombstoned = Vec::new();
             let mut values = Vec::new();
             for fact in facts {
                 if fact.is_tombstone {
-                    values.retain(|value| value != &fact.value);
-                } else {
-                    values.push(fact.value);
+                    if !tombstoned.iter().any(|value| value == &fact.value) {
+                        tombstoned.push(fact.value);
+                    }
+                    continue;
                 }
+                if tombstoned.iter().any(|value| value == &fact.value) {
+                    continue;
+                }
+                if values.iter().any(|value| value == &fact.value) {
+                    continue;
+                }
+                values.push(fact.value);
             }
             if values.is_empty() {
                 return Ok(None);
@@ -12116,187 +12019,5 @@ async fn fetch_op_deps(
 }
 
 #[cfg(test)]
-mod compaction_tests {
-    use super::*;
-    use crate::{FieldDef, SetEdgeExistenceIntervalInput, TypeDef, TypeFieldDef};
-    use tempfile::tempdir;
-
-    #[tokio::test]
-    async fn compaction_prunes_duplicate_intervals() -> MnemeResult<()> {
-        let dir = tempdir().expect("tempdir");
-        let base = dir.path();
-        let config = MnemeConfig::default_sqlite(base.join("compaction.sqlite").to_string_lossy());
-        let store = MnemeStore::connect(&config, base).await?;
-        let partition = PartitionId(Id::new());
-        let actor = ActorId(Id::new());
-        let type_id = Id::new();
-        let field_id = Id::new();
-
-        store
-            .upsert_metamodel_batch(
-                partition,
-                actor,
-                Hlc::now(),
-                MetamodelBatch {
-                    types: vec![TypeDef {
-                        type_id,
-                        applies_to: EntityKind::Node,
-                        label: "Service".to_string(),
-                        is_abstract: false,
-                        parent_type_id: None,
-                    }],
-                    fields: vec![FieldDef {
-                        field_id,
-                        label: "name".to_string(),
-                        value_type: ValueType::Str,
-                        cardinality_multi: false,
-                        merge_policy: MergePolicy::Lww,
-                        is_indexed: false,
-                        disallow_overlap: false,
-                    }],
-                    type_fields: vec![TypeFieldDef {
-                        type_id,
-                        field_id,
-                        is_required: false,
-                        default_value: None,
-                        override_default: false,
-                        tighten_required: false,
-                        disallow_overlap: None,
-                    }],
-                    edge_type_rules: vec![],
-                    metamodel_version: None,
-                    metamodel_source: None,
-                },
-            )
-            .await?;
-
-        let node_id = Id::new();
-        store
-            .create_node(CreateNodeInput {
-                partition,
-                scenario_id: None,
-                actor,
-                asserted_at: Hlc::now(),
-                node_id,
-                type_id: Some(type_id),
-                acl_group_id: None,
-                owner_actor_id: None,
-                visibility: None,
-                write_options: None,
-            })
-            .await?;
-
-        store
-            .set_property_interval(SetPropIntervalInput {
-                partition,
-                scenario_id: None,
-                actor,
-                asserted_at: Hlc::now(),
-                entity_id: node_id,
-                field_id,
-                value: Value::Str("alpha".to_string()),
-                valid_from: ValidTime(0),
-                valid_to: Some(ValidTime(10)),
-                layer: Layer::Actual,
-                write_options: None,
-            })
-            .await?;
-        store
-            .set_property_interval(SetPropIntervalInput {
-                partition,
-                scenario_id: None,
-                actor,
-                asserted_at: Hlc::now(),
-                entity_id: node_id,
-                field_id,
-                value: Value::Str("beta".to_string()),
-                valid_from: ValidTime(0),
-                valid_to: Some(ValidTime(10)),
-                layer: Layer::Actual,
-                write_options: None,
-            })
-            .await?;
-
-        let edge_id = Id::new();
-        store
-            .create_edge(CreateEdgeInput {
-                partition,
-                scenario_id: None,
-                actor,
-                asserted_at: Hlc::now(),
-                edge_id,
-                type_id: None,
-                src_id: node_id,
-                dst_id: node_id,
-                exists_valid_from: ValidTime(0),
-                exists_valid_to: Some(ValidTime(10)),
-                layer: Layer::Actual,
-                weight: None,
-                acl_group_id: None,
-                owner_actor_id: None,
-                visibility: None,
-                write_options: None,
-            })
-            .await?;
-        store
-            .set_edge_existence_interval(SetEdgeExistenceIntervalInput {
-                partition,
-                scenario_id: None,
-                actor,
-                asserted_at: Hlc::now(),
-                edge_id,
-                valid_from: ValidTime(0),
-                valid_to: Some(ValidTime(10)),
-                layer: Layer::Actual,
-                is_tombstone: false,
-                write_options: None,
-            })
-            .await?;
-
-        let before = store
-            .export_snapshot_stream(SnapshotOptions {
-                partition_id: partition,
-                scenario_id: None,
-                as_of_asserted_at: Hlc::now(),
-                include_facts: true,
-                include_entities: true,
-            })
-            .await?
-            .collect::<Vec<_>>();
-        let before_prop = before
-            .iter()
-            .filter(|rec| rec.record_type == "snapshot_fact_str")
-            .count();
-        let before_edge = before
-            .iter()
-            .filter(|rec| rec.record_type == "snapshot_edge_exists")
-            .count();
-
-        let tx = store.conn.begin().await?;
-        store.compact_partition(&tx, partition).await?;
-        tx.commit().await?;
-
-        let after = store
-            .export_snapshot_stream(SnapshotOptions {
-                partition_id: partition,
-                scenario_id: None,
-                as_of_asserted_at: Hlc::now(),
-                include_facts: true,
-                include_entities: true,
-            })
-            .await?
-            .collect::<Vec<_>>();
-        let after_prop = after
-            .iter()
-            .filter(|rec| rec.record_type == "snapshot_fact_str")
-            .count();
-        let after_edge = after
-            .iter()
-            .filter(|rec| rec.record_type == "snapshot_edge_exists")
-            .count();
-
-        assert!(before_prop > after_prop);
-        assert!(before_edge > after_edge);
-        Ok(())
-    }
-}
+#[path = "../tests/store_compaction_tests.rs"]
+mod compaction_tests;

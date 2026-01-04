@@ -15,7 +15,7 @@ use serde::Deserialize;
 use std::time::Instant;
 use tauri::State;
 
-use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
+use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse, ipc_handle};
 use crate::worker::WorkerState;
 
 #[tauri::command]
@@ -36,12 +36,11 @@ pub async fn chrona_temporal_state_at(
     state: State<'_, WorkerState>,
     request: IpcRequest<StateAtArgs>,
 ) -> Result<IpcResponse<StateAtResult>, HostError> {
-    let request_id = request.request_id;
-    let response = match temporal_state_at_inner(state.engine(), request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    let IpcRequest {
+        request_id,
+        payload,
+    } = request;
+    Ok(ipc_handle(request_id, temporal_state_at_inner(state.engine(), payload)).await)
 }
 
 async fn temporal_state_at_inner(
@@ -79,12 +78,11 @@ pub async fn chrona_temporal_diff(
     state: State<'_, WorkerState>,
     request: IpcRequest<DiffArgs>,
 ) -> Result<IpcResponse<DiffSummary>, HostError> {
-    let request_id = request.request_id;
-    let response = match temporal_diff_inner(state.engine(), request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    let IpcRequest {
+        request_id,
+        payload,
+    } = request;
+    Ok(ipc_handle(request_id, temporal_diff_inner(state.engine(), payload)).await)
 }
 
 async fn temporal_diff_inner(
@@ -128,12 +126,11 @@ pub async fn chrona_temporal_commit_changes(
     state: State<'_, WorkerState>,
     request: IpcRequest<CommitChangesRequest>,
 ) -> Result<IpcResponse<CommitChangesResponse>, HostError> {
-    let request_id = request.request_id;
-    let response = match commit_changes(state, request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    let IpcRequest {
+        request_id,
+        payload,
+    } = request;
+    Ok(ipc_handle(request_id, commit_changes(state, payload)).await)
 }
 
 #[derive(Debug, Deserialize)]
@@ -169,12 +166,11 @@ pub async fn chrona_temporal_list_commits(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListCommitsPayload>,
 ) -> Result<IpcResponse<ListCommitsResponse>, HostError> {
-    let request_id = request.request_id;
-    let response = match list_commits(state, request.payload.branch).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    let IpcRequest {
+        request_id,
+        payload,
+    } = request;
+    Ok(ipc_handle(request_id, list_commits(state, payload.branch)).await)
 }
 
 async fn list_commits_inner(
@@ -198,12 +194,11 @@ pub async fn chrona_temporal_create_branch(
     state: State<'_, WorkerState>,
     request: IpcRequest<CreateBranchRequest>,
 ) -> Result<IpcResponse<BranchInfo>, HostError> {
-    let request_id = request.request_id;
-    let response = match create_branch_inner(state.engine(), request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    let IpcRequest {
+        request_id,
+        payload,
+    } = request;
+    Ok(ipc_handle(request_id, create_branch_inner(state.engine(), payload)).await)
 }
 
 async fn create_branch_inner(
@@ -230,8 +225,10 @@ pub async fn chrona_temporal_list_branches(
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<ListBranchesResponse>, HostError> {
     let request_id = request.request_id;
-    let response = IpcResponse::ok(request_id, list_branches_inner(state.engine()).await);
-    Ok(response)
+    Ok(IpcResponse::ok(
+        request_id,
+        list_branches_inner(state.engine()).await,
+    ))
 }
 
 async fn list_branches_inner(engine: &aideon_chrona::TemporalEngine) -> ListBranchesResponse {
@@ -252,12 +249,11 @@ pub async fn chrona_temporal_merge_branches(
     state: State<'_, WorkerState>,
     request: IpcRequest<MergeRequest>,
 ) -> Result<IpcResponse<MergeResponse>, HostError> {
-    let request_id = request.request_id;
-    let response = match merge_branches_inner(state.engine(), request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    let IpcRequest {
+        request_id,
+        payload,
+    } = request;
+    Ok(ipc_handle(request_id, merge_branches_inner(state.engine(), payload)).await)
 }
 
 async fn merge_branches_inner(
@@ -281,12 +277,11 @@ pub async fn chrona_temporal_topology_delta(
     state: State<'_, WorkerState>,
     request: IpcRequest<TopologyDeltaArgs>,
 ) -> Result<IpcResponse<TopologyDeltaResult>, HostError> {
-    let request_id = request.request_id;
-    let response = match topology_delta_inner(state.engine(), request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    let IpcRequest {
+        request_id,
+        payload,
+    } = request;
+    Ok(ipc_handle(request_id, topology_delta_inner(state.engine(), payload)).await)
 }
 
 async fn topology_delta_inner(
@@ -310,11 +305,10 @@ pub async fn praxis_metamodel_get(
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<MetaModelDocument>, HostError> {
     let request_id = request.request_id;
-    let response = IpcResponse::ok(
+    Ok(IpcResponse::ok(
         request_id,
         temporal_metamodel_get_inner(state.engine()).await,
-    );
-    Ok(response)
+    ))
 }
 
 async fn temporal_metamodel_get_inner(engine: &aideon_chrona::TemporalEngine) -> MetaModelDocument {
@@ -335,172 +329,5 @@ pub(crate) fn host_error(error: PraxisError) -> HostError {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use aideon_chrona::TemporalEngine;
-    use aideon_praxis::praxis::temporal::{
-        ChangeSet, CommitRef, EdgeVersion, NodeVersion, StateAtArgs, TopologyDeltaArgs,
-    };
-    use serde_json::json;
-
-    #[test]
-    fn host_error_maps_codes() {
-        let err = PraxisError::ValidationFailed {
-            message: "bad".into(),
-        };
-        let mapped = host_error(err);
-        assert_eq!(mapped.code, "validation_failed");
-        assert!(mapped.message.contains("bad"));
-
-        let err = PraxisError::IntegrityViolation {
-            message: "dup".into(),
-        };
-        let mapped = host_error(err);
-        assert_eq!(mapped.code, "integrity_violation");
-    }
-
-    #[test]
-    fn host_error_covers_all_codes() {
-        let cases = vec![
-            (
-                PraxisError::UnknownBranch {
-                    branch: "main".to_string(),
-                },
-                "unknown_branch",
-            ),
-            (
-                PraxisError::UnknownCommit {
-                    commit: "abc123".to_string(),
-                },
-                "unknown_commit",
-            ),
-            (
-                PraxisError::ConcurrencyConflict {
-                    branch: "dev".to_string(),
-                    expected: Some("a1".to_string()),
-                    actual: Some("b2".to_string()),
-                },
-                "concurrency_conflict",
-            ),
-            (
-                PraxisError::MergeConflict {
-                    message: "edge".to_string(),
-                },
-                "merge_conflict",
-            ),
-        ];
-
-        for (error, code) in cases {
-            let mapped = host_error(error);
-            assert_eq!(mapped.code, code);
-            assert!(
-                mapped
-                    .message
-                    .contains(code.split('_').next().unwrap_or(""))
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn temporal_command_helpers_cover_core_flows() {
-        let engine = TemporalEngine::new().await.expect("engine");
-        let base = commit_seed(&engine, "base").await;
-        let expanded = commit_with_edge(&engine, "expand", &base).await;
-
-        let state = temporal_state_at_inner(
-            &engine,
-            StateAtArgs {
-                as_of: CommitRef::Id(expanded.clone()),
-                scenario: Some("main".into()),
-                confidence: None,
-            },
-        )
-        .await
-        .expect("state");
-        assert!(state.nodes > 0);
-
-        let diff = temporal_diff_inner(
-            &engine,
-            DiffArgs {
-                from: CommitRef::Id(base.clone()),
-                to: CommitRef::Id(expanded.clone()),
-                scope: None,
-            },
-        )
-        .await
-        .expect("diff");
-        assert!(diff.node_adds >= 1);
-
-        let commits = list_commits_inner(&engine, "main".to_string())
-            .await
-            .expect("commits");
-        assert!(!commits.is_empty());
-
-        let branches = list_branches_inner(&engine).await;
-        assert!(!branches.branches.is_empty());
-
-        let delta = topology_delta_inner(
-            &engine,
-            TopologyDeltaArgs {
-                from: CommitRef::Id(base),
-                to: CommitRef::Id(expanded),
-            },
-        )
-        .await
-        .expect("delta");
-        assert!(delta.node_adds >= 1);
-    }
-
-    async fn commit_seed(engine: &TemporalEngine, message: &str) -> String {
-        engine
-            .commit(CommitChangesRequest {
-                branch: "main".into(),
-                parent: None,
-                author: Some("tester".into()),
-                time: None,
-                message: message.to_string(),
-                tags: vec![],
-                changes: ChangeSet {
-                    node_creates: vec![NodeVersion {
-                        id: "cap-1".into(),
-                        r#type: Some("Capability".into()),
-                        props: Some(json!({ "name": "cap-1" })),
-                    }],
-                    ..ChangeSet::default()
-                },
-            })
-            .await
-            .expect("commit")
-    }
-
-    async fn commit_with_edge(engine: &TemporalEngine, message: &str, parent: &str) -> String {
-        engine
-            .commit(CommitChangesRequest {
-                branch: "main".into(),
-                parent: Some(parent.to_string()),
-                author: None,
-                time: None,
-                message: message.to_string(),
-                tags: vec![],
-                changes: {
-                    let mut change = ChangeSet::default();
-                    change.node_creates.push(NodeVersion {
-                        id: "stage-1".into(),
-                        r#type: Some("ValueStreamStage".into()),
-                        props: Some(json!({ "name": "stage-1" })),
-                    });
-                    change.edge_creates.push(EdgeVersion {
-                        id: None,
-                        from: "cap-1".into(),
-                        to: "stage-1".into(),
-                        r#type: Some("serves".into()),
-                        directed: Some(true),
-                        props: None,
-                    });
-                    change
-                },
-            })
-            .await
-            .expect("commit")
-    }
-}
+#[path = "../tests/temporal_tests.rs"]
+mod tests;
