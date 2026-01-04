@@ -218,5 +218,5 @@ fn default_branch() -> String {
 }
 
 #[cfg(test)]
-#[path = "../tests/dataset_tests.rs"]
+#[path = "../tests/internal/dataset_tests.rs"]
 mod tests;

@@ -90,5 +90,5 @@ pub async fn init_temporal(app: &AppHandle<Wry>) -> Result<(), String> {
 }
 
 #[cfg(test)]
-#[path = "../tests/worker_tests.rs"]
+#[path = "../tests/internal/worker_tests.rs"]
 mod tests;

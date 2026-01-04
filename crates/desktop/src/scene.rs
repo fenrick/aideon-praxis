@@ -186,5 +186,5 @@ pub async fn praxis_canvas_layout_save(
 }
 
 #[cfg(test)]
-#[path = "../tests/scene_tests.rs"]
+#[path = "../tests/internal/scene_tests.rs"]
 mod tests;

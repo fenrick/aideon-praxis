@@ -141,7 +141,7 @@ fn to_string<E: std::fmt::Display>(error: E) -> String {
 }
 
 #[cfg(test)]
-#[path = "../tests/menu_tests.rs"]
+#[path = "../tests/internal/menu_tests.rs"]
 mod tests;
 
 fn append_edit_items<R: Runtime>(app: &App<R>, edit: &Submenu<R>) -> Result<(), String> {

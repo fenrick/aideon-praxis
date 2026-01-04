@@ -499,5 +499,5 @@ fn build_change_set(target_snapshot: &GraphSnapshot, patch: &DiffPatch) -> Chang
 }
 
 #[cfg(test)]
-#[path = "../../tests/engine_ops_tests.rs"]
+#[path = "../../tests/internal/engine_ops_tests.rs"]
 mod tests;

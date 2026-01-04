@@ -31,5 +31,5 @@ pub fn datastore_path(base: &Path) -> MnemeResult<PathBuf> {
 }
 
 #[cfg(test)]
-#[path = "../tests/datastore_tests.rs"]
+#[path = "../tests/internal/datastore_tests.rs"]
 mod tests;

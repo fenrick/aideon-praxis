@@ -6,5 +6,5 @@ pub fn greet(name: String) -> String {
 }
 
 #[cfg(test)]
-#[path = "../tests/commands_tests.rs"]
+#[path = "../tests/internal/commands_tests.rs"]
 mod tests;

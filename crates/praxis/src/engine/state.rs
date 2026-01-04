@@ -104,5 +104,5 @@ impl Inner {
 }
 
 #[cfg(test)]
-#[path = "../../tests/engine_state_tests.rs"]
+#[path = "../../tests/internal/engine_state_tests.rs"]
 mod tests;

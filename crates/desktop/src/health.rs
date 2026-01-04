@@ -35,5 +35,5 @@ fn health_snapshot(state: &WorkerState) -> WorkerHealth {
 }
 
 #[cfg(test)]
-#[path = "../tests/health_tests.rs"]
+#[path = "../tests/internal/health_tests.rs"]
 mod tests;

@@ -28,5 +28,5 @@ pub fn generate_demo_scene() -> Vec<CanvasShape> {
 }
 
 #[cfg(test)]
-#[path = "../tests/scene_tests.rs"]
+#[path = "../tests/internal/scene_tests.rs"]
 mod tests;

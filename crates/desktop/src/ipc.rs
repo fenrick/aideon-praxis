@@ -129,5 +129,5 @@ where
 }
 
 #[cfg(test)]
-#[path = "../tests/ipc_tests.rs"]
+#[path = "../tests/internal/ipc_tests.rs"]
 mod tests;

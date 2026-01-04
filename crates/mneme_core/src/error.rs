@@ -69,5 +69,5 @@ impl From<sea_orm::DbErr> for MnemeError {
 }
 
 #[cfg(test)]
-#[path = "../tests/error_tests.rs"]
+#[path = "../tests/internal/error_tests.rs"]
 mod tests;

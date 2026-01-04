@@ -261,5 +261,5 @@ fn validate_blob(value: &Value, format_error: impl Fn(String) -> String) -> Prax
 }
 
 #[cfg(test)]
-#[path = "../../tests/meta_validation_tests.rs"]
+#[path = "../../tests/internal/meta_validation_tests.rs"]
 mod tests;

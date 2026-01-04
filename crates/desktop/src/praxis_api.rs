@@ -828,5 +828,5 @@ fn next_commit_id() -> String {
 }
 
 #[cfg(test)]
-#[path = "../tests/praxis_api_tests.rs"]
+#[path = "../tests/internal/praxis_api_tests.rs"]
 mod tests;

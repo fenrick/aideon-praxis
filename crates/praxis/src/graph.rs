@@ -384,5 +384,5 @@ fn remove_edges_matching(
 }
 
 #[cfg(test)]
-#[path = "../tests/graph_tests.rs"]
+#[path = "../tests/internal/graph_tests.rs"]
 mod tests;

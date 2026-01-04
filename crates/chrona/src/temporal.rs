@@ -85,5 +85,5 @@ impl TemporalEngine {
 }
 
 #[cfg(test)]
-#[path = "../tests/temporal_tests.rs"]
+#[path = "../tests/internal/temporal_tests.rs"]
 mod tests;

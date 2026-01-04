@@ -85,5 +85,5 @@ pub struct CanvasLayoutGetRequest {
 }
 
 #[cfg(test)]
-#[path = "../tests/canvas_tests.rs"]
+#[path = "../tests/internal/canvas_tests.rs"]
 mod tests;

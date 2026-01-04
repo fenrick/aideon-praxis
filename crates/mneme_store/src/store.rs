@@ -10038,7 +10038,7 @@ fn change_feed_payload(
 }
 
 #[cfg(test)]
-#[path = "../tests/store_helper_tests.rs"]
+#[path = "../tests/internal/store_helper_tests.rs"]
 mod helper_tests;
 
 async fn insert_property_fact(
@@ -12019,5 +12019,5 @@ async fn fetch_op_deps(
 }
 
 #[cfg(test)]
-#[path = "../tests/store_compaction_tests.rs"]
+#[path = "../tests/internal/store_compaction_tests.rs"]
 mod compaction_tests;

@@ -38,5 +38,5 @@ pub fn apply_rect_packing(shapes: &mut [CanvasShape], max_row_width: f64, spacin
 }
 
 #[cfg(test)]
-#[path = "../tests/layout_tests.rs"]
+#[path = "../tests/internal/layout_tests.rs"]
 mod tests;

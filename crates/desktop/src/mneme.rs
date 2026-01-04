@@ -2890,5 +2890,5 @@ pub struct ExplainTraversalPayload {
 }
 
 #[cfg(test)]
-#[path = "../tests/mneme_tests.rs"]
+#[path = "../tests/internal/mneme_tests.rs"]
 mod tests;

@@ -151,5 +151,5 @@ pub fn system_setup_state(
 }
 
 #[cfg(test)]
-#[path = "../tests/setup_tests.rs"]
+#[path = "../tests/internal/setup_tests.rs"]
 mod tests;

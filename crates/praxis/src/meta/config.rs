@@ -50,5 +50,5 @@ impl MetaModelConfig {
 }
 
 #[cfg(test)]
-#[path = "../../tests/meta_config_tests.rs"]
+#[path = "../../tests/internal/meta_config_tests.rs"]
 mod tests;

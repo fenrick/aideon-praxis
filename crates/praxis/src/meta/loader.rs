@@ -87,5 +87,5 @@ fn merge_relationships(base: &mut Vec<MetaRelationship>, overrides: &[MetaRelati
 }
 
 #[cfg(test)]
-#[path = "../../tests/meta_loader_tests.rs"]
+#[path = "../../tests/internal/meta_loader_tests.rs"]
 mod tests;

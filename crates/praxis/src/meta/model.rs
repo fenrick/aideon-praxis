@@ -147,5 +147,5 @@ pub(super) fn relationship_rules(
 }
 
 #[cfg(test)]
-#[path = "../../tests/meta_model_tests.rs"]
+#[path = "../../tests/internal/meta_model_tests.rs"]
 mod tests;

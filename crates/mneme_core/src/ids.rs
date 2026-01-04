@@ -124,5 +124,5 @@ id_wrapper_serde!(OpId);
 id_wrapper_serde!(ScenarioId);
 
 #[cfg(test)]
-#[path = "../tests/ids_tests.rs"]
+#[path = "../tests/internal/ids_tests.rs"]
 mod tests;

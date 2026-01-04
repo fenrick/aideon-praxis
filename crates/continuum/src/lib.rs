@@ -42,5 +42,5 @@ impl SnapshotStore for FileSnapshotStore {
 }
 
 #[cfg(test)]
-#[path = "../tests/lib_tests.rs"]
+#[path = "../tests/internal/lib_tests.rs"]
 mod tests;

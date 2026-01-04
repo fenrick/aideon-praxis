@@ -233,5 +233,5 @@ async fn collect_ancestors(inner: &mut Inner, head: &str) -> PraxisResult<HashSe
 }
 
 #[cfg(test)]
-#[path = "../../tests/engine_util_tests.rs"]
+#[path = "../../tests/internal/engine_util_tests.rs"]
 mod tests;

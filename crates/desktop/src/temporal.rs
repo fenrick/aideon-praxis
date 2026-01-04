@@ -329,5 +329,5 @@ pub(crate) fn host_error(error: PraxisError) -> HostError {
 }
 
 #[cfg(test)]
-#[path = "../tests/temporal_tests.rs"]
+#[path = "../tests/internal/temporal_tests.rs"]
 mod tests;

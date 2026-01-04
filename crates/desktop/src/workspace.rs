@@ -72,5 +72,5 @@ pub async fn workspace_templates_list(
 }
 
 #[cfg(test)]
-#[path = "../tests/workspace_tests.rs"]
+#[path = "../tests/internal/workspace_tests.rs"]
 mod tests;

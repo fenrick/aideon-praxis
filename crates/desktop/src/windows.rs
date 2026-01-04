@@ -175,5 +175,5 @@ fn to_string<E: std::fmt::Display>(error: E) -> String {
 }
 
 #[cfg(test)]
-#[path = "../tests/windows_tests.rs"]
+#[path = "../tests/internal/windows_tests.rs"]
 mod tests;
