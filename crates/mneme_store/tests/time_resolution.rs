@@ -1,4 +1,7 @@
-use aideon_mneme_store::{ActorId, Direction, Hlc, Id, MergePolicy, SyncApi, TraverseAtTimeInput};
+use aideon_mneme_store::{
+    ActorId, CounterUpdateInput, Direction, Hlc, Id, MergePolicy, OrSetUpdateInput, SetOp, SyncApi,
+    TraverseAtTimeInput,
+};
 use aideon_mneme_store::{
     CreateNodeInput, EntityKind, FieldDef, GraphReadApi, GraphWriteApi, Layer, MetamodelApi,
     MetamodelBatch, MnemeConfig, MnemeStore, PartitionId, PropertyWriteApi, ReadEntityAtTimeInput,
@@ -244,6 +247,289 @@ async fn resolves_multi_value_for_mv() -> aideon_mneme_store::MnemeResult<()> {
         }
         other => panic!("expected multi value, got {other:?}"),
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn resolves_or_set_add_remove_for_reads() -> aideon_mneme_store::MnemeResult<()> {
+    let dir = tempdir().expect("tempdir");
+    let base = dir.path();
+    let config = MnemeConfig::default_sqlite(base.join("mneme.sqlite").to_string_lossy());
+    let store = MnemeStore::connect(&config, base).await?;
+    let (partition, actor) = new_ids();
+    let type_id = Id::new();
+    let field_id = Id::new();
+    store
+        .upsert_metamodel_batch(
+            partition,
+            actor,
+            Hlc::now(),
+            MetamodelBatch {
+                types: vec![TypeDef {
+                    type_id,
+                    applies_to: EntityKind::Node,
+                    label: "Service".to_string(),
+                    is_abstract: false,
+                    parent_type_id: None,
+                }],
+                fields: vec![FieldDef {
+                    field_id,
+                    label: "tags".to_string(),
+                    value_type: ValueType::Str,
+                    cardinality_multi: true,
+                    merge_policy: MergePolicy::OrSet,
+                    is_indexed: false,
+                    disallow_overlap: false,
+                }],
+                type_fields: vec![TypeFieldDef {
+                    type_id,
+                    field_id,
+                    is_required: false,
+                    default_value: None,
+                    override_default: false,
+                    tighten_required: false,
+                    disallow_overlap: None,
+                }],
+                edge_type_rules: Vec::new(),
+                metamodel_version: None,
+                metamodel_source: None,
+            },
+        )
+        .await?;
+
+    let node_id = Id::new();
+    store
+        .create_node(CreateNodeInput {
+            partition,
+            scenario_id: None,
+            actor,
+            asserted_at: Hlc::now(),
+            node_id,
+            type_id: Some(type_id),
+            acl_group_id: None,
+            owner_actor_id: None,
+            visibility: None,
+            write_options: None,
+        })
+        .await?;
+
+    store
+        .or_set_update(OrSetUpdateInput {
+            partition,
+            scenario_id: None,
+            actor,
+            asserted_at: Hlc::now(),
+            entity_id: node_id,
+            field_id,
+            op: SetOp::Add,
+            element: Value::Str("alpha".to_string()),
+            valid_from: ValidTime(0),
+            valid_to: None,
+            layer: Layer::Actual,
+            write_options: None,
+        })
+        .await?;
+    store
+        .or_set_update(OrSetUpdateInput {
+            partition,
+            scenario_id: None,
+            actor,
+            asserted_at: Hlc::now(),
+            entity_id: node_id,
+            field_id,
+            op: SetOp::Add,
+            element: Value::Str("beta".to_string()),
+            valid_from: ValidTime(0),
+            valid_to: None,
+            layer: Layer::Actual,
+            write_options: None,
+        })
+        .await?;
+
+    let result = store
+        .read_entity_at_time(ReadEntityAtTimeInput {
+            partition,
+            scenario_id: None,
+            security_context: None,
+            entity_id: node_id,
+            at_valid_time: ValidTime(1),
+            as_of_asserted_at: None,
+            field_ids: Some(vec![field_id]),
+            include_defaults: false,
+        })
+        .await?;
+    let value = result.properties.get(&field_id).expect("field value");
+    let mut values = match value {
+        aideon_mneme_store::ReadValue::Multi(values)
+        | aideon_mneme_store::ReadValue::MultiLimited {
+            values,
+            more_available: _,
+        } => values.clone(),
+        other => panic!("expected multi value, got {other:?}"),
+    };
+    values.sort_by(|a, b| format!("{a:?}").cmp(&format!("{b:?}")));
+    assert_eq!(
+        values,
+        vec![
+            Value::Str("alpha".to_string()),
+            Value::Str("beta".to_string())
+        ]
+    );
+
+    store
+        .or_set_update(OrSetUpdateInput {
+            partition,
+            scenario_id: None,
+            actor,
+            asserted_at: Hlc::now(),
+            entity_id: node_id,
+            field_id,
+            op: SetOp::Remove,
+            element: Value::Str("alpha".to_string()),
+            valid_from: ValidTime(0),
+            valid_to: None,
+            layer: Layer::Actual,
+            write_options: None,
+        })
+        .await?;
+
+    let result = store
+        .read_entity_at_time(ReadEntityAtTimeInput {
+            partition,
+            scenario_id: None,
+            security_context: None,
+            entity_id: node_id,
+            at_valid_time: ValidTime(1),
+            as_of_asserted_at: None,
+            field_ids: Some(vec![field_id]),
+            include_defaults: false,
+        })
+        .await?;
+    let value = result.properties.get(&field_id).expect("field value");
+    match value {
+        aideon_mneme_store::ReadValue::Multi(values)
+        | aideon_mneme_store::ReadValue::MultiLimited {
+            values,
+            more_available: _,
+        } => {
+            assert_eq!(values, &vec![Value::Str("beta".to_string())]);
+        }
+        other => panic!("expected multi value, got {other:?}"),
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn resolves_counter_updates_over_interval() -> aideon_mneme_store::MnemeResult<()> {
+    let dir = tempdir().expect("tempdir");
+    let base = dir.path();
+    let config = MnemeConfig::default_sqlite(base.join("mneme.sqlite").to_string_lossy());
+    let store = MnemeStore::connect(&config, base).await?;
+    let (partition, actor) = new_ids();
+    let type_id = Id::new();
+    let field_id = Id::new();
+    store
+        .upsert_metamodel_batch(
+            partition,
+            actor,
+            Hlc::now(),
+            MetamodelBatch {
+                types: vec![TypeDef {
+                    type_id,
+                    applies_to: EntityKind::Node,
+                    label: "Service".to_string(),
+                    is_abstract: false,
+                    parent_type_id: None,
+                }],
+                fields: vec![FieldDef {
+                    field_id,
+                    label: "count".to_string(),
+                    value_type: ValueType::I64,
+                    cardinality_multi: false,
+                    merge_policy: MergePolicy::Counter,
+                    is_indexed: false,
+                    disallow_overlap: false,
+                }],
+                type_fields: vec![TypeFieldDef {
+                    type_id,
+                    field_id,
+                    is_required: false,
+                    default_value: None,
+                    override_default: false,
+                    tighten_required: false,
+                    disallow_overlap: None,
+                }],
+                edge_type_rules: Vec::new(),
+                metamodel_version: None,
+                metamodel_source: None,
+            },
+        )
+        .await?;
+
+    let node_id = Id::new();
+    store
+        .create_node(CreateNodeInput {
+            partition,
+            scenario_id: None,
+            actor,
+            asserted_at: Hlc::now(),
+            node_id,
+            type_id: Some(type_id),
+            acl_group_id: None,
+            owner_actor_id: None,
+            visibility: None,
+            write_options: None,
+        })
+        .await?;
+
+    store
+        .counter_update(CounterUpdateInput {
+            partition,
+            scenario_id: None,
+            actor,
+            asserted_at: Hlc::now(),
+            entity_id: node_id,
+            field_id,
+            delta: 5,
+            valid_from: ValidTime(0),
+            valid_to: None,
+            layer: Layer::Actual,
+            write_options: None,
+        })
+        .await?;
+    store
+        .counter_update(CounterUpdateInput {
+            partition,
+            scenario_id: None,
+            actor,
+            asserted_at: Hlc::now(),
+            entity_id: node_id,
+            field_id,
+            delta: 7,
+            valid_from: ValidTime(0),
+            valid_to: None,
+            layer: Layer::Actual,
+            write_options: None,
+        })
+        .await?;
+
+    let result = store
+        .read_entity_at_time(ReadEntityAtTimeInput {
+            partition,
+            scenario_id: None,
+            security_context: None,
+            entity_id: node_id,
+            at_valid_time: ValidTime(1),
+            as_of_asserted_at: None,
+            field_ids: Some(vec![field_id]),
+            include_defaults: false,
+        })
+        .await?;
+    let value = result.properties.get(&field_id).expect("field value");
+    assert_eq!(
+        value,
+        &aideon_mneme_store::ReadValue::Single(Value::I64(12))
+    );
     Ok(())
 }
 

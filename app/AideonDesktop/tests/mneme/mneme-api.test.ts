@@ -268,6 +268,25 @@ describe('mneme-api metamodel bindings', () => {
     expect(result.schemaVersionHash).toBe('mock-schema-hash');
   });
 
+  it('wraps host invoke failures with a stable error message', async () => {
+    invokeMock.mockRejectedValueOnce({ message: 'nope' });
+    await expect(
+      compileEffectiveSchema({
+        partitionId: 'p-1',
+        actorId: 'a-1',
+        assertedAt: '123',
+        typeId: 't-1',
+      }),
+    ).rejects.toThrow("Host command 'mneme.store.compile_effective_schema' failed: nope");
+  });
+
+  it('formats non-object invoke failures as strings', async () => {
+    invokeMock.mockRejectedValueOnce('boom');
+    await expect(getSchemaManifest()).rejects.toThrow(
+      "Host command 'mneme.store.get_schema_manifest' failed: boom",
+    );
+  });
+
   it('maps effective schema results from rust to ts', async () => {
     invokeMock.mockImplementationOnce(
       mockIpcOk({

@@ -295,6 +295,7 @@ async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
 
     #[test]
     fn cli_parses_health_defaults() {
@@ -348,6 +349,132 @@ mod tests {
             on_disk, manifest,
             "ipc-manifest.json drifted; rerun `cargo run -p aideon_xtask -- ipc-manifest`"
         );
+    }
+
+    #[test]
+    fn extract_tauri_renames_handles_single_and_multiline_attributes() {
+        let source = r#"
+            #[tauri::command(rename = "a.b.c")]
+            pub async fn demo() {}
+
+            #[tauri::command(
+              rename = "x.y.z",
+            )]
+            pub async fn demo2() {}
+
+            #[tauri::command]
+            pub async fn no_rename() {}
+        "#;
+        let mut renames = extract_tauri_renames(source);
+        renames.sort();
+        assert_eq!(renames, vec!["a.b.c".to_string(), "x.y.z".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn export_ipc_manifest_writes_json_file() {
+        let dir = tempdir().expect("tempdir");
+        let out = dir.path().join("ipc-manifest.json");
+        export_ipc_manifest(IpcManifestArgs { out: out.clone() })
+            .await
+            .expect("export manifest");
+        let raw = fs::read_to_string(&out).expect("read manifest");
+        let manifest: IpcManifest = serde_json::from_str(&raw).expect("parse manifest");
+        assert_eq!(manifest.schema_version, 1);
+        assert!(!manifest.commands.is_empty());
+    }
+
+    #[tokio::test]
+    async fn migrate_state_creates_sqlite_store_and_sets_main_head() {
+        let dir = tempdir().expect("tempdir");
+        let input = dir.path().join("legacy.json");
+        let output = dir.path().join("out");
+
+        let legacy = serde_json::json!({
+            "commits": [
+                {
+                    "summary": {
+                        "id": "c1",
+                        "parents": [],
+                        "branch": "main",
+                        "author": null,
+                        "time": null,
+                        "message": "init",
+                        "tags": [],
+                        "changeCount": 0
+                    },
+                    "change_set": {
+                        "nodeCreates": [],
+                        "nodeUpdates": [],
+                        "nodeDeletes": [],
+                        "edgeCreates": [],
+                        "edgeUpdates": [],
+                        "edgeDeletes": []
+                    }
+                }
+            ],
+            "branches": []
+        });
+        fs::write(&input, serde_json::to_vec_pretty(&legacy).expect("encode"))
+            .expect("write legacy");
+
+        migrate_state(MigrateStateArgs {
+            input,
+            output: output.clone(),
+            force: false,
+        })
+        .await
+        .expect("migrate state");
+
+        let db_path = output.join("praxis.sqlite");
+        assert!(db_path.exists());
+    }
+
+    #[tokio::test]
+    async fn migrate_state_rejects_existing_output_without_force() {
+        let dir = tempdir().expect("tempdir");
+        let input = dir.path().join("legacy.json");
+        fs::write(&input, "{\"commits\":[],\"branches\":[]}").expect("write legacy");
+
+        let output = dir.path().join("out");
+        fs::create_dir_all(&output).expect("mkdir");
+        fs::write(output.join("praxis.sqlite"), "").expect("touch sqlite");
+
+        let err = migrate_state(MigrateStateArgs {
+            input,
+            output,
+            force: false,
+        })
+        .await
+        .expect_err("should error");
+        assert!(err.to_string().contains("rerun with --force"));
+    }
+
+    #[tokio::test]
+    async fn import_dataset_dry_run_uses_embedded_dataset_when_missing() {
+        let dir = tempdir().expect("tempdir");
+        let datastore = dir.path().join(".praxis");
+        import_dataset(ImportDatasetArgs {
+            dataset: dir.path().join("missing.yaml"),
+            datastore: datastore.clone(),
+            dry_run: true,
+            force: false,
+        })
+        .await
+        .expect("dry-run import");
+        assert!(!datastore.exists());
+    }
+
+    #[tokio::test]
+    async fn health_check_errors_when_branch_filter_matches_none() {
+        let dir = tempdir().expect("tempdir");
+        let err = check_health(HealthArgs {
+            datastore: dir.path().join(".praxis"),
+            branch: Some("does-not-exist".to_string()),
+            quiet: true,
+        })
+        .await
+        .expect_err("missing datastore");
+        assert!(!err.to_string().is_empty());
     }
 }
 
