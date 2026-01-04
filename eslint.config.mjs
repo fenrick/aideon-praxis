@@ -1,6 +1,6 @@
 // eslint.config.mjs
 // ESLint v9 flat config, ESM, TS-aware, Sonar-style clean code
-// Prettier handles formatting; ESLint handles correctness/clean-code.
+// Prettier handles formatting (enforced via ESLint); ESLint handles correctness/clean-code.
 
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
@@ -9,6 +9,7 @@ import stylistic from '@stylistic/eslint-plugin';
 import importPlugin from 'eslint-plugin-import';
 import jsdoc from 'eslint-plugin-jsdoc';
 import promise from 'eslint-plugin-promise';
+import prettierPlugin from 'eslint-plugin-prettier';
 import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
 import sonarjs from 'eslint-plugin-sonarjs';
@@ -460,6 +461,17 @@ export default defineConfig([
       'jsx-a11y/label-has-associated-control': 'error', // S6853
       'react/no-deprecated': 'error', // S6957
       'import/no-self-import': 'error', // S7060
+    },
+  },
+
+  // Enforce Prettier formatting as ESLint errors (so `eslint` covers `prettier --check`).
+  {
+    name: 'prettier',
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    rules: {
+      'prettier/prettier': ['error', {}, { usePrettierrc: true }],
     },
   },
   eslintConfigPrettier,
