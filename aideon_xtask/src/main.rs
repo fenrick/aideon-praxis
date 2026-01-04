@@ -142,10 +142,11 @@ fn extract_tauri_renames(source: &str) -> Vec<String> {
         if let Some(current) = buffer.as_mut() {
             current.push_str(line);
             if line.contains(']') {
-                if current.contains("#[tauri::command") && current.contains("rename") {
-                    if let Some(rename) = parse_attr(current) {
-                        found.push(rename);
-                    }
+                if current.contains("#[tauri::command")
+                    && current.contains("rename")
+                    && let Some(rename) = parse_attr(current)
+                {
+                    found.push(rename);
                 }
                 buffer = None;
             }
@@ -157,10 +158,10 @@ fn extract_tauri_renames(source: &str) -> Vec<String> {
             continue;
         }
         if trimmed.contains(']') {
-            if trimmed.contains("rename") {
-                if let Some(rename) = parse_attr(trimmed) {
-                    found.push(rename);
-                }
+            if trimmed.contains("rename")
+                && let Some(rename) = parse_attr(trimmed)
+            {
+                found.push(rename);
             }
             continue;
         }
