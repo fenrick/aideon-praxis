@@ -220,6 +220,8 @@ refer to `ARCHITECTURE-BOUNDARY.md`. The notes below focus on product/module nam
 
 - One responsibility per file; split when a second reason to change appears.
 - Keep files short (aim ≤300–500 LOC).
+- When a Rust module must stay in a single namespace, split the file into a directory with a
+  `mod.rs` façade and `include!` fragments to keep each file small without changing the API.
 - Place Rust tests under crate-level `tests/`. If a test needs crate-private access, include it as
   a `#[cfg(test)] #[path = "../tests/internal/<file>.rs"] mod <name>;` module from the owning
   source file so test code stays out of `src/` and the file is not auto-discovered as an
