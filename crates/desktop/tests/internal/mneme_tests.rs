@@ -2,9 +2,9 @@ use super::*;
 use aideon_chrona::TemporalEngine;
 use aideon_praxis::mneme::open_store;
 use serde_json::json;
-use tempfile::tempdir;
 use tauri::Manager;
 use tauri::test::mock_app;
+use tempfile::tempdir;
 
 fn ipc_request<T>(payload: T) -> IpcRequest<T> {
     use std::sync::atomic::{AtomicU32, Ordering};
@@ -394,8 +394,9 @@ async fn mneme_store_wrappers_smoke() {
         },
         scenario_id: None,
     };
-    let response =
-        mneme_store_upsert_metamodel_batch(state.clone(), ipc_request(metamodel)).await.unwrap();
+    let response = mneme_store_upsert_metamodel_batch(state.clone(), ipc_request(metamodel))
+        .await
+        .unwrap();
     assert_eq!(response.status, "ok");
 
     let response = mneme_store_compile_effective_schema(
@@ -1006,10 +1007,9 @@ async fn mneme_store_wrappers_smoke() {
     .unwrap();
     assert_eq!(response.status, "ok");
 
-    let response =
-        mneme_store_get_schema_manifest(state.clone(), ipc_request(EmptyPayload {}))
-            .await
-            .unwrap();
+    let response = mneme_store_get_schema_manifest(state.clone(), ipc_request(EmptyPayload {}))
+        .await
+        .unwrap();
     assert_eq!(response.status, "ok");
 
     let response = mneme_store_explain_resolution(
