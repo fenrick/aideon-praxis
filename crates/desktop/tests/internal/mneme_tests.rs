@@ -24,7 +24,10 @@ where
     F: FnOnce(&WorkerState, T) -> Fut,
     Fut: Future<Output = Result<R, HostError>>,
 {
-    let IpcRequest { request_id, payload } = request;
+    let IpcRequest {
+        request_id,
+        payload,
+    } = request;
     ipc_handle(request_id, f(state, payload)).await
 }
 
