@@ -414,8 +414,7 @@ async fn mneme_store_wrappers_smoke() {
         state,
         ipc_request(metamodel),
         mneme_upsert_metamodel_batch_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -428,8 +427,7 @@ async fn mneme_store_wrappers_smoke() {
             scenario_id: None,
         }),
         mneme_compile_effective_schema_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -446,8 +444,7 @@ async fn mneme_store_wrappers_smoke() {
             visibility: None,
         }),
         mneme_create_node_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -464,8 +461,7 @@ async fn mneme_store_wrappers_smoke() {
             visibility: None,
         }),
         mneme_create_node_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -483,8 +479,7 @@ async fn mneme_store_wrappers_smoke() {
             layer: None,
         }),
         mneme_set_property_interval_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -507,8 +502,7 @@ async fn mneme_store_wrappers_smoke() {
             visibility: None,
         }),
         mneme_create_edge_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -525,8 +519,7 @@ async fn mneme_store_wrappers_smoke() {
             is_tombstone: Some(false),
         }),
         mneme_set_edge_existence_interval_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -541,8 +534,7 @@ async fn mneme_store_wrappers_smoke() {
             include_defaults: Some(true),
         }),
         mneme_read_entity_at_time_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -563,8 +555,7 @@ async fn mneme_store_wrappers_smoke() {
             cursor: None,
         }),
         mneme_list_entities_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -580,8 +571,7 @@ async fn mneme_store_wrappers_smoke() {
             limit: Some(10),
         }),
         mneme_traverse_at_time_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -592,8 +582,7 @@ async fn mneme_store_wrappers_smoke() {
             limit: Some(10),
         }),
         mneme_get_changes_since_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -607,8 +596,7 @@ async fn mneme_store_wrappers_smoke() {
             limit: Some(10),
         }),
         mneme_get_projection_edges_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -621,8 +609,7 @@ async fn mneme_store_wrappers_smoke() {
             limit: Some(10),
         }),
         mneme_get_graph_degree_stats_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -634,8 +621,7 @@ async fn mneme_store_wrappers_smoke() {
             limit: Some(10),
         }),
         mneme_get_graph_edge_type_counts_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -659,8 +645,7 @@ async fn mneme_store_wrappers_smoke() {
             scenario_id: None,
         }),
         mneme_store_pagerank_scores_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
     let run_id = response
         .result
@@ -676,8 +661,7 @@ async fn mneme_store_wrappers_smoke() {
             top_n: 10,
         }),
         mneme_get_pagerank_scores_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let ops_response = ipc_with_payload!(
@@ -689,8 +673,7 @@ async fn mneme_store_wrappers_smoke() {
             limit: Some(100),
         }),
         mneme_export_ops_inner,
-    )
-    .await;
+    );
     assert_eq!(ops_response.status, "ok");
     let ops = ops_response.result.unwrap_or_default();
 
@@ -712,8 +695,7 @@ async fn mneme_store_wrappers_smoke() {
                 .collect(),
         }),
         mneme_ingest_ops_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -723,8 +705,7 @@ async fn mneme_store_wrappers_smoke() {
             scenario_id: None,
         }),
         mneme_get_partition_head_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let scenario_response = ipc_with_payload!(
@@ -736,8 +717,7 @@ async fn mneme_store_wrappers_smoke() {
             name: "Test Scenario".into(),
         }),
         mneme_create_scenario_inner,
-    )
-    .await;
+    );
     assert_eq!(scenario_response.status, "ok");
     let scenario_id = scenario_response.result.expect("scenario id");
 
@@ -750,8 +730,7 @@ async fn mneme_store_wrappers_smoke() {
             scenario_id,
         }),
         mneme_delete_scenario_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let export_ops = ipc_with_payload!(
@@ -766,8 +745,7 @@ async fn mneme_store_wrappers_smoke() {
             include_scenarios: Some(true),
         }),
         mneme_export_ops_stream_inner,
-    )
-    .await;
+    );
     assert_eq!(export_ops.status, "ok");
     let records = export_ops.result.unwrap_or_default();
 
@@ -782,8 +760,7 @@ async fn mneme_store_wrappers_smoke() {
             records,
         }),
         mneme_import_ops_stream_inner,
-    )
-    .await;
+    );
     assert!(matches!(response.status, "ok" | "error"));
 
     let export_snapshot = ipc_with_payload!(
@@ -796,8 +773,7 @@ async fn mneme_store_wrappers_smoke() {
             include_entities: Some(true),
         }),
         mneme_export_snapshot_stream_inner,
-    )
-    .await;
+    );
     assert_eq!(export_snapshot.status, "ok");
     let snapshot_records = export_snapshot.result.unwrap_or_default();
 
@@ -812,8 +788,7 @@ async fn mneme_store_wrappers_smoke() {
             records: snapshot_records,
         }),
         mneme_import_snapshot_stream_inner,
-    )
-    .await;
+    );
     assert!(matches!(response.status, "ok" | "error"));
 
     let response = ipc_with_payload!(
@@ -832,16 +807,14 @@ async fn mneme_store_wrappers_smoke() {
             }],
         }),
         mneme_upsert_validation_rules_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
         state,
         ipc_request(ListValidationRulesPayload { partition_id }),
         mneme_list_validation_rules_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -859,16 +832,14 @@ async fn mneme_store_wrappers_smoke() {
             }],
         }),
         mneme_upsert_computed_rules_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
         state,
         ipc_request(ListComputedRulesPayload { partition_id }),
         mneme_list_computed_rules_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -886,8 +857,7 @@ async fn mneme_store_wrappers_smoke() {
             }],
         }),
         mneme_upsert_computed_cache_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -900,8 +870,7 @@ async fn mneme_store_wrappers_smoke() {
             limit: Some(10),
         }),
         mneme_list_computed_cache_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -912,8 +881,7 @@ async fn mneme_store_wrappers_smoke() {
             reason: "tests".into(),
         }),
         mneme_trigger_rebuild_effective_schema_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -924,8 +892,7 @@ async fn mneme_store_wrappers_smoke() {
             reason: "tests".into(),
         }),
         mneme_trigger_refresh_integrity_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -936,8 +903,7 @@ async fn mneme_store_wrappers_smoke() {
             reason: "tests".into(),
         }),
         mneme_trigger_refresh_analytics_projections_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -954,8 +920,7 @@ async fn mneme_store_wrappers_smoke() {
             reason: "tests".into(),
         }),
         mneme_trigger_retention_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -966,8 +931,7 @@ async fn mneme_store_wrappers_smoke() {
             reason: "tests".into(),
         }),
         mneme_trigger_compaction_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -977,8 +941,7 @@ async fn mneme_store_wrappers_smoke() {
             lease_millis: 1000,
         }),
         mneme_run_processing_worker_inner,
-    )
-    .await;
+    );
     assert!(matches!(response.status, "ok" | "error"));
 
     let response = ipc_with_payload!(
@@ -989,8 +952,7 @@ async fn mneme_store_wrappers_smoke() {
             limit: 10,
         }),
         mneme_list_jobs_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -1000,8 +962,7 @@ async fn mneme_store_wrappers_smoke() {
             scenario_id: None,
         }),
         mneme_get_integrity_head_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -1011,8 +972,7 @@ async fn mneme_store_wrappers_smoke() {
             type_id,
         }),
         mneme_get_last_schema_compile_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -1022,16 +982,14 @@ async fn mneme_store_wrappers_smoke() {
             limit: 10,
         }),
         mneme_list_failed_jobs_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_no_payload!(
         state,
         ipc_request(EmptyPayload {}),
         mneme_get_schema_manifest_inner,
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -1045,8 +1003,7 @@ async fn mneme_store_wrappers_smoke() {
             as_of_asserted_at: Some(asserted_at.clone()),
         }),
         mneme_explain_resolution_inner,
-    )
-    .await;
+    );
     assert!(matches!(response.status, "ok" | "error"));
 
     let response = ipc_with_payload!(
@@ -1059,8 +1016,7 @@ async fn mneme_store_wrappers_smoke() {
             as_of_asserted_at: Some(asserted_at.clone()),
         }),
         mneme_explain_traversal_inner,
-    )
-    .await;
+    );
     assert!(matches!(response.status, "ok" | "error"));
 
     let response = ipc_with_payload!(
@@ -1072,8 +1028,7 @@ async fn mneme_store_wrappers_smoke() {
         |state, payload| {
             mneme_get_effective_schema_inner(state, payload.partition_id, payload.type_id)
         },
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 
     let response = ipc_with_payload!(
@@ -1085,7 +1040,6 @@ async fn mneme_store_wrappers_smoke() {
         |state, payload| {
             mneme_list_edge_type_rules_inner(state, payload.partition_id, payload.edge_type_id)
         },
-    )
-    .await;
+    );
     assert_eq!(response.status, "ok");
 }
