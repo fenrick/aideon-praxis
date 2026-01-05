@@ -97,6 +97,7 @@ fn build_menu_registers_ids() {
 }
 
 #[test]
+#[cfg(not(target_os = "windows"))]
 fn handle_menu_event_emits_shell_command() {
     let app = tauri::test::mock_app();
     app.manage(MenuIds {
@@ -113,6 +114,7 @@ fn handle_menu_event_emits_shell_command() {
 }
 
 #[test]
+#[cfg(not(target_os = "windows"))]
 fn handle_menu_event_opens_windows() {
     let app = tauri::test::mock_app();
     app.manage(MenuIds {

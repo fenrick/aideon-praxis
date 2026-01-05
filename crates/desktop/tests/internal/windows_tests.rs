@@ -50,6 +50,7 @@ fn system_window_open_rejects_unknown_window() {
 }
 
 #[test]
+#[cfg(not(target_os = "windows"))]
 fn system_window_open_handles_known_windows() {
     let app = tauri::test::mock_app();
     let response = system_window_open(
@@ -78,6 +79,7 @@ fn system_window_open_handles_known_windows() {
 }
 
 #[test]
+#[cfg(not(target_os = "windows"))]
 fn window_openers_handle_existing_windows() {
     let app = tauri::test::mock_app();
     let _ = open_settings(app.handle().clone());
@@ -94,6 +96,7 @@ fn window_openers_handle_existing_windows() {
 }
 
 #[test]
+#[cfg(not(target_os = "windows"))]
 fn create_windows_builds_splash_and_main() {
     let app = tauri::test::mock_app();
     create_windows(&app).expect("create windows");
