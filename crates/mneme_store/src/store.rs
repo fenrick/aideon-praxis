@@ -12021,3 +12021,7 @@ async fn fetch_op_deps(
 #[cfg(test)]
 #[path = "../tests/internal/store_compaction_tests.rs"]
 mod compaction_tests;
+
+#[cfg(test)]
+#[path = "../tests/internal/store_processing_tests.rs"]
+mod processing_tests;

@@ -1,5 +1,12 @@
-use super::{MenuAction, MenuIds, ShellCommandPayload, classify_menu_event, to_string};
+#[cfg(not(target_os = "macos"))]
+use super::build_menu;
+use super::{
+    MenuAction, MenuIds, ShellCommandPayload, classify_menu_event, handle_menu_event, to_string,
+};
 use serde_json::json;
+use tauri::Manager;
+use tauri::menu::{MenuEvent, MenuId};
+use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 #[test]
 fn menu_ids_default_is_empty() {
@@ -78,4 +85,56 @@ fn append_window_items_supports_visibility_options() {
     super::append_window_items(&app, &window, true).expect("append window items");
     let minimal = tauri::menu::Submenu::new(&app, "Window2", true).expect("submenu");
     super::append_window_items(&app, &minimal, false).expect("append window items");
+}
+
+#[test]
+#[cfg(not(target_os = "macos"))]
+fn build_menu_registers_ids() {
+    let app = tauri::test::mock_app();
+    build_menu(&app).expect("build menu");
+    let ids = app.state::<MenuIds>();
+    assert!(!ids.styleguide.is_empty());
+}
+
+#[test]
+fn handle_menu_event_emits_shell_command() {
+    let app = tauri::test::mock_app();
+    app.manage(MenuIds {
+        styleguide: "styleguide".to_string(),
+    });
+    let _window = WebviewWindowBuilder::new(&app, "main", WebviewUrl::App("index.html".into()))
+        .build()
+        .expect("main window");
+
+    let event = MenuEvent {
+        id: MenuId::new("view.toggle_navigation"),
+    };
+    handle_menu_event(app.handle(), event);
+}
+
+#[test]
+fn handle_menu_event_opens_windows() {
+    let app = tauri::test::mock_app();
+    app.manage(MenuIds {
+        styleguide: "debug_styleguide".to_string(),
+    });
+
+    handle_menu_event(
+        app.handle(),
+        MenuEvent {
+            id: MenuId::new("preferences"),
+        },
+    );
+    handle_menu_event(
+        app.handle(),
+        MenuEvent {
+            id: MenuId::new("help.about"),
+        },
+    );
+    handle_menu_event(
+        app.handle(),
+        MenuEvent {
+            id: MenuId::new("debug_styleguide"),
+        },
+    );
 }

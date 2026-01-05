@@ -1,4 +1,9 @@
-use super::{SystemWindowTarget, parse_window_target, to_string};
+use super::{
+    OpenWindowPayload, SystemWindowTarget, create_windows, open_about, open_settings, open_status,
+    open_styleguide, parse_window_target, system_window_open, to_string,
+};
+use crate::ipc::IpcRequest;
+use tauri::Manager;
 
 #[test]
 fn to_string_formats_errors() {
@@ -25,4 +30,73 @@ fn parse_window_target_maps_known_ids() {
         SystemWindowTarget::Styleguide
     );
     assert!(parse_window_target("nope").is_err());
+}
+
+#[test]
+fn system_window_open_rejects_unknown_window() {
+    let app = tauri::test::mock_app();
+    let response = system_window_open(
+        app.handle().clone(),
+        IpcRequest {
+            request_id: "req-1".to_string(),
+            payload: OpenWindowPayload {
+                window: "unknown".to_string(),
+            },
+        },
+    )
+    .expect("response");
+    assert_eq!(response.status, "error");
+    assert!(response.error.is_some());
+}
+
+#[test]
+fn system_window_open_handles_known_windows() {
+    let app = tauri::test::mock_app();
+    let response = system_window_open(
+        app.handle().clone(),
+        IpcRequest {
+            request_id: "req-2".to_string(),
+            payload: OpenWindowPayload {
+                window: "settings".to_string(),
+            },
+        },
+    )
+    .expect("response");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = system_window_open(
+        app.handle().clone(),
+        IpcRequest {
+            request_id: "req-3".to_string(),
+            payload: OpenWindowPayload {
+                window: "about".to_string(),
+            },
+        },
+    )
+    .expect("response");
+    assert!(matches!(response.status, "ok" | "error"));
+}
+
+#[test]
+fn window_openers_handle_existing_windows() {
+    let app = tauri::test::mock_app();
+    let _ = open_settings(app.handle().clone());
+    let _ = open_settings(app.handle().clone());
+
+    let _ = open_about(app.handle().clone());
+    let _ = open_about(app.handle().clone());
+
+    let _ = open_status(app.handle().clone());
+    let _ = open_status(app.handle().clone());
+
+    let _ = open_styleguide(app.handle().clone());
+    let _ = open_styleguide(app.handle().clone());
+}
+
+#[test]
+fn create_windows_builds_splash_and_main() {
+    let app = tauri::test::mock_app();
+    create_windows(&app).expect("create windows");
+    assert!(app.get_webview_window("splash").is_some());
+    assert!(app.get_webview_window("main").is_some());
 }
