@@ -1025,7 +1025,7 @@ async fn mneme_store_wrappers_smoke() {
             partition_id,
             type_id,
         }),
-        |state, payload| {
+        |state, payload: GetEffectiveSchemaPayload| {
             mneme_get_effective_schema_inner(state, payload.partition_id, payload.type_id)
         },
     );
@@ -1037,7 +1037,7 @@ async fn mneme_store_wrappers_smoke() {
             partition_id,
             edge_type_id: None,
         }),
-        |state, payload| {
+        |state, payload: ListEdgeTypeRulesPayload| {
             mneme_list_edge_type_rules_inner(state, payload.partition_id, payload.edge_type_id)
         },
     );
