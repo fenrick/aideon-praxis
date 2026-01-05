@@ -2,8 +2,7 @@ use super::*;
 use aideon_chrona::TemporalEngine;
 use aideon_praxis::mneme::open_store;
 use serde_json::json;
-use tauri::Manager;
-use tauri::test::mock_app;
+use std::future::Future;
 use tempfile::tempdir;
 
 fn ipc_request<T>(payload: T) -> IpcRequest<T> {
@@ -14,6 +13,35 @@ fn ipc_request<T>(payload: T) -> IpcRequest<T> {
         request_id: format!("req-{id}"),
         payload,
     }
+}
+
+async fn ipc_with_payload<T, R, F, Fut>(
+    state: &WorkerState,
+    request: IpcRequest<T>,
+    f: F,
+) -> IpcResponse<R>
+where
+    F: FnOnce(&WorkerState, T) -> Fut,
+    Fut: Future<Output = Result<R, HostError>>,
+{
+    let IpcRequest { request_id, payload } = request;
+    ipc_handle(request_id, f(state, payload)).await
+}
+
+async fn ipc_no_payload<R, F, Fut>(
+    state: &WorkerState,
+    request: IpcRequest<EmptyPayload>,
+    f: F,
+) -> IpcResponse<R>
+where
+    F: FnOnce(&WorkerState) -> Fut,
+    Fut: Future<Output = Result<R, HostError>>,
+{
+    let IpcRequest {
+        request_id,
+        payload: _,
+    } = request;
+    ipc_handle(request_id, f(state)).await
 }
 
 #[test]
@@ -346,9 +374,7 @@ async fn mneme_command_helpers_roundtrip() {
 #[tokio::test]
 async fn mneme_store_wrappers_smoke() {
     let (state, _dir) = build_state().await;
-    let app = mock_app();
-    app.manage(state);
-    let state = app.state::<WorkerState>();
+    let state = &state;
     let partition_id = PartitionId(aideon_praxis::mneme::Id::new());
     let actor_id = ActorId(aideon_praxis::mneme::Id::new());
     let asserted_at = Hlc::now().as_i64().to_string();
@@ -394,13 +420,16 @@ async fn mneme_store_wrappers_smoke() {
         },
         scenario_id: None,
     };
-    let response = mneme_store_upsert_metamodel_batch(state.clone(), ipc_request(metamodel))
-        .await
-        .unwrap();
+    let response = ipc_with_payload(
+        state,
+        ipc_request(metamodel),
+        mneme_upsert_metamodel_batch_inner,
+    )
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_compile_effective_schema(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(CompileEffectiveSchemaInput {
             partition_id,
             actor_id,
@@ -408,13 +437,13 @@ async fn mneme_store_wrappers_smoke() {
             type_id,
             scenario_id: None,
         }),
+        mneme_compile_effective_schema_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_create_node(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(CreateNodePayload {
             partition_id,
             scenario_id: None,
@@ -426,13 +455,13 @@ async fn mneme_store_wrappers_smoke() {
             owner_actor_id: None,
             visibility: None,
         }),
+        mneme_create_node_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_create_node(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(CreateNodePayload {
             partition_id,
             scenario_id: None,
@@ -444,13 +473,13 @@ async fn mneme_store_wrappers_smoke() {
             owner_actor_id: None,
             visibility: None,
         }),
+        mneme_create_node_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_set_property_interval(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(SetPropertyIntervalPayload {
             partition_id,
             scenario_id: None,
@@ -463,13 +492,13 @@ async fn mneme_store_wrappers_smoke() {
             valid_to: None,
             layer: None,
         }),
+        mneme_set_property_interval_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_create_edge(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(CreateEdgePayload {
             partition_id,
             scenario_id: None,
@@ -487,13 +516,13 @@ async fn mneme_store_wrappers_smoke() {
             owner_actor_id: None,
             visibility: None,
         }),
+        mneme_create_edge_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_set_edge_existence_interval(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(SetEdgeExistencePayload {
             partition_id,
             scenario_id: None,
@@ -505,13 +534,13 @@ async fn mneme_store_wrappers_smoke() {
             layer: None,
             is_tombstone: Some(false),
         }),
+        mneme_set_edge_existence_interval_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_read_entity_at_time(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ReadEntityAtTimePayload {
             partition_id,
             scenario_id: None,
@@ -521,13 +550,13 @@ async fn mneme_store_wrappers_smoke() {
             field_ids: None,
             include_defaults: Some(true),
         }),
+        mneme_read_entity_at_time_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_list_entities(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ListEntitiesPayload {
             partition_id,
             scenario_id: None,
@@ -543,13 +572,13 @@ async fn mneme_store_wrappers_smoke() {
             limit: Some(10),
             cursor: None,
         }),
+        mneme_list_entities_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_traverse_at_time(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(TraverseAtTimePayload {
             partition_id,
             scenario_id: None,
@@ -560,25 +589,25 @@ async fn mneme_store_wrappers_smoke() {
             as_of_asserted_at: None,
             limit: Some(10),
         }),
+        mneme_traverse_at_time_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_get_changes_since(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(GetChangesSincePayload {
             partition_id,
             from_sequence: None,
             limit: Some(10),
         }),
+        mneme_get_changes_since_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_get_projection_edges(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(GetProjectionEdgesPayload {
             partition_id,
             scenario_id: None,
@@ -587,13 +616,13 @@ async fn mneme_store_wrappers_smoke() {
             edge_type_filter: None,
             limit: Some(10),
         }),
+        mneme_get_projection_edges_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_get_graph_degree_stats(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(GetGraphDegreeStatsPayload {
             partition_id,
             scenario_id: None,
@@ -601,26 +630,26 @@ async fn mneme_store_wrappers_smoke() {
             entity_ids: Some(vec![node_a]),
             limit: Some(10),
         }),
+        mneme_get_graph_degree_stats_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_get_graph_edge_type_counts(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(GetGraphEdgeTypeCountsPayload {
             partition_id,
             scenario_id: None,
             edge_type_ids: None,
             limit: Some(10),
         }),
+        mneme_get_graph_edge_type_counts_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_store_pagerank_scores(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(StorePageRankScoresPayload {
             partition_id,
             actor_id,
@@ -639,9 +668,9 @@ async fn mneme_store_wrappers_smoke() {
             }],
             scenario_id: None,
         }),
+        mneme_store_pagerank_scores_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
     let run_id = response
         .result
@@ -649,34 +678,34 @@ async fn mneme_store_wrappers_smoke() {
         .map(|result| result.run_id)
         .expect("pagerank run id");
 
-    let response = mneme_store_get_pagerank_scores(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(GetPageRankScoresPayload {
             partition_id,
             run_id,
             top_n: 10,
         }),
+        mneme_get_pagerank_scores_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let ops_response = mneme_store_export_ops(
-        state.clone(),
+    let ops_response = ipc_with_payload(
+        state,
         ipc_request(ExportOpsPayload {
             partition_id,
             scenario_id: None,
             since_asserted_at: None,
             limit: Some(100),
         }),
+        mneme_export_ops_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(ops_response.status, "ok");
     let ops = ops_response.result.unwrap_or_default();
 
-    let response = mneme_store_ingest_ops(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(IngestOpsPayload {
             partition_id,
             scenario_id: None,
@@ -692,51 +721,51 @@ async fn mneme_store_wrappers_smoke() {
                 })
                 .collect(),
         }),
+        mneme_ingest_ops_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_get_partition_head(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(PartitionHeadPayload {
             partition_id,
             scenario_id: None,
         }),
+        mneme_get_partition_head_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let scenario_response = mneme_store_create_scenario(
-        state.clone(),
+    let scenario_response = ipc_with_payload(
+        state,
         ipc_request(CreateScenarioPayload {
             partition_id,
             actor_id,
             asserted_at: asserted_at.clone(),
             name: "Test Scenario".into(),
         }),
+        mneme_create_scenario_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(scenario_response.status, "ok");
     let scenario_id = scenario_response.result.expect("scenario id");
 
-    let response = mneme_store_delete_scenario(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(DeleteScenarioPayload {
             partition_id,
             actor_id,
             asserted_at: asserted_at.clone(),
             scenario_id,
         }),
+        mneme_delete_scenario_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let export_ops = mneme_store_export_ops_stream(
-        state.clone(),
+    let export_ops = ipc_with_payload(
+        state,
         ipc_request(ExportOpsStreamPayload {
             partition_id,
             scenario_id: None,
@@ -746,14 +775,14 @@ async fn mneme_store_wrappers_smoke() {
             include_data_ops: Some(true),
             include_scenarios: Some(true),
         }),
+        mneme_export_ops_stream_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(export_ops.status, "ok");
     let records = export_ops.result.unwrap_or_default();
 
-    let response = mneme_store_import_ops_stream(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ImportOpsStreamPayload {
             target_partition: partition_id,
             scenario_id: None,
@@ -762,13 +791,13 @@ async fn mneme_store_wrappers_smoke() {
             strict_schema: Some(false),
             records,
         }),
+        mneme_import_ops_stream_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert!(matches!(response.status, "ok" | "error"));
 
-    let export_snapshot = mneme_store_export_snapshot_stream(
-        state.clone(),
+    let export_snapshot = ipc_with_payload(
+        state,
         ipc_request(ExportSnapshotPayload {
             partition_id,
             scenario_id: None,
@@ -776,14 +805,14 @@ async fn mneme_store_wrappers_smoke() {
             include_facts: Some(true),
             include_entities: Some(true),
         }),
+        mneme_export_snapshot_stream_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(export_snapshot.status, "ok");
     let snapshot_records = export_snapshot.result.unwrap_or_default();
 
-    let response = mneme_store_import_snapshot_stream(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ImportSnapshotPayload {
             target_partition: partition_id,
             scenario_id: None,
@@ -792,13 +821,13 @@ async fn mneme_store_wrappers_smoke() {
             strict_schema: Some(false),
             records: snapshot_records,
         }),
+        mneme_import_snapshot_stream_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert!(matches!(response.status, "ok" | "error"));
 
-    let response = mneme_store_upsert_validation_rules(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(UpsertValidationRulesPayload {
             partition_id,
             actor_id,
@@ -812,21 +841,21 @@ async fn mneme_store_wrappers_smoke() {
                 params: json!({ "field": field_id.to_string() }),
             }],
         }),
+        mneme_upsert_validation_rules_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_list_validation_rules(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ListValidationRulesPayload { partition_id }),
+        mneme_list_validation_rules_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_upsert_computed_rules(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(UpsertComputedRulesPayload {
             partition_id,
             actor_id,
@@ -839,21 +868,21 @@ async fn mneme_store_wrappers_smoke() {
                 params: json!({ "op": "concat" }),
             }],
         }),
+        mneme_upsert_computed_rules_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_list_computed_rules(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ListComputedRulesPayload { partition_id }),
+        mneme_list_computed_rules_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_upsert_computed_cache(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(UpsertComputedCachePayload {
             partition_id,
             entries: vec![ComputedCacheEntryPayload {
@@ -866,13 +895,13 @@ async fn mneme_store_wrappers_smoke() {
                 computed_asserted_at: asserted_at.clone(),
             }],
         }),
+        mneme_upsert_computed_cache_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_list_computed_cache(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ListComputedCachePayload {
             partition_id,
             entity_id: Some(node_a),
@@ -880,49 +909,49 @@ async fn mneme_store_wrappers_smoke() {
             at_valid_time: Some("0".to_string()),
             limit: Some(10),
         }),
+        mneme_list_computed_cache_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_trigger_rebuild_effective_schema(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(TriggerProcessingPayload {
             partition_id,
             scenario_id: None,
             reason: "tests".into(),
         }),
+        mneme_trigger_rebuild_effective_schema_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_trigger_refresh_integrity(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(TriggerProcessingPayload {
             partition_id,
             scenario_id: None,
             reason: "tests".into(),
         }),
+        mneme_trigger_refresh_integrity_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_trigger_refresh_analytics_projections(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(TriggerProcessingPayload {
             partition_id,
             scenario_id: None,
             reason: "tests".into(),
         }),
+        mneme_trigger_refresh_analytics_projections_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_trigger_retention(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(TriggerRetentionPayload {
             partition_id,
             scenario_id: None,
@@ -934,86 +963,89 @@ async fn mneme_store_wrappers_smoke() {
             },
             reason: "tests".into(),
         }),
+        mneme_trigger_retention_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_trigger_compaction(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(TriggerCompactionPayload {
             partition_id,
             scenario_id: None,
             reason: "tests".into(),
         }),
+        mneme_trigger_compaction_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_run_processing_worker(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(RunWorkerPayload {
             max_jobs: 1,
             lease_millis: 1000,
         }),
+        mneme_run_processing_worker_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert!(matches!(response.status, "ok" | "error"));
 
-    let response = mneme_store_list_jobs(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ListJobsPayload {
             partition_id,
             status: None,
             limit: 10,
         }),
+        mneme_list_jobs_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_get_integrity_head(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(IntegrityHeadPayload {
             partition_id,
             scenario_id: None,
         }),
+        mneme_get_integrity_head_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_get_last_schema_compile(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(SchemaHeadPayload {
             partition_id,
             type_id,
         }),
+        mneme_get_last_schema_compile_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_list_failed_jobs(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ListFailedJobsPayload {
             partition_id,
             limit: 10,
         }),
+        mneme_list_failed_jobs_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_get_schema_manifest(state.clone(), ipc_request(EmptyPayload {}))
-        .await
-        .unwrap();
+    let response = ipc_no_payload(
+        state,
+        ipc_request(EmptyPayload {}),
+        mneme_get_schema_manifest_inner,
+    )
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_explain_resolution(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ExplainResolutionPayload {
             partition_id,
             scenario_id: None,
@@ -1022,13 +1054,13 @@ async fn mneme_store_wrappers_smoke() {
             at: "0".to_string(),
             as_of_asserted_at: Some(asserted_at.clone()),
         }),
+        mneme_explain_resolution_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert!(matches!(response.status, "ok" | "error"));
 
-    let response = mneme_store_explain_traversal(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ExplainTraversalPayload {
             partition_id,
             scenario_id: None,
@@ -1036,30 +1068,34 @@ async fn mneme_store_wrappers_smoke() {
             at: "0".to_string(),
             as_of_asserted_at: Some(asserted_at.clone()),
         }),
+        mneme_explain_traversal_inner,
     )
-    .await
-    .unwrap();
+    .await;
     assert!(matches!(response.status, "ok" | "error"));
 
-    let response = mneme_store_get_effective_schema(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(GetEffectiveSchemaPayload {
             partition_id,
             type_id,
         }),
+        |state, payload| {
+            mneme_get_effective_schema_inner(state, payload.partition_id, payload.type_id)
+        },
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 
-    let response = mneme_store_list_edge_type_rules(
-        state.clone(),
+    let response = ipc_with_payload(
+        state,
         ipc_request(ListEdgeTypeRulesPayload {
             partition_id,
             edge_type_id: None,
         }),
+        |state, payload| {
+            mneme_list_edge_type_rules_inner(state, payload.partition_id, payload.edge_type_id)
+        },
     )
-    .await
-    .unwrap();
+    .await;
     assert_eq!(response.status, "ok");
 }
