@@ -16,7 +16,10 @@ fn ipc_request<T>(payload: T) -> IpcRequest<T> {
 
 macro_rules! ipc_with_payload {
     ($state:expr, $request:expr, $call:expr) => {{
-        let IpcRequest { request_id, payload } = $request;
+        let IpcRequest {
+            request_id,
+            payload,
+        } = $request;
         ipc_handle(request_id, ($call)($state, payload)).await
     }};
 }
