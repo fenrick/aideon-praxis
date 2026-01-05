@@ -1,8 +1,10 @@
 use super::{
-    OpenWindowPayload, SystemWindowTarget, create_windows, open_about, open_settings, open_status,
-    open_styleguide, parse_window_target, system_window_open, to_string,
+    OpenWindowPayload, SystemWindowTarget, parse_window_target, system_window_open, to_string,
 };
+#[cfg(not(target_os = "windows"))]
+use super::{create_windows, open_about, open_settings, open_status, open_styleguide};
 use crate::ipc::IpcRequest;
+#[cfg(not(target_os = "windows"))]
 use tauri::Manager;
 
 #[test]

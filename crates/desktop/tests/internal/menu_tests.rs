@@ -1,11 +1,14 @@
 #[cfg(not(target_os = "macos"))]
 use super::build_menu;
-use super::{
-    MenuAction, MenuIds, ShellCommandPayload, classify_menu_event, handle_menu_event, to_string,
-};
+#[cfg(not(target_os = "windows"))]
+use super::handle_menu_event;
+use super::{MenuAction, MenuIds, ShellCommandPayload, classify_menu_event, to_string};
 use serde_json::json;
+#[cfg(not(target_os = "windows"))]
 use tauri::Manager;
+#[cfg(not(target_os = "windows"))]
 use tauri::menu::{MenuEvent, MenuId};
+#[cfg(not(target_os = "windows"))]
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 #[test]
