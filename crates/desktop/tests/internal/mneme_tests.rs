@@ -15,7 +15,7 @@ fn ipc_request<T>(payload: T) -> IpcRequest<T> {
 }
 
 macro_rules! ipc_with_payload {
-    ($state:expr, $request:expr, $call:expr) => {{
+    ($state:expr, $request:expr, $call:expr $(,)?) => {{
         let IpcRequest {
             request_id,
             payload,
@@ -25,7 +25,7 @@ macro_rules! ipc_with_payload {
 }
 
 macro_rules! ipc_no_payload {
-    ($state:expr, $request:expr, $call:expr) => {{
+    ($state:expr, $request:expr, $call:expr $(,)?) => {{
         let IpcRequest {
             request_id,
             payload: _,
