@@ -1,9 +1,22 @@
 use super::*;
 use aideon_chrona::TemporalEngine;
+use aideon_praxis::mneme::open_store;
 use aideon_praxis::praxis::temporal::{
     ChangeSet, CommitRef, EdgeVersion, NodeVersion, StateAtArgs, TopologyDeltaArgs,
 };
 use serde_json::json;
+use tauri::Manager;
+use tempfile::tempdir;
+
+fn ipc_request<T>(payload: T) -> IpcRequest<T> {
+    use std::sync::atomic::{AtomicU32, Ordering};
+    static COUNTER: AtomicU32 = AtomicU32::new(1);
+    let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+    IpcRequest {
+        request_id: format!("req-{id}"),
+        payload,
+    }
+}
 
 #[test]
 fn host_error_maps_codes() {
@@ -164,4 +177,118 @@ async fn commit_with_edge(engine: &TemporalEngine, message: &str, parent: &str) 
         })
         .await
         .expect("commit")
+}
+
+#[tokio::test]
+async fn temporal_wrapped_commands_cover_ipc_surface() {
+    let dir = tempdir().expect("tempdir");
+    let mneme = open_store(dir.path()).await.expect("open store");
+    let engine = TemporalEngine::new().await.expect("engine");
+    let state = WorkerState::new(engine, mneme);
+    let app = tauri::test::mock_app();
+    app.manage(state);
+    let state = app.state::<WorkerState>();
+
+    let base = commit_seed(state.engine(), "base").await;
+    let expanded = commit_with_edge(state.engine(), "expand", &base).await;
+
+    let response = chrona_temporal_state_at(
+        state.clone(),
+        ipc_request(StateAtArgs {
+            as_of: CommitRef::Id(expanded.clone()),
+            scenario: Some("main".into()),
+            confidence: None,
+        }),
+    )
+    .await
+    .expect("state response");
+    assert_eq!(response.status, "ok");
+
+    let response = chrona_temporal_diff(
+        state.clone(),
+        ipc_request(DiffArgs {
+            from: CommitRef::Id(base.clone()),
+            to: CommitRef::Id(expanded.clone()),
+            scope: None,
+        }),
+    )
+    .await
+    .expect("diff response");
+    assert_eq!(response.status, "ok");
+
+    let response = chrona_temporal_list_commits(
+        state.clone(),
+        ipc_request(ListCommitsPayload {
+            branch: "main".into(),
+        }),
+    )
+    .await
+    .expect("commits response");
+    assert_eq!(response.status, "ok");
+
+    let response = chrona_temporal_list_branches(state.clone(), ipc_request(EmptyPayload {}))
+        .await
+        .expect("branches response");
+    assert_eq!(response.status, "ok");
+
+    let response = chrona_temporal_topology_delta(
+        state.clone(),
+        ipc_request(TopologyDeltaArgs {
+            from: CommitRef::Id(base.clone()),
+            to: CommitRef::Id(expanded.clone()),
+        }),
+    )
+    .await
+    .expect("delta response");
+    assert_eq!(response.status, "ok");
+
+    let response = chrona_temporal_commit_changes(
+        state.clone(),
+        ipc_request(CommitChangesRequest {
+            branch: "main".into(),
+            parent: Some(expanded.clone()),
+            author: Some("tester".into()),
+            time: None,
+            message: "branch commit".into(),
+            tags: vec![],
+            changes: ChangeSet {
+                node_creates: vec![NodeVersion {
+                    id: "extra-node".into(),
+                    r#type: Some("Capability".into()),
+                    props: Some(json!({ "name": "extra-node" })),
+                }],
+                ..ChangeSet::default()
+            },
+        }),
+    )
+    .await
+    .expect("commit response");
+    assert_eq!(response.status, "ok");
+
+    let response = chrona_temporal_create_branch(
+        state.clone(),
+        ipc_request(CreateBranchRequest {
+            name: "feature".into(),
+            from: Some(CommitRef::Id(expanded.clone())),
+        }),
+    )
+    .await
+    .expect("create branch");
+    assert_eq!(response.status, "ok");
+
+    let response = chrona_temporal_merge_branches(
+        state.clone(),
+        ipc_request(MergeRequest {
+            source: "feature".into(),
+            target: "main".into(),
+        }),
+    )
+    .await
+    .expect("merge response");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = praxis_metamodel_get(state, ipc_request(EmptyPayload {}))
+        .await
+        .expect("metamodel response");
+    assert_eq!(response.status, "ok");
 }

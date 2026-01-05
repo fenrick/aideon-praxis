@@ -61,3 +61,21 @@ fn menu_event_classification_covers_common_paths() {
         MenuAction::OpenStyleguide
     );
 }
+
+#[test]
+#[cfg(not(target_os = "macos"))]
+fn append_edit_items_builds_edit_menu() {
+    let app = tauri::test::mock_app();
+    let edit = tauri::menu::Submenu::new(&app, "Edit", true).expect("submenu");
+    super::append_edit_items(&app, &edit).expect("append edit items");
+}
+
+#[test]
+#[cfg(not(target_os = "macos"))]
+fn append_window_items_supports_visibility_options() {
+    let app = tauri::test::mock_app();
+    let window = tauri::menu::Submenu::new(&app, "Window", true).expect("submenu");
+    super::append_window_items(&app, &window, true).expect("append window items");
+    let minimal = tauri::menu::Submenu::new(&app, "Window2", true).expect("submenu");
+    super::append_window_items(&app, &minimal, false).expect("append window items");
+}

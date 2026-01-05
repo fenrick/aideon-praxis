@@ -1,8 +1,9 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { AideonToolbar } from 'aideon/shell/aideon-toolbar';
+import { AideonToolbar, __test__ } from 'aideon/shell/aideon-toolbar';
 import { AideonShellControlsProvider } from 'aideon/shell/shell-controls';
+import type { UseThemeProps } from 'next-themes';
 
 const toggleSidebar = vi.fn();
 const keyTarget = globalThis as unknown as Window;
@@ -87,5 +88,92 @@ describe('AideonToolbar', () => {
     fireEvent.click(screen.getByText('Keyboard shortcuts…'));
 
     expect(screen.getByText('Keyboard shortcuts')).toBeInTheDocument();
+  });
+
+  it('builds shell commands and handles shortcuts', () => {
+    interface SidebarContextValue {
+      state: 'expanded' | 'collapsed';
+      open: boolean;
+      setOpen: (open: boolean) => void;
+      openMobile: boolean;
+      setOpenMobile: (open: boolean) => void;
+      isMobile: boolean;
+      toggleSidebar: () => void;
+    }
+
+    const sidebar: SidebarContextValue = {
+      state: 'expanded',
+      open: true,
+      setOpen: vi.fn(),
+      openMobile: false,
+      setOpenMobile: vi.fn(),
+      isMobile: false,
+      toggleSidebar: vi.fn(),
+    };
+
+    const shell = { toggleInspector: vi.fn(), inspectorCollapsed: false };
+    const theme: UseThemeProps = {
+      themes: ['system', 'light', 'dark'],
+      setTheme: vi.fn(),
+      theme: 'system',
+      resolvedTheme: 'system',
+      systemTheme: 'light',
+      forcedTheme: undefined,
+    };
+    const workspace = [{ id: 'ws', label: 'Workspace', group: 'Workspace', onSelect: vi.fn() }];
+    const commands = __test__.buildShellCommands({
+      sidebar,
+      shell,
+      theme,
+      workspaceCommands: workspace,
+      shortcutLabelFor: (letter) => `Cmd+${letter}`,
+    });
+
+    expect(commands.some((command) => command.id === 'toggle-navigation')).toBe(true);
+    expect(commands.some((command) => command.id === 'toggle-inspector')).toBe(true);
+    expect(commands.some((command) => command.id === 'theme.system')).toBe(true);
+    expect(commands.some((command) => command.id === 'ws')).toBe(true);
+
+    const openCommandPalette = vi.fn();
+    expect(
+      __test__.handleBrowserShortcut({
+        key: 'b',
+        sidebar,
+        shell,
+        openCommandPalette,
+      }),
+    ).toBe(true);
+    expect(
+      __test__.handleBrowserShortcut({
+        key: 'i',
+        sidebar,
+        shell,
+        openCommandPalette,
+      }),
+    ).toBe(true);
+    expect(
+      __test__.handleBrowserShortcut({
+        key: 'k',
+        sidebar,
+        shell,
+        openCommandPalette,
+      }),
+    ).toBe(true);
+    expect(openCommandPalette).toHaveBeenCalled();
+  });
+
+  it('recognises editable targets and mac platforms', () => {
+    const input = document.createElement('input');
+    const textarea = document.createElement('textarea');
+    const div = document.createElement('div');
+    Object.defineProperty(div, 'isContentEditable', { value: true, configurable: true });
+
+    expect(__test__.isEditableTarget(input)).toBe(true);
+    expect(__test__.isEditableTarget(textarea)).toBe(true);
+    expect(__test__.isEditableTarget(div)).toBe(true);
+    const textNode = document.createTextNode('text');
+    expect(__test__.isEditableTarget(textNode)).toBe(false);
+
+    expect(typeof __test__.isMacPlatform()).toBe('boolean');
   });
 });

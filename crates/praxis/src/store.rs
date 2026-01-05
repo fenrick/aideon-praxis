@@ -405,6 +405,10 @@ impl Store for SqliteDb {
     }
 }
 
+#[cfg(test)]
+#[path = "../tests/internal/store_tests.rs"]
+mod tests;
+
 fn ensure_commits_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     let columns = table_columns(conn, "commits")?;
     if columns.is_empty() {

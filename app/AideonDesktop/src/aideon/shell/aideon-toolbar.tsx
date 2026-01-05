@@ -444,6 +444,13 @@ function ThemeMenu({
   );
 }
 
+export const __test__ = {
+  buildShellCommands,
+  handleBrowserShortcut,
+  isEditableTarget,
+  isMacPlatform,
+};
+
 /**
  *
  * @param root0

@@ -168,6 +168,11 @@ function toInvokeArguments(value: object): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+export const __test__ = {
+  formatIpcError,
+  toInvokeArguments,
+};
+
 export interface UpsertMetamodelBatchInput {
   partitionId: string;
   actorId: string;

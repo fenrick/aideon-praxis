@@ -1,5 +1,16 @@
 use super::*;
+use crate::ipc::EmptyPayload;
 use time::OffsetDateTime;
+
+fn ipc_request<T>(payload: T) -> IpcRequest<T> {
+    use std::sync::atomic::{AtomicU32, Ordering};
+    static COUNTER: AtomicU32 = AtomicU32::new(1);
+    let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+    IpcRequest {
+        request_id: format!("req-{id}"),
+        payload,
+    }
+}
 
 #[test]
 fn metadata_contains_source() {
@@ -167,6 +178,88 @@ fn chart_view_demo_supports_kpi_and_line() {
     assert!(line.kpi.is_none());
     assert_eq!(line.series.len(), 1);
     assert!(!line.series[0].points.is_empty());
+}
+
+#[tokio::test]
+async fn artefact_wrappers_return_ipc_envelopes() {
+    let graph_def = GraphViewDefinition {
+        id: "graph-1".into(),
+        name: "Graph".into(),
+        kind: "graph".into(),
+        as_of: "2025-12-01".into(),
+        scenario: None,
+        confidence: Some(0.9),
+        filters: None,
+        scope: None,
+    };
+    let graph = praxis_artefact_graph_execute(ipc_request(graph_def))
+        .await
+        .expect("graph");
+    assert_eq!(graph.status, "ok");
+
+    let catalogue_def = CatalogueViewDefinition {
+        id: "cat-1".into(),
+        name: "Catalogue".into(),
+        kind: "catalogue".into(),
+        as_of: "2025-12-01".into(),
+        scenario: None,
+        confidence: None,
+        filters: None,
+        columns: Vec::new(),
+    };
+    let catalogue = praxis_artefact_catalogue_execute(ipc_request(catalogue_def))
+        .await
+        .expect("catalogue");
+    assert_eq!(catalogue.status, "ok");
+
+    let matrix_def = MatrixViewDefinition {
+        id: "matrix-1".into(),
+        name: "Matrix".into(),
+        kind: "matrix".into(),
+        as_of: "2025-12-01".into(),
+        row_type: "Capability".into(),
+        column_type: "Service".into(),
+        scenario: None,
+        confidence: None,
+        filters: None,
+    };
+    let matrix = praxis_artefact_matrix_execute(ipc_request(matrix_def))
+        .await
+        .expect("matrix");
+    assert_eq!(matrix.status, "ok");
+
+    let chart_def = ChartViewDefinition {
+        id: "chart-1".into(),
+        name: "Chart".into(),
+        kind: "chart".into(),
+        as_of: "2025-12-01".into(),
+        chart_type: "kpi".into(),
+        measure: "count".into(),
+        dimension: None,
+        scenario: None,
+        confidence: None,
+        filters: None,
+    };
+    let chart = praxis_artefact_chart_execute(ipc_request(chart_def))
+        .await
+        .expect("chart");
+    assert_eq!(chart.status, "ok");
+}
+
+#[tokio::test]
+async fn task_and_scenario_wrappers_return_ipc_envelopes() {
+    let response =
+        praxis_task_apply_operations(ipc_request(ApplyOperationsPayload { operations: vec![] }))
+            .await
+            .expect("apply operations");
+    assert_eq!(response.status, "ok");
+    assert!(!response.result.expect("result").accepted);
+
+    let response = praxis_scenario_list(ipc_request(EmptyPayload {}))
+        .await
+        .expect("scenario list");
+    assert_eq!(response.status, "ok");
+    assert!(!response.result.unwrap_or_default().is_empty());
 }
 
 #[test]

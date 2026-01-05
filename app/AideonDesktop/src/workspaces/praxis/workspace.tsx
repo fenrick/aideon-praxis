@@ -96,6 +96,10 @@ function createTemplateWidget(entry: WidgetRegistryEntry, widgetId: string): Tem
   }
 }
 
+export const __test__ = {
+  createTemplateWidget,
+};
+
 interface ScenarioState {
   loading: boolean;
   error?: string;

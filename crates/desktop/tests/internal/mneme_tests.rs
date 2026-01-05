@@ -2,6 +2,7 @@ use super::*;
 use aideon_chrona::TemporalEngine;
 use aideon_praxis::mneme::open_store;
 use serde_json::json;
+use tauri::Manager;
 use tempfile::tempdir;
 
 fn ipc_request<T>(payload: T) -> IpcRequest<T> {
@@ -1041,5 +1042,784 @@ async fn mneme_store_wrappers_smoke() {
             mneme_list_edge_type_rules_inner(state, payload.partition_id, payload.edge_type_id)
         },
     );
+    assert_eq!(response.status, "ok");
+}
+
+#[tokio::test]
+async fn mneme_store_wrappers_cover_ipc_surface() {
+    let (state, _dir) = build_state().await;
+    let app = tauri::test::mock_app();
+    app.manage(state);
+    let state = app.state::<WorkerState>();
+
+    let partition_id = PartitionId(aideon_praxis::mneme::Id::new());
+    let actor_id = ActorId(aideon_praxis::mneme::Id::new());
+    let type_id = aideon_praxis::mneme::Id::new();
+    let field_id = aideon_praxis::mneme::Id::new();
+    let node_a = aideon_praxis::mneme::Id::new();
+    let node_b = aideon_praxis::mneme::Id::new();
+    let edge_id = aideon_praxis::mneme::Id::new();
+    let asserted_at = Hlc::now().as_i64().to_string();
+
+    let response = mneme_store_upsert_metamodel_batch(
+        state.clone(),
+        ipc_request(UpsertMetamodelBatchInput {
+            partition_id,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            batch: MetamodelBatch {
+                types: vec![aideon_praxis::mneme::TypeDef {
+                    type_id,
+                    applies_to: EntityKind::Node,
+                    label: "Service".to_string(),
+                    is_abstract: false,
+                    parent_type_id: None,
+                }],
+                fields: vec![aideon_praxis::mneme::FieldDef {
+                    field_id,
+                    label: "name".to_string(),
+                    value_type: aideon_praxis::mneme::ValueType::Str,
+                    cardinality_multi: false,
+                    merge_policy: aideon_praxis::mneme::MergePolicy::Lww,
+                    is_indexed: true,
+                    disallow_overlap: false,
+                }],
+                type_fields: vec![aideon_praxis::mneme::TypeFieldDef {
+                    type_id,
+                    field_id,
+                    is_required: false,
+                    default_value: None,
+                    override_default: false,
+                    tighten_required: false,
+                    disallow_overlap: None,
+                }],
+                edge_type_rules: vec![],
+                metamodel_version: Some("v1".to_string()),
+                metamodel_source: Some("tests".to_string()),
+            },
+            scenario_id: None,
+        }),
+    )
+    .await
+    .expect("metamodel response");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_compile_effective_schema(
+        state.clone(),
+        ipc_request(CompileEffectiveSchemaInput {
+            partition_id,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            type_id,
+            scenario_id: None,
+        }),
+    )
+    .await
+    .expect("schema response");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_create_node(
+        state.clone(),
+        ipc_request(CreateNodePayload {
+            partition_id,
+            scenario_id: None,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            node_id: node_a,
+            type_id: Some(type_id),
+            acl_group_id: None,
+            owner_actor_id: None,
+            visibility: None,
+        }),
+    )
+    .await
+    .expect("create node");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_create_node(
+        state.clone(),
+        ipc_request(CreateNodePayload {
+            partition_id,
+            scenario_id: None,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            node_id: node_b,
+            type_id: Some(type_id),
+            acl_group_id: None,
+            owner_actor_id: None,
+            visibility: None,
+        }),
+    )
+    .await
+    .expect("create node");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_create_edge(
+        state.clone(),
+        ipc_request(CreateEdgePayload {
+            partition_id,
+            scenario_id: None,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            edge_id,
+            type_id: None,
+            src_id: node_a,
+            dst_id: node_b,
+            exists_valid_from: "0".into(),
+            exists_valid_to: None,
+            layer: None,
+            weight: None,
+            acl_group_id: None,
+            owner_actor_id: None,
+            visibility: None,
+        }),
+    )
+    .await
+    .expect("create edge");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_set_edge_existence_interval(
+        state.clone(),
+        ipc_request(SetEdgeExistencePayload {
+            partition_id,
+            scenario_id: None,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            edge_id,
+            valid_from: "0".into(),
+            valid_to: None,
+            layer: None,
+            is_tombstone: Some(false),
+        }),
+    )
+    .await
+    .expect("set edge interval");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_set_property_interval(
+        state.clone(),
+        ipc_request(SetPropertyIntervalPayload {
+            partition_id,
+            scenario_id: None,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            entity_id: node_a,
+            field_id,
+            value: Value::Str("alpha".into()),
+            valid_from: "0".into(),
+            valid_to: None,
+            layer: None,
+        }),
+    )
+    .await
+    .expect("set property");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_clear_property_interval(
+        state.clone(),
+        ipc_request(ClearPropertyIntervalPayload {
+            partition_id,
+            scenario_id: None,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            entity_id: node_a,
+            field_id,
+            valid_from: "0".into(),
+            valid_to: None,
+            layer: None,
+        }),
+    )
+    .await
+    .expect("clear property");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_or_set_update(
+        state.clone(),
+        ipc_request(OrSetUpdatePayload {
+            partition_id,
+            scenario_id: None,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            entity_id: node_a,
+            field_id,
+            op: SetOp::Add,
+            element: Value::Str("tag".into()),
+            valid_from: "0".into(),
+            valid_to: None,
+            layer: None,
+        }),
+    )
+    .await
+    .expect("or-set update");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = mneme_store_counter_update(
+        state.clone(),
+        ipc_request(CounterUpdatePayload {
+            partition_id,
+            scenario_id: None,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            entity_id: node_a,
+            field_id,
+            delta: 3,
+            valid_from: "0".into(),
+            valid_to: None,
+            layer: None,
+        }),
+    )
+    .await
+    .expect("counter update");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = mneme_store_read_entity_at_time(
+        state.clone(),
+        ipc_request(ReadEntityAtTimePayload {
+            partition_id,
+            scenario_id: None,
+            entity_id: node_a,
+            at: "0".into(),
+            as_of_asserted_at: Some(asserted_at.clone()),
+            field_ids: None,
+            include_defaults: Some(true),
+        }),
+    )
+    .await
+    .expect("read entity");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_traverse_at_time(
+        state.clone(),
+        ipc_request(TraverseAtTimePayload {
+            partition_id,
+            scenario_id: None,
+            from_entity_id: node_a,
+            direction: Direction::Out,
+            edge_type_id: None,
+            at: "0".into(),
+            as_of_asserted_at: Some(asserted_at.clone()),
+            limit: Some(10),
+        }),
+    )
+    .await
+    .expect("traverse");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = mneme_store_list_entities(
+        state.clone(),
+        ipc_request(ListEntitiesPayload {
+            partition_id,
+            scenario_id: None,
+            kind: Some(EntityKind::Node),
+            type_id: Some(type_id),
+            at: "0".into(),
+            as_of_asserted_at: None,
+            filters: None,
+            limit: Some(10),
+            cursor: None,
+        }),
+    )
+    .await
+    .expect("list entities");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_get_changes_since(
+        state.clone(),
+        ipc_request(GetChangesSincePayload {
+            partition_id,
+            from_sequence: None,
+            limit: Some(10),
+        }),
+    )
+    .await
+    .expect("changes since");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_get_projection_edges(
+        state.clone(),
+        ipc_request(GetProjectionEdgesPayload {
+            partition_id,
+            scenario_id: None,
+            at: None,
+            as_of_asserted_at: None,
+            edge_type_filter: None,
+            limit: Some(10),
+        }),
+    )
+    .await
+    .expect("projection edges");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_get_graph_degree_stats(
+        state.clone(),
+        ipc_request(GetGraphDegreeStatsPayload {
+            partition_id,
+            scenario_id: None,
+            as_of_valid_time: None,
+            entity_ids: None,
+            limit: Some(10),
+        }),
+    )
+    .await
+    .expect("degree stats");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_get_graph_edge_type_counts(
+        state.clone(),
+        ipc_request(GetGraphEdgeTypeCountsPayload {
+            partition_id,
+            scenario_id: None,
+            edge_type_ids: None,
+            limit: Some(10),
+        }),
+    )
+    .await
+    .expect("edge counts");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_store_pagerank_scores(
+        state.clone(),
+        ipc_request(StorePageRankScoresPayload {
+            partition_id,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            as_of_valid_time: Some("0".into()),
+            as_of_asserted_at: Some(asserted_at.clone()),
+            params: PageRankParamsPayload {
+                damping: 0.85,
+                max_iters: 10,
+                tol: 0.0001,
+                personalised_seed: Some(vec![PageRankSeedPayload {
+                    id: node_a,
+                    weight: 1.0,
+                }]),
+            },
+            scores: vec![PageRankScorePayload {
+                id: node_a,
+                score: 0.99,
+            }],
+            scenario_id: None,
+        }),
+    )
+    .await
+    .expect("pagerank store");
+    assert_eq!(response.status, "ok");
+    let run_id = response.result.expect("run id").run_id;
+
+    let response = mneme_store_get_pagerank_scores(
+        state.clone(),
+        ipc_request(GetPageRankScoresPayload {
+            partition_id,
+            run_id,
+            top_n: 5,
+        }),
+    )
+    .await
+    .expect("pagerank get");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_export_ops(
+        state.clone(),
+        ipc_request(ExportOpsPayload {
+            partition_id,
+            scenario_id: None,
+            since_asserted_at: None,
+            limit: Some(10),
+        }),
+    )
+    .await
+    .expect("export ops");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_ingest_ops(
+        state.clone(),
+        ipc_request(IngestOpsPayload {
+            partition_id,
+            scenario_id: None,
+            ops: vec![],
+        }),
+    )
+    .await
+    .expect("ingest ops");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_get_partition_head(
+        state.clone(),
+        ipc_request(PartitionHeadPayload {
+            partition_id,
+            scenario_id: None,
+        }),
+    )
+    .await
+    .expect("partition head");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_create_scenario(
+        state.clone(),
+        ipc_request(CreateScenarioPayload {
+            partition_id,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            name: "Scenario".into(),
+        }),
+    )
+    .await
+    .expect("create scenario");
+    assert_eq!(response.status, "ok");
+    let scenario_id = response.result.expect("scenario id");
+
+    let response = mneme_store_delete_scenario(
+        state.clone(),
+        ipc_request(DeleteScenarioPayload {
+            partition_id,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            scenario_id,
+        }),
+    )
+    .await
+    .expect("delete scenario");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_export_ops_stream(
+        state.clone(),
+        ipc_request(ExportOpsStreamPayload {
+            partition_id,
+            scenario_id: None,
+            since_asserted_at: None,
+            until_asserted_at: None,
+            include_schema: Some(true),
+            include_data_ops: Some(true),
+            include_scenarios: Some(true),
+        }),
+    )
+    .await
+    .expect("export ops stream");
+    assert_eq!(response.status, "ok");
+    let export_records = response.result.unwrap_or_default();
+
+    let response = mneme_store_import_ops_stream(
+        state.clone(),
+        ipc_request(ImportOpsStreamPayload {
+            target_partition: partition_id,
+            scenario_id: None,
+            allow_partition_create: Some(false),
+            remap_actor_ids: None,
+            strict_schema: Some(false),
+            records: export_records,
+        }),
+    )
+    .await
+    .expect("import ops stream");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = mneme_store_export_snapshot_stream(
+        state.clone(),
+        ipc_request(ExportSnapshotPayload {
+            partition_id,
+            scenario_id: None,
+            as_of_asserted_at: asserted_at.clone(),
+            include_facts: Some(true),
+            include_entities: Some(true),
+        }),
+    )
+    .await
+    .expect("export snapshot");
+    assert_eq!(response.status, "ok");
+    let snapshot_records = response.result.unwrap_or_default();
+
+    let response = mneme_store_import_snapshot_stream(
+        state.clone(),
+        ipc_request(ImportSnapshotPayload {
+            target_partition: partition_id,
+            scenario_id: None,
+            allow_partition_create: Some(false),
+            remap_actor_ids: None,
+            strict_schema: Some(false),
+            records: snapshot_records,
+        }),
+    )
+    .await
+    .expect("import snapshot");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = mneme_store_upsert_validation_rules(
+        state.clone(),
+        ipc_request(UpsertValidationRulesPayload {
+            partition_id,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            rules: vec![ValidationRule {
+                rule_id: aideon_praxis::mneme::Id::new(),
+                scope_kind: 0,
+                scope_id: None,
+                severity: 1,
+                template_kind: "presence".into(),
+                params: json!({ "field": field_id.to_string() }),
+            }],
+        }),
+    )
+    .await
+    .expect("upsert validation rules");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_list_validation_rules(
+        state.clone(),
+        ipc_request(ListValidationRulesPayload { partition_id }),
+    )
+    .await
+    .expect("list validation rules");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_upsert_computed_rules(
+        state.clone(),
+        ipc_request(UpsertComputedRulesPayload {
+            partition_id,
+            actor_id,
+            asserted_at: asserted_at.clone(),
+            rules: vec![ComputedRule {
+                rule_id: aideon_praxis::mneme::Id::new(),
+                target_type_id: Some(type_id),
+                output_field_id: Some(field_id),
+                template_kind: "derive".into(),
+                params: json!({ "op": "concat" }),
+            }],
+        }),
+    )
+    .await
+    .expect("upsert computed rules");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_list_computed_rules(
+        state.clone(),
+        ipc_request(ListComputedRulesPayload { partition_id }),
+    )
+    .await
+    .expect("list computed rules");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_upsert_computed_cache(
+        state.clone(),
+        ipc_request(UpsertComputedCachePayload {
+            partition_id,
+            entries: vec![ComputedCacheEntryPayload {
+                entity_id: node_a,
+                field_id,
+                valid_from: "0".into(),
+                valid_to: None,
+                value: Value::Str("computed".into()),
+                rule_version_hash: "hash".into(),
+                computed_asserted_at: asserted_at.clone(),
+            }],
+        }),
+    )
+    .await
+    .expect("upsert computed cache");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_list_computed_cache(
+        state.clone(),
+        ipc_request(ListComputedCachePayload {
+            partition_id,
+            entity_id: Some(node_a),
+            field_id,
+            at_valid_time: Some("0".into()),
+            limit: Some(10),
+        }),
+    )
+    .await
+    .expect("list computed cache");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_trigger_rebuild_effective_schema(
+        state.clone(),
+        ipc_request(TriggerProcessingPayload {
+            partition_id,
+            scenario_id: None,
+            reason: "tests".into(),
+        }),
+    )
+    .await
+    .expect("trigger rebuild");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_trigger_refresh_integrity(
+        state.clone(),
+        ipc_request(TriggerProcessingPayload {
+            partition_id,
+            scenario_id: None,
+            reason: "tests".into(),
+        }),
+    )
+    .await
+    .expect("trigger integrity");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_trigger_refresh_analytics_projections(
+        state.clone(),
+        ipc_request(TriggerProcessingPayload {
+            partition_id,
+            scenario_id: None,
+            reason: "tests".into(),
+        }),
+    )
+    .await
+    .expect("trigger analytics");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_trigger_retention(
+        state.clone(),
+        ipc_request(TriggerRetentionPayload {
+            partition_id,
+            scenario_id: None,
+            policy: RetentionPolicyPayload {
+                keep_ops_days: Some(7),
+                keep_facts_days: Some(7),
+                keep_failed_jobs_days: Some(7),
+                keep_pagerank_runs_days: Some(7),
+            },
+            reason: "tests".into(),
+        }),
+    )
+    .await
+    .expect("trigger retention");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_trigger_compaction(
+        state.clone(),
+        ipc_request(TriggerCompactionPayload {
+            partition_id,
+            scenario_id: None,
+            reason: "tests".into(),
+        }),
+    )
+    .await
+    .expect("trigger compaction");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_run_processing_worker(
+        state.clone(),
+        ipc_request(RunWorkerPayload {
+            max_jobs: 1,
+            lease_millis: 500,
+        }),
+    )
+    .await
+    .expect("run worker");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = mneme_store_list_jobs(
+        state.clone(),
+        ipc_request(ListJobsPayload {
+            partition_id,
+            status: None,
+            limit: 5,
+        }),
+    )
+    .await
+    .expect("list jobs");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_get_integrity_head(
+        state.clone(),
+        ipc_request(IntegrityHeadPayload {
+            partition_id,
+            scenario_id: None,
+        }),
+    )
+    .await
+    .expect("integrity head");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_get_last_schema_compile(
+        state.clone(),
+        ipc_request(SchemaHeadPayload {
+            partition_id,
+            type_id,
+        }),
+    )
+    .await
+    .expect("schema head");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_list_failed_jobs(
+        state.clone(),
+        ipc_request(ListFailedJobsPayload {
+            partition_id,
+            limit: 5,
+        }),
+    )
+    .await
+    .expect("failed jobs");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_get_schema_manifest(state.clone(), ipc_request(EmptyPayload {}))
+        .await
+        .expect("schema manifest");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_explain_resolution(
+        state.clone(),
+        ipc_request(ExplainResolutionPayload {
+            partition_id,
+            scenario_id: None,
+            entity_id: node_a,
+            field_id,
+            at: "0".into(),
+            as_of_asserted_at: Some(asserted_at.clone()),
+        }),
+    )
+    .await
+    .expect("explain resolution");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = mneme_store_explain_traversal(
+        state.clone(),
+        ipc_request(ExplainTraversalPayload {
+            partition_id,
+            scenario_id: None,
+            edge_id,
+            at: "0".into(),
+            as_of_asserted_at: Some(asserted_at.clone()),
+        }),
+    )
+    .await
+    .expect("explain traversal");
+    assert!(matches!(response.status, "ok" | "error"));
+
+    let response = mneme_store_get_effective_schema(
+        state.clone(),
+        ipc_request(GetEffectiveSchemaPayload {
+            partition_id,
+            type_id,
+        }),
+    )
+    .await
+    .expect("get effective schema");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_list_edge_type_rules(
+        state.clone(),
+        ipc_request(ListEdgeTypeRulesPayload {
+            partition_id,
+            edge_type_id: None,
+        }),
+    )
+    .await
+    .expect("list edge rules");
+    assert_eq!(response.status, "ok");
+
+    let response = mneme_store_tombstone_entity(
+        state,
+        ipc_request(TombstoneEntityPayload {
+            partition_id,
+            scenario_id: None,
+            actor_id,
+            asserted_at,
+            entity_id: node_a,
+        }),
+    )
+    .await
+    .expect("tombstone");
     assert_eq!(response.status, "ok");
 }

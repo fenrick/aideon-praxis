@@ -1,5 +1,8 @@
 use super::*;
-use crate::temporal::{EdgeVersion, NodeTombstone, NodeVersion};
+use crate::PraxisEngineConfig;
+use crate::store::{MemoryStore, Store};
+use crate::temporal::{CommitSummary, EdgeVersion, NodeTombstone, NodeVersion, PersistedCommit};
+use std::sync::Arc;
 
 #[test]
 fn change_count_counts_all_change_vectors() {
@@ -102,4 +105,86 @@ fn validate_branch_name_rejects_empty_or_invalid_segments() {
     assert!(validate_branch_name("a/b@c").is_err());
     validate_branch_name("feature/test_1").unwrap();
     validate_branch_name("release-1.0").unwrap();
+}
+
+fn persisted_commit(id: &str, parents: Vec<String>) -> PersistedCommit {
+    PersistedCommit {
+        summary: CommitSummary {
+            id: id.to_string(),
+            parents,
+            branch: "main".into(),
+            author: None,
+            time: None,
+            message: "test".into(),
+            tags: Vec::new(),
+            change_count: 0,
+        },
+        change_set: ChangeSet::default(),
+    }
+}
+
+#[tokio::test]
+async fn resolve_commit_id_prefers_known_commit_or_branch_head() {
+    let store = Arc::new(MemoryStore::default());
+    store
+        .put_commit(&persisted_commit("c1", Vec::new()))
+        .await
+        .unwrap();
+    let mut inner = Inner::new(PraxisEngineConfig::default(), store)
+        .await
+        .unwrap();
+    inner.branches.insert(
+        "feature".into(),
+        crate::engine::state::BranchState {
+            head: Some("c1".into()),
+        },
+    );
+
+    let resolved = resolve_commit_id(&mut inner, &CommitRef::Id("c1".into()), None)
+        .await
+        .unwrap();
+    assert_eq!(resolved, "c1");
+
+    let resolved = resolve_commit_id(&mut inner, &CommitRef::Id("feature".into()), None)
+        .await
+        .unwrap();
+    assert_eq!(resolved, "c1");
+}
+
+#[tokio::test]
+async fn resolve_commit_id_respects_branch_reference_and_errors() {
+    let store = Arc::new(MemoryStore::default());
+    store
+        .put_commit(&persisted_commit("c1", Vec::new()))
+        .await
+        .unwrap();
+    let mut inner = Inner::new(PraxisEngineConfig::default(), store)
+        .await
+        .unwrap();
+    inner.branches.insert(
+        "main".into(),
+        crate::engine::state::BranchState {
+            head: Some("c1".into()),
+        },
+    );
+
+    let resolved = resolve_commit_id(
+        &mut inner,
+        &CommitRef::Branch {
+            branch: "main".into(),
+            at: None,
+        },
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(resolved, "c1");
+
+    let err = resolve_commit_id(&mut inner, &CommitRef::Id("missing".into()), None)
+        .await
+        .unwrap_err();
+    assert!(matches!(
+        err,
+        crate::error::PraxisError::UnknownCommit { .. }
+    ));
 }

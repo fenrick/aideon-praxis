@@ -9,6 +9,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 
 import {
+  __test__,
   clearPropertyInterval,
   compileEffectiveSchema,
   counterUpdate,
@@ -1513,5 +1514,42 @@ describe('mneme-api metamodel bindings', () => {
       asOfAssertedAt: undefined,
       scenarioId: undefined,
     });
+  });
+});
+
+describe('mneme-api helpers', () => {
+  it('formats ipc errors with message fallbacks', () => {
+    expect(__test__.formatIpcError(new Error('boom'))).toBe('boom');
+    expect(__test__.formatIpcError({ message: 'detail' })).toBe('detail');
+    expect(__test__.formatIpcError('raw')).toBe('raw');
+  });
+
+  it('returns identity invoke arguments', () => {
+    const arguments_ = __test__.toInvokeArguments({ hello: 'world' });
+    expect(arguments_).toEqual({ hello: 'world' });
+  });
+});
+
+describe('mneme-api non-tauri fallbacks', () => {
+  beforeEach(() => {
+    isTauriMock.mockReturnValue(false);
+  });
+
+  it('returns mock values when tauri is unavailable', async () => {
+    const metamodel = await upsertMetamodelBatch({
+      partitionId: 'p1',
+      actorId: 'a1',
+      assertedAt: '0',
+      batch: { types: [], fields: [], typeFields: [], edgeTypeRules: [] },
+    });
+    expect(metamodel.opId).toBe('mock-op');
+
+    const schema = await compileEffectiveSchema({
+      partitionId: 'p1',
+      actorId: 'a1',
+      assertedAt: '0',
+      typeId: 't1',
+    });
+    expect(schema.schemaVersionHash).toBe('mock-schema-hash');
   });
 });
