@@ -42,7 +42,7 @@ dependencies = [
 
 [[package]]
 name = "aideon_chrona"
-version = "0.0.0"
+version = "0.2.0"
 dependencies = [
  "aideon_praxis",
  "log",
@@ -52,11 +52,11 @@ dependencies = [
 
 [[package]]
 name = "aideon_continuum"
-version = "0.0.0"
+version = "0.2.0"
 
 [[package]]
 name = "aideon_desktop"
-version = "0.0.0"
+version = "0.2.0"
 dependencies = [
  "aideon_chrona",
  "aideon_praxis",
@@ -77,11 +77,11 @@ dependencies = [
 
 [[package]]
 name = "aideon_metis"
-version = "0.0.0"
+version = "0.2.0"
 
 [[package]]
 name = "aideon_mneme"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "aideon_mneme_core",
  "aideon_mneme_store",
@@ -89,7 +89,7 @@ dependencies = [
 
 [[package]]
 name = "aideon_mneme_core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -105,7 +105,7 @@ dependencies = [
 
 [[package]]
 name = "aideon_mneme_store"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "aideon_mneme_core",
  "async-trait",
@@ -125,7 +125,7 @@ dependencies = [
 
 [[package]]
 name = "aideon_praxis"
-version = "0.0.0"
+version = "0.2.0"
 dependencies = [
  "aideon_continuum",
  "aideon_metis",
@@ -146,7 +146,7 @@ dependencies = [
 
 [[package]]
 name = "aideon_xtask"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "aideon_continuum",
  "aideon_mneme",

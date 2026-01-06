@@ -1,15 +1,51 @@
 {
-  "branches": ["main", { "name": "nightly", "channel": "nightly", "prerelease": "nightly" }],
+  "branches": [
+    "main",
+    {
+      "name": "develop",
+      "channel": "nightly",
+      "prerelease": "nightly"
+    }
+  ],
   "plugins": [
     [
       "@semantic-release/commit-analyzer",
-      { "preset": "conventionalcommits", "presetConfig": { "preMajor": true } }
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "preMajor": true
+        }
+      }
     ],
-    ["@semantic-release/release-notes-generator"],
-    ["@semantic-release/changelog", { "changelogFile": "CHANGELOG.md" }],
+    [
+      "@semantic-release/release-notes-generator"
+    ],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "semantic-release-cargo",
+      {
+        "publish": false,
+        "alwaysVerifyToken": false,
+        "allFeatures": true,
+        "check": true
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
+      }
+    ],
     [
       "@semantic-release/exec",
-      { "prepareCmd": "node scripts/inject-version.mjs ${nextRelease.version}" }
+      {
+        "prepareCmd": "node scripts/inject-version.mjs ${nextRelease.version}"
+      }
     ],
     [
       "@semantic-release/github",
@@ -23,9 +59,13 @@
       {
         "assets": [
           "CHANGELOG.md",
+          "Cargo.toml",
           "package.json",
-          "app/praxis-desktop/src/version.ts",
-          "crates/desktop/tauri.conf.json"
+          "app/AideonDesktop/package.json",
+          "app/AideonDesktop/src/version.ts",
+          "crates/desktop/tauri.conf.json",
+          "crates/**/Cargo.toml",
+          "aideon_xtask/Cargo.toml"
         ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }

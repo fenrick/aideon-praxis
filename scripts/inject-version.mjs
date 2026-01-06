@@ -63,6 +63,15 @@ async function main() {
     await writeTypeScriptVersion(path.join(repoRoot, 'app/AideonDesktop/src/version.ts'), version),
   );
 
+  const rendererPackage = path.join(repoRoot, 'app/AideonDesktop/package.json');
+  if (await fileExists(rendererPackage)) {
+    updatedFiles.push(
+      await updateJsonVersion(rendererPackage, version, (data, newVersion) => {
+        data.version = newVersion;
+      }),
+    );
+  }
+
   // Optional worker version file(s)
   const workerTargets = [path.join(repoRoot, 'app/worker/python/src/aideon_worker/_version.py')];
 

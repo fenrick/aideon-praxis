@@ -1,6 +1,6 @@
 [package]
 name = "aideon_chrona"
-version = "0.0.0"
+version.workspace = true
 edition = "2024"
 authors = ["Aideon Chrona Contributors"]
 license = "MIT"
