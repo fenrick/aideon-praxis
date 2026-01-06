@@ -14,6 +14,8 @@ jobs:
 
         steps:
             -   name: Delete workflow runs
-                uses: viascom/github-maintenance-action@v0.1.0
+                uses: viascom/github-maintenance-action@v0.2.0
                 with:
                     github_token: ${{ secrets.GITHUB_TOKEN }}
+                    retention_days: 7
+                    
