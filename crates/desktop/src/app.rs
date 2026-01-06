@@ -76,6 +76,8 @@ pub fn run() {
             crate::scene::praxis_canvas_scene_get,
             crate::scene::praxis_canvas_layout_get,
             crate::scene::praxis_canvas_layout_save,
+            crate::scene::praxis_graph_layout_get,
+            crate::scene::praxis_graph_layout_save,
             crate::praxis_api::praxis_graph_view,
             crate::praxis_api::praxis_catalogue_view,
             crate::praxis_api::praxis_matrix_view,

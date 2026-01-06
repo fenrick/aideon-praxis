@@ -22,6 +22,7 @@ import { Separator } from 'design-system/components/ui/separator';
 import { Skeleton } from 'design-system/components/ui/skeleton';
 
 import type {
+  GraphLayoutContext,
   PraxisCanvasWidget,
   PraxisWidgetErrorEvent,
   PraxisWidgetViewEvent,
@@ -40,6 +41,7 @@ interface RenderPraxisWidgetParameters {
   readonly onGraphViewChange: (event: PraxisWidgetViewEvent) => void;
   readonly onGraphError: (event: PraxisWidgetErrorEvent) => void;
   readonly onRequestMetaModelFocus?: (types: string[]) => void;
+  readonly graphLayoutContext?: GraphLayoutContext;
 }
 
 /**
@@ -52,6 +54,7 @@ interface RenderPraxisWidgetParameters {
  * @param root0.onGraphViewChange
  * @param root0.onGraphError
  * @param root0.onRequestMetaModelFocus
+ * @param root0.graphLayoutContext
  */
 function renderPraxisWidget({
   widget,
@@ -61,6 +64,7 @@ function renderPraxisWidget({
   onGraphViewChange,
   onGraphError,
   onRequestMetaModelFocus,
+  graphLayoutContext,
 }: RenderPraxisWidgetParameters): ReactElement {
   switch (widget.kind) {
     case 'graph': {
@@ -69,6 +73,7 @@ function renderPraxisWidget({
           widget={widget}
           reloadVersion={reloadVersion}
           selection={selection}
+          graphLayoutContext={graphLayoutContext}
           onSelectionChange={onSelection}
           onViewChange={(view: GraphViewModel) => {
             onGraphViewChange({ widgetId: widget.id, view });
@@ -138,6 +143,7 @@ export interface PraxisCanvasWorkspaceProperties {
   readonly widgets: PraxisCanvasWidget[];
   readonly canvasLayoutKey?: string;
   readonly canvasLayoutPersistence?: CanvasRuntimeLayoutPersistence<PraxisCanvasWidget>;
+  readonly graphLayoutContext?: GraphLayoutContext;
   readonly selection: SelectionState;
   readonly onSelectionChange?: (selection: SelectionState) => void;
   readonly onRequestMetaModelFocus?: (types: string[]) => void;
@@ -158,6 +164,7 @@ const SUGGESTED_WIDGETS = ['KPI', 'Graph', 'Catalogue snapshot'] as const;
  * @param root0.widgets
  * @param root0.canvasLayoutKey
  * @param root0.canvasLayoutPersistence
+ * @param root0.graphLayoutContext
  * @param root0.selection
  * @param root0.onSelectionChange
  * @param root0.onRequestMetaModelFocus
@@ -173,6 +180,7 @@ export function PraxisCanvasWorkspace({
   widgets,
   canvasLayoutKey,
   canvasLayoutPersistence,
+  graphLayoutContext,
   selection,
   onSelectionChange,
   onRequestMetaModelFocus,
@@ -286,6 +294,7 @@ export function PraxisCanvasWorkspace({
               onGraphViewChange: handleGraphViewChange,
               onGraphError: handleGraphError,
               onRequestMetaModelFocus,
+              graphLayoutContext,
             })
           }
         />

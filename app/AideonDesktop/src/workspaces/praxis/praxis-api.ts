@@ -1,6 +1,8 @@
 import type {
   CanvasLayoutGetRequest,
   CanvasLayoutSnapshot,
+  GraphLayoutGetRequest,
+  GraphLayoutSnapshot,
   MetaModelDocument,
   TemporalDiffParameters,
   TemporalDiffSnapshot,
@@ -23,6 +25,8 @@ const COMMANDS = {
   metaModel: 'praxis.metamodel.get',
   canvasGetLayout: 'praxis.canvas.get_layout',
   canvasSaveLayout: 'praxis.canvas.save_layout',
+  graphLayoutGet: 'praxis.graph.layout.get',
+  graphLayoutSave: 'praxis.graph.layout.save',
   listBranches: 'chrona.temporal.list_branches',
   listCommits: 'chrona.temporal.list_commits',
   stateAt: 'chrona.temporal.state_at',
@@ -180,6 +184,44 @@ export async function saveCanvasLayout(snapshot: CanvasLayoutSnapshot): Promise<
     nodes: snapshot.nodes,
     edges: snapshot.edges,
     groups: snapshot.groups,
+  });
+}
+
+/**
+ * Fetch a persisted graph layout snapshot for the given widget and time context.
+ * @param request lookup key (doc + widget + time)
+ */
+export async function getGraphLayout(
+  request: GraphLayoutGetRequest,
+): Promise<GraphLayoutSnapshot | undefined> {
+  if (!isTauri()) {
+    return undefined;
+  }
+  const result = await invokeIpc<GraphLayoutSnapshot | null>(COMMANDS.graphLayoutGet, {
+    docId: request.docId,
+    widgetId: request.widgetId,
+    asOf: request.asOf,
+    scenario: request.scenario,
+    layer: request.layer,
+  });
+  return result ?? undefined;
+}
+
+/**
+ * Persist a graph layout snapshot to the host store.
+ * @param snapshot layout payload
+ */
+export async function saveGraphLayout(snapshot: GraphLayoutSnapshot): Promise<void> {
+  if (!isTauri()) {
+    return;
+  }
+  await invokeIpc<unknown>(COMMANDS.graphLayoutSave, {
+    docId: snapshot.docId,
+    widgetId: snapshot.widgetId,
+    asOf: snapshot.asOf,
+    scenario: snapshot.scenario,
+    layer: snapshot.layer,
+    nodes: snapshot.nodes,
   });
 }
 

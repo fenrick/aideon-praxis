@@ -7,6 +7,7 @@ export type {
   CanvasLayoutSnapshot,
   CanvasNode,
 } from './canvas';
+export type { GraphLayoutGetRequest, GraphLayoutNode, GraphLayoutSnapshot } from './graph-layout';
 export type { IsoDateTime } from './iso';
 export type {
   ConfidencePercent,

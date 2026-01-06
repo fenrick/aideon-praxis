@@ -1,5 +1,5 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Background,
@@ -9,16 +9,23 @@ import {
   Panel,
   ReactFlow,
   ReactFlowProvider,
+  applyNodeChanges,
   useEdgesState,
   useNodesState,
   type Edge,
   type EdgeTypes,
   type Node,
+  type NodeChange,
   type NodeTypes,
 } from '@xyflow/react';
 import { toErrorMessage } from 'praxis/lib/errors';
 import { cn } from 'praxis/lib/utilities';
-import { getGraphView, type GraphViewModel } from 'praxis/praxis-api';
+import {
+  getGraphLayout,
+  getGraphView,
+  saveGraphLayout,
+  type GraphViewModel,
+} from 'praxis/praxis-api';
 
 import { NodeSearchDialog } from 'design-system/components/node-search';
 import { PraxisNode } from 'design-system/components/praxis-node';
@@ -26,6 +33,7 @@ import { TimelineEdge, type TimelineEdgeData } from 'design-system/components/ti
 import { Button } from 'design-system/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from 'design-system/components/ui/toggle-group';
 import type {
+  GraphLayoutContext,
   PraxisGraphWidgetConfig as GraphWidgetConfig,
   SelectionState,
   WidgetSelection,
@@ -39,6 +47,7 @@ interface GraphWidgetProperties {
   readonly widget: GraphWidgetConfig;
   readonly reloadVersion: number;
   readonly selection?: SelectionState;
+  readonly graphLayoutContext?: GraphLayoutContext;
   readonly onSelectionChange?: (selection: WidgetSelection) => void;
   readonly onViewChange?: (view: GraphViewModel) => void;
   readonly onError?: (message: string) => void;
@@ -51,6 +60,7 @@ interface GraphWidgetProperties {
  * @param root0.widget
  * @param root0.reloadVersion
  * @param root0.selection
+ * @param root0.graphLayoutContext
  * @param root0.onSelectionChange
  * @param root0.onViewChange
  * @param root0.onError
@@ -60,12 +70,13 @@ export function GraphWidget({
   widget,
   reloadVersion,
   selection,
+  graphLayoutContext,
   onSelectionChange,
   onViewChange,
   onError,
   onRequestMetaModelFocus,
 }: GraphWidgetProperties) {
-  const [nodes, setNodes, handleNodesChange] = useNodesState<Node<GraphNodeData>>([]);
+  const [nodes, setNodes] = useNodesState<Node<GraphNodeData>>([]);
   const [edges, setEdges, handleEdgesChange] = useEdgesState<Edge<TimelineEdgeData>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
@@ -73,8 +84,50 @@ export function GraphWidget({
   const [background, setBackground] = useState<'dots' | 'lines' | 'cross'>('dots');
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [showControls, setShowControls] = useState(true);
+  const [layoutHydrated, setLayoutHydrated] = useState(true);
+  const viewReference = useRef<GraphViewModel | undefined>(undefined);
 
   const definition = widget.view;
+
+  const persistLayout = useCallback(
+    (nextNodes: Node<GraphNodeData>[]) => {
+      if (!layoutHydrated) {
+        return;
+      }
+      if (!graphLayoutContext) {
+        return;
+      }
+      void saveGraphLayout({
+        docId: graphLayoutContext.docId,
+        widgetId: widget.id,
+        asOf: graphLayoutContext.asOf,
+        scenario: graphLayoutContext.scenario,
+        layer: graphLayoutContext.layer,
+        nodes: nextNodes.map((node) => ({
+          id: node.id,
+          x: node.position.x,
+          y: node.position.y,
+        })),
+      });
+    },
+    [graphLayoutContext, layoutHydrated, widget.id],
+  );
+
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      const shouldPersist = changes.some(
+        (change) => change.type === 'position' && change.dragging === false,
+      );
+      setNodes((current) => {
+        const next = applyNodeChanges(changes, current);
+        if (shouldPersist) {
+          persistLayout(next);
+        }
+        return next;
+      });
+    },
+    [persistLayout, setNodes],
+  );
 
   const attachInspectHandlers = useCallback(
     (flowNodes: Node<GraphNodeData>[]) => {
@@ -105,11 +158,35 @@ export function GraphWidget({
   const loadView = useCallback(async () => {
     setLoading(true);
     setError(undefined);
+    setLayoutHydrated(!graphLayoutContext);
     try {
       const view = await getGraphView(definition);
+      viewReference.current = view;
       setMetadata(view.metadata);
-      const flowNodes = buildFlowNodes(view);
-      setNodes(attachInspectHandlers(flowNodes));
+      const flowNodes = attachInspectHandlers(buildFlowNodes(view));
+      if (graphLayoutContext) {
+        const layout = await getGraphLayout({
+          docId: graphLayoutContext.docId,
+          widgetId: widget.id,
+          asOf: graphLayoutContext.asOf,
+          scenario: graphLayoutContext.scenario,
+          layer: graphLayoutContext.layer,
+        });
+        const layoutPositions = new Map((layout?.nodes ?? []).map((node) => [node.id, node]));
+        const mergedNodes = flowNodes.map((node) => {
+          const position = layoutPositions.get(node.id);
+          if (!position) {
+            return node;
+          }
+          return {
+            ...node,
+            position: { x: position.x, y: position.y },
+          };
+        });
+        setNodes(mergedNodes);
+      } else {
+        setNodes(flowNodes);
+      }
       setEdges(buildFlowEdges(view));
       onViewChange?.(view);
     } catch (unknownError) {
@@ -117,9 +194,19 @@ export function GraphWidget({
       setError(message);
       onError?.(message);
     } finally {
+      setLayoutHydrated(true);
       setLoading(false);
     }
-  }, [attachInspectHandlers, definition, onError, onViewChange, setEdges, setNodes]);
+  }, [
+    attachInspectHandlers,
+    definition,
+    graphLayoutContext,
+    onError,
+    onViewChange,
+    setEdges,
+    setNodes,
+    widget.id,
+  ]);
 
   useEffect(() => {
     loadView().catch((_ignoredError: unknown) => {
@@ -187,6 +274,17 @@ export function GraphWidget({
     },
     [onSelectionChange, selection, widget.id],
   );
+
+  const handleAutoLayout = useCallback(() => {
+    const view = viewReference.current;
+    if (!view) {
+      return;
+    }
+    const flowNodes = attachInspectHandlers(buildFlowNodes(view));
+    setNodes(flowNodes);
+    setEdges(buildFlowEdges(view));
+    persistLayout(flowNodes);
+  }, [attachInspectHandlers, persistLayout, setEdges, setNodes]);
 
   const [nodeSearchOpen, setNodeSearchOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | undefined>();
@@ -321,6 +419,14 @@ export function GraphWidget({
                   }}
                 >
                   Controls
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={handleAutoLayout}
+                >
+                  Auto layout
                 </Button>
               </div>
               <p className="mt-2 text-[11px] text-muted-foreground/90">

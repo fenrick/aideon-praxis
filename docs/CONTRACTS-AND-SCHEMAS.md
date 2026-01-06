@@ -50,3 +50,13 @@ Canvas layout geometry is persisted by the host (desktop mode) and keyed by time
 - IPC commands:
   - `praxis.canvas.get_layout` payload `CanvasLayoutGetRequest { docId, asOf, scenario?, layer? }` → `CanvasLayoutSnapshot | null`
   - `praxis.canvas.save_layout` payload `CanvasLayoutSnapshot { docId, asOf, scenario?, layer?, nodes[], edges[], groups[] }` → `()`
+
+## Graph layout persistence (Praxis graph widget)
+
+Graph widget node geometry is persisted by the host and keyed by time context plus widget id.
+
+- TS DTOs: `app/AideonDesktop/src/dtos/graph-layout.ts`
+- Rust DTOs: `crates/praxis/src/graph_layout.rs`
+- IPC commands:
+  - `praxis.graph.layout.get` payload `GraphLayoutGetRequest { docId, widgetId, asOf, scenario?, layer? }` → `GraphLayoutSnapshot | null`
+  - `praxis.graph.layout.save` payload `GraphLayoutSnapshot { docId, widgetId, asOf, scenario?, layer?, nodes[] }` → `()`

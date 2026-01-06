@@ -55,6 +55,7 @@ import {
 } from 'praxis/templates';
 import type {
   PraxisCanvasWidget as CanvasWidget,
+  GraphLayoutContext,
   SelectionState,
   PraxisWidgetKind as WidgetKind,
 } from 'praxis/types';
@@ -136,6 +137,7 @@ interface PraxisWorkspaceContextValue {
   readonly temporalActions: ReturnType<typeof useTemporalPanel>[1];
   readonly canvasLayoutKey?: string;
   readonly canvasLayoutPersistence?: CanvasRuntimeLayoutPersistence<CanvasWidget>;
+  readonly graphLayoutContext?: GraphLayoutContext;
   readonly branchSelectReferenceCallback: RefCallback<HTMLButtonElement>;
   readonly onTemplateChange: (templateId: string) => void;
   readonly onTemplateSave: () => void;
@@ -416,6 +418,18 @@ function PraxisWorkspaceStateProvider({
     }
     const scenarioToken = runtimeScenario ?? 'default';
     return `${documentId}::${scenarioToken}::${runtimeAsOf}`;
+  }, [activeTemplate?.documentId, runtimeAsOf, runtimeScenario]);
+
+  const graphLayoutContext = useMemo<GraphLayoutContext | undefined>(() => {
+    const documentId = activeTemplate?.documentId;
+    if (!documentId) {
+      return;
+    }
+    return {
+      docId: documentId,
+      asOf: runtimeAsOf,
+      scenario: runtimeScenario,
+    };
   }, [activeTemplate?.documentId, runtimeAsOf, runtimeScenario]);
 
   const canvasLayoutPersistence = useMemo<
@@ -739,6 +753,7 @@ function PraxisWorkspaceStateProvider({
       temporalActions,
       canvasLayoutKey,
       canvasLayoutPersistence,
+      graphLayoutContext,
       branchSelectReferenceCallback,
       onTemplateChange: handleTemplateChange,
       onTemplateSave: handleTemplateSave,
@@ -782,6 +797,7 @@ function PraxisWorkspaceStateProvider({
     temporalState,
     canvasLayoutKey,
     canvasLayoutPersistence,
+    graphLayoutContext,
     widgetLibraryOpen,
     widgets,
   ]);
@@ -856,6 +872,7 @@ export function PraxisWorkspaceContent() {
     widgets,
     canvasLayoutKey,
     canvasLayoutPersistence,
+    graphLayoutContext,
     selection,
     onSelectionChange,
     branchSelectReferenceCallback,
@@ -877,6 +894,7 @@ export function PraxisWorkspaceContent() {
           widgets={widgets}
           canvasLayoutKey={canvasLayoutKey}
           canvasLayoutPersistence={canvasLayoutPersistence}
+          graphLayoutContext={graphLayoutContext}
           selection={selection}
           onSelectionChange={onSelectionChange}
           onRequestMetaModelFocus={(types) => {

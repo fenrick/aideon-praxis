@@ -67,6 +67,8 @@
     "praxis.canvas.get_layout",
     "praxis.canvas.get_scene",
     "praxis.canvas.save_layout",
+    "praxis.graph.layout.get",
+    "praxis.graph.layout.save",
     "praxis.metamodel.get",
     "praxis.scenario.list",
     "praxis.task.apply_operations",

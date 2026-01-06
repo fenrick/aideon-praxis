@@ -11,6 +11,8 @@ fn app_registers_core_ipc_commands() {
         "crate::temporal::praxis_metamodel_get",
         "crate::scene::praxis_canvas_layout_get",
         "crate::scene::praxis_canvas_layout_save",
+        "crate::scene::praxis_graph_layout_get",
+        "crate::scene::praxis_graph_layout_save",
         "crate::praxis_api::praxis_artefact_graph_execute",
         "crate::praxis_api::praxis_artefact_catalogue_execute",
         "crate::praxis_api::praxis_artefact_matrix_execute",

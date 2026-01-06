@@ -10,6 +10,13 @@ import type { CanvasWidgetLayout } from 'aideon/canvas/types';
 
 export type PraxisWidgetKind = 'graph' | 'catalogue' | 'matrix' | 'chart';
 
+export interface GraphLayoutContext {
+  readonly docId: string;
+  readonly asOf: string;
+  readonly scenario?: string;
+  readonly layer?: string;
+}
+
 interface BaseWidgetConfig<TView> extends CanvasWidgetLayout {
   title: string;
   view: TView;

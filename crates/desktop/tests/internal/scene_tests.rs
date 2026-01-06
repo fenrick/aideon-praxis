@@ -1,5 +1,6 @@
 use super::*;
 use aideon_praxis::praxis::canvas::CanvasNode;
+use aideon_praxis::praxis::graph_layout::GraphLayoutNode;
 use std::fs;
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -29,6 +30,15 @@ fn safe_segment_sanitizes_inputs() {
 fn store_key_trims_blank_segments() {
     let key = canvas_store_key("doc1", "2025-01-01", Some(" "), Some(""));
     assert_eq!(key, "canvas/doc1/layout-2025-01-01.json");
+}
+
+#[test]
+fn graph_layout_key_is_stable() {
+    let key = graph_layout_store_key("doc1", "widget1", "2025-01-01", Some("main"), None);
+    assert_eq!(
+        key,
+        "graph/doc1/widget-widget1/scenario-main/layout-2025-01-01.json"
+    );
 }
 
 #[test]
@@ -116,6 +126,53 @@ async fn canvas_get_layout_returns_none_when_missing() {
     .expect("missing layout");
 
     assert!(response.is_none());
+
+    let _ = fs::remove_dir_all(base);
+    unsafe {
+        std::env::remove_var("AIDEON_TEST_DATA_DIR");
+    }
+}
+
+#[tokio::test]
+async fn graph_layout_roundtrips() {
+    let _guard = env_lock().lock().await;
+    let base = std::env::temp_dir().join(format!(
+        "aideon-graph-{}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+    ));
+    unsafe {
+        std::env::set_var("AIDEON_TEST_DATA_DIR", base.to_string_lossy().to_string());
+    }
+
+    let payload = GraphLayoutSaveRequest {
+        doc_id: "doc-a".into(),
+        widget_id: "widget-1".into(),
+        as_of: "commit-1".into(),
+        scenario: None,
+        layer: None,
+        nodes: vec![GraphLayoutNode {
+            id: "n1".into(),
+            x: 12.0,
+            y: 24.0,
+        }],
+    };
+
+    graph_layout_save(payload.clone()).await.unwrap();
+
+    let loaded = graph_layout_get(GraphLayoutGetRequest {
+        doc_id: payload.doc_id.clone(),
+        widget_id: payload.widget_id.clone(),
+        as_of: payload.as_of.clone(),
+        scenario: payload.scenario.clone(),
+        layer: payload.layer.clone(),
+    })
+    .await
+    .unwrap();
+
+    assert_eq!(loaded, Some(payload));
 
     let _ = fs::remove_dir_all(base);
     unsafe {

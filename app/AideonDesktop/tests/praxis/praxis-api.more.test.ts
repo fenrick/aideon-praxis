@@ -1,6 +1,7 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import {
   getChartView,
+  getGraphLayout,
   listTemporalCommits,
   mergeTemporalBranches,
   type ChartViewModel,
@@ -113,5 +114,33 @@ describe('praxis-api host paths', () => {
     const calls = (invoke as unknown as { mock: { calls: unknown[][] } }).mock.calls;
     const invokeArguments = findInvokeArguments(calls, 'praxis.artefact.execute_chart');
     expect(payloadFromInvokeArguments(invokeArguments)).toEqual(definition);
+  });
+
+  it('requests graph layout snapshots via the host', async () => {
+    invoke.mockImplementationOnce(
+      mockIpcOk({
+        docId: 'doc-1',
+        widgetId: 'widget-9',
+        asOf: '2025-01-01',
+        nodes: [{ id: 'n1', x: 1, y: 2 }],
+      }),
+    );
+
+    const layout = await getGraphLayout({
+      docId: 'doc-1',
+      widgetId: 'widget-9',
+      asOf: '2025-01-01',
+    });
+
+    expect(layout?.nodes).toEqual([{ id: 'n1', x: 1, y: 2 }]);
+    const calls = (invoke as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const invokeArguments = findInvokeArguments(calls, 'praxis.graph.layout.get');
+    expect(payloadFromInvokeArguments(invokeArguments)).toEqual({
+      docId: 'doc-1',
+      widgetId: 'widget-9',
+      asOf: '2025-01-01',
+      scenario: undefined,
+      layer: undefined,
+    });
   });
 });

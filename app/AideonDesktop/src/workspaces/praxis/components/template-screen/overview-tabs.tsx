@@ -6,7 +6,7 @@ import { CommitTimelineList } from 'praxis/components/blocks/commit-timeline-lis
 import { templateScreenCopy } from 'praxis/copy/template-screen';
 import type { GraphViewModel } from 'praxis/praxis-api';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
-import type { PraxisCanvasWidget, SelectionState } from 'praxis/types';
+import type { GraphLayoutContext, PraxisCanvasWidget, SelectionState } from 'praxis/types';
 
 import type { CanvasRuntimeLayoutPersistence } from 'aideon/canvas/canvas-runtime';
 import { Badge } from 'design-system/components/ui/badge';
@@ -23,6 +23,7 @@ interface OverviewTabsProperties {
   readonly widgets: PraxisCanvasWidget[];
   readonly canvasLayoutKey?: string;
   readonly canvasLayoutPersistence?: CanvasRuntimeLayoutPersistence<PraxisCanvasWidget>;
+  readonly graphLayoutContext?: GraphLayoutContext;
   readonly selection: SelectionState;
   readonly onSelectionChange: (selection: SelectionState) => void;
   readonly onRequestMetaModelFocus: (types: string[]) => void;
@@ -43,6 +44,7 @@ interface OverviewTabsProperties {
  * @param root0.widgets
  * @param root0.canvasLayoutKey
  * @param root0.canvasLayoutPersistence
+ * @param root0.graphLayoutContext
  * @param root0.selection
  * @param root0.onSelectionChange
  * @param root0.onRequestMetaModelFocus
@@ -60,6 +62,7 @@ export function OverviewTabs({
   widgets,
   canvasLayoutKey,
   canvasLayoutPersistence,
+  graphLayoutContext,
   selection,
   onSelectionChange,
   onRequestMetaModelFocus,
@@ -143,6 +146,7 @@ export function OverviewTabs({
           widgets={widgets}
           canvasLayoutKey={canvasLayoutKey}
           canvasLayoutPersistence={canvasLayoutPersistence}
+          graphLayoutContext={graphLayoutContext}
           selection={selection}
           onSelectionChange={onSelectionChange}
           onRequestMetaModelFocus={onRequestMetaModelFocus}
