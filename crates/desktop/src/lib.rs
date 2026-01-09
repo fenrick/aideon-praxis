@@ -21,3 +21,7 @@ pub use ipc::{HostError, IpcRequest, IpcResponse};
 pub fn run() {
     app::run();
 }
+
+#[cfg(test)]
+#[path = "../tests/internal/tauri_e2e_smoke.rs"]
+mod tauri_e2e_smoke_tests;

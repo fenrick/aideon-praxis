@@ -1578,6 +1578,11 @@ E2E must be deterministic:
 - freeze time where required
 - disable network access
 
+Current coverage:
+
+- `crates/desktop/tests/internal/tauri_e2e_smoke.rs` smoke checks window routes + IPC wiring via a
+  Tauri mock app (runs on non-Windows during `cargo test -p aideon_desktop`).
+
 ---
 
 ## 51. Extending to “all possible modules” (suite-level scaling rules)
