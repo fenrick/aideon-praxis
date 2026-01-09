@@ -9,7 +9,7 @@ describe('graph-selection helpers', () => {
       edges: [{ id: 'e1' }],
     });
 
-    expect(snapshot).toEqual({ nodeIds: ['n1', 'n2'], edgeIds: ['e1'] });
+    expect(snapshot).toEqual({ nodeIds: ['n1', 'n2'], edgeIds: ['e1'], cellIds: [] });
   });
 
   it('treats string arrays as sets', () => {

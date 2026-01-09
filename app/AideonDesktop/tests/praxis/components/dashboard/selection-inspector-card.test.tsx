@@ -8,6 +8,7 @@ import type { PraxisCanvasWidget } from 'praxis/types';
 const sampleSelection: SelectionState = {
   nodeIds: ['n1', 'n2', 'n3'],
   edgeIds: ['e1'],
+  cellIds: [],
   sourceWidgetId: 'w1',
 };
 
@@ -31,7 +32,7 @@ describe('SelectionInspectorCard', () => {
   it('shows empty state and disables clear', () => {
     render(
       <SelectionInspectorCard
-        selection={{ nodeIds: [], edgeIds: [], sourceWidgetId: undefined }}
+        selection={{ nodeIds: [], edgeIds: [], cellIds: [], sourceWidgetId: undefined }}
         widgets={widgets}
       />,
     );
@@ -66,6 +67,7 @@ describe('SelectionInspectorCard', () => {
     expect(onSelectionChange).toHaveBeenCalledWith({
       nodeIds: [],
       edgeIds: [],
+      cellIds: [],
       sourceWidgetId: undefined,
     });
   });

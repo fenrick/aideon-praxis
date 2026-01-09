@@ -13,7 +13,7 @@ describe('DesktopPropertiesPanel', () => {
   it('summarises node and edge counts', () => {
     render(
       <DesktopPropertiesPanel
-        selection={{ sourceWidgetId: 'test', nodeIds: ['n1', 'n2'], edgeIds: ['e1'] }}
+        selection={{ sourceWidgetId: 'test', nodeIds: ['n1', 'n2'], edgeIds: ['e1'], cellIds: [] }}
       />,
     );
 

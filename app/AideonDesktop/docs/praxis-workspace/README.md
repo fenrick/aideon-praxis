@@ -11,6 +11,7 @@ chart views over the time-first digital twin.
 - Render the main workspace UI for Praxis via the workspace module contract.
 - Manage widget composition, time/selection state, and template flows.
 - Talk to the Tauri host via typed APIs (`app/AideonDesktop/src/workspaces/praxis/praxis-api.ts`).
+- Persist templates and layout snapshots via host-managed IPC commands (desktop mode).
 - Consume shared UI primitives from `app/AideonDesktop/src/design-system`.
 - Respect renderer boundaries (no direct filesystem/DB access; IPC only).
 

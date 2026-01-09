@@ -87,6 +87,9 @@ function formatSelection(selection?: SelectionState): string {
   if (!selection) {
     return 'none';
   }
+  if (selection.cellIds.length > 0) {
+    return `${selection.cellIds.length.toString()} cell(s)`;
+  }
   if (selection.nodeIds.length > 0) {
     return `${selection.nodeIds.length.toString()} node(s)`;
   }

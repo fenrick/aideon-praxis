@@ -88,7 +88,7 @@ export function CanvasRuntimeCard({
           <CardTitle>Canvas runtime</CardTitle>
           <CardDescription>
             {metadata
-              ? `As of ${new Date(metadata.asOf).toLocaleString()} (${metadata.scenario ?? 'main'})`
+              ? `As of ${formatAsOf(metadata.asOf)} (${metadata.scenario ?? 'main'})`
               : 'React Flow GraphWidget powered by praxisApi'}
           </CardDescription>
         </div>
@@ -179,4 +179,19 @@ function StatTile({ label, value }: StatTileProperties) {
       </p>
     </div>
   );
+}
+
+/**
+ * Format an as-of reference; fall back to commit ids when not ISO timestamps.
+ * @param asOf
+ */
+function formatAsOf(asOf: string): string {
+  const parsed = new Date(asOf);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleString();
+  }
+  if (asOf.length > 16) {
+    return `${asOf.slice(0, 8)}…`;
+  }
+  return asOf;
 }

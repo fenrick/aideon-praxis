@@ -16,7 +16,10 @@ vi.mock('praxis/components/template-screen/projects-sidebar', () => ({
 
 vi.mock('praxis/components/template-screen/properties-inspector', () => ({
   PropertiesInspector: ({ selection }: { selection: SelectionState }) => (
-    <div>Properties Inspector ({selection.nodeIds.length + selection.edgeIds.length})</div>
+    <div>
+      Properties Inspector (
+      {selection.nodeIds.length + selection.edgeIds.length + selection.cellIds.length})
+    </div>
   ),
 }));
 
@@ -45,6 +48,7 @@ vi.mock('praxis/domain-data', () => ({
       widgets: [],
     },
   ]),
+  saveTemplateToHost: vi.fn((template) => Promise.resolve(template)),
 }));
 
 vi.mock('praxis/praxis-api', () => ({

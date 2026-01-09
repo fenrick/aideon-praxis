@@ -34,6 +34,7 @@ import {
 import {
   listProjectsWithScenarios,
   listTemplatesFromHost,
+  saveTemplateToHost,
   type ProjectSummary,
 } from 'praxis/domain-data';
 import { useCommandStack } from 'praxis/hooks/use-command-stack';
@@ -44,6 +45,8 @@ import {
   applyOperations,
   getCanvasLayout,
   saveCanvasLayout,
+  type GraphViewModel,
+  type OperationBatchResult,
   type ScenarioSummary,
 } from 'praxis/praxis-api';
 import {
@@ -56,6 +59,7 @@ import {
 import type {
   PraxisCanvasWidget as CanvasWidget,
   GraphLayoutContext,
+  PraxisWidgetViewEvent,
   SelectionState,
   PraxisWidgetKind as WidgetKind,
 } from 'praxis/types';
@@ -101,6 +105,115 @@ export const __test__ = {
   createTemplateWidget,
 };
 
+/**
+ * Upsert a template in the current list, replacing by id when found.
+ * @param templates - Existing templates.
+ * @param nextTemplate - Template to insert or replace.
+ */
+function upsertTemplate(
+  templates: CanvasTemplate[],
+  nextTemplate: CanvasTemplate,
+): CanvasTemplate[] {
+  const existingIndex = templates.findIndex((entry) => entry.id === nextTemplate.id);
+  if (existingIndex === -1) {
+    return [...templates, nextTemplate];
+  }
+  return templates.map((entry) => (entry.id === nextTemplate.id ? nextTemplate : entry));
+}
+
+/**
+ * Build node properties from inspector patch data.
+ * @param patch - Inspector patch fields.
+ */
+function buildNodeProperties(patch: Record<string, string | undefined>): Record<string, unknown> {
+  const properties: Record<string, unknown> = {};
+  if (patch.name !== undefined) {
+    properties.name = patch.name;
+  }
+  if (patch.dataSource !== undefined) {
+    properties.dataSource = patch.dataSource;
+  }
+  if (patch.description !== undefined) {
+    properties.description = patch.description;
+  }
+  return properties;
+}
+
+/**
+ * Build edge properties plus endpoints from inspector patch data.
+ * @param patch - Inspector patch fields.
+ * @param selection - Current selection properties.
+ */
+function buildEdgeUpdate(
+  patch: Record<string, string | undefined>,
+  selection?: SelectionProperties,
+): { props: Record<string, unknown>; from: string; to: string } | undefined {
+  const from = selection?.from;
+  const to = selection?.to;
+  if (!from || !to) {
+    return undefined;
+  }
+  const properties: Record<string, unknown> = {};
+  if (patch.name !== undefined) {
+    properties.label = patch.name;
+  }
+  if (patch.description !== undefined) {
+    properties.description = patch.description;
+  }
+  return { props: properties, from, to };
+}
+
+/**
+ *
+ * @param parameters
+ * @param parameters.kind
+ * @param parameters.id
+ * @param parameters.patch
+ * @param parameters.selectedProperties
+ * @param parameters.branch
+ */
+async function applyInspectorPatch(parameters: {
+  readonly kind: SelectionKind;
+  readonly id: string;
+  readonly patch: Record<string, string | undefined>;
+  readonly selectedProperties?: SelectionProperties;
+  readonly branch?: string;
+}): Promise<OperationBatchResult | undefined> {
+  const { kind, id, patch, selectedProperties, branch } = parameters;
+  if (kind === 'node') {
+    return applyOperations(
+      [
+        {
+          kind: 'updateNode',
+          node: { id, props: buildNodeProperties(patch) },
+        },
+      ],
+      { branch },
+    );
+  }
+  if (kind === 'edge') {
+    const update = buildEdgeUpdate(patch, selectedProperties);
+    if (!update) {
+      throw new Error('Edge endpoints unavailable for update.');
+    }
+    return applyOperations(
+      [
+        {
+          kind: 'updateEdge',
+          edge: {
+            id,
+            from: update.from,
+            to: update.to,
+            props: update.props,
+          },
+        },
+      ],
+      { branch },
+    );
+  }
+  return undefined;
+}
+
 interface ScenarioState {
   loading: boolean;
   error?: string;
@@ -126,7 +239,7 @@ interface PraxisWorkspaceContextValue {
   readonly widgets: CanvasWidget[];
   readonly selection: SelectionState;
   readonly selectedProperties?: SelectionProperties;
-  readonly selectionKind?: string;
+  readonly selectionKind?: SelectionKind;
   readonly selectionId?: string;
   readonly propertyState: {
     saving: boolean;
@@ -147,6 +260,7 @@ interface PraxisWorkspaceContextValue {
   readonly onSelectionChange: (selection: SelectionState) => void;
   readonly onInspectorSave: (patch: Record<string, string | undefined>) => void;
   readonly onInspectorReset: () => void;
+  readonly onGraphViewChange: (event: PraxisWidgetViewEvent) => void;
   readonly debugVisible: boolean;
   readonly widgetLibraryOpen: boolean;
   readonly onToggleWidgetLibrary: (open: boolean) => void;
@@ -275,6 +389,17 @@ function PraxisWorkspaceStateProvider({
     saving: false,
     reloadTick: 0,
   });
+  const [graphViewCache, setGraphViewCache] = useState<Map<string, GraphViewModel>>(
+    () => new Map(),
+  );
+
+  const handleGraphViewChange = useCallback((event: PraxisWidgetViewEvent) => {
+    setGraphViewCache((previous) => {
+      const next = new Map(previous);
+      next.set(event.widgetId, event.view);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     onSelectionChange?.(selectionState.selection);
@@ -399,7 +524,8 @@ function PraxisWorkspaceStateProvider({
 
   const fallbackAsOfReference = useRef<string>(new Date().toISOString());
   const runtimeScenario = activeScenario?.branch ?? temporalState.branch;
-  const runtimeAsOf = temporalState.commitId ?? fallbackAsOfReference.current;
+  const runtimeAsOf = temporalState.commitId ?? runtimeScenario ?? fallbackAsOfReference.current;
+  const runtimeLayer = temporalState.layer;
 
   const widgets = useMemo<CanvasWidget[]>(() => {
     if (!activeTemplate) {
@@ -408,8 +534,9 @@ function PraxisWorkspaceStateProvider({
     return instantiateTemplate(activeTemplate, {
       scenario: runtimeScenario,
       asOf: runtimeAsOf,
+      layer: runtimeLayer,
     });
-  }, [activeTemplate, runtimeAsOf, runtimeScenario]);
+  }, [activeTemplate, runtimeAsOf, runtimeLayer, runtimeScenario]);
 
   const canvasLayoutKey = useMemo(() => {
     const documentId = activeTemplate?.documentId;
@@ -417,8 +544,9 @@ function PraxisWorkspaceStateProvider({
       return;
     }
     const scenarioToken = runtimeScenario ?? 'default';
-    return `${documentId}::${scenarioToken}::${runtimeAsOf}`;
-  }, [activeTemplate?.documentId, runtimeAsOf, runtimeScenario]);
+    const layerToken = runtimeLayer;
+    return `${documentId}::${scenarioToken}::${layerToken}::${runtimeAsOf}`;
+  }, [activeTemplate?.documentId, runtimeAsOf, runtimeLayer, runtimeScenario]);
 
   const graphLayoutContext = useMemo<GraphLayoutContext | undefined>(() => {
     const documentId = activeTemplate?.documentId;
@@ -429,8 +557,9 @@ function PraxisWorkspaceStateProvider({
       docId: documentId,
       asOf: runtimeAsOf,
       scenario: runtimeScenario,
+      layer: runtimeLayer,
     };
-  }, [activeTemplate?.documentId, runtimeAsOf, runtimeScenario]);
+  }, [activeTemplate?.documentId, runtimeAsOf, runtimeLayer, runtimeScenario]);
 
   const canvasLayoutPersistence = useMemo<
     CanvasRuntimeLayoutPersistence<CanvasWidget> | undefined
@@ -447,6 +576,7 @@ function PraxisWorkspaceStateProvider({
       docId: documentId,
       asOf: runtimeAsOf,
       scenario: runtimeScenario,
+      layer: runtimeLayer,
     } as const;
 
     return {
@@ -505,13 +635,23 @@ function PraxisWorkspaceStateProvider({
         }
       },
     };
-  }, [activeTemplate?.documentId, runtimeAsOf, runtimeScenario]);
+  }, [activeTemplate?.documentId, runtimeAsOf, runtimeLayer, runtimeScenario]);
 
   const selectionKind = deriveSelectionKind(selectionState.selection);
   const selectionId = primarySelectionId(selectionState.selection);
-  const selectedProperties = selectionId
-    ? (Reflect.get(selectionState.properties, selectionId) as SelectionProperties | undefined)
-    : undefined;
+  const selectedProperties = (() => {
+    if (!selectionId) {
+      return;
+    }
+    const storedProperties = Reflect.get(selectionState.properties, selectionId) as
+      | SelectionProperties
+      | undefined;
+    const view = selectionState.selection.sourceWidgetId
+      ? graphViewCache.get(selectionState.selection.sourceWidgetId)
+      : undefined;
+    const viewProperties = resolveViewSelectionProperties({ selectionKind, selectionId, view });
+    return mergeSelectionProperties(viewProperties, storedProperties);
+  })();
 
   const handleSelectionChange = useCallback(
     (next: SelectionState) => {
@@ -520,6 +660,7 @@ function PraxisWorkspaceStateProvider({
         sourceWidgetId: next.sourceWidgetId,
         nodeIds: dedupeIds(next.nodeIds),
         edgeIds: dedupeIds(next.edgeIds),
+        cellIds: dedupeIds(next.cellIds),
       };
       setSelection(normalised);
       commandStack.record({
@@ -560,6 +701,18 @@ function PraxisWorkspaceStateProvider({
     [activeScenario?.id, activeTemplateId, clear, commandStack],
   );
 
+  const commitTemplate = useCallback(
+    (template: CanvasTemplate) => {
+      setTemplatesState((previous) => ({
+        ...previous,
+        data: upsertTemplate(previous.data, template),
+      }));
+      setActiveTemplateId(template.id);
+      track('template.change', { templateId: template.id, scenarioId: activeScenario?.id });
+    },
+    [activeScenario?.id],
+  );
+
   const handleTemplateSave = useCallback(() => {
     if (widgets.length === 0) {
       return;
@@ -567,10 +720,16 @@ function PraxisWorkspaceStateProvider({
     const nextIndexLabel = (templatesState.data.length + 1).toString();
     const name = `Template ${nextIndexLabel}`;
     const snapshot = captureTemplateFromWidgets(name, 'Saved from runtime', widgets);
-    setTemplatesState((previous) => ({ ...previous, data: [...previous.data, snapshot] }));
-    setActiveTemplateId(snapshot.id);
-    track('template.change', { templateId: snapshot.id, scenarioId: activeScenario?.id });
-  }, [activeScenario?.id, templatesState.data.length, widgets]);
+    const saveTemplate = async () => {
+      if (!isTauri()) {
+        commitTemplate(snapshot);
+        return;
+      }
+      const saved = await saveTemplateToHost(snapshot);
+      commitTemplate(saved);
+    };
+    void saveTemplate();
+  }, [commitTemplate, templatesState.data.length, widgets]);
 
   const handleScenarioSelect = useCallback(
     (scenarioId: string) => {
@@ -612,7 +771,7 @@ function PraxisWorkspaceStateProvider({
         ),
       }));
       setActiveTemplateId(newTemplate.id);
-      setFromWidget({ widgetId: newWidgetId, nodeIds: [], edgeIds: [] });
+      setFromWidget({ widgetId: newWidgetId, nodeIds: [], edgeIds: [], cellIds: [] });
       setWidgetLibraryOpen(false);
       track('template.create_widget', { widgetType: type, templateId: newTemplate.id });
     },
@@ -635,15 +794,27 @@ function PraxisWorkspaceStateProvider({
       setPropertyState((previous) => ({ ...previous, saving: true, error: undefined }));
       void (async () => {
         try {
-          if (kind === 'node') {
-            await applyOperations([
-              {
-                kind: 'updateNode',
-                node: { id, props: { label: patch.name, dataSource: patch.dataSource } },
-              },
-            ]);
-            setPropertyState((previous) => ({ ...previous, reloadTick: previous.reloadTick + 1 }));
+          const branch = runtimeScenario ?? temporalState.branch;
+          const result = await applyInspectorPatch({
+            kind,
+            id,
+            patch,
+            selectedProperties,
+            branch,
+          });
+          if (!result) {
+            return;
           }
+          if (!result.accepted) {
+            throw new Error(result.message ?? 'Operation rejected.');
+          }
+          if (result.commitId) {
+            if (branch) {
+              await temporalActions.selectBranch(branch);
+            }
+            temporalActions.selectCommit(result.commitId);
+          }
+          setPropertyState((previous) => ({ ...previous, reloadTick: previous.reloadTick + 1 }));
           track('inspector.save', { selectionKind: kind, selectionId: id });
         } catch (unknownError) {
           setPropertyState((previous) => ({ ...previous, error: toErrorMessage(unknownError) }));
@@ -653,7 +824,15 @@ function PraxisWorkspaceStateProvider({
         }
       })();
     },
-    [selectionId, selectionKind, updateProperties],
+    [
+      runtimeScenario,
+      selectionId,
+      selectionKind,
+      selectedProperties,
+      temporalActions,
+      temporalState.branch,
+      updateProperties,
+    ],
   );
 
   const handleInspectorReset = useCallback(() => {
@@ -765,6 +944,7 @@ function PraxisWorkspaceStateProvider({
       onSelectionChange: handleSelectionChange,
       onInspectorSave: handleInspectorSave,
       onInspectorReset: handleInspectorReset,
+      onGraphViewChange: handleGraphViewChange,
       debugVisible,
       widgetLibraryOpen,
       onToggleWidgetLibrary: setWidgetLibraryOpen,
@@ -785,6 +965,7 @@ function PraxisWorkspaceStateProvider({
     handleTemplateChange,
     handleTemplateSave,
     handleWidgetCreate,
+    handleGraphViewChange,
     projectState,
     scenarioState,
     selectionId,
@@ -875,6 +1056,7 @@ export function PraxisWorkspaceContent() {
     graphLayoutContext,
     selection,
     onSelectionChange,
+    onGraphViewChange,
     branchSelectReferenceCallback,
     propertyState,
     debugVisible,
@@ -897,6 +1079,7 @@ export function PraxisWorkspaceContent() {
           graphLayoutContext={graphLayoutContext}
           selection={selection}
           onSelectionChange={onSelectionChange}
+          onGraphViewChange={onGraphViewChange}
           onRequestMetaModelFocus={(types) => {
             if (types.length === 0) {
               return;
@@ -945,7 +1128,7 @@ export function PraxisWorkspaceInspector() {
     <PropertiesInspector
       key={selectionId ?? 'none'}
       selection={selection}
-      selectionKind={(selectionKind ?? 'none') as SelectionKind}
+      selectionKind={selectionKind ?? 'none'}
       selectionId={selectionId}
       properties={selectedProperties}
       onSave={onInspectorSave}
@@ -954,6 +1137,94 @@ export function PraxisWorkspaceInspector() {
       error={propertyState.error}
     />
   );
+}
+
+/**
+ *
+ * @param viewProperties
+ * @param storedProperties
+ */
+function mergeSelectionProperties(
+  viewProperties?: SelectionProperties,
+  storedProperties?: SelectionProperties,
+): SelectionProperties | undefined {
+  if (!viewProperties && !storedProperties) {
+    return undefined;
+  }
+  return { ...viewProperties, ...storedProperties };
+}
+
+/**
+ *
+ * @param parameters
+ * @param parameters.selectionKind
+ * @param parameters.selectionId
+ * @param parameters.view
+ */
+function resolveViewSelectionProperties(parameters: {
+  readonly selectionKind: SelectionKind;
+  readonly selectionId: string;
+  readonly view?: GraphViewModel;
+}): SelectionProperties | undefined {
+  const { selectionKind, selectionId, view } = parameters;
+  if (!view) {
+    return undefined;
+  }
+  if (selectionKind === 'node') {
+    const node = view.nodes.find((candidate) => candidate.id === selectionId);
+    if (!node) {
+      return undefined;
+    }
+    const properties = node.props ?? {};
+    const name = asOptionalString(node.label) ?? asOptionalString(properties.label) ?? node.id;
+    return {
+      name,
+      description: asOptionalString(properties.description),
+      dataSource: asOptionalString(properties.dataSource),
+      type: node.type,
+    };
+  }
+  if (selectionKind === 'edge') {
+    const edge = findEdgeById(view, selectionId);
+    if (!edge) {
+      return undefined;
+    }
+    const properties = edge.props ?? {};
+    return {
+      name: edge.label ?? asOptionalString(properties.label) ?? edge.type ?? selectionId,
+      description: asOptionalString(properties.description),
+      type: edge.type,
+      from: edge.from,
+      to: edge.to,
+    };
+  }
+  return undefined;
+}
+
+/**
+ *
+ * @param view
+ * @param edgeId
+ */
+function findEdgeById(view: GraphViewModel, edgeId: string) {
+  for (const [index, edge] of view.edges.entries()) {
+    const resolved = edge.id ?? `${edge.from}-${edge.to}-${String(index)}`;
+    if (resolved === edgeId) {
+      return edge;
+    }
+  }
+}
+
+/**
+ *
+ * @param value
+ */
+function asOptionalString(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 interface WidgetLibraryDialogProperties {

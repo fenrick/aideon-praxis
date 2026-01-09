@@ -90,8 +90,8 @@ export function GraphWidget({
   const definition = widget.view;
 
   const persistLayout = useCallback(
-    (nextNodes: Node<GraphNodeData>[]) => {
-      if (!layoutHydrated) {
+    (nextNodes: Node<GraphNodeData>[], options?: { force?: boolean }) => {
+      if (!layoutHydrated && !options?.force) {
         return;
       }
       if (!graphLayoutContext) {
@@ -119,7 +119,7 @@ export function GraphWidget({
         (change) => change.type === 'position' && change.dragging === false,
       );
       setNodes((current) => {
-        const next = applyNodeChanges(changes, current);
+        const next = applyNodeChanges(changes, current) as Node<GraphNodeData>[];
         if (shouldPersist) {
           persistLayout(next);
         }
@@ -261,7 +261,8 @@ export function GraphWidget({
       if (
         selection &&
         areStringSetsEqual(selection.nodeIds, snapshot.nodeIds) &&
-        areStringSetsEqual(selection.edgeIds, snapshot.edgeIds)
+        areStringSetsEqual(selection.edgeIds, snapshot.edgeIds) &&
+        areStringSetsEqual(selection.cellIds, snapshot.cellIds)
       ) {
         return;
       }
@@ -270,6 +271,7 @@ export function GraphWidget({
         widgetId: widget.id,
         nodeIds: [...snapshot.nodeIds],
         edgeIds: [...snapshot.edgeIds],
+        cellIds: [...snapshot.cellIds],
       });
     },
     [onSelectionChange, selection, widget.id],
@@ -283,7 +285,7 @@ export function GraphWidget({
     const flowNodes = attachInspectHandlers(buildFlowNodes(view));
     setNodes(flowNodes);
     setEdges(buildFlowEdges(view));
-    persistLayout(flowNodes);
+    persistLayout(flowNodes, { force: true });
   }, [attachInspectHandlers, persistLayout, setEdges, setNodes]);
 
   const [nodeSearchOpen, setNodeSearchOpen] = useState(false);

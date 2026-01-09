@@ -36,7 +36,7 @@ describe('DebugOverlay', () => {
         templateName="Template 1"
         branch="main"
         commitId="c1"
-        selection={{ nodeIds: ['n1', 'n2'], edgeIds: [], sourceWidgetId: undefined }}
+        selection={{ nodeIds: ['n1', 'n2'], edgeIds: [], cellIds: [], sourceWidgetId: undefined }}
       />,
     );
 
@@ -52,13 +52,18 @@ describe('DebugOverlay', () => {
     render(
       <DebugOverlay
         visible
-        selection={{ nodeIds: [], edgeIds: ['e1'], sourceWidgetId: undefined }}
+        selection={{ nodeIds: [], edgeIds: ['e1'], cellIds: [], sourceWidgetId: undefined }}
       />,
     );
     expect(screen.getByText('1 edge(s)')).toBeInTheDocument();
     expect(screen.getByText(/No events yet/i)).toBeInTheDocument();
 
-    render(<DebugOverlay visible selection={{ nodeIds: [], edgeIds: [], sourceWidgetId: 'w1' }} />);
+    render(
+      <DebugOverlay
+        visible
+        selection={{ nodeIds: [], edgeIds: [], cellIds: [], sourceWidgetId: 'w1' }}
+      />,
+    );
     expect(screen.getByText('widget w1')).toBeInTheDocument();
   });
 });

@@ -14,8 +14,18 @@ describe('canvas selection helpers', () => {
   });
 
   it('builds consistent selection state from widget events', () => {
-    const state = fromWidgetSelection({ widgetId: 'graph', nodeIds: ['x', 'x'], edgeIds: [] });
-    expect(state).toEqual({ sourceWidgetId: 'graph', nodeIds: ['x'], edgeIds: [] });
+    const state = fromWidgetSelection({
+      widgetId: 'graph',
+      nodeIds: ['x', 'x'],
+      edgeIds: [],
+      cellIds: [],
+    });
+    expect(state).toEqual({
+      sourceWidgetId: 'graph',
+      nodeIds: ['x'],
+      edgeIds: [],
+      cellIds: [],
+    });
   });
 
   it('detects empty selections', () => {
@@ -28,8 +38,20 @@ describe('canvas selection helpers', () => {
       sourceWidgetId: 'graph',
       nodeIds: ['a', 'b'],
       edgeIds: ['e'],
+      cellIds: [],
     });
     expect(summary).toBe('2 nodes, 1 edge');
     expect(selectionSummary()).toBe('No selection');
+  });
+
+  it('summarises cell selections', () => {
+    expect(
+      selectionSummary({
+        sourceWidgetId: 'matrix',
+        nodeIds: [],
+        edgeIds: [],
+        cellIds: ['row-1::col-1'],
+      }),
+    ).toBe('1 cell');
   });
 });

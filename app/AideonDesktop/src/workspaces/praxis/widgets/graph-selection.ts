@@ -1,6 +1,7 @@
 export interface GraphSelectionSnapshot {
   readonly nodeIds: readonly string[];
   readonly edgeIds: readonly string[];
+  readonly cellIds: readonly string[];
 }
 
 export interface GraphSelectionEvent {
@@ -16,6 +17,7 @@ export function selectionFromEvent(event: GraphSelectionEvent): GraphSelectionSn
   return {
     nodeIds: (event.nodes ?? []).map((node) => node.id),
     edgeIds: (event.edges ?? []).map((edge) => edge.id),
+    cellIds: [],
   };
 }
 

@@ -4,6 +4,7 @@ interface TemporalStateParameters {
   asOf: string;
   scenario?: string;
   confidence?: number;
+  layer?: 'Plan' | 'Actual';
 }
 interface TemporalStateSnapshot extends TemporalStateParameters {
   nodes: number;
@@ -51,6 +52,7 @@ describe('adapter contracts', () => {
           asOf: parameters.asOf,
           scenario: parameters.scenario,
           confidence: parameters.confidence,
+          layer: parameters.layer,
           nodes: 0,
           edges: 0,
         });

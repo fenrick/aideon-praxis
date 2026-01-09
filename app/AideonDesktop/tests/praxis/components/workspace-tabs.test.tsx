@@ -107,7 +107,12 @@ import type { PraxisCanvasWidget } from 'praxis/types';
 
 const mockUseTemporalPanel = vi.mocked(useTemporalPanel);
 
-const baseSelection: SelectionState = { nodeIds: [], edgeIds: [], sourceWidgetId: undefined };
+const baseSelection: SelectionState = {
+  nodeIds: [],
+  edgeIds: [],
+  cellIds: [],
+  sourceWidgetId: undefined,
+};
 
 const baseTemporalState: TemporalPanelState = {
   branches: [],
@@ -115,11 +120,13 @@ const baseTemporalState: TemporalPanelState = {
   loading: false,
   snapshotLoading: false,
   merging: false,
+  layer: 'Plan',
 };
 
 const baseTemporalActions: TemporalPanelActions = {
   selectBranch: vi.fn(() => Promise.resolve()),
   selectCommit: vi.fn(),
+  selectLayer: vi.fn(),
   refreshBranches: vi.fn(() => Promise.resolve()),
   mergeIntoMain: vi.fn(() => Promise.resolve()),
 };

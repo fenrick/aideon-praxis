@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   getStateAtSnapshot,
@@ -13,6 +13,7 @@ import {
   type TemporalMergeConflict,
 } from 'praxis/praxis-api';
 
+import type { Layer } from 'dtos';
 import { toErrorMessage } from 'praxis/lib/errors';
 
 export interface TemporalPanelState {
@@ -21,6 +22,7 @@ export interface TemporalPanelState {
   readonly commits: TemporalCommitSummary[];
   readonly commitId?: string;
   readonly snapshot?: StateAtSnapshot;
+  readonly layer: Layer;
   readonly loading: boolean;
   readonly snapshotLoading: boolean;
   readonly error?: string;
@@ -32,6 +34,7 @@ export interface TemporalPanelState {
 export interface TemporalPanelActions {
   readonly selectBranch: (branch: string) => Promise<void>;
   readonly selectCommit: (commitId?: string) => void;
+  readonly selectLayer: (layer: Layer) => void;
   readonly refreshBranches: () => Promise<void>;
   readonly mergeIntoMain: () => Promise<void>;
 }
@@ -44,6 +47,7 @@ const INITIAL_STATE: TemporalPanelState = {
   mergeConflicts: undefined,
   merging: false,
   diff: undefined,
+  layer: 'Plan',
 };
 
 /**
@@ -52,6 +56,7 @@ const INITIAL_STATE: TemporalPanelState = {
  */
 export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
   const [state, setState] = useState<TemporalPanelState>(INITIAL_STATE);
+  const layerReference = useRef<Layer>(INITIAL_STATE.layer);
   const loadDiff = useCallback(async (commits: TemporalCommitSummary[]) => {
     if (commits.length < 2) {
       setState((previous) => ({ ...previous, diff: undefined }));
@@ -71,6 +76,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
 
   const loadBranch = useCallback(
     async (branch: string) => {
+      const layer = layerReference.current;
       setState((previous) => ({
         ...previous,
         branch,
@@ -81,13 +87,14 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         error: undefined,
         snapshotLoading: false,
         mergeConflicts: undefined,
+        layer,
       }));
       try {
         const commits = await listTemporalCommits(branch);
         const latest = commits.at(-1);
         let snapshot: StateAtSnapshot | undefined;
         if (latest) {
-          snapshot = await getStateAtSnapshot({ asOf: latest.id, scenario: branch });
+          snapshot = await getStateAtSnapshot({ asOf: latest.id, scenario: branch, layer });
         }
         setState((previous) => ({
           ...previous,
@@ -98,6 +105,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
           snapshotLoading: false,
           loading: false,
           merging: false,
+          layer,
         }));
         await loadDiff(commits);
       } catch (unknownError) {
@@ -143,6 +151,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
   const selectCommit = useCallback(
     (commitId?: string) => {
       const branch = state.branch;
+      const layer = layerReference.current;
       if (!branch) {
         return;
       }
@@ -165,16 +174,22 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         snapshotLoading: true,
         error: undefined,
         mergeConflicts: undefined,
+        layer,
       }));
       const loadSnapshot = async () => {
         try {
-          const snapshot = await getStateAtSnapshot({ asOf: commitId, scenario: branch });
+          const snapshot = await getStateAtSnapshot({
+            asOf: commitId,
+            scenario: branch,
+            layer,
+          });
           setState((previous) => ({
             ...previous,
             commitId,
             snapshot,
             snapshotLoading: false,
             loading: false,
+            layer,
           }));
         } catch (unknownError) {
           setState((previous) => ({
@@ -188,6 +203,41 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
       loadSnapshot().catch((_ignoredError: unknown) => {
         return;
       });
+    },
+    [state.branch, state.commitId],
+  );
+
+  const selectLayer = useCallback(
+    (layer: Layer) => {
+      layerReference.current = layer;
+      setState((previous) => ({
+        ...previous,
+        layer,
+        snapshotLoading: !!previous.commitId,
+        error: undefined,
+      }));
+      if (!state.branch || !state.commitId) {
+        return;
+      }
+      const commitId = state.commitId;
+      const branch = state.branch;
+      void (async () => {
+        try {
+          const snapshot = await getStateAtSnapshot({ asOf: commitId, scenario: branch, layer });
+          setState((previous) => ({
+            ...previous,
+            snapshot,
+            snapshotLoading: false,
+            layer,
+          }));
+        } catch (unknownError) {
+          setState((previous) => ({
+            ...previous,
+            snapshotLoading: false,
+            error: toErrorMessage(unknownError),
+          }));
+        }
+      })();
     },
     [state.branch, state.commitId],
   );
@@ -252,6 +302,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
     {
       selectBranch: selectBranchAction,
       selectCommit,
+      selectLayer,
       refreshBranches,
       mergeIntoMain,
     },

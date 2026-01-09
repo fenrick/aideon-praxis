@@ -60,7 +60,7 @@ describe('CatalogueWidget', () => {
       <CatalogueWidget
         widget={CATALOGUE_WIDGET}
         reloadVersion={0}
-        selection={{ nodeIds: ['cap-1'], edgeIds: [], sourceWidgetId: 'graph-widget' }}
+        selection={{ nodeIds: ['cap-1'], edgeIds: [], cellIds: [], sourceWidgetId: 'graph-widget' }}
       />,
     );
 

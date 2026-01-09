@@ -9,7 +9,7 @@ const selectCommit = vi.fn();
 const resetProperties = vi.fn();
 
 vi.mock('praxis/stores/selection-store', () => {
-  const selection = { nodeIds: ['n1'], edgeIds: [], sourceWidgetId: 'w1' };
+  const selection = { nodeIds: ['n1'], edgeIds: [], cellIds: [], sourceWidgetId: 'w1' };
   const properties = { n1: { name: 'Node', dataSource: 'ds', layout: 'grid', description: 'd' } };
   return {
     SelectionProvider: ({ children }: { children: ReactNode }) => (
@@ -96,6 +96,7 @@ vi.mock('praxis/domain-data', () => ({
         { id: 't1', documentId: 'canvasdoc-t1', name: 'Template 1', description: '', widgets: [] },
       ];
     }),
+  saveTemplateToHost: (template: { id: string }) => Promise.resolve(template),
 }));
 
 const templateSpy = vi.fn<(templates: { id: string; name: string }[]) => void>();

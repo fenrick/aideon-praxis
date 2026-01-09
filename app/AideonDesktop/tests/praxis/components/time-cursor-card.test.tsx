@@ -115,6 +115,7 @@ describe('TimeCursorCard', () => {
       confidence: 0.9,
       scenario: 'chronaplay',
     },
+    layer: 'Plan',
     loading: false,
     snapshotLoading: false,
     error: undefined,
@@ -125,6 +126,7 @@ describe('TimeCursorCard', () => {
   const actions: TemporalPanelActions = {
     selectBranch: vi.fn(() => Promise.resolve()),
     selectCommit: vi.fn(),
+    selectLayer: vi.fn(),
     refreshBranches: vi.fn(() => Promise.resolve()),
     mergeIntoMain: vi.fn(() => Promise.resolve()),
   };
@@ -146,6 +148,7 @@ describe('TimeCursorCard', () => {
     const emptyActions: TemporalPanelActions = {
       selectBranch: vi.fn(() => Promise.resolve()),
       selectCommit: vi.fn(),
+      selectLayer: vi.fn(),
       refreshBranches: vi.fn(() => Promise.resolve()),
       mergeIntoMain: vi.fn(() => Promise.resolve()),
     };
@@ -155,6 +158,7 @@ describe('TimeCursorCard', () => {
       commits: [],
       commitId: undefined,
       snapshot: undefined,
+      layer: 'Plan',
       loading: true,
       snapshotLoading: true,
       error: 'No timeline loaded',

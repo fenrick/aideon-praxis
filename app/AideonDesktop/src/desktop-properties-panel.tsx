@@ -15,7 +15,8 @@ export interface DesktopPropertiesPanelProperties {
  */
 export function DesktopPropertiesPanel({ selection }: DesktopPropertiesPanelProperties) {
   const hasSelection = Boolean(
-    selection && (selection.nodeIds.length > 0 || selection.edgeIds.length > 0),
+    selection &&
+    (selection.nodeIds.length > 0 || selection.edgeIds.length > 0 || selection.cellIds.length > 0),
   );
 
   return (
@@ -36,6 +37,10 @@ export function DesktopPropertiesPanel({ selection }: DesktopPropertiesPanelProp
                   Edges selected:{' '}
                   <span className="text-foreground">{selection?.edgeIds.length}</span>
                 </p>
+                <p>
+                  Cells selected:{' '}
+                  <span className="text-foreground">{selection?.cellIds.length}</span>
+                </p>
                 {selection?.sourceWidgetId ? (
                   <p>
                     Source widget:
@@ -44,7 +49,7 @@ export function DesktopPropertiesPanel({ selection }: DesktopPropertiesPanelProp
                 ) : undefined}
               </>
             ) : (
-              <p>No selection yet. Pick a node or edge to see details.</p>
+              <p>No selection yet. Pick a node, edge, or cell to see details.</p>
             )}
           </CardContent>
         </Card>

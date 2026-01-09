@@ -46,6 +46,7 @@ describe('PraxisWorkspaceToolbar', () => {
         nodes: 2,
         edges: 1,
       },
+      layer: 'Plan',
       error: undefined,
       diff: undefined,
       mergeConflicts: undefined,
@@ -55,6 +56,7 @@ describe('PraxisWorkspaceToolbar', () => {
       selectCommit: vi.fn(() => {
         void 0;
       }),
+      selectLayer: vi.fn(),
       refreshBranches: vi.fn(() => Promise.resolve()),
       mergeIntoMain: vi.fn(() => Promise.resolve()),
     };

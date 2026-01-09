@@ -5,6 +5,8 @@ import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getGraphViewMock = vi.fn<typeof PraxisApi.getGraphView>();
+const getGraphLayoutMock = vi.fn<typeof PraxisApi.getGraphLayout>();
+const saveGraphLayoutMock = vi.fn<typeof PraxisApi.saveGraphLayout>();
 
 vi.mock('praxis/praxis-api', async () => {
   const actual = await vi.importActual<typeof PraxisApi>('praxis/praxis-api');
@@ -12,6 +14,10 @@ vi.mock('praxis/praxis-api', async () => {
     ...actual,
     getGraphView: (...arguments_: Parameters<typeof actual.getGraphView>) =>
       getGraphViewMock(...arguments_),
+    getGraphLayout: (...arguments_: Parameters<typeof actual.getGraphLayout>) =>
+      getGraphLayoutMock(...arguments_),
+    saveGraphLayout: (...arguments_: Parameters<typeof actual.saveGraphLayout>) =>
+      saveGraphLayoutMock(...arguments_),
   };
 });
 
@@ -34,6 +40,16 @@ interface ContextMenuNode {
 let latestContextMenuHandler:
   | ((event: { preventDefault: () => void }, node: ContextMenuNode) => void)
   | undefined;
+let latestNodesChangeHandler:
+  | ((
+      changes: {
+        id: string;
+        type: string;
+        dragging?: boolean;
+        position?: { x: number; y: number };
+      }[],
+    ) => void)
+  | undefined;
 
 vi.mock('@xyflow/react', () => {
   const { createElement } = React;
@@ -44,19 +60,48 @@ vi.mock('@xyflow/react', () => {
       children,
       onSelectionChange,
       onNodeContextMenu,
+      onNodesChange,
     }: {
       children?: React.ReactNode;
       onSelectionChange?: (selection: Selection) => void;
       onNodeContextMenu?: (event: { preventDefault: () => void }, node: ContextMenuNode) => void;
+      onNodesChange?: (
+        changes: {
+          id: string;
+          type: string;
+          dragging?: boolean;
+          position?: { x: number; y: number };
+        }[],
+      ) => void;
     }) => {
       latestSelectionHandler = onSelectionChange ?? undefined;
       latestContextMenuHandler = onNodeContextMenu ?? undefined;
+      latestNodesChangeHandler = onNodesChange ?? undefined;
       return createElement('div', { 'data-testid': 'reactflow' }, children);
     },
     Controls: () => createElement('div', { 'data-testid': 'controls' }),
     MiniMap: () => createElement('div', { 'data-testid': 'minimap' }),
     Background: () => createElement('div', { 'data-testid': 'background' }),
     BackgroundVariant: { Dots: 'dots' },
+    applyNodeChanges: (
+      changes: {
+        id: string;
+        type: string;
+        dragging?: boolean;
+        position?: { x: number; y: number };
+      }[],
+      nodes: unknown[],
+    ) =>
+      nodes.map((node) => {
+        const typedNode = node as { id?: string; position?: { x: number; y: number } };
+        const change = changes.find(
+          (entry) => entry.id === typedNode.id && entry.type === 'position',
+        );
+        if (!change?.position) {
+          return node;
+        }
+        return { ...typedNode, position: { x: change.position.x, y: change.position.y } };
+      }),
     useNodesState: () => {
       const [nodes, setNodes] = React.useState<unknown[]>([]);
       return [nodes, setNodes, vi.fn()];
@@ -113,7 +158,10 @@ const GRAPH_VIEW: PraxisApi.GraphViewModel = {
 describe('GraphWidget', () => {
   beforeEach(() => {
     getGraphViewMock.mockReset();
+    getGraphLayoutMock.mockReset();
+    saveGraphLayoutMock.mockReset();
     latestSelectionHandler = undefined;
+    latestNodesChangeHandler = undefined;
   });
 
   it('loads the graph view on mount and surfaces metadata/context to parents', async () => {
@@ -153,6 +201,7 @@ describe('GraphWidget', () => {
         widgetId: 'graph-widget',
         nodeIds: ['node-1'],
         edgeIds: [],
+        cellIds: [],
       });
     });
   });
@@ -199,7 +248,7 @@ describe('GraphWidget', () => {
         widget={GRAPH_WIDGET}
         reloadVersion={0}
         onRequestMetaModelFocus={onRequestMetaModelFocus}
-        selection={{ nodeIds: ['node-1'], edgeIds: [], sourceWidgetId: undefined }}
+        selection={{ nodeIds: ['node-1'], edgeIds: [], cellIds: [], sourceWidgetId: undefined }}
       />,
     );
 
@@ -217,5 +266,67 @@ describe('GraphWidget', () => {
     const menuButton = await screen.findByText(/View meta-model entry/);
     menuButton.click();
     expect(onRequestMetaModelFocus).toHaveBeenCalledWith(['Capability']);
+  });
+
+  it('loads persisted layouts and saves layout updates', async () => {
+    getGraphViewMock.mockResolvedValue(GRAPH_VIEW);
+    getGraphLayoutMock.mockResolvedValue({
+      docId: 'doc-1',
+      widgetId: 'graph-widget',
+      asOf: '2025-11-01T00:00:00.000Z',
+      scenario: 'main',
+      layer: 'Plan',
+      nodes: [{ id: 'node-1', x: 99, y: 88 }],
+    });
+
+    render(
+      <GraphWidget
+        widget={GRAPH_WIDGET}
+        reloadVersion={0}
+        graphLayoutContext={{
+          docId: 'doc-1',
+          asOf: '2025-11-01T00:00:00.000Z',
+          scenario: 'main',
+          layer: 'Plan',
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(getGraphLayoutMock).toHaveBeenCalledWith({
+        docId: 'doc-1',
+        widgetId: 'graph-widget',
+        asOf: '2025-11-01T00:00:00.000Z',
+        scenario: 'main',
+        layer: 'Plan',
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading graph')).not.toBeInTheDocument();
+    });
+
+    await screen.findAllByText('Customer Experience');
+
+    await waitFor(() => {
+      expect(latestNodesChangeHandler).toBeDefined();
+    });
+    latestNodesChangeHandler?.([
+      { id: 'node-1', type: 'position', dragging: false, position: { x: 10, y: 20 } },
+    ]);
+
+    await waitFor(() => {
+      expect(saveGraphLayoutMock).toHaveBeenCalled();
+    });
+
+    const [payload] = saveGraphLayoutMock.mock.calls[0] ?? [];
+    expect(payload).toMatchObject({
+      docId: 'doc-1',
+      widgetId: 'graph-widget',
+      asOf: '2025-11-01T00:00:00.000Z',
+      scenario: 'main',
+      layer: 'Plan',
+      nodes: [{ id: 'node-1', x: 10, y: 20 }],
+    });
   });
 });

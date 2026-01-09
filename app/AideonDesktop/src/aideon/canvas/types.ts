@@ -12,15 +12,18 @@ export interface WidgetSelection {
   widgetId: string;
   nodeIds: string[];
   edgeIds: string[];
+  cellIds: string[];
 }
 
 export interface SelectionState {
   sourceWidgetId?: string;
   nodeIds: string[];
   edgeIds: string[];
+  cellIds: string[];
 }
 
 export const EMPTY_SELECTION: SelectionState = {
   nodeIds: [],
   edgeIds: [],
+  cellIds: [],
 };

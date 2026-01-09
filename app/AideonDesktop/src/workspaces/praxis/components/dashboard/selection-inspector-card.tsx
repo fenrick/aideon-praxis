@@ -33,6 +33,7 @@ export function SelectionInspectorCard({
   const sourceLabel = sourceWidget ? sourceWidget.title : 'No widget';
   const nodeIds = selection.nodeIds.slice(0, 6);
   const edgeIds = selection.edgeIds.slice(0, 4);
+  const cellIds = selection.cellIds.slice(0, 4);
 
   const handleClear = () => {
     onSelectionChange?.(EMPTY_SELECTION);
@@ -62,6 +63,7 @@ export function SelectionInspectorCard({
           <>
             <SelectionList label="Nodes" values={nodeIds} emptyLabel="No nodes" />
             <SelectionList label="Edges" values={edgeIds} emptyLabel="No edges" />
+            <SelectionList label="Cells" values={cellIds} emptyLabel="No cells" />
           </>
         )}
       </CardContent>

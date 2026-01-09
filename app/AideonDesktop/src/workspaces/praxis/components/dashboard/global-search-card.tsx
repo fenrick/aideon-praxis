@@ -68,7 +68,7 @@ export function GlobalSearchCard({
             id: 'command-catalogue',
             name: 'Command palette quick search',
             kind: 'catalogue',
-            asOf: state.commitId ?? new Date().toISOString(),
+            asOf: state.commitId ?? state.branch ?? 'main',
             scenario: state.branch ?? 'main',
             columns: [
               { id: 'name', label: 'Name', type: 'string' },

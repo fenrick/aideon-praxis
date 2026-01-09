@@ -6,7 +6,12 @@ import { CommitTimelineList } from 'praxis/components/blocks/commit-timeline-lis
 import { templateScreenCopy } from 'praxis/copy/template-screen';
 import type { GraphViewModel } from 'praxis/praxis-api';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
-import type { GraphLayoutContext, PraxisCanvasWidget, SelectionState } from 'praxis/types';
+import type {
+  GraphLayoutContext,
+  PraxisCanvasWidget,
+  PraxisWidgetViewEvent,
+  SelectionState,
+} from 'praxis/types';
 
 import type { CanvasRuntimeLayoutPersistence } from 'aideon/canvas/canvas-runtime';
 import { Badge } from 'design-system/components/ui/badge';
@@ -27,6 +32,7 @@ interface OverviewTabsProperties {
   readonly selection: SelectionState;
   readonly onSelectionChange: (selection: SelectionState) => void;
   readonly onRequestMetaModelFocus: (types: string[]) => void;
+  readonly onGraphViewChange?: (event: PraxisWidgetViewEvent) => void;
   readonly onAddWidget?: () => void;
   readonly timelineContent?: ReactNode;
   readonly activityContent?: ReactNode;
@@ -48,6 +54,7 @@ interface OverviewTabsProperties {
  * @param root0.selection
  * @param root0.onSelectionChange
  * @param root0.onRequestMetaModelFocus
+ * @param root0.onGraphViewChange
  * @param root0.onAddWidget
  * @param root0.timelineContent
  * @param root0.activityContent
@@ -66,6 +73,7 @@ export function OverviewTabs({
   selection,
   onSelectionChange,
   onRequestMetaModelFocus,
+  onGraphViewChange,
   onAddWidget,
   timelineContent,
   activityContent,
@@ -150,6 +158,7 @@ export function OverviewTabs({
           selection={selection}
           onSelectionChange={onSelectionChange}
           onRequestMetaModelFocus={onRequestMetaModelFocus}
+          onGraphViewChange={onGraphViewChange}
           onAddWidget={onAddWidget}
           reloadSignal={localReloadSignal}
           showPageBreaks={showPageBreaks}

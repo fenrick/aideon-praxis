@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('praxis/platform', () => ({ isTauri: vi.fn() }));
 vi.mock('praxis/praxis-api', () => ({ listScenarios: vi.fn() }));
 
-import { listProjectsWithScenarios, listTemplatesFromHost } from 'praxis/domain-data';
+import {
+  listProjectsWithScenarios,
+  listTemplatesFromHost,
+  saveTemplateToHost,
+} from 'praxis/domain-data';
 import { isTauri } from 'praxis/platform';
 import { listScenarios } from 'praxis/praxis-api';
 import { BUILT_IN_TEMPLATES } from 'praxis/templates';
@@ -34,5 +38,14 @@ describe('domain-data adapters', () => {
   it('returns built-in templates in mock mode', async () => {
     const templates = await listTemplatesFromHost();
     expect(templates[0]?.id).toBe(BUILT_IN_TEMPLATES[0]?.id);
+  });
+
+  it('returns the provided template when not in Tauri', async () => {
+    const template = BUILT_IN_TEMPLATES[0];
+    if (!template) {
+      throw new Error('Missing built-in template fixture');
+    }
+    const saved = await saveTemplateToHost(template);
+    expect(saved.id).toBe(template.id);
   });
 });

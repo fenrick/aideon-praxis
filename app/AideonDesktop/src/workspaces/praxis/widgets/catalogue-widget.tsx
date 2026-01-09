@@ -69,7 +69,7 @@ export function CatalogueWidget({
 
   const handleRowActivate = useCallback(
     (row: CatalogueRow) => {
-      onSelectionChange?.({ widgetId: widget.id, nodeIds: [row.id], edgeIds: [] });
+      onSelectionChange?.({ widgetId: widget.id, nodeIds: [row.id], edgeIds: [], cellIds: [] });
     },
     [onSelectionChange, widget.id],
   );

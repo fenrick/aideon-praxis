@@ -95,6 +95,7 @@ describe('TimeControlPanel', () => {
     ],
     commitId: 'c1',
     snapshot: { asOf: 'c1', nodes: 42, edges: 10 },
+    layer: 'Plan',
     loading: false,
     snapshotLoading: false,
     error: undefined,
@@ -105,6 +106,7 @@ describe('TimeControlPanel', () => {
   const actions: TemporalPanelActions = {
     selectBranch: vi.fn(() => Promise.resolve()),
     selectCommit: vi.fn(),
+    selectLayer: vi.fn(),
     refreshBranches: vi.fn(() => Promise.resolve()),
     mergeIntoMain: vi.fn(() => Promise.resolve()),
   };
@@ -129,6 +131,7 @@ describe('TimeControlPanel', () => {
     const localActions: TemporalPanelActions = {
       selectBranch: vi.fn(() => Promise.resolve()),
       selectCommit: vi.fn(),
+      selectLayer: vi.fn(),
       refreshBranches: vi.fn(() => Promise.resolve()),
       mergeIntoMain: vi.fn(() => Promise.resolve()),
     };
@@ -138,6 +141,7 @@ describe('TimeControlPanel', () => {
       commits: [],
       commitId: undefined,
       snapshot: undefined,
+      layer: 'Plan',
       loading: true,
       snapshotLoading: true,
       error: 'Boom',

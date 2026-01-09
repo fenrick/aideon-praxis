@@ -57,6 +57,7 @@ describe('praxis-api state/diff host calls', () => {
         asOf: '2025-01-01',
         scenario: undefined,
         confidence: undefined,
+        layer: undefined,
         nodes: 1,
         edges: 2,
       }),
@@ -71,11 +72,13 @@ describe('praxis-api state/diff host calls', () => {
       asOf: { id: '2025-01-01' },
       scenario: undefined,
       confidence: undefined,
+      layer: undefined,
     });
     expect(snapshot).toEqual({
       asOf: '2025-01-01',
       scenario: undefined,
       confidence: undefined,
+      layer: undefined,
       nodes: 1,
       edges: 2,
     });

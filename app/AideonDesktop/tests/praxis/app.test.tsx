@@ -48,6 +48,7 @@ vi.mock('praxis/components/template-screen/overview-tabs', () => ({
     onSelectionChange: (selection: {
       nodeIds: string[];
       edgeIds: string[];
+      cellIds: string[];
       sourceWidgetId?: string;
     }) => void;
     reloadSignal?: number;
@@ -55,7 +56,12 @@ vi.mock('praxis/components/template-screen/overview-tabs', () => ({
     <div>
       <button
         onClick={() => {
-          onSelectionChange({ nodeIds: ['n1'], edgeIds: [], sourceWidgetId: 'widget-1' });
+          onSelectionChange({
+            nodeIds: ['n1'],
+            edgeIds: [],
+            cellIds: [],
+            sourceWidgetId: 'widget-1',
+          });
         }}
       >
         simulate-selection
@@ -78,7 +84,8 @@ vi.mock('praxis/components/template-screen/properties-inspector', () => ({
     saving?: boolean;
   }) => (
     <div data-testid="inspector">
-      {selectionKind}:{selectionId}:{selection.nodeIds.length + selection.edgeIds.length}:
+      {selectionKind}:{selectionId}:
+      {selection.nodeIds.length + selection.edgeIds.length + selection.cellIds.length}:
       {saving ? 'saving' : 'idle'}
     </div>
   ),
@@ -87,6 +94,7 @@ vi.mock('praxis/components/template-screen/properties-inspector', () => ({
 vi.mock('praxis/domain-data', () => ({
   listProjectsWithScenarios: vi.fn(),
   listTemplatesFromHost: vi.fn(),
+  saveTemplateToHost: vi.fn((template) => Promise.resolve(template)),
 }));
 
 vi.mock('praxis/praxis-api', () => ({

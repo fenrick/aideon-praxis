@@ -21,7 +21,12 @@ describe('selection-store extra coverage', () => {
     const { result } = renderHook(() => useSelectionStore(), { wrapper });
 
     act(() => {
-      result.current.setFromWidget({ widgetId: 'w1', nodeIds: ['n1', 'n1'], edgeIds: ['e1'] });
+      result.current.setFromWidget({
+        widgetId: 'w1',
+        nodeIds: ['n1', 'n1'],
+        edgeIds: ['e1'],
+        cellIds: [],
+      });
     });
     expect(result.current.state.selection.nodeIds).toEqual(['n1']);
     expect(result.current.state.selection.edgeIds).toEqual(['e1']);
@@ -39,25 +44,57 @@ describe('selection-store extra coverage', () => {
   });
 
   it('derives selection kind and primary id', () => {
-    expect(deriveSelectionKind({ nodeIds: ['a'], edgeIds: [], sourceWidgetId: undefined })).toBe(
-      'node',
-    );
-    expect(deriveSelectionKind({ nodeIds: [], edgeIds: ['b'], sourceWidgetId: undefined })).toBe(
-      'edge',
-    );
-    expect(deriveSelectionKind({ nodeIds: [], edgeIds: [], sourceWidgetId: 'widget-1' })).toBe(
-      'widget',
-    );
+    const cellId = ['c1', 'c2'].join('::');
+    expect(
+      deriveSelectionKind({
+        nodeIds: ['a'],
+        edgeIds: [],
+        cellIds: [],
+        sourceWidgetId: undefined,
+      }),
+    ).toBe('node');
+    expect(
+      deriveSelectionKind({
+        nodeIds: [],
+        edgeIds: ['b'],
+        cellIds: [],
+        sourceWidgetId: undefined,
+      }),
+    ).toBe('edge');
+    expect(
+      deriveSelectionKind({
+        nodeIds: [],
+        edgeIds: [],
+        cellIds: [],
+        sourceWidgetId: 'widget-1',
+      }),
+    ).toBe('widget');
+    expect(
+      deriveSelectionKind({
+        nodeIds: [],
+        edgeIds: [],
+        cellIds: [cellId],
+        sourceWidgetId: undefined,
+      }),
+    ).toBe('cell');
     expect(deriveSelectionKind(EMPTY_SELECTION)).toBe('none');
 
-    expect(primarySelectionId({ nodeIds: ['a'], edgeIds: [], sourceWidgetId: undefined })).toBe(
-      'a',
-    );
-    expect(primarySelectionId({ nodeIds: [], edgeIds: ['b'], sourceWidgetId: undefined })).toBe(
-      'b',
-    );
-    expect(primarySelectionId({ nodeIds: [], edgeIds: [], sourceWidgetId: 'widget-1' })).toBe(
-      'widget-1',
-    );
+    expect(
+      primarySelectionId({ nodeIds: ['a'], edgeIds: [], cellIds: [], sourceWidgetId: undefined }),
+    ).toBe('a');
+    expect(
+      primarySelectionId({ nodeIds: [], edgeIds: ['b'], cellIds: [], sourceWidgetId: undefined }),
+    ).toBe('b');
+    expect(
+      primarySelectionId({
+        nodeIds: [],
+        edgeIds: [],
+        cellIds: [cellId],
+        sourceWidgetId: undefined,
+      }),
+    ).toBe(cellId);
+    expect(
+      primarySelectionId({ nodeIds: [], edgeIds: [], cellIds: [], sourceWidgetId: 'widget-1' }),
+    ).toBe('widget-1');
   });
 });

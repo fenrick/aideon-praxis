@@ -223,14 +223,25 @@ describe('IpcTemporalAdapter', () => {
       confidence: 0.9,
     });
 
+    await a.stateAt({ asOf: 'c9', scenario: 'dev', confidence: 0.9, layer: 'Plan' });
+    const stateAtCallWithLayer = callLog.filter(
+      (entry) => entry.cmd === 'chrona.temporal.state_at',
+    )[1];
+    expect(callPayload(stateAtCallWithLayer)).toEqual({
+      asOf: { id: 'c9' },
+      scenario: 'dev',
+      confidence: 0.9,
+      layer: 'Plan',
+    });
+
     await a.createBranch({ name: 'feature/no-from' });
     const createBranchCall = requireCall('chrona.temporal.create_branch');
     expect(callPayload(createBranchCall)).toEqual({ name: 'feature/no-from' });
 
     await a.stateAt({ asOf: 'c10' });
-    const stateAtCallMinimal = callLog.filter(
+    const stateAtCallMinimal = callLog.findLast(
       (entry) => entry.cmd === 'chrona.temporal.state_at',
-    )[1];
+    );
     expect(callPayload(stateAtCallMinimal)).toEqual({ asOf: { id: 'c10' } });
 
     await a.diff({ from: 'c0', to: 'c1' });

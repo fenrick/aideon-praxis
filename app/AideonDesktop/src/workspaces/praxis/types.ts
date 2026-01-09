@@ -1,3 +1,4 @@
+import type { Layer } from 'dtos';
 import type {
   CatalogueViewDefinition,
   ChartViewDefinition,
@@ -14,7 +15,7 @@ export interface GraphLayoutContext {
   readonly docId: string;
   readonly asOf: string;
   readonly scenario?: string;
-  readonly layer?: string;
+  readonly layer?: Layer;
 }
 
 interface BaseWidgetConfig<TView> extends CanvasWidgetLayout {

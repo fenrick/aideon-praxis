@@ -12,6 +12,7 @@ const baseState: TemporalPanelState = {
   loading: false,
   snapshotLoading: false,
   merging: false,
+  layer: 'Plan',
   snapshot: {
     asOf: 'c1',
     nodes: 1200,

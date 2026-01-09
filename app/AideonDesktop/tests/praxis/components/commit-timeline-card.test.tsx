@@ -15,6 +15,7 @@ const mergeIntoMainSpy = vi.fn();
 const mockActions = {
   selectBranch: selectBranchSpy,
   selectCommit: selectCommitSpy,
+  selectLayer: vi.fn(),
   refreshBranches: refreshBranchesSpy,
   mergeIntoMain: mergeIntoMainSpy,
 };
@@ -61,6 +62,7 @@ describe('CommitTimelineCard', () => {
       ],
       commitId: 'commit-1',
       snapshot: undefined,
+      layer: 'Plan',
       loading: false,
       snapshotLoading: false,
       error: undefined,

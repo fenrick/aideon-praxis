@@ -1,3 +1,4 @@
+import type { Layer } from 'dtos';
 import type {
   MetaModelDocument,
   MetaModelProvider,
@@ -26,10 +27,22 @@ const COMMANDS = {
 
 export const TIMEGRAPH_IPC_COMMANDS = COMMANDS;
 
+/**
+ *
+ * @param value
+ */
+function asLayer(value?: string | null): Layer | undefined {
+  if (value === 'Plan' || value === 'Actual') {
+    return value;
+  }
+  return undefined;
+}
+
 interface StateAtResp {
   asOf: string;
   scenario: string | null;
   confidence: number | null;
+  layer?: string | null;
   nodes: number;
   edges: number;
 }
@@ -135,11 +148,15 @@ export class IpcTemporalAdapter implements MutableGraphAdapter, MetaModelProvide
     if (parameters.confidence !== undefined) {
       payload.confidence = parameters.confidence;
     }
+    if (parameters.layer !== undefined) {
+      payload.layer = parameters.layer;
+    }
     const result = await invokeIpc<StateAtResp>(COMMANDS.stateAt, payload);
     return {
       asOf: result.asOf,
       scenario: result.scenario ?? undefined,
       confidence: result.confidence ?? undefined,
+      layer: asLayer(result.layer),
       nodes: result.nodes,
       edges: result.edges,
     };

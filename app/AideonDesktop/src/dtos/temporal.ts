@@ -1,4 +1,5 @@
 import type { IsoDateTime } from './iso';
+import type { Layer } from './mneme';
 
 export type ScenarioKey = string | undefined;
 export type ConfidencePercent = number | undefined;
@@ -12,12 +13,14 @@ export interface TemporalStateParameters {
   asOf: string;
   scenario?: ScenarioKey;
   confidence?: ConfidencePercent;
+  layer?: Layer;
 }
 
 export interface TemporalStateSnapshot {
   asOf: string;
   scenario?: ScenarioKey;
   confidence?: ConfidencePercent;
+  layer?: Layer;
   nodes: number;
   edges: number;
 }
@@ -64,4 +67,5 @@ export interface TemporalTopologyDeltaSnapshot {
 export interface TemporalResultMeta {
   effectiveAt: IsoDateTime;
   confidence?: ConfidencePercent;
+  layer?: Layer;
 }

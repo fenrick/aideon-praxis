@@ -8,6 +8,9 @@ export interface SelectionProperties {
   readonly dataSource?: string;
   readonly layout?: string;
   readonly description?: string;
+  readonly type?: string;
+  readonly from?: string;
+  readonly to?: string;
 }
 
 interface SelectionStoreState {
@@ -91,6 +94,7 @@ export function SelectionProvider({ children }: { readonly children: React.React
         sourceWidgetId: selection.widgetId,
         nodeIds: dedupeIds(selection.nodeIds),
         edgeIds: dedupeIds(selection.edgeIds),
+        cellIds: dedupeIds(selection.cellIds),
       },
     });
   }, []);
@@ -132,7 +136,10 @@ export function useSelectionStore(): SelectionContextValue {
  */
 export function deriveSelectionKind(
   selection: SelectionState,
-): 'widget' | 'node' | 'edge' | 'none' {
+): 'widget' | 'node' | 'edge' | 'cell' | 'none' {
+  if (selection.cellIds.length > 0) {
+    return 'cell';
+  }
   if (selection.nodeIds.length > 0) {
     return 'node';
   }
@@ -150,6 +157,9 @@ export function deriveSelectionKind(
  * @param selection
  */
 export function primarySelectionId(selection: SelectionState): string | undefined {
+  if (selection.cellIds[0]) {
+    return selection.cellIds[0];
+  }
   if (selection.nodeIds[0]) {
     return selection.nodeIds[0];
   }

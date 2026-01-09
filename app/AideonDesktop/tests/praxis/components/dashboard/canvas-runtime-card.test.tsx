@@ -17,6 +17,7 @@ vi.mock('praxis/widgets/graph-widget', () => ({
     onSelectionChange?: (selection: {
       nodeIds: string[];
       edgeIds: string[];
+      cellIds: string[];
       widgetId: string;
     }) => void;
   }) => (
@@ -33,7 +34,9 @@ vi.mock('praxis/widgets/graph-widget', () => ({
       <button data-testid="emit-error" onClick={() => onError?.('boom')} />
       <button
         data-testid="emit-selection"
-        onClick={() => onSelectionChange?.({ nodeIds: ['n1'], edgeIds: [], widgetId: 'w1' })}
+        onClick={() =>
+          onSelectionChange?.({ nodeIds: ['n1'], edgeIds: [], cellIds: [], widgetId: 'w1' })
+        }
       />
     </div>
   ),
@@ -55,7 +58,7 @@ describe('CanvasRuntimeCard', () => {
             view: { id: 'g1', name: 'Graph View', kind: 'graph', asOf: '2025-01-01T00:00:00Z' },
           },
         ]}
-        selection={{ nodeIds: [], edgeIds: [] }}
+        selection={{ nodeIds: [], edgeIds: [], cellIds: [] }}
         onSelectionChange={onSelectionChange}
       />,
     );
@@ -72,6 +75,7 @@ describe('CanvasRuntimeCard', () => {
     expect(onSelectionChange).toHaveBeenCalledWith({
       nodeIds: ['n1'],
       edgeIds: [],
+      cellIds: [],
       sourceWidgetId: 'w1',
     });
 
@@ -81,7 +85,7 @@ describe('CanvasRuntimeCard', () => {
 
   it('disables refresh when no widgets and increments reload version when clicked', () => {
     const { container, unmount } = render(
-      <CanvasRuntimeCard widgets={[]} selection={{ nodeIds: [], edgeIds: [] }} />,
+      <CanvasRuntimeCard widgets={[]} selection={{ nodeIds: [], edgeIds: [], cellIds: [] }} />,
     );
     const refreshButtons = [...container.querySelectorAll('button')].filter((button) =>
       /Refresh graph/i.test(button.textContent),
@@ -99,7 +103,7 @@ describe('CanvasRuntimeCard', () => {
             view: { id: 'g1', name: 'Graph View', kind: 'graph', asOf: '2025-01-01T00:00:00Z' },
           },
         ]}
-        selection={{ nodeIds: [], edgeIds: [] }}
+        selection={{ nodeIds: [], edgeIds: [], cellIds: [] }}
       />,
     );
     const refresh = [...container2.querySelectorAll('button')].find((button) =>

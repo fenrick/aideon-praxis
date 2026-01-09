@@ -1,4 +1,5 @@
 import type { WidgetSize } from 'aideon/canvas/types';
+import type { Layer } from 'dtos';
 import type {
   CatalogueViewDefinition,
   ChartViewDefinition,
@@ -7,10 +8,10 @@ import type {
 } from 'praxis/praxis-api';
 import type { PraxisCanvasWidget } from 'praxis/types';
 
-type GraphTemplateView = Omit<GraphViewDefinition, 'asOf' | 'scenario'>;
-type CatalogueTemplateView = Omit<CatalogueViewDefinition, 'asOf' | 'scenario'>;
-type MatrixTemplateView = Omit<MatrixViewDefinition, 'asOf' | 'scenario'>;
-type ChartTemplateView = Omit<ChartViewDefinition, 'asOf' | 'scenario'>;
+type GraphTemplateView = Omit<GraphViewDefinition, 'asOf' | 'scenario' | 'layer'>;
+type CatalogueTemplateView = Omit<CatalogueViewDefinition, 'asOf' | 'scenario' | 'layer'>;
+type MatrixTemplateView = Omit<MatrixViewDefinition, 'asOf' | 'scenario' | 'layer'>;
+type ChartTemplateView = Omit<ChartViewDefinition, 'asOf' | 'scenario' | 'layer'>;
 
 interface TemplateWidgetBase {
   id: string;
@@ -35,6 +36,7 @@ export interface CanvasTemplate {
 export interface TemplateContext {
   scenario?: string;
   asOf?: string;
+  layer?: Layer;
 }
 
 /**
@@ -47,28 +49,29 @@ export function instantiateTemplate(
   context: TemplateContext,
 ): PraxisCanvasWidget[] {
   const asOf = context.asOf ?? new Date().toISOString();
+  const layer = context.layer;
   return template.widgets.map((widget) => {
     if (widget.kind === 'graph') {
       return {
         ...widget,
-        view: { ...widget.view, asOf, scenario: context.scenario },
+        view: { ...widget.view, asOf, scenario: context.scenario, layer },
       } satisfies PraxisCanvasWidget;
     }
     if (widget.kind === 'catalogue') {
       return {
         ...widget,
-        view: { ...widget.view, asOf, scenario: context.scenario },
+        view: { ...widget.view, asOf, scenario: context.scenario, layer },
       } satisfies PraxisCanvasWidget;
     }
     if (widget.kind === 'matrix') {
       return {
         ...widget,
-        view: { ...widget.view, asOf, scenario: context.scenario },
+        view: { ...widget.view, asOf, scenario: context.scenario, layer },
       } satisfies PraxisCanvasWidget;
     }
     return {
       ...widget,
-      view: { ...widget.view, asOf, scenario: context.scenario },
+      view: { ...widget.view, asOf, scenario: context.scenario, layer },
     } satisfies PraxisCanvasWidget;
   });
 }
@@ -115,11 +118,14 @@ function convertWidgetToTemplate(widget: PraxisCanvasWidget): TemplateWidgetConf
  * Strip runtime-only fields from a view definition.
  * @param view - View definition including runtime fields.
  */
-function withoutRuntimeFields<T extends { asOf: string; scenario?: string }>(
+function withoutRuntimeFields<T extends { asOf: string; scenario?: string; layer?: string }>(
   view: T,
-): Omit<T, 'asOf' | 'scenario'> {
-  const entries = Object.entries(view).filter(([key]) => key !== 'asOf' && key !== 'scenario');
-  return Object.fromEntries(entries) as Omit<T, 'asOf' | 'scenario'>;
+): Omit<T, 'asOf' | 'scenario' | 'layer'> {
+  const rest: Partial<T> = { ...view };
+  delete rest.asOf;
+  delete rest.scenario;
+  delete rest.layer;
+  return rest as Omit<T, 'asOf' | 'scenario' | 'layer'>;
 }
 
 const GRAPH_OVERVIEW: GraphTemplateView = {

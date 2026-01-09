@@ -85,7 +85,7 @@ vi.mock('praxis/widgets/matrix-widget', () => ({
 
 describe('PraxisCanvasWorkspace', () => {
   it('renders widgets, reflects page breaks, and forwards view/error state', async () => {
-    const selection: SelectionState = { nodeIds: [], edgeIds: [] };
+    const selection: SelectionState = { nodeIds: [], edgeIds: [], cellIds: [] };
     const widgets: PraxisCanvasWidget[] = [
       { id: 'g1', kind: 'graph', title: 'Graph', view: {} } as unknown as PraxisCanvasWidget,
       {

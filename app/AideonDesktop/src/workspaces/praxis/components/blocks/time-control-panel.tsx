@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import type { Layer } from 'dtos';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
 import {
@@ -43,6 +44,7 @@ export function TimeControlPanel({
   state,
   actions,
 }: TimeControlPanelProperties) {
+  const layers: Layer[] = ['Plan', 'Actual'];
   const branchOptions = useMemo(
     () => state.branches.map((branch) => branch.name),
     [state.branches],
@@ -73,6 +75,28 @@ export function TimeControlPanel({
               {branchOptions.map((option) => (
                 <SelectItem key={option} value={option}>
                   {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </PanelField>
+        <PanelField label="Layer">
+          <Select
+            value={state.layer}
+            disabled={state.loading}
+            onValueChange={(value: string) => {
+              if (value === 'Plan' || value === 'Actual') {
+                actions.selectLayer(value);
+              }
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select layer" />
+            </SelectTrigger>
+            <SelectContent>
+              {layers.map((layer) => (
+                <SelectItem key={layer} value={layer}>
+                  {layer}
                 </SelectItem>
               ))}
             </SelectContent>

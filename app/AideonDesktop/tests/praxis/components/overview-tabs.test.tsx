@@ -18,6 +18,7 @@ const temporalState: TemporalPanelState = {
   ],
   commitId: 'c2',
   snapshot: { asOf: 'c2', nodes: 10, edges: 4, scenario: 'main' },
+  layer: 'Plan',
   loading: false,
   snapshotLoading: false,
   error: undefined,
@@ -28,6 +29,7 @@ const temporalState: TemporalPanelState = {
 const temporalActions: TemporalPanelActions = {
   selectBranch: vi.fn(() => Promise.resolve()),
   selectCommit: vi.fn(),
+  selectLayer: vi.fn(),
   refreshBranches: vi.fn(() => Promise.resolve()),
   mergeIntoMain: vi.fn(() => Promise.resolve()),
 };
@@ -39,7 +41,7 @@ describe('OverviewTabs', () => {
         state={temporalState}
         actions={temporalActions}
         widgets={[]}
-        selection={{ nodeIds: [], edgeIds: [], sourceWidgetId: undefined }}
+        selection={{ nodeIds: [], edgeIds: [], cellIds: [], sourceWidgetId: undefined }}
         onSelectionChange={vi.fn()}
         onRequestMetaModelFocus={vi.fn()}
         initialTab="activity"

@@ -14,6 +14,8 @@ interface TemplatePayload extends Partial<CanvasTemplate> {
   readonly id?: string;
   readonly name?: string;
   readonly documentId?: string;
+  readonly description?: string;
+  readonly widgets?: CanvasTemplate['widgets'];
 }
 
 export interface ProjectSummary {
@@ -25,6 +27,7 @@ export interface ProjectSummary {
 const COMMANDS = {
   listProjects: 'workspace.projects.list',
   listTemplates: 'workspace.templates.list',
+  saveTemplate: 'workspace.templates.save',
 } as const;
 
 export const PRAXIS_DOMAIN_IPC_COMMANDS = COMMANDS;
@@ -74,6 +77,29 @@ export async function listTemplatesFromHost(): Promise<CanvasTemplate[]> {
 }
 
 /**
+ * Persist a template snapshot to the host when running inside Tauri.
+ * @param template
+ */
+export async function saveTemplateToHost(template: CanvasTemplate): Promise<CanvasTemplate> {
+  if (!isTauri()) {
+    return template;
+  }
+  try {
+    const payload = await invokeIpc<TemplatePayload>(COMMANDS.saveTemplate, {
+      id: template.id,
+      documentId: template.documentId,
+      name: template.name,
+      description: template.description,
+      widgets: template.widgets,
+    });
+    return normaliseTemplate(payload);
+  } catch (error) {
+    toErrorMessage(error);
+    return template;
+  }
+}
+
+/**
  *
  * @param payload
  */
@@ -100,7 +126,7 @@ function normaliseTemplate(payload: TemplatePayload): CanvasTemplate {
   const id = payload.id ?? cryptoRandomId('template');
   return {
     id,
-    documentId: payload.documentId ?? `canvasdoc-${id}`,
+    documentId: payload.documentId ?? cryptoRandomId('canvasdoc'),
     name: payload.name?.trim() ?? fallback.name,
     description: payload.description ?? fallback.description,
     widgets:

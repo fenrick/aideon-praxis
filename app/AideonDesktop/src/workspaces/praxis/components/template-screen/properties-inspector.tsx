@@ -43,7 +43,7 @@ import {
 import { Switch } from 'design-system/components/ui/switch';
 import { Textarea } from 'design-system/components/ui/textarea';
 
-export type SelectionKind = 'widget' | 'node' | 'edge' | 'none';
+export type SelectionKind = 'widget' | 'node' | 'edge' | 'cell' | 'none';
 
 /**
  * Local form values stored for the inspector form.
@@ -330,6 +330,187 @@ function WidgetFormPanel({ form, copy }: WidgetFormPanelProperties) {
   );
 }
 
+interface NodeFormPanelProperties {
+  readonly form: UseFormReturn<FormValues>;
+  readonly typeLabel?: string;
+}
+
+/**
+ * Renders the accordion-backed form for a single node.
+ * @param root0 - Component props.
+ * @param root0.form - Hook form instance.
+ * @param root0.typeLabel - Optional node type label.
+ */
+function NodeFormPanel({ form, typeLabel }: NodeFormPanelProperties) {
+  return (
+    <Form {...form}>
+      <Accordion type="single" collapsible defaultValue="details" className="space-y-3">
+        <AccordionItem value="details" className="rounded-2xl border border-border/60">
+          <AccordionTrigger>Details</AccordionTrigger>
+          <AccordionContent className="space-y-4 pt-3">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Node name" {...field} />
+                  </FormControl>
+                  <FormDescription>Primary label shown on the canvas.</FormDescription>
+                </FormItem>
+              )}
+            />
+            <FormItem className="space-y-2">
+              <FormLabel>Type</FormLabel>
+              <FormControl>
+                <Input value={typeLabel ?? 'Unknown'} readOnly disabled />
+              </FormControl>
+              <FormDescription>Entity type assigned by the metamodel.</FormDescription>
+            </FormItem>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe this node" rows={3} {...field} />
+                  </FormControl>
+                  <FormDescription>Optional context for collaborators.</FormDescription>
+                </FormItem>
+              )}
+            />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </Form>
+  );
+}
+
+interface EdgeFormPanelProperties {
+  readonly form: UseFormReturn<FormValues>;
+  readonly typeLabel?: string;
+  readonly from?: string;
+  readonly to?: string;
+}
+
+/**
+ * Render editable fields for a selected edge.
+ * @param root0 - Component props.
+ * @param root0.form - Hook form instance.
+ * @param root0.typeLabel - Optional edge type label.
+ * @param root0.from - Source node id.
+ * @param root0.to - Target node id.
+ */
+function EdgeFormPanel({ form, typeLabel, from, to }: EdgeFormPanelProperties) {
+  return (
+    <Form {...form}>
+      <Accordion type="single" collapsible defaultValue="details" className="space-y-3">
+        <AccordionItem value="details" className="rounded-2xl border border-border/60">
+          <AccordionTrigger>Details</AccordionTrigger>
+          <AccordionContent className="space-y-4 pt-3">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Label</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Relationship label" {...field} />
+                  </FormControl>
+                  <FormDescription>Label shown on the edge.</FormDescription>
+                </FormItem>
+              )}
+            />
+            <FormItem className="space-y-2">
+              <FormLabel>Type</FormLabel>
+              <FormControl>
+                <Input value={typeLabel ?? 'Unknown'} readOnly disabled />
+              </FormControl>
+              <FormDescription>Relationship type from the metamodel.</FormDescription>
+            </FormItem>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormItem className="space-y-2">
+                <FormLabel>From</FormLabel>
+                <FormControl>
+                  <Input value={from ?? '—'} readOnly disabled />
+                </FormControl>
+              </FormItem>
+              <FormItem className="space-y-2">
+                <FormLabel>To</FormLabel>
+                <FormControl>
+                  <Input value={to ?? '—'} readOnly disabled />
+                </FormControl>
+              </FormItem>
+            </div>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe this relationship" rows={3} {...field} />
+                  </FormControl>
+                  <FormDescription>Optional context for collaborators.</FormDescription>
+                </FormItem>
+              )}
+            />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </Form>
+  );
+}
+
+interface CellDetailsPanelProperties {
+  readonly selectionId?: string;
+}
+
+/**
+ * Render read-only details for a selected matrix cell.
+ * @param root0 - Component props.
+ * @param root0.selectionId - Cell identifier encoded as rowId::columnId.
+ */
+function CellDetailsPanel({ selectionId }: CellDetailsPanelProperties) {
+  const parsed = parseCellSelectionId(selectionId);
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Cell edits are coming next. For now, review row/column context.
+      </p>
+      <div className="grid gap-3">
+        <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Row</p>
+          <p className="text-sm font-semibold">{parsed?.rowId ?? '—'}</p>
+        </div>
+        <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Column</p>
+          <p className="text-sm font-semibold">{parsed?.columnId ?? '—'}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ *
+ * @param selectionId
+ */
+function parseCellSelectionId(
+  selectionId?: string,
+): { rowId: string; columnId: string } | undefined {
+  if (!selectionId) {
+    return undefined;
+  }
+  const [rowId, columnId] = selectionId.split('::');
+  if (!rowId || !columnId) {
+    return undefined;
+  }
+  return { rowId, columnId };
+}
+
 export interface PropertiesInspectorProperties {
   readonly selection: SelectionState;
   readonly selectionKind: SelectionKind;
@@ -365,13 +546,26 @@ export function PropertiesInspector({
   error,
 }: PropertiesInspectorProperties) {
   const copy = templateScreenCopy.properties;
-  const selectionCount = selection.nodeIds.length + selection.edgeIds.length;
+  const selectionCount =
+    selection.nodeIds.length + selection.edgeIds.length + selection.cellIds.length;
+  const hasSingleSelection = selectionCount === 1;
   const showWidgetForm = selectionKind === 'widget' && !!selectionId;
-  const showMultiState = !showWidgetForm && selectionCount > 0;
-  const showEmptyState = !showWidgetForm && !showMultiState;
+  const showNodeForm = selectionKind === 'node' && !!selectionId && hasSingleSelection;
+  const showEdgeForm = selectionKind === 'edge' && !!selectionId && hasSingleSelection;
+  const showCellForm = selectionKind === 'cell' && !!selectionId && hasSingleSelection;
+  const showMultiState =
+    !showWidgetForm && !showNodeForm && !showEdgeForm && !showCellForm && selectionCount > 1;
+  const showEmptyState =
+    !showWidgetForm && !showNodeForm && !showEdgeForm && !showCellForm && selectionCount === 0;
   let badgeLabel = 'Page';
   if (showWidgetForm) {
     badgeLabel = 'Widget';
+  } else if (showNodeForm) {
+    badgeLabel = 'Node';
+  } else if (showEdgeForm) {
+    badgeLabel = 'Edge';
+  } else if (showCellForm) {
+    badgeLabel = 'Cell';
   } else if (showMultiState) {
     badgeLabel = 'Multi';
   }
@@ -380,11 +574,28 @@ export function PropertiesInspector({
     if (showEmptyState) {
       return 'Select a widget to edit its data, display, or interactions.';
     }
+    if (showNodeForm) {
+      return 'Edit node fields and apply a change task to the twin.';
+    }
+    if (showEdgeForm) {
+      return 'Edit relationship details and apply a change task to the twin.';
+    }
+    if (showCellForm) {
+      return 'Inspect the selected matrix cell.';
+    }
     if (showMultiState) {
       return `${selectionCount.toString()} items selected. Use bulk actions to keep the storyboard tidy.`;
     }
     return copy.widgetHeading;
-  }, [copy.widgetHeading, selectionCount, showEmptyState, showMultiState]);
+  }, [
+    copy.widgetHeading,
+    selectionCount,
+    showEdgeForm,
+    showEmptyState,
+    showCellForm,
+    showMultiState,
+    showNodeForm,
+  ]);
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -400,7 +611,7 @@ export function PropertiesInspector({
   });
 
   useEffect(() => {
-    if (!showWidgetForm) {
+    if (!showWidgetForm && !showNodeForm && !showEdgeForm && !showCellForm) {
       return;
     }
     form.reset({
@@ -413,15 +624,17 @@ export function PropertiesInspector({
       showLabels: true,
       interactionMode: 'default',
     });
-  }, [form, properties, selectionId, showWidgetForm]);
+  }, [form, properties, selectionId, showCellForm, showEdgeForm, showNodeForm, showWidgetForm]);
 
   const submit = form.handleSubmit(async (values) => {
-    await onSave?.({
-      name: values.name,
-      dataSource: values.dataSource,
-      layout: values.layout,
-      description: values.description,
-    });
+    if (showWidgetForm || showNodeForm || showEdgeForm) {
+      await onSave?.({
+        name: values.name,
+        dataSource: values.dataSource,
+        layout: values.layout,
+        description: values.description,
+      });
+    }
   });
 
   const handleSave = () => {
@@ -430,8 +643,10 @@ export function PropertiesInspector({
     });
   };
 
+  const showSaveActions = showWidgetForm || showNodeForm || showEdgeForm;
+
   let footer: ReactNode | undefined;
-  if (showWidgetForm) {
+  if (showSaveActions) {
     footer = (
       <CardFooter className="flex flex-wrap items-center gap-4">
         <Button size="sm" onClick={handleSave} disabled={saving}>
@@ -489,6 +704,19 @@ export function PropertiesInspector({
           {showMultiState && <MultiSelectionPanel selectionCount={selectionCount} />}
 
           {showWidgetForm && <WidgetFormPanel form={form} copy={copy} />}
+
+          {showNodeForm && <NodeFormPanel form={form} typeLabel={properties?.type} />}
+
+          {showEdgeForm && (
+            <EdgeFormPanel
+              form={form}
+              typeLabel={properties?.type}
+              from={properties?.from}
+              to={properties?.to}
+            />
+          )}
+
+          {showCellForm && <CellDetailsPanel selectionId={selectionId} />}
         </CardContent>
       </ScrollArea>
 

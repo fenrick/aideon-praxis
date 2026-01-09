@@ -81,6 +81,8 @@ describe('domain-data normalization', () => {
 
     const templates = await listTemplatesFromHost();
     expect(templates[0]?.id).toBe('template-uuid-2');
+    expect(templates[0]?.documentId).toBe('canvasdoc-uuid-2');
+    expect(templates[0]?.documentId).not.toBe(templates[0]?.id);
     expect(templates[0]?.name).toBe(BUILT_IN_TEMPLATES[0]?.name);
     expect(templates[0]?.widgets).toEqual(BUILT_IN_TEMPLATES[0]?.widgets);
   });

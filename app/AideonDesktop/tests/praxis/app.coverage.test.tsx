@@ -63,6 +63,7 @@ vi.mock('praxis/components/template-screen/overview-tabs', () => ({
     onSelectionChange: (selection: {
       nodeIds: string[];
       edgeIds: string[];
+      cellIds: string[];
       sourceWidgetId?: string;
     }) => void;
     reloadSignal?: number;
@@ -75,7 +76,12 @@ vi.mock('praxis/components/template-screen/overview-tabs', () => ({
       <button
         data-testid="select-node"
         onClick={() => {
-          onSelectionChange({ nodeIds: ['n1'], edgeIds: [], sourceWidgetId: undefined });
+          onSelectionChange({
+            nodeIds: ['n1'],
+            edgeIds: [],
+            cellIds: [],
+            sourceWidgetId: undefined,
+          });
         }}
       >
         select
@@ -100,7 +106,8 @@ vi.mock('praxis/components/template-screen/properties-inspector', () => ({
   }) => (
     <div data-testid="inspector">
       <div data-testid="selection-kind">
-        {selectionKind}:{selectionId ?? ''}:{selection.nodeIds.length + selection.edgeIds.length}
+        {selectionKind}:{selectionId ?? ''}:
+        {selection.nodeIds.length + selection.edgeIds.length + selection.cellIds.length}
       </div>
       <button
         data-testid="inspector-save"
@@ -176,6 +183,7 @@ vi.mock('praxis/domain-data', () => ({
     .mockResolvedValue([
       { id: 't1', documentId: 'canvasdoc-t1', name: 'Template 1', description: '', widgets: [] },
     ]),
+  saveTemplateToHost: vi.fn((template) => Promise.resolve(template)),
 }));
 vi.mock('praxis/platform', () => ({ isTauri: vi.fn(() => false) }));
 const useTemporalPanelMock = vi.hoisted(() =>
@@ -204,12 +212,14 @@ describe('PraxisWorkspaceSurface (coverage)', () => {
     loading: false,
     snapshotLoading: false,
     merging: false,
+    layer: 'Plan',
   };
 
   const baseTemporalActions: TemporalPanelActions = {
     refreshBranches: vi.fn(() => Promise.resolve()),
     selectCommit: vi.fn(),
     selectBranch: vi.fn(() => Promise.resolve()),
+    selectLayer: vi.fn(),
     mergeIntoMain: vi.fn(() => Promise.resolve()),
   };
 
@@ -239,6 +249,7 @@ describe('PraxisWorkspaceSurface (coverage)', () => {
     expect(onSelectionChange).toHaveBeenCalledWith({
       nodeIds: ['n1'],
       edgeIds: [],
+      cellIds: [],
       sourceWidgetId: undefined,
     });
 

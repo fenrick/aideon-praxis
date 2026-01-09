@@ -74,14 +74,23 @@ export function MatrixWidget({
   }, [loadView, reloadVersion]);
 
   const cellMap = useMemo(() => buildCellIndex(model?.cells ?? []), [model?.cells]);
-  const activeIds = useMemo(
+  const activeNodeIds = useMemo(
     () => (selection?.nodeIds ? new Set(selection.nodeIds) : new Set<string>()),
     [selection?.nodeIds],
   );
+  const activeCellIds = useMemo(
+    () => (selection?.cellIds ? new Set(selection.cellIds) : new Set<string>()),
+    [selection?.cellIds],
+  );
 
   const emitSelection = useCallback(
-    (nodeIds: string[]) => {
-      onSelectionChange?.({ widgetId: widget.id, nodeIds, edgeIds: [] });
+    (payload: { nodeIds?: string[]; cellIds?: string[] }) => {
+      onSelectionChange?.({
+        widgetId: widget.id,
+        nodeIds: payload.nodeIds ?? [],
+        edgeIds: [],
+        cellIds: payload.cellIds ?? [],
+      });
     },
     [onSelectionChange, widget.id],
   );
@@ -96,15 +105,16 @@ export function MatrixWidget({
           rows={model.rows}
           columns={model.columns}
           cellMap={cellMap}
-          activeIds={activeIds}
+          activeNodeIds={activeNodeIds}
+          activeCellIds={activeCellIds}
           onRowSelect={(rowId) => {
-            emitSelection([rowId]);
+            emitSelection({ nodeIds: [rowId] });
           }}
           onColumnSelect={(columnId) => {
-            emitSelection([columnId]);
+            emitSelection({ nodeIds: [columnId] });
           }}
           onCellSelect={(rowId, columnId) => {
-            emitSelection([rowId, columnId]);
+            emitSelection({ cellIds: [cellKey(rowId, columnId)] });
           }}
         />
         <Legend />
@@ -137,7 +147,8 @@ export function MatrixWidget({
  * @param parameters.rows
  * @param parameters.columns
  * @param parameters.cellMap
- * @param parameters.activeIds
+ * @param parameters.activeNodeIds
+ * @param parameters.activeCellIds
  * @param parameters.onRowSelect
  * @param parameters.onColumnSelect
  * @param parameters.onCellSelect
@@ -146,13 +157,22 @@ function MatrixTable(parameters: {
   readonly rows: MatrixAxis[];
   readonly columns: MatrixAxis[];
   readonly cellMap: Map<string, MatrixCell>;
-  readonly activeIds: Set<string>;
+  readonly activeNodeIds: Set<string>;
+  readonly activeCellIds: Set<string>;
   readonly onRowSelect: (rowId: string) => void;
   readonly onColumnSelect: (columnId: string) => void;
   readonly onCellSelect: (rowId: string, columnId: string) => void;
 }) {
-  const { rows, columns, cellMap, activeIds, onRowSelect, onColumnSelect, onCellSelect } =
-    parameters;
+  const {
+    rows,
+    columns,
+    cellMap,
+    activeNodeIds,
+    activeCellIds,
+    onRowSelect,
+    onColumnSelect,
+    onCellSelect,
+  } = parameters;
   if (rows.length === 0 || columns.length === 0) {
     return <Placeholder message="Add rows and columns to visualise relationships" />;
   }
@@ -170,7 +190,7 @@ function MatrixTable(parameters: {
                   type="button"
                   className={cn(
                     'w-full rounded-lg px-2 py-1 text-xs font-medium transition',
-                    activeIds.has(column.id)
+                    activeNodeIds.has(column.id)
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:bg-muted/40',
                   )}
@@ -187,7 +207,7 @@ function MatrixTable(parameters: {
         </TableHeader>
         <TableBody>
           {rows.map((row) => (
-            <TableRow key={row.id} data-state={activeIds.has(row.id) ? 'selected' : undefined}>
+            <TableRow key={row.id} data-state={activeNodeIds.has(row.id) ? 'selected' : undefined}>
               <TableHead className="text-left text-sm font-semibold normal-case">
                 <button
                   type="button"
@@ -204,7 +224,10 @@ function MatrixTable(parameters: {
                 <MatrixCellView
                   key={`${row.id}-${column.id}`}
                   cell={cellMap.get(cellKey(row.id, column.id))}
-                  active={activeIds.has(row.id) && activeIds.has(column.id)}
+                  active={
+                    activeCellIds.has(cellKey(row.id, column.id)) ||
+                    (activeNodeIds.has(row.id) && activeNodeIds.has(column.id))
+                  }
                   onClick={() => {
                     onCellSelect(row.id, column.id);
                   }}

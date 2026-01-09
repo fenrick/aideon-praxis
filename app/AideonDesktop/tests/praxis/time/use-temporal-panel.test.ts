@@ -2,6 +2,7 @@ import { act, createElement, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { Layer } from 'dtos';
 import type {
   StateAtSnapshot,
   TemporalBranchSummary,
@@ -40,7 +41,11 @@ async function waitForState(predicate: () => boolean, retries = 10): Promise<voi
 
 type BranchesMock = () => Promise<TemporalBranchSummary[]>;
 type CommitsMock = (branch: string) => Promise<TemporalCommitSummary[]>;
-type SnapshotMock = (request: { asOf: string; scenario?: string }) => Promise<StateAtSnapshot>;
+type SnapshotMock = (request: {
+  asOf: string;
+  scenario?: string;
+  layer?: Layer;
+}) => Promise<StateAtSnapshot>;
 type DiffMock = (request: { from: string; to: string }) => Promise<TemporalDiffSnapshot>;
 type MergeMock = (request: {
   source: string;
@@ -105,6 +110,7 @@ const SNAPSHOTS: Record<string, StateAtSnapshot> = {
     asOf: 'commit-main-001',
     scenario: 'main',
     confidence: 0.9,
+    layer: 'Plan',
     nodes: 12,
     edges: 18,
   },
@@ -112,6 +118,7 @@ const SNAPSHOTS: Record<string, StateAtSnapshot> = {
     asOf: 'commit-main-002',
     scenario: 'main',
     confidence: 0.95,
+    layer: 'Plan',
     nodes: 20,
     edges: 28,
   },
@@ -119,6 +126,7 @@ const SNAPSHOTS: Record<string, StateAtSnapshot> = {
     asOf: 'commit-feature-001',
     scenario: 'chronaplay',
     confidence: 0.8,
+    layer: 'Plan',
     nodes: 22,
     edges: 31,
   },
@@ -208,13 +216,15 @@ describe('useTemporalPanel', () => {
       return Promise.resolve([]);
     });
 
-    getSnapshotSpy.mockImplementation(({ asOf }: { asOf: string; scenario?: string }) => {
-      const snapshot = SNAPSHOT_MAP.get(asOf);
-      if (!snapshot) {
-        return Promise.reject(new Error(`Missing snapshot for ${asOf}`));
-      }
-      return Promise.resolve(snapshot);
-    });
+    getSnapshotSpy.mockImplementation(
+      ({ asOf }: { asOf: string; scenario?: string; layer?: Layer }) => {
+        const snapshot = SNAPSHOT_MAP.get(asOf);
+        if (!snapshot) {
+          return Promise.reject(new Error(`Missing snapshot for ${asOf}`));
+        }
+        return Promise.resolve(snapshot);
+      },
+    );
 
     getDiffSpy.mockResolvedValue({
       from: 'commit-main-001',
@@ -265,7 +275,11 @@ describe('useTemporalPanel', () => {
 
       await waitForState(() => harness.state.commitId === 'commit-main-001');
       await waitForState(() => harness.state.snapshot?.asOf === 'commit-main-001');
-      expect(getSnapshotSpy).toHaveBeenCalledWith({ asOf: 'commit-main-001', scenario: 'main' });
+      expect(getSnapshotSpy).toHaveBeenCalledWith({
+        asOf: 'commit-main-001',
+        scenario: 'main',
+        layer: 'Plan',
+      });
       const expectedSnapshot = SNAPSHOTS['commit-main-001'];
       if (!expectedSnapshot) {
         throw new Error('Missing snapshot fixture.');
@@ -391,6 +405,25 @@ describe('useTemporalPanel', () => {
       });
       await waitForState(() => harness.state.commitId === undefined);
       expect(harness.state.snapshot).toBeUndefined();
+    } finally {
+      harness.unmount();
+    }
+  });
+
+  it('reloads snapshot when switching layers', async () => {
+    const harness = renderTemporalPanelHook();
+    try {
+      await waitForState(() => harness.state.commitId === 'commit-main-002');
+      getSnapshotSpy.mockClear();
+      act(() => {
+        harness.actions.selectLayer('Actual');
+      });
+      await waitForState(() => harness.state.layer === 'Actual');
+      expect(getSnapshotSpy).toHaveBeenCalledWith({
+        asOf: 'commit-main-002',
+        scenario: 'main',
+        layer: 'Actual',
+      });
     } finally {
       harness.unmount();
     }

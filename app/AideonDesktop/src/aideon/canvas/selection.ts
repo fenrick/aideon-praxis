@@ -22,6 +22,7 @@ export function fromWidgetSelection(selection?: WidgetSelection): SelectionState
     sourceWidgetId: selection.widgetId,
     nodeIds: dedupeIds(selection.nodeIds),
     edgeIds: dedupeIds(selection.edgeIds),
+    cellIds: dedupeIds(selection.cellIds),
   };
 }
 
@@ -34,7 +35,11 @@ export function isSelectionEmpty(selection?: SelectionState): boolean {
   if (!selection) {
     return true;
   }
-  return selection.nodeIds.length === 0 && selection.edgeIds.length === 0;
+  return (
+    selection.nodeIds.length === 0 &&
+    selection.edgeIds.length === 0 &&
+    selection.cellIds.length === 0
+  );
 }
 
 /**
@@ -42,10 +47,16 @@ export function isSelectionEmpty(selection?: SelectionState): boolean {
  * @param selection selection to inspect.
  * @returns object containing node and edge counts (defaults to zero).
  */
-export function selectionCounts(selection?: SelectionState): { nodes: number; edges: number } {
+export function selectionCounts(selection?: SelectionState): {
+  nodes: number;
+  edges: number;
+  cells: number;
+} {
+  const resolved = selection ?? EMPTY_SELECTION;
   return {
-    nodes: selection?.nodeIds.length ?? 0,
-    edges: selection?.edgeIds.length ?? 0,
+    nodes: resolved.nodeIds.length,
+    edges: resolved.edgeIds.length,
+    cells: resolved.cellIds.length,
   };
 }
 
@@ -55,16 +66,20 @@ export function selectionCounts(selection?: SelectionState): { nodes: number; ed
  * @returns sentence fragment describing counts (e.g., "2 nodes, 1 edge").
  */
 export function selectionSummary(selection?: SelectionState): string {
-  if (isSelectionEmpty(selection)) {
+  const { nodes, edges, cells } = selectionCounts(selection);
+  if (nodes + edges + cells === 0) {
     return 'No selection';
   }
-  const { nodes, edges } = selectionCounts(selection);
-  const parts: string[] = [];
-  if (nodes > 0) {
-    parts.push(`${nodes.toString()} ${nodes === 1 ? 'node' : 'nodes'}`);
-  }
-  if (edges > 0) {
-    parts.push(`${edges.toString()} ${edges === 1 ? 'edge' : 'edges'}`);
-  }
-  return parts.join(', ');
+  const parts = [
+    ['node', nodes],
+    ['edge', edges],
+    ['cell', cells],
+  ] as const;
+  return parts
+    .filter(([, count]) => count > 0)
+    .map(([label, count]) => {
+      const noun = count === 1 ? label : `${label}s`;
+      return `${count.toString()} ${noun}`;
+    })
+    .join(', ');
 }

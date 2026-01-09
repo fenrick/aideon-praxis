@@ -3,6 +3,7 @@ import type {
   CanvasLayoutSnapshot,
   GraphLayoutGetRequest,
   GraphLayoutSnapshot,
+  Layer,
   MetaModelDocument,
   TemporalDiffParameters,
   TemporalDiffSnapshot,
@@ -67,6 +68,7 @@ interface ViewDefinitionBase {
   asOf: string;
   scenario?: string;
   confidence?: number;
+  layer?: Layer;
   filters?: ViewFilters;
 }
 
@@ -111,6 +113,7 @@ export interface ViewMetadata {
   name: string;
   asOf: string;
   scenario?: string;
+  layer?: Layer;
   fetchedAt: string;
   source: 'host' | 'mock';
 }
@@ -320,6 +323,7 @@ export type PraxisOperation =
   | { kind: 'updateNode'; node: TwinNode }
   | { kind: 'deleteNode'; nodeId: string }
   | { kind: 'createEdge'; edge: TwinEdge }
+  | { kind: 'updateEdge'; edge: TwinEdge }
   | { kind: 'deleteEdge'; edgeId: string };
 
 export interface OperationBatchResult {
@@ -491,6 +495,7 @@ export async function getStateAtSnapshot(request: StateAtRequest): Promise<State
     ...snapshot,
     scenario: snapshot.scenario ?? undefined,
     confidence: snapshot.confidence ?? undefined,
+    layer: snapshot.layer ?? undefined,
   };
 }
 
@@ -548,11 +553,14 @@ export async function mergeTemporalBranches(request: {
  * Apply a batch of graph operations; host handles commit creation.
  * Falls back to a deterministic mock commit in dev.
  * @param operations list of operations to apply.
+ * @param options optional context (e.g. branch/scenario).
+ * @param options.branch
  */
 export async function applyOperations(
   operations: PraxisOperation[],
+  options?: { branch?: string },
 ): Promise<OperationBatchResult> {
-  return callOrMock(COMMANDS.applyOperations, { operations }, () =>
+  return callOrMock(COMMANDS.applyOperations, { operations, branch: options?.branch }, () =>
     mockApplyOperations(operations),
   );
 }
@@ -963,6 +971,7 @@ function mockStateAt(request: StateAtRequest): StateAtSnapshot {
     asOf,
     scenario,
     confidence: request.confidence ?? undefined,
+    layer: request.layer ?? undefined,
     nodes,
     edges,
   };
@@ -1015,6 +1024,7 @@ function buildMetadata(definition: ViewDefinitionBase): ViewMetadata {
     name: definition.name,
     asOf: definition.asOf,
     scenario: definition.scenario,
+    layer: definition.layer,
     fetchedAt: nowIso(),
     source: isTauri() ? 'host' : 'mock',
   };
@@ -1056,6 +1066,7 @@ function serializeStateAtArguments(request: StateAtRequest): Record<string, unkn
     asOf: { id: request.asOf },
     scenario: request.scenario ?? undefined,
     confidence: request.confidence ?? undefined,
+    layer: request.layer ?? undefined,
   };
 }
 

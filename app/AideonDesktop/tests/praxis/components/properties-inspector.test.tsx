@@ -4,16 +4,41 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PropertiesInspector } from 'praxis/components/template-screen/properties-inspector';
 
-const emptySelection: SelectionState = { sourceWidgetId: undefined, nodeIds: [], edgeIds: [] };
+const emptySelection: SelectionState = {
+  sourceWidgetId: undefined,
+  nodeIds: [],
+  edgeIds: [],
+  cellIds: [],
+};
 const widgetSelection: SelectionState = {
   sourceWidgetId: 'widget-1',
   nodeIds: [],
   edgeIds: [],
+  cellIds: [],
 };
 const nodeSelection: SelectionState = {
   sourceWidgetId: undefined,
   nodeIds: ['n1'],
   edgeIds: [],
+  cellIds: [],
+};
+const edgeSelection: SelectionState = {
+  sourceWidgetId: undefined,
+  nodeIds: [],
+  edgeIds: ['e1'],
+  cellIds: [],
+};
+const cellSelection: SelectionState = {
+  sourceWidgetId: undefined,
+  nodeIds: [],
+  edgeIds: [],
+  cellIds: ['row-1::col-1'],
+};
+const multiSelection: SelectionState = {
+  sourceWidgetId: undefined,
+  nodeIds: ['n1', 'n2'],
+  edgeIds: [],
+  cellIds: [],
 };
 
 describe('PropertiesInspector', () => {
@@ -44,10 +69,55 @@ describe('PropertiesInspector', () => {
   });
 
   it('shows bulk action controls when non-widget items are selected', () => {
-    render(<PropertiesInspector selectionKind="node" selection={nodeSelection} />);
+    render(<PropertiesInspector selectionKind="node" selection={multiSelection} />);
     expect(screen.getByRole('button', { name: /align/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /distribute/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+  });
+
+  it('renders node fields when a node is selected', () => {
+    render(
+      <PropertiesInspector
+        selectionKind="node"
+        selectionId="n1"
+        selection={nodeSelection}
+        properties={{ name: 'Node 1', type: 'Capability' }}
+      />,
+    );
+
+    expect(screen.getByDisplayValue(/Node 1/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/Capability/i)).toBeInTheDocument();
+  });
+
+  it('renders edge fields when an edge is selected', () => {
+    render(
+      <PropertiesInspector
+        selectionKind="edge"
+        selectionId="e1"
+        selection={edgeSelection}
+        properties={{ name: 'Depends on', type: 'depends_on', from: 'n1', to: 'n2' }}
+      />,
+    );
+
+    expect(screen.getByDisplayValue(/Depends on/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/depends_on/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/n1/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/n2/i)).toBeInTheDocument();
+  });
+
+  it('renders cell context when a cell is selected', () => {
+    render(
+      <PropertiesInspector
+        selectionKind="cell"
+        selectionId="row-1::col-1"
+        selection={cellSelection}
+      />,
+    );
+
+    expect(screen.getByText(/^Row$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Column$/i)).toBeInTheDocument();
+    expect(screen.getByText(/row-1/i)).toBeInTheDocument();
+    expect(screen.getByText(/col-1/i)).toBeInTheDocument();
   });
 
   it('invokes save/reset callbacks and renders error state for a widget', async () => {
