@@ -1,10 +1,10 @@
 //! Praxis API-facing DTOs and Tauri command handlers bridging React IPC calls.
 
+use aideon_praxis::GraphSnapshot;
+use aideon_praxis::temporal::{EdgeVersion, NodeVersion};
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value, json};
+use serde_json::{Map, Value};
 use time::{OffsetDateTime, format_description::well_known::Rfc3339};
-
-use crate::ipc::{HostError, IpcRequest, IpcResponse};
 
 include!("commands.rs");
 include!("view_types.rs");

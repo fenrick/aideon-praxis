@@ -88,6 +88,7 @@ async fn temporal_command_helpers_cover_core_flows() {
             as_of: CommitRef::Id(expanded.clone()),
             scenario: Some("main".into()),
             confidence: None,
+            layer: None,
         },
     )
     .await
@@ -198,6 +199,7 @@ async fn temporal_wrapped_commands_cover_ipc_surface() {
             as_of: CommitRef::Id(expanded.clone()),
             scenario: Some("main".into()),
             confidence: None,
+            layer: None,
         }),
     )
     .await

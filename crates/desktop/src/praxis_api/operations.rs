@@ -5,6 +5,7 @@ pub enum PraxisOperation {
     UpdateNode { node: TwinNode },
     DeleteNode { node_id: String },
     CreateEdge { edge: TwinEdge },
+    UpdateEdge { edge: TwinEdge },
     DeleteEdge { edge_id: String },
 }
 
@@ -22,7 +23,7 @@ impl OperationBatchResult {
     fn accepted(commit_id: String) -> Self {
         Self {
             accepted: true,
-            message: Some("mock commit created".into()),
+            message: Some("commit created".into()),
             commit_id: Some(commit_id),
         }
     }

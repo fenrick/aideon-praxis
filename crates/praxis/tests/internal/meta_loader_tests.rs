@@ -37,11 +37,13 @@ fn merge_documents_rejects_version_mismatch() {
 fn merge_documents_overrides_types_and_relationships_by_id() {
     let base_type = MetaType {
         id: "Capability".into(),
+        uuid: None,
         label: Some("Capability".into()),
         category: None,
         extends: None,
         attributes: vec![MetaAttribute {
             name: "name".into(),
+            uuid: None,
             value_type: MetaAttributeKind::String,
             required: true,
             enum_values: vec![],
@@ -50,11 +52,13 @@ fn merge_documents_overrides_types_and_relationships_by_id() {
     };
     let overlay_type = MetaType {
         id: "Capability".into(),
+        uuid: None,
         label: Some("Capability (override)".into()),
         category: None,
         extends: None,
         attributes: vec![MetaAttribute {
             name: "owner".into(),
+            uuid: None,
             value_type: MetaAttributeKind::String,
             required: false,
             enum_values: vec![],
@@ -63,6 +67,7 @@ fn merge_documents_overrides_types_and_relationships_by_id() {
     };
     let base_rel = MetaRelationship {
         id: "supports".into(),
+        uuid: None,
         label: None,
         from: vec!["Capability".into()],
         to: vec!["Capability".into()],
@@ -72,6 +77,7 @@ fn merge_documents_overrides_types_and_relationships_by_id() {
     };
     let overlay_rel = MetaRelationship {
         id: "supports".into(),
+        uuid: None,
         label: Some("Supports".into()),
         from: vec!["Capability".into()],
         to: vec!["Capability".into()],
@@ -90,4 +96,43 @@ fn merge_documents_overrides_types_and_relationships_by_id() {
     );
     assert_eq!(merged.relationships.len(), 1);
     assert_eq!(merged.relationships[0].directed, Some(false));
+}
+
+#[test]
+fn embedded_core_has_stable_uuids() {
+    let doc = load_document(&MetaModelSource::EmbeddedCore).expect("core meta");
+    for ty in &doc.types {
+        assert!(
+            ty.uuid.as_deref().map(looks_like_uuid).unwrap_or(false),
+            "type {} missing uuid",
+            ty.id
+        );
+        for attr in &ty.attributes {
+            assert!(
+                attr.uuid.as_deref().map(looks_like_uuid).unwrap_or(false),
+                "type {} attribute {} missing uuid",
+                ty.id,
+                attr.name
+            );
+        }
+    }
+    for rel in &doc.relationships {
+        assert!(
+            rel.uuid.as_deref().map(looks_like_uuid).unwrap_or(false),
+            "relationship {} missing uuid",
+            rel.id
+        );
+        for attr in &rel.attributes {
+            assert!(
+                attr.uuid.as_deref().map(looks_like_uuid).unwrap_or(false),
+                "relationship {} attribute {} missing uuid",
+                rel.id,
+                attr.name
+            );
+        }
+    }
+}
+
+fn looks_like_uuid(value: &str) -> bool {
+    value.len() == 36 && value.matches('-').count() == 4
 }

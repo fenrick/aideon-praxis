@@ -57,6 +57,7 @@ async fn merge_creates_commit_when_no_conflicts() {
             merged_id.clone(),
             Some("main".into()),
             None,
+            None,
         ))
         .await
         .expect("merged state");

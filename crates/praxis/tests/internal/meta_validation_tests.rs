@@ -14,6 +14,7 @@ fn rules() -> AttributeRuleSet {
 fn string_attr(name: &str, required: bool) -> MetaAttribute {
     MetaAttribute {
         name: name.into(),
+        uuid: None,
         value_type: MetaAttributeKind::String,
         required,
         enum_values: vec![],
@@ -23,6 +24,7 @@ fn string_attr(name: &str, required: bool) -> MetaAttribute {
 fn enum_attr(name: &str, variants: &[&str]) -> MetaAttribute {
     MetaAttribute {
         name: name.into(),
+        uuid: None,
         value_type: MetaAttributeKind::Enum,
         required: true,
         enum_values: variants.iter().map(|v| (*v).to_string()).collect(),

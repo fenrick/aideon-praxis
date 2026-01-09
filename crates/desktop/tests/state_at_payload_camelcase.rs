@@ -7,6 +7,7 @@ fn state_at_result_camelcase_roundtrip() {
         "asOf": "commit-001",
         "scenario": null,
         "confidence": null,
+        "layer": "Plan",
         "nodes": 7,
         "edges": 11
     }"#;
@@ -17,6 +18,7 @@ fn state_at_result_camelcase_roundtrip() {
     // Outgoing JSON must keep camelCase
     let out = serde_json::to_string(&v).expect("serialize");
     assert!(out.contains("\"asOf\""), "must serialize camelCase asOf");
+    assert!(out.contains("\"layer\":\"Plan\""));
     assert!(out.contains("\"nodes\":7"));
     assert!(out.contains("\"edges\":11"));
 }

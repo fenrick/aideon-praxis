@@ -5,11 +5,11 @@
 //! orchestrates Praxis Engine with Chrona/Metis/Continuum/Mneme.
 
 pub mod canvas;
-pub mod graph_layout;
 mod dataset;
 pub mod engine;
 mod error;
 mod graph;
+pub mod graph_layout;
 pub mod meta;
 mod meta_seed;
 pub mod store;

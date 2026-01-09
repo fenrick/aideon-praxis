@@ -22,6 +22,7 @@ fn registry() -> MetaModelRegistry {
         types: vec![
             MetaType {
                 id: "A".into(),
+                uuid: None,
                 label: None,
                 category: None,
                 extends: None,
@@ -30,6 +31,7 @@ fn registry() -> MetaModelRegistry {
             },
             MetaType {
                 id: "B".into(),
+                uuid: None,
                 label: None,
                 category: None,
                 extends: None,
@@ -39,6 +41,7 @@ fn registry() -> MetaModelRegistry {
         ],
         relationships: vec![MetaRelationship {
             id: "rel".into(),
+            uuid: None,
             label: None,
             from: vec!["A".into()],
             to: vec!["B".into()],

@@ -8,6 +8,7 @@ fn app_registers_core_ipc_commands() {
         "crate::health::system_worker_health",
         "crate::workspace::workspace_projects_list",
         "crate::workspace::workspace_templates_list",
+        "crate::workspace::workspace_templates_save",
         "crate::temporal::praxis_metamodel_get",
         "crate::scene::praxis_canvas_layout_get",
         "crate::scene::praxis_canvas_layout_save",

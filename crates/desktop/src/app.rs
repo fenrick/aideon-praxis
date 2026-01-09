@@ -198,8 +198,10 @@ pub fn run() {
             crate::windows::system_window_open,
             crate::workspace::list_projects,
             crate::workspace::list_templates,
+            crate::workspace::save_template,
             crate::workspace::workspace_projects_list,
             crate::workspace::workspace_templates_list,
+            crate::workspace::workspace_templates_save,
             crate::setup::get_setup_state,
             crate::setup::system_setup_state
         ])

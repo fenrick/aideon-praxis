@@ -222,6 +222,7 @@ Praxis expresses metamodel and all modelling operations using Mneme’s types/fi
 
 All master types, domain types, fields, and edge types use **stable UUIDs** committed in source.
 No regeneration allowed.
+The core meta-model JSON (`docs/data/meta/core-v1.json`) stores these UUIDs alongside human keys.
 
 ### 7.2 Praxis metamodel compilation output
 

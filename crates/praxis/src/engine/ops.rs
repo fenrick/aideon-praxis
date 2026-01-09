@@ -183,6 +183,7 @@ pub(super) async fn state_at(inner: &mut Inner, args: StateAtArgs) -> PraxisResu
         commit_id,
         Some(branch_name),
         args.confidence,
+        args.layer.clone(),
         stats.node_count as u64,
         stats.edge_count as u64,
     ))

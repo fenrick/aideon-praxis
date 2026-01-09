@@ -70,6 +70,15 @@ impl PraxisEngine {
         ops::topology_delta(&mut guard, args).await
     }
 
+    pub async fn resolve_snapshot(
+        &self,
+        reference: CommitRef,
+        scenario: Option<String>,
+    ) -> PraxisResult<(String, Arc<GraphSnapshot>, String)> {
+        let mut guard = self.lock().await;
+        util::resolve_snapshot(&mut guard, &reference, scenario.as_deref()).await
+    }
+
     pub async fn list_branches(&self) -> Vec<BranchInfo> {
         let guard = self.lock().await;
         guard

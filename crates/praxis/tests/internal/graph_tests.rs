@@ -20,6 +20,7 @@ fn registry(allow_duplicate: Option<bool>) -> MetaModelRegistry {
         types: vec![
             MetaType {
                 id: "A".into(),
+                uuid: None,
                 label: None,
                 category: None,
                 extends: None,
@@ -28,6 +29,7 @@ fn registry(allow_duplicate: Option<bool>) -> MetaModelRegistry {
             },
             MetaType {
                 id: "B".into(),
+                uuid: None,
                 label: None,
                 category: None,
                 extends: None,
@@ -37,6 +39,7 @@ fn registry(allow_duplicate: Option<bool>) -> MetaModelRegistry {
         ],
         relationships: vec![MetaRelationship {
             id: "rel".into(),
+            uuid: None,
             label: None,
             from: vec!["A".into()],
             to: vec!["B".into()],

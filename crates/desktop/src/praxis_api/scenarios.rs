@@ -12,25 +12,20 @@ pub struct ScenarioSummary {
 }
 
 impl ScenarioSummary {
-    pub(crate) fn demo_list() -> Vec<Self> {
-        vec![
-            ScenarioSummary {
-                id: "scenario-main".into(),
-                name: "Mainline FY25".into(),
-                branch: "main".into(),
-                description: Some("Authoritative branch".into()),
-                updated_at: now_iso(),
-                is_default: Some(true),
-            },
-            ScenarioSummary {
-                id: "scenario-chrona".into(),
-                name: "Chrona Playground".into(),
-                branch: "chronaplay".into(),
-                description: Some("Prototype overlays".into()),
-                updated_at: now_iso(),
-                is_default: None,
-            },
-        ]
+    pub(crate) fn from_branch(branch: String, updated_at: Option<String>) -> Self {
+        let is_default = branch == "main";
+        let name = if is_default {
+            "Mainline".into()
+        } else {
+            branch.replace('-', " ")
+        };
+        ScenarioSummary {
+            id: format!("scenario-{branch}"),
+            name,
+            branch,
+            description: None,
+            updated_at: updated_at.unwrap_or_else(now_iso),
+            is_default: if is_default { Some(true) } else { None },
+        }
     }
 }
-

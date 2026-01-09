@@ -21,6 +21,7 @@ async fn state_at_and_diff_cover_new_commit() {
             baseline_head.clone(),
             Some("main".into()),
             None,
+            None,
         ))
         .await
         .expect("baseline state_at");
@@ -49,6 +50,7 @@ async fn state_at_and_diff_cover_new_commit() {
         .state_at(StateAtArgs::new(
             commit_id.clone(),
             Some("main".into()),
+            None,
             None,
         ))
         .await

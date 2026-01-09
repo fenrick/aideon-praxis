@@ -9,7 +9,8 @@ use aideon_praxis::temporal::{
     ListBranchesResponse, MergeRequest, MergeResponse, StateAtArgs, StateAtResult,
     TopologyDeltaArgs, TopologyDeltaResult,
 };
-use aideon_praxis::{PraxisEngine, PraxisResult};
+use aideon_praxis::{GraphSnapshot, PraxisEngine, PraxisResult};
+use std::sync::Arc;
 
 /// Thin wrapper that keeps the previous `TemporalEngine` name stable for the host.
 #[derive(Clone)]
@@ -81,6 +82,15 @@ impl TemporalEngine {
     /// Return the active meta-model document.
     pub async fn meta_model(&self) -> MetaModelDocument {
         self.inner.meta_model().await
+    }
+
+    /// Resolve a snapshot for a commit reference or branch.
+    pub async fn resolve_snapshot(
+        &self,
+        reference: CommitRef,
+        scenario: Option<String>,
+    ) -> PraxisResult<(String, Arc<GraphSnapshot>, String)> {
+        self.inner.resolve_snapshot(reference, scenario).await
     }
 }
 

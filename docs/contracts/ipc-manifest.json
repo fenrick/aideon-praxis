@@ -77,6 +77,7 @@
     "system.window.open",
     "system.worker.health",
     "workspace.projects.list",
-    "workspace.templates.list"
+    "workspace.templates.list",
+    "workspace.templates.save"
   ]
 }

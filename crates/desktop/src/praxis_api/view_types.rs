@@ -19,6 +19,10 @@ pub struct GraphViewDefinition {
     pub kind: String,
     pub as_of: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub layout: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layer: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scenario: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
@@ -43,6 +47,8 @@ pub struct CatalogueViewDefinition {
     pub kind: String,
     pub as_of: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub layer: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scenario: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
@@ -50,6 +56,8 @@ pub struct CatalogueViewDefinition {
     pub filters: Option<ViewFilters>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub columns: Vec<CatalogueColumn>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,6 +69,10 @@ pub struct MatrixViewDefinition {
     pub as_of: String,
     pub row_type: String,
     pub column_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub relationship: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layer: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scenario: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -81,6 +93,8 @@ pub struct ChartViewDefinition {
     pub measure: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dimension: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layer: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scenario: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -155,6 +169,8 @@ pub struct ViewMetadata {
     pub id: String,
     pub name: String,
     pub as_of: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layer: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scenario: Option<String>,
     pub fetched_at: String,

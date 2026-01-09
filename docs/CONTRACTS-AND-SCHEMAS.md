@@ -60,3 +60,41 @@ Graph widget node geometry is persisted by the host and keyed by time context pl
 - IPC commands:
   - `praxis.graph.layout.get` payload `GraphLayoutGetRequest { docId, widgetId, asOf, scenario?, layer? }` → `GraphLayoutSnapshot | null`
   - `praxis.graph.layout.save` payload `GraphLayoutSnapshot { docId, widgetId, asOf, scenario?, layer?, nodes[] }` → `()`
+
+## Praxis artefact execution (views)
+
+Artefact execution requests carry explicit time context (valid time + optional scenario + layer).
+
+- Host IPC commands:
+  - `praxis.artefact.execute_graph` payload `GraphViewDefinition { id, name, kind, asOf, layout?, scenario?, layer?, confidence?, filters?, scope? }` → `GraphViewModel`
+  - `praxis.artefact.execute_catalogue` payload `CatalogueViewDefinition { id, name, kind, asOf, scenario?, layer?, confidence?, filters?, columns[], limit? }` → `CatalogueViewModel`
+  - `praxis.artefact.execute_matrix` payload `MatrixViewDefinition { id, name, kind, asOf, rowType, columnType, relationship?, scenario?, layer?, confidence?, filters? }` → `MatrixViewModel`
+  - `praxis.artefact.execute_chart` payload `ChartViewDefinition { id, name, kind, asOf, chartType, measure, dimension?, scenario?, layer?, confidence?, filters? }` → `ChartViewModel`
+- `ViewMetadata` (camelCase): `{ id, name, asOf, scenario?, layer?, fetchedAt, source }`
+
+## Praxis task operations (apply_operations)
+
+Praxis task operations mutate the twin through explicit task payloads.
+
+- Host IPC commands:
+- `praxis.task.apply_operations` payload `{ branch?, operations: PraxisOperation[] }` → `OperationBatchResult`
+- `PraxisOperation` (camelCase union):
+  - `createNode { node: TwinNode }`
+  - `updateNode { node: TwinNode }`
+  - `deleteNode { nodeId }`
+  - `createEdge { edge: TwinEdge }`
+  - `updateEdge { edge: TwinEdge }`
+  - `deleteEdge { edgeId }`
+- `TwinNode`: `{ id, type?, props? }`
+- `TwinEdge`: `{ id?, from, to, type?, directed?, props? }`
+
+## Workspace templates (Praxis)
+
+Workspace templates are persisted by the host and returned to the renderer for canvas composition.
+
+- Host IPC commands:
+  - `workspace.templates.list` payload `{}` → `TemplatePayload[]`
+  - `workspace.templates.save` payload `TemplatePayload` → `TemplatePayload`
+- `TemplatePayload` (camelCase):
+  - `id`, `documentId`, `name`, `description`, `widgets[]`
+  - `widgets[]` items: `{ id, title, size?, kind, view }` where `view` is the widget view definition.

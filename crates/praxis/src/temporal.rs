@@ -145,14 +145,22 @@ pub struct StateAtArgs {
     pub as_of: CommitRef,
     pub scenario: Option<String>,
     pub confidence: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layer: Option<String>,
 }
 
 impl StateAtArgs {
-    pub fn new(as_of: String, scenario: Option<String>, confidence: Option<f64>) -> Self {
+    pub fn new(
+        as_of: String,
+        scenario: Option<String>,
+        confidence: Option<f64>,
+        layer: Option<String>,
+    ) -> Self {
         Self {
             as_of: CommitRef::Id(as_of),
             scenario,
             confidence,
+            layer,
         }
     }
 }
@@ -164,6 +172,8 @@ pub struct StateAtResult {
     pub commit_id: String,
     pub scenario: Option<String>,
     pub confidence: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layer: Option<String>,
     pub nodes: u64,
     pub edges: u64,
 }
@@ -173,6 +183,7 @@ impl StateAtResult {
         commit_id: String,
         scenario: Option<String>,
         confidence: Option<f64>,
+        layer: Option<String>,
         nodes: u64,
         edges: u64,
     ) -> Self {
@@ -180,6 +191,7 @@ impl StateAtResult {
             commit_id,
             scenario,
             confidence,
+            layer,
             nodes,
             edges,
         }

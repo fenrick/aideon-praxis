@@ -15,6 +15,8 @@ pub struct MetaModelDocument {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MetaType {
     pub id: String,
+    #[serde(default)]
+    pub uuid: Option<String>,
     pub label: Option<String>,
     pub category: Option<String>,
     pub extends: Option<String>,
@@ -27,6 +29,8 @@ pub struct MetaType {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MetaAttribute {
     pub name: String,
+    #[serde(default)]
+    pub uuid: Option<String>,
     #[serde(rename = "type")]
     pub value_type: MetaAttributeKind,
     #[serde(default)]
@@ -50,6 +54,8 @@ pub enum MetaAttributeKind {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MetaRelationship {
     pub id: String,
+    #[serde(default)]
+    pub uuid: Option<String>,
     pub label: Option<String>,
     pub from: Vec<String>,
     pub to: Vec<String>,

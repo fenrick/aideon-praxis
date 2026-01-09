@@ -44,6 +44,7 @@ async fn commit_and_state_flow() {
             as_of: CommitRef::Id(commit_id),
             scenario: Some("main".into()),
             confidence: None,
+            layer: None,
         })
         .await
         .expect("state ok");

@@ -20,6 +20,9 @@ pub struct MetaModelRegistry {
     relationships: BTreeMap<String, RelationshipDescriptor>,
     attr_rules: AttributeRuleSet,
     relationship_rules: HashMap<String, RelationshipRule>,
+    type_uuids: BTreeMap<String, String>,
+    relationship_uuids: BTreeMap<String, String>,
+    attribute_uuids: BTreeMap<String, String>,
 }
 
 impl MetaModelRegistry {
@@ -46,17 +49,38 @@ impl MetaModelRegistry {
         let relationship_rules = relationship_rules(doc.validation.as_ref());
         let type_descriptors = build_type_descriptors(&doc.types)?;
         let relationship_descriptors = build_relationship_descriptors(&doc.relationships);
+        let type_uuids = build_type_uuid_map(&doc.types);
+        let relationship_uuids = build_relationship_uuid_map(&doc.relationships);
+        let attribute_uuids = build_attribute_uuid_map(&doc.types, &doc.relationships);
         Ok(Self {
             document: Arc::new(doc),
             types: type_descriptors,
             relationships: relationship_descriptors,
             attr_rules,
             relationship_rules,
+            type_uuids,
+            relationship_uuids,
+            attribute_uuids,
         })
     }
 
     pub fn document(&self) -> MetaModelDocument {
         (*self.document).clone()
+    }
+
+    pub fn type_uuid(&self, type_id: &str) -> Option<&str> {
+        self.type_uuids.get(type_id).map(|value| value.as_str())
+    }
+
+    pub fn relationship_uuid(&self, rel_id: &str) -> Option<&str> {
+        self.relationship_uuids
+            .get(rel_id)
+            .map(|value| value.as_str())
+    }
+
+    pub fn attribute_uuid(&self, type_id: &str, attribute: &str) -> Option<&str> {
+        let key = format!("{type_id}.{attribute}");
+        self.attribute_uuids.get(&key).map(|value| value.as_str())
     }
 
     pub fn validate_node(&self, node: &NodeVersion) -> PraxisResult<()> {
@@ -85,4 +109,42 @@ impl MetaModelRegistry {
             .and_then(|rule| rule.allow_duplicate)
             .unwrap_or(true)
     }
+}
+
+fn build_type_uuid_map(types: &[crate::meta::MetaType]) -> BTreeMap<String, String> {
+    types
+        .iter()
+        .filter_map(|ty| ty.uuid.as_ref().map(|uuid| (ty.id.clone(), uuid.clone())))
+        .collect()
+}
+
+fn build_relationship_uuid_map(
+    relationships: &[crate::meta::MetaRelationship],
+) -> BTreeMap<String, String> {
+    relationships
+        .iter()
+        .filter_map(|rel| rel.uuid.as_ref().map(|uuid| (rel.id.clone(), uuid.clone())))
+        .collect()
+}
+
+fn build_attribute_uuid_map(
+    types: &[crate::meta::MetaType],
+    relationships: &[crate::meta::MetaRelationship],
+) -> BTreeMap<String, String> {
+    let mut map = BTreeMap::new();
+    for ty in types {
+        for attr in &ty.attributes {
+            if let Some(uuid) = attr.uuid.as_ref() {
+                map.insert(format!("{}.{}", ty.id, attr.name), uuid.clone());
+            }
+        }
+    }
+    for rel in relationships {
+        for attr in &rel.attributes {
+            if let Some(uuid) = attr.uuid.as_ref() {
+                map.insert(format!("{}.{}", rel.id, attr.name), uuid.clone());
+            }
+        }
+    }
+    map
 }

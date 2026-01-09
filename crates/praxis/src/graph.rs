@@ -119,7 +119,7 @@ impl GraphSnapshot {
         Ok(())
     }
 
-    pub(crate) fn node(&self, id: &str) -> Option<&NodeVersion> {
+    pub fn node(&self, id: &str) -> Option<&NodeVersion> {
         self.nodes.get(id)
     }
 
@@ -139,6 +139,20 @@ impl GraphSnapshot {
         self.edges
             .keys()
             .any(|key| key.matches_tombstone(tombstone))
+    }
+
+    pub fn nodes(&self) -> impl Iterator<Item = &NodeVersion> {
+        self.nodes.values()
+    }
+
+    pub fn edges(&self) -> impl Iterator<Item = &EdgeVersion> {
+        self.edges.values()
+    }
+
+    pub fn edge_by_id(&self, id: &str) -> Option<&EdgeVersion> {
+        self.edges
+            .values()
+            .find(|edge| edge.id.as_deref() == Some(id))
     }
 }
 
