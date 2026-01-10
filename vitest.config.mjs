@@ -27,6 +27,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: [path.resolve(__dirname, 'tests/setup.ts')],
+    include: [
+      'app/AideonDesktop/src/**/*.{test,spec}.{ts,tsx,js,jsx}',
+      'app/AideonDesktop/tests/**/*.{test,spec}.{ts,tsx,js,jsx}',
+    ],
+    exclude: ['tests/webdriver/**'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'lcov', 'html'],

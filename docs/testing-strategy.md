@@ -65,7 +65,7 @@ We use four main kinds of tests:
 
 4. **End-to-end (E2E) tests**
    - Launch the Tauri desktop app and test real user flows.
-   - Use a browser automation tool (e.g. Playwright).
+   - Use Tauri WebDriver (tauri-driver) with WebdriverIO.
 
 **Baseline commands (run from repo root):**
 
@@ -76,9 +76,9 @@ We use four main kinds of tests:
 - Rust coverage (requires `cargo-llvm-cov` installed):
   `pnpm run host:coverage` (writes `coverage/rust.lcov` and fails on errors)
 
-If the repo already has a preferred tool (e.g. Vitest vs Jest, Playwright vs something else), use
+If the repo already has a preferred tool (e.g. Vitest vs Jest, WebdriverIO vs something else), use
 that. Otherwise default to: Rust built-in `cargo test`; Vitest + React Testing Library for TS/React;
-Playwright for E2E.
+WebdriverIO + tauri-driver for E2E.
 
 ---
 
@@ -265,10 +265,15 @@ They are not for coverage; they are for **confidence in critical flows**.
 
 ### 6.2. Tools
 
-Assuming **Playwright** as default:
+Default tooling for the desktop app:
 
-- It launches the Tauri app, attaches to the window, and drives clicks/keystrokes.
-- Tests are written in TypeScript.
+- **tauri-driver** (WebDriver bridge for Tauri) + **WebdriverIO**.
+- Linux runners need **WebKitWebDriver** (`webkit2gtk-driver`) and usually **Xvfb** for headless runs.
+
+Common commands (repo root):
+
+- `pnpm run webdriver:test` — Build the app and run WebDriver validations.
+- `pnpm run webdriver:test:headless` — Same as above under Xvfb (Linux/CI).
 
 ### 6.3. Flows to cover
 
