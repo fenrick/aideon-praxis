@@ -1582,6 +1582,8 @@ Current coverage:
 
 - `crates/desktop/tests/internal/tauri_e2e_smoke.rs` smoke checks window routes + IPC wiring via a
   Tauri mock app (runs on non-Windows during `cargo test -p aideon_desktop`).
+- `tests/e2e/specs/tauri-smoke.e2e.mjs` Node-driven smoke test using `tauri-driver` + WebdriverIO
+  to invoke real Rust commands through the app window.
 
 ---
 

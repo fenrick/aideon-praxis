@@ -33,6 +33,7 @@ Coverage failures are hard gates in CI.
 - `pnpm run host:lint && pnpm run host:check`
 - `cargo test --all --all-targets`
 - `pnpm run host:coverage` (requires `cargo-llvm-cov`)
+- `pnpm run node:e2e` (requires `tauri-driver`; runs on Linux/Windows, skips macOS by default)
 
 ---
 
