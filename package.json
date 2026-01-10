@@ -32,6 +32,8 @@
     "node:format": "prettier -w .",
     "node:format:check": "prettier -c .",
     "node:typecheck": "pnpm --filter @aideon/desktop run typecheck",
+    "webdriver:test": "pnpm --filter @aideon/webdriver test",
+    "webdriver:test:headless": "xvfb-run -a pnpm --filter @aideon/webdriver test",
     "design:guard": "node tools/design-system-guard.mjs",
     "node:ci": "pnpm run design:guard && pnpm run node:lint:fix && pnpm run node:typecheck && pnpm run node:test:coverage && pnpm run node:format",
     "tauri": "tauri",

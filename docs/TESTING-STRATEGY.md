@@ -34,6 +34,8 @@ Coverage failures are hard gates in CI.
 - `cargo test --all --all-targets`
 - `pnpm run host:coverage` (requires `cargo-llvm-cov`)
 - `pnpm run node:e2e` (requires `tauri-driver`; runs on Linux/Windows, skips macOS by default)
+- `pnpm run webdriver:test` (requires `tauri-driver`; runs Tauri WebDriver smoke tests)
+- `pnpm run webdriver:test:headless` (Linux headless runner via `xvfb-run`)
 
 ---
 

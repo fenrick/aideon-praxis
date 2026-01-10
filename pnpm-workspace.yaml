@@ -1,5 +1,6 @@
 packages:
   - app/AideonDesktop
+  - tests/webdriver
 
 ignoredBuiltDependencies:
   - esbuild

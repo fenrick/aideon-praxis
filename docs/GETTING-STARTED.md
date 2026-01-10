@@ -14,6 +14,7 @@ about reproducible setup and common workflows; architecture lives in `docs/DESIG
 - pnpm 10 (via Corepack: `corepack enable`)
 - Rust toolchain (via `rustup`)
 - GitHub CLI (`gh`) only if you use the issue helpers
+- WebDriver (optional E2E): `cargo install tauri-driver --locked`
 
 ---
 
@@ -63,6 +64,8 @@ Notes:
 - Test (desktop/host): `pnpm run host:test`
 - Test (renderer): `pnpm run node:test`
 - E2E (manual smoke): `pnpm run node:dev` + `pnpm tauri dev`
+- WebDriver (Tauri): `pnpm run webdriver:test`
+- WebDriver (headless, Linux): `pnpm run webdriver:test:headless`
 
 ---
 
@@ -99,3 +102,4 @@ pnpm run issues:mirror
 - `gh: not logged in`: run `gh auth login` or set `GH_TOKEN` in your environment.
 - Rust toolchain missing: install rustup and run `rustup default stable`.
 - Tauri build failures: confirm system dependencies for your OS; retry with `pnpm tauri dev`.
+- WebDriver failures on Linux: install `webkit2gtk-driver` and `xvfb` (headless); ensure `tauri-driver` is in `PATH`.
