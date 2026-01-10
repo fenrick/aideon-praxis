@@ -26,11 +26,6 @@ tests, and CI pipelines.
 - `pnpm run host:check` — `cargo check` sanity pass.
 - `pnpm run host:ci` — Aggregated Rust pipeline (clean → fix → lint → check → format).
 
-## WebDriver validations (Tauri)
-
-- `pnpm run webdriver:test` — Build the app, launch the Tauri driver, and run WebDriver validations.
-- `pnpm run webdriver:test:headless` — Same as above under Xvfb (Linux/CI).
-
 ## Packaging
 
 - `pnpm run tauri:build` — Builds the Tauri app bundle.

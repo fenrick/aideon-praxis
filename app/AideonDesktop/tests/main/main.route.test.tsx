@@ -20,5 +20,5 @@ describe('main.tsx routing', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(document.body.textContent || '').toContain('Host status');
-  }, 15_000);
+  });
 });
