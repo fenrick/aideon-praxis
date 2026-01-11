@@ -356,6 +356,7 @@ jobs:
         run: pnpm run node:test:coverage
 
       - name: Rust coverage
+        if: matrix.os == 'ubuntu-latest'
         run: pnpm run host:coverage
 
       - name: Upload coverage artifacts

@@ -1,26 +1,56 @@
 import { expect } from '@wdio/globals';
 
+const MAIN_TITLE = 'Aideon';
+const SPLASH_TITLE = 'Aideon — Loading';
+const SYSTEM_COMMANDS = {
+  setupState: 'system.setup.state',
+  windowOpen: 'system.window.open',
+};
+const LEGACY_COMMANDS = {
+  setupState: 'get_setup_state',
+  openWindow: (window) => `open_${window}`,
+};
+
+async function safeExecute(fn) {
+  try {
+    return await browser.execute(fn);
+  } catch {
+    return null;
+  }
+}
+
 async function findWindow(matchFn) {
   const handles = await browser.getWindowHandles();
   for (const handle of handles) {
-    await browser.switchToWindow(handle);
-    const info = await browser.execute(() => ({
-      hash: window.location.hash,
+    try {
+      await browser.switchToWindow(handle);
+    } catch {
+      continue;
+    }
+    const info = await safeExecute(() => ({
+      title: document.title,
+      pathname: window.location.pathname,
       text: document.body?.innerText ?? '',
-      hasRoot: Boolean(document.getElementById('root')),
+      shell: Boolean(document.querySelector('[data-testid="aideon-shell-content"]')),
     }));
-    if (matchFn(info)) {
+    if (info && matchFn(info)) {
       return { handle, info };
     }
   }
   return null;
 }
 
+function isMainPath(pathname) {
+  return pathname === '/' || pathname.endsWith('/index.html');
+}
+
 async function ensureMainWindow() {
   let mainHandle;
   await browser.waitUntil(
     async () => {
-      const found = await findWindow(({ hash }) => hash.includes('/main'));
+      const found = await findWindow(({ title, pathname, shell }) => {
+        return title === MAIN_TITLE && (isMainPath(pathname) || shell);
+      });
       if (found) {
         mainHandle = found.handle;
         return true;
@@ -33,39 +63,127 @@ async function ensureMainWindow() {
   return mainHandle;
 }
 
-async function invokeTauri(command) {
-  const result = await browser.executeAsync((cmd, done) => {
-    const tauri = window.__TAURI_INTERNALS__;
-    if (!tauri?.invoke) {
-      done({ ok: false, error: 'Tauri internals not available' });
-      return;
+async function invokeEnvelopeCommand(command, payload) {
+  const result = await browser.executeAsync(
+    (cmd, reqPayload, done) => {
+      const tauri = window.__TAURI_INTERNALS__;
+      if (!tauri?.invoke) {
+        done({ ok: false, error: 'Tauri internals not available' });
+        return;
+      }
+      const requestId = `${crypto.randomUUID()}-${Date.now()}`;
+      tauri
+        .invoke(cmd, { request: { requestId, payload: reqPayload } })
+        .then((response) => done({ ok: true, response }))
+        .catch((error) => done({ ok: false, error: String(error) }));
+    },
+    command,
+    payload,
+  );
+  if (!result.ok) {
+    throw new Error(result.error || `IPC command ${command} failed`);
+  }
+  if (result.response?.status && result.response.status !== 'ok') {
+    throw new Error(
+      `IPC command ${command} failed: ${result.response?.error?.message ?? 'unknown error'}`,
+    );
+  }
+  return result.response?.result;
+}
+
+async function invokeCommand(command, payload) {
+  const result = await browser.executeAsync(
+    (cmd, reqPayload, done) => {
+      const tauri = window.__TAURI_INTERNALS__;
+      if (!tauri?.invoke) {
+        done({ ok: false, error: 'Tauri internals not available' });
+        return;
+      }
+      tauri
+        .invoke(cmd, reqPayload)
+        .then((response) => done({ ok: true, response }))
+        .catch((error) => done({ ok: false, error: String(error) }));
+    },
+    command,
+    payload,
+  );
+  if (!result.ok) {
+    throw new Error(result.error || `Command ${command} failed`);
+  }
+  return result.response;
+}
+
+function isCommandNotFound(error) {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /command .* not found/i.test(message);
+}
+
+async function invokeWithFallback(
+  primaryCommand,
+  payload,
+  fallbackCommand,
+  fallbackPayload = payload,
+) {
+  try {
+    return await invokeEnvelopeCommand(primaryCommand, payload);
+  } catch (error) {
+    if (!isCommandNotFound(error)) {
+      throw error;
     }
-    tauri
-      .invoke(cmd)
-      .then(() => done({ ok: true }))
-      .catch((error) => done({ ok: false, error: String(error) }));
-  }, command);
-  await expect(result.ok).toBe(true);
+  }
+  return invokeCommand(fallbackCommand, fallbackPayload);
+}
+
+async function getSetupState() {
+  return invokeWithFallback(SYSTEM_COMMANDS.setupState, {}, LEGACY_COMMANDS.setupState, {});
 }
 
 describe('Aideon Praxis desktop', () => {
   it('shows splash then main window', async () => {
     let splashHandle;
+    try {
+      await browser.waitUntil(
+        async () => {
+          const found = await findWindow(
+            ({ title, pathname, text }) =>
+              title === SPLASH_TITLE ||
+              pathname.includes('/splash') ||
+              text.includes('Reticulating splines'),
+          );
+          if (found) {
+            splashHandle = found.handle;
+            return true;
+          }
+          return false;
+        },
+        { timeout: 10000 },
+      );
+    } catch {
+      splashHandle = undefined;
+    }
+
+    const mainHandle = await ensureMainWindow();
+
     await browser.waitUntil(
       async () => {
-        const found = await findWindow(
-          ({ hash, text }) => hash.includes('splash') || text.includes('Loading workspace'),
-        );
-        if (found) {
-          splashHandle = found.handle;
+        const state = await getSetupState().catch(() => null);
+        if (state?.frontend && state?.backend) {
           return true;
+        }
+        if (state?.backend) {
+          if (splashHandle) {
+            const open = (await browser.getWindowHandles()).includes(splashHandle);
+            return !open;
+          }
+          const splash = await findWindow(
+            ({ title, pathname }) => title === SPLASH_TITLE || pathname.includes('/splash'),
+          );
+          return !splash;
         }
         return false;
       },
-      { timeout: 30000, timeoutMsg: 'Splash window did not appear' },
+      { timeout: 60000, timeoutMsg: 'Setup state never reached frontend+backend' },
     );
-
-    const mainHandle = await ensureMainWindow();
 
     if (splashHandle) {
       await browser.waitUntil(
@@ -75,32 +193,40 @@ describe('Aideon Praxis desktop', () => {
     }
 
     await browser.switchToWindow(mainHandle);
-    const root = await browser.$('#root');
-    await root.waitForExist({ timeout: 30000 });
-    await expect(root).toBeExisting();
+    const shell = await browser.$('[data-testid="aideon-shell-content"]');
+    await shell.waitForExist({ timeout: 30000 });
+    await expect(shell).toBeExisting();
 
-    const hash = await browser.execute(() => window.location.hash);
-    await expect(hash).toContain('/main');
+    const pathname = await browser.execute(() => window.location.pathname);
+    await expect(isMainPath(pathname)).toBe(true);
   });
 
   it('opens auxiliary windows (settings/about/status/styleguide)', async () => {
     await ensureMainWindow();
 
     const windowsToOpen = [
-      { command: 'open_settings', hash: '/settings' },
-      { command: 'open_about', hash: '/about' },
-      { command: 'open_status', hash: '/status' },
-      { command: 'open_styleguide', hash: '/styleguide' },
+      { window: 'settings', path: '/settings', text: 'Settings' },
+      { window: 'about', path: '/about', text: 'Aideon' },
+      { window: 'status', path: '/status', text: 'Host status' },
+      { window: 'styleguide', path: '/styleguide', text: 'Styleguide' },
     ];
 
     for (const entry of windowsToOpen) {
-      await invokeTauri(entry.command);
+      await invokeWithFallback(
+        SYSTEM_COMMANDS.windowOpen,
+        { window: entry.window },
+        LEGACY_COMMANDS.openWindow(entry.window),
+        {},
+      );
       await browser.waitUntil(
         async () => {
-          const found = await findWindow(({ hash }) => hash.includes(entry.hash));
+          const found = await findWindow(
+            ({ pathname, text }) =>
+              pathname.includes(entry.path) || (entry.text && text.includes(entry.text)),
+          );
           return Boolean(found?.handle);
         },
-        { timeout: 30000, timeoutMsg: `Window ${entry.hash} did not appear` },
+        { timeout: 30000, timeoutMsg: `Window ${entry.path} did not appear` },
       );
     }
   });

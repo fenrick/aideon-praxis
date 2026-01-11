@@ -1,5 +1,6 @@
 import { Button } from 'design-system/components/ui/button';
 import { cn } from 'design-system/lib/utilities';
+import { isBrowserRuntime } from 'lib/runtime';
 import { Maximize, MousePointer2, ZoomIn, ZoomOut } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -87,6 +88,23 @@ function syncWidgetSizes(
   }
 
   return didChange ? next : previous;
+}
+
+/**
+ * Schedule a frame update in the browser, with a setTimeout fallback for non-browser environments.
+ * @param callback
+ */
+function scheduleFrame(callback: () => void) {
+  if (!isBrowserRuntime() || typeof globalThis.requestAnimationFrame !== 'function') {
+    const timeout = setTimeout(callback, 0);
+    return () => {
+      clearTimeout(timeout);
+    };
+  }
+  const frame = globalThis.requestAnimationFrame(callback);
+  return () => {
+    globalThis.cancelAnimationFrame(frame);
+  };
 }
 
 /**
@@ -180,7 +198,7 @@ function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({
     if (!layoutHydrated) {
       return;
     }
-    const frame = requestAnimationFrame(() => {
+    const cancelFrame = scheduleFrame(() => {
       const currentPositions = widgetPositionsReference.current;
       const currentSizes = widgetSizesReference.current;
       const nextPositions = syncWidgetPositions(currentPositions, widgets);
@@ -203,7 +221,7 @@ function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({
     });
 
     return () => {
-      cancelAnimationFrame(frame);
+      cancelFrame();
     };
   }, [layoutHydrated, persistSnapshot, widgets]);
 

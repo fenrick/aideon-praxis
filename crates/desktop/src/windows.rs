@@ -1,9 +1,11 @@
 #[cfg(target_os = "windows")]
 use log::warn;
 use serde::Deserialize;
+use tauri::webview::PageLoadEvent;
 use tauri::{App, AppHandle, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 
 use crate::ipc::{HostError, IpcRequest, IpcResponse};
+use crate::setup::{SetupState, set_complete};
 
 const ROUTE_SPLASH: &str = "splash/";
 const ROUTE_MAIN: &str = "index.html";
@@ -19,6 +21,20 @@ pub fn create_windows<R: Runtime>(app: &App<R>) -> Result<(), String> {
         .decorations(false)
         .inner_size(520.0, 320.0)
         .center()
+        .on_page_load(|window, payload| {
+            if payload.event() != PageLoadEvent::Finished {
+                return;
+            }
+            let app = window.app_handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state = app.state::<std::sync::Mutex<SetupState>>();
+                let app_for_call = app.clone();
+                if let Err(error) = set_complete(app_for_call, state, "frontend".to_string()).await
+                {
+                    log::warn!("host: set_complete frontend failed: {error}");
+                }
+            });
+        })
         .build()
         .map_err(to_string)?;
 

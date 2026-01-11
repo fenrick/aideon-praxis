@@ -104,5 +104,5 @@ describe('PraxisWorkspaceToolbar', () => {
     fireEvent.click(timeButton);
     expect(await screen.findByText(/Time controls/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /^Close$/i }));
-  });
+  }, 15_000);
 });

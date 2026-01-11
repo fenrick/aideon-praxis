@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 
 import { AideonDesktopRoot } from '@/root';
-import { getCurrentWindowLabel, setSetupComplete } from '../adapters/system-ipc';
+import { setSetupComplete } from '../adapters/system-ipc';
 import { SplashScreen as PraxisSplashScreen } from '../components/splash/splash-screen';
 import { Badge } from '../design-system/components/ui/badge';
 import {
@@ -21,21 +21,18 @@ import { isTauriRuntime } from '../lib/runtime';
  * Root screen for the main desktop window.
  */
 export function MainScreen() {
-  return <AideonDesktopRoot />;
+  return (
+    <FrontendReady>
+      <AideonDesktopRoot />
+    </FrontendReady>
+  );
 }
 
 /**
  * Splash screen displayed while the host initializes.
  */
 export function SplashScreenRoute() {
-  const isTauri = isTauriRuntime();
-  const windowLabel = useMemo(() => {
-    if (!isTauri) {
-      return;
-    }
-    return getCurrentWindowLabel();
-  }, [isTauri]);
-  const shouldSignalFrontendReady = isTauri && windowLabel === 'splash';
+  const shouldSignalFrontendReady = true;
   const loadLines = useMemo(
     () => [
       'Reticulating splines…',
@@ -196,16 +193,29 @@ export function FrontendReady({
     if (!enabled || didSignal.current) {
       return;
     }
-    if (!isTauriRuntime()) {
-      return;
-    }
-    didSignal.current = true;
-
-    setSetupComplete('frontend')
-      .then(() => true)
-      .catch(() => false);
+    let cancelled = false;
+    const attemptSignal = () => {
+      if (cancelled || didSignal.current) {
+        return;
+      }
+      if (!isTauriRuntime()) {
+        return;
+      }
+      setSetupComplete('frontend')
+        .then(() => {
+          didSignal.current = true;
+          return true;
+        })
+        .catch(() => false);
+    };
+    attemptSignal();
+    const interval = setInterval(attemptSignal, 300);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [enabled]);
-  return children as React.ReactElement | null;
+  return children as ReactElement | null;
 }
 
 /**

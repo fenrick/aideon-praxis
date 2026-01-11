@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use log::{error, info, warn};
 use serde::Deserialize;
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State, Wry};
+use tauri::{AppHandle, Manager, Runtime, State, Wry};
 
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::worker::init_temporal;
@@ -52,8 +52,8 @@ pub struct SetupFlags {
 }
 
 #[tauri::command]
-pub async fn set_complete(
-    app: AppHandle<Wry>,
+pub async fn set_complete<R: Runtime>(
+    app: AppHandle<R>,
     state: State<'_, Mutex<SetupState>>,
     task: String,
 ) -> Result<(), HostError> {
