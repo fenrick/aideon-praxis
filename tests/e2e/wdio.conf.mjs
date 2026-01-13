@@ -25,6 +25,11 @@ const findAppPath = () => {
 
 let tauriDriver;
 let appPath = findAppPath();
+let exit = false;
+
+const driverHost = process.env.TAURI_E2E_DRIVER_HOST ?? '127.0.0.1';
+const driverPort = Number(process.env.TAURI_E2E_DRIVER_PORT ?? '4444');
+const nativePort = Number(process.env.TAURI_E2E_NATIVE_PORT ?? '4445');
 
 function buildApp() {
   if (process.env.TAURI_E2E_SKIP_BUILD === '1') {
@@ -55,9 +60,12 @@ export const config = {
   runner: 'local',
   specs: [path.join(__dirname, 'specs', '**', '*.mjs')],
   maxInstances: 1,
+  hostname: driverHost,
+  port: driverPort,
+  path: '/',
   capabilities: [
     {
-      browserName: 'tauri',
+      maxInstances: 1,
       'tauri:options': {
         application: appPath,
       },
@@ -77,21 +85,54 @@ export const config = {
   onPrepare() {
     buildApp();
     ensureAppPath();
-  },
-  beforeSession() {
     const driverPath = process.env.TAURI_E2E_DRIVER_PATH;
     if (!driverPath) {
       throw new Error('TAURI_E2E_DRIVER_PATH not set');
     }
-    tauriDriver = spawn(driverPath, [], {
-      stdio: 'inherit',
-      cwd: repoRoot,
+    tauriDriver = spawn(
+      driverPath,
+      ['--port', String(driverPort), '--native-port', String(nativePort)],
+      {
+        stdio: 'inherit',
+        cwd: repoRoot,
+      },
+    );
+    tauriDriver.on('error', (error) => {
+      console.error('tauri-driver error:', error);
+      process.exit(1);
+    });
+    tauriDriver.on('exit', (code) => {
+      if (!exit) {
+        console.error('tauri-driver exited with code:', code);
+        process.exit(1);
+      }
     });
   },
-  afterSession() {
-    if (tauriDriver) {
-      tauriDriver.kill();
-      tauriDriver = undefined;
-    }
+  onComplete() {
+    closeTauriDriver();
   },
 };
+
+function closeTauriDriver() {
+  exit = true;
+  tauriDriver?.kill();
+}
+
+function onShutdown(fn) {
+  const cleanup = () => {
+    try {
+      fn();
+    } finally {
+      process.exit();
+    }
+  };
+  process.on('exit', cleanup);
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
+  process.on('SIGHUP', cleanup);
+  process.on('SIGBREAK', cleanup);
+}
+
+onShutdown(() => {
+  closeTauriDriver();
+});

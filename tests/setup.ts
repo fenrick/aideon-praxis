@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach } from 'vitest';
+import { afterAll, afterEach } from 'vitest';
 
 // Vitest occasionally runs pending React scheduler callbacks after the jsdom
 // environment has been torn down (seen on macOS runners), which leaves
@@ -20,6 +20,9 @@ const ensureWindowStub = () => {
 
 ensureWindowStub();
 afterEach(() => {
+  ensureWindowStub();
+});
+afterAll(() => {
   ensureWindowStub();
 });
 

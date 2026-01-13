@@ -21,10 +21,6 @@ export default defineConfig({
       { find: 'adapters', replacement: path.join(srcRoot, 'adapters') },
       { find: 'dtos', replacement: path.join(srcRoot, 'dtos') },
       { find: 'lib', replacement: path.join(srcRoot, 'lib') },
-      {
-        find: '@tauri-apps/api/core',
-        replacement: path.join(testsRoot, 'adapters/stubs/tauri-core.ts'),
-      },
     ],
   },
   plugins: [react()],

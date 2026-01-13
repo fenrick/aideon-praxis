@@ -3,8 +3,8 @@ import { expect } from '@wdio/globals';
 const MAIN_TITLE = 'Aideon';
 const SPLASH_TITLE = 'Aideon — Loading';
 const SYSTEM_COMMANDS = {
-  setupState: 'system.setup.state',
-  windowOpen: 'system.window.open',
+  setupState: 'system_setup_state',
+  windowOpen: 'system_window_open',
 };
 const LEGACY_COMMANDS = {
   setupState: 'get_setup_state',
