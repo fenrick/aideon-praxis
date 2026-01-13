@@ -1,4 +1,5 @@
 use super::*;
+use crate::ipc::IpcRequest;
 use aideon_praxis::praxis::canvas::CanvasNode;
 use aideon_praxis::praxis::graph_layout::GraphLayoutNode;
 use std::fs;
@@ -10,6 +11,16 @@ static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 fn env_lock() -> &'static Mutex<()> {
     ENV_LOCK.get_or_init(|| Mutex::new(()))
+}
+
+fn ipc_request<T>(payload: T) -> IpcRequest<T> {
+    use std::sync::atomic::{AtomicU32, Ordering};
+    static COUNTER: AtomicU32 = AtomicU32::new(1);
+    let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+    IpcRequest {
+        request_id: format!("req-{id}"),
+        payload,
+    }
 }
 
 #[test]
@@ -175,6 +186,92 @@ async fn graph_layout_roundtrips() {
     assert_eq!(loaded, Some(payload));
 
     let _ = fs::remove_dir_all(base);
+    unsafe {
+        std::env::remove_var("AIDEON_TEST_DATA_DIR");
+    }
+}
+
+#[tokio::test]
+async fn praxis_scene_wrappers_cover_ipc_surface() {
+    let _guard = env_lock().lock().await;
+    let dir = tempfile::tempdir().expect("tempdir");
+    let base = dir.path().to_path_buf();
+    unsafe {
+        std::env::set_var("AIDEON_TEST_DATA_DIR", base.to_string_lossy().to_string());
+    }
+
+    let canvas_payload = CanvasLayoutSaveRequest {
+        doc_id: "doc-ipc".into(),
+        as_of: "commit-1".into(),
+        scenario: Some("main".into()),
+        layer: None,
+        nodes: vec![CanvasNode {
+            id: "w1".into(),
+            type_id: "widget".into(),
+            x: 10.0,
+            y: 20.0,
+            w: 100.0,
+            h: 50.0,
+            z: 0,
+            label: None,
+            group_id: None,
+        }],
+        edges: vec![],
+        groups: vec![],
+    };
+
+    let response = praxis_canvas_save_layout(ipc_request(canvas_payload.clone()))
+        .await
+        .expect("canvas save");
+    assert_eq!(response.status, "ok");
+
+    let response = praxis_canvas_get_layout(ipc_request(CanvasLayoutGetRequest {
+        doc_id: canvas_payload.doc_id.clone(),
+        as_of: canvas_payload.as_of.clone(),
+        scenario: canvas_payload.scenario.clone(),
+        layer: canvas_payload.layer.clone(),
+    }))
+    .await
+    .expect("canvas get");
+    assert_eq!(response.status, "ok");
+    assert_eq!(response.result, Some(Some(canvas_payload)));
+
+    let graph_payload = GraphLayoutSaveRequest {
+        doc_id: "doc-ipc".into(),
+        widget_id: "widget-1".into(),
+        as_of: "commit-1".into(),
+        scenario: None,
+        layer: None,
+        nodes: vec![GraphLayoutNode {
+            id: "n1".into(),
+            x: 12.0,
+            y: 24.0,
+        }],
+    };
+
+    let response = praxis_graph_layout_save(ipc_request(graph_payload.clone()))
+        .await
+        .expect("graph save");
+    assert_eq!(response.status, "ok");
+
+    let response = praxis_graph_layout_get(ipc_request(GraphLayoutGetRequest {
+        doc_id: graph_payload.doc_id.clone(),
+        widget_id: graph_payload.widget_id.clone(),
+        as_of: graph_payload.as_of.clone(),
+        scenario: graph_payload.scenario.clone(),
+        layer: graph_payload.layer.clone(),
+    }))
+    .await
+    .expect("graph get");
+    assert_eq!(response.status, "ok");
+    assert_eq!(response.result, Some(Some(graph_payload)));
+
+    let response = praxis_canvas_get_scene(ipc_request(CanvasScenePayload { as_of: None }))
+        .await
+        .expect("scene get");
+    assert_eq!(response.status, "ok");
+    assert!(!response.result.unwrap_or_default().is_empty());
+
     unsafe {
         std::env::remove_var("AIDEON_TEST_DATA_DIR");
     }

@@ -126,47 +126,53 @@ fn collect_rs_files(dir: &PathBuf, out: &mut Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
-fn extract_tauri_renames(source: &str) -> Vec<String> {
-    fn parse_attr(attr: &str) -> Option<String> {
-        let rename_idx = attr.find("rename")?;
-        let after = &attr[rename_idx..];
-        let first_quote = after.find('"')?;
-        let rest = &after[first_quote + 1..];
-        let second_quote = rest.find('"')?;
-        Some(rest[..second_quote].to_string())
-    }
-
+fn extract_tauri_commands(source: &str) -> Vec<String> {
     let mut found = Vec::new();
-    let mut buffer: Option<String> = None;
+    let mut pending_command_attr = false;
+    let mut in_attr = false;
+    let mut attr_buffer = String::new();
+
     for line in source.lines() {
-        if let Some(current) = buffer.as_mut() {
-            current.push_str(line);
-            if line.contains(']') {
-                if current.contains("#[tauri::command")
-                    && current.contains("rename")
-                    && let Some(rename) = parse_attr(current)
-                {
-                    found.push(rename);
-                }
-                buffer = None;
+        let trimmed = line.trim();
+
+        if in_attr {
+            attr_buffer.push_str(trimmed);
+            if trimmed.contains(']') {
+                in_attr = false;
+                pending_command_attr = attr_buffer.contains("#[tauri::command");
+                attr_buffer.clear();
             }
             continue;
         }
 
-        let trimmed = line.trim();
-        if !trimmed.contains("#[tauri::command") {
-            continue;
-        }
-        if trimmed.contains(']') {
-            if trimmed.contains("rename")
-                && let Some(rename) = parse_attr(trimmed)
-            {
-                found.push(rename);
+        if trimmed.contains("#[tauri::command") {
+            if trimmed.contains(']') {
+                pending_command_attr = true;
+            } else {
+                in_attr = true;
+                attr_buffer.push_str(trimmed);
             }
             continue;
         }
-        buffer = Some(trimmed.to_string());
+
+        if pending_command_attr
+            && let Some(name) = trimmed
+                .split_whitespace()
+                .skip_while(|segment| *segment != "fn")
+                .nth(1)
+        {
+            let name = name.trim_start_matches(|c: char| !c.is_alphabetic() && c != '_');
+            let name = name
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect::<String>();
+            if !name.is_empty() {
+                found.push(name);
+                pending_command_attr = false;
+            }
+        }
     }
+
     found
 }
 
@@ -179,13 +185,15 @@ fn build_ipc_manifest() -> Result<IpcManifest> {
     for path in files {
         let contents =
             fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
-        for rename in extract_tauri_renames(&contents) {
-            commands.insert(rename);
+        for command in extract_tauri_commands(&contents) {
+            if is_contract_command(&command) {
+                commands.insert(command);
+            }
         }
     }
 
     Ok(IpcManifest {
-        schema_version: 1,
+        schema_version: 2,
         commands: commands.into_iter().collect(),
     })
 }
@@ -206,6 +214,25 @@ async fn export_ipc_manifest(args: IpcManifestArgs) -> Result<()> {
     fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
     println!("Wrote IPC manifest to {}", out.display());
     Ok(())
+}
+
+fn is_contract_command(command: &str) -> bool {
+    const PREFIXES: [&str; 13] = [
+        "chrona_temporal_",
+        "mneme_store_",
+        "praxis_artefact_",
+        "praxis_canvas_",
+        "praxis_graph_layout_",
+        "praxis_metamodel_",
+        "praxis_scenario_",
+        "praxis_task_",
+        "system_setup_",
+        "system_window_",
+        "system_worker_",
+        "workspace_projects_",
+        "workspace_templates_",
+    ];
+    PREFIXES.iter().any(|prefix| command.starts_with(prefix))
 }
 
 async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
@@ -352,22 +379,29 @@ mod tests {
     }
 
     #[test]
-    fn extract_tauri_renames_handles_single_and_multiline_attributes() {
+    fn extract_tauri_commands_handles_single_and_multiline_attributes() {
         let source = r#"
-            #[tauri::command(rename = "a.b.c")]
+            #[tauri::command]
             pub async fn demo() {}
 
             #[tauri::command(
-              rename = "x.y.z",
+              async,
             )]
             pub async fn demo2() {}
 
             #[tauri::command]
             pub async fn no_rename() {}
         "#;
-        let mut renames = extract_tauri_renames(source);
-        renames.sort();
-        assert_eq!(renames, vec!["a.b.c".to_string(), "x.y.z".to_string()]);
+        let mut commands = extract_tauri_commands(source);
+        commands.sort();
+        assert_eq!(
+            commands,
+            vec![
+                "demo".to_string(),
+                "demo2".to_string(),
+                "no_rename".to_string()
+            ]
+        );
     }
 
     #[tokio::test]
@@ -379,7 +413,7 @@ mod tests {
             .expect("export manifest");
         let raw = fs::read_to_string(&out).expect("read manifest");
         let manifest: IpcManifest = serde_json::from_str(&raw).expect("parse manifest");
-        assert_eq!(manifest.schema_version, 1);
+        assert_eq!(manifest.schema_version, 2);
         assert!(!manifest.commands.is_empty());
     }
 

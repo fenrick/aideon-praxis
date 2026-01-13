@@ -158,7 +158,7 @@ fn parse_window_target(value: &str) -> Result<SystemWindowTarget, HostError> {
 }
 
 /// Namespaced + requestId-wrapped window open command.
-#[tauri::command(rename = "system.window.open")]
+#[tauri::command]
 pub fn system_window_open<R: Runtime>(
     app: AppHandle<R>,
     request: IpcRequest<OpenWindowPayload>,

@@ -1,4 +1,5 @@
 use super::*;
+use tauri::Manager;
 
 #[test]
 fn parse_task_accepts_known_values() {
@@ -42,4 +43,43 @@ fn setup_state_roundtrips_over_ipc_envelope() {
     .expect("system setup state");
     assert_eq!(response.status, "ok");
     assert!(response.result.expect("flags").frontend);
+}
+
+#[tokio::test]
+async fn system_setup_complete_marks_tasks() {
+    let app = tauri::test::mock_app();
+    app.manage(std::sync::Mutex::new(SetupState::new()));
+
+    let response = system_setup_complete(
+        app.handle().clone(),
+        app.state::<std::sync::Mutex<SetupState>>(),
+        crate::ipc::IpcRequest {
+            request_id: "req-frontend".to_string(),
+            payload: SetupCompletePayload {
+                task: "frontend".to_string(),
+            },
+        },
+    )
+    .await
+    .expect("frontend complete");
+    assert_eq!(response.status, "ok");
+
+    let response = system_setup_complete(
+        app.handle().clone(),
+        app.state::<std::sync::Mutex<SetupState>>(),
+        crate::ipc::IpcRequest {
+            request_id: "req-backend".to_string(),
+            payload: SetupCompletePayload {
+                task: "backend".to_string(),
+            },
+        },
+    )
+    .await
+    .expect("backend complete");
+    assert_eq!(response.status, "ok");
+
+    let flags =
+        get_setup_state(app.state::<std::sync::Mutex<SetupState>>()).expect("get setup state");
+    assert!(flags.frontend);
+    assert!(flags.backend);
 }

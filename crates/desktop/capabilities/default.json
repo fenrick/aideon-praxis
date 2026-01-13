@@ -9,6 +9,7 @@
     "core:window:default",
     "core:webview:default",
     "core:event:default",
+    "appcommands",
     "log:default",
     "dialog:default",
     "opener:default"

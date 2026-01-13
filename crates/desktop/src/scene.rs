@@ -27,8 +27,8 @@ pub struct CanvasScenePayload {
 }
 
 /// Namespaced + requestId-wrapped canvas scene query.
-#[tauri::command(rename = "praxis.canvas.get_scene")]
-pub async fn praxis_canvas_scene_get(
+#[tauri::command]
+pub async fn praxis_canvas_get_scene(
     request: IpcRequest<CanvasScenePayload>,
 ) -> Result<IpcResponse<Vec<CanvasShape>>, HostError> {
     let request_id = request.request_id;
@@ -258,7 +258,7 @@ pub async fn graph_layout_get(
 }
 
 /// Namespaced + requestId-wrapped graph layout load command.
-#[tauri::command(rename = "praxis.graph.layout.get")]
+#[tauri::command]
 pub async fn praxis_graph_layout_get(
     request: IpcRequest<GraphLayoutGetRequest>,
 ) -> Result<IpcResponse<Option<GraphLayoutSaveRequest>>, HostError> {
@@ -271,7 +271,7 @@ pub async fn praxis_graph_layout_get(
 }
 
 /// Namespaced + requestId-wrapped graph layout persistence command.
-#[tauri::command(rename = "praxis.graph.layout.save")]
+#[tauri::command]
 pub async fn praxis_graph_layout_save(
     request: IpcRequest<GraphLayoutSaveRequest>,
 ) -> Result<IpcResponse<()>, HostError> {
@@ -284,8 +284,8 @@ pub async fn praxis_graph_layout_save(
 }
 
 /// Namespaced + requestId-wrapped canvas layout load command.
-#[tauri::command(rename = "praxis.canvas.get_layout")]
-pub async fn praxis_canvas_layout_get(
+#[tauri::command]
+pub async fn praxis_canvas_get_layout(
     request: IpcRequest<CanvasLayoutGetRequest>,
 ) -> Result<IpcResponse<Option<CanvasLayoutSaveRequest>>, HostError> {
     let request_id = request.request_id;
@@ -297,8 +297,8 @@ pub async fn praxis_canvas_layout_get(
 }
 
 /// Namespaced + requestId-wrapped canvas layout persistence command.
-#[tauri::command(rename = "praxis.canvas.save_layout")]
-pub async fn praxis_canvas_layout_save(
+#[tauri::command]
+pub async fn praxis_canvas_save_layout(
     request: IpcRequest<CanvasLayoutSaveRequest>,
 ) -> Result<IpcResponse<()>, HostError> {
     let request_id = request.request_id;

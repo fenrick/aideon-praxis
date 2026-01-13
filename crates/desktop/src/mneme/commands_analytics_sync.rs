@@ -1,4 +1,4 @@
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_store_pagerank_scores(
     state: State<'_, WorkerState>,
     payload: StorePageRankScoresPayload,
@@ -52,7 +52,7 @@ async fn mneme_store_pagerank_scores_inner(
     Ok(PageRankRunResult { run_id })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_get_pagerank_scores(
     state: State<'_, WorkerState>,
     payload: GetPageRankScoresPayload,
@@ -75,7 +75,7 @@ async fn mneme_get_pagerank_scores_inner(
         .collect())
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_export_ops(
     state: State<'_, WorkerState>,
     payload: ExportOpsPayload,
@@ -104,7 +104,7 @@ async fn mneme_export_ops_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_ingest_ops(
     state: State<'_, WorkerState>,
     payload: IngestOpsPayload,
@@ -143,7 +143,7 @@ async fn mneme_ingest_ops_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_get_partition_head(
     state: State<'_, WorkerState>,
     payload: PartitionHeadPayload,
@@ -169,7 +169,7 @@ async fn mneme_get_partition_head_inner(
     })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_create_scenario(
     state: State<'_, WorkerState>,
     payload: CreateScenarioPayload,
@@ -194,7 +194,7 @@ async fn mneme_create_scenario_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_delete_scenario(
     state: State<'_, WorkerState>,
     payload: DeleteScenarioPayload,
@@ -219,7 +219,7 @@ async fn mneme_delete_scenario_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_export_ops_stream(
     state: State<'_, WorkerState>,
     payload: ExportOpsStreamPayload,
@@ -255,7 +255,7 @@ async fn mneme_export_ops_stream_inner(
     Ok(records.collect())
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_import_ops_stream(
     state: State<'_, WorkerState>,
     payload: ImportOpsStreamPayload,
@@ -281,7 +281,7 @@ async fn mneme_import_ops_stream_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_export_snapshot_stream(
     state: State<'_, WorkerState>,
     payload: ExportSnapshotPayload,
@@ -308,7 +308,7 @@ async fn mneme_export_snapshot_stream_inner(
     Ok(records.collect())
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_import_snapshot_stream(
     state: State<'_, WorkerState>,
     payload: ImportSnapshotPayload,

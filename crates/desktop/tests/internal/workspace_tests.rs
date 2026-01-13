@@ -57,9 +57,26 @@ async fn projects_list_wraps_request_id() {
 }
 
 #[tokio::test]
-async fn templates_list_is_empty_and_wrapped() {
+async fn templates_list_is_bootstrapped_and_wrapped() {
+    let _guard = env_lock().lock().await;
+    let base = std::env::temp_dir().join(format!(
+        "aideon-templates-list-{}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+    ));
+    unsafe {
+        std::env::set_var("AIDEON_TEST_DATA_DIR", base.to_string_lossy().to_string());
+    }
+
     let templates = list_templates().await.expect("templates");
-    assert!(templates.is_empty());
+    assert!(!templates.is_empty());
+    assert!(
+        templates
+            .iter()
+            .any(|template| template.id == "template-executive")
+    );
 
     let response = workspace_templates_list(IpcRequest {
         request_id: "req-2".to_string(),
@@ -69,7 +86,12 @@ async fn templates_list_is_empty_and_wrapped() {
     .expect("templates list");
     assert_eq!(response.request_id, "req-2");
     assert_eq!(response.status, "ok");
-    assert!(response.result.unwrap().is_empty());
+    assert!(!response.result.unwrap().is_empty());
+
+    let _ = fs::remove_dir_all(base);
+    unsafe {
+        std::env::remove_var("AIDEON_TEST_DATA_DIR");
+    }
 }
 
 #[tokio::test]
@@ -104,8 +126,7 @@ async fn templates_save_roundtrips() {
     assert_eq!(saved.id, "template-1");
 
     let templates = list_templates().await.expect("list templates");
-    assert_eq!(templates.len(), 1);
-    assert_eq!(templates[0].document_id, "canvasdoc-1");
+    assert!(templates.iter().any(|template| template.id == "template-1"));
 
     let response = workspace_templates_save(IpcRequest {
         request_id: "req-save".to_string(),

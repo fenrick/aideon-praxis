@@ -48,8 +48,8 @@ Canvas layout geometry is persisted by the host (desktop mode) and keyed by time
 - TS DTOs: `app/AideonDesktop/src/dtos/canvas.ts`
 - Rust DTOs: `crates/praxis/src/canvas.rs`
 - IPC commands:
-  - `praxis.canvas.get_layout` payload `CanvasLayoutGetRequest { docId, asOf, scenario?, layer? }` → `CanvasLayoutSnapshot | null`
-  - `praxis.canvas.save_layout` payload `CanvasLayoutSnapshot { docId, asOf, scenario?, layer?, nodes[], edges[], groups[] }` → `()`
+  - `praxis_canvas_get_layout` payload `CanvasLayoutGetRequest { docId, asOf, scenario?, layer? }` → `CanvasLayoutSnapshot | null`
+  - `praxis_canvas_save_layout` payload `CanvasLayoutSnapshot { docId, asOf, scenario?, layer?, nodes[], edges[], groups[] }` → `()`
 
 ## Graph layout persistence (Praxis graph widget)
 
@@ -58,18 +58,18 @@ Graph widget node geometry is persisted by the host and keyed by time context pl
 - TS DTOs: `app/AideonDesktop/src/dtos/graph-layout.ts`
 - Rust DTOs: `crates/praxis/src/graph_layout.rs`
 - IPC commands:
-  - `praxis.graph.layout.get` payload `GraphLayoutGetRequest { docId, widgetId, asOf, scenario?, layer? }` → `GraphLayoutSnapshot | null`
-  - `praxis.graph.layout.save` payload `GraphLayoutSnapshot { docId, widgetId, asOf, scenario?, layer?, nodes[] }` → `()`
+  - `praxis_graph_layout_get` payload `GraphLayoutGetRequest { docId, widgetId, asOf, scenario?, layer? }` → `GraphLayoutSnapshot | null`
+  - `praxis_graph_layout_save` payload `GraphLayoutSnapshot { docId, widgetId, asOf, scenario?, layer?, nodes[] }` → `()`
 
 ## Praxis artefact execution (views)
 
 Artefact execution requests carry explicit time context (valid time + optional scenario + layer).
 
 - Host IPC commands:
-  - `praxis.artefact.execute_graph` payload `GraphViewDefinition { id, name, kind, asOf, layout?, scenario?, layer?, confidence?, filters?, scope? }` → `GraphViewModel`
-  - `praxis.artefact.execute_catalogue` payload `CatalogueViewDefinition { id, name, kind, asOf, scenario?, layer?, confidence?, filters?, columns[], limit? }` → `CatalogueViewModel`
-  - `praxis.artefact.execute_matrix` payload `MatrixViewDefinition { id, name, kind, asOf, rowType, columnType, relationship?, scenario?, layer?, confidence?, filters? }` → `MatrixViewModel`
-  - `praxis.artefact.execute_chart` payload `ChartViewDefinition { id, name, kind, asOf, chartType, measure, dimension?, scenario?, layer?, confidence?, filters? }` → `ChartViewModel`
+  - `praxis_artefact_execute_graph` payload `GraphViewDefinition { id, name, kind, asOf, layout?, scenario?, layer?, confidence?, filters?, scope? }` → `GraphViewModel`
+  - `praxis_artefact_execute_catalogue` payload `CatalogueViewDefinition { id, name, kind, asOf, scenario?, layer?, confidence?, filters?, columns[], limit? }` → `CatalogueViewModel`
+  - `praxis_artefact_execute_matrix` payload `MatrixViewDefinition { id, name, kind, asOf, rowType, columnType, relationship?, scenario?, layer?, confidence?, filters? }` → `MatrixViewModel`
+  - `praxis_artefact_execute_chart` payload `ChartViewDefinition { id, name, kind, asOf, chartType, measure, dimension?, scenario?, layer?, confidence?, filters? }` → `ChartViewModel`
 - `ViewMetadata` (camelCase): `{ id, name, asOf, scenario?, layer?, fetchedAt, source }`
 
 ## Praxis task operations (apply_operations)
@@ -77,7 +77,7 @@ Artefact execution requests carry explicit time context (valid time + optional s
 Praxis task operations mutate the twin through explicit task payloads.
 
 - Host IPC commands:
-- `praxis.task.apply_operations` payload `{ branch?, operations: PraxisOperation[] }` → `OperationBatchResult`
+- `praxis_task_apply_operations` payload `{ branch?, operations: PraxisOperation[] }` → `OperationBatchResult`
 - `PraxisOperation` (camelCase union):
   - `createNode { node: TwinNode }`
   - `updateNode { node: TwinNode }`
@@ -91,10 +91,11 @@ Praxis task operations mutate the twin through explicit task payloads.
 ## Workspace templates (Praxis)
 
 Workspace templates are persisted by the host and returned to the renderer for canvas composition.
+The host seeds a default template set on first run so the renderer always has initial artefacts.
 
 - Host IPC commands:
-  - `workspace.templates.list` payload `{}` → `TemplatePayload[]`
-  - `workspace.templates.save` payload `TemplatePayload` → `TemplatePayload`
+  - `workspace_templates_list` payload `{}` → `TemplatePayload[]`
+  - `workspace_templates_save` payload `TemplatePayload` → `TemplatePayload`
 - `TemplatePayload` (camelCase):
   - `id`, `documentId`, `name`, `description`, `widgets[]`
   - `widgets[]` items: `{ id, title, size?, kind, view }` where `view` is the widget view definition.

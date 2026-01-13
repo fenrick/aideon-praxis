@@ -12,76 +12,35 @@ use crate::worker::WorkerState;
 const DEFAULT_BRANCH: &str = "main";
 
 #[tauri::command]
-pub async fn praxis_graph_view(
-    state: State<'_, WorkerState>,
-    definition: GraphViewDefinition,
-) -> Result<GraphViewModel, HostError> {
-    praxis_graph_view_inner(state.engine(), definition).await
-}
-
-#[tauri::command(rename = "praxis.artefact.execute_graph")]
-pub async fn praxis_artefact_graph_execute(
+pub async fn praxis_artefact_execute_graph(
     state: State<'_, WorkerState>,
     request: IpcRequest<GraphViewDefinition>,
 ) -> Result<IpcResponse<GraphViewModel>, HostError> {
-    Ok(praxis_artefact_graph_execute_inner(state.engine(), request).await)
+    Ok(praxis_artefact_execute_graph_inner(state.engine(), request).await)
 }
 
 #[tauri::command]
-pub async fn praxis_catalogue_view(
-    state: State<'_, WorkerState>,
-    definition: CatalogueViewDefinition,
-) -> Result<CatalogueViewModel, HostError> {
-    praxis_catalogue_view_inner(state.engine(), definition).await
-}
-
-#[tauri::command(rename = "praxis.artefact.execute_catalogue")]
-pub async fn praxis_artefact_catalogue_execute(
+pub async fn praxis_artefact_execute_catalogue(
     state: State<'_, WorkerState>,
     request: IpcRequest<CatalogueViewDefinition>,
 ) -> Result<IpcResponse<CatalogueViewModel>, HostError> {
-    Ok(praxis_artefact_catalogue_execute_inner(state.engine(), request).await)
+    Ok(praxis_artefact_execute_catalogue_inner(state.engine(), request).await)
 }
 
 #[tauri::command]
-pub async fn praxis_matrix_view(
-    state: State<'_, WorkerState>,
-    definition: MatrixViewDefinition,
-) -> Result<MatrixViewModel, HostError> {
-    praxis_matrix_view_inner(state.engine(), definition).await
-}
-
-#[tauri::command(rename = "praxis.artefact.execute_matrix")]
-pub async fn praxis_artefact_matrix_execute(
+pub async fn praxis_artefact_execute_matrix(
     state: State<'_, WorkerState>,
     request: IpcRequest<MatrixViewDefinition>,
 ) -> Result<IpcResponse<MatrixViewModel>, HostError> {
-    Ok(praxis_artefact_matrix_execute_inner(state.engine(), request).await)
+    Ok(praxis_artefact_execute_matrix_inner(state.engine(), request).await)
 }
 
-#[allow(dead_code)]
 #[tauri::command]
-pub async fn praxis_chart_view(
-    state: State<'_, WorkerState>,
-    definition: ChartViewDefinition,
-) -> Result<ChartViewModel, HostError> {
-    praxis_chart_view_inner(state.engine(), definition).await
-}
-
-#[tauri::command(rename = "praxis.artefact.execute_chart")]
-pub async fn praxis_artefact_chart_execute(
+pub async fn praxis_artefact_execute_chart(
     state: State<'_, WorkerState>,
     request: IpcRequest<ChartViewDefinition>,
 ) -> Result<IpcResponse<ChartViewModel>, HostError> {
-    Ok(praxis_artefact_chart_execute_inner(state.engine(), request).await)
-}
-
-#[tauri::command]
-pub async fn praxis_apply_operations(
-    state: State<'_, WorkerState>,
-    operations: Vec<PraxisOperation>,
-) -> Result<OperationBatchResult, HostError> {
-    praxis_apply_operations_inner(state.engine(), operations, None).await
+    Ok(praxis_artefact_execute_chart_inner(state.engine(), request).await)
 }
 
 #[derive(Debug, Deserialize)]
@@ -93,7 +52,7 @@ pub struct ApplyOperationsPayload {
     pub operations: Vec<PraxisOperation>,
 }
 
-#[tauri::command(rename = "praxis.task.apply_operations")]
+#[tauri::command]
 pub async fn praxis_task_apply_operations(
     state: State<'_, WorkerState>,
     request: IpcRequest<ApplyOperationsPayload>,
@@ -102,13 +61,6 @@ pub async fn praxis_task_apply_operations(
 }
 
 #[tauri::command]
-pub async fn praxis_list_scenarios(
-    state: State<'_, WorkerState>,
-) -> Result<Vec<ScenarioSummary>, HostError> {
-    praxis_list_scenarios_inner(state.engine()).await
-}
-
-#[tauri::command(rename = "praxis.scenario.list")]
 pub async fn praxis_scenario_list(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
@@ -130,7 +82,7 @@ async fn praxis_graph_view_inner(
     ))
 }
 
-async fn praxis_artefact_graph_execute_inner(
+async fn praxis_artefact_execute_graph_inner(
     engine: &TemporalEngine,
     request: IpcRequest<GraphViewDefinition>,
 ) -> IpcResponse<GraphViewModel> {
@@ -155,7 +107,7 @@ async fn praxis_catalogue_view_inner(
     ))
 }
 
-async fn praxis_artefact_catalogue_execute_inner(
+async fn praxis_artefact_execute_catalogue_inner(
     engine: &TemporalEngine,
     request: IpcRequest<CatalogueViewDefinition>,
 ) -> IpcResponse<CatalogueViewModel> {
@@ -180,7 +132,7 @@ async fn praxis_matrix_view_inner(
     ))
 }
 
-async fn praxis_artefact_matrix_execute_inner(
+async fn praxis_artefact_execute_matrix_inner(
     engine: &TemporalEngine,
     request: IpcRequest<MatrixViewDefinition>,
 ) -> IpcResponse<MatrixViewModel> {
@@ -205,7 +157,7 @@ async fn praxis_chart_view_inner(
     ))
 }
 
-async fn praxis_artefact_chart_execute_inner(
+async fn praxis_artefact_execute_chart_inner(
     engine: &TemporalEngine,
     request: IpcRequest<ChartViewDefinition>,
 ) -> IpcResponse<ChartViewModel> {

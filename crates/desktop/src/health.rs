@@ -2,13 +2,14 @@
 
 use crate::worker::WorkerState;
 use aideon_praxis::mneme::WorkerHealth;
+#[cfg(test)]
 use log::{debug, info};
 use tauri::State;
 
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 
-#[tauri::command]
 /// Return the current worker health snapshot.
+#[cfg(test)]
 pub async fn worker_health(state: State<'_, WorkerState>) -> Result<WorkerHealth, HostError> {
     info!("host: worker_health requested");
     let snapshot = health_snapshot(state.inner());
@@ -20,7 +21,7 @@ pub async fn worker_health(state: State<'_, WorkerState>) -> Result<WorkerHealth
 }
 
 /// Namespaced + requestId-wrapped worker health command.
-#[tauri::command(rename = "system.worker.health")]
+#[tauri::command]
 pub async fn system_worker_health(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,

@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 use log::{error, info, warn};
 use serde::Deserialize;
@@ -8,15 +9,21 @@ use tauri::{AppHandle, Manager, Runtime, State, Wry};
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::worker::init_temporal;
 
-#[derive(Default)]
 pub struct SetupState {
     frontend_task: bool,
     backend_task: bool,
+    started_at: Instant,
+    close_scheduled: bool,
 }
 
 impl SetupState {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            frontend_task: false,
+            backend_task: false,
+            started_at: Instant::now(),
+            close_scheduled: false,
+        }
     }
 }
 
@@ -45,6 +52,12 @@ fn all_complete(state: &SetupState) -> bool {
     state.backend_task && state.frontend_task
 }
 
+fn close_delay(state: &SetupState) -> Duration {
+    const MIN_SPLASH: Duration = Duration::from_secs(3);
+    let elapsed = state.started_at.elapsed();
+    MIN_SPLASH.checked_sub(elapsed).unwrap_or_default()
+}
+
 #[derive(Serialize)]
 pub struct SetupFlags {
     frontend: bool,
@@ -69,19 +82,30 @@ pub async fn set_complete<R: Runtime>(
     );
     mark_complete(&mut state_lock, parsed);
 
-    if all_complete(&state_lock) {
-        info!("host: setup complete; closing splash and showing main window");
-        if let Some(splash) = app.get_webview_window("splash") {
-            let _ = splash.close();
-        }
-        if let Some(main_window) = app.get_webview_window("main") {
-            if let Err(error) = main_window.show() {
-                warn!("host: failed showing main window: {error}");
+    if all_complete(&state_lock) && !state_lock.close_scheduled {
+        state_lock.close_scheduled = true;
+        let delay = close_delay(&state_lock);
+        info!(
+            "host: setup complete; showing main window after {:?} delay",
+            delay
+        );
+        let app_handle = app.clone();
+        tauri::async_runtime::spawn(async move {
+            if !delay.is_zero() {
+                tokio::time::sleep(delay).await;
             }
-            let _ = main_window.set_focus();
-        } else {
-            warn!("host: main window not found when completing setup");
-        }
+            if let Some(splash) = app_handle.get_webview_window("splash") {
+                let _ = splash.close();
+            }
+            if let Some(main_window) = app_handle.get_webview_window("main") {
+                if let Err(error) = main_window.show() {
+                    warn!("host: failed showing main window: {error}");
+                }
+                let _ = main_window.set_focus();
+            } else {
+                warn!("host: main window not found when completing setup");
+            }
+        });
     }
 
     Ok(())
@@ -122,9 +146,9 @@ pub struct SetupCompletePayload {
 }
 
 /// Namespaced + requestId-wrapped setup completion signal.
-#[tauri::command(rename = "system.setup.complete")]
-pub async fn system_setup_complete(
-    app: AppHandle<Wry>,
+#[tauri::command]
+pub async fn system_setup_complete<R: Runtime>(
+    app: AppHandle<R>,
     state: State<'_, Mutex<SetupState>>,
     request: IpcRequest<SetupCompletePayload>,
 ) -> Result<IpcResponse<()>, HostError> {
@@ -137,7 +161,7 @@ pub async fn system_setup_complete(
 }
 
 /// Namespaced + requestId-wrapped setup state query.
-#[tauri::command(rename = "system.setup.state")]
+#[tauri::command]
 pub fn system_setup_state(
     state: State<'_, Mutex<SetupState>>,
     request: IpcRequest<EmptyPayload>,

@@ -18,20 +18,8 @@ use tauri::State;
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse, ipc_handle};
 use crate::worker::WorkerState;
 
-#[tauri::command]
-/// Handle a renderer request for `Temporal.StateAt`, delegating to the worker engine.
-///
-/// The handler logs the request for traceability and forwards the typed DTOs
-/// untouched so the transport format stays stable regardless of runtime.
-pub async fn temporal_state_at(
-    state: State<'_, WorkerState>,
-    payload: StateAtArgs,
-) -> Result<StateAtResult, HostError> {
-    temporal_state_at_inner(state.engine(), payload).await
-}
-
 /// Namespaced + requestId-wrapped temporal state query.
-#[tauri::command(rename = "chrona.temporal.state_at")]
+#[tauri::command]
 pub async fn chrona_temporal_state_at(
     state: State<'_, WorkerState>,
     request: IpcRequest<StateAtArgs>,
@@ -63,17 +51,8 @@ async fn temporal_state_at_inner(
     Ok(output)
 }
 
-#[tauri::command]
-/// Compute diff summary statistics between two plateaus or timestamps.
-pub async fn temporal_diff(
-    state: State<'_, WorkerState>,
-    payload: DiffArgs,
-) -> Result<DiffSummary, HostError> {
-    temporal_diff_inner(state.engine(), payload).await
-}
-
 /// Namespaced + requestId-wrapped diff summary query.
-#[tauri::command(rename = "chrona.temporal.diff")]
+#[tauri::command]
 pub async fn chrona_temporal_diff(
     state: State<'_, WorkerState>,
     request: IpcRequest<DiffArgs>,
@@ -111,8 +90,7 @@ async fn temporal_diff_inner(
     Ok(summary)
 }
 
-#[tauri::command]
-pub async fn commit_changes(
+async fn commit_changes(
     state: State<'_, WorkerState>,
     payload: CommitChangesRequest,
 ) -> Result<CommitChangesResponse, HostError> {
@@ -121,7 +99,7 @@ pub async fn commit_changes(
 }
 
 /// Namespaced + requestId-wrapped commit application command.
-#[tauri::command(rename = "chrona.temporal.commit_changes")]
+#[tauri::command]
 pub async fn chrona_temporal_commit_changes(
     state: State<'_, WorkerState>,
     request: IpcRequest<CommitChangesRequest>,
@@ -146,7 +124,6 @@ async fn commit_changes_inner(
     engine.commit(payload).await.map_err(host_error)
 }
 
-#[tauri::command]
 pub async fn list_commits(
     state: State<'_, WorkerState>,
     branch: String,
@@ -161,7 +138,7 @@ pub async fn list_commits(
 }
 
 /// Namespaced + requestId-wrapped commit list query.
-#[tauri::command(rename = "chrona.temporal.list_commits")]
+#[tauri::command]
 pub async fn chrona_temporal_list_commits(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListCommitsPayload>,
@@ -180,16 +157,8 @@ async fn list_commits_inner(
     engine.list_commits(branch).await.map_err(host_error)
 }
 
-#[tauri::command]
-pub async fn create_branch(
-    state: State<'_, WorkerState>,
-    payload: CreateBranchRequest,
-) -> Result<BranchInfo, HostError> {
-    create_branch_inner(state.engine(), payload).await
-}
-
 /// Namespaced + requestId-wrapped branch creation command.
-#[tauri::command(rename = "chrona.temporal.create_branch")]
+#[tauri::command]
 pub async fn chrona_temporal_create_branch(
     state: State<'_, WorkerState>,
     request: IpcRequest<CreateBranchRequest>,
@@ -211,15 +180,8 @@ async fn create_branch_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
-pub async fn list_branches(
-    state: State<'_, WorkerState>,
-) -> Result<ListBranchesResponse, HostError> {
-    Ok(list_branches_inner(state.engine()).await)
-}
-
 /// Namespaced + requestId-wrapped branch list query.
-#[tauri::command(rename = "chrona.temporal.list_branches")]
+#[tauri::command]
 pub async fn chrona_temporal_list_branches(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
@@ -235,16 +197,8 @@ async fn list_branches_inner(engine: &aideon_chrona::TemporalEngine) -> ListBran
     engine.list_branches().await
 }
 
-#[tauri::command]
-pub async fn merge_branches(
-    state: State<'_, WorkerState>,
-    payload: MergeRequest,
-) -> Result<MergeResponse, HostError> {
-    merge_branches_inner(state.engine(), payload).await
-}
-
 /// Namespaced + requestId-wrapped branch merge command.
-#[tauri::command(rename = "chrona.temporal.merge_branches")]
+#[tauri::command]
 pub async fn chrona_temporal_merge_branches(
     state: State<'_, WorkerState>,
     request: IpcRequest<MergeRequest>,
@@ -263,16 +217,8 @@ async fn merge_branches_inner(
     engine.merge(payload).await.map_err(host_error)
 }
 
-#[tauri::command]
-pub async fn topology_delta(
-    state: State<'_, WorkerState>,
-    payload: TopologyDeltaArgs,
-) -> Result<TopologyDeltaResult, HostError> {
-    topology_delta_inner(state.engine(), payload).await
-}
-
 /// Namespaced + requestId-wrapped topology delta query.
-#[tauri::command(rename = "chrona.temporal.topology_delta")]
+#[tauri::command]
 pub async fn chrona_temporal_topology_delta(
     state: State<'_, WorkerState>,
     request: IpcRequest<TopologyDeltaArgs>,
@@ -291,15 +237,8 @@ async fn topology_delta_inner(
     engine.topology_delta(payload).await.map_err(host_error)
 }
 
-#[tauri::command]
-pub async fn temporal_metamodel_get(
-    state: State<'_, WorkerState>,
-) -> Result<MetaModelDocument, HostError> {
-    Ok(temporal_metamodel_get_inner(state.engine()).await)
-}
-
 /// Namespaced + requestId-wrapped metamodel query.
-#[tauri::command(rename = "praxis.metamodel.get")]
+#[tauri::command]
 pub async fn praxis_metamodel_get(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,

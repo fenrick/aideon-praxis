@@ -1,6 +1,10 @@
 use super::*;
 use crate::ipc::EmptyPayload;
+use crate::worker::WorkerState;
 use aideon_chrona::TemporalEngine;
+use aideon_praxis::mneme::open_store;
+use tauri::Manager;
+use tempfile::tempdir;
 use time::OffsetDateTime;
 
 fn ipc_request<T>(payload: T) -> IpcRequest<T> {
@@ -228,7 +232,7 @@ async fn artefact_wrappers_return_ipc_envelopes() {
         filters: None,
         scope: None,
     };
-    let graph = praxis_artefact_graph_execute_inner(&engine, ipc_request(graph_def)).await;
+    let graph = praxis_artefact_execute_graph_inner(&engine, ipc_request(graph_def)).await;
     assert_eq!(graph.status, "ok");
 
     let catalogue_def = CatalogueViewDefinition {
@@ -244,7 +248,7 @@ async fn artefact_wrappers_return_ipc_envelopes() {
         limit: None,
     };
     let catalogue =
-        praxis_artefact_catalogue_execute_inner(&engine, ipc_request(catalogue_def)).await;
+        praxis_artefact_execute_catalogue_inner(&engine, ipc_request(catalogue_def)).await;
     assert_eq!(catalogue.status, "ok");
 
     let matrix_def = MatrixViewDefinition {
@@ -260,7 +264,7 @@ async fn artefact_wrappers_return_ipc_envelopes() {
         confidence: None,
         filters: None,
     };
-    let matrix = praxis_artefact_matrix_execute_inner(&engine, ipc_request(matrix_def)).await;
+    let matrix = praxis_artefact_execute_matrix_inner(&engine, ipc_request(matrix_def)).await;
     assert_eq!(matrix.status, "ok");
 
     let chart_def = ChartViewDefinition {
@@ -276,9 +280,121 @@ async fn artefact_wrappers_return_ipc_envelopes() {
         confidence: None,
         filters: None,
     };
-    let chart = praxis_artefact_chart_execute_inner(&engine, ipc_request(chart_def)).await;
+    let chart = praxis_artefact_execute_chart_inner(&engine, ipc_request(chart_def)).await;
     assert_eq!(chart.status, "ok");
 
     let scenarios = praxis_scenario_list_inner(&engine, ipc_request(EmptyPayload {})).await;
     assert_eq!(scenarios.status, "ok");
+}
+
+#[tokio::test]
+async fn praxis_ipc_commands_execute_over_bridge() {
+    let dir = tempdir().expect("tempdir");
+    let mneme = open_store(dir.path()).await.expect("open store");
+    let engine = TemporalEngine::new().await.expect("engine");
+    let state = WorkerState::new(engine, mneme);
+
+    let app = tauri::test::mock_app();
+    app.manage(state);
+    let state = app.state::<WorkerState>();
+
+    let graph_def = GraphViewDefinition {
+        id: "graph-1".into(),
+        name: "Graph".into(),
+        kind: "graph".into(),
+        as_of: "main".into(),
+        layout: None,
+        layer: None,
+        scenario: Some("main".into()),
+        confidence: Some(0.9),
+        filters: None,
+        scope: None,
+    };
+    let response = praxis_artefact_execute_graph(state.clone(), ipc_request(graph_def))
+        .await
+        .expect("graph response");
+    assert_eq!(response.status, "ok");
+
+    let catalogue_def = CatalogueViewDefinition {
+        id: "cat-1".into(),
+        name: "Catalogue".into(),
+        kind: "catalogue".into(),
+        as_of: "main".into(),
+        layer: None,
+        scenario: Some("main".into()),
+        confidence: None,
+        filters: None,
+        columns: Vec::new(),
+        limit: None,
+    };
+    let response = praxis_artefact_execute_catalogue(state.clone(), ipc_request(catalogue_def))
+        .await
+        .expect("catalogue response");
+    assert_eq!(response.status, "ok");
+
+    let matrix_def = MatrixViewDefinition {
+        id: "matrix-1".into(),
+        name: "Matrix".into(),
+        kind: "matrix".into(),
+        as_of: "main".into(),
+        row_type: "Capability".into(),
+        column_type: "Application".into(),
+        relationship: Some("realises".into()),
+        layer: None,
+        scenario: Some("main".into()),
+        confidence: None,
+        filters: None,
+    };
+    let response = praxis_artefact_execute_matrix(state.clone(), ipc_request(matrix_def))
+        .await
+        .expect("matrix response");
+    assert_eq!(response.status, "ok");
+
+    let chart_def = ChartViewDefinition {
+        id: "chart-1".into(),
+        name: "Chart".into(),
+        kind: "chart".into(),
+        as_of: "main".into(),
+        chart_type: "kpi".into(),
+        measure: "count".into(),
+        dimension: None,
+        layer: None,
+        scenario: Some("main".into()),
+        confidence: None,
+        filters: None,
+    };
+    let response = praxis_artefact_execute_chart(state.clone(), ipc_request(chart_def))
+        .await
+        .expect("chart response");
+    assert_eq!(response.status, "ok");
+
+    let response = praxis_task_apply_operations(
+        state.clone(),
+        ipc_request(ApplyOperationsPayload {
+            branch: None,
+            operations: vec![PraxisOperation::CreateNode {
+                node: TwinNode {
+                    id: "n1".into(),
+                    r#type: Some("Capability".into()),
+                    props: Some(serde_json::json!({ "name": "Temp Node" })),
+                },
+            }],
+        }),
+    )
+    .await
+    .expect("apply operations");
+    assert_eq!(response.status, "ok");
+    assert!(response.result.expect("result").accepted);
+
+    let response = praxis_scenario_list(state.clone(), ipc_request(EmptyPayload {}))
+        .await
+        .expect("scenario list");
+    assert_eq!(response.status, "ok");
+    assert!(
+        response
+            .result
+            .unwrap_or_default()
+            .iter()
+            .any(|s| s.is_default == Some(true))
+    );
 }

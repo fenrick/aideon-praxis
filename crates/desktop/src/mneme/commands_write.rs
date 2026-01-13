@@ -26,7 +26,7 @@ pub struct OpResult {
     pub op_id: OpId,
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_upsert_metamodel_batch(
     state: State<'_, WorkerState>,
     payload: UpsertMetamodelBatchInput,
@@ -56,7 +56,7 @@ async fn mneme_upsert_metamodel_batch_inner(
     Ok(OpResult { op_id })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_compile_effective_schema(
     state: State<'_, WorkerState>,
     payload: CompileEffectiveSchemaInput,
@@ -86,7 +86,7 @@ async fn mneme_compile_effective_schema_inner(
     Ok(result)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_create_node(
     state: State<'_, WorkerState>,
     payload: CreateNodePayload,
@@ -117,7 +117,7 @@ async fn mneme_create_node_inner(
     Ok(OpResult { op_id })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_create_edge(
     state: State<'_, WorkerState>,
     payload: CreateEdgePayload,
@@ -157,7 +157,7 @@ async fn mneme_create_edge_inner(
     Ok(OpResult { op_id })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_set_edge_existence_interval(
     state: State<'_, WorkerState>,
     payload: SetEdgeExistencePayload,
@@ -191,14 +191,6 @@ async fn mneme_set_edge_existence_interval_inner(
     Ok(OpResult { op_id })
 }
 
-#[tauri::command]
-pub async fn mneme_tombstone_entity(
-    state: State<'_, WorkerState>,
-    payload: TombstoneEntityPayload,
-) -> Result<OpResult, HostError> {
-    mneme_tombstone_entity_inner(state.inner(), payload).await
-}
-
 async fn mneme_tombstone_entity_inner(
     state: &WorkerState,
     payload: TombstoneEntityPayload,
@@ -217,7 +209,7 @@ async fn mneme_tombstone_entity_inner(
     Ok(OpResult { op_id })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_set_property_interval(
     state: State<'_, WorkerState>,
     payload: SetPropertyIntervalPayload,
@@ -252,7 +244,7 @@ async fn mneme_set_property_interval_inner(
     Ok(OpResult { op_id })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_clear_property_interval(
     state: State<'_, WorkerState>,
     payload: ClearPropertyIntervalPayload,
@@ -286,7 +278,7 @@ async fn mneme_clear_property_interval_inner(
     Ok(OpResult { op_id })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_or_set_update(
     state: State<'_, WorkerState>,
     payload: OrSetUpdatePayload,
@@ -322,7 +314,7 @@ async fn mneme_or_set_update_inner(
     Ok(OpResult { op_id })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_counter_update(
     state: State<'_, WorkerState>,
     payload: CounterUpdatePayload,

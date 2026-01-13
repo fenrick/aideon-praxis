@@ -1,4 +1,4 @@
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_read_entity_at_time(
     state: State<'_, WorkerState>,
     payload: ReadEntityAtTimePayload,
@@ -31,7 +31,7 @@ async fn mneme_read_entity_at_time_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_traverse_at_time(
     state: State<'_, WorkerState>,
     payload: TraverseAtTimePayload,
@@ -65,7 +65,7 @@ async fn mneme_traverse_at_time_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_list_entities(
     state: State<'_, WorkerState>,
     payload: ListEntitiesPayload,
@@ -110,14 +110,6 @@ async fn mneme_list_entities_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
-pub async fn mneme_get_changes_since(
-    state: State<'_, WorkerState>,
-    payload: GetChangesSincePayload,
-) -> Result<Vec<ChangeEvent>, HostError> {
-    mneme_get_changes_since_inner(state.inner(), payload).await
-}
-
 async fn mneme_get_changes_since_inner(
     state: &WorkerState,
     payload: GetChangesSincePayload,
@@ -133,7 +125,6 @@ async fn mneme_get_changes_since_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
 pub async fn mneme_subscribe_partition(
     state: State<'_, WorkerState>,
     window: Window,
@@ -180,7 +171,6 @@ fn spawn_change_event_forwarder<F>(
     });
 }
 
-#[tauri::command]
 pub async fn mneme_unsubscribe_partition(
     state: State<'_, WorkerState>,
     payload: UnsubscribePartitionPayload,
@@ -188,7 +178,7 @@ pub async fn mneme_unsubscribe_partition(
     Ok(state.cancel_subscription(&payload.subscription_id).await)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_get_projection_edges(
     state: State<'_, WorkerState>,
     payload: GetProjectionEdgesPayload,
@@ -224,7 +214,7 @@ async fn mneme_get_projection_edges_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_get_graph_degree_stats(
     state: State<'_, WorkerState>,
     payload: GetGraphDegreeStatsPayload,
@@ -253,7 +243,7 @@ async fn mneme_get_graph_degree_stats_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_get_graph_edge_type_counts(
     state: State<'_, WorkerState>,
     payload: GetGraphEdgeTypeCountsPayload,

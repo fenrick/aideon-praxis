@@ -1,4 +1,4 @@
-#[tauri::command(rename = "mneme.store.export_ops")]
+#[tauri::command]
 pub async fn mneme_store_export_ops(
     state: State<'_, WorkerState>,
     request: IpcRequest<ExportOpsPayload>,
@@ -10,7 +10,7 @@ pub async fn mneme_store_export_ops(
     Ok(ipc_handle(request_id, mneme_export_ops_inner(state.inner(), payload)).await)
 }
 
-#[tauri::command(rename = "mneme.store.ingest_ops")]
+#[tauri::command]
 pub async fn mneme_store_ingest_ops(
     state: State<'_, WorkerState>,
     request: IpcRequest<IngestOpsPayload>,
@@ -22,7 +22,7 @@ pub async fn mneme_store_ingest_ops(
     Ok(ipc_handle(request_id, mneme_ingest_ops_inner(state.inner(), payload)).await)
 }
 
-#[tauri::command(rename = "mneme.store.get_partition_head")]
+#[tauri::command]
 pub async fn mneme_store_get_partition_head(
     state: State<'_, WorkerState>,
     request: IpcRequest<PartitionHeadPayload>,
@@ -38,7 +38,7 @@ pub async fn mneme_store_get_partition_head(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.create_scenario")]
+#[tauri::command]
 pub async fn mneme_store_create_scenario(
     state: State<'_, WorkerState>,
     request: IpcRequest<CreateScenarioPayload>,
@@ -54,7 +54,7 @@ pub async fn mneme_store_create_scenario(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.delete_scenario")]
+#[tauri::command]
 pub async fn mneme_store_delete_scenario(
     state: State<'_, WorkerState>,
     request: IpcRequest<DeleteScenarioPayload>,
@@ -70,7 +70,7 @@ pub async fn mneme_store_delete_scenario(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.export_ops_stream")]
+#[tauri::command]
 pub async fn mneme_store_export_ops_stream(
     state: State<'_, WorkerState>,
     request: IpcRequest<ExportOpsStreamPayload>,
@@ -86,7 +86,7 @@ pub async fn mneme_store_export_ops_stream(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.import_ops_stream")]
+#[tauri::command]
 pub async fn mneme_store_import_ops_stream(
     state: State<'_, WorkerState>,
     request: IpcRequest<ImportOpsStreamPayload>,
@@ -102,7 +102,7 @@ pub async fn mneme_store_import_ops_stream(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.export_snapshot_stream")]
+#[tauri::command]
 pub async fn mneme_store_export_snapshot_stream(
     state: State<'_, WorkerState>,
     request: IpcRequest<ExportSnapshotPayload>,
@@ -118,7 +118,7 @@ pub async fn mneme_store_export_snapshot_stream(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.import_snapshot_stream")]
+#[tauri::command]
 pub async fn mneme_store_import_snapshot_stream(
     state: State<'_, WorkerState>,
     request: IpcRequest<ImportSnapshotPayload>,
@@ -134,7 +134,7 @@ pub async fn mneme_store_import_snapshot_stream(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.upsert_validation_rules")]
+#[tauri::command]
 pub async fn mneme_store_upsert_validation_rules(
     state: State<'_, WorkerState>,
     request: IpcRequest<UpsertValidationRulesPayload>,
@@ -150,7 +150,7 @@ pub async fn mneme_store_upsert_validation_rules(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.list_validation_rules")]
+#[tauri::command]
 pub async fn mneme_store_list_validation_rules(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListValidationRulesPayload>,
@@ -166,7 +166,7 @@ pub async fn mneme_store_list_validation_rules(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.upsert_computed_rules")]
+#[tauri::command]
 pub async fn mneme_store_upsert_computed_rules(
     state: State<'_, WorkerState>,
     request: IpcRequest<UpsertComputedRulesPayload>,
@@ -182,7 +182,7 @@ pub async fn mneme_store_upsert_computed_rules(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.list_computed_rules")]
+#[tauri::command]
 pub async fn mneme_store_list_computed_rules(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListComputedRulesPayload>,
@@ -198,7 +198,7 @@ pub async fn mneme_store_list_computed_rules(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.upsert_computed_cache")]
+#[tauri::command]
 pub async fn mneme_store_upsert_computed_cache(
     state: State<'_, WorkerState>,
     request: IpcRequest<UpsertComputedCachePayload>,
@@ -214,7 +214,7 @@ pub async fn mneme_store_upsert_computed_cache(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.list_computed_cache")]
+#[tauri::command]
 pub async fn mneme_store_list_computed_cache(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListComputedCachePayload>,
@@ -230,7 +230,7 @@ pub async fn mneme_store_list_computed_cache(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.trigger_rebuild_effective_schema")]
+#[tauri::command]
 pub async fn mneme_store_trigger_rebuild_effective_schema(
     state: State<'_, WorkerState>,
     request: IpcRequest<TriggerProcessingPayload>,
@@ -246,7 +246,7 @@ pub async fn mneme_store_trigger_rebuild_effective_schema(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.trigger_refresh_integrity")]
+#[tauri::command]
 pub async fn mneme_store_trigger_refresh_integrity(
     state: State<'_, WorkerState>,
     request: IpcRequest<TriggerProcessingPayload>,
@@ -262,7 +262,7 @@ pub async fn mneme_store_trigger_refresh_integrity(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.trigger_refresh_analytics_projections")]
+#[tauri::command]
 pub async fn mneme_store_trigger_refresh_analytics_projections(
     state: State<'_, WorkerState>,
     request: IpcRequest<TriggerProcessingPayload>,
@@ -278,7 +278,7 @@ pub async fn mneme_store_trigger_refresh_analytics_projections(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.trigger_retention")]
+#[tauri::command]
 pub async fn mneme_store_trigger_retention(
     state: State<'_, WorkerState>,
     request: IpcRequest<TriggerRetentionPayload>,
@@ -294,7 +294,7 @@ pub async fn mneme_store_trigger_retention(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.trigger_compaction")]
+#[tauri::command]
 pub async fn mneme_store_trigger_compaction(
     state: State<'_, WorkerState>,
     request: IpcRequest<TriggerCompactionPayload>,
@@ -310,7 +310,7 @@ pub async fn mneme_store_trigger_compaction(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.run_processing_worker")]
+#[tauri::command]
 pub async fn mneme_store_run_processing_worker(
     state: State<'_, WorkerState>,
     request: IpcRequest<RunWorkerPayload>,
@@ -326,7 +326,7 @@ pub async fn mneme_store_run_processing_worker(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.list_jobs")]
+#[tauri::command]
 pub async fn mneme_store_list_jobs(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListJobsPayload>,
@@ -338,7 +338,7 @@ pub async fn mneme_store_list_jobs(
     Ok(ipc_handle(request_id, mneme_list_jobs_inner(state.inner(), payload)).await)
 }
 
-#[tauri::command(rename = "mneme.store.get_integrity_head")]
+#[tauri::command]
 pub async fn mneme_store_get_integrity_head(
     state: State<'_, WorkerState>,
     request: IpcRequest<IntegrityHeadPayload>,
@@ -354,7 +354,7 @@ pub async fn mneme_store_get_integrity_head(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.get_last_schema_compile")]
+#[tauri::command]
 pub async fn mneme_store_get_last_schema_compile(
     state: State<'_, WorkerState>,
     request: IpcRequest<SchemaHeadPayload>,
@@ -370,7 +370,7 @@ pub async fn mneme_store_get_last_schema_compile(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.list_failed_jobs")]
+#[tauri::command]
 pub async fn mneme_store_list_failed_jobs(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListFailedJobsPayload>,
@@ -386,7 +386,7 @@ pub async fn mneme_store_list_failed_jobs(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.get_schema_manifest")]
+#[tauri::command]
 pub async fn mneme_store_get_schema_manifest(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
@@ -395,7 +395,7 @@ pub async fn mneme_store_get_schema_manifest(
     Ok(ipc_handle(request_id, mneme_get_schema_manifest_inner(state.inner())).await)
 }
 
-#[tauri::command(rename = "mneme.store.explain_resolution")]
+#[tauri::command]
 pub async fn mneme_store_explain_resolution(
     state: State<'_, WorkerState>,
     request: IpcRequest<ExplainResolutionPayload>,
@@ -411,7 +411,7 @@ pub async fn mneme_store_explain_resolution(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.explain_traversal")]
+#[tauri::command]
 pub async fn mneme_store_explain_traversal(
     state: State<'_, WorkerState>,
     request: IpcRequest<ExplainTraversalPayload>,

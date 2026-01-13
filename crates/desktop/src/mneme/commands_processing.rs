@@ -1,4 +1,4 @@
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_upsert_validation_rules(
     state: State<'_, WorkerState>,
     payload: UpsertValidationRulesPayload,
@@ -23,7 +23,7 @@ async fn mneme_upsert_validation_rules_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_list_validation_rules(
     state: State<'_, WorkerState>,
     payload: ListValidationRulesPayload,
@@ -42,7 +42,7 @@ async fn mneme_list_validation_rules_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_upsert_computed_rules(
     state: State<'_, WorkerState>,
     payload: UpsertComputedRulesPayload,
@@ -67,7 +67,7 @@ async fn mneme_upsert_computed_rules_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_list_computed_rules(
     state: State<'_, WorkerState>,
     payload: ListComputedRulesPayload,
@@ -86,7 +86,7 @@ async fn mneme_list_computed_rules_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_upsert_computed_cache(
     state: State<'_, WorkerState>,
     payload: UpsertComputedCachePayload,
@@ -128,7 +128,7 @@ async fn mneme_upsert_computed_cache_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_list_computed_cache(
     state: State<'_, WorkerState>,
     payload: ListComputedCachePayload,
@@ -156,7 +156,7 @@ async fn mneme_list_computed_cache_inner(
     store.list_computed_cache(input).await.map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_trigger_rebuild_effective_schema(
     state: State<'_, WorkerState>,
     payload: TriggerProcessingPayload,
@@ -179,7 +179,7 @@ async fn mneme_trigger_rebuild_effective_schema_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_trigger_refresh_integrity(
     state: State<'_, WorkerState>,
     payload: TriggerProcessingPayload,
@@ -202,7 +202,7 @@ async fn mneme_trigger_refresh_integrity_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_trigger_refresh_analytics_projections(
     state: State<'_, WorkerState>,
     payload: TriggerProcessingPayload,
@@ -225,7 +225,7 @@ async fn mneme_trigger_refresh_analytics_projections_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_trigger_retention(
     state: State<'_, WorkerState>,
     payload: TriggerRetentionPayload,
@@ -254,7 +254,7 @@ async fn mneme_trigger_retention_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_trigger_compaction(
     state: State<'_, WorkerState>,
     payload: TriggerCompactionPayload,
@@ -277,7 +277,7 @@ async fn mneme_trigger_compaction_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_run_processing_worker(
     state: State<'_, WorkerState>,
     payload: RunWorkerPayload,
@@ -302,7 +302,7 @@ async fn mneme_run_processing_worker_inner(
     })
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_list_jobs(
     state: State<'_, WorkerState>,
     payload: ListJobsPayload,
@@ -321,7 +321,7 @@ async fn mneme_list_jobs_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_get_integrity_head(
     state: State<'_, WorkerState>,
     payload: IntegrityHeadPayload,
@@ -340,7 +340,7 @@ async fn mneme_get_integrity_head_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_get_last_schema_compile(
     state: State<'_, WorkerState>,
     payload: SchemaHeadPayload,
@@ -359,7 +359,7 @@ async fn mneme_get_last_schema_compile_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_list_failed_jobs(
     state: State<'_, WorkerState>,
     payload: ListFailedJobsPayload,
@@ -378,7 +378,7 @@ async fn mneme_list_failed_jobs_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_get_schema_manifest(
     state: State<'_, WorkerState>,
 ) -> Result<SchemaManifest, HostError> {
@@ -390,7 +390,7 @@ async fn mneme_get_schema_manifest_inner(state: &WorkerState) -> Result<SchemaMa
     store.get_schema_manifest().await.map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_explain_resolution(
     state: State<'_, WorkerState>,
     payload: ExplainResolutionPayload,
@@ -422,7 +422,7 @@ async fn mneme_explain_resolution_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_explain_traversal(
     state: State<'_, WorkerState>,
     payload: ExplainTraversalPayload,
@@ -453,7 +453,7 @@ async fn mneme_explain_traversal_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_get_effective_schema(
     state: State<'_, WorkerState>,
     partition_id: PartitionId,
@@ -474,7 +474,7 @@ async fn mneme_get_effective_schema_inner(
         .map_err(host_error)
 }
 
-#[tauri::command]
+#[cfg(test)]
 pub async fn mneme_list_edge_type_rules(
     state: State<'_, WorkerState>,
     partition_id: PartitionId,

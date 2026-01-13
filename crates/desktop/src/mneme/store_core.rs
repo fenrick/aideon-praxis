@@ -2,7 +2,7 @@
 ///
 /// These are the forward-compatible IPC surface. The legacy `mneme_*` commands remain available
 /// for existing renderer code; migrate callers to these as part of contract hardening.
-#[tauri::command(rename = "mneme.store.upsert_metamodel_batch")]
+#[tauri::command]
 pub async fn mneme_store_upsert_metamodel_batch(
     state: State<'_, WorkerState>,
     request: IpcRequest<UpsertMetamodelBatchInput>,
@@ -18,7 +18,7 @@ pub async fn mneme_store_upsert_metamodel_batch(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.compile_effective_schema")]
+#[tauri::command]
 pub async fn mneme_store_compile_effective_schema(
     state: State<'_, WorkerState>,
     request: IpcRequest<CompileEffectiveSchemaInput>,
@@ -34,7 +34,7 @@ pub async fn mneme_store_compile_effective_schema(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.get_effective_schema")]
+#[tauri::command]
 pub async fn mneme_store_get_effective_schema(
     state: State<'_, WorkerState>,
     request: IpcRequest<GetEffectiveSchemaPayload>,
@@ -50,7 +50,7 @@ pub async fn mneme_store_get_effective_schema(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.list_edge_type_rules")]
+#[tauri::command]
 pub async fn mneme_store_list_edge_type_rules(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListEdgeTypeRulesPayload>,
@@ -66,7 +66,7 @@ pub async fn mneme_store_list_edge_type_rules(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.create_node")]
+#[tauri::command]
 pub async fn mneme_store_create_node(
     state: State<'_, WorkerState>,
     request: IpcRequest<CreateNodePayload>,
@@ -78,7 +78,7 @@ pub async fn mneme_store_create_node(
     Ok(ipc_handle(request_id, mneme_create_node_inner(state.inner(), payload)).await)
 }
 
-#[tauri::command(rename = "mneme.store.create_edge")]
+#[tauri::command]
 pub async fn mneme_store_create_edge(
     state: State<'_, WorkerState>,
     request: IpcRequest<CreateEdgePayload>,
@@ -90,7 +90,7 @@ pub async fn mneme_store_create_edge(
     Ok(ipc_handle(request_id, mneme_create_edge_inner(state.inner(), payload)).await)
 }
 
-#[tauri::command(rename = "mneme.store.set_edge_existence_interval")]
+#[tauri::command]
 pub async fn mneme_store_set_edge_existence_interval(
     state: State<'_, WorkerState>,
     request: IpcRequest<SetEdgeExistencePayload>,
@@ -106,7 +106,7 @@ pub async fn mneme_store_set_edge_existence_interval(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.tombstone_entity")]
+#[tauri::command]
 pub async fn mneme_store_tombstone_entity(
     state: State<'_, WorkerState>,
     request: IpcRequest<TombstoneEntityPayload>,
@@ -122,7 +122,7 @@ pub async fn mneme_store_tombstone_entity(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.set_property_interval")]
+#[tauri::command]
 pub async fn mneme_store_set_property_interval(
     state: State<'_, WorkerState>,
     request: IpcRequest<SetPropertyIntervalPayload>,
@@ -138,7 +138,7 @@ pub async fn mneme_store_set_property_interval(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.clear_property_interval")]
+#[tauri::command]
 pub async fn mneme_store_clear_property_interval(
     state: State<'_, WorkerState>,
     request: IpcRequest<ClearPropertyIntervalPayload>,
@@ -154,7 +154,7 @@ pub async fn mneme_store_clear_property_interval(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.or_set_update")]
+#[tauri::command]
 pub async fn mneme_store_or_set_update(
     state: State<'_, WorkerState>,
     request: IpcRequest<OrSetUpdatePayload>,
@@ -170,7 +170,7 @@ pub async fn mneme_store_or_set_update(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.counter_update")]
+#[tauri::command]
 pub async fn mneme_store_counter_update(
     state: State<'_, WorkerState>,
     request: IpcRequest<CounterUpdatePayload>,
@@ -186,7 +186,7 @@ pub async fn mneme_store_counter_update(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.read_entity_at_time")]
+#[tauri::command]
 pub async fn mneme_store_read_entity_at_time(
     state: State<'_, WorkerState>,
     request: IpcRequest<ReadEntityAtTimePayload>,
@@ -202,7 +202,7 @@ pub async fn mneme_store_read_entity_at_time(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.traverse_at_time")]
+#[tauri::command]
 pub async fn mneme_store_traverse_at_time(
     state: State<'_, WorkerState>,
     request: IpcRequest<TraverseAtTimePayload>,
@@ -215,7 +215,7 @@ pub async fn mneme_store_traverse_at_time(
     Ok(response)
 }
 
-#[tauri::command(rename = "mneme.store.list_entities")]
+#[tauri::command]
 pub async fn mneme_store_list_entities(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListEntitiesPayload>,
@@ -231,7 +231,7 @@ pub async fn mneme_store_list_entities(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.get_changes_since")]
+#[tauri::command]
 pub async fn mneme_store_get_changes_since(
     state: State<'_, WorkerState>,
     request: IpcRequest<GetChangesSincePayload>,
@@ -247,7 +247,7 @@ pub async fn mneme_store_get_changes_since(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.subscribe_partition")]
+#[tauri::command]
 pub async fn mneme_store_subscribe_partition(
     state: State<'_, WorkerState>,
     window: Window,
@@ -264,7 +264,7 @@ pub async fn mneme_store_subscribe_partition(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.unsubscribe_partition")]
+#[tauri::command]
 pub async fn mneme_store_unsubscribe_partition(
     state: State<'_, WorkerState>,
     request: IpcRequest<UnsubscribePartitionPayload>,
@@ -276,7 +276,7 @@ pub async fn mneme_store_unsubscribe_partition(
     Ok(ipc_handle(request_id, mneme_unsubscribe_partition(state, payload)).await)
 }
 
-#[tauri::command(rename = "mneme.store.get_projection_edges")]
+#[tauri::command]
 pub async fn mneme_store_get_projection_edges(
     state: State<'_, WorkerState>,
     request: IpcRequest<GetProjectionEdgesPayload>,
@@ -292,7 +292,7 @@ pub async fn mneme_store_get_projection_edges(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.get_graph_degree_stats")]
+#[tauri::command]
 pub async fn mneme_store_get_graph_degree_stats(
     state: State<'_, WorkerState>,
     request: IpcRequest<GetGraphDegreeStatsPayload>,
@@ -308,7 +308,7 @@ pub async fn mneme_store_get_graph_degree_stats(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.get_graph_edge_type_counts")]
+#[tauri::command]
 pub async fn mneme_store_get_graph_edge_type_counts(
     state: State<'_, WorkerState>,
     request: IpcRequest<GetGraphEdgeTypeCountsPayload>,
@@ -324,7 +324,7 @@ pub async fn mneme_store_get_graph_edge_type_counts(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.store_pagerank_scores")]
+#[tauri::command]
 pub async fn mneme_store_store_pagerank_scores(
     state: State<'_, WorkerState>,
     request: IpcRequest<StorePageRankScoresPayload>,
@@ -340,7 +340,7 @@ pub async fn mneme_store_store_pagerank_scores(
     .await)
 }
 
-#[tauri::command(rename = "mneme.store.get_pagerank_scores")]
+#[tauri::command]
 pub async fn mneme_store_get_pagerank_scores(
     state: State<'_, WorkerState>,
     request: IpcRequest<GetPageRankScoresPayload>,
