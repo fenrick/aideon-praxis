@@ -1,4 +1,3 @@
-import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import {
   getChartView,
   getGraphLayout,
@@ -6,12 +5,9 @@ import {
   mergeTemporalBranches,
   type ChartViewModel,
 } from 'praxis/praxis-api';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-const invoke = vi.mocked(tauriInvoke);
-
-vi.mock('praxis/platform', () => ({ isTauri: () => true }));
+import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 
 /**
  * Narrow unknown values to plain object records.
@@ -59,6 +55,9 @@ function mockIpcOk(result: unknown) {
   };
 }
 
+const invokeMock =
+  vi.fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>();
+
 const baseMeta = {
   id: 'chart1',
   name: 'Chart',
@@ -68,8 +67,23 @@ const baseMeta = {
 };
 
 describe('praxis-api host paths', () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    invokeMock.mockImplementation(
+      (command: string, arguments_: Record<string, unknown> | undefined) =>
+        buildOkResponse(arguments_),
+    );
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
+  });
+
+  afterEach(() => {
+    clearTauriMocks();
+  });
+
   it('merges branches and surfaces conflicts', async () => {
-    invoke.mockImplementationOnce(
+    invokeMock.mockImplementationOnce(
       mockIpcOk({ conflicts: [{ reference: 'r1', kind: 'diverge', message: 'conflict' }] }),
     );
 
@@ -82,13 +96,14 @@ describe('praxis-api host paths', () => {
     });
   });
 
-  it('fills in missing branch names when listing commits', async () => {
-    invoke.mockImplementationOnce(
+  it('rejects commit payloads missing required fields', async () => {
+    invokeMock.mockImplementationOnce(
       mockIpcOk({ commits: [{ id: 'c1', parents: [], message: 'msg', change_count: 1 }] }),
     );
 
-    const commits = await listTemporalCommits('dev');
-    expect(commits[0]).toMatchObject({ id: 'c1', branch: 'dev', changeCount: 1 });
+    await expect(listTemporalCommits('dev')).rejects.toThrow(
+      'Host commit payload missing commit.branch.',
+    );
   });
 
   it('invokes host for chart view when in tauri', async () => {
@@ -97,7 +112,7 @@ describe('praxis-api host paths', () => {
       chartType: 'kpi',
       series: [],
     };
-    invoke.mockImplementationOnce(mockIpcOk(chartView));
+    invokeMock.mockImplementationOnce(mockIpcOk(chartView));
 
     const definition = {
       id: 'chart1',
@@ -111,13 +126,13 @@ describe('praxis-api host paths', () => {
     await expect(getChartView(definition)).resolves.toMatchObject({
       chartType: 'kpi',
     });
-    const calls = (invoke as unknown as { mock: { calls: unknown[][] } }).mock.calls;
-    const invokeArguments = findInvokeArguments(calls, 'praxis.artefact.execute_chart');
+    const calls = (invokeMock as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const invokeArguments = findInvokeArguments(calls, 'praxis_artefact_execute_chart');
     expect(payloadFromInvokeArguments(invokeArguments)).toEqual(definition);
   });
 
   it('requests graph layout snapshots via the host', async () => {
-    invoke.mockImplementationOnce(
+    invokeMock.mockImplementationOnce(
       mockIpcOk({
         docId: 'doc-1',
         widgetId: 'widget-9',
@@ -133,8 +148,8 @@ describe('praxis-api host paths', () => {
     });
 
     expect(layout?.nodes).toEqual([{ id: 'n1', x: 1, y: 2 }]);
-    const calls = (invoke as unknown as { mock: { calls: unknown[][] } }).mock.calls;
-    const invokeArguments = findInvokeArguments(calls, 'praxis.graph.layout.get');
+    const calls = (invokeMock as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const invokeArguments = findInvokeArguments(calls, 'praxis_graph_layout_get');
     expect(payloadFromInvokeArguments(invokeArguments)).toEqual({
       docId: 'doc-1',
       widgetId: 'widget-9',

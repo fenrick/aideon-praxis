@@ -61,6 +61,11 @@ export function GlobalSearchCard({
   useEffect(() => {
     let cancelled = false;
     const loadAuxiliarySources = async () => {
+      const asOf = state.commitId ?? state.branch;
+      const scenario = state.branch;
+      if (!asOf || !scenario) {
+        return;
+      }
       try {
         const [schema, catalogue] = await Promise.all([
           fetchMetaModel(),
@@ -68,8 +73,8 @@ export function GlobalSearchCard({
             id: 'command-catalogue',
             name: 'Command palette quick search',
             kind: 'catalogue',
-            asOf: state.commitId ?? state.branch ?? 'main',
-            scenario: state.branch ?? 'main',
+            asOf,
+            scenario,
             columns: [
               { id: 'name', label: 'Name', type: 'string' },
               { id: 'owner', label: 'Owner', type: 'string' },

@@ -40,7 +40,6 @@ import {
 import { useCommandStack } from 'praxis/hooks/use-command-stack';
 import { track } from 'praxis/lib/analytics';
 import { toErrorMessage } from 'praxis/lib/errors';
-import { isTauri } from 'praxis/platform';
 import {
   applyOperations,
   getCanvasLayout,
@@ -50,7 +49,6 @@ import {
   type ScenarioSummary,
 } from 'praxis/praxis-api';
 import {
-  BUILT_IN_TEMPLATES,
   captureTemplateFromWidgets,
   instantiateTemplate,
   type CanvasTemplate,
@@ -434,10 +432,9 @@ function PraxisWorkspaceStateProvider({
     } catch (unknownError) {
       setTemplatesState({
         loading: false,
-        data: BUILT_IN_TEMPLATES,
+        data: [],
         error: toErrorMessage(unknownError),
       });
-      setActiveTemplateId((previous) => previous || (BUILT_IN_TEMPLATES[0]?.id ?? ''));
     }
   }, []);
 
@@ -522,13 +519,12 @@ function PraxisWorkspaceStateProvider({
     );
   }, [activeTemplateId, templatesState.data]);
 
-  const fallbackAsOfReference = useRef<string>(new Date().toISOString());
-  const runtimeScenario = activeScenario?.branch ?? temporalState.branch;
-  const runtimeAsOf = temporalState.commitId ?? runtimeScenario ?? fallbackAsOfReference.current;
+  const runtimeScenario = temporalState.branch ?? activeScenario?.branch;
+  const runtimeAsOf = temporalState.commitId ?? runtimeScenario;
   const runtimeLayer = temporalState.layer;
 
   const widgets = useMemo<CanvasWidget[]>(() => {
-    if (!activeTemplate) {
+    if (!activeTemplate || !runtimeAsOf) {
       return [];
     }
     return instantiateTemplate(activeTemplate, {
@@ -540,17 +536,16 @@ function PraxisWorkspaceStateProvider({
 
   const canvasLayoutKey = useMemo(() => {
     const documentId = activeTemplate?.documentId;
-    if (!documentId) {
+    if (!documentId || !runtimeAsOf || !runtimeScenario) {
       return;
     }
-    const scenarioToken = runtimeScenario ?? 'default';
     const layerToken = runtimeLayer;
-    return `${documentId}::${scenarioToken}::${layerToken}::${runtimeAsOf}`;
+    return `${documentId}::${runtimeScenario}::${layerToken}::${runtimeAsOf}`;
   }, [activeTemplate?.documentId, runtimeAsOf, runtimeLayer, runtimeScenario]);
 
   const graphLayoutContext = useMemo<GraphLayoutContext | undefined>(() => {
     const documentId = activeTemplate?.documentId;
-    if (!documentId) {
+    if (!documentId || !runtimeAsOf) {
       return;
     }
     return {
@@ -565,10 +560,7 @@ function PraxisWorkspaceStateProvider({
     CanvasRuntimeLayoutPersistence<CanvasWidget> | undefined
   >(() => {
     const documentId = activeTemplate?.documentId;
-    if (!documentId) {
-      return;
-    }
-    if (!isTauri()) {
+    if (!documentId || !runtimeAsOf) {
       return;
     }
 
@@ -721,10 +713,6 @@ function PraxisWorkspaceStateProvider({
     const name = `Template ${nextIndexLabel}`;
     const snapshot = captureTemplateFromWidgets(name, 'Saved from runtime', widgets);
     const saveTemplate = async () => {
-      if (!isTauri()) {
-        commitTemplate(snapshot);
-        return;
-      }
       const saved = await saveTemplateToHost(snapshot);
       commitTemplate(saved);
     };

@@ -720,9 +720,9 @@ export function AideonToolbar({
     const handleCommandPalette = () => {
       setCommandPaletteOpen(true);
     };
-    globalThis.addEventListener('aideon.workspace.open-command-palette', handleCommandPalette);
+    globalThis.addEventListener('aideon.workspace_open-command-palette', handleCommandPalette);
     return () => {
-      globalThis.removeEventListener('aideon.workspace.open-command-palette', handleCommandPalette);
+      globalThis.removeEventListener('aideon.workspace_open-command-palette', handleCommandPalette);
     };
   }, []);
 

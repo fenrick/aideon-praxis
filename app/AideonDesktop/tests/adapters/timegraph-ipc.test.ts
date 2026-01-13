@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 
 const callLog: { cmd: string; args?: Record<string, unknown> }[] = [];
 const overrides = new Map<string, unknown>();
@@ -79,91 +81,99 @@ function requireCall(command: string) {
   return entry;
 }
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: (cmd: string, arguments_?: Record<string, unknown>) => {
-    callLog.push({ cmd, args: arguments_ });
-    if (overrides.has(cmd)) {
-      const value = overrides.get(cmd);
-      overrides.delete(cmd);
-      return ok(value, arguments_);
-    }
-
-    const payload = (arguments_?.request as { payload?: Record<string, unknown> } | undefined)
-      ?.payload;
-
-    switch (cmd) {
-      case 'chrona.temporal.commit_changes': {
-        return ok({ id: 'c1' }, arguments_);
-      }
-      case 'chrona.temporal.list_commits': {
-        return ok({ commits: [] }, arguments_);
-      }
-      case 'chrona.temporal.list_branches': {
-        return ok({ branches: [{ name: 'main', head: 'c1' }] }, arguments_);
-      }
-      case 'chrona.temporal.diff': {
-        return ok(
-          {
-            from: commitReferenceId(payload?.from) ?? 'from',
-            to: commitReferenceId(payload?.to) ?? 'to',
-            nodeAdds: 1,
-            nodeMods: 0,
-            nodeDels: 0,
-            edgeAdds: 2,
-            edgeMods: 0,
-            edgeDels: 0,
-          },
-          arguments_,
-        );
-      }
-      case 'chrona.temporal.topology_delta': {
-        return ok(
-          {
-            from: commitReferenceId(payload?.from) ?? 'from',
-            to: commitReferenceId(payload?.to) ?? 'to',
-            nodeAdds: 2,
-            nodeDels: 1,
-            edgeAdds: 3,
-            edgeDels: 1,
-          },
-          arguments_,
-        );
-      }
-      case 'chrona.temporal.create_branch': {
-        return ok(
-          {
-            name: (payload as { name?: string } | undefined)?.name ?? 'feature/x',
-            head: 'c1',
-          },
-          arguments_,
-        );
-      }
-      case 'chrona.temporal.merge_branches': {
-        return ok({ result: 'merge-1' }, arguments_);
-      }
-      case 'praxis.metamodel.get': {
-        return ok({ version: 'v1' }, arguments_);
-      }
-      default: {
-        return ok(
-          {
-            asOf: commitReferenceId(payload?.asOf) ?? 'x',
-            scenario: (payload as { scenario?: string } | undefined)?.scenario ?? undefined,
-            confidence: (payload as { confidence?: number } | undefined)?.confidence ?? undefined,
-            nodes: 0,
-            edges: 0,
-          },
-          arguments_,
-        );
-      }
-    }
-  },
-}));
+const invokeMock =
+  vi.fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>();
 
 describe('IpcTemporalAdapter', () => {
   beforeEach(() => {
     callLog.length = 0;
     overrides.clear();
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string, arguments_?: Record<string, unknown>) => {
+      callLog.push({ cmd, args: arguments_ });
+      if (overrides.has(cmd)) {
+        const value = overrides.get(cmd);
+        overrides.delete(cmd);
+        return ok(value, arguments_);
+      }
+
+      const payload = (arguments_?.request as { payload?: Record<string, unknown> } | undefined)
+        ?.payload;
+
+      switch (cmd) {
+        case 'chrona_temporal_commit_changes': {
+          return ok({ id: 'c1' }, arguments_);
+        }
+        case 'chrona_temporal_list_commits': {
+          return ok({ commits: [] }, arguments_);
+        }
+        case 'chrona_temporal_list_branches': {
+          return ok({ branches: [{ name: 'main', head: 'c1' }] }, arguments_);
+        }
+        case 'chrona_temporal_diff': {
+          return ok(
+            {
+              from: commitReferenceId(payload?.from) ?? 'from',
+              to: commitReferenceId(payload?.to) ?? 'to',
+              nodeAdds: 1,
+              nodeMods: 0,
+              nodeDels: 0,
+              edgeAdds: 2,
+              edgeMods: 0,
+              edgeDels: 0,
+            },
+            arguments_,
+          );
+        }
+        case 'chrona_temporal_topology_delta': {
+          return ok(
+            {
+              from: commitReferenceId(payload?.from) ?? 'from',
+              to: commitReferenceId(payload?.to) ?? 'to',
+              nodeAdds: 2,
+              nodeDels: 1,
+              edgeAdds: 3,
+              edgeDels: 1,
+            },
+            arguments_,
+          );
+        }
+        case 'chrona_temporal_create_branch': {
+          return ok(
+            {
+              name: (payload as { name?: string } | undefined)?.name ?? 'feature/x',
+              head: 'c1',
+            },
+            arguments_,
+          );
+        }
+        case 'chrona_temporal_merge_branches': {
+          return ok({ result: 'merge-1' }, arguments_);
+        }
+        case 'praxis_metamodel_get': {
+          return ok({ version: 'v1' }, arguments_);
+        }
+        default: {
+          return ok(
+            {
+              asOf: commitReferenceId(payload?.asOf) ?? 'x',
+              scenario: (payload as { scenario?: string } | undefined)?.scenario ?? undefined,
+              confidence: (payload as { confidence?: number } | undefined)?.confidence ?? undefined,
+              nodes: 0,
+              edges: 0,
+            },
+            arguments_,
+          );
+        }
+      }
+    });
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
+  });
+
+  afterEach(() => {
+    clearTauriMocks();
   });
 
   it('stateAt/commit/list/create stubs roundtrip', async () => {
@@ -203,7 +213,7 @@ describe('IpcTemporalAdapter', () => {
     const { IpcTemporalAdapter } = await import('adapters/timegraph-ipc');
     const a = new IpcTemporalAdapter();
     await a.diff({ from: 'c0', to: 'c1', scope: 'capability' });
-    const diffCall = requireCall('chrona.temporal.diff');
+    const diffCall = requireCall('chrona_temporal_diff');
     expect(callPayload(diffCall)).toEqual({
       from: { id: 'c0' },
       to: { id: 'c1' },
@@ -216,7 +226,7 @@ describe('IpcTemporalAdapter', () => {
     const a = new IpcTemporalAdapter();
 
     await a.stateAt({ asOf: 'c9', scenario: 'dev', confidence: 0.9 });
-    const stateAtCall = requireCall('chrona.temporal.state_at');
+    const stateAtCall = requireCall('chrona_temporal_state_at');
     expect(callPayload(stateAtCall)).toEqual({
       asOf: { id: 'c9' },
       scenario: 'dev',
@@ -225,7 +235,7 @@ describe('IpcTemporalAdapter', () => {
 
     await a.stateAt({ asOf: 'c9', scenario: 'dev', confidence: 0.9, layer: 'Plan' });
     const stateAtCallWithLayer = callLog.filter(
-      (entry) => entry.cmd === 'chrona.temporal.state_at',
+      (entry) => entry.cmd === 'chrona_temporal_state_at',
     )[1];
     expect(callPayload(stateAtCallWithLayer)).toEqual({
       asOf: { id: 'c9' },
@@ -235,20 +245,20 @@ describe('IpcTemporalAdapter', () => {
     });
 
     await a.createBranch({ name: 'feature/no-from' });
-    const createBranchCall = requireCall('chrona.temporal.create_branch');
+    const createBranchCall = requireCall('chrona_temporal_create_branch');
     expect(callPayload(createBranchCall)).toEqual({ name: 'feature/no-from' });
 
     await a.stateAt({ asOf: 'c10' });
     const stateAtCallMinimal = callLog.findLast(
-      (entry) => entry.cmd === 'chrona.temporal.state_at',
+      (entry) => entry.cmd === 'chrona_temporal_state_at',
     );
     expect(callPayload(stateAtCallMinimal)).toEqual({ asOf: { id: 'c10' } });
 
     await a.diff({ from: 'c0', to: 'c1' });
-    const diffCall = requireCall('chrona.temporal.diff');
+    const diffCall = requireCall('chrona_temporal_diff');
     expect(callPayload(diffCall)).toEqual({ from: { id: 'c0' }, to: { id: 'c1' } });
 
-    overrides.set('chrona.temporal.list_branches', {
+    overrides.set('chrona_temporal_list_branches', {
       branches: [{ name: 123 }, { head: 'h1' }],
     });
     const branches = await a.listBranches();
@@ -257,7 +267,7 @@ describe('IpcTemporalAdapter', () => {
       { name: '', head: 'h1' },
     ]);
 
-    overrides.set('chrona.temporal.topology_delta', {
+    overrides.set('chrona_temporal_topology_delta', {
       from: 1,
       to: undefined,
       node_adds: '2',
@@ -271,7 +281,7 @@ describe('IpcTemporalAdapter', () => {
       metrics: { nodeAdds: 0, nodeDels: 1, edgeAdds: 0, edgeDels: 0 },
     });
 
-    overrides.set('chrona.temporal.topology_delta', {
+    overrides.set('chrona_temporal_topology_delta', {
       from: 'c0',
       to: 'c1',
       node_adds: 2,
@@ -287,7 +297,7 @@ describe('IpcTemporalAdapter', () => {
     const { IpcTemporalAdapter } = await import('adapters/timegraph-ipc');
     const a = new IpcTemporalAdapter();
 
-    overrides.set('chrona.temporal.merge_branches', {
+    overrides.set('chrona_temporal_merge_branches', {
       result: 123,
       conflicts: [
         { reference: 'r1', kind: 'node', message: 'conflict' },
@@ -320,7 +330,7 @@ describe('IpcTemporalAdapter', () => {
       },
     });
 
-    const commitCall = requireCall('chrona.temporal.commit_changes');
+    const commitCall = requireCall('chrona_temporal_commit_changes');
     const requestId = callRequestId(commitCall);
     expect(requestId).not.toBeUndefined();
     expect(callPayload(commitCall)).toEqual({

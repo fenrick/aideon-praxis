@@ -88,7 +88,7 @@ export function CanvasRuntimeCard({
           <CardTitle>Canvas runtime</CardTitle>
           <CardDescription>
             {metadata
-              ? `As of ${formatAsOf(metadata.asOf)} (${metadata.scenario ?? 'main'})`
+              ? `As of ${formatAsOf(metadata.asOf)} (${metadata.scenario ?? 'unknown'})`
               : 'React Flow GraphWidget powered by praxisApi'}
           </CardDescription>
         </div>

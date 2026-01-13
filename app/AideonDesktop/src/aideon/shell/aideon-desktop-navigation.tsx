@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import type { WorkspaceId, WorkspaceNavigationProperties } from 'workspaces/types';
+import type { WorkspaceNavigationProperties } from 'workspaces/types';
 
 import { Button } from 'design-system/components/ui/button';
 import {
@@ -11,12 +11,6 @@ import {
 } from 'design-system/components/ui/tooltip';
 import { cn } from 'design-system/lib/utilities';
 import { Brain, Database, LayoutGrid } from 'lucide-react';
-
-const WORKSPACE_ICONS: Record<WorkspaceId, typeof LayoutGrid> = {
-  praxis: LayoutGrid,
-  metis: Brain,
-  mneme: Database,
-};
 
 export interface AideonDesktopNavigationProperties extends Readonly<WorkspaceNavigationProperties> {
   readonly children: ReactNode;
@@ -44,10 +38,30 @@ export function AideonDesktopNavigation({
       <TooltipProvider>
         <div className="flex w-14 flex-col items-center gap-3 border-r border-border/70 bg-sidebar px-2 py-3">
           {workspaceOptions.map((workspace) => {
-            const Icon = WORKSPACE_ICONS[workspace.id];
-            const active = workspace.id === activeWorkspaceId;
+            const {
+              id: workspaceId,
+              label: workspaceLabel,
+              disabled: workspaceDisabled,
+            } = workspace;
+            const Icon = (() => {
+              switch (workspaceId) {
+                case 'praxis': {
+                  return LayoutGrid;
+                }
+                case 'metis': {
+                  return Brain;
+                }
+                case 'mneme': {
+                  return Database;
+                }
+                default: {
+                  return LayoutGrid;
+                }
+              }
+            })();
+            const active = workspaceId === activeWorkspaceId;
             return (
-              <Tooltip key={workspace.id}>
+              <Tooltip key={workspaceId}>
                 <TooltipTrigger asChild>
                   <Button
                     type="button"
@@ -55,20 +69,20 @@ export function AideonDesktopNavigation({
                     variant={active ? 'secondary' : 'ghost'}
                     className={cn(
                       'h-10 w-10 rounded-xl',
-                      workspace.disabled ? 'cursor-not-allowed opacity-50' : undefined,
+                      workspaceDisabled ? 'cursor-not-allowed opacity-50' : undefined,
                     )}
-                    aria-label={workspace.label}
-                    disabled={workspace.disabled}
+                    aria-label={workspaceLabel}
+                    disabled={workspaceDisabled}
                     onClick={() => {
-                      onWorkspaceSelect(workspace.id);
+                      onWorkspaceSelect(workspaceId);
                     }}
                   >
                     <Icon className="size-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right">
-                  {workspace.label}
-                  {workspace.disabled ? ' (Coming soon)' : ''}
+                  {workspaceLabel}
+                  {workspaceDisabled ? ' (Coming soon)' : ''}
                 </TooltipContent>
               </Tooltip>
             );

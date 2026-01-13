@@ -29,8 +29,7 @@ export function WorkerHealthCard() {
     badgeLabel = 'Operational';
     badgeVariant = 'default';
   }
-  const description =
-    state.error ?? state.snapshot?.notes ?? 'Engine responds with mock data when Tauri is offline.';
+  const description = state.error ?? state.snapshot?.notes ?? 'Awaiting host response.';
 
   return (
     <Card>

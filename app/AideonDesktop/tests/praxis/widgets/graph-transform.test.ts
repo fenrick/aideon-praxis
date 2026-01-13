@@ -11,7 +11,7 @@ const SAMPLE_VIEW: GraphViewModel = {
     asOf: '2025-11-14T00:00:00.000Z',
     scenario: 'main',
     fetchedAt: '2025-11-14T00:00:00.000Z',
-    source: 'mock',
+    source: 'host',
   },
   stats: { nodes: 2, edges: 1 },
   nodes: [

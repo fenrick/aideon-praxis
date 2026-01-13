@@ -203,7 +203,7 @@ describe('PraxisWorkspaceSurface interactions', () => {
     projectError.mockReturnValue(false);
   });
 
-  it('falls back to built-in templates when host load fails', async () => {
+  it('keeps templates empty when host load fails', async () => {
     templateError.mockReturnValueOnce(true);
     render(<PraxisWorkspaceSurface />);
 
@@ -212,7 +212,7 @@ describe('PraxisWorkspaceSurface interactions', () => {
     });
     const latestTemplates =
       (templateSpy.mock.calls.at(-1)?.[0] as { id: string; name: string }[] | undefined) ?? [];
-    expect(latestTemplates[0]?.name).toBe('Fallback');
+    expect(latestTemplates).toHaveLength(0);
   });
 
   it('surfaces project load errors and allows retry', async () => {

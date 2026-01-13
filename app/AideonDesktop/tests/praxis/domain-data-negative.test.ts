@@ -1,14 +1,22 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 
 describe('domain-data negative paths', () => {
-  it('falls back to built-in templates when host invoke fails', async () => {
-    const invokeMock = vi.fn().mockRejectedValue(new Error('no host'));
-    vi.doMock('praxis/platform', () => ({ isTauri: () => true }));
-    vi.doMock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
+  afterEach(() => {
+    clearTauriMocks();
+  });
+
+  it('throws when host invoke fails', async () => {
+    const invokeMock = vi
+      .fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>()
+      .mockRejectedValue(new Error('no host'));
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
 
     const { listTemplatesFromHost } = await import('praxis/domain-data');
-    const templates = await listTemplatesFromHost();
-    expect(templates.length).toBeGreaterThan(0);
+    await expect(listTemplatesFromHost()).rejects.toThrow('Host command');
     expect(invokeMock).toHaveBeenCalled();
   });
 });

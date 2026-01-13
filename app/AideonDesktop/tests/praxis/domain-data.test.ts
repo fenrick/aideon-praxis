@@ -1,51 +1,82 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('praxis/platform', () => ({ isTauri: vi.fn() }));
-vi.mock('praxis/praxis-api', () => ({ listScenarios: vi.fn() }));
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   listProjectsWithScenarios,
   listTemplatesFromHost,
   saveTemplateToHost,
 } from 'praxis/domain-data';
-import { isTauri } from 'praxis/platform';
-import { listScenarios } from 'praxis/praxis-api';
-import { BUILT_IN_TEMPLATES } from 'praxis/templates';
 
-const isTauriMock = vi.mocked(isTauri);
-const listScenariosMock = vi.mocked(listScenarios);
+import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
+
+const invokeMock =
+  vi.fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>();
+
+/**
+ * Create a successful IPC envelope response for the adapter boundary.
+ * @param result
+ */
+function mockIpcOk(result: unknown) {
+  return (_command: string, invokeArguments: unknown) =>
+    Promise.resolve(buildOkResponse(invokeArguments, result));
+}
 
 describe('domain-data adapters', () => {
   beforeEach(() => {
-    isTauriMock.mockReturnValue(false);
-    listScenariosMock.mockResolvedValue([
-      {
-        id: 's1',
-        name: 'Scenario 1',
-        branch: 'main',
-        updatedAt: '2025-01-01T00:00:00Z',
-        isDefault: true,
-      },
-    ]);
+    invokeMock.mockReset();
+    invokeMock.mockImplementation(
+      (command: string, arguments_: Record<string, unknown> | undefined) =>
+        buildOkResponse(arguments_),
+    );
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
   });
 
-  it('falls back to default project when host unavailable', async () => {
+  afterEach(() => {
+    clearTauriMocks();
+  });
+
+  it('loads projects from the host', async () => {
+    invokeMock.mockImplementationOnce(mockIpcOk([{ id: 'p1', name: 'Project', scenarios: [] }]));
     const projects = await listProjectsWithScenarios();
     expect(projects).toHaveLength(1);
-    expect(projects[0]?.scenarios[0]?.id).toBe('s1');
+    expect(projects[0]?.id).toBe('p1');
   });
 
-  it('returns built-in templates in mock mode', async () => {
+  it('loads templates from the host', async () => {
+    invokeMock.mockImplementationOnce(
+      mockIpcOk([
+        {
+          id: 'template-1',
+          documentId: 'canvasdoc-1',
+          name: 'Template',
+          description: 'Example',
+          widgets: [],
+        },
+      ]),
+    );
     const templates = await listTemplatesFromHost();
-    expect(templates[0]?.id).toBe(BUILT_IN_TEMPLATES[0]?.id);
+    expect(templates).toHaveLength(1);
+    expect(templates[0]?.id).toBe('template-1');
   });
 
-  it('returns the provided template when not in Tauri', async () => {
-    const template = BUILT_IN_TEMPLATES[0];
-    if (!template) {
-      throw new Error('Missing built-in template fixture');
-    }
-    const saved = await saveTemplateToHost(template);
-    expect(saved.id).toBe(template.id);
+  it('saves templates through the host', async () => {
+    invokeMock.mockImplementationOnce(
+      mockIpcOk({
+        id: 'template-1',
+        documentId: 'canvasdoc-1',
+        name: 'Template',
+        description: 'Example',
+        widgets: [],
+      }),
+    );
+    const saved = await saveTemplateToHost({
+      id: 'template-1',
+      documentId: 'canvasdoc-1',
+      name: 'Template',
+      description: 'Example',
+      widgets: [],
+    });
+    expect(saved.id).toBe('template-1');
   });
 });

@@ -1,15 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { isTauri } from 'praxis/platform';
+import { clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 
 describe('praxis/platform', () => {
+  afterEach(() => {
+    clearTauriMocks();
+  });
+
   it('detects tauri internals when present', () => {
-    const win = globalThis.window as Window & { __TAURI_INTERNALS__?: unknown };
     expect(isTauri()).toBe(false);
 
-    win.__TAURI_INTERNALS__ = {};
+    installTauriMocks();
     expect(isTauri()).toBe(true);
-
-    delete win.__TAURI_INTERNALS__;
   });
 });

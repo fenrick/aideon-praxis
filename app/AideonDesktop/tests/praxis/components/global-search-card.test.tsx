@@ -90,7 +90,7 @@ describe('GlobalSearchCard', () => {
         name: 'Command palette quick search',
         asOf: new Date().toISOString(),
         fetchedAt: new Date().toISOString(),
-        source: 'mock',
+        source: 'host',
       },
       columns: [
         { id: 'name', label: 'Name', type: 'string' },

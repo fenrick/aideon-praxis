@@ -39,7 +39,7 @@ const CATALOGUE_VIEW: PraxisApi.CatalogueViewModel = {
     asOf: '2025-10-01T00:00:00.000Z',
     fetchedAt: '2025-10-01T00:01:00.000Z',
     scenario: 'main',
-    source: 'mock',
+    source: 'host',
   },
   columns: CATALOGUE_WIDGET.view.columns,
   rows: [

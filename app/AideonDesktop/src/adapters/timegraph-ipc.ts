@@ -14,15 +14,15 @@ import type {
 import { invokeIpc } from './ipc';
 
 const COMMANDS = {
-  stateAt: 'chrona.temporal.state_at',
-  diff: 'chrona.temporal.diff',
-  topologyDelta: 'chrona.temporal.topology_delta',
-  commitChanges: 'chrona.temporal.commit_changes',
-  listCommits: 'chrona.temporal.list_commits',
-  createBranch: 'chrona.temporal.create_branch',
-  listBranches: 'chrona.temporal.list_branches',
-  mergeBranches: 'chrona.temporal.merge_branches',
-  metamodelGet: 'praxis.metamodel.get',
+  stateAt: 'chrona_temporal_state_at',
+  diff: 'chrona_temporal_diff',
+  topologyDelta: 'chrona_temporal_topology_delta',
+  commitChanges: 'chrona_temporal_commit_changes',
+  listCommits: 'chrona_temporal_list_commits',
+  createBranch: 'chrona_temporal_create_branch',
+  listBranches: 'chrona_temporal_list_branches',
+  mergeBranches: 'chrona_temporal_merge_branches',
+  metamodelGet: 'praxis_metamodel_get',
 } as const;
 
 export const TIMEGRAPH_IPC_COMMANDS = COMMANDS;

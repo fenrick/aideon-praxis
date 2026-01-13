@@ -13,75 +13,20 @@ import {
 import { ColorThemeProvider } from 'design-system/theme/color-theme';
 import { isTauriRuntime } from 'lib/runtime';
 
+import {
+  clearTauriMocks,
+  findIpcCall,
+  installTauriMocks,
+  requestPayloadFromArguments,
+} from '../tauri-mocks';
+
 vi.mock('@/root', () => ({ AideonDesktopRoot: () => <div>Root</div> }));
-
-/**
- * Narrow unknown values to plain object records.
- * @param value
- */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-/**
- * Extract the requestId value from a Tauri invoke arguments object.
- * @param invokeArguments - Raw invoke args.
- */
-function requestIdFromInvokeArguments(invokeArguments: unknown): string | undefined {
-  if (!isRecord(invokeArguments)) {
-    return undefined;
-  }
-  const request = invokeArguments.request;
-  if (!isRecord(request)) {
-    return undefined;
-  }
-  const requestId = request.requestId;
-  return typeof requestId === 'string' ? requestId : undefined;
-}
-
-/**
- * Extract the request payload value from a Tauri invoke arguments object.
- * @param invokeArguments - Raw invoke args.
- */
-function payloadFromInvokeArguments(invokeArguments: unknown): unknown {
-  if (!isRecord(invokeArguments)) {
-    return undefined;
-  }
-  const request = invokeArguments.request;
-  if (!isRecord(request)) {
-    return undefined;
-  }
-  return request.payload;
-}
-
-/**
- * Find invoke args for a given command.
- * @param calls
- * @param command
- */
-function findInvokeArguments(calls: unknown[][], command: string): unknown {
-  const call = calls.find((entry) => entry[0] === command);
-  return call?.[1];
-}
-
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn().mockImplementation((_command: string, invokeArguments: unknown) => {
-    const requestId = requestIdFromInvokeArguments(invokeArguments) ?? 'req';
-    return Promise.resolve({ requestId, status: 'ok', result: undefined });
-  }),
-}));
-let currentWindowLabel = 'main';
-vi.mock('@tauri-apps/api/window', () => ({
-  getCurrentWindow: () => ({ label: currentWindowLabel }),
-}));
 
 afterEach(() => {
   cleanup();
-  delete (globalThis as { __TAURI__?: unknown }).__TAURI__;
-  delete (globalThis as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+  clearTauriMocks();
   vi.clearAllMocks();
   vi.useRealTimers();
-  currentWindowLabel = 'main';
 });
 
 describe('app screens', () => {
@@ -91,9 +36,7 @@ describe('app screens', () => {
   });
 
   it('signals frontend readiness in tauri', async () => {
-    (globalThis as { __TAURI__?: unknown }).__TAURI__ = {};
-    const { invoke } = await import('@tauri-apps/api/core');
-    const invokeMock = vi.mocked(invoke);
+    installTauriMocks();
 
     render(
       <FrontendReady>
@@ -103,11 +46,11 @@ describe('app screens', () => {
 
     expect(screen.getByText('ready')).toBeInTheDocument();
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith('system.setup.complete', expect.anything());
+      const call = findIpcCall('system_setup_complete');
+      expect(call).toBeDefined();
     });
-    const calls = (invokeMock as unknown as { mock: { calls: unknown[][] } }).mock.calls;
-    const invokeArguments = findInvokeArguments(calls, 'system.setup.complete');
-    expect(payloadFromInvokeArguments(invokeArguments)).toEqual({ task: 'frontend' });
+    const call = findIpcCall('system_setup_complete');
+    expect(requestPayloadFromArguments(call?.arguments_)).toEqual({ task: 'frontend' });
   });
 
   it('detects tauri runtime from global flags', () => {
@@ -128,19 +71,16 @@ describe('app screens', () => {
   });
 
   it('signals frontend readiness from the splash window', async () => {
-    (globalThis as { __TAURI__?: unknown }).__TAURI__ = {};
-    currentWindowLabel = 'splash';
-    const { invoke } = await import('@tauri-apps/api/core');
-    const invokeMock = vi.mocked(invoke);
+    installTauriMocks({ currentWindow: 'splash' });
 
     render(<SplashScreenRoute />);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith('system.setup.complete', expect.anything());
+      const call = findIpcCall('system_setup_complete');
+      expect(call).toBeDefined();
     });
-    const calls = (invokeMock as unknown as { mock: { calls: unknown[][] } }).mock.calls;
-    const invokeArguments = findInvokeArguments(calls, 'system.setup.complete');
-    expect(payloadFromInvokeArguments(invokeArguments)).toEqual({ task: 'frontend' });
+    const call = findIpcCall('system_setup_complete');
+    expect(requestPayloadFromArguments(call?.arguments_)).toEqual({ task: 'frontend' });
   });
 
   it('renders status and about screens', () => {

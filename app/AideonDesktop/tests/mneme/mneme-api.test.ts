@@ -1,12 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/workspaces/mneme/platform', () => ({ isTauri: vi.fn() }));
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
-import { isTauri } from '@/workspaces/mneme/platform';
-import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+
+import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 
 import {
   __test__,
@@ -73,9 +71,13 @@ import {
   upsertValidationRules,
 } from '@/workspaces/mneme/mneme-api';
 
-const isTauriMock = vi.mocked(isTauri);
-const invokeMock = vi.mocked(invoke);
 const listenMock = vi.mocked(listen);
+const invokeMock =
+  vi.fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>();
+
+afterEach(() => {
+  clearTauriMocks();
+});
 
 /**
  * @param records
@@ -161,9 +163,15 @@ function expectIpcInvoke(command: string, payload: Record<string, unknown>) {
 
 describe('mneme-api metamodel bindings', () => {
   beforeEach(() => {
-    isTauriMock.mockReturnValue(true);
     invokeMock.mockReset();
+    invokeMock.mockImplementation(
+      (command: string, arguments_: Record<string, unknown> | undefined) =>
+        buildOkResponse(arguments_),
+    );
     listenMock.mockReset();
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
   });
 
   it('maps metamodel batch payloads to rust shapes', async () => {
@@ -209,7 +217,7 @@ describe('mneme-api metamodel bindings', () => {
       },
     });
 
-    expectIpcInvoke('mneme.store.upsert_metamodel_batch', {
+    expectIpcInvoke('mneme_store_upsert_metamodel_batch', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -259,7 +267,7 @@ describe('mneme-api metamodel bindings', () => {
   });
 
   it('returns a mock schema hash outside Tauri', async () => {
-    isTauriMock.mockReturnValue(false);
+    clearTauriMocks();
     const result = await compileEffectiveSchema({
       partitionId: 'p-1',
       actorId: 'a-1',
@@ -278,13 +286,13 @@ describe('mneme-api metamodel bindings', () => {
         assertedAt: '123',
         typeId: 't-1',
       }),
-    ).rejects.toThrow("Host command 'mneme.store.compile_effective_schema' failed: nope");
+    ).rejects.toThrow("Host command 'mneme_store_compile_effective_schema' failed: nope");
   });
 
   it('formats non-object invoke failures as strings', async () => {
     invokeMock.mockRejectedValueOnce('boom');
     await expect(getSchemaManifest()).rejects.toThrow(
-      "Host command 'mneme.store.get_schema_manifest' failed: boom",
+      "Host command 'mneme_store_get_schema_manifest' failed: boom",
     );
   });
 
@@ -364,7 +372,7 @@ describe('mneme-api metamodel bindings', () => {
       scenarioId: 's-1',
     });
 
-    expectIpcInvoke('mneme.store.create_node', {
+    expectIpcInvoke('mneme_store_create_node', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -392,7 +400,7 @@ describe('mneme-api metamodel bindings', () => {
       scenarioId: 's-1',
     });
 
-    expectIpcInvoke('mneme.store.create_edge', {
+    expectIpcInvoke('mneme_store_create_edge', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -421,7 +429,7 @@ describe('mneme-api metamodel bindings', () => {
       isTombstone: true,
     });
 
-    expectIpcInvoke('mneme.store.set_edge_existence_interval', {
+    expectIpcInvoke('mneme_store_set_edge_existence_interval', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -442,7 +450,7 @@ describe('mneme-api metamodel bindings', () => {
       entityId: 'n-1',
     });
 
-    expectIpcInvoke('mneme.store.tombstone_entity', {
+    expectIpcInvoke('mneme_store_tombstone_entity', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -465,7 +473,7 @@ describe('mneme-api metamodel bindings', () => {
       layer: 'Actual',
     });
 
-    expectIpcInvoke('mneme.store.set_property_interval', {
+    expectIpcInvoke('mneme_store_set_property_interval', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -491,7 +499,7 @@ describe('mneme-api metamodel bindings', () => {
       validFrom: '2025-01-01T00:00:00Z',
     });
 
-    expectIpcInvoke('mneme.store.clear_property_interval', {
+    expectIpcInvoke('mneme_store_clear_property_interval', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -518,7 +526,7 @@ describe('mneme-api metamodel bindings', () => {
       validFrom: '2025-01-01T00:00:00Z',
     });
 
-    expectIpcInvoke('mneme.store.or_set_update', {
+    expectIpcInvoke('mneme_store_or_set_update', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -546,7 +554,7 @@ describe('mneme-api metamodel bindings', () => {
       validFrom: '2025-01-01T00:00:00Z',
     });
 
-    expectIpcInvoke('mneme.store.counter_update', {
+    expectIpcInvoke('mneme_store_counter_update', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -632,7 +640,7 @@ describe('mneme-api metamodel bindings', () => {
       limit: 5,
     });
 
-    expectIpcInvoke('mneme.store.list_entities', {
+    expectIpcInvoke('mneme_store_list_entities', {
       partitionId: 'p-1',
       at: '2025-01-01T00:00:00Z',
       filters: [{ fieldId: 'f-1', op: 'Eq', value: { Str: 'alpha' } }],
@@ -712,7 +720,7 @@ describe('mneme-api metamodel bindings', () => {
     });
 
     expect(result.runId).toBe('r-1');
-    expectIpcInvoke('mneme.store.store_pagerank_scores', {
+    expectIpcInvoke('mneme_store_store_pagerank_scores', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -778,7 +786,7 @@ describe('mneme-api metamodel bindings', () => {
       { recordType: 'header', data: { version: 1 } },
       { recordType: 'op', data: { opId: 'o-1' } },
     ]);
-    expectIpcInvoke('mneme.store.export_ops_stream', {
+    expectIpcInvoke('mneme_store_export_ops_stream', {
       partitionId: 'p-1',
     });
   });
@@ -839,7 +847,7 @@ describe('mneme-api metamodel bindings', () => {
       ],
     });
 
-    expectIpcInvoke('mneme.store.ingest_ops', {
+    expectIpcInvoke('mneme_store_ingest_ops', {
       partitionId: 'p-1',
       ops: [
         {
@@ -867,7 +875,7 @@ describe('mneme-api metamodel bindings', () => {
     );
 
     expect(report).toEqual({ opsImported: 2, opsSkipped: 1, errors: 0 });
-    expectIpcInvoke('mneme.store.import_ops_stream', {
+    expectIpcInvoke('mneme_store_import_ops_stream', {
       targetPartition: 'p-1',
       allowPartitionCreate: true,
       strictSchema: true,
@@ -888,7 +896,7 @@ describe('mneme-api metamodel bindings', () => {
     }
 
     expect(records).toEqual([{ recordType: 'header', data: { snap: true } }]);
-    expectIpcInvoke('mneme.store.export_snapshot_stream', {
+    expectIpcInvoke('mneme_store_export_snapshot_stream', {
       partitionId: 'p-1',
       asOfAssertedAt: '123',
     });
@@ -905,7 +913,7 @@ describe('mneme-api metamodel bindings', () => {
       yieldRecords([{ recordType: 'header', data: { snap: true } }]),
     );
 
-    expectIpcInvoke('mneme.store.import_snapshot_stream', {
+    expectIpcInvoke('mneme_store_import_snapshot_stream', {
       targetPartition: 'p-1',
       allowPartitionCreate: false,
       records: [{ record_type: 'header', data: { snap: true } }],
@@ -954,7 +962,7 @@ describe('mneme-api metamodel bindings', () => {
         params: { field: 'name' },
       },
     ]);
-    expectIpcInvoke('mneme.store.upsert_validation_rules', {
+    expectIpcInvoke('mneme_store_upsert_validation_rules', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
@@ -969,7 +977,7 @@ describe('mneme-api metamodel bindings', () => {
         },
       ],
     });
-    expectIpcInvoke('mneme.store.list_validation_rules', {
+    expectIpcInvoke('mneme_store_list_validation_rules', {
       partitionId: 'p-1',
     });
   });
@@ -1013,7 +1021,7 @@ describe('mneme-api metamodel bindings', () => {
         params: { fields: ['f-2'] },
       },
     ]);
-    expectIpcInvoke('mneme.store.upsert_computed_rules', {
+    expectIpcInvoke('mneme_store_upsert_computed_rules', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '555',
@@ -1027,7 +1035,7 @@ describe('mneme-api metamodel bindings', () => {
         },
       ],
     });
-    expectIpcInvoke('mneme.store.list_computed_rules', {
+    expectIpcInvoke('mneme_store_list_computed_rules', {
       partitionId: 'p-1',
     });
   });
@@ -1078,7 +1086,7 @@ describe('mneme-api metamodel bindings', () => {
         computedAssertedAt: '321',
       },
     ]);
-    expectIpcInvoke('mneme.store.upsert_computed_cache', {
+    expectIpcInvoke('mneme_store_upsert_computed_cache', {
       partitionId: 'p-1',
       entries: [
         {
@@ -1092,7 +1100,7 @@ describe('mneme-api metamodel bindings', () => {
         },
       ],
     });
-    expectIpcInvoke('mneme.store.list_computed_cache', {
+    expectIpcInvoke('mneme_store_list_computed_cache', {
       partitionId: 'p-1',
       fieldId: 'f-1',
       limit: 25,
@@ -1105,7 +1113,7 @@ describe('mneme-api metamodel bindings', () => {
     const result = await getPartitionHead({ partitionId: 'p-1' });
 
     expect(result.head).toBe('999');
-    expectIpcInvoke('mneme.store.get_partition_head', {
+    expectIpcInvoke('mneme_store_get_partition_head', {
       partitionId: 'p-1',
       scenarioId: undefined,
     });
@@ -1128,13 +1136,13 @@ describe('mneme-api metamodel bindings', () => {
     });
 
     expect(scenarioId).toBe('s-1');
-    expectIpcInvoke('mneme.store.create_scenario', {
+    expectIpcInvoke('mneme_store_create_scenario', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '123',
       name: 'Plan A',
     });
-    expectIpcInvoke('mneme.store.delete_scenario', {
+    expectIpcInvoke('mneme_store_delete_scenario', {
       partitionId: 'p-1',
       actorId: 'a-1',
       assertedAt: '124',
@@ -1155,24 +1163,24 @@ describe('mneme-api metamodel bindings', () => {
     });
     await triggerCompaction({ partitionId: 'p-1', reason: 'compact' });
 
-    expectIpcInvoke('mneme.store.trigger_rebuild_effective_schema', {
+    expectIpcInvoke('mneme_store_trigger_rebuild_effective_schema', {
       partitionId: 'p-1',
       reason: 'rebuild',
     });
-    expectIpcInvoke('mneme.store.trigger_refresh_integrity', {
+    expectIpcInvoke('mneme_store_trigger_refresh_integrity', {
       partitionId: 'p-1',
       reason: 'integrity',
     });
-    expectIpcInvoke('mneme.store.trigger_refresh_analytics_projections', {
+    expectIpcInvoke('mneme_store_trigger_refresh_analytics_projections', {
       partitionId: 'p-1',
       reason: 'analytics',
     });
-    expectIpcInvoke('mneme.store.trigger_retention', {
+    expectIpcInvoke('mneme_store_trigger_retention', {
       partitionId: 'p-1',
       reason: 'cleanup',
       policy: { keepOpsDays: 30 },
     });
-    expectIpcInvoke('mneme.store.trigger_compaction', {
+    expectIpcInvoke('mneme_store_trigger_compaction', {
       partitionId: 'p-1',
       reason: 'compact',
     });
@@ -1256,10 +1264,10 @@ describe('mneme-api metamodel bindings', () => {
 
     expect(sub.subscriptionId).toBe('sub-1');
     expect(ok).toBe(true);
-    expectIpcInvoke('mneme.store.subscribe_partition', {
+    expectIpcInvoke('mneme_store_subscribe_partition', {
       partitionId: 'p-1',
     });
-    expectIpcInvoke('mneme.store.unsubscribe_partition', {
+    expectIpcInvoke('mneme_store_unsubscribe_partition', {
       subscriptionId: 'sub-1',
     });
   });
@@ -1295,7 +1303,7 @@ describe('mneme-api metamodel bindings', () => {
       runId: 'run-1',
       updatedAssertedAt: '90210',
     });
-    expectIpcInvoke('mneme.store.get_integrity_head', {
+    expectIpcInvoke('mneme_store_get_integrity_head', {
       partitionId: 'p-1',
       scenarioId: undefined,
     });
@@ -1319,7 +1327,7 @@ describe('mneme-api metamodel bindings', () => {
       schemaVersionHash: 'hash-1',
       updatedAssertedAt: '12',
     });
-    expectIpcInvoke('mneme.store.get_last_schema_compile', {
+    expectIpcInvoke('mneme_store_get_last_schema_compile', {
       partitionId: 'p-1',
       typeId: 't-1',
     });
@@ -1361,7 +1369,7 @@ describe('mneme-api metamodel bindings', () => {
       dedupeKey: 'key',
       lastError: 'oops',
     });
-    expectIpcInvoke('mneme.store.list_failed_jobs', {
+    expectIpcInvoke('mneme_store_list_failed_jobs', {
       partitionId: 'p-1',
       limit: 5,
     });
@@ -1448,7 +1456,7 @@ describe('mneme-api metamodel bindings', () => {
         isTombstone: false,
       },
     });
-    expectIpcInvoke('mneme.store.explain_resolution', {
+    expectIpcInvoke('mneme_store_explain_resolution', {
       partitionId: 'p-1',
       entityId: 'n-1',
       fieldId: 'f-1',
@@ -1507,7 +1515,7 @@ describe('mneme-api metamodel bindings', () => {
         isTombstone: false,
       },
     });
-    expectIpcInvoke('mneme.store.explain_traversal', {
+    expectIpcInvoke('mneme_store_explain_traversal', {
       partitionId: 'p-1',
       edgeId: 'e-1',
       at: '2024-01-02T00:00:00.000Z',
@@ -1532,7 +1540,7 @@ describe('mneme-api helpers', () => {
 
 describe('mneme-api non-tauri fallbacks', () => {
   beforeEach(() => {
-    isTauriMock.mockReturnValue(false);
+    clearTauriMocks();
   });
 
   it('returns mock values when tauri is unavailable', async () => {

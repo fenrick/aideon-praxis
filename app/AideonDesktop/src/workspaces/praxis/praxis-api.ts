@@ -15,26 +15,25 @@ import type {
 import { invokeIpc } from '../../adapters/ipc';
 
 import { toErrorMessage } from './lib/errors';
-import { isTauri } from './platform';
 
 const COMMANDS = {
-  workerHealth: 'system.worker.health',
-  graphView: 'praxis.artefact.execute_graph',
-  catalogueView: 'praxis.artefact.execute_catalogue',
-  matrixView: 'praxis.artefact.execute_matrix',
-  chartView: 'praxis.artefact.execute_chart',
-  metaModel: 'praxis.metamodel.get',
-  canvasGetLayout: 'praxis.canvas.get_layout',
-  canvasSaveLayout: 'praxis.canvas.save_layout',
-  graphLayoutGet: 'praxis.graph.layout.get',
-  graphLayoutSave: 'praxis.graph.layout.save',
-  listBranches: 'chrona.temporal.list_branches',
-  listCommits: 'chrona.temporal.list_commits',
-  stateAt: 'chrona.temporal.state_at',
-  diffSummary: 'chrona.temporal.diff',
-  mergeBranches: 'chrona.temporal.merge_branches',
-  applyOperations: 'praxis.task.apply_operations',
-  listScenarios: 'praxis.scenario.list',
+  workerHealth: 'system_worker_health',
+  graphView: 'praxis_artefact_execute_graph',
+  catalogueView: 'praxis_artefact_execute_catalogue',
+  matrixView: 'praxis_artefact_execute_matrix',
+  chartView: 'praxis_artefact_execute_chart',
+  metaModel: 'praxis_metamodel_get',
+  canvasGetLayout: 'praxis_canvas_get_layout',
+  canvasSaveLayout: 'praxis_canvas_save_layout',
+  graphLayoutGet: 'praxis_graph_layout_get',
+  graphLayoutSave: 'praxis_graph_layout_save',
+  listBranches: 'chrona_temporal_list_branches',
+  listCommits: 'chrona_temporal_list_commits',
+  stateAt: 'chrona_temporal_state_at',
+  diffSummary: 'chrona_temporal_diff',
+  mergeBranches: 'chrona_temporal_merge_branches',
+  applyOperations: 'praxis_task_apply_operations',
+  listScenarios: 'praxis_scenario_list',
 } as const;
 
 export const PRAXIS_IPC_COMMANDS = COMMANDS;
@@ -115,7 +114,7 @@ export interface ViewMetadata {
   scenario?: string;
   layer?: Layer;
   fetchedAt: string;
-  source: 'host' | 'mock';
+  source: 'host';
 }
 
 export interface ViewStats {
@@ -142,14 +141,10 @@ export interface GraphViewModel {
 /**
  * Fetch the Praxis meta-model document from the host.
  *
- * This is a contract surface (DTO) and must remain stable; mock-only usage should
- * go through `praxis/lib/meta-model` for browser previews.
+ * This is a contract surface (DTO) and must remain stable.
  */
 export async function getMetaModelDocument(): Promise<MetaModelDocument> {
-  if (!isTauri()) {
-    throw new Error('Meta-model is only available from the host in Tauri runtime.');
-  }
-  return invokeIpc<MetaModelDocument>(COMMANDS.metaModel, {});
+  return invokeHost<MetaModelDocument>(COMMANDS.metaModel, {});
 }
 
 /**
@@ -159,10 +154,7 @@ export async function getMetaModelDocument(): Promise<MetaModelDocument> {
 export async function getCanvasLayout(
   request: CanvasLayoutGetRequest,
 ): Promise<CanvasLayoutSnapshot | undefined> {
-  if (!isTauri()) {
-    return undefined;
-  }
-  const result = await invokeIpc<CanvasLayoutSnapshot | null>(COMMANDS.canvasGetLayout, {
+  const result = await invokeHost<CanvasLayoutSnapshot | null>(COMMANDS.canvasGetLayout, {
     docId: request.docId,
     asOf: request.asOf,
     scenario: request.scenario,
@@ -176,10 +168,7 @@ export async function getCanvasLayout(
  * @param snapshot layout payload
  */
 export async function saveCanvasLayout(snapshot: CanvasLayoutSnapshot): Promise<void> {
-  if (!isTauri()) {
-    return;
-  }
-  await invokeIpc<unknown>(COMMANDS.canvasSaveLayout, {
+  await invokeHost<unknown>(COMMANDS.canvasSaveLayout, {
     docId: snapshot.docId,
     asOf: snapshot.asOf,
     scenario: snapshot.scenario,
@@ -197,10 +186,7 @@ export async function saveCanvasLayout(snapshot: CanvasLayoutSnapshot): Promise<
 export async function getGraphLayout(
   request: GraphLayoutGetRequest,
 ): Promise<GraphLayoutSnapshot | undefined> {
-  if (!isTauri()) {
-    return undefined;
-  }
-  const result = await invokeIpc<GraphLayoutSnapshot | null>(COMMANDS.graphLayoutGet, {
+  const result = await invokeHost<GraphLayoutSnapshot | null>(COMMANDS.graphLayoutGet, {
     docId: request.docId,
     widgetId: request.widgetId,
     asOf: request.asOf,
@@ -215,10 +201,7 @@ export async function getGraphLayout(
  * @param snapshot layout payload
  */
 export async function saveGraphLayout(snapshot: GraphLayoutSnapshot): Promise<void> {
-  if (!isTauri()) {
-    return;
-  }
-  await invokeIpc<unknown>(COMMANDS.graphLayoutSave, {
+  await invokeHost<unknown>(COMMANDS.graphLayoutSave, {
     docId: snapshot.docId,
     widgetId: snapshot.widgetId,
     asOf: snapshot.asOf,
@@ -341,13 +324,6 @@ export interface ScenarioSummary {
   isDefault?: boolean;
 }
 
-const MOCK_HEALTH: WorkerHealth = {
-  ok: true,
-  timestamp_ms: Date.now(),
-  status: 'mock',
-  notes: 'Using mock health state outside Tauri',
-};
-
 interface ListBranchesResponse {
   branches?: TemporalBranchSummaryPayload[];
 }
@@ -402,64 +378,54 @@ interface TemporalMergeConflictPayload {
 }
 
 /**
- * Return worker health, falling back to a mock payload when outside Tauri.
+ * Return worker health from the host.
  */
 export async function getWorkerHealth(): Promise<WorkerHealth> {
-  if (!isTauri()) {
-    return { ...MOCK_HEALTH, timestamp_ms: Date.now() };
-  }
-  return invokeIpc(COMMANDS.workerHealth, {});
+  return invokeHost(COMMANDS.workerHealth, {});
 }
 
 /**
- * Fetch a time-sliced graph view from the host or return a mock for tests/dev.
+ * Fetch a time-sliced graph view from the host.
  * @param definition Graph view request parameters.
  */
 export async function getGraphView(definition: GraphViewDefinition): Promise<GraphViewModel> {
-  return callOrMock(COMMANDS.graphView, definition, () => mockGraphView(definition));
+  return invokeHost(COMMANDS.graphView, definition);
 }
 
 /**
- * Fetch catalogue rows/columns for the requested definition or a mock payload.
+ * Fetch catalogue rows/columns for the requested definition.
  * @param definition catalogue view definition (columns, filters, pagination).
  */
 export async function getCatalogueView(
   definition: CatalogueViewDefinition,
 ): Promise<CatalogueViewModel> {
-  return callOrMock(COMMANDS.catalogueView, definition, () => mockCatalogueView(definition));
+  return invokeHost(COMMANDS.catalogueView, definition);
 }
 
 /**
- * Fetch a matrix view (row/column axes plus cells), defaulting to mock data.
+ * Fetch a matrix view (row/column axes plus cells).
  * @param definition matrix view definition.
  */
 export async function getMatrixView(definition: MatrixViewDefinition): Promise<MatrixViewModel> {
-  return callOrMock(COMMANDS.matrixView, definition, () => mockMatrixView(definition));
+  return invokeHost(COMMANDS.matrixView, definition);
 }
 
 /**
- * Fetch a chart view, returning mock KPI/line/bar data when not in Tauri.
+ * Fetch a chart view from the host.
  * @param definition chart view definition.
  */
 export async function getChartView(definition: ChartViewDefinition): Promise<ChartViewModel> {
-  return callOrMock(COMMANDS.chartView, definition, () => mockChartView(definition));
+  return invokeHost(COMMANDS.chartView, definition);
 }
 
 /**
- * List temporal branches (scenarios) from the host; mock when offline.
+ * List temporal branches (scenarios) from the host.
  */
 export async function listTemporalBranches(): Promise<TemporalBranchSummary[]> {
-  const response = await callOrMock<ListBranchesResponse | TemporalBranchSummary[]>(
-    COMMANDS.listBranches,
-    {},
-    () => mockBranches(),
-  );
-  if (Array.isArray(response)) {
-    return response;
-  }
+  const response = await invokeHost<ListBranchesResponse>(COMMANDS.listBranches, {});
   const entries = Array.isArray(response.branches) ? response.branches : [];
   return entries.map((entry) => ({
-    name: typeof entry.name === 'string' ? entry.name : '',
+    name: requireStringField(entry.name, 'branch.name'),
     head: typeof entry.head === 'string' ? entry.head : undefined,
   }));
 }
@@ -469,16 +435,9 @@ export async function listTemporalBranches(): Promise<TemporalBranchSummary[]> {
  * @param branch branch name to query.
  */
 export async function listTemporalCommits(branch: string): Promise<TemporalCommitSummary[]> {
-  const response = await callOrMock<ListCommitsResponse | TemporalCommitSummary[]>(
-    COMMANDS.listCommits,
-    { branch },
-    () => mockCommits(branch),
-  );
-  if (Array.isArray(response)) {
-    return response;
-  }
+  const response = await invokeHost<ListCommitsResponse>(COMMANDS.listCommits, { branch });
   const commits = Array.isArray(response.commits) ? response.commits : [];
-  return commits.map((entry) => normalizeCommit(entry, branch));
+  return commits.map((entry) => normalizeCommit(entry));
 }
 
 /**
@@ -486,10 +445,9 @@ export async function listTemporalCommits(branch: string): Promise<TemporalCommi
  * @param request timestamp/scenario/confidence payload.
  */
 export async function getStateAtSnapshot(request: StateAtRequest): Promise<StateAtSnapshot> {
-  const snapshot = await callOrMock<StateAtSnapshot>(
+  const snapshot = await invokeHost<StateAtSnapshot>(
     COMMANDS.stateAt,
     serializeStateAtArguments(request),
-    () => mockStateAt(request),
   );
   return {
     ...snapshot,
@@ -500,14 +458,13 @@ export async function getStateAtSnapshot(request: StateAtRequest): Promise<State
 }
 
 /**
- * Fetch diff summary metrics between two references; uses mock data outside Tauri.
+ * Fetch diff summary metrics between two references.
  * @param request diff request containing `from`, `to`, and optional scope.
  */
 export async function getTemporalDiff(request: TemporalDiffRequest): Promise<TemporalDiffSnapshot> {
-  const summary = await callOrMock<DiffSummaryResponse>(
+  const summary = await invokeHost<DiffSummaryResponse>(
     COMMANDS.diffSummary,
     serializeDiffArguments(request),
-    () => mockDiffSummary(request),
   );
   return {
     from: summary.from ?? request.from,
@@ -535,9 +492,7 @@ export async function mergeTemporalBranches(request: {
   target: string;
   strategy?: string;
 }): Promise<TemporalMergeResult> {
-  const response = await callOrMock<MergeResponsePayload>(COMMANDS.mergeBranches, request, () =>
-    mockMerge(request),
-  );
+  const response = await invokeHost<MergeResponsePayload>(COMMANDS.mergeBranches, request);
   const conflicts = Array.isArray(response.conflicts)
     ? response.conflicts
         .map((conflict) => normalizeConflict(conflict))
@@ -551,7 +506,6 @@ export async function mergeTemporalBranches(request: {
 
 /**
  * Apply a batch of graph operations; host handles commit creation.
- * Falls back to a deterministic mock commit in dev.
  * @param operations list of operations to apply.
  * @param options optional context (e.g. branch/scenario).
  * @param options.branch
@@ -560,33 +514,23 @@ export async function applyOperations(
   operations: PraxisOperation[],
   options?: { branch?: string },
 ): Promise<OperationBatchResult> {
-  return callOrMock(COMMANDS.applyOperations, { operations, branch: options?.branch }, () =>
-    mockApplyOperations(operations),
-  );
+  return invokeHost(COMMANDS.applyOperations, { operations, branch: options?.branch });
 }
 
 /**
- * List available scenarios; returns mock scenarios when running outside Tauri.
+ * List available scenarios.
  */
 export async function listScenarios(): Promise<ScenarioSummary[]> {
-  return callOrMock(COMMANDS.listScenarios, {}, () => mockScenarios());
+  return invokeHost(COMMANDS.listScenarios, {});
 }
 
 /**
- * Invoke a Tauri command when available; otherwise return a mock fallback.
+ * Invoke a host command through the Tauri bridge.
  * Wraps host errors with a readable message.
  * @param command Tauri command name.
  * @param payload payload for the command.
- * @param fallback function returning mock data when not in Tauri.
  */
-async function callOrMock<T>(
-  command: string,
-  payload: object,
-  fallback: () => T | Promise<T>,
-): Promise<T> {
-  if (!isTauri()) {
-    return fallback();
-  }
+async function invokeHost<T>(command: string, payload: object): Promise<T> {
   try {
     const result = await invokeIpc<T>(command, payload as Record<string, unknown>);
     return result;
@@ -599,34 +543,48 @@ async function callOrMock<T>(
 /**
  * Normalise a commit payload into the strict `TemporalCommitSummary` shape.
  * @param payload raw host commit payload.
- * @param fallbackBranch branch to use when host omits it.
  */
-function normalizeCommit(
-  payload: TemporalCommitSummaryPayload,
-  fallbackBranch: string,
-): TemporalCommitSummary {
+function normalizeCommit(payload: TemporalCommitSummaryPayload): TemporalCommitSummary {
+  const id = requireStringField(payload.id, 'commit.id');
+  const branch = requireStringField(payload.branch, 'commit.branch');
+  const message = requireStringField(payload.message, 'commit.message');
   const parents = Array.isArray(payload.parents)
     ? (payload.parents as unknown[]).filter((value): value is string => typeof value === 'string')
     : [];
   const tags = Array.isArray(payload.tags)
     ? (payload.tags as unknown[]).filter((value): value is string => typeof value === 'string')
     : [];
-  let changeCount = 0;
+  let changeCount: number | undefined;
   if (typeof payload.changeCount === 'number') {
     changeCount = payload.changeCount;
   } else if (typeof payload.change_count === 'number') {
     changeCount = payload.change_count;
   }
+  if (changeCount === undefined) {
+    throw new Error('Host commit payload missing changeCount.');
+  }
   return {
-    id: payload.id ?? 'unknown',
-    branch: payload.branch ?? fallbackBranch,
+    id,
+    branch,
     parents,
     author: payload.author ?? undefined,
     time: payload.time ?? undefined,
-    message: payload.message ?? 'Commit',
+    message,
     tags,
     changeCount,
   };
+}
+
+/**
+ * Require a non-empty string field from host payloads.
+ * @param value
+ * @param label
+ */
+function requireStringField(value: unknown, label: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`Host commit payload missing ${label}.`);
+  }
+  return value;
 }
 
 /**
@@ -645,416 +603,6 @@ function normalizeConflict(
     message:
       typeof payload.message === 'string' ? payload.message : 'Conflict requires manual resolution',
   };
-}
-
-const GRAPH_NODE_IDS = {
-  onboarding: 'cap-customer-onboarding',
-  support: 'cap-customer-support',
-  workflow: 'app-workflow',
-  identity: 'svc-auth',
-} as const;
-
-/**
- * Mock graph view for offline/dev usage.
- * @param definition
- */
-function mockGraphView(definition: GraphViewDefinition): GraphViewModel {
-  const nodes: GraphNodeView[] = [
-    {
-      id: GRAPH_NODE_IDS.onboarding,
-      label: 'Customer Onboarding',
-      type: 'Capability',
-      position: { x: 120, y: 200 },
-    },
-    {
-      id: GRAPH_NODE_IDS.support,
-      label: 'Customer Support',
-      type: 'Capability',
-      position: { x: 420, y: 120 },
-    },
-    {
-      id: GRAPH_NODE_IDS.workflow,
-      label: 'Workflow Engine',
-      type: 'Application',
-      position: { x: 420, y: 320 },
-    },
-    {
-      id: GRAPH_NODE_IDS.identity,
-      label: 'Identity Service',
-      type: 'Service',
-      position: { x: 680, y: 220 },
-    },
-  ];
-
-  const edges: GraphEdgeView[] = [
-    {
-      id: 'edge-1',
-      from: GRAPH_NODE_IDS.onboarding,
-      to: GRAPH_NODE_IDS.support,
-      type: 'supports',
-      label: 'handoff',
-    },
-    {
-      id: 'edge-2',
-      from: GRAPH_NODE_IDS.support,
-      to: GRAPH_NODE_IDS.workflow,
-      type: 'depends_on',
-      label: 'tickets',
-    },
-    {
-      id: 'edge-3',
-      from: GRAPH_NODE_IDS.workflow,
-      to: GRAPH_NODE_IDS.identity,
-      type: 'depends_on',
-      label: 'auth',
-    },
-  ];
-
-  return {
-    metadata: buildMetadata(definition),
-    stats: {
-      nodes: nodes.length,
-      edges: edges.length,
-    },
-    nodes,
-    edges,
-  };
-}
-
-/**
- * Mock catalogue view for offline/dev usage.
- * @param definition
- */
-function mockCatalogueView(definition: CatalogueViewDefinition): CatalogueViewModel {
-  const columns =
-    definition.columns.length > 0
-      ? definition.columns
-      : [
-          { id: 'name', label: 'Name', type: 'string' as const },
-          { id: 'owner', label: 'Owner', type: 'string' as const },
-          { id: 'state', label: 'State', type: 'string' as const },
-        ];
-
-  const rows: CatalogueRow[] = [
-    {
-      id: 'cap-customer-onboarding',
-      values: { name: 'Customer Onboarding', owner: 'CX', state: 'Pilot' },
-    },
-    {
-      id: 'cap-customer-support',
-      values: { name: 'Customer Support', owner: 'Ops', state: 'Production' },
-    },
-    {
-      id: 'cap-incident-response',
-      values: { name: 'Incident Response', owner: 'SRE', state: 'In Flight' },
-    },
-  ];
-
-  return {
-    metadata: buildMetadata(definition),
-    columns,
-    rows,
-  };
-}
-
-const MATRIX_AXIS_IDS = {
-  onboarding: 'cap-customer-onboarding',
-  incident: 'cap-incident-response',
-  identity: 'svc-auth',
-  search: 'svc-search',
-} as const;
-
-/**
- * Mock matrix view for offline/dev usage.
- * @param definition
- */
-function mockMatrixView(definition: MatrixViewDefinition): MatrixViewModel {
-  const rows: MatrixAxis[] = [
-    { id: MATRIX_AXIS_IDS.onboarding, label: 'Customer Onboarding' },
-    { id: MATRIX_AXIS_IDS.incident, label: 'Incident Response' },
-  ];
-  const columns: MatrixAxis[] = [
-    { id: MATRIX_AXIS_IDS.identity, label: 'Identity Service' },
-    { id: MATRIX_AXIS_IDS.search, label: 'Search Platform' },
-  ];
-  const cells: MatrixCell[] = [
-    {
-      rowId: MATRIX_AXIS_IDS.onboarding,
-      columnId: MATRIX_AXIS_IDS.identity,
-      state: 'connected',
-      strength: 0.8,
-    },
-    { rowId: MATRIX_AXIS_IDS.onboarding, columnId: MATRIX_AXIS_IDS.search, state: 'missing' },
-    {
-      rowId: MATRIX_AXIS_IDS.incident,
-      columnId: MATRIX_AXIS_IDS.identity,
-      state: 'connected',
-      strength: 0.4,
-    },
-    { rowId: MATRIX_AXIS_IDS.incident, columnId: MATRIX_AXIS_IDS.search, state: 'missing' },
-  ];
-  return {
-    metadata: buildMetadata(definition),
-    rows,
-    columns,
-    cells,
-  };
-}
-
-/**
- * Mock chart view for offline/dev usage.
- * @param definition
- */
-function mockChartView(definition: ChartViewDefinition): ChartViewModel {
-  const metadata = buildMetadata(definition);
-  if (definition.chartType === 'kpi') {
-    return {
-      metadata,
-      chartType: 'kpi',
-      series: [],
-      kpi: {
-        value: 128,
-        units: 'services',
-        delta: 6,
-        trend: 'up',
-      },
-    };
-  }
-  if (definition.chartType === 'line') {
-    const baseTimestamp = Date.now() - 6 * 24 * 60 * 60 * 1000;
-    const points: ChartPoint[] = Array.from({ length: 7 }).map((_, index) => {
-      const timestamp = new Date(baseTimestamp + index * 24 * 60 * 60 * 1000);
-      return {
-        label: timestamp.toLocaleDateString('en-US', { weekday: 'short' }),
-        value: 80 + index * 5 + (index % 2 === 0 ? 3 : -4),
-        timestamp: timestamp.toISOString(),
-      };
-    });
-    return {
-      metadata,
-      chartType: 'line',
-      series: [
-        {
-          id: 'velocity',
-          label: 'Delivery velocity',
-          color: '#2563eb',
-          points,
-        },
-      ],
-    };
-  }
-  const categories = ['Security', 'Resilience', 'Efficiency', 'Experience'];
-  const series: ChartSeries[] = [
-    {
-      id: 'current',
-      label: 'Current',
-      color: '#0f172a',
-      points: categories.map((category) => ({ label: category, value: randomScore(category) })),
-    },
-    {
-      id: 'target',
-      label: 'Target',
-      color: '#10b981',
-      points: categories.map((category) => ({ label: category, value: 95 })),
-    },
-  ];
-  return {
-    metadata,
-    chartType: 'bar',
-    series,
-  };
-}
-
-/** Provide deterministic mock branch list for offline/dev use. */
-function mockBranches(): TemporalBranchSummary[] {
-  return [
-    { name: 'main', head: 'commit-main-004' },
-    { name: 'chronaplay', head: 'commit-chronaplay-002' },
-  ];
-}
-
-/**
- * Mock commit history for a branch with sensible timestamps and messages.
- * @param branch
- */
-function mockCommits(branch: string): TemporalCommitSummary[] {
-  if (branch === 'chronaplay') {
-    return [
-      mockCommit('commit-chronaplay-001', 'chronaplay', 'Chrona staging', -3),
-      mockCommit('commit-chronaplay-002', 'chronaplay', 'Chrona overlays', -1),
-    ];
-  }
-  return [
-    mockCommit('commit-main-001', 'main', 'Initial snapshot', -14),
-    mockCommit('commit-main-002', 'main', 'Capability ingest', -7),
-    mockCommit('commit-main-003', 'main', 'Application links', -2),
-    mockCommit('commit-main-004', 'main', 'Plan Events sync', 0),
-  ];
-}
-
-/**
- * Fabricate diff summary metrics for mock mode.
- * @param request
- */
-function mockDiffSummary(request: TemporalDiffRequest): DiffSummaryResponse {
-  return {
-    from: request.from,
-    to: request.to,
-    node_adds: 3,
-    node_mods: 2,
-    node_dels: 1,
-    edge_adds: 4,
-    edge_mods: 1,
-    edge_dels: 0,
-  };
-}
-
-/**
- * Simulate merge responses, injecting a conflict for a known branch pair.
- * @param request
- * @param request.source
- * @param request.target
- */
-function mockMerge(request: { source: string; target: string }): MergeResponsePayload {
-  if (request.source === 'chronaplay' && request.target === 'main') {
-    return {
-      result: 'conflicts',
-      conflicts: [
-        {
-          reference: 'cap-customer-onboarding',
-          kind: 'node',
-          message: 'Capability already diverged in main',
-        },
-      ],
-    };
-  }
-  return { result: 'merged', conflicts: [] };
-}
-
-/**
- * Create a mock commit with a timestamp offset for deterministic ordering.
- * @param id
- * @param branch
- * @param message
- * @param daysOffset
- */
-function mockCommit(
-  id: string,
-  branch: string,
-  message: string,
-  daysOffset: number,
-): TemporalCommitSummary {
-  const time = new Date(Date.now() + daysOffset * 24 * 60 * 60 * 1000).toISOString();
-  return {
-    id,
-    branch,
-    parents: [],
-    author: 'Praxis Bot',
-    time,
-    message,
-    tags: [],
-    changeCount: 12,
-  };
-}
-
-/**
- * Build a mock state-at snapshot with seeded node/edge counts.
- * @param request
- */
-function mockStateAt(request: StateAtRequest): StateAtSnapshot {
-  const asOf = request.asOf;
-  const scenario = request.scenario ?? 'main';
-  const base = seededMetric(`${asOf}-${scenario}`);
-  const nodes = 220 + (base % 60);
-  const edges = 430 + (base % 90);
-  return {
-    asOf,
-    scenario,
-    confidence: request.confidence ?? undefined,
-    layer: request.layer ?? undefined,
-    nodes,
-    edges,
-  };
-}
-
-/**
- * Stub operation application, issuing a deterministic mock commit id.
- * @param operations
- */
-function mockApplyOperations(operations: PraxisOperation[]): OperationBatchResult {
-  if (operations.length === 0) {
-    return { accepted: false, message: 'No operations provided' };
-  }
-  return {
-    accepted: true,
-    commitId: `mock-commit-${nextOperationId()}`,
-    message: 'Mock commit created',
-  };
-}
-
-/** Mock scenario list aligned with the desktop shell expectations. */
-function mockScenarios(): ScenarioSummary[] {
-  const now = nowIso();
-  return [
-    {
-      id: 'scenario-mainline',
-      name: 'Mainline FY25',
-      branch: 'main',
-      description: 'Authoritative twin data for production decisions.',
-      updatedAt: now,
-      isDefault: true,
-    },
-    {
-      id: 'scenario-chrona',
-      name: 'Chrona Playground',
-      branch: 'chronaplay',
-      description: 'Prototype scenario for Chrona overlays.',
-      updatedAt: now,
-    },
-  ];
-}
-
-/**
- * Build consistent metadata for mock and host view payloads.
- * @param definition
- */
-function buildMetadata(definition: ViewDefinitionBase): ViewMetadata {
-  return {
-    id: definition.id,
-    name: definition.name,
-    asOf: definition.asOf,
-    scenario: definition.scenario,
-    layer: definition.layer,
-    fetchedAt: nowIso(),
-    source: isTauri() ? 'host' : 'mock',
-  };
-}
-
-const nextOperationId = (() => {
-  let counter = 1;
-  return () => {
-    counter += 1;
-    return counter.toString().padStart(4, '0');
-  };
-})();
-
-/** Generate a fresh ISO timestamp. Extracted for easier testing. */
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-/**
- * Deterministic pseudo-random score generator used by mock data builders.
- * @param seed
- */
-function randomScore(seed: string): number {
-  let hash = 0;
-  for (const character of seed) {
-    hash = (hash << 5) - hash + (character.codePointAt(0) ?? 0);
-    hash = Math.trunc(hash);
-  }
-  const normalized = Math.abs(hash % 40);
-  return 60 + normalized;
 }
 
 /**
@@ -1080,14 +628,6 @@ function serializeDiffArguments(request: TemporalDiffRequest): Record<string, un
     to: { id: request.to },
     scope: request.scope ?? undefined,
   };
-}
-
-/**
- * Deterministic metric helper used by mocks to keep numbers stable.
- * @param key
- */
-function seededMetric(key: string): number {
-  return randomScore(key) * 10;
 }
 
 export { type TemporalDiffMetrics, type TemporalDiffSnapshot, type WorkerHealth } from '../../dtos';

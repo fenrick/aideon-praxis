@@ -1,6 +1,5 @@
-import { isTauri } from 'praxis/platform';
-import { listScenarios, type ScenarioSummary } from 'praxis/praxis-api';
-import { BUILT_IN_TEMPLATES, type CanvasTemplate } from 'praxis/templates';
+import type { ScenarioSummary } from 'praxis/praxis-api';
+import type { CanvasTemplate } from 'praxis/templates';
 import { invokeIpc } from '../../adapters/ipc';
 import { toErrorMessage } from './lib/errors';
 
@@ -25,54 +24,46 @@ export interface ProjectSummary {
 }
 
 const COMMANDS = {
-  listProjects: 'workspace.projects.list',
-  listTemplates: 'workspace.templates.list',
-  saveTemplate: 'workspace.templates.save',
+  listProjects: 'workspace_projects_list',
+  listTemplates: 'workspace_templates_list',
+  saveTemplate: 'workspace_templates_save',
 } as const;
 
 export const PRAXIS_DOMAIN_IPC_COMMANDS = COMMANDS;
 
 /**
- * Fetch projects (with scenarios) from the host, falling back to a derived default project.
+ * Fetch projects (with scenarios) from the host.
  */
 export async function listProjectsWithScenarios(): Promise<ProjectSummary[]> {
-  if (!isTauri()) {
-    const fallback = await fallbackProjects();
-    return fallback;
-  }
-
   try {
     const payload = await invokeIpc<ProjectPayload[]>(COMMANDS.listProjects, {});
-    const projects = Array.isArray(payload) ? payload : [];
+    const projects = Array.isArray(payload) ? payload.map((entry) => normaliseProject(entry)) : [];
     if (projects.length === 0) {
-      const fallback = await fallbackProjects();
-      return fallback;
+      throw new Error('Host returned no projects.');
     }
-    return projects.map((entry) => normaliseProject(entry));
+    return projects;
   } catch (error) {
-    toErrorMessage(error);
-    const fallback = await fallbackProjects();
-    return fallback;
+    const message = toErrorMessage(error);
+    throw new Error(`Host command '${COMMANDS.listProjects}' failed: ${message}`);
   }
 }
 
 /**
- * Load template definitions from the host; defaults to built-in templates for dev/preview.
+ * Load template definitions from the host.
  */
 export async function listTemplatesFromHost(): Promise<CanvasTemplate[]> {
-  if (!isTauri()) {
-    return BUILT_IN_TEMPLATES;
-  }
   try {
     const payload = await invokeIpc<TemplatePayload[]>(COMMANDS.listTemplates, {});
-    const templates = Array.isArray(payload) ? payload : [];
+    const templates = Array.isArray(payload)
+      ? payload.map((template) => normaliseTemplate(template))
+      : [];
     if (templates.length === 0) {
-      return BUILT_IN_TEMPLATES;
+      throw new Error('Host returned no templates.');
     }
-    return templates.map((template) => normaliseTemplate(template));
+    return templates;
   } catch (error) {
-    toErrorMessage(error);
-    return BUILT_IN_TEMPLATES;
+    const message = toErrorMessage(error);
+    throw new Error(`Host command '${COMMANDS.listTemplates}' failed: ${message}`);
   }
 }
 
@@ -81,9 +72,6 @@ export async function listTemplatesFromHost(): Promise<CanvasTemplate[]> {
  * @param template
  */
 export async function saveTemplateToHost(template: CanvasTemplate): Promise<CanvasTemplate> {
-  if (!isTauri()) {
-    return template;
-  }
   try {
     const payload = await invokeIpc<TemplatePayload>(COMMANDS.saveTemplate, {
       id: template.id,
@@ -94,8 +82,8 @@ export async function saveTemplateToHost(template: CanvasTemplate): Promise<Canv
     });
     return normaliseTemplate(payload);
   } catch (error) {
-    toErrorMessage(error);
-    return template;
+    const message = toErrorMessage(error);
+    throw new Error(`Host command '${COMMANDS.saveTemplate}' failed: ${message}`);
   }
 }
 
@@ -104,10 +92,15 @@ export async function saveTemplateToHost(template: CanvasTemplate): Promise<Canv
  * @param payload
  */
 function normaliseProject(payload: ProjectPayload): ProjectSummary {
+  const id = requireString(payload.id, 'project id');
+  const name = requireString(payload.name, 'project name').trim();
+  if (!Array.isArray(payload.scenarios)) {
+    throw new TypeError('Project scenarios missing.');
+  }
   return {
-    id: payload.id ?? cryptoRandomId('project'),
-    name: payload.name?.trim() ?? 'Project',
-    scenarios: Array.isArray(payload.scenarios) ? payload.scenarios : [],
+    id,
+    name,
+    scenarios: payload.scenarios,
   };
 }
 
@@ -116,47 +109,30 @@ function normaliseProject(payload: ProjectPayload): ProjectSummary {
  * @param payload
  */
 function normaliseTemplate(payload: TemplatePayload): CanvasTemplate {
-  const fallback = BUILT_IN_TEMPLATES[0] ?? {
-    id: 'template-default',
-    documentId: 'canvasdoc-default',
-    name: 'Template',
-    description: '',
-    widgets: [],
-  };
-  const id = payload.id ?? cryptoRandomId('template');
+  const id = requireString(payload.id, 'template id');
+  const documentId = requireString(payload.documentId, 'template documentId');
+  const name = requireString(payload.name, 'template name').trim();
+  const description = typeof payload.description === 'string' ? payload.description : '';
+  if (!Array.isArray(payload.widgets)) {
+    throw new TypeError('Template widgets missing.');
+  }
   return {
     id,
-    documentId: payload.documentId ?? cryptoRandomId('canvasdoc'),
-    name: payload.name?.trim() ?? fallback.name,
-    description: payload.description ?? fallback.description,
-    widgets:
-      Array.isArray(payload.widgets) && payload.widgets.length > 0
-        ? payload.widgets
-        : fallback.widgets,
+    documentId,
+    name,
+    description,
+    widgets: payload.widgets,
   } satisfies CanvasTemplate;
 }
 
 /**
- *
- * @param prefix
+ * Require a non-empty string; throw otherwise.
+ * @param value
+ * @param label
  */
-function cryptoRandomId(prefix: string): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `${prefix}-${crypto.randomUUID()}`;
+function requireString(value: unknown, label: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new TypeError(`Missing ${label}.`);
   }
-  return `${prefix}-${Date.now().toString(36)}`;
-}
-
-/**
- *
- */
-async function fallbackProjects(): Promise<ProjectSummary[]> {
-  const scenarios = await listScenarios();
-  return [
-    {
-      id: 'default-project',
-      name: 'Praxis Workspace',
-      scenarios,
-    },
-  ];
+  return value;
 }

@@ -37,7 +37,7 @@ export interface PraxisWorkspaceToolbarProperties {
   readonly loading?: boolean;
 }
 
-const COMMAND_PALETTE_EVENT = 'aideon.workspace.open-command-palette';
+const COMMAND_PALETTE_EVENT = 'aideon.workspace_open-command-palette';
 const HEADER_PAGES = ['Canvas', 'Overview', 'Timeline', 'Activity'] as const;
 
 /**
@@ -80,8 +80,8 @@ export function PraxisWorkspaceToolbar({
   const [pagesDialogOpen, setPagesDialogOpen] = useState(false);
   const shouldUseNativeSelect = isTauri();
 
-  const headerEyebrow = scenarioName ?? 'Mainline FY25';
-  const headerTitle = templateName ?? 'Executive overview';
+  const headerEyebrow = scenarioName ?? temporalState.branch ?? 'No scenario selected';
+  const headerTitle = templateName ?? 'Select a template';
   const headerDescription = 'Graph + KPI + catalogue snapshot for leadership reviews';
   const activeTemplateExists = templates.some((template) => template.id === activeTemplateId);
   const templateSelectValue = activeTemplateExists ? activeTemplateId : '';

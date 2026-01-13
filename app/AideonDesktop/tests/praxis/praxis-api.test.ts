@@ -1,13 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('praxis/platform', () => ({ isTauri: vi.fn() }));
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-
-import { invoke } from '@tauri-apps/api/core';
-import { isTauri } from 'praxis/platform';
+import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 
 import {
-  applyOperations,
   getGraphView,
   getTemporalDiff,
   getWorkerHealth,
@@ -19,82 +14,88 @@ import {
   type TemporalMergeResult,
 } from 'praxis/praxis-api';
 
-const isTauriMock = vi.mocked(isTauri);
-const invokeMock = vi.mocked(invoke);
-
-/**
- * Narrow unknown values to plain object records.
- * @param value
- */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-/**
- * Extract requestId from invoke arguments.
- * @param invokeArguments
- */
-function requestIdFromInvokeArguments(invokeArguments: unknown): string | undefined {
-  if (!isRecord(invokeArguments)) {
-    return undefined;
-  }
-  const request = invokeArguments.request;
-  if (!isRecord(request)) {
-    return undefined;
-  }
-  const requestId = request.requestId;
-  return typeof requestId === 'string' ? requestId : undefined;
-}
+const invokeMock =
+  vi.fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>();
 
 /**
  * Create a successful IPC envelope response for the adapter boundary.
  * @param result
  */
 function mockIpcOk(result: unknown) {
-  invokeMock.mockImplementationOnce((_command: string, invokeArguments: unknown) => {
-    const requestId = requestIdFromInvokeArguments(invokeArguments) ?? 'req';
-    return Promise.resolve({ requestId, status: 'ok', result });
-  });
+  invokeMock.mockImplementationOnce((_command: string, invokeArguments: unknown) =>
+    Promise.resolve(buildOkResponse(invokeArguments, result)),
+  );
 }
 
-describe('praxis-api fallbacks and normalization', () => {
+describe('praxis-api normalization', () => {
   beforeEach(() => {
-    isTauriMock.mockReturnValue(false);
     invokeMock.mockReset();
+    invokeMock.mockImplementation(
+      (command: string, arguments_: Record<string, unknown> | undefined) =>
+        buildOkResponse(arguments_),
+    );
+    clearTauriMocks();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    clearTauriMocks();
   });
 
-  it('returns mock worker health outside Tauri with fresh timestamp', async () => {
-    vi.useFakeTimers();
-    const now = new Date('2025-01-02T03:04:05Z');
-    vi.setSystemTime(now);
+  it('returns worker health from host', async () => {
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
+    mockIpcOk({ ok: true, timestamp_ms: 123, status: 'ok' });
 
     const snapshot = await getWorkerHealth();
 
-    expect(snapshot.status).toBe('mock');
     expect(snapshot.ok).toBe(true);
-    expect(snapshot.timestamp_ms).toBe(now.getTime());
+    expect(snapshot.timestamp_ms).toBe(123);
   });
 
   it('normalizes branch payloads from the host', async () => {
-    isTauriMock.mockReturnValue(true);
-    mockIpcOk({ branches: [{ name: 'main', head: undefined }, { head: 'h1' }] });
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
+    mockIpcOk({
+      branches: [
+        { name: 'main', head: undefined },
+        { name: 'dev', head: 'h1' },
+      ],
+    });
 
     const branches = await listTemporalBranches();
 
     expect(branches).toEqual([
       { name: 'main', head: undefined },
-      { name: '', head: 'h1' },
+      { name: 'dev', head: 'h1' },
     ]);
   });
 
-  it('normalizes commit payloads and falls back to branch name', async () => {
-    isTauriMock.mockReturnValue(true);
+  it('normalizes commit payloads from the host', async () => {
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
     mockIpcOk({
-      commits: [{ id: 'c1', parents: ['p1', 42], tags: ['t1', 99], change_count: 3 }, {}],
+      commits: [
+        {
+          id: 'c1',
+          branch: 'main',
+          message: 'Commit 1',
+          parents: ['p1', 42],
+          tags: ['t1', 99],
+          change_count: 3,
+        },
+        {
+          id: 'c2',
+          branch: 'main',
+          message: 'Commit 2',
+          parents: [],
+          tags: [],
+          changeCount: 0,
+        },
+      ],
     });
 
     const commits = await listTemporalCommits('main');
@@ -106,11 +107,13 @@ describe('praxis-api fallbacks and normalization', () => {
       tags: ['t1'],
       changeCount: 3,
     });
-    expect(commits[1]).toMatchObject({ id: 'unknown', branch: 'main', message: 'Commit' });
+    expect(commits[1]).toMatchObject({ id: 'c2', branch: 'main', message: 'Commit 2' });
   });
 
   it('wraps host errors when invoking commands inside Tauri', async () => {
-    isTauriMock.mockReturnValue(true);
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
     invokeMock.mockRejectedValue(new Error('bad news'));
 
     await expect(
@@ -120,19 +123,35 @@ describe('praxis-api fallbacks and normalization', () => {
         kind: 'graph',
         asOf: '2025-01-01',
       }),
-    ).rejects.toThrow("Host command 'praxis.artefact.execute_graph' failed: bad news");
+    ).rejects.toThrow("Host command 'praxis_artefact_execute_graph' failed: bad news");
   });
 
-  it('returns deterministic mock diff summary when offline', async () => {
+  it('normalizes diff summary response', async () => {
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
+    mockIpcOk({
+      from: 'a',
+      to: 'b',
+      node_adds: 2,
+      edge_adds: 3,
+      node_mods: 1,
+      node_dels: 0,
+      edge_mods: 4,
+      edge_dels: 5,
+    });
+
     const summary = await getTemporalDiff({ from: 'a', to: 'b', scope: 'cap' });
 
     expect(summary.from).toBe('a');
     expect(summary.to).toBe('b');
-    expect(summary.metrics).toMatchObject({ nodeAdds: 3, edgeAdds: 4 });
+    expect(summary.metrics).toMatchObject({ nodeAdds: 2, edgeAdds: 3 });
   });
 
   it('drops malformed merge conflicts and infers a conflicts result', async () => {
-    isTauriMock.mockReturnValue(true);
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
     mockIpcOk({
       conflicts: [{ reference: 'cap-1', kind: 5 }, { kind: 'node' }],
     });
@@ -160,17 +179,15 @@ describe('praxis-api fallbacks and normalization', () => {
     expect(typeof firstConflict.message).toBe('string');
   });
 
-  it('rejects empty operation batches in mock mode', async () => {
-    const response = await applyOperations([]);
+  it('returns scenarios from host', async () => {
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
+    mockIpcOk([{ id: 's1', name: 'Main', branch: 'main', updatedAt: 'now', isDefault: true }]);
 
-    expect(response.accepted).toBe(false);
-    expect(response.message).toMatch(/No operations/);
-  });
-
-  it('uses mock scenarios outside Tauri', async () => {
     const scenarios = await listScenarios();
 
-    expect(scenarios.length).toBeGreaterThan(0);
-    expect(scenarios.some((scenario) => scenario.isDefault)).toBe(true);
+    expect(scenarios).toHaveLength(1);
+    expect(scenarios[0]?.branch).toBe('main');
   });
 });

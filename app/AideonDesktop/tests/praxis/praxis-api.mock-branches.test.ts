@@ -1,10 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('praxis/platform', () => ({ isTauri: vi.fn() }));
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-
-import { invoke } from '@tauri-apps/api/core';
-import { isTauri } from 'praxis/platform';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   applyOperations,
@@ -17,8 +11,10 @@ import {
   mergeTemporalBranches,
 } from 'praxis/praxis-api';
 
-const isTauriMock = vi.mocked(isTauri);
-const invokeMock = vi.mocked(invoke);
+import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
+
+const invokeMock =
+  vi.fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>();
 
 /**
  * Narrow unknown values to plain object records.
@@ -66,79 +62,108 @@ function mockIpcOk(result: unknown) {
   };
 }
 
-describe('praxis-api mock branches', () => {
-  it('covers mock builders for catalogue, matrix, chart, commits, merge, operations, state-at', async () => {
-    isTauriMock.mockReturnValue(false);
+describe('praxis-api host commands', () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    invokeMock.mockImplementation(
+      (command: string, arguments_: Record<string, unknown> | undefined) =>
+        buildOkResponse(arguments_),
+    );
+  });
 
-    const catalogue = await getCatalogueView({
+  afterEach(() => {
+    clearTauriMocks();
+  });
+
+  it('invokes host for temporal and artefact commands', async () => {
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
+
+    invokeMock.mockImplementationOnce(
+      mockIpcOk({
+        columns: [],
+        rows: [],
+        metadata: { id: 'cat', name: 'Catalogue', asOf: 'c1', fetchedAt: 'now', source: 'host' },
+      }),
+    );
+    await getCatalogueView({
       id: 'cat',
       name: 'Catalogue',
       kind: 'catalogue',
-      asOf: '2025-01-01T00:00:00Z',
+      asOf: 'c1',
       columns: [],
     });
-    expect(catalogue.columns.length).toBeGreaterThan(0);
 
-    const matrix = await getMatrixView({
+    invokeMock.mockImplementationOnce(
+      mockIpcOk({
+        rows: [],
+        columns: [],
+        cells: [],
+        metadata: { id: 'm1', name: 'Matrix', asOf: 'c1', fetchedAt: 'now', source: 'host' },
+      }),
+    );
+    await getMatrixView({
       id: 'm1',
       name: 'Matrix',
       kind: 'matrix',
-      asOf: '2025-01-01T00:00:00Z',
+      asOf: 'c1',
       rowType: 'Capability',
       columnType: 'Service',
       relationship: 'depends_on',
     });
-    expect(matrix.cells.length).toBeGreaterThan(0);
 
-    const kpi = await getChartView({
+    invokeMock.mockImplementationOnce(
+      mockIpcOk({
+        chartType: 'kpi',
+        series: [],
+        kpi: { value: 1 },
+        metadata: { id: 'c1', name: 'KPI', asOf: 'c1', fetchedAt: 'now', source: 'host' },
+      }),
+    );
+    await getChartView({
       id: 'c1',
       name: 'KPI',
       kind: 'chart',
-      asOf: '2025-01-01T00:00:00Z',
+      asOf: 'c1',
       chartType: 'kpi',
       measure: 'count',
     });
-    expect(kpi.kpi?.value).toBeGreaterThan(0);
 
-    const line = await getChartView({
-      id: 'c2',
-      name: 'Line',
-      kind: 'chart',
-      asOf: '2025-01-01T00:00:00Z',
-      chartType: 'line',
-      measure: 'velocity',
-    });
-    expect(line.series[0]?.points.length).toBe(7);
+    invokeMock.mockImplementationOnce(
+      mockIpcOk({
+        commits: [
+          {
+            id: 'commit-1',
+            branch: 'main',
+            message: 'Init',
+            tags: [],
+            parents: [],
+            changeCount: 0,
+          },
+        ],
+      }),
+    );
+    await listTemporalCommits('main');
 
-    const bar = await getChartView({
-      id: 'c3',
-      name: 'Bar',
-      kind: 'chart',
-      asOf: '2025-01-01T00:00:00Z',
-      chartType: 'bar',
-      measure: 'score',
-    });
-    expect(bar.series.length).toBe(2);
+    invokeMock.mockImplementationOnce(mockIpcOk({ result: 'merged', conflicts: [] }));
+    await mergeTemporalBranches({ source: 'branch-a', target: 'main' });
 
-    const commits = await listTemporalCommits('chronaplay');
-    expect(commits.length).toBeGreaterThan(0);
-    expect(commits[0]?.branch).toBe('chronaplay');
+    invokeMock.mockImplementationOnce(mockIpcOk({ accepted: true, commitId: 'c1' }));
+    await applyOperations([{ kind: 'deleteNode', nodeId: 'n1' }]);
 
-    const merge = await mergeTemporalBranches({ source: 'chronaplay', target: 'main' });
-    expect(merge.result).toBe('conflicts');
-    expect(merge.conflicts?.[0]?.reference).toBeTruthy();
+    invokeMock.mockImplementationOnce(
+      mockIpcOk({ asOf: 'c1', scenario: 'main', nodes: 1, edges: 0 }),
+    );
+    await getStateAtSnapshot({ asOf: 'c1', scenario: 'main' });
 
-    const opResult = await applyOperations([{ kind: 'deleteNode', nodeId: 'n1' }]);
-    expect(opResult.accepted).toBe(true);
-    expect(opResult.commitId).toMatch(/^mock-commit-/);
-
-    const state = await getStateAtSnapshot({ asOf: '2025-01-01T00:00:00Z' });
-    expect(state.scenario).toBeDefined();
-    expect(typeof state.nodes).toBe('number');
+    expect(invokeMock).toHaveBeenCalled();
   });
 
   it('invokes host on success when in Tauri', async () => {
-    isTauriMock.mockReturnValue(true);
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
     const graphView = {
       metadata: {
         id: 'g1',
@@ -157,7 +182,7 @@ describe('praxis-api mock branches', () => {
       getGraphView({ id: 'g1', name: 'Graph', kind: 'graph', asOf: '2025-01-01' }),
     ).resolves.toMatchObject({ stats: { nodes: 1 } });
     const calls = (invokeMock as unknown as { mock: { calls: unknown[][] } }).mock.calls;
-    const invokeArguments = findInvokeArguments(calls, 'praxis.artefact.execute_graph');
+    const invokeArguments = findInvokeArguments(calls, 'praxis_artefact_execute_graph');
     expect(payloadFromInvokeArguments(invokeArguments)).toEqual({
       id: 'g1',
       name: 'Graph',

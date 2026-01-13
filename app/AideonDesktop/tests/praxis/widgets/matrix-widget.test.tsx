@@ -37,7 +37,7 @@ const MATRIX_VIEW: PraxisApi.MatrixViewModel = {
     asOf: '2025-10-05T00:00:00.000Z',
     fetchedAt: '2025-10-05T00:01:00.000Z',
     scenario: 'main',
-    source: 'mock',
+    source: 'host',
   },
   rows: [
     { id: 'cap-a', label: 'Capability A' },

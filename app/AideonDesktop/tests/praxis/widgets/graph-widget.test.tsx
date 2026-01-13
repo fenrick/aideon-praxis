@@ -141,7 +141,7 @@ const GRAPH_VIEW: PraxisApi.GraphViewModel = {
     asOf: '2025-11-01T00:00:00.000Z',
     fetchedAt: '2025-11-01T00:01:00.000Z',
     scenario: 'main',
-    source: 'mock',
+    source: 'host',
   },
   stats: { nodes: 1, edges: 0 },
   nodes: [

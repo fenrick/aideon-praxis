@@ -1,17 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('praxis/platform', () => ({ isTauri: vi.fn() }));
-vi.mock('praxis/praxis-api', () => ({ listScenarios: vi.fn() }));
-
-import { invoke } from '@tauri-apps/api/core';
 import { listProjectsWithScenarios, listTemplatesFromHost } from 'praxis/domain-data';
-import { isTauri } from 'praxis/platform';
-import { listScenarios } from 'praxis/praxis-api';
 
-const invokeMock = vi.mocked(invoke);
-const isTauriMock = vi.mocked(isTauri);
-const listScenariosMock = vi.mocked(listScenarios);
+import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
+
+const invokeMock =
+  vi.fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>();
 
 /**
  * Narrow unknown values to plain object records.
@@ -35,42 +29,55 @@ function mockIpcOk(result: unknown) {
 }
 
 describe('domain-data branches', () => {
-  it('falls back to built-ins when not running in Tauri', async () => {
-    isTauriMock.mockReturnValue(false);
-    listScenariosMock.mockResolvedValue([
-      { id: 's1', name: 'Main', branch: 'main', updatedAt: '', isDefault: true },
-    ]);
-
-    const projects = await listProjectsWithScenarios();
-    expect(invokeMock).not.toHaveBeenCalled();
-    expect(projects).not.toHaveLength(0);
-    const firstProject = projects[0];
-    if (!firstProject) {
-      throw new Error('Expected at least one project.');
-    }
-    expect(firstProject.id).toBe('default-project');
-
-    const templates = await listTemplatesFromHost();
-    expect(templates.length).toBeGreaterThan(0);
+  beforeEach(() => {
+    invokeMock.mockReset();
+    invokeMock.mockImplementation(
+      (command: string, arguments_: Record<string, unknown> | undefined) =>
+        buildOkResponse(arguments_),
+    );
   });
 
-  it('normalises host results and falls back on errors or empty payloads', async () => {
-    isTauriMock.mockReturnValue(true);
+  afterEach(() => {
+    clearTauriMocks();
+  });
+
+  it('normalises host results', async () => {
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
     invokeMock.mockImplementationOnce(mockIpcOk([{ id: 'p1', name: 'Proj', scenarios: [] }]));
     const projects = await listProjectsWithScenarios();
     expect(projects[0]).toMatchObject({ id: 'p1', name: 'Proj' });
 
-    invokeMock.mockImplementationOnce(mockIpcOk([]));
-    const templatesEmpty = await listTemplatesFromHost();
-    expect(templatesEmpty.length).toBeGreaterThan(0);
+    invokeMock.mockImplementationOnce(
+      mockIpcOk([
+        {
+          id: 'template-1',
+          documentId: 'canvasdoc-1',
+          name: 'Template',
+          description: 'Example',
+          widgets: [],
+        },
+      ]),
+    );
+    const templates = await listTemplatesFromHost();
+    expect(templates).toHaveLength(1);
+  });
 
-    invokeMock.mockRejectedValueOnce(new Error('boom'));
-    const projectsFallback = await listProjectsWithScenarios();
-    expect(projectsFallback).not.toHaveLength(0);
-    const fallbackProject = projectsFallback[0];
-    if (!fallbackProject) {
-      throw new Error('Expected fallback project.');
-    }
-    expect(fallbackProject.id).toBe('default-project');
+  it('throws on empty or invalid host payloads', async () => {
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
+    invokeMock.mockImplementationOnce(mockIpcOk([]));
+    await expect(listProjectsWithScenarios()).rejects.toThrow('Host returned no projects');
+
+    invokeMock.mockImplementationOnce(mockIpcOk([]));
+    await expect(listTemplatesFromHost()).rejects.toThrow('Host returned no templates');
+
+    invokeMock.mockImplementationOnce(mockIpcOk([{ id: '', name: '' }]));
+    await expect(listProjectsWithScenarios()).rejects.toThrow('Missing project id');
+
+    invokeMock.mockImplementationOnce(mockIpcOk([{ id: 'p2', name: 'Project' }]));
+    await expect(listProjectsWithScenarios()).rejects.toThrow('Project scenarios missing');
   });
 });

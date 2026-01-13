@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 
 beforeEach(() => {
   vi.resetModules();
@@ -26,20 +28,27 @@ function mockIpcOk(result: unknown) {
 }
 
 describe('praxis-api negative paths', () => {
+  afterEach(() => {
+    clearTauriMocks();
+  });
+
   it('wraps host errors when Tauri invoke fails', async () => {
-    const invokeMock = vi.fn().mockRejectedValue(new Error('boom'));
-    vi.doMock('praxis/platform', () => ({ isTauri: () => true }));
-    vi.doMock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
+    const invokeMock = vi
+      .fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>()
+      .mockRejectedValue(new Error('boom'));
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
     const { getGraphView } = await import('praxis/praxis-api');
 
     await expect(
       getGraphView({ id: 'g1', name: 'Graph', kind: 'graph', asOf: 'now' }),
-    ).rejects.toThrow("Host command 'praxis.artefact.execute_graph' failed: boom");
+    ).rejects.toThrow("Host command 'praxis_artefact_execute_graph' failed: boom");
   });
 
-  it('normalises host branch/commit payloads from invoke responses', async () => {
+  it('rejects commit payloads missing required fields', async () => {
     const invokeMock = vi
-      .fn()
+      .fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>()
       // listBranches
       .mockImplementationOnce(mockIpcOk({ branches: [{ name: 'main' }, { head: 'abc' }] }))
       // listCommits
@@ -56,23 +65,17 @@ describe('praxis-api negative paths', () => {
           ],
         }),
       );
-    vi.doMock('praxis/platform', () => ({ isTauri: () => true }));
-    vi.doMock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
 
     const { listTemporalBranches, listTemporalCommits } = await import('praxis/praxis-api');
-    const branches = await listTemporalBranches();
-    expect(branches).toEqual([
-      { name: 'main', head: undefined },
-      { name: '', head: 'abc' },
-    ]);
+    await expect(listTemporalBranches()).rejects.toThrow(
+      'Host commit payload missing branch.name.',
+    );
 
-    const commits = await listTemporalCommits('feat');
-    expect(commits[0]).toMatchObject({
-      id: 'unknown',
-      branch: 'feat',
-      message: 'Commit',
-      tags: ['tag'],
-      changeCount: 0,
-    });
+    await expect(listTemporalCommits('feat')).rejects.toThrow(
+      'Host commit payload missing commit.id.',
+    );
   });
 });

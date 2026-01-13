@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-const invoke = vi.mocked(await import('@tauri-apps/api/core').then((m) => m.invoke));
-vi.mock('praxis/platform', () => ({ isTauri: () => true }));
+import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
+
+const invokeMock =
+  vi.fn<(command: string, arguments_: Record<string, unknown> | undefined) => unknown>();
 
 /**
  * Narrow unknown values to plain object records.
@@ -51,8 +52,23 @@ function mockIpcOk(result: unknown) {
 }
 
 describe('praxis-api state/diff host calls', () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    invokeMock.mockImplementation(
+      (command: string, arguments_: Record<string, unknown> | undefined) =>
+        buildOkResponse(arguments_),
+    );
+    installTauriMocks({
+      ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
+    });
+  });
+
+  afterEach(() => {
+    clearTauriMocks();
+  });
+
   it('serializes optional fields for stateAt', async () => {
-    invoke.mockImplementationOnce(
+    invokeMock.mockImplementationOnce(
       mockIpcOk({
         asOf: '2025-01-01',
         scenario: undefined,
@@ -66,8 +82,8 @@ describe('praxis-api state/diff host calls', () => {
 
     const snapshot = await getStateAtSnapshot({ asOf: '2025-01-01' });
 
-    const calls = (invoke as unknown as { mock: { calls: unknown[][] } }).mock.calls;
-    const invokeArguments = findInvokeArguments(calls, 'chrona.temporal.state_at');
+    const calls = (invokeMock as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const invokeArguments = findInvokeArguments(calls, 'chrona_temporal_state_at');
     expect(payloadFromInvokeArguments(invokeArguments)).toEqual({
       asOf: { id: '2025-01-01' },
       scenario: undefined,
@@ -85,7 +101,7 @@ describe('praxis-api state/diff host calls', () => {
   });
 
   it('passes scope into temporal diff payload', async () => {
-    invoke.mockImplementationOnce(
+    invokeMock.mockImplementationOnce(
       mockIpcOk({
         from: 'a',
         to: 'b',
@@ -101,8 +117,8 @@ describe('praxis-api state/diff host calls', () => {
 
     await getTemporalDiff({ from: 'a', to: 'b', scope: 'Capability' });
 
-    const calls = (invoke as unknown as { mock: { calls: unknown[][] } }).mock.calls;
-    const invokeArguments = findInvokeArguments(calls, 'chrona.temporal.diff');
+    const calls = (invokeMock as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const invokeArguments = findInvokeArguments(calls, 'chrona_temporal_diff');
     expect(payloadFromInvokeArguments(invokeArguments)).toEqual({
       from: { id: 'a' },
       to: { id: 'b' },

@@ -1,15 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { isTauri } from '@/workspaces/mneme/platform';
-
-const tauriWindow = globalThis as unknown as Window & {
-  __TAURI_INTERNALS__?: unknown;
-  __TAURI_METADATA__?: unknown;
-};
+import { clearTauriMocks, installTauriMocks } from '../../tauri-mocks';
 
 afterEach(() => {
-  delete tauriWindow.__TAURI_INTERNALS__;
-  delete tauriWindow.__TAURI_METADATA__;
+  clearTauriMocks();
 });
 
 describe('mneme platform', () => {
@@ -18,10 +13,11 @@ describe('mneme platform', () => {
   });
 
   it('detects tauri internals and metadata flags', () => {
-    tauriWindow.__TAURI_INTERNALS__ = {};
+    installTauriMocks();
     expect(isTauri()).toBe(true);
 
-    delete tauriWindow.__TAURI_INTERNALS__;
+    clearTauriMocks();
+    const tauriWindow = globalThis as unknown as Window & { __TAURI_METADATA__?: unknown };
     tauriWindow.__TAURI_METADATA__ = {};
     expect(isTauri()).toBe(true);
   });
