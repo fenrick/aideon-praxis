@@ -1,4 +1,5 @@
 use super::*;
+use std::time::Duration;
 use tauri::Manager;
 
 #[test]
@@ -16,6 +17,14 @@ fn marking_tasks_tracks_completion() {
     assert!(!all_complete(&state));
     mark_complete(&mut state, SetupTask::Backend);
     assert!(all_complete(&state));
+}
+
+#[test]
+fn splash_delay_respects_minimum() {
+    let state = SetupState::new();
+    let delay = close_delay(&state);
+    assert!(delay <= Duration::from_secs(3));
+    assert!(delay > Duration::from_secs(2));
 }
 
 #[test]

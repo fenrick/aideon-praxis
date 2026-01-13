@@ -49,7 +49,12 @@
   font-size: clamp(64px, 8vw, 140px);
   letter-spacing: 0.012em;
   margin: 0 0 24px;
-  background: linear-gradient(90deg, var(--teal), var(--vio), var(--sun));
+  background: linear-gradient(
+    90deg,
+    var(--teal, #39d0c3),
+    var(--vio, #8f6cf5),
+    var(--sun, #f5c46a)
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -83,7 +88,7 @@
   left: 0;
   width: 30%;
   height: 100%;
-  background: linear-gradient(90deg, var(--teal), var(--sun));
+  background: linear-gradient(90deg, var(--teal, #39d0c3), var(--sun, #f5c46a));
   border-radius: 9999px;
   animation: scan 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
