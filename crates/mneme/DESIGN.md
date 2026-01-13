@@ -2424,7 +2424,7 @@ Mneme supports two flat-file formats:
 - Easy to stream, append, compress, and inspect
 - Suitable for very large partitions
 
-File extension: `.mneme.ndjson` (optionally `.gz`)
+File extension: `.mneme_ndjson` (optionally `.gz`)
 
 #### Record types
 

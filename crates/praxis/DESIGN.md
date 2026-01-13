@@ -1667,13 +1667,13 @@ To ensure artefacts are portable, migratable, and safe to execute, Praxis must s
 
 Praxis includes an internal registry:
 
-- `praxis.schema.view@1.0`
-- `praxis.schema.catalogue@1.0`
-- `praxis.schema.matrix@1.0`
-- `praxis.schema.map.capability@1.0`
-- `praxis.schema.map.journey@1.0`
-- `praxis.schema.report@1.0`
-- `praxis.schema.template@1.0`
+- `praxis_schema_view@1.0`
+- `praxis_schema_catalogue@1.0`
+- `praxis_schema_matrix@1.0`
+- `praxis_schema_map_capability@1.0`
+- `praxis_schema_map_journey@1.0`
+- `praxis_schema_report@1.0`
+- `praxis_schema_template@1.0`
 
 Each schema:
 

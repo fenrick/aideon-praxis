@@ -43,14 +43,14 @@ time is stored as `INTEGER` (portable i64 encoding).
 ## File locations
 
 Desktop mode stores the database under the Praxis application data directory. The host should
-create the directory and open the DB using Mneme configuration (for example, `mneme.json`) and
+create the directory and open the DB using Mneme configuration (for example, `mneme_json`) and
 default to SQLite when not configured.
 
-Example `mneme.json` (SQLite with explicit pool settings):
+Example `mneme_json` (SQLite with explicit pool settings):
 
 ```json
 {
-  "database": { "backend": "sqlite", "path": "praxis.sqlite" },
+  "database": { "backend": "sqlite", "path": "praxis_sqlite" },
   "pool": {
     "max_connections": 10,
     "min_connections": 1,
@@ -61,7 +61,7 @@ Example `mneme.json` (SQLite with explicit pool settings):
 }
 ```
 
-Example `mneme.json` (Postgres/MySQL):
+Example `mneme_json` (Postgres/MySQL):
 
 ```json
 {
@@ -71,7 +71,7 @@ Example `mneme.json` (Postgres/MySQL):
 
 ## Future swaps
 
-- **Managed Postgres / MySQL**: Use SeaORM connection URLs in `mneme.json` to point at the target
+- **Managed Postgres / MySQL**: Use SeaORM connection URLs in `mneme_json` to point at the target
   RDBMS while keeping Mneme APIs stable.
 - **FoundationDB**: Map op log + fact tables to transactional key prefixes, maintaining the same
   resolution rules from Mneme (outside current SeaORM scope).

@@ -20,18 +20,18 @@ Option A — Use Structurizr CLI + PlantUML directly
    - `mkdir -p .tools/plantuml && curl -fSL -o .tools/plantuml/plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar`
 3. Export PlantUML and render PNGs:
    - `mkdir -p docs/c4/out/plantuml docs/c4/out/png`
-   - `java -jar .tools/structurizr-cli/structurizr-cli-*.jar export -workspace docs/c4/workspace.dsl -format plantuml -output docs/c4/out/plantuml`
+   - `java -jar .tools/structurizr-cli/structurizr-cli-*.jar export -workspace docs/c4/workspace_dsl -format plantuml -output docs/c4/out/plantuml`
    - `java -Djava.awt.headless=true -jar .tools/plantuml/plantuml.jar -tpng docs/c4/out/plantuml/*.puml -o docs/c4/out/png`
 
 Option B — Use Docker
 
 - `docker run --rm -v "$PWD":/work ghcr.io/structurizr/cli:latest \
-export -workspace /work/docs/c4/workspace.dsl -format plantuml -output /work/docs/c4/out/plantuml`
+export -workspace /work/docs/c4/workspace_dsl -format plantuml -output /work/docs/c4/out/plantuml`
 - Then render PNGs via PlantUML container or local tools.
 
 Outputs are written under `docs/c4/out/plantuml` and `docs/c4/out/png` (gitignored).
 
 ### Files
 
-- `workspace.dsl` – DSL source (System Context + Container views)
+- `workspace_dsl` – DSL source (System Context + Container views)
 - `out/` – CI-generated exports (not committed); available as workflow artifacts

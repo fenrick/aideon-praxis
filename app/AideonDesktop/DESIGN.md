@@ -48,6 +48,11 @@ The implementation uses the design-system proxies for Sidebar, Resizable, and Me
 - Workspace modules are registered in `src/workspaces/registry.ts` and follow the `WorkspaceModule` contract in `src/workspaces/types.ts`.
 - Tauri loads the static Next.js export (`app/AideonDesktop/out`) with window routes mapped to `app/*/page.tsx` and the shared screen logic in `src/app/app-screens.tsx`; workspace modules mount inside the shell rather than owning the window.
 
+## Splash window
+
+- The splash window remains visible for at least 3 seconds to avoid flash-on-load.
+- The host closes the splash only after both frontend and backend setup signals are complete.
+
 ## Next.js static export constraints
 
 - The renderer is built with `output: "export"`; all screens must be renderable at build time (no request-time SSR).

@@ -466,16 +466,16 @@ All IPC commands MUST follow:
 
 Examples:
 
-- `system.window.open`
-- `workspace.open`
+- `system_window_open`
+- `workspace_open`
 - `jobs.start`
 - `jobs.cancel`
-- `praxis.artefact.execute`
-- `praxis.task.apply`
-- `mneme.export.snapshot`
-- `mneme.import.replay`
+- `praxis_artefact_execute`
+- `praxis_task_apply`
+- `mneme_export_snapshot`
+- `mneme_import_replay`
 - `metis.analytics.run`
-- `chrona.time.slice`
+- `chrona_time_slice`
 
 This enables:
 
@@ -530,7 +530,7 @@ Every IPC command MUST declare:
 
 ```rust
 #[aideon_command(
-  capability = "workspace.write",
+  capability = "workspace_write",
   risk = "high",
   audit = true
 )]
@@ -547,11 +547,11 @@ Attributes:
 
 | Capability        | Meaning              |
 | ----------------- | -------------------- |
-| system.read       | app metadata         |
-| system.write      | window control       |
-| workspace.read    | model inspection     |
-| workspace.write   | model mutation       |
-| workspace.admin   | migrations, deletes  |
+| system_read       | app metadata         |
+| system_write      | window control       |
+| workspace_read    | model inspection     |
+| workspace_write   | model mutation       |
+| workspace_admin   | migrations, deletes  |
 | jobs.run          | background execution |
 | filesystem.export | export data          |
 | filesystem.import | import data          |
@@ -561,6 +561,10 @@ Default policy:
 
 - Renderer starts with **read-only**
 - Write/admin capabilities require explicit enablement
+
+Host IPC permissions are declared in `crates/desktop/permissions/` and enabled via
+`crates/desktop/capabilities/default.json`. The default capability must include the
+permission set covering the app command surface.
 
 ### 20.3 User-visible prompts (future-ready)
 
@@ -588,13 +592,13 @@ Workspaces and modules are described declaratively.
   "name": "Praxis",
   "version": "1.0.0",
   "hostVersion": ">=1.0.0",
-  "capabilities": ["workspace.read", "workspace.write", "jobs.run"],
+  "capabilities": ["workspace_read", "workspace_write", "jobs.run"],
   "ui": {
     "navigation": true,
     "toolbar": true,
     "inspector": true
   },
-  "ipcNamespaces": ["praxis.*"]
+  "ipcNamespaces": ["praxis_*"]
 }
 ```
 
@@ -721,8 +725,8 @@ Renderer shows interrupted jobs explicitly.
 
 | Event               | Payload         |
 | ------------------- | --------------- |
-| `workspace.opened`  | workspace id    |
-| `workspace.closed`  | workspace id    |
+| `workspace_opened`  | workspace id    |
+| `workspace_closed`  | workspace id    |
 | `model.changed`     | scope summary   |
 | `job.updated`       | job metadata    |
 | `job.completed`     | job result ref  |
@@ -1251,12 +1255,12 @@ Required modules:
 
 - `ipc/` (new folder; consolidates today’s command sprawl)
   - `ipc/mod.rs` – registry glue and shared DTO helpers
-  - `ipc/system.rs` – version, environment, diagnostics toggles
-  - `ipc/workspace.rs` – open/close/list/backup/restore
+  - `ipc/system_rs` – version, environment, diagnostics toggles
+  - `ipc/workspace_rs` – open/close/list/backup/restore
   - `ipc/jobs.rs` – start/cancel/list, progress subscriptions
-  - `ipc/praxis.rs` – artefact execution + task application
-  - `ipc/mneme.rs` – storage primitives + export/import + subscriptions
-  - `ipc/chrona.rs` – time/scenario UX and temporal snapshots (where applicable)
+  - `ipc/praxis_rs` – artefact execution + task application
+  - `ipc/mneme_rs` – storage primitives + export/import + subscriptions
+  - `ipc/chrona_rs` – time/scenario UX and temporal snapshots (where applicable)
   - `ipc/metis.rs` – analytics job entrypoints
   - `ipc/continuum.rs` – orchestration/scheduler entrypoints (when enabled)
 
@@ -1284,7 +1288,7 @@ Future-proof rule:
 
 Example mapping:
 
-- Adapter method: `chrona.time.stateAt()`
+- Adapter method: `chrona_time_stateAt()`
   Calls host command: `temporal_state_at`
 
 This avoids breaking current code while giving you a scalable mental model for “all possible modules”.
@@ -1430,7 +1434,7 @@ Host emits events for:
 
 - `setup.backend_ready`
 - `setup.frontend_ready_ack`
-- `workspace.opened` / `workspace.closed`
+- `workspace_opened` / `workspace_closed`
 - `jobs.updated` (progress)
 - `jobs.completed`
 - `model.changed` (with scope)

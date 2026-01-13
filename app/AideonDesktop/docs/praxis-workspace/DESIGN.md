@@ -38,8 +38,9 @@ embedding during tests or previews.
 - Canvas templates carry a stable `documentId` (distinct from the template `id`) used as the
   persistence key for layout snapshots; the renderer must not infer document identity from the
   active template id.
-- Templates are persisted by the host (via `workspace.templates.list/save`) and rehydrated by the
-  renderer; local-only templates are a fallback for non-Tauri previews.
+- Templates are persisted by the host (via `workspace_templates_list/save`) and rehydrated by the
+  renderer; the host seeds default templates on first run so the workspace always has initial
+  artefacts to render.
 
 ## Data model and APIs
 
@@ -62,7 +63,7 @@ embedding during tests or previews.
 - **Loading/error/empty handling:** Components accept `loading`, `error`, and optional `empty` hints from their hook state and render design-system `Alert`/`Skeleton` patterns. Errors should be human-readable, not raw objects.
 - **Composition:** Prefer shadcn blocks (cards, badges, buttons) and design-system primitives; avoid bespoke wrappers. Keep layout simple: card header, body, action row.
 - **Testing:** Mirror the golden vertical tests: hook-level tests for state machines; component tests for rendering + interactions; IPC adapters mocked at the boundary.
-- **Inspector edits:** Single node/edge selections surface editable fields and dispatch `praxis.task.apply_operations` updates scoped to the active scenario branch; multi-select remains bulk-only.
+- **Inspector edits:** Single node/edge selections surface editable fields and dispatch `praxis_task_apply_operations` updates scoped to the active scenario branch; multi-select remains bulk-only.
 
 ## Constraints and invariants
 
