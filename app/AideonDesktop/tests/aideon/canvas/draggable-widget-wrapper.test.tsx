@@ -25,15 +25,18 @@ describe('DraggableWidgetWrapper', () => {
   });
 
   afterAll(() => {
+    const proto = HTMLElement.prototype as {
+      setPointerCapture?: ((pointerId: number) => void) | undefined;
+      releasePointerCapture?: ((pointerId: number) => void) | undefined;
+    };
+
     if (originalSetPointerCapture) {
       Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
         configurable: true,
         value: originalSetPointerCapture,
       });
     } else {
-      delete (
-        HTMLElement.prototype as typeof HTMLElement.prototype & { setPointerCapture?: unknown }
-      ).setPointerCapture;
+      delete proto.setPointerCapture;
     }
 
     if (originalReleasePointerCapture) {
@@ -42,9 +45,7 @@ describe('DraggableWidgetWrapper', () => {
         value: originalReleasePointerCapture,
       });
     } else {
-      delete (
-        HTMLElement.prototype as typeof HTMLElement.prototype & { releasePointerCapture?: unknown }
-      ).releasePointerCapture;
+      delete proto.releasePointerCapture;
     }
   });
 
