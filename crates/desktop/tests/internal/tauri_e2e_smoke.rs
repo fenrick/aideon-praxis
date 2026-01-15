@@ -2,7 +2,7 @@
 use {
     crate::ipc::IpcRequest,
     crate::temporal::chrona_temporal_state_at,
-    crate::windows::{create_windows, system_window_open, OpenWindowPayload},
+    crate::windows::{OpenWindowPayload, create_windows, system_window_open},
     crate::worker::WorkerState,
     aideon_chrona::TemporalEngine,
     aideon_praxis::mneme::open_store,
