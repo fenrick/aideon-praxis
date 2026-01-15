@@ -1,3 +1,4 @@
+#![cfg(not(target_os = "windows"))]
 use super::{health_snapshot, system_worker_health, worker_health};
 use crate::worker::WorkerState;
 use aideon_chrona::TemporalEngine;

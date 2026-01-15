@@ -1,3 +1,4 @@
+#![cfg(not(target_os = "windows"))]
 #[cfg(not(target_os = "macos"))]
 use super::build_menu;
 #[cfg(not(target_os = "windows"))]

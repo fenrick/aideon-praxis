@@ -1,3 +1,4 @@
+#![cfg(not(target_os = "windows"))]
 use super::*;
 use crate::ipc::EmptyPayload;
 use crate::worker::WorkerState;

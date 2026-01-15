@@ -1,3 +1,4 @@
+#![cfg(not(target_os = "windows"))]
 use super::*;
 use aideon_chrona::TemporalEngine;
 use aideon_praxis::mneme::open_store;

@@ -1,3 +1,4 @@
+#![cfg(not(target_os = "windows"))]
 use super::*;
 use std::time::Duration;
 use tauri::Manager;

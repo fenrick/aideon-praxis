@@ -1,3 +1,4 @@
+#![cfg(not(target_os = "windows"))]
 use super::*;
 use crate::worker::WorkerState;
 use aideon_chrona::TemporalEngine;

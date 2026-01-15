@@ -1,3 +1,4 @@
+#![cfg(not(target_os = "windows"))]
 use super::{
     OpenWindowPayload, SystemWindowTarget, parse_window_target, system_window_open, to_string,
 };
