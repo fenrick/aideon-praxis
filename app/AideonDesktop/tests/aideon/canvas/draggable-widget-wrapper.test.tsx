@@ -26,8 +26,8 @@ describe('DraggableWidgetWrapper', () => {
 
   afterAll(() => {
     const proto = HTMLElement.prototype as {
-      setPointerCapture?: ((pointerId: number) => void) | undefined;
-      releasePointerCapture?: ((pointerId: number) => void) | undefined;
+      setPointerCapture?: (pointerId: number) => void;
+      releasePointerCapture?: (pointerId: number) => void;
     };
 
     if (originalSetPointerCapture) {
