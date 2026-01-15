@@ -20,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_VERSION: '24'
-      PNPM_VERSION: '10.26.2'
     if: |
       github.event_name == 'push' ||
       (github.event_name == 'pull_request' &&
@@ -42,8 +41,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Capture pnpm store path
         id: pnpm-store
