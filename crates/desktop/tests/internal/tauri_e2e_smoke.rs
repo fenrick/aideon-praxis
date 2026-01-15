@@ -6,6 +6,7 @@ use aideon_chrona::TemporalEngine;
 use aideon_praxis::mneme::open_store;
 use aideon_praxis::praxis::temporal::StateAtArgs;
 use tauri::Manager;
+#[cfg(not(target_os = "windows"))]
 use tempfile::tempdir;
 
 #[tokio::test]
