@@ -458,24 +458,26 @@ This section defines **how IPC is organised**, not the full list of commands (th
 
 ### 19.1 Command namespace rules
 
-All IPC commands MUST follow:
+All IPC commands MUST follow snake_case naming:
 
 ```
-<domain>.<capability>.<action>
+<domain>_<capability>_<action>
 ```
 
 Examples:
 
 - `system_window_open`
 - `workspace_open`
-- `jobs.start`
-- `jobs.cancel`
+- `jobs_start`
+- `jobs_cancel`
 - `praxis_artefact_execute`
 - `praxis_task_apply`
 - `mneme_export_snapshot`
 - `mneme_import_replay`
-- `metis.analytics.run`
+- `metis_analytics_run`
 - `chrona_time_slice`
+
+Note: dot-separated names do not work on the IPC bridge; use snake_case only.
 
 This enables:
 
@@ -552,10 +554,10 @@ Attributes:
 | workspace_read    | model inspection     |
 | workspace_write   | model mutation       |
 | workspace_admin   | migrations, deletes  |
-| jobs.run          | background execution |
-| filesystem.export | export data          |
-| filesystem.import | import data          |
-| diagnostics.read  | logs, health         |
+| jobs_run          | background execution |
+| filesystem_export | export data          |
+| filesystem_import | import data          |
+| diagnostics_read  | logs, health         |
 
 Default policy:
 
@@ -592,7 +594,7 @@ Workspaces and modules are described declaratively.
   "name": "Praxis",
   "version": "1.0.0",
   "hostVersion": ">=1.0.0",
-  "capabilities": ["workspace_read", "workspace_write", "jobs.run"],
+  "capabilities": ["workspace_read", "workspace_write", "jobs_run"],
   "ui": {
     "navigation": true,
     "toolbar": true,
@@ -668,7 +670,7 @@ Artefact cache invalidation happens when:
 - workspace changes
 - scenario changes
 - valid time changes
-- host emits `model.changed`
+- host emits `model_changed`
 - job affecting artefact completes
 
 Never via implicit React re-renders.
@@ -691,16 +693,16 @@ Pending → Running → Completed
 
 ```json
 {
-  "jobId": "uuid",
+  "job_id": "uuid",
   "kind": "analytics | import | export | migration | projection",
-  "workspaceId": "uuid",
+  "workspace_id": "uuid",
   "progress": {
     "percent": 42,
     "stage": "Computing PageRank"
   },
-  "startedAt": "...",
-  "endedAt": "...",
-  "resultRef": "optional",
+  "started_at": "...",
+  "ended_at": "...",
+  "result_ref": "optional",
   "error": "optional"
 }
 ```
@@ -727,11 +729,11 @@ Renderer shows interrupted jobs explicitly.
 | ------------------- | --------------- |
 | `workspace_opened`  | workspace id    |
 | `workspace_closed`  | workspace id    |
-| `model.changed`     | scope summary   |
-| `job.updated`       | job metadata    |
-| `job.completed`     | job result ref  |
-| `integrity.warning` | rule + entities |
-| `analytics.updated` | artefact ids    |
+| `model_changed`     | scope summary   |
+| `job_updated`       | job metadata    |
+| `job_completed`     | job result ref  |
+| `integrity_warning` | rule + entities |
+| `analytics_updated` | artefact ids    |
 
 ### 24.2 Delivery guarantees
 
@@ -1255,12 +1257,12 @@ Required modules:
 
 - `ipc/` (new folder; consolidates today’s command sprawl)
   - `ipc/mod.rs` – registry glue and shared DTO helpers
-  - `ipc/system_rs` – version, environment, diagnostics toggles
-  - `ipc/workspace_rs` – open/close/list/backup/restore
+- `ipc/system.rs` – version, environment, diagnostics toggles
+- `ipc/workspace.rs` – open/close/list/backup/restore
   - `ipc/jobs.rs` – start/cancel/list, progress subscriptions
-  - `ipc/praxis_rs` – artefact execution + task application
-  - `ipc/mneme_rs` – storage primitives + export/import + subscriptions
-  - `ipc/chrona_rs` – time/scenario UX and temporal snapshots (where applicable)
+- `ipc/praxis.rs` – artefact execution + task application
+- `ipc/mneme.rs` – storage primitives + export/import + subscriptions
+- `ipc/chrona.rs` – time/scenario UX and temporal snapshots (where applicable)
   - `ipc/metis.rs` – analytics job entrypoints
   - `ipc/continuum.rs` – orchestration/scheduler entrypoints (when enabled)
 
@@ -1288,7 +1290,7 @@ Future-proof rule:
 
 Example mapping:
 
-- Adapter method: `chrona_time_stateAt()`
+- Adapter method: `chrona_time_state_at()`
   Calls host command: `temporal_state_at`
 
 This avoids breaking current code while giving you a scalable mental model for “all possible modules”.
@@ -1432,15 +1434,15 @@ You already have request/response IPC for commands. You now need first-class **e
 
 Host emits events for:
 
-- `setup.backend_ready`
-- `setup.frontend_ready_ack`
+- `setup_backend_ready`
+- `setup_frontend_ready_ack`
 - `workspace_opened` / `workspace_closed`
-- `jobs.updated` (progress)
-- `jobs.completed`
-- `model.changed` (with scope)
-- `integrity.updated`
-- `analytics.updated`
-- `sync.updated` (future)
+- `job_updated` (progress)
+- `job_completed`
+- `model_changed` (with scope)
+- `integrity_warning`
+- `analytics_updated`
+- `sync_updated` (future)
 
 Renderer subscribes via a single adapter (e.g. `adapters/events-ipc.ts`).
 

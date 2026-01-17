@@ -88,10 +88,12 @@ Renderer ↔ Host uses Tauri invoke. Host ↔ Engines uses Rust traits in-proces
 
 ## IPC contract rules
 
-- Command names are namespaced: `<domain>.<capability>.<action>`.
+- Command names are snake_case: `<domain>_<capability>_<action>`.
 - Payloads are single JSON objects (no positional args).
 - Responses use a stable error envelope with machine-readable codes.
 - Commands are capability-gated; default is deny.
+
+Note: dot-separated names do not work on the IPC bridge; use snake_case only.
 
 ### Tauri capability sources (desktop baseline)
 

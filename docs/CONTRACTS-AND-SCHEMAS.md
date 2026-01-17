@@ -7,15 +7,24 @@ shapes in feature code.
 
 ---
 
+## IPC naming
+
+All IPC command names are snake_case (dots are not supported by the bridge).
+
+---
+
 ## Where contracts live
 
 - **TypeScript (renderer/adapters):** `app/AideonDesktop/src/dtos` is the canonical renderer-side
-  contract surface.
+  contract surface for shared DTOs. Praxis view/task contracts currently live in
+  `app/AideonDesktop/src/workspaces/praxis/praxis-api.ts` and are re-exported via
+  `app/AideonDesktop/src/workspaces/praxis/types.ts`.
 - **Rust (host/engines):** DTOs live in the host and engine crates and are exposed via typed IPC and
   trait interfaces.
 - **Host IPC envelopes:** `crates/desktop/src/ipc.rs` defines the canonical request/response
   envelopes (`IpcRequest { requestId, payload }`, `IpcResponse { requestId, status, result?, error? }`)
-  and the stable `HostError { code, message }` shape that is mapped into `IpcResponse.error`.
+  and the stable `HostError { code, message }` shape that is mapped into `IpcResponse.error`
+  (including `details` for debug context).
 
 ---
 
@@ -65,26 +74,28 @@ Graph widget node geometry is persisted by the host and keyed by time context pl
 
 Artefact execution requests carry explicit time context (valid time + optional scenario + layer).
 
+- TS contracts: `app/AideonDesktop/src/workspaces/praxis/praxis-api.ts`
 - Host IPC commands:
   - `praxis_artefact_execute_graph` payload `GraphViewDefinition { id, name, kind, asOf, layout?, scenario?, layer?, confidence?, filters?, scope? }` → `GraphViewModel`
   - `praxis_artefact_execute_catalogue` payload `CatalogueViewDefinition { id, name, kind, asOf, scenario?, layer?, confidence?, filters?, columns[], limit? }` → `CatalogueViewModel`
   - `praxis_artefact_execute_matrix` payload `MatrixViewDefinition { id, name, kind, asOf, rowType, columnType, relationship?, scenario?, layer?, confidence?, filters? }` → `MatrixViewModel`
   - `praxis_artefact_execute_chart` payload `ChartViewDefinition { id, name, kind, asOf, chartType, measure, dimension?, scenario?, layer?, confidence?, filters? }` → `ChartViewModel`
-- `ViewMetadata` (camelCase): `{ id, name, asOf, scenario?, layer?, fetchedAt, source }`
+- `ViewMetadata`: `{ id, name, asOf, scenario?, layer?, fetchedAt, source }`
 
 ## Praxis task operations (apply_operations)
 
 Praxis task operations mutate the twin through explicit task payloads.
 
+- TS contracts: `app/AideonDesktop/src/workspaces/praxis/praxis-api.ts`
 - Host IPC commands:
-- `praxis_task_apply_operations` payload `{ branch?, operations: PraxisOperation[] }` → `OperationBatchResult`
-- `PraxisOperation` (camelCase union):
-  - `createNode { node: TwinNode }`
-  - `updateNode { node: TwinNode }`
-  - `deleteNode { nodeId }`
-  - `createEdge { edge: TwinEdge }`
-  - `updateEdge { edge: TwinEdge }`
-  - `deleteEdge { edgeId }`
+  - `praxis_task_apply_operations` payload `{ branch?, operations: PraxisOperation[] }` → `OperationBatchResult`
+- `PraxisOperation` (discriminated union):
+  - `{ kind: 'createNode', node: TwinNode }`
+  - `{ kind: 'updateNode', node: TwinNode }`
+  - `{ kind: 'deleteNode', nodeId: string }`
+  - `{ kind: 'createEdge', edge: TwinEdge }`
+  - `{ kind: 'updateEdge', edge: TwinEdge }`
+  - `{ kind: 'deleteEdge', edgeId: string }`
 - `TwinNode`: `{ id, type?, props? }`
 - `TwinEdge`: `{ id?, from, to, type?, directed?, props? }`
 
@@ -93,9 +104,21 @@ Praxis task operations mutate the twin through explicit task payloads.
 Workspace templates are persisted by the host and returned to the renderer for canvas composition.
 The host seeds a default template set on first run so the renderer always has initial artefacts.
 
+- TS contracts: `app/AideonDesktop/src/workspaces/praxis/domain-data.ts` (payloads) and
+  `app/AideonDesktop/src/workspaces/praxis/templates` (template shapes).
 - Host IPC commands:
   - `workspace_templates_list` payload `{}` → `TemplatePayload[]`
   - `workspace_templates_save` payload `TemplatePayload` → `TemplatePayload`
-- `TemplatePayload` (camelCase):
+- `TemplatePayload`:
   - `id`, `documentId`, `name`, `description`, `widgets[]`
   - `widgets[]` items: `{ id, title, size?, kind, view }` where `view` is the widget view definition.
+
+## Workspace projects and scenarios (Praxis)
+
+Projects and scenario summaries are surfaced via the host to seed workspace navigation.
+
+- TS contracts: `app/AideonDesktop/src/workspaces/praxis/domain-data.ts` and
+  `app/AideonDesktop/src/workspaces/praxis/praxis-api.ts`
+- Host IPC commands:
+  - `workspace_projects_list` payload `{}` → `ProjectSummary[]`
+  - `praxis_scenario_list` payload `{}` → `ScenarioSummary[]`

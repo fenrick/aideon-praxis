@@ -17,12 +17,12 @@ engine** (rankings, impact, etc.). Telemetry is privacy-first and opt-in by host
 
 ## Event catalogue (renderer)
 
-- `template.change` - template selection changed.
-- `template.create_widget` - widget added from registry.
-- `selection.change` - selection updated (counts only).
-- `time.cursor` - time context changed.
-- `inspector.save` - property save dispatched.
-- `error.ui` - user-visible error banner shown.
+- `template_change` - template selection changed.
+- `template_create_widget` - widget added from registry.
+- `selection_change` - selection updated (counts only).
+- `time_cursor` - time context changed.
+- `inspector_save` - property save dispatched.
+- `error_ui` - user-visible error banner shown.
 
 ---
 

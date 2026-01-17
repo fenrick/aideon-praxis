@@ -23,10 +23,15 @@ product surfaces.
 ```
 app/AideonDesktop/src/design-system/
 ├── blocks/          # UI blocks (panel, toolbar, sidebar, modal)
+├── components/      # React Flow UI registry proxies + wrappers
 ├── components/ui/   # generated shadcn primitives + registry entries
-├── components/      # React Flow UI registry proxies
+├── desktop-shell/   # shell layout primitives (menubar, resizable, sidebar)
 ├── hooks/           # shared hooks
+├── lib/             # shadcn compatibility utilities
 ├── styles/          # globals and theme tokens
+├── theme/           # color theme runtime + loaders
+├── ui/              # thin wrappers and convenience exports
+├── tokens.ts        # spacing/layout tokens
 └── index.ts         # consolidated exports
 ```
 
@@ -57,7 +62,8 @@ pnpm --filter @aideon/desktop run components:refresh
 
 ## Usage rules
 
-- Import from `@aideon/design-system/*` (or local path in the desktop renderer).
+- Import directly from the local `src/design-system` tree using the configured `design-system/*`
+  alias in `app/AideonDesktop/tsconfig.json` (no package aliases).
 - Do not import Radix/shadcn directly from product surfaces.
 - Include `styles/globals.css` to pick up tokens.
 

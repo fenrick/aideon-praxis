@@ -10,7 +10,8 @@ Praxis provides:
 - **Unlimited extensibility** via domain types (inheritance, defaults, rules)
 - A **task-oriented interaction model** that stays consistent even as the metamodel grows
 - A **quality and integrity system** that keeps analytics meaningful (PageRank, dependency risk, change impact)
-- A strict separation where **Mneme owns persistence** (SeaORM/SQLx) and **Praxis owns meaning**
+- A strict separation where **Mneme owns persistence** (core + store crates using SeaORM/SQLx)
+  and **Praxis owns meaning**
 
 Praxis never generates SQL and never exposes storage mechanics.
 

@@ -41,9 +41,9 @@ Artefact results include **diagram specs** that the UI renders without semantic 
 
 ### Selection model (required)
 
-- Selection kinds: `node`, `edge`, `cell`, `artefact`, `none`.
+- Selection kinds: `node`, `edge`, `cell`, `widget`, `none`.
 - Single primary selection; multi-select is allowed but one item is primary.
-- Selection includes the originating artefact/widget id for context.
+- Selection includes the originating widget id for context.
 
 ### Editing flow (required)
 
@@ -70,6 +70,7 @@ The shell owns chrome and layout. Workspaces fill slots:
 - Toolbar
 - Content surface
 - Inspector
+- Footer / status
 
 See `app/AideonDesktop/DESIGN.md` for the shell layout contract.
 

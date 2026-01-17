@@ -38,7 +38,7 @@ embedding during tests or previews.
 - Canvas templates carry a stable `documentId` (distinct from the template `id`) used as the
   persistence key for layout snapshots; the renderer must not infer document identity from the
   active template id.
-- Templates are persisted by the host (via `workspace_templates_list/save`) and rehydrated by the
+- Templates are persisted by the host (via `workspace_templates_list` / `workspace_templates_save`) and rehydrated by the
   renderer; the host seeds default templates on first run so the workspace always has initial
   artefacts to render.
 

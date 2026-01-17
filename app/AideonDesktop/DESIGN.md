@@ -7,10 +7,11 @@
 
 ## Layout regions
 
-- **Top toolbar:** global actions, workspace switching, and app-level menus plus a workspace toolbar slot.
+- **Header / toolbar:** global actions, workspace switching, and app-level menus plus a workspace toolbar slot.
 - **Left navigation:** workspace-provided navigation (projects/scenarios in Praxis today).
-- **Centre workspace:** active workspace content (Praxis initially).
+- **Main content:** active workspace content (Praxis initially).
 - **Right inspector:** workspace-provided contextual details and forms.
+- **Footer / status:** global status and job health surface.
 
 ## Principles
 
@@ -36,8 +37,14 @@ The shell is defined by a small set of slots that callers fill:
 Layout sketch:
 
 ```
-[ Toolbar / Menubar ]
-[ Sidebar ][ Main workspace ][ Properties ]
+┌────────────────────────────────────────┐
+│ Header / Toolbar (global + workspace)  │
+├──────────────┬─────────────────────────┤
+│ Left Nav     │ Main Content             │
+│ (workspace)  │ (artefacts, diagrams)   │
+├──────────────┴───────────────┬─────────┤
+│ Footer / Status               │ Inspector│
+└──────────────────────────────┴─────────┘
 ```
 
 The implementation uses the design-system proxies for Sidebar, Resizable, and Menubar/Toolbar components. Default sizing keeps the sidebar and properties panels narrow (≈20%) with the main workspace as the dominant pane.
