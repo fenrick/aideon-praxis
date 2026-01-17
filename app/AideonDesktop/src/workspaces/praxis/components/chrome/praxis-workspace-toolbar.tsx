@@ -37,7 +37,7 @@ export interface PraxisWorkspaceToolbarProperties {
   readonly loading?: boolean;
 }
 
-const COMMAND_PALETTE_EVENT = 'aideon.workspace_open-command-palette';
+const COMMAND_PALETTE_EVENT = 'aideon_workspace_open_command_palette';
 const HEADER_PAGES = ['Canvas', 'Overview', 'Timeline', 'Activity'] as const;
 
 /**

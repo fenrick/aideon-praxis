@@ -20,6 +20,11 @@
 - Keep the shell local-first and Tauri-friendly: no renderer HTTP, typed IPC only.
 - Desktop keyboard shortcuts should be registered in the Tauri native menu (accelerators) and dispatched to the renderer; browser preview keeps lightweight fallback handlers.
 
+## Authority
+
+- This document defines the **renderer UX shell** end state only.
+- IPC/capabilities/security contracts are defined by the host (`crates/desktop/DESIGN.md`) and the shared contract docs (`docs/CONTRACTS-AND-SCHEMAS.md`) and take precedence.
+
 ## Tree and properties panels
 
 - Left navigation is provided by each workspace module (Praxis uses the projects/scenarios sidebar).
@@ -54,6 +59,16 @@ The implementation uses the design-system proxies for Sidebar, Resizable, and Me
 - `AideonDesktopRoot` is the React entry that selects the active workspace module and composes `AideonDesktopShell` with navigation/toolbar/content/inspector slots.
 - Workspace modules are registered in `src/workspaces/registry.ts` and follow the `WorkspaceModule` contract in `src/workspaces/types.ts`.
 - Tauri loads the static Next.js export (`app/AideonDesktop/out`) with window routes mapped to `app/*/page.tsx` and the shared screen logic in `src/app/app-screens.tsx`; workspace modules mount inside the shell rather than owning the window.
+
+## Workspace UX docs
+
+Module-level UX designs live under `app/AideonDesktop/docs/`:
+
+- Praxis workspace: `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`
+- Mneme workspace: `app/AideonDesktop/docs/mneme-workspace/DESIGN.md`
+- Metis workspace: `app/AideonDesktop/docs/metis-workspace/DESIGN.md`
+- Chrona time UX: `app/AideonDesktop/docs/chrona-time/DESIGN.md`
+- Continuum automation UX: `app/AideonDesktop/docs/continuum-automation/DESIGN.md`
 
 ## Splash window
 

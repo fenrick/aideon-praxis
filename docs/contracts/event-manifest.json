@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "events": [
+    {
+      "name": "shell_command",
+      "payloadKeys": ["command", "payload"]
+    }
+  ]
+}

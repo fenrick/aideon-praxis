@@ -153,6 +153,41 @@ No module is allowed to assume “current state only”.
 - Host selects local vs remote implementations behind the same DTOs and command names.
 - Baseline security invariants remain true (no renderer HTTP; host remains the boundary).
 
+Additional constraints (remote-ready parity):
+
+- Remote mode must not introduce new renderer-side networking; all remote access remains host-owned.
+- Switching local ↔ remote is configuration-only; renderer code and routes do not fork.
+- Offline-first remains true: local mode remains fully functional without remote dependencies.
+- Remote failures degrade gracefully:
+  - timeouts and auth failures are user-visible and actionable,
+  - partial data is labeled explicitly,
+  - users can return to local mode without data loss.
+- Contracts remain stable across modes:
+  - identical command names,
+  - identical DTO shapes,
+  - identical error envelope shape (same `code` semantics).
+- Authn/z and audit are host-owned:
+  - renderer never handles secrets,
+  - host persists credentials in platform-secure stores,
+  - host logs audit events for privileged actions.
+
+---
+
+## Extensions and workspace modules (constraints)
+
+Workspaces and extensions are first-class modules that render inside the desktop shell. They must not
+weaken boundaries.
+
+- Extensions do not add renderer chrome; they fill shell slots only.
+- Extensions do not open ports or start servers in desktop mode.
+- Extensions do not bypass host capability gating; new IPC commands require explicit capabilities.
+- Extensions must declare:
+  - IPC namespaces,
+  - required capabilities,
+  - supported host/contract versions.
+- Extension install/uninstall is reversible and must not corrupt workspaces.
+- Extension data access remains workspace-scoped; no cross-workspace reads without explicit user intent.
+
 ---
 
 ## References
@@ -160,5 +195,5 @@ No module is allowed to assume “current state only”.
 - Suite design: `docs/DESIGN.md`
 - Host design: `crates/desktop/DESIGN.md`
 - Praxis design: `crates/praxis/DESIGN.md`
-- Mneme design: `crates/mneme/DESIGN.md`
+- Mneme design: `crates/mneme_core/DESIGN.md` and `crates/mneme_store/DESIGN.md` (legacy overview: `crates/mneme/DESIGN.md`)
 - Contracts: `docs/CONTRACTS-AND-SCHEMAS.md`

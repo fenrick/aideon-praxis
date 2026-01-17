@@ -162,7 +162,7 @@ function buildShellCommands({
     ...(sidebar
       ? ([
           {
-            id: 'toggle-navigation',
+            id: 'toggle_navigation',
             group: 'View',
             label: 'Toggle navigation',
             shortcut: shortcutLabelFor('B'),
@@ -175,7 +175,7 @@ function buildShellCommands({
     ...(shell
       ? ([
           {
-            id: 'toggle-inspector',
+            id: 'toggle_inspector',
             group: 'View',
             label: 'Toggle inspector',
             shortcut: shortcutLabelFor('I'),
@@ -303,21 +303,21 @@ function useTauriShellCommandListener({
           return;
         }
         unlisten = await listen<{ command?: string; payload?: unknown }>(
-          'aideon.shell.command',
+          'shell_command',
           (event) => {
             const command = event.payload.command;
             const payload = event.payload.payload;
 
-            if (command === 'toggle-navigation') {
+            if (command === 'toggle_navigation') {
               sidebar?.toggleSidebar();
             }
-            if (command === 'toggle-inspector') {
+            if (command === 'toggle_inspector') {
               shell?.toggleInspector();
             }
-            if (command === 'open-command-palette') {
+            if (command === 'open_command_palette') {
               openCommandPalette();
             }
-            if (command === 'file.print') {
+            if (command === 'file_print') {
               globalThis.print();
             }
 
@@ -720,9 +720,15 @@ export function AideonToolbar({
     const handleCommandPalette = () => {
       setCommandPaletteOpen(true);
     };
-    globalThis.addEventListener('aideon.workspace_open-command-palette', handleCommandPalette);
+    globalThis.addEventListener(
+      'aideon_workspace_open_command_palette',
+      handleCommandPalette,
+    );
     return () => {
-      globalThis.removeEventListener('aideon.workspace_open-command-palette', handleCommandPalette);
+      globalThis.removeEventListener(
+        'aideon_workspace_open_command_palette',
+        handleCommandPalette,
+      );
     };
   }, []);
 

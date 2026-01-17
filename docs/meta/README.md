@@ -46,4 +46,4 @@ compatibility when packages are applied.
 ## Storage notes
 
 Mneme persists schema and edge semantics in its portable tables; no raw SQL is used in migrations or
-runtime paths. See `crates/mneme/DESIGN.md` for schema details.
+runtime paths. See `crates/mneme_core/DESIGN.md` and `crates/mneme_store/DESIGN.md` for schema details.

@@ -291,12 +291,14 @@ The current worker jobs and time APIs are defined by engine contracts and module
 - Worker job types and payloads: see Metis and temporal engine design docs.
 - Time APIs and PlanEvent schema: see Praxis engine design docs.
 
-- `Analytics.Centrality { algorithm: degree|betweenness, scope }`
-- `Analytics.Impact { seedRefs[], filters{} }`
-- `Temporal.StateAt { asOf, scenario?, layer? }`
-- `Temporal.Diff { from: plateauId|date, to: plateauId|date, scope? }`
-- `Temporal.TopologyDelta { from, to }`
-- `Finance.TCO { scope, asOf, scenario?, policies? }`
+Worker job identifiers are **snake_case** (dot-separated names are not supported by the IPC bridge):
+
+- `analytics_centrality { algorithm: degree|betweenness, scope }`
+- `analytics_impact { seedRefs[], filters{} }`
+- `temporal_state_at { asOf, scenario?, layer? }`
+- `temporal_diff { from: plateauId|date, to: plateauId|date, scope? }`
+- `temporal_topology_delta { from, to }`
+- `finance_tco { scope, asOf, scenario?, policies? }`
 
 ### Time APIs (desktop read‑only; server read/write)
 

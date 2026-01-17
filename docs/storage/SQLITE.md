@@ -3,8 +3,9 @@
 ## Purpose
 
 Provide a reference for the SQLite storage layer used by Mneme Core in desktop mode. The
-authoritative design is `crates/mneme/DESIGN.md`; this document highlights SQLite-specific
-implementation details and portability considerations for the SeaORM-backed store.
+authoritative design is `crates/mneme_store/DESIGN.md` (store) and `crates/mneme_core/DESIGN.md`
+(core); this document highlights SQLite-specific implementation details and portability
+considerations for the SeaORM-backed store.
 
 ## Schema overview (Mneme v1)
 

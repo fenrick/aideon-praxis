@@ -52,36 +52,36 @@ import type {
  * menu captured under “Contracts snapshot” in AGENTS.md.
  */
 export interface WorkerJobMap {
-  'Analytics.ShortestPath': {
+  analytics_shortest_path: {
     input: { from: string; to: string; maxHops: number };
     output: {
       path: string[];
       hopCount: number;
     };
   };
-  'Analytics.Centrality': {
+  analytics_centrality: {
     input: { algorithm: 'degree' | 'betweenness'; scope?: Record<string, unknown> };
     output: {
       scores: { nodeRef: string; score: number }[];
     };
   };
-  'Analytics.Impact': {
+  analytics_impact: {
     input: { seedRefs: string[]; filters?: Record<string, unknown> };
     output: { impactedRefs: string[] };
   };
-  'Temporal.StateAt': {
+  temporal_state_at: {
     input: TemporalStateParameters;
     output: TemporalStateSnapshot;
   };
-  'Temporal.Diff': {
+  temporal_diff: {
     input: TemporalDiffParameters;
     output: TemporalDiffSnapshot;
   };
-  'Temporal.TopologyDelta': {
+  temporal_topology_delta: {
     input: TemporalTopologyDeltaParameters;
     output: TemporalTopologyDeltaSnapshot;
   };
-  'Finance.TCO': {
+  finance_tco: {
     input: {
       scope: Record<string, unknown>;
       asOf: IsoDateTime;

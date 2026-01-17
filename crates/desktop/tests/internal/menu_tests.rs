@@ -20,18 +20,18 @@ fn menu_ids_default_is_empty() {
 #[test]
 fn shell_command_payload_serializes() {
     let payload = ShellCommandPayload {
-        command: "toggle-navigation".into(),
+        command: "toggle_navigation".into(),
         payload: None,
     };
     let encoded = serde_json::to_string(&payload).expect("serialize");
-    assert!(encoded.contains("toggle-navigation"));
+    assert!(encoded.contains("toggle_navigation"));
 
     let payload = ShellCommandPayload {
-        command: "file.open".into(),
+        command: "file_open".into(),
         payload: Some(json!({ "path": "/tmp/demo.txt" })),
     };
     let encoded = serde_json::to_string(&payload).expect("serialize");
-    assert!(encoded.contains("file.open"));
+    assert!(encoded.contains("file_open"));
     assert!(encoded.contains("demo.txt"));
 }
 
@@ -43,28 +43,28 @@ fn to_string_formats_errors() {
 #[test]
 fn menu_event_classification_covers_common_paths() {
     assert_eq!(classify_menu_event("about", ""), MenuAction::OpenAbout);
-    assert_eq!(classify_menu_event("help.about", ""), MenuAction::OpenAbout);
+    assert_eq!(classify_menu_event("help_about", ""), MenuAction::OpenAbout);
     assert_eq!(
         classify_menu_event("preferences", ""),
         MenuAction::OpenSettings
     );
     assert_eq!(
-        classify_menu_event("view.toggle_navigation", ""),
-        MenuAction::EmitShellCommand("toggle-navigation")
+        classify_menu_event("view_toggle_navigation", ""),
+        MenuAction::EmitShellCommand("toggle_navigation")
     );
     assert_eq!(
-        classify_menu_event("file.open", ""),
+        classify_menu_event("file_open", ""),
         MenuAction::PickOpenFile
     );
     assert_eq!(
-        classify_menu_event("file.save_as", ""),
+        classify_menu_event("file_save_as", ""),
         MenuAction::PickSaveFile
     );
     assert_eq!(
-        classify_menu_event("file.print", ""),
-        MenuAction::EmitShellCommand("file.print")
+        classify_menu_event("file_print", ""),
+        MenuAction::EmitShellCommand("file_print")
     );
-    assert_eq!(classify_menu_event("file.quit", ""), MenuAction::Quit);
+    assert_eq!(classify_menu_event("file_quit", ""), MenuAction::Quit);
     assert_eq!(classify_menu_event("unknown", ""), MenuAction::Noop);
     assert_eq!(
         classify_menu_event("resolved-styleguide", "resolved-styleguide"),
@@ -111,7 +111,7 @@ fn handle_menu_event_emits_shell_command() {
         .expect("main window");
 
     let event = MenuEvent {
-        id: MenuId::new("view.toggle_navigation"),
+        id: MenuId::new("view_toggle_navigation"),
     };
     handle_menu_event(app.handle(), event);
 }
@@ -133,7 +133,7 @@ fn handle_menu_event_opens_windows() {
     handle_menu_event(
         app.handle(),
         MenuEvent {
-            id: MenuId::new("help.about"),
+            id: MenuId::new("help_about"),
         },
     );
     handle_menu_event(

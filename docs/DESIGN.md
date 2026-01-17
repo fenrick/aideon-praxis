@@ -9,7 +9,9 @@ Module details live in:
 
 - Host: `crates/desktop/DESIGN.md`
 - Praxis: `crates/praxis/DESIGN.md`
-- Mneme: `crates/mneme/DESIGN.md`
+- Mneme (umbrella overview): `crates/mneme/DESIGN.md`
+- Mneme Core: `crates/mneme_core/DESIGN.md`
+- Mneme Store: `crates/mneme_store/DESIGN.md`
 - Chrona: `crates/chrona/DESIGN.md`
 - Metis: `crates/metis/DESIGN.md`
 - Continuum: `crates/continuum/DESIGN.md`

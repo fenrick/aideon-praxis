@@ -1,9 +1,10 @@
-# Mneme Core – Aideon Suite module
+# Mneme – Aideon Suite storage module
 
 ## Purpose
 
-Mneme Core is the persistence layer for Aideon Suite. It provides the op-log, bi-temporal fact
-storage, schema-as-data, and graph projections described in `crates/mneme/DESIGN.md`.
+Mneme is the persistence layer for Aideon Suite. It provides the op-log, bi-temporal fact storage,
+schema-as-data, and graph projections described in `crates/mneme_core/DESIGN.md` and
+`crates/mneme_store/DESIGN.md`.
 SQLite is the first implementation; other RDBMS backends are expected to follow the same logical
 schema and APIs.
 
@@ -58,5 +59,11 @@ schema and APIs.
 
 ## Design and architecture
 
-`crates/mneme/DESIGN.md` is the authoritative design spec. Update it when storage semantics or
-APIs change. Keep `docs/storage/SQLITE.md` aligned with the current schema and migration strategy.
+Authoritative designs live in:
+
+- `crates/mneme_core/DESIGN.md` (domain contracts + traits)
+- `crates/mneme_store/DESIGN.md` (store semantics, migrations, jobs, exports)
+
+`crates/mneme/DESIGN.md` remains as an umbrella overview; keep it aligned with the split design so
+the narrative stays coherent. Keep `docs/storage/SQLITE.md` aligned with the current schema and
+migration strategy.

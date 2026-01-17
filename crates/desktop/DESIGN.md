@@ -262,6 +262,48 @@ Each job has:
 - `result_ref` (optional)
 - `error` (optional)
 
+#### 8.2.1 Job DTO (canonical, snake_case)
+
+Jobs must have a stable cross-boundary DTO so the renderer can render progress consistently and
+persistently.
+
+```json
+{
+  "job_id": "uuid",
+  "workspace_id": "uuid",
+  "kind": "analytics | import | export | migration | projection | maintenance",
+  "status": "pending | running | completed | failed | cancelled | interrupted",
+  "progress": {
+    "percent": 0,
+    "stage": "string",
+    "detail": "optional string"
+  },
+  "created_at": "RFC3339 timestamp",
+  "updated_at": "RFC3339 timestamp",
+  "started_at": "optional RFC3339 timestamp",
+  "ended_at": "optional RFC3339 timestamp",
+  "result_ref": "optional opaque reference",
+  "error": {
+    "code": "string",
+    "message": "string"
+  }
+}
+```
+
+Rules:
+
+- `job_id` is globally unique and stable across restarts.
+- `status` is a closed set; add new states only with a versioned contract update.
+- `progress.percent` is monotonically non-decreasing for a given attempt.
+- `result_ref` is an opaque reference; the renderer must not assume it is a path.
+- `error` is stable enough for UI display (no raw Rust error dumps).
+
+#### 8.2.2 Idempotency and durability
+
+- Starting a job should be idempotent when a `dedupe_key` is present (host/engine-defined).
+- Job metadata is persisted; renderer can reconstruct state after restart via list commands and/or replay.
+- Cancellation is best-effort but observable: cancelled jobs must move to `cancelled` or `failed` with a reason.
+
 ### 8.3 Host responsibilities
 
 - Run jobs asynchronously
@@ -994,7 +1036,7 @@ Host normalises logs from all engines into:
 
 - unified log stream
 - severity levels
-- correlation IDs (jobId, requestId)
+- correlation IDs (`job_id`, `request_id`, `workspace_id`)
 
 ---
 
@@ -1015,6 +1057,44 @@ This window must remain usable even if:
 - an engine is degraded
 
 ---
+
+### 34.3 Audit and redaction contract
+
+The host is the audit and privacy boundary. Observability must not leak sensitive content.
+
+**Audit events (minimum)**
+
+- capability decisions (allow/deny) per IPC command
+- all write actions (command name, actor, time context, workspace)
+- job lifecycle transitions (created/running/completed/failed/cancelled)
+- workspace lifecycle (create/open/close/backup/restore)
+- export operations (what was exported, redaction policy applied)
+
+**Required structured fields (minimum)**
+
+- `request_id` (if applicable)
+- `job_id` (if applicable)
+- `workspace_id` (if applicable)
+- `command` (snake_case command name)
+- `capability` (snake_case capability id)
+- `status` (ok/error or job status)
+
+**Redaction rules**
+
+- Default to deny-by-default for export surfaces and logs.
+- Never log raw model payloads that may contain PII.
+- Prefer summary counts and stable identifiers over free-form text.
+- Error `details` may include debug context, but must remain safe to surface in the Status window.
+
+**Audit packs (exportable)**
+
+- Audit packs must be PII-redacted by default.
+- Audit packs should include:
+  - command/event manifests,
+  - job summaries,
+  - recent error summaries,
+  - version/build metadata,
+  - minimal diagnostic logs with correlation IDs.
 
 ## 35. Versioning and compatibility strategy
 
@@ -1108,7 +1188,7 @@ No feature may silently degrade due to lack of connectivity.
 
 The design must not block future sync.
 
-Preparation points already baked in:
+Preparation points baked into the design:
 
 - event-log-based storage (Mneme)
 - job-based background processing
@@ -1212,7 +1292,7 @@ With Sections **1–43**, the Aideon Desktop & Host design now covers:
 
 ## 44. Aideon Host (Rust/Tauri) detailed design
 
-This section makes the host buildable and maintainable as the suite expands beyond the currently documented modules.
+This section makes the host buildable and maintainable as the suite expands beyond the documented modules.
 
 ### 44.1 Host crate responsibilities (hard boundaries)
 
@@ -1220,7 +1300,7 @@ The host is responsible for:
 
 - **Windowing**: create, show/hide, focus, centre, size, vibrancy, menus.
 - **Security**: CSP, Tauri capabilities, command allowlists, filesystem boundaries.
-- **Workspace lifecycle**: open/close/create/list/backup/restore (even if initially stubbed).
+- **Workspace lifecycle**: open/close/create/list/backup/restore.
 - **IPC façade**: typed commands only, DTO validation, stable error envelopes.
 - **Job orchestration**: run background work across engines, progress, cancellation, persistence.
 - **Event distribution**: push events to renderer (job updates, model changed, sync status).
@@ -1255,7 +1335,8 @@ Required modules:
 - `setup.rs`
   Splash gating and backend initialisation. Owns setup state machine.
 
-- `ipc/` (new folder; consolidates today’s command sprawl)
+- `ipc/`
+  Host IPC organized by responsibility/domain.
   - `ipc/mod.rs` – registry glue and shared DTO helpers
 - `ipc/system.rs` – version, environment, diagnostics toggles
 - `ipc/workspace.rs` – open/close/list/backup/restore
@@ -1269,31 +1350,28 @@ Required modules:
 - `health.rs`
   Host + engine health aggregation.
 
-- `events.rs` (new)
+- `events.rs`
   Host→renderer event bus wrappers and event schema.
 
-- `jobs.rs` (new)
+- `jobs.rs`
   Host job manager + persistence + cancellation token plumbing.
 
-This does not require large refactors day one, but it is the target structure.
+This is the required structure.
 
 ---
 
-### 44.3 Command naming and compatibility with current code
+### 44.3 Command naming and adapter facades
 
-Your current host command names are flat (e.g. `temporal_state_at`, `mneme_create_node`) and registered in `app.rs`.
+Rules:
 
-Future-proof rule:
-
-- **Host keeps existing command names as stable IDs.**
-- **Renderer exposes namespaced methods via adapters.**
+- Host IPC command names are stable, snake_case identifiers.
+- Renderer calls the host only through typed adapters (no ad-hoc invokes).
+- Adapters provide readable method names while preserving stable command ids.
 
 Example mapping:
 
-- Adapter method: `chrona_time_state_at()`
-  Calls host command: `temporal_state_at`
-
-This avoids breaking current code while giving you a scalable mental model for “all possible modules”.
+- Adapter method: `chrona_temporal_state_at()`
+  Calls host command: `chrona_temporal_state_at`
 
 ---
 
@@ -1301,11 +1379,11 @@ This avoids breaking current code while giving you a scalable mental model for �
 
 Host must manage these in Tauri state:
 
-- `SetupState` (already present)
-- `WorkspaceManager` (new)
-- `JobManager` (new)
-- `EventBus` (new)
-- `EngineRegistry` (new; trait objects for each engine)
+- `SetupState`
+- `WorkspaceManager`
+- `JobManager`
+- `EventBus`
+- `EngineRegistry` (trait objects for each engine)
 
 None of these are accessed directly by renderer. Renderer gets them through commands/events only.
 
@@ -1324,7 +1402,7 @@ These labels must never change:
 - `about`
 - `styleguide`
 
-(Your current `windows.rs` already follows this pattern.)
+This is a hard compatibility requirement.
 
 ### 45.2 Route contract (renderer paths)
 
@@ -1379,9 +1457,9 @@ This aligns with `app/AideonDesktop/DESIGN.md` and extends it to support more mo
   Workspace modules registered in `registry.ts` and implementing `WorkspaceModule`.
 
 - `adapters/`
-  IPC adapters and contracts (`timegraph-ipc.ts` is the current exemplar).
+  IPC adapters and contracts.
 
-- `state/` (new if not already present)
+- `state/`
   Global store slices:
   - system
   - workspace
@@ -1428,7 +1506,7 @@ This keeps the product coherent as modules proliferate.
 
 ## 47. Host ↔ Renderer interaction model (beyond basic invoke)
 
-You already have request/response IPC for commands. You now need first-class **events**.
+The host/renderer interaction uses request/response IPC for commands and must also provide first-class **events**.
 
 ### 47.1 Event bus (host → renderer)
 
@@ -1454,7 +1532,7 @@ Rule:
 
 ## 48. Job system (host-owned) build-ready specification
 
-Your repo already hints at job concepts (`mneme_list_jobs`, failed jobs, triggers). This section standardises it at the host level.
+Jobs are a first-class host concept. This section standardises the job system at the host level.
 
 ### 48.1 Job API surface (stable)
 
@@ -1531,16 +1609,16 @@ Renderer never sees filesystem paths.
 
 ---
 
-## 50. Testing regime (explicit and aligned to your repo)
+## 50. Testing regime (explicit and enforceable)
 
-Your repo already documents the testing strategy. This section turns it into wrapper-specific requirements.
+This section defines wrapper-specific requirements aligned to the suite testing strategy.
 
 ### 50.1 Rust tests (host)
 
 Must include:
 
-- **Invoke payload casing tests** (already present pattern)
-- **CSP and window config tests** (already present pattern)
+- **Invoke payload casing tests**
+- **CSP and window config tests**
 - **Command registration test**:
   - ensure command list in `app.rs` matches the expected registry
   - fails when commands are accidentally removed/renamed
@@ -1557,7 +1635,7 @@ Must include:
 - Store slice tests (context changes invalidating caches)
 - Shell composition tests (workspace slot contract)
 
-### 50.3 Cross-boundary contract tests (missing today; required)
+### 50.3 Cross-boundary contract tests (required)
 
 Add a generated artefact in CI:
 
@@ -1575,7 +1653,7 @@ E2E must run the real packaged (or dev) Tauri app and verify:
 - splash gating works
 - main window shows
 - settings window opens from menu
-- at least one real IPC call works (e.g., `temporal_state_at`)
+- at least one real IPC call works (e.g., `chrona_temporal_state_at`)
 - status window shows job list
 
 E2E must be deterministic:
@@ -1584,7 +1662,7 @@ E2E must be deterministic:
 - freeze time where required
 - disable network access
 
-Current coverage:
+Reference tests:
 
 - `crates/desktop/tests/internal/tauri_e2e_smoke.rs` smoke checks window routes + IPC wiring via a
   Tauri mock app (runs on non-Windows during `cargo test -p aideon_desktop`).
@@ -1595,7 +1673,7 @@ Current coverage:
 
 ## 51. Extending to “all possible modules” (suite-level scaling rules)
 
-This is the key part of your ask: the wrapper must scale past today’s modules.
+The wrapper must scale across modules without changing the shell.
 
 ### 51.1 Module categories
 
@@ -1639,7 +1717,7 @@ The wrapper must support modules of these categories, without changing the shell
 
 - Settings, preferences, diagnostics
 - Import/export tooling
-- Plugin manager (if you allow external plugins)
+- Plugin manager (if external plugins are supported)
 
 ### 51.2 Wrapper invariants for all modules
 
@@ -1663,15 +1741,15 @@ These are the lowest-risk, highest-leverage next steps that align with your exis
 - host emits job+model events
 - renderer subscribes in one place
 
-2. **Introduce a host JobManager wrapper**
+2. **Introduce a host JobManager**
 
-- even if engines internally manage jobs today, unify the view for renderer
+- unify job lifecycle and visibility for the renderer
 
 3. **Add command manifest generation**
 
 - small Rust build step that outputs JSON manifest of commands/DTOs
 - TS test consumes it and validates adapters
 
-4. **Formalise workspace lifecycle stubs**
+4. **Formalise workspace lifecycle**
 
-- even if the underlying storage is “single workspace today”, the host surface should look like multi-workspace now
+- the host surface must be multi-workspace capable from the outset
