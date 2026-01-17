@@ -8,4 +8,3 @@ diagnostics. It renders inside the Aideon Desktop shell and talks to the host vi
 ## What lives here
 
 - Design: `app/AideonDesktop/docs/mneme-workspace/DESIGN.md`
-

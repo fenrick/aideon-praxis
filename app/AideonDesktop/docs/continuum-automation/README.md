@@ -8,4 +8,3 @@ and provenance for automated workflows, without weakening the offline-first secu
 ## What lives here
 
 - Design: `app/AideonDesktop/docs/continuum-automation/DESIGN.md`
-

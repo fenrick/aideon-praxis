@@ -62,19 +62,19 @@ Toolbar details:
 
 Content screens (minimum)
 
-1) Centrality
+1. Centrality
    - Inputs: algorithm, scope, limits.
    - Outputs: ranked list + distribution summary.
-2) Impact
+2. Impact
    - Inputs: seed refs, traversal bounds, filters.
    - Outputs: impacted items + evidence summary.
-3) Shortest path
+3. Shortest path
    - Inputs: from/to refs, constraints, max depth.
    - Outputs: path + evidence.
-4) TCO
+4. TCO
    - Inputs: scope, policies, time context.
    - Outputs: cost breakdown table + assumptions.
-5) Diagnostics
+5. Diagnostics
    - Inputs: scope, ruleset selection.
    - Outputs: issues list with severity and “go to” links.
 

@@ -38,4 +38,3 @@ and storage performance while remaining isolated from the host UI/runtime.
 
 - Implements Mneme traits defined in `crates/mneme_core`.
 - Called by the host (`crates/desktop`) through engine adapters/traits.
-

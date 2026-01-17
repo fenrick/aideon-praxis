@@ -26,4 +26,3 @@ datastores (SQLite in desktop mode by default).
 ## Design and architecture
 
 See `crates/mneme_store/DESIGN.md` and the suite-level storage spec in `crates/mneme/DESIGN.md`.
-

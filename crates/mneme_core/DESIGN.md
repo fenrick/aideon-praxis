@@ -32,4 +32,3 @@ This crate exists to keep the storage contract stable while allowing the store i
 
 - Consumed by `crates/mneme_store` for concrete persistence and migrations.
 - Consumed by the host (`crates/desktop`) and engines that need Mneme contract types.
-

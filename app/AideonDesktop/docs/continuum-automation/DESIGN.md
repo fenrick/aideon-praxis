@@ -86,9 +86,9 @@ Toolbar details:
 
 Three primary screens:
 
-1) **Schedule detail**: configuration + next runs + history.
-2) **Connector detail**: configuration + auth status + schema mapping summary.
-3) **Run detail**: progress timeline + outputs summary + provenance + logs/errors.
+1. **Schedule detail**: configuration + next runs + history.
+2. **Connector detail**: configuration + auth status + schema mapping summary.
+3. **Run detail**: progress timeline + outputs summary + provenance + logs/errors.
 
 Schedule detail (required sections)
 

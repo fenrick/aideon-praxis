@@ -54,22 +54,22 @@ recoverable without leaving the desktop app.
 
 Screens (minimum):
 
-1) Health
+1. Health
    - engine health summary
    - storage connectivity (SQLite path remains host-owned; renderer sees health only)
    - migration status (running/blocked/ok)
-2) Jobs
+2. Jobs
    - running jobs list (progress, cancel when allowed)
    - failed jobs list (error summary, retry when allowed)
    - job detail view (metadata + timeline + correlation ids)
-3) Integrity
+3. Integrity
    - integrity head summary
    - recent integrity findings (bounded)
    - “explain” entrypoint for a finding (read-only)
-4) Schema
+4. Schema
    - schema manifest (read-only)
    - effective schema view for a type (read-only, bounded)
-5) Maintenance
+5. Maintenance
    - safe operations (rebuild schema, refresh integrity, refresh projections, retention, compaction)
    - each operation shows bounds, expected impact, and requires explicit confirmation
 

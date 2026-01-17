@@ -9,4 +9,3 @@ IPC only.
 ## What lives here
 
 - Design: `app/AideonDesktop/docs/metis-workspace/DESIGN.md`
-

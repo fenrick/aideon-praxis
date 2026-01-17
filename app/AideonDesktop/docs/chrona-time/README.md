@@ -8,4 +8,3 @@ scenario/branch selection, diffs, and merges) and how those controls drive artef
 ## What lives here
 
 - Design: `app/AideonDesktop/docs/chrona-time/DESIGN.md`
-

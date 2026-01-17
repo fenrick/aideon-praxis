@@ -26,4 +26,3 @@ agnostic.
 ## Design and architecture
 
 See `crates/mneme_core/DESIGN.md`.
-

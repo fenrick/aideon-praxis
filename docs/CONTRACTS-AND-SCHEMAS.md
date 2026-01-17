@@ -32,7 +32,9 @@ The renderer should treat events as a typed envelope with a stable shape:
 {
   "event": "job_updated",
   "emitted_at": "RFC3339 timestamp",
-  "payload": { /* event-specific */ }
+  "payload": {
+    /* event-specific */
+  }
 }
 ```
 
