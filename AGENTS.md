@@ -17,11 +17,12 @@ Before making changes, agents should read:
 - `ARCHITECTURE-BOUNDARY.md` (layers, adapters, time-first boundaries)
 - `docs/CODING-STANDARDS.md` (coding rules and boundaries)
 - `docs/TESTING-STRATEGY.md` (testing expectations)
-- The `README.md` and `DESIGN.md` for the module they are working in
+- The module’s README/DESIGN docs (examples: `crates/desktop/DESIGN.md`, `crates/praxis/DESIGN.md`,
+  `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`)
 
 ## Documentation index
 
-- **Canonical**: `README.md`, `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`, `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`, `docs/DESIGN-SYSTEM.md`, `docs/UX-DESIGN.md`, and module-level `README.md` + `DESIGN.md`.
+- **Canonical**: `README.md`, `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`, `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`, `docs/DESIGN-SYSTEM.md`, `docs/UX-DESIGN.md`, plus module-level docs (examples: `crates/desktop/DESIGN.md`, `crates/praxis/DESIGN.md`, `crates/mneme_store/DESIGN.md`, `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`).
 - Legacy Svelte renderer (`app/PraxisDesktop/`) has been removed; ignore any remaining references to it.
 
 > **Scope:** These instructions apply exclusively to the `aideon-praxis` codebase. Do not spend time optimising for downstream consumers, SDKs, or hypothetical adopters outside this repository unless explicitly directed in a task.
@@ -67,7 +68,7 @@ design docs require it.
 ## Repository boundaries (monorepo)
 
 High-level module boundaries are documented in `ARCHITECTURE-BOUNDARY.md` and in each module’s
-`README.md`/`DESIGN.md` (see the “Aideon Suite modules” table in `README.md`). Never cross those
+README/DESIGN docs (see the “Aideon Suite modules” table in `README.md`). Never cross those
 boundaries with imports or side-effects (e.g., no renderer ↔ DB access, no engines importing Tauri).
 
 ## Evergreen environment & legacy handling
@@ -76,7 +77,7 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 
 - **1. Code on `main`** is always authoritative.
 - **2. Suite-level docs:** `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`, `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`, `docs/ROADMAP.md`.
-- **3. Module docs:** `<module>/README.md`, `<module>/DESIGN.md`.
+- **3. Module docs:** module-level README/DESIGN docs (Rust modules under `crates/*/`; desktop UX modules under `app/AideonDesktop/docs/*/`).
 - **4. Supporting docs in `docs/`** (not listed above).
 - **Anything else** is informational only and does not override the above.
 
@@ -85,16 +86,16 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 - Prefer updating to current patterns over preserving legacy. When you touch code, refactor it toward the current architecture and coding standards.
 - Clean as you go: when modifying a file, remove or clearly mark obsolete TODOs, comments, and dead code in the area you touch, if safe and reasonable.
 - Do not add new features on top of obviously legacy seams (e.g., pre-refactor patterns, deprecated UIs). Only maintain or migrate these; do not extend them.
-- After changing behaviour or design, update the relevant module `README.md` and `DESIGN.md`. Remove or archive outdated doc sections rather than adding conflicting ones.
-- Minimise new `.md` files: only create new module `README.md`/`DESIGN.md` docs. Prefer updating existing docs.
+- After changing behaviour or design, update the relevant module docs (README/DESIGN). Remove or archive outdated doc sections rather than adding conflicting ones.
+- Minimise new `.md` files: only create new module README/DESIGN docs. Prefer updating existing docs.
 
 ## Checklists
 
 **Before you start a task**
 
 - Skim the docs listed at the top for your area.
-- Identify the target module (`app/AideonDesktop/src/canvas`, host crate, engine crate, etc.) and open its
-  `README.md`/`DESIGN.md`.
+- Identify the target module (`app/AideonDesktop/src/canvas`, host crate, engine crate, etc.) and open its module docs (README/DESIGN).
+  Examples: `crates/desktop/DESIGN.md`, `crates/praxis/DESIGN.md`, `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`.
 - If you touch legacy code, plan to migrate toward the current stack where safe.
 - Locate existing adapters/APIs to reuse; do not add new IPC/HTTP surfaces without need.
 
@@ -114,7 +115,7 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 
 **When touching a boundary (Rust ↔ host ↔ renderer)**
 
-- Update/validate DTO types on both sides (TS in `app/PraxisDtos`, Rust in `crates/mneme`).
+- Update/validate DTO types on both sides (TS in `app/AideonDesktop/src/dtos`; Rust in the relevant domain crates, e.g. `crates/mneme_core`, `crates/mneme_store`, `crates/praxis`).
 - Update `docs/CONTRACTS-AND-SCHEMAS.md` when schemas or IPC error shapes change.
 - Ensure error structures are documented and consistent across layers before merging.
 
@@ -136,7 +137,7 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 - Analytics in the Rust worker crates (Chrona/Metis) with tests and metrics.
 - Connectors via Continuum scheduler (e.g., CMDB), CSV wizard features, PII redaction,
   encryption‑at‑rest.
-- Docs: module `README.md`/`DESIGN.md`, global README, `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`,
+- Docs: module docs (README/DESIGN), global README, `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`,
   ROADMAP, C4 diagrams-as-code.
 
 ## Examples (golden patterns)
@@ -238,18 +239,18 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
   - Tests: Rust tests via `cargo test -p aideon_desktop`; workspace checks via `pnpm run host:lint && pnpm run host:check`.
 
 - **Engines (`crates/praxis`, `crates/chrona`, `crates/metis`, `crates/continuum`, `crates/mneme`)**
-  - Read: each crate’s `README.md`, `DESIGN.md` (where present), `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`.
+  - Read: each crate’s README/DESIGN docs (where present), `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`.
   - Constraints: no Tauri or UI dependencies; obey time-first commit model and adapter boundaries.
   - Tests: crate-level `cargo test -p <crate>` plus workspace Rust checks.
 
 ## Technology & testing expectations
 
-### TypeScript / React (Praxis Canvas, app/PraxisAdapters)
+### TypeScript / React (Praxis Canvas, app/AideonDesktop)
 
 – Node 24, React 19. Strict TS config; ESLint + Prettier. All new surface/canvas work targets the
 React + React Flow + shadcn/ui stack
 described in `docs/UX-DESIGN.md`, `docs/DESIGN-SYSTEM.md`, and
-`app/AideonDesktop/docs/praxis-canvas/DESIGN.md`.
+`app/AideonDesktop/docs/praxis-workspace/DESIGN.md`.
 
 - Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict
   plugin access. The host exposes typed commands only, and React components call the host through a
@@ -282,7 +283,7 @@ described in `docs/UX-DESIGN.md`, `docs/DESIGN-SYSTEM.md`, and
 - Markdown, markdownlint clean (no heading jumps; 2‑space nested bullets).
 - Diagrams‑as‑code preferred (Structurizr DSL, Mermaid, PlantUML) stored under `docs/c4/`.
 - When updating docs, prefer editing existing suite/module docs; avoid creating new `.md`
-  files unless they are a new module `README.md`/`DESIGN.md`.
+  files unless they are a new module README/DESIGN docs.
 
 ## Contracts snapshot (reference only)
 

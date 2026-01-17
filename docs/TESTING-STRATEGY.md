@@ -3,7 +3,7 @@
 ## Purpose
 
 Describe how we test Aideon Suite across renderer, host, and engine crates. Module-specific detail
-lives in module `README.md`/`DESIGN.md` docs.
+lives in module README/DESIGN docs (examples: `crates/desktop/DESIGN.md`, `crates/praxis/DESIGN.md`, `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`).
 
 ---
 

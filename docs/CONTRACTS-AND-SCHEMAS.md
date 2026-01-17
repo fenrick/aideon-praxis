@@ -136,7 +136,7 @@ drift visible in code review and enforceable in CI.
 2. Mirror the shape in `app/AideonDesktop/src/dtos`.
 3. Update IPC handlers and adapters.
 4. Extend contract tests (Rust + TypeScript).
-5. Update the affected module `README.md`/`DESIGN.md`.
+5. Update the affected module README/DESIGN docs (examples: `crates/desktop/DESIGN.md`, `crates/praxis/DESIGN.md`, `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`).
 
 ---
 

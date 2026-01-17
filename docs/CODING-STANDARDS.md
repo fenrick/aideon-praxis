@@ -1,6 +1,6 @@
 # Coding Standards (v2)
 
-> Doc update checklist: when changing a public API, a cross-module boundary, or adding a pattern that should become standard, update this file plus the relevant module `DESIGN.md`/`README.md` in the same PR so guidance stays in sync.
+> Doc update checklist: when changing a public API, a cross-module boundary, or adding a pattern that should become standard, update this file plus the relevant module README/DESIGN docs in the same PR so guidance stays in sync (examples: `crates/desktop/DESIGN.md`, `crates/praxis/DESIGN.md`, `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`).
 
 ## Purpose
 
@@ -13,7 +13,7 @@ monorepo. Praxis is the current primary desktop module, but these standards appl
 - Runtime posture: typed adapters over IPC; no renderer HTTP and no open TCP
   ports in desktop mode
 
-**Evergreen posture:** code on `main` and current module `DESIGN.md` docs override older notes. Prefer upgrading legacy
+**Evergreen posture:** code on `main` and current module design docs override older notes. Prefer upgrading legacy
 areas to the current stack instead of preserving them.
 
 **Frameworks-first defaults:**

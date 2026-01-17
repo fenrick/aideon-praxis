@@ -110,7 +110,7 @@ No other primitives should be used for the app shell; keep layout composition co
 
 - Consumed by Praxis workspace (and future React apps) as the single source of UI primitives/blocks.
 - Refreshed via the `components:refresh` script, which updates generated components in
-  `src/components/ui` from `components.json`.
+  `src/components/ui` from `app/AideonDesktop/components.json`.
 
 ## Constraints and invariants
 
