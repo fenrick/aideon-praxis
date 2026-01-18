@@ -34,3 +34,10 @@ export async function getSetupState(): Promise<SetupStateFlags> {
 export async function openStyleguideWindow(): Promise<void> {
   await invokeIpc(SYSTEM_IPC_COMMANDS.windowOpen, { window: 'styleguide' });
 }
+
+/**
+ * Open the Status window using the typed IPC envelope.
+ */
+export async function openStatusWindow(): Promise<void> {
+  await invokeIpc(SYSTEM_IPC_COMMANDS.windowOpen, { window: 'status' });
+}

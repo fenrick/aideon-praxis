@@ -7,7 +7,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State, Wry};
 
 use crate::contracts::{
-    EVENT_SETUP_BACKEND_READY, EVENT_SETUP_FRONTEND_READY_ACK, EVENT_SETUP_PROGRESS,
+    EVENT_SETUP_BACKEND_READY, EVENT_SETUP_FAILED, EVENT_SETUP_FRONTEND_READY_ACK, EVENT_SETUP_PROGRESS,
 };
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::worker::init_temporal;
@@ -64,6 +64,14 @@ pub fn emit_setup_progress<R: Runtime>(app: &AppHandle<R>, phase: &'static str) 
         app,
         EVENT_SETUP_PROGRESS,
         serde_json::json!({ "phase": phase }),
+    );
+}
+
+pub fn emit_setup_failed<R: Runtime>(app: &AppHandle<R>, error: &HostError) {
+    emit_setup_event(
+        app,
+        EVENT_SETUP_FAILED,
+        serde_json::json!({ "code": error.code, "message": error.message }),
     );
 }
 
@@ -153,7 +161,12 @@ pub fn get_setup_state(state: State<'_, Mutex<SetupState>>) -> Result<SetupFlags
 
 pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), HostError> {
     info!("host: backend setup started");
-    init_temporal(&app).await.map_err(HostError::internal)?;
+    if let Err(message) = init_temporal(&app).await {
+        let error = HostError::internal(message);
+        emit_setup_progress(&app, "failed");
+        emit_setup_failed(&app, &error);
+        return Err(error);
+    }
 
     if let Err(error_message) = set_complete(
         app.clone(),

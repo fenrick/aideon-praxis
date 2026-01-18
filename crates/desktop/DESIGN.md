@@ -1591,6 +1591,7 @@ Host emits events for:
 
 - `setup_backend_ready`
 - `setup_frontend_ready_ack`
+- `setup_failed`
 - `workspace_opened` / `workspace_closed`
 - `job_updated` (progress)
 - `job_completed`

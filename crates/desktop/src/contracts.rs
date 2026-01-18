@@ -3,3 +3,4 @@ pub const EVENT_MNEME_CHANGE: &str = "mneme_change_event";
 pub const EVENT_SETUP_BACKEND_READY: &str = "setup_backend_ready";
 pub const EVENT_SETUP_FRONTEND_READY_ACK: &str = "setup_frontend_ready_ack";
 pub const EVENT_SETUP_PROGRESS: &str = "setup_progress";
+pub const EVENT_SETUP_FAILED: &str = "setup_failed";

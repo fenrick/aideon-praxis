@@ -18,6 +18,13 @@
       "payloadKeys": []
     },
     {
+      "name": "setup_failed",
+      "payloadKeys": [
+        "code",
+        "message"
+      ]
+    },
+    {
       "name": "setup_frontend_ready_ack",
       "payloadKeys": []
     },

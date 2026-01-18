@@ -41,7 +41,7 @@ Actions (8–10):
 5. [ ] Define “first-run required storage” explicitly (paths, minimum schema, seeded data) and
        guarantee host creates it using platform-conventional directories. Refs:
        `crates/desktop/DESIGN.md`, `crates/mneme_store/DESIGN.md`, `docs/storage/SQLITE.md`.
-6. [ ] Add a dedicated “Setup/Status” UX path for setup failures that avoids crash loops and
+6. [~] Add a dedicated “Setup/Status” UX path for setup failures that avoids crash loops and
        supports retry/copy diagnostics. Refs: `docs/UX-DESIGN.md`, `app/AideonDesktop/DESIGN.md`,
        `crates/desktop/DESIGN.md`.
 7. [x] Make setup progress visible (at minimum: “starting”, “migrating”, “ready”), sourced from host

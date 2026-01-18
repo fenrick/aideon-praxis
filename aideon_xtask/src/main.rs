@@ -305,6 +305,10 @@ fn payload_keys_for_event(name: &str) -> Vec<String> {
         .collect(),
         "setup_backend_ready" | "setup_frontend_ready_ack" => Vec::new(),
         "setup_progress" => vec!["phase"].into_iter().map(String::from).collect(),
+        "setup_failed" => vec!["code", "message"]
+            .into_iter()
+            .map(String::from)
+            .collect(),
         _ => Vec::new(),
     }
 }

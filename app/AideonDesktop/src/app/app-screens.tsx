@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode
 
 import { AideonDesktopRoot } from '@/root';
 import { HOST_EVENT_NAMES } from '../adapters/host-events';
-import { getSetupState, setSetupComplete } from '../adapters/system-ipc';
+import { getSetupState, openStatusWindow, setSetupComplete } from '../adapters/system-ipc';
 import { SplashScreen as PraxisSplashScreen } from '../components/splash/splash-screen';
 import { Badge } from '../design-system/components/ui/badge';
+import { Button } from '../design-system/components/ui/button';
 import {
   Card,
   CardContent,
@@ -55,6 +56,7 @@ export function SplashScreenRoute() {
   const [currentLine, setCurrentLine] = useState<string>(loadLines[0] ?? '');
   const [backendReady, setBackendReady] = useState(false);
   const [setupPhase, setSetupPhase] = useState<string>('starting');
+  const [setupError, setSetupError] = useState<null | { code: string; message: string }>(null);
 
   useEffect(() => {
     if (!isTauriRuntime()) {
@@ -63,6 +65,7 @@ export function SplashScreenRoute() {
     let cancelled = false;
     let unlistenBackend: undefined | (() => void);
     let unlistenProgress: undefined | (() => void);
+    let unlistenFailed: undefined | (() => void);
     const subscribe = async () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
@@ -78,6 +81,16 @@ export function SplashScreenRoute() {
             setSetupPhase(phase);
           }
         });
+        unlistenFailed = await listen<{ code?: string; message?: string }>(
+          HOST_EVENT_NAMES.setupFailed,
+          (ev) => {
+            const code = ev.payload.code;
+            const message = ev.payload.message;
+            if (typeof code === 'string' && typeof message === 'string') {
+              setSetupError({ code, message });
+            }
+          },
+        );
       } catch {
         // ignore missing tauri event module (browser preview)
       }
@@ -87,6 +100,7 @@ export function SplashScreenRoute() {
       cancelled = true;
       unlistenBackend?.();
       unlistenProgress?.();
+      unlistenFailed?.();
     };
   }, []);
 
@@ -106,6 +120,10 @@ export function SplashScreenRoute() {
   useEffect(() => {
     let ix = 0;
     const interval = setInterval(() => {
+      if (setupError) {
+        setCurrentLine('Setup failed — see Status for details.');
+        return;
+      }
       if (backendReady) {
         setCurrentLine('Backend ready…');
         return;
@@ -120,11 +138,41 @@ export function SplashScreenRoute() {
     return () => {
       clearInterval(interval);
     };
-  }, [backendReady, loadLines, setupPhase]);
+  }, [backendReady, loadLines, setupError, setupPhase]);
 
   return (
     <FrontendReady enabled={shouldSignalFrontendReady}>
       <PraxisSplashScreen line={currentLine} />
+      {setupError ? (
+        <div className="fixed inset-0 flex items-end justify-end p-6">
+          <Card className="w-full max-w-md border-destructive/50 bg-card/90 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-destructive">Setup failed</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                The host failed to initialize. Open Status to view diagnostics and recovery actions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+                <p className="text-xs font-medium">
+                  <span className="font-mono">{setupError.code}</span>
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{setupError.message}</p>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    openStatusWindow().catch(() => false);
+                  }}
+                >
+                  Open Status
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
     </FrontendReady>
   );
 }
