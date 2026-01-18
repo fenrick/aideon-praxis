@@ -303,6 +303,7 @@ fn payload_keys_for_event(name: &str) -> Vec<String> {
         .into_iter()
         .map(String::from)
         .collect(),
+        "setup_backend_ready" | "setup_frontend_ready_ack" => Vec::new(),
         _ => Vec::new(),
     }
 }

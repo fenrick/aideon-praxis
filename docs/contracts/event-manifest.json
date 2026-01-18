@@ -14,8 +14,19 @@
       ]
     },
     {
+      "name": "setup_backend_ready",
+      "payloadKeys": []
+    },
+    {
+      "name": "setup_frontend_ready_ack",
+      "payloadKeys": []
+    },
+    {
       "name": "shell_command",
-      "payloadKeys": ["command", "payload"]
+      "payloadKeys": [
+        "command",
+        "payload"
+      ]
     }
   ]
 }

@@ -4,8 +4,9 @@ use std::time::{Duration, Instant};
 use log::{error, info, warn};
 use serde::Deserialize;
 use serde::Serialize;
-use tauri::{AppHandle, Manager, Runtime, State, Wry};
+use tauri::{AppHandle, Emitter, Manager, Runtime, State, Wry};
 
+use crate::contracts::{EVENT_SETUP_BACKEND_READY, EVENT_SETUP_FRONTEND_READY_ACK};
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::worker::init_temporal;
 
@@ -48,6 +49,14 @@ fn mark_complete(state: &mut SetupState, task: SetupTask) {
     }
 }
 
+fn emit_setup_event<R: Runtime>(app: &AppHandle<R>, event: &str) {
+    for window_id in ["splash", "main"] {
+        if let Some(window) = app.get_webview_window(window_id) {
+            let _ = window.emit(event, serde_json::json!({}));
+        }
+    }
+}
+
 fn all_complete(state: &SetupState) -> bool {
     state.backend_task && state.frontend_task
 }
@@ -76,11 +85,21 @@ pub async fn set_complete<R: Runtime>(
         warn!("host: set_complete called with invalid task '{task}'");
         HostError::invalid_input("invalid task")
     })?;
+    let was_frontend = state_lock.frontend_task;
+    let was_backend = state_lock.backend_task;
     info!(
         "host: set_complete({task}) frontend={} backend={}",
         state_lock.frontend_task, state_lock.backend_task
     );
     mark_complete(&mut state_lock, parsed);
+
+    match parsed {
+        SetupTask::Backend if !was_backend => emit_setup_event(&app, EVENT_SETUP_BACKEND_READY),
+        SetupTask::Frontend if !was_frontend => {
+            emit_setup_event(&app, EVENT_SETUP_FRONTEND_READY_ACK);
+        }
+        _ => {}
+    }
 
     if all_complete(&state_lock) && !state_lock.close_scheduled {
         state_lock.close_scheduled = true;

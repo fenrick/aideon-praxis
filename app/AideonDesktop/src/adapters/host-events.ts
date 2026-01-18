@@ -1,6 +1,8 @@
 export const HOST_EVENT_NAMES = {
   shellCommand: 'shell_command',
   mnemeChangeEvent: 'mneme_change_event',
+  setupBackendReady: 'setup_backend_ready',
+  setupFrontendReadyAck: 'setup_frontend_ready_ack',
 } as const;
 
 export const HOST_SHELL_COMMAND_IDS = {

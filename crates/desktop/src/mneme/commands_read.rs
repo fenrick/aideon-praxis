@@ -142,7 +142,7 @@ pub async fn mneme_subscribe_partition(
         .await;
     let event_name = match payload.event_name {
         Some(name) => {
-            if !crate::contracts::is_contract_event_name(name.as_str()) {
+            if name.as_str() != crate::contracts::EVENT_MNEME_CHANGE {
                 return Err(HostError::invalid_input("unknown event_name"));
             }
             name

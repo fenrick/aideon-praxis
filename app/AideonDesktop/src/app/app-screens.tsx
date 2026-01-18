@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 
 import { AideonDesktopRoot } from '@/root';
+import { HOST_EVENT_NAMES } from '../adapters/host-events';
 import { setSetupComplete } from '../adapters/system-ipc';
 import { SplashScreen as PraxisSplashScreen } from '../components/splash/splash-screen';
 import { Badge } from '../design-system/components/ui/badge';
@@ -52,17 +53,48 @@ export function SplashScreenRoute() {
   );
 
   const [currentLine, setCurrentLine] = useState<string>(loadLines[0] ?? '');
+  const [backendReady, setBackendReady] = useState(false);
+
+  useEffect(() => {
+    if (!isTauriRuntime()) {
+      return;
+    }
+    let cancelled = false;
+    let unlistenBackend: undefined | (() => void);
+    const subscribe = async () => {
+      try {
+        const { listen } = await import('@tauri-apps/api/event');
+        if (cancelled) {
+          return;
+        }
+        unlistenBackend = await listen(HOST_EVENT_NAMES.setupBackendReady, () => {
+          setBackendReady(true);
+        });
+      } catch {
+        // ignore missing tauri event module (browser preview)
+      }
+    };
+    subscribe().catch(() => false);
+    return () => {
+      cancelled = true;
+      unlistenBackend?.();
+    };
+  }, []);
 
   useEffect(() => {
     let ix = 0;
     const interval = setInterval(() => {
+      if (backendReady) {
+        setCurrentLine('Backend ready…');
+        return;
+      }
       setCurrentLine(loadLines[ix % loadLines.length] ?? '');
       ix += 1;
     }, 800);
     return () => {
       clearInterval(interval);
     };
-  }, [loadLines]);
+  }, [backendReady, loadLines]);
 
   return (
     <FrontendReady enabled={shouldSignalFrontendReady}>
