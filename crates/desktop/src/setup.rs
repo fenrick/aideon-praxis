@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -7,7 +8,8 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State, Wry};
 
 use crate::contracts::{
-    EVENT_SETUP_BACKEND_READY, EVENT_SETUP_FAILED, EVENT_SETUP_FRONTEND_READY_ACK, EVENT_SETUP_PROGRESS,
+    EVENT_SETUP_BACKEND_READY, EVENT_SETUP_FAILED, EVENT_SETUP_FRONTEND_READY_ACK,
+    EVENT_SETUP_PROGRESS,
 };
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::worker::init_temporal;
@@ -73,6 +75,25 @@ pub fn emit_setup_failed<R: Runtime>(app: &AppHandle<R>, error: &HostError) {
         EVENT_SETUP_FAILED,
         serde_json::json!({ "code": error.code, "message": error.message }),
     );
+}
+
+#[allow(dead_code)]
+fn storage_root_path<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, HostError> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|err| HostError::internal(err.to_string()))?;
+    Ok(app_data_dir.join("AideonPraxis"))
+}
+
+#[allow(dead_code)]
+pub(crate) async fn clear_storage_root(root: PathBuf) -> Result<(), HostError> {
+    if root.exists() {
+        tokio::fs::remove_dir_all(&root)
+            .await
+            .map_err(|err| HostError::internal(err.to_string()))?;
+    }
+    Ok(())
 }
 
 fn all_complete(state: &SetupState) -> bool {
@@ -198,6 +219,50 @@ pub async fn system_setup_complete<R: Runtime>(
 ) -> Result<IpcResponse<()>, HostError> {
     let request_id = request.request_id;
     let response = match set_complete(app, state, request.payload.task).await {
+        Ok(()) => IpcResponse::ok(request_id, ()),
+        Err(err) => IpcResponse::err(request_id, err),
+    };
+    Ok(response)
+}
+
+#[allow(dead_code)]
+const FACTORY_RESET_CONFIRMATION: &str = "CONFIRM-FACTORY-RESET";
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
+pub struct FactoryResetPayload {
+    pub confirmation: String,
+}
+
+#[allow(dead_code)]
+async fn perform_factory_reset<R: Runtime>(
+    app: AppHandle<R>,
+    request: &IpcRequest<FactoryResetPayload>,
+) -> Result<(), HostError> {
+    if request.payload.confirmation != FACTORY_RESET_CONFIRMATION {
+        return Err(HostError::invalid_input(
+            "factory reset requires explicit confirmation",
+        ));
+    }
+    let storage_root = storage_root_path(&app)?;
+    clear_storage_root(storage_root).await?;
+    info!(
+        "host: factory reset completed (request id: {})",
+        request.request_id
+    );
+    Ok(())
+}
+
+/// Namespaced + requestId-wrapped factory reset command.
+#[tauri::command]
+#[allow(dead_code)]
+pub async fn system_factory_reset<R: Runtime>(
+    app: AppHandle<R>,
+    request: IpcRequest<FactoryResetPayload>,
+) -> Result<IpcResponse<()>, HostError> {
+    let request_id = request.request_id.clone();
+    let response = match perform_factory_reset(app, &request).await {
         Ok(()) => IpcResponse::ok(request_id, ()),
         Err(err) => IpcResponse::err(request_id, err),
     };

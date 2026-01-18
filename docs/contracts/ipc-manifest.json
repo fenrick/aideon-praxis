@@ -72,6 +72,7 @@
     "praxis_metamodel_get",
     "praxis_scenario_list",
     "praxis_task_apply_operations",
+    "system_factory_reset",
     "system_setup_complete",
     "system_setup_state",
     "system_window_open",

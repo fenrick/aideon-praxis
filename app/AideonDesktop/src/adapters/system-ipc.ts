@@ -6,6 +6,7 @@ export const SYSTEM_IPC_COMMANDS = {
   setupComplete: 'system_setup_complete',
   setupState: 'system_setup_state',
   windowOpen: 'system_window_open',
+  factoryReset: 'system_factory_reset',
 } as const;
 
 /**
@@ -25,7 +26,7 @@ export interface SetupStateFlags {
  * Read the host setup state (one-time query; avoid polling).
  */
 export async function getSetupState(): Promise<SetupStateFlags> {
-  return await invokeIpc<SetupStateFlags>(SYSTEM_IPC_COMMANDS.setupState, {});
+  return invokeIpc<SetupStateFlags>(SYSTEM_IPC_COMMANDS.setupState, {});
 }
 
 /**

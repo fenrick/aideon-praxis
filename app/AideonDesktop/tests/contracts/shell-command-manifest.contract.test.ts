@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest';
 
 interface ShellCommandManifest {
   readonly schemaVersion: number;
-  readonly commands: Array<{
+  readonly commands: {
     readonly id: string;
     readonly payloadKeys: string[];
-  }>;
+  }[];
 }
 
 describe('Shell command contract manifest', () => {
@@ -22,4 +22,3 @@ describe('Shell command contract manifest', () => {
     expect(missing).toEqual([]);
   });
 });
-

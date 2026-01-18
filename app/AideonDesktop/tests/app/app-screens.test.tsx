@@ -93,11 +93,11 @@ describe('app screens', () => {
     installTauriMocks({ currentWindow: 'splash' });
     const handlers = new Map<string, (event: { payload: unknown }) => void>();
 
-    listenMock.mockImplementation(async (name, cb) => {
-      handlers.set(name, cb as (event: { payload: unknown }) => void);
-      return () => {
+    listenMock.mockImplementation((name, callback) => {
+      handlers.set(name, callback as (event: { payload: unknown }) => void);
+      return Promise.resolve(() => {
         handlers.delete(name);
-      };
+      });
     });
 
     render(<SplashScreenRoute />);

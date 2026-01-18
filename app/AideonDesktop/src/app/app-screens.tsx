@@ -56,7 +56,7 @@ export function SplashScreenRoute() {
   const [currentLine, setCurrentLine] = useState<string>(loadLines[0] ?? '');
   const [backendReady, setBackendReady] = useState(false);
   const [setupPhase, setSetupPhase] = useState<string>('starting');
-  const [setupError, setSetupError] = useState<null | { code: string; message: string }>(null);
+  const [setupError, setSetupError] = useState<{ code: string; message: string } | undefined>();
 
   useEffect(() => {
     if (!isTauriRuntime()) {
@@ -75,17 +75,20 @@ export function SplashScreenRoute() {
         unlistenBackend = await listen(HOST_EVENT_NAMES.setupBackendReady, () => {
           setBackendReady(true);
         });
-        unlistenProgress = await listen<{ phase?: string }>(HOST_EVENT_NAMES.setupProgress, (ev) => {
-          const phase = ev.payload.phase;
-          if (typeof phase === 'string' && phase.length > 0) {
-            setSetupPhase(phase);
-          }
-        });
+        unlistenProgress = await listen<{ phase?: string }>(
+          HOST_EVENT_NAMES.setupProgress,
+          (event) => {
+            const phase = event.payload.phase;
+            if (typeof phase === 'string' && phase.length > 0) {
+              setSetupPhase(phase);
+            }
+          },
+        );
         unlistenFailed = await listen<{ code?: string; message?: string }>(
           HOST_EVENT_NAMES.setupFailed,
-          (ev) => {
-            const code = ev.payload.code;
-            const message = ev.payload.message;
+          (event) => {
+            const code = event.payload.code;
+            const message = event.payload.message;
             if (typeof code === 'string' && typeof message === 'string') {
               setSetupError({ code, message });
             }
@@ -108,13 +111,17 @@ export function SplashScreenRoute() {
     if (!isTauriRuntime()) {
       return;
     }
-    getSetupState()
-      .then((state) => {
+    const checkSetup = async () => {
+      try {
+        const state = await getSetupState();
         if (state.backend) {
           setBackendReady(true);
         }
-      })
-      .catch(() => false);
+      } catch {
+        // swallow errors during browser preview or startup races
+      }
+    };
+    void checkSetup();
   }, []);
 
   useEffect(() => {
@@ -172,7 +179,7 @@ export function SplashScreenRoute() {
             </CardContent>
           </Card>
         </div>
-      ) : null}
+      ) : undefined}
     </FrontendReady>
   );
 }
@@ -293,7 +300,7 @@ export function FrontendReady({
 }: {
   readonly children: ReactNode;
   readonly enabled?: boolean;
-}): ReactElement | null {
+}): ReactElement | undefined {
   const didSignal = useRef(false);
   useEffect(() => {
     if (!enabled || didSignal.current) {
@@ -321,7 +328,7 @@ export function FrontendReady({
       clearInterval(interval);
     };
   }, [enabled]);
-  return children as ReactElement | null;
+  return children as ReactElement | undefined;
 }
 
 /**

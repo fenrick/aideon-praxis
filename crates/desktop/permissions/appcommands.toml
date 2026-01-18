@@ -75,6 +75,7 @@ commands.allow = [
   "praxis_task_apply_operations",
   "system_setup_complete",
   "system_setup_state",
+  "system_factory_reset",
   "system_window_open",
   "system_worker_health",
   "workspace_projects_list",

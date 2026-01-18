@@ -43,7 +43,12 @@ fn default_capability_maps_enabled_plugins() {
         .filter_map(|value| value.as_str())
         .collect::<BTreeSet<_>>();
 
-    for required in ["appcommands", "dialog:default", "log:default", "opener:default"] {
+    for required in [
+        "appcommands",
+        "dialog:default",
+        "log:default",
+        "opener:default",
+    ] {
         assert!(
             perms.contains(required),
             "default capability must include {required}"
@@ -61,8 +66,8 @@ fn appcommands_permission_matches_ipc_manifest_contract() {
     let ipc_path = repo.join("docs/contracts/ipc-manifest.json");
     let ipc_raw = std::fs::read_to_string(&ipc_path)
         .unwrap_or_else(|_| panic!("read {}", ipc_path.display()));
-    let ipc: serde_json::Value = serde_json::from_str(&ipc_raw)
-        .unwrap_or_else(|_| panic!("parse {}", ipc_path.display()));
+    let ipc: serde_json::Value =
+        serde_json::from_str(&ipc_raw).unwrap_or_else(|_| panic!("parse {}", ipc_path.display()));
     let ipc_commands = ipc["commands"]
         .as_array()
         .expect("ipc manifest commands array")

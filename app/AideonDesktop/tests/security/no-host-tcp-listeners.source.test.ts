@@ -3,17 +3,31 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-async function listRustFiles(dir: string): Promise<string[]> {
-  const entries = await fs.readdir(dir, { withFileTypes: true });
+/* eslint-disable security/detect-non-literal-fs-filename -- walking the repo tree is the point of this security test */
+
+interface Pattern {
+  readonly label: string;
+  readonly re: RegExp;
+}
+
+interface Violation {
+  readonly file: string;
+  readonly pattern: string;
+}
+
+/**
+ * Recursively collect every Rust source file under `directory`.
+ * @param directory - Starting path for the search.
+ */
+async function listRustFiles(directory: string): Promise<string[]> {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
   const files: string[] = [];
 
   for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
+    const fullPath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
       files.push(...(await listRustFiles(fullPath)));
-      continue;
-    }
-    if (entry.isFile() && entry.name.endsWith('.rs')) {
+    } else if (entry.isFile() && entry.name.endsWith('.rs')) {
       files.push(fullPath);
     }
   }
@@ -26,7 +40,7 @@ describe('Security posture: desktop TCP listeners', () => {
     const hostRoot = path.resolve('crates/desktop/src');
     const files = await listRustFiles(hostRoot);
 
-    const patterns: Array<{ label: string; re: RegExp }> = [
+    const patterns: Pattern[] = [
       { label: 'std::net::TcpListener', re: /\bstd::net::TcpListener\b/ },
       { label: 'tokio::net::TcpListener', re: /\btokio::net::TcpListener\b/ },
       { label: 'TcpListener::bind', re: /\bTcpListener::bind\b/ },
@@ -35,7 +49,7 @@ describe('Security posture: desktop TCP listeners', () => {
       { label: 'warp::serve', re: /\bwarp::serve\b/ },
     ];
 
-    const violations: Array<{ file: string; pattern: string }> = [];
+    const violations: Violation[] = [];
 
     await Promise.all(
       files.map(async (file) => {
@@ -51,3 +65,5 @@ describe('Security posture: desktop TCP listeners', () => {
     expect(violations).toEqual([]);
   });
 });
+
+/* eslint-enable security/detect-non-literal-fs-filename */

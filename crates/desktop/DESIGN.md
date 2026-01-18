@@ -426,18 +426,19 @@ Regression tests:
 - No arbitrary path access from renderer
 - **Export & PII posture**: exports run through host commands that declare the `filesystem_export` capability.
 - Host treats exports as **deny-by-default**:
--   * No command is exposed until a capability manifest explicitly includes it (see `crates/desktop/permissions/appcommands.toml` plus `crates/desktop/capabilities/*`).
--   * Export commands are audited and logged; the renderer never crafts arbitrary `fs` paths.
--   * All export payloads go through redaction-aware helpers before leaving the host (e.g., `mneme_store_export_*` commands annotate sensitive fields, or the renderer may filter them based on workspace policy).
--   * Tests/gated contracts must run without enabling `filesystem_export` for other flows.
+- - No command is exposed until a capability manifest explicitly includes it (see `crates/desktop/permissions/appcommands.toml` plus `crates/desktop/capabilities/*`).
+- - Export commands are audited and logged; the renderer never crafts arbitrary `fs` paths.
+- - All export payloads go through redaction-aware helpers before leaving the host (e.g., `mneme_store_export_*` commands annotate sensitive fields, or the renderer may filter them based on workspace policy).
+- - Tests/gated contracts must run without enabling `filesystem_export` for other flows.
 
 ### 13.4 PII & export posture (UX notes)
 
 - The renderer must treat PII exports as **high-risk** operations:
--   * Export buttons/actions are disabled until the host enables `filesystem_export` capability and the user workflow passes explicit consent.
--   * Host events/commands describe what data is included and what redaction strategy is applied.
--   * Diagnostics or Status captures for `workspace`/`export` scenarios default to redacted fields unless a granular capability is granted.
--   * The host remains the only authority that can share `mneme_store_export_snapshot_stream`, `mneme_store_export_ops_stream`, or `mneme_store_export_ops`; these commands carry metadata to label exported fields.
+- - Export buttons/actions are disabled until the host enables `filesystem_export` capability and the user workflow passes explicit consent.
+- - Host events/commands describe what data is included and what redaction strategy is applied.
+- - Diagnostics or Status captures for `workspace`/`export` scenarios default to redacted fields unless a granular capability is granted.
+- - The host remains the only authority that can share `mneme_store_export_snapshot_stream`, `mneme_store_export_ops_stream`, or `mneme_store_export_ops`; these commands carry metadata to label exported fields.
+
 ---
 
 ## 14. Testing strategy (full stack)
@@ -1705,6 +1706,14 @@ Renderer never sees filesystem paths.
 - The host applies deterministic, forward-only migrations when initializing the database; migration metadata is surfaced in diagnostics so the Status window can explain version changes.
 - First-run seed data comes from the baseline dataset (`docs/data/base/baseline.yaml`) and the deterministic import tooling (`aideon_xtask import-dataset`). Re-running setup reconstructs the same workspace state; the host never seeds the renderer directly.
 - Exported data (snapshots, ops, diagnostics) sits in `mneme` partitions and is always gated through host commands such as `mneme_store_export_snapshot_stream` with PII-aware payloads.
+
+### 49.4 Factory reset
+
+- The host exposes `system_factory_reset` (payload `{ confirmation }`) that clears the `AideonPraxis`
+  storage tree after receiving the literal `CONFIRM-FACTORY-RESET` token. The command runs under the
+  `workspace_admin` capability and emits diagnostics in the Status window if anything fails.
+- Renderer surfaces this action only inside recovery/Status contexts, archives logs before invoking, and
+  never calls the command automatically.
 
 ---
 

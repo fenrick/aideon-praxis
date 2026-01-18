@@ -32,7 +32,7 @@ pub fn run() {
             });
 
             create_windows(app)?;
-            emit_setup_progress(&app.handle(), "starting");
+            emit_setup_progress(app.handle(), "starting");
 
             let app_handle = app.handle().clone();
             spawn(async move {

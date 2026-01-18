@@ -19,10 +19,7 @@
     },
     {
       "name": "setup_failed",
-      "payloadKeys": [
-        "code",
-        "message"
-      ]
+      "payloadKeys": ["code", "message"]
     },
     {
       "name": "setup_frontend_ready_ack",
@@ -30,16 +27,11 @@
     },
     {
       "name": "setup_progress",
-      "payloadKeys": [
-        "phase"
-      ]
+      "payloadKeys": ["phase"]
     },
     {
       "name": "shell_command",
-      "payloadKeys": [
-        "command",
-        "payload"
-      ]
+      "payloadKeys": ["command", "payload"]
     }
   ]
 }

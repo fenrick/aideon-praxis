@@ -87,6 +87,10 @@ Shell commands are ids carried inside the `shell_command` event payload.
   - renderer subscriptions and DTOs,
   - contract docs/tests.
 
+### System commands (host → renderer)
+
+- `system_factory_reset` payload `{ confirmation }` — clears `AideonPraxis` storage per `tauri::App::path().app_data_dir()` and requires the literal confirmation token `CONFIRM-FACTORY-RESET`. This command must only be exposed via a `workspace_admin` capability and should be wired into the Status/diagnostics surface for recovery scenarios.
+
 ---
 
 ## Where contracts live

@@ -425,21 +425,22 @@ async fn export_shell_command_manifest(args: ShellCommandManifestArgs) -> Result
 }
 
 fn is_contract_command(command: &str) -> bool {
-    const PREFIXES: [&str; 13] = [
-        "chrona_temporal_",
-        "mneme_store_",
-        "praxis_artefact_",
-        "praxis_canvas_",
-        "praxis_graph_layout_",
-        "praxis_metamodel_",
-        "praxis_scenario_",
-        "praxis_task_",
-        "system_setup_",
-        "system_window_",
-        "system_worker_",
-        "workspace_projects_",
-        "workspace_templates_",
-    ];
+    const PREFIXES: [&str; 14] = [
+    "chrona_temporal_",
+    "mneme_store_",
+    "praxis_artefact_",
+    "praxis_canvas_",
+    "praxis_graph_layout_",
+    "praxis_metamodel_",
+    "praxis_scenario_",
+    "praxis_task_",
+    "system_setup_",
+    "system_window_",
+    "system_factory_",
+    "system_worker_",
+    "workspace_projects_",
+    "workspace_templates_",
+];
     PREFIXES.iter().any(|prefix| command.starts_with(prefix))
 }
 

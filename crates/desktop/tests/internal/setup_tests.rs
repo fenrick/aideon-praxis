@@ -1,6 +1,7 @@
 #![cfg(not(target_os = "windows"))]
 use super::*;
 use std::time::Duration;
+use tempfile::tempdir;
 use tauri::Manager;
 
 #[test]
@@ -144,4 +145,26 @@ async fn system_setup_complete_marks_tasks() {
         get_setup_state(app.state::<std::sync::Mutex<SetupState>>()).expect("get setup state");
     assert!(flags.frontend);
     assert!(flags.backend);
+}
+
+#[tokio::test]
+async fn factory_reset_clears_storage_dir() {
+    let tmp = tempdir().expect("tempdir");
+    let root = tmp.path().join("AideonPraxis");
+    std::fs::create_dir_all(&root).expect("create storage root");
+
+    clear_storage_root(root.clone())
+        .await
+        .expect("clear storage root");
+
+    assert!(!root.exists(), "storage root removed");
+}
+
+#[tokio::test]
+async fn factory_reset_is_idempotent_when_missing() {
+    let tmp = tempdir().expect("tempdir");
+    let root = tmp.path().join("AideonPraxis");
+    clear_storage_root(root)
+        .await
+        .expect("clear storage root missing");
 }

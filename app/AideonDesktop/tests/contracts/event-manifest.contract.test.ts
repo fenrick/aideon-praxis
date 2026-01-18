@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest';
 
 interface EventManifest {
   readonly schemaVersion: number;
-  readonly events: Array<{
+  readonly events: {
     readonly name: string;
     readonly payloadKeys: string[];
-  }>;
+  }[];
 }
 
 describe('Event contract manifest', () => {

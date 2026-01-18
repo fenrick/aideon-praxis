@@ -3,9 +3,7 @@
   "commands": [
     {
       "id": "file_open",
-      "payloadKeys": [
-        "path"
-      ]
+      "payloadKeys": ["path"]
     },
     {
       "id": "file_print",
@@ -13,9 +11,7 @@
     },
     {
       "id": "file_save_as",
-      "payloadKeys": [
-        "path"
-      ]
+      "payloadKeys": ["path"]
     },
     {
       "id": "open_command_palette",

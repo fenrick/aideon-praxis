@@ -3,23 +3,33 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-async function listSourceFiles(dir: string): Promise<string[]> {
-  const entries = await fs.readdir(dir, { withFileTypes: true });
+/* eslint-disable security/detect-non-literal-fs-filename -- intentionally enumerating renderer files for security checks */
+
+interface Pattern {
+  readonly label: string;
+  readonly re: RegExp;
+}
+
+interface Violation {
+  readonly file: string;
+  readonly pattern: string;
+}
+
+/**
+ * Recursively gather each renderer source file under `directory`.
+ * @param directory - Starting path for the search.
+ */
+async function listSourceFiles(directory: string): Promise<string[]> {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
   const files: string[] = [];
 
   for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
+    const fullPath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
       files.push(...(await listSourceFiles(fullPath)));
-      continue;
+    } else if (entry.isFile() && /\.(?:ts|tsx|js|jsx)$/.test(entry.name)) {
+      files.push(fullPath);
     }
-    if (!entry.isFile()) {
-      continue;
-    }
-    if (!/\.(ts|tsx|js|jsx)$/.test(entry.name)) {
-      continue;
-    }
-    files.push(fullPath);
   }
 
   return files;
@@ -27,11 +37,11 @@ async function listSourceFiles(dir: string): Promise<string[]> {
 
 describe('Security posture: renderer networking', () => {
   it('rejects direct renderer HTTP usage', async () => {
-    const srcRoot = path.resolve('app/AideonDesktop/src');
-    const files = await listSourceFiles(srcRoot);
+    const sourceRoot = path.resolve('app/AideonDesktop/src');
+    const files = await listSourceFiles(sourceRoot);
 
-    const violations: Array<{ file: string; pattern: string }> = [];
-    const patterns: Array<{ label: string; re: RegExp }> = [
+    const violations: Violation[] = [];
+    const patterns: Pattern[] = [
       { label: 'fetch(', re: /\bfetch\s*\(/ },
       { label: 'XMLHttpRequest', re: /\bXMLHttpRequest\b/ },
       { label: 'axios', re: /\baxios\b/ },
@@ -51,3 +61,5 @@ describe('Security posture: renderer networking', () => {
     expect(violations).toEqual([]);
   });
 });
+
+/* eslint-enable security/detect-non-literal-fs-filename */
