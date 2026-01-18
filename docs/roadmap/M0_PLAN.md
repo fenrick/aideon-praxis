@@ -29,7 +29,7 @@ Actions (8–10):
 1. [x] Ensure first-run setup is a host-owned flow with explicit lifecycle phases (backend setup,
        frontend ready ack), not renderer-side hidden defaults. Refs: `crates/desktop/DESIGN.md`,
        `docs/CONTRACTS-AND-SCHEMAS.md`, `ARCHITECTURE-BOUNDARY.md`.
-2. [ ] Define and document the **first-run state machine** (states, transitions, failure modes,
+2. [~] Define and document the **first-run state machine** (states, transitions, failure modes,
        retry points) and keep the UI aligned to those states. Refs: `crates/desktop/DESIGN.md`,
        `app/AideonDesktop/DESIGN.md`, `docs/UX-DESIGN.md`.
 3. [ ] Make “offline-first” testable: add an automated “no network available” boot smoke test
@@ -69,10 +69,10 @@ Actions (8–10):
 3. [x] Add a hard test/guard that fails if desktop mode opens TCP listeners (scan /proc, or
        platform-specific heuristics in E2E). Refs: `ARCHITECTURE-BOUNDARY.md`,
        `docs/TESTING-STRATEGY.md`.
-4. [ ] Document and enforce capability deny-by-default posture for any OS integration (fs, dialog,
+4. [~] Document and enforce capability deny-by-default posture for any OS integration (fs, dialog,
        clipboard, export/print, etc.) and ensure every new IPC command is associated with a capability.
        Refs: `crates/desktop/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`.
-5. [ ] Ensure CSP and WebView hardening remain strict (no Node integration, no remote resource
+5. [x] Ensure CSP and WebView hardening remain strict (no Node integration, no remote resource
        loads, content isolation), and document the invariants in the host design. Refs:
        `crates/desktop/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`.
 6. [ ] Establish a “PII and export deny-by-default” baseline even for M0 (exports may be limited
@@ -170,7 +170,7 @@ Actions (8–10):
        `docs/CONTRACTS-AND-SCHEMAS.md`, `app/AideonDesktop/DESIGN.md`.
 8. [x] Ensure About and Status windows are available even when main workspace fails to open (recovery
        guarantee). Refs: `docs/UX-DESIGN.md`, `crates/desktop/DESIGN.md`.
-9. [ ] Ensure multi-window behaviour is deterministic across platforms (macOS vs Windows/Linux)
+9. [x] Ensure multi-window behaviour is deterministic across platforms (macOS vs Windows/Linux)
        and documented. Refs: `crates/desktop/DESIGN.md`.
 10. [x] Ensure “Debug style guide” window is dev-only and never expands the production capability
         surface. Refs: `ARCHITECTURE-BOUNDARY.md`, `app/AideonDesktop/DESIGN.md`.

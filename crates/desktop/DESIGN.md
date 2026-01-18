@@ -389,19 +389,36 @@ Renderer never infers meaning.
 
 ### 13.1 Capability registry
 
-Every IPC command declares:
+Security posture is **deny-by-default**.
 
-- Category
-- Privilege level
-- Required capability
+The renderer is untrusted and cannot access host privileges unless explicitly granted via Tauri
+capabilities and allowlisted command permissions.
 
-Default: **deny**.
+Required invariants:
+
+- **No renderer HTTP**: the UI must not use `fetch`/`XMLHttpRequest`/`axios`; the host owns any
+  networking (future remote mode).
+- **No open TCP ports in desktop mode**: the host must not bind listeners.
+- **Only allowlisted IPC commands are invocable**: command exposure is declared via the Tauri
+  permission `appcommands` (`crates/desktop/permissions/appcommands.toml`) and enabled by default
+  capability (`crates/desktop/capabilities/default.json`).
+- **Only allowlisted plugins are enabled**: adding a plugin requires updating capabilities and
+  contracts first.
 
 ### 13.2 CSP
 
-- Strict in production
-- No remote assets
-- Dev exceptions only in dev builds
+CSP and WebView hardening are non-negotiable:
+
+- `crates/desktop/tauri.conf.json` MUST define a strict production CSP policy:
+  - `default-src 'none'`
+  - `connect-src` limited to `'self'` + `ipc:` + `tauri:` (no remote `http(s)`/`ws(s)` origins)
+- Dev-only allowances (e.g., HMR and `unsafe-eval`) MUST be scoped to `devPolicy` and loopback-only.
+- `withGlobalTauri` MUST remain `false` (do not rely on injected global Tauri APIs).
+
+Regression tests:
+
+- `crates/desktop/tests/csp_and_windows.rs`
+- `crates/desktop/tests/security_posture.rs`
 
 ### 13.3 Filesystem
 
@@ -1389,6 +1406,48 @@ None of these are accessed directly by renderer. Renderer gets them through comm
 
 ---
 
+### 44.5 Setup lifecycle (first-run) state machine
+
+The host owns first-run setup. The renderer only reflects setup progress and acknowledges readiness.
+
+Authoritative signals:
+
+- Events (host → renderer): `setup_progress`, `setup_backend_ready`, `setup_frontend_ready_ack`
+- Command (renderer → host): `system_setup_state` (for late subscribers / refresh)
+
+State machine (host-owned):
+
+```
+Boot
+  -> SplashVisible (main hidden)
+      -> BackendSetupRunning
+          -> BackendReady
+      -> FrontendReadyAck
+      -> SetupComplete (min splash duration respected)
+          -> SplashClosed + MainVisibleAndFocused
+```
+
+Notes:
+
+- The splash is closed only when **both** backend + frontend readiness tasks are complete.
+- Backend readiness is set by the host after engine/bootstrap initialisation completes.
+- Frontend readiness is set by the host when the splash route finishes loading (and is also
+  queryable via `system_setup_state` to avoid “missed event” races).
+
+Failure modes (current M0 baseline):
+
+- If backend setup fails, the host logs the error and setup does not complete (splash remains).
+  Recovery access is still expected via host-owned windows (Status/About).
+- If the splash never reaches “frontend ready”, setup does not complete; this should be treated as
+  a UI boot failure and is investigated via diagnostics.
+
+Implementation reference:
+
+- `crates/desktop/src/setup.rs`
+- `crates/desktop/src/windows.rs`
+
+---
+
 ## 45. Window model and UI routing contract (detailed)
 
 ### 45.1 Window labels (stable IDs)
@@ -1433,6 +1492,24 @@ Host must set:
   - default decorations on main, off on splash
 
 The renderer must assume **no** platform-specific CSS hacks are required to make the shell look correct.
+
+### 45.4 Multi-window determinism (single-instance per label)
+
+Window behaviour MUST be deterministic across platforms:
+
+- Each window label is **single-instance** within the process (`splash`, `main`, `settings`,
+  `status`, `about`, `styleguide`).
+- “Open window” operations MUST be host-owned and implemented as:
+  - if the window exists: focus it
+  - else: create it with the canonical route + size constraints
+- `main` is created during boot but remains hidden until setup completion (splash gating).
+- `status` and `about` MUST remain available even if `main` fails to open (recovery guarantee).
+- Dev-only windows (e.g., `styleguide`) MUST never be exposed in release builds.
+
+Implementation reference:
+
+- `crates/desktop/src/windows.rs`
+- `crates/desktop/src/setup.rs`
 
 ---
 
