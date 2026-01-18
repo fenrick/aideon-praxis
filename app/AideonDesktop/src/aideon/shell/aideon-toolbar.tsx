@@ -33,6 +33,7 @@ import { useTheme } from 'next-themes';
 import { useAideonShellControls } from './shell-controls';
 
 import { SidebarTrigger, useSidebar } from 'design-system/desktop-shell';
+import { HOST_EVENT_NAMES } from '../../adapters/host-events';
 import { openStyleguideWindow } from '../../adapters/system-ipc';
 import { AideonCommandPalette, type AideonCommandItem } from './command-palette';
 import { KeyboardShortcutsDialog } from './keyboard-shortcuts-dialog';
@@ -303,7 +304,7 @@ function useTauriShellCommandListener({
           return;
         }
         unlisten = await listen<{ command?: string; payload?: unknown }>(
-          'shell_command',
+          HOST_EVENT_NAMES.shellCommand,
           (event) => {
             const command = event.payload.command;
             const payload = event.payload.payload;

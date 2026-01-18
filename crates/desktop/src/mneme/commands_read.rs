@@ -140,9 +140,15 @@ pub async fn mneme_subscribe_partition(
     state
         .register_subscription(subscription_id.clone(), cancel_tx)
         .await;
-    let event_name = payload
-        .event_name
-        .unwrap_or_else(|| "mneme_change_event".to_string());
+    let event_name = match payload.event_name {
+        Some(name) => {
+            if !crate::contracts::is_contract_event_name(name.as_str()) {
+                return Err(HostError::invalid_input("unknown event_name"));
+            }
+            name
+        }
+        None => crate::contracts::EVENT_MNEME_CHANGE.to_string(),
+    };
     spawn_change_event_forwarder(receiver, cancel_rx, move |change| {
         let _ = window.emit(&event_name, change);
     });

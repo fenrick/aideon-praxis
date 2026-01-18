@@ -21,6 +21,7 @@ async fn main() -> Result<()> {
         Command::ImportDataset(args) => import_dataset(args).await,
         Command::Health(args) => check_health(args).await,
         Command::IpcManifest(args) => export_ipc_manifest(args).await,
+        Command::EventManifest(args) => export_event_manifest(args).await,
     }
 }
 
@@ -45,6 +46,8 @@ enum Command {
     Health(HealthArgs),
     /// Generate a manifest of host IPC command names (for contract tests).
     IpcManifest(IpcManifestArgs),
+    /// Generate a manifest of host→renderer event names (for contract tests).
+    EventManifest(EventManifestArgs),
 }
 
 #[derive(Parser)]
@@ -96,11 +99,32 @@ struct IpcManifestArgs {
     out: PathBuf,
 }
 
+#[derive(Parser)]
+struct EventManifestArgs {
+    /// Path to write the manifest JSON to (relative to repo root by default).
+    #[arg(long, default_value = "docs/contracts/event-manifest.json")]
+    out: PathBuf,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 struct IpcManifest {
     schema_version: u32,
     commands: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct EventManifest {
+    schema_version: u32,
+    events: Vec<EventSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct EventSpec {
+    name: String,
+    payload_keys: Vec<String>,
 }
 
 fn repo_root() -> PathBuf {
@@ -213,6 +237,92 @@ async fn export_ipc_manifest(args: IpcManifestArgs) -> Result<()> {
     let json = serde_json::to_string_pretty(&manifest)?;
     fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
     println!("Wrote IPC manifest to {}", out.display());
+    Ok(())
+}
+
+fn extract_event_names_from_contracts_rs(source: &str) -> Vec<String> {
+    let mut found = Vec::new();
+
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("pub const EVENT_") {
+            continue;
+        }
+        if let Some((_, rest)) = trimmed.split_once('"')
+            && let Some((event, _)) = rest.split_once('"')
+            && event
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        {
+            found.push(event.to_string());
+        }
+    }
+
+    found
+}
+
+fn payload_keys_for_event(name: &str) -> Vec<String> {
+    match name {
+        "shell_command" => vec!["command", "payload"]
+            .into_iter()
+            .map(String::from)
+            .collect(),
+        "mneme_change_event" => vec![
+            "partition",
+            "sequence",
+            "op_id",
+            "asserted_at",
+            "entity_id",
+            "change_kind",
+            "payload",
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect(),
+        _ => Vec::new(),
+    }
+}
+
+fn build_event_manifest() -> Result<EventManifest> {
+    let repo = repo_root();
+    let contracts = repo.join("crates/desktop/src/contracts.rs");
+    let raw =
+        fs::read_to_string(&contracts).with_context(|| format!("read {}", contracts.display()))?;
+
+    let mut events = std::collections::BTreeSet::<String>::new();
+    for name in extract_event_names_from_contracts_rs(&raw) {
+        events.insert(name);
+    }
+
+    let events = events
+        .into_iter()
+        .map(|name| EventSpec {
+            payload_keys: payload_keys_for_event(&name),
+            name,
+        })
+        .collect();
+
+    Ok(EventManifest {
+        schema_version: 1,
+        events,
+    })
+}
+
+async fn export_event_manifest(args: EventManifestArgs) -> Result<()> {
+    let repo = repo_root();
+    let out = if args.out.is_absolute() {
+        args.out
+    } else {
+        repo.join(args.out)
+    };
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("create_dir_all {}", parent.display()))?;
+    }
+    let manifest = build_event_manifest()?;
+    let json = serde_json::to_string_pretty(&manifest)?;
+    fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
+    println!("Wrote event manifest to {}", out.display());
     Ok(())
 }
 
@@ -379,6 +489,24 @@ mod tests {
     }
 
     #[test]
+    fn event_manifest_is_deterministic_and_checked_in() {
+        let repo = repo_root();
+        let manifest = build_event_manifest().expect("build manifest");
+        let path = repo.join("docs/contracts/event-manifest.json");
+        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run `cargo run -p aideon_xtask -- event-manifest` to generate it",
+                path.display()
+            )
+        });
+        let on_disk: EventManifest = serde_json::from_str(&raw).expect("parse event-manifest.json");
+        assert_eq!(
+            on_disk, manifest,
+            "event-manifest.json drifted; rerun `cargo run -p aideon_xtask -- event-manifest`"
+        );
+    }
+
+    #[test]
     fn extract_tauri_commands_handles_single_and_multiline_attributes() {
         let source = r#"
             #[tauri::command]
@@ -415,6 +543,19 @@ mod tests {
         let manifest: IpcManifest = serde_json::from_str(&raw).expect("parse manifest");
         assert_eq!(manifest.schema_version, 2);
         assert!(!manifest.commands.is_empty());
+    }
+
+    #[tokio::test]
+    async fn export_event_manifest_writes_json_file() {
+        let dir = tempdir().expect("tempdir");
+        let out = dir.path().join("event-manifest.json");
+        export_event_manifest(EventManifestArgs { out: out.clone() })
+            .await
+            .expect("export manifest");
+        let raw = fs::read_to_string(&out).expect("read manifest");
+        let manifest: EventManifest = serde_json::from_str(&raw).expect("parse manifest");
+        assert_eq!(manifest.schema_version, 1);
+        assert!(!manifest.events.is_empty());
     }
 
     #[tokio::test]

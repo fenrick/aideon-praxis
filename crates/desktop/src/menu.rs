@@ -6,6 +6,7 @@ use tauri::{
 };
 use tauri_plugin_dialog::DialogExt;
 
+use crate::contracts::EVENT_SHELL_COMMAND;
 use crate::windows::{open_about, open_settings, open_styleguide};
 
 #[derive(Clone, Debug, Serialize)]
@@ -107,7 +108,7 @@ fn emit_shell_command_with_payload<R: Runtime>(
 ) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.emit(
-            "shell_command",
+            EVENT_SHELL_COMMAND,
             ShellCommandPayload {
                 command: command.to_string(),
                 payload,

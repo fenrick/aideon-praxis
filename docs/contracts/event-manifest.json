@@ -2,6 +2,18 @@
   "schemaVersion": 1,
   "events": [
     {
+      "name": "mneme_change_event",
+      "payloadKeys": [
+        "partition",
+        "sequence",
+        "op_id",
+        "asserted_at",
+        "entity_id",
+        "change_kind",
+        "payload"
+      ]
+    },
+    {
       "name": "shell_command",
       "payloadKeys": ["command", "payload"]
     }

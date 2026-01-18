@@ -2,6 +2,7 @@
 
 mod app;
 mod commands;
+mod contracts;
 mod health;
 mod ipc;
 mod menu;
