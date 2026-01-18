@@ -75,7 +75,7 @@ Actions (8–10):
 5. [x] Ensure CSP and WebView hardening remain strict (no Node integration, no remote resource
        loads, content isolation), and document the invariants in the host design. Refs:
        `crates/desktop/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`.
-6. [ ] Establish a “PII and export deny-by-default” baseline even for M0 (exports may be limited
+6. [~] Establish a “PII and export deny-by-default” baseline even for M0 (exports may be limited
        functionality, but posture must be correct). Refs: `ARCHITECTURE-BOUNDARY.md`, `docs/UX-DESIGN.md`,
        `crates/desktop/DESIGN.md`.
 7. [ ] Confirm logs/diagnostics do not leak sensitive data by default; require redaction on any

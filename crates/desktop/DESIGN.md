@@ -424,7 +424,20 @@ Regression tests:
 
 - Workspace-scoped access only
 - No arbitrary path access from renderer
+- **Export & PII posture**: exports run through host commands that declare the `filesystem_export` capability.
+- Host treats exports as **deny-by-default**:
+-   * No command is exposed until a capability manifest explicitly includes it (see `crates/desktop/permissions/appcommands.toml` plus `crates/desktop/capabilities/*`).
+-   * Export commands are audited and logged; the renderer never crafts arbitrary `fs` paths.
+-   * All export payloads go through redaction-aware helpers before leaving the host (e.g., `mneme_store_export_*` commands annotate sensitive fields, or the renderer may filter them based on workspace policy).
+-   * Tests/gated contracts must run without enabling `filesystem_export` for other flows.
 
+### 13.4 PII & export posture (UX notes)
+
+- The renderer must treat PII exports as **high-risk** operations:
+-   * Export buttons/actions are disabled until the host enables `filesystem_export` capability and the user workflow passes explicit consent.
+-   * Host events/commands describe what data is included and what redaction strategy is applied.
+-   * Diagnostics or Status captures for `workspace`/`export` scenarios default to redacted fields unless a granular capability is granted.
+-   * The host remains the only authority that can share `mneme_store_export_snapshot_stream`, `mneme_store_export_ops_stream`, or `mneme_store_export_ops`; these commands carry metadata to label exported fields.
 ---
 
 ## 14. Testing strategy (full stack)
