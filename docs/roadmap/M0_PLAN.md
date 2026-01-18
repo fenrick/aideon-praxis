@@ -86,7 +86,7 @@ Actions (8–10):
 9. [x] Provide security regression checklist automation in CI (no renderer HTTP, no TCP listeners,
        no new privileged plugins without capability mapping). Refs: `docs/CODING-STANDARDS.md`,
        `docs/TESTING-STRATEGY.md`, `ARCHITECTURE-BOUNDARY.md`.
-10. [ ] Add a short “security invariants” section to module UX docs for any workspace that triggers
+10. [x] Add a short “security invariants” section to module UX docs for any workspace that triggers
         OS actions (at M0, at least shell + Praxis). Refs: `docs/UX-DESIGN.md`,
         `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`, `crates/desktop/DESIGN.md`.
 
@@ -106,7 +106,7 @@ Actions (8–10):
        Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/TESTING-STRATEGY.md`.
 5. [x] Ensure renderer-side invocations target only commands in the manifest (contract test guard).
        Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/TESTING-STRATEGY.md`.
-6. [ ] Add the same level of contract discipline for host→renderer events (manifest + contract
+6. [x] Add the same level of contract discipline for host→renderer events (manifest + contract
        tests), starting with M0-required events. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`.
 7. [ ] Document versioning policy for commands/events (additive changes, deprecation windows,
        schemaVersion bumps). Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `crates/desktop/DESIGN.md`.
@@ -161,14 +161,14 @@ Actions (8–10):
        with snake_case command ids. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `crates/desktop/DESIGN.md`.
 4. [x] Document the “shell command” catalog (ids, payloads, expected behaviour) and treat it as a
        contract with tests and a manifest. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/UX-DESIGN.md`.
-5. [ ] Ensure window routes are stable and reflect the packaged Next export. Refs:
+5. [x] Ensure window routes are stable and reflect the packaged Next export. Refs:
        `app/AideonDesktop/DESIGN.md`, `crates/desktop/DESIGN.md`.
 6. [ ] Add E2E coverage for window open/close flows and “no crash loop” behaviour on errors. Refs:
        `docs/TESTING-STRATEGY.md`, `docs/UX-DESIGN.md`.
-7. [ ] Ensure splash is closed only when both backend + frontend readiness conditions are met; the
+7. [x] Ensure splash is closed only when both backend + frontend readiness conditions are met; the
        policy should be explicit and testable. Refs: `crates/desktop/DESIGN.md`,
        `docs/CONTRACTS-AND-SCHEMAS.md`, `app/AideonDesktop/DESIGN.md`.
-8. [ ] Ensure About and Status windows are available even when main workspace fails to open (recovery
+8. [x] Ensure About and Status windows are available even when main workspace fails to open (recovery
        guarantee). Refs: `docs/UX-DESIGN.md`, `crates/desktop/DESIGN.md`.
 9. [ ] Ensure multi-window behaviour is deterministic across platforms (macOS vs Windows/Linux)
        and documented. Refs: `crates/desktop/DESIGN.md`.

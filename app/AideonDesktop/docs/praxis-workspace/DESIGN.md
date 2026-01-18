@@ -71,3 +71,10 @@ embedding during tests or previews.
 - Twin is the source of truth; React state mirrors but never replaces it.
 - Component and state boundaries should make it easy to plug in additional widgets (Chrona/Metis)
   without breaking existing flows.
+
+## Security invariants (M0)
+
+- No renderer HTTP (no `fetch`/`axios`); all privileged actions flow through host IPC.
+- Desktop mode must not open TCP listeners.
+- File dialogs and file paths come from the host; the renderer treats them as data and never reads
+  arbitrary paths directly.

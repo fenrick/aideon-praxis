@@ -20,6 +20,52 @@ fn marking_tasks_tracks_completion() {
     assert!(all_complete(&state));
 }
 
+#[tokio::test]
+async fn splash_is_only_closed_after_both_tasks_complete() {
+    let app = tauri::test::mock_app();
+    app.manage(std::sync::Mutex::new(SetupState::new()));
+
+    let response = system_setup_complete(
+        app.handle().clone(),
+        app.state::<std::sync::Mutex<SetupState>>(),
+        crate::ipc::IpcRequest {
+            request_id: "req-frontend".to_string(),
+            payload: SetupCompletePayload {
+                task: "frontend".to_string(),
+            },
+        },
+    )
+    .await
+    .expect("frontend complete");
+    assert_eq!(response.status, "ok");
+
+    {
+        let state_ref = app.state::<std::sync::Mutex<SetupState>>();
+        let guard = state_ref.lock().expect("lock");
+        assert!(!guard.close_scheduled, "must not schedule close after frontend only");
+    }
+
+    let response = system_setup_complete(
+        app.handle().clone(),
+        app.state::<std::sync::Mutex<SetupState>>(),
+        crate::ipc::IpcRequest {
+            request_id: "req-backend".to_string(),
+            payload: SetupCompletePayload {
+                task: "backend".to_string(),
+            },
+        },
+    )
+    .await
+    .expect("backend complete");
+    assert_eq!(response.status, "ok");
+
+    {
+        let state_ref = app.state::<std::sync::Mutex<SetupState>>();
+        let guard = state_ref.lock().expect("lock");
+        assert!(guard.close_scheduled, "must schedule close after both tasks complete");
+    }
+}
+
 #[test]
 fn splash_delay_respects_minimum() {
     let state = SetupState::new();

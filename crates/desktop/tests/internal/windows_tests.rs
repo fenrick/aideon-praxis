@@ -100,6 +100,19 @@ fn window_openers_handle_existing_windows() {
 
 #[test]
 #[cfg(not(target_os = "windows"))]
+fn status_and_about_open_without_main_window() {
+    let app = tauri::test::mock_app();
+    assert!(app.get_webview_window("main").is_none());
+
+    let _ = open_status(app.handle().clone());
+    let _ = open_about(app.handle().clone());
+
+    assert!(app.get_webview_window("status").is_some());
+    assert!(app.get_webview_window("about").is_some());
+}
+
+#[test]
+#[cfg(not(target_os = "windows"))]
 fn create_windows_builds_splash_and_main() {
     let app = tauri::test::mock_app();
     create_windows(&app).expect("create windows");
