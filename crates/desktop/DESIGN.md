@@ -1698,6 +1698,14 @@ Only host may decide:
 
 Renderer never sees filesystem paths.
 
+### 49.3 First-run storage layout
+
+- **Storage roots** are created via `tauri::App::path().app_data_dir()` → `AideonPraxis/.praxis`. `crates/desktop/src/worker.rs` ensures the directory exists before invoking the Praxis engine, and the renderer never accesses it directly.
+- A minimal schema consists of `praxis.sqlite` (managed by `PraxisEngine`) plus a `mneme` subdirectory (`.praxis/mneme`) that backs the Mneme store. Both are created before setup emits readiness events.
+- The host applies deterministic, forward-only migrations when initializing the database; migration metadata is surfaced in diagnostics so the Status window can explain version changes.
+- First-run seed data comes from the baseline dataset (`docs/data/base/baseline.yaml`) and the deterministic import tooling (`aideon_xtask import-dataset`). Re-running setup reconstructs the same workspace state; the host never seeds the renderer directly.
+- Exported data (snapshots, ops, diagnostics) sits in `mneme` partitions and is always gated through host commands such as `mneme_store_export_snapshot_stream` with PII-aware payloads.
+
 ---
 
 ## 50. Testing regime (explicit and enforceable)

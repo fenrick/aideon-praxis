@@ -38,7 +38,7 @@ Actions (8–10):
 4. [ ] Ensure all first-run required assets are packaged locally (no CDN/runtime downloads); verify
        `next export` output is sufficient for Tauri boot. Refs: `app/AideonDesktop/DESIGN.md`,
        `ARCHITECTURE-BOUNDARY.md`.
-5. [ ] Define “first-run required storage” explicitly (paths, minimum schema, seeded data) and
+5. [x] Define “first-run required storage” explicitly (paths, minimum schema, seeded data) and
        guarantee host creates it using platform-conventional directories. Refs:
        `crates/desktop/DESIGN.md`, `crates/mneme_store/DESIGN.md`, `docs/storage/SQLITE.md`.
 6. [x] Add a dedicated “Setup/Status” UX path for setup failures that avoids crash loops and
