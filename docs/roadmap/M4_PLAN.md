@@ -7,6 +7,7 @@ what is currently implemented.
 Status notation:
 
 - `[x]` implemented and verified in this repo
+- `[~]` in progress (partially implemented / partially verified)
 - `[ ]` not yet met
 
 ## Design references (primary)

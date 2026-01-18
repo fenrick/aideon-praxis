@@ -51,6 +51,17 @@ The renderer should treat events as a typed envelope with a stable shape:
 
 - `shell_command` payload `{ command, payload? }` — host requests a shell-level action (menus, shortcuts).
 
+#### Shell command ids (v1)
+
+Shell commands are ids carried inside the `shell_command` event payload.
+
+- `toggle_navigation` payload `{}` — toggle the desktop sidebar.
+- `toggle_inspector` payload `{}` — toggle the inspector panel.
+- `open_command_palette` payload `{}` — open the command palette.
+- `file_print` payload `{}` — request print of the current surface.
+- `file_open` payload `{ path }` — request opening a file path selected by the host file picker.
+- `file_save_as` payload `{ path }` — request saving to a file path selected by the host file picker.
+
 **Jobs**
 
 - `job_updated` payload `{ job }`

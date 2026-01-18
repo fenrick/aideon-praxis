@@ -29,13 +29,16 @@ Evergreen rules:
 - When an outcome is achieved, record it in the changelog and update this roadmap.
 - Retire or merge outcomes that are no longer relevant; do not keep stale items.
 - Maintain alignment with design and boundary docs; update outcomes when constraints change.
-- Status marking: each bullet is an outcome; `[x]` means implemented and verified in this repo, `[ ]` means not yet met.
+- Status marking: each bullet is an outcome.
+  - `[x]` implemented and verified in this repo
+  - `[~]` in progress (partially implemented / partially verified)
+  - `[ ]` not yet met
 - A milestone is complete only when every bullet (including the DoD line) is checked.
 
 ### M0 - Launchable, secure desktop
 
-- [ ] Desktop app launches offline and completes first-run setup without network access.
-- [ ] Security boundaries are enforced by default (no renderer HTTP, no open TCP ports).
+- [~] Desktop app launches offline and completes first-run setup without network access.
+- [~] Security boundaries are enforced by default (no renderer HTTP, no open TCP ports).
 - [x] IPC command surface is stable snake_case with a canonical request/response error envelope.
 - [x] Local storage and migrations exist for desktop mode (SQLite + forward-only migrations).
 - [x] Core windows (splash, main, settings, status, about) open reliably via menu/commands (`shell_command` event + snake_case ids).

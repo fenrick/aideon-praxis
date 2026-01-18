@@ -7,6 +7,7 @@ what is currently implemented.
 Status notation:
 
 - `[x]` implemented and verified in this repo
+- `[~]` in progress (partially implemented / partially verified)
 - `[ ]` not yet met
 
 ## Design references (primary)
@@ -21,7 +22,7 @@ Status notation:
 
 ## M0.1 Outcome — Desktop app launches offline and completes first-run setup without network access
 
-Roadmap status: `[ ]` (from `docs/ROADMAP.md`).
+Roadmap status: `[~]` (from `docs/ROADMAP.md`).
 
 Actions (8–10):
 
@@ -43,29 +44,29 @@ Actions (8–10):
 6. [ ] Add a dedicated “Setup/Status” UX path for setup failures that avoids crash loops and
        supports retry/copy diagnostics. Refs: `docs/UX-DESIGN.md`, `app/AideonDesktop/DESIGN.md`,
        `crates/desktop/DESIGN.md`.
-7. [ ] Make setup progress visible (at minimum: “starting”, “migrating”, “ready”), sourced from host
-       events rather than polling. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/UX-DESIGN.md`,
-       `crates/desktop/DESIGN.md`.
+7. [~] Make setup progress visible (at minimum: “starting”, “migrating”, “ready”), sourced from host
+   events rather than polling. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/UX-DESIGN.md`,
+   `crates/desktop/DESIGN.md`.
 8. [ ] Ensure first-run seeding is deterministic and idempotent (safe to re-run); record what was
        seeded and at what schema version. Refs: `crates/mneme_store/DESIGN.md`, `crates/desktop/DESIGN.md`.
 9. [ ] Provide a “factory reset” / “safe wipe” action gated by explicit confirmation and
        capabilities (for development and recovery). Refs: `crates/desktop/DESIGN.md`,
        `ARCHITECTURE-BOUNDARY.md`, `docs/UX-DESIGN.md`.
-10. [ ] Establish a “setup contract” snapshot (commands/events involved in setup) and cover it with
-        contract tests. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/TESTING-STRATEGY.md`.
+10. [~] Establish a “setup contract” snapshot (commands/events involved in setup) and cover it with
+    contract tests. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/TESTING-STRATEGY.md`.
 
 ## M0.2 Outcome — Security boundaries are enforced by default (no renderer HTTP, no open TCP ports)
 
-Roadmap status: `[ ]` (from `docs/ROADMAP.md`).
+Roadmap status: `[~]` (from `docs/ROADMAP.md`).
 
 Actions (8–10):
 
 1. [x] Keep the renderer untrusted: all privileged actions flow through host IPC (commands/events)
        and capability checks. Refs: `ARCHITECTURE-BOUNDARY.md`, `crates/desktop/DESIGN.md`.
-2. [ ] Add a hard test that fails if renderer code introduces direct HTTP usage (e.g. `fetch`,
+2. [x] Add a hard test that fails if renderer code introduces direct HTTP usage (e.g. `fetch`,
        `axios`) outside explicitly allowed host-owned adapters (if any). Refs:
        `ARCHITECTURE-BOUNDARY.md`, `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`.
-3. [ ] Add a hard test/guard that fails if desktop mode opens TCP listeners (scan /proc, or
+3. [x] Add a hard test/guard that fails if desktop mode opens TCP listeners (scan /proc, or
        platform-specific heuristics in E2E). Refs: `ARCHITECTURE-BOUNDARY.md`,
        `docs/TESTING-STRATEGY.md`.
 4. [ ] Document and enforce capability deny-by-default posture for any OS integration (fs, dialog,
@@ -82,9 +83,9 @@ Actions (8–10):
 8. [ ] Ensure “remote mode” remains off by default; any network features must be host-owned and
        explicitly configured. Refs: `ARCHITECTURE-BOUNDARY.md`, `docs/DESIGN.md`,
        `crates/desktop/DESIGN.md`.
-9. [ ] Provide security regression checklist automation in CI (no renderer HTTP, no TCP listeners,
-       no new privileged plugins without capability mapping). Refs: `docs/CODING-STANDARDS.md`,
-       `docs/TESTING-STRATEGY.md`, `ARCHITECTURE-BOUNDARY.md`.
+9. [~] Provide security regression checklist automation in CI (no renderer HTTP, no TCP listeners,
+   no new privileged plugins without capability mapping). Refs: `docs/CODING-STANDARDS.md`,
+   `docs/TESTING-STRATEGY.md`, `ARCHITECTURE-BOUNDARY.md`.
 10. [ ] Add a short “security invariants” section to module UX docs for any workspace that triggers
         OS actions (at M0, at least shell + Praxis). Refs: `docs/UX-DESIGN.md`,
         `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`, `crates/desktop/DESIGN.md`.
@@ -158,7 +159,7 @@ Actions (8–10):
        `crates/desktop/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`.
 3. [x] Ensure menus/accelerators dispatch into the renderer via a snake_case event (`shell_command`)
        with snake_case command ids. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `crates/desktop/DESIGN.md`.
-4. [ ] Document the “shell command” catalog (ids, payloads, expected behaviour) and treat it as a
+4. [x] Document the “shell command” catalog (ids, payloads, expected behaviour) and treat it as a
        contract with tests and a manifest. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/UX-DESIGN.md`.
 5. [ ] Ensure window routes are stable and reflect the packaged Next export. Refs:
        `app/AideonDesktop/DESIGN.md`, `crates/desktop/DESIGN.md`.
@@ -258,7 +259,7 @@ Actions (8–10):
    - apply one task operation,
    - open Status and view diagnostics.
      Refs: `docs/TESTING-STRATEGY.md`, `docs/UX-DESIGN.md`, `docs/CONTRACTS-AND-SCHEMAS.md`.
-5. [ ] Add contract coverage for M0-required events (at minimum `shell_command`, setup lifecycle
+5. [x] Add contract coverage for M0-required events (at minimum `shell_command`, setup lifecycle
        events) similar to the IPC command manifest test. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`,
        `docs/TESTING-STRATEGY.md`.
 6. [ ] Ensure all tests run without “security exceptions” (no mocked CSP bypasses, no enabling
@@ -267,9 +268,9 @@ Actions (8–10):
 7. [ ] Ensure startup failures are tested (migration fails, workspace open fails) and the UI
        remains navigable (Status window reachable, retry possible). Refs: `docs/UX-DESIGN.md`,
        `crates/desktop/DESIGN.md`.
-8. [ ] Add a “security posture regression” suite (no renderer HTTP usage, no TCP listeners, deny-by-default
-       capabilities) and run it as part of CI. Refs: `ARCHITECTURE-BOUNDARY.md`,
-       `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`.
+8. [~] Add a “security posture regression” suite (no renderer HTTP usage, no TCP listeners, deny-by-default
+   capabilities) and run it as part of CI. Refs: `ARCHITECTURE-BOUNDARY.md`,
+   `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`.
 9. [ ] Ensure docs are in sync with what is validated (tests reflect contract docs; roadmap items
        are checked only when verification exists). Refs: `docs/ROADMAP.md`, `docs/TESTING-STRATEGY.md`.
 10. [ ] Mark M0 complete only when every M0 outcome and the DoD line are `[x]`, and record the
