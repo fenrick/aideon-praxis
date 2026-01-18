@@ -172,7 +172,7 @@ Actions (8–10):
        guarantee). Refs: `docs/UX-DESIGN.md`, `crates/desktop/DESIGN.md`.
 9. [ ] Ensure multi-window behaviour is deterministic across platforms (macOS vs Windows/Linux)
        and documented. Refs: `crates/desktop/DESIGN.md`.
-10. [ ] Ensure “Debug style guide” window is dev-only and never expands the production capability
+10. [x] Ensure “Debug style guide” window is dev-only and never expands the production capability
         surface. Refs: `ARCHITECTURE-BOUNDARY.md`, `app/AideonDesktop/DESIGN.md`.
 
 ## M0.6 Outcome — Workspace seed/navigation works without renderer-side storage (projects/scenarios list; templates list/save)

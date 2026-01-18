@@ -115,6 +115,12 @@ pub fn open_status<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
 
 #[tauri::command]
 pub fn open_styleguide<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
+    if !cfg!(debug_assertions) {
+        return Err(HostError::new(
+            "forbidden",
+            "styleguide is only available in development builds",
+        ));
+    }
     log::info!("host: open_styleguide requested");
     if let Some(window) = app.get_webview_window("styleguide") {
         let _ = window.set_focus();

@@ -361,7 +361,9 @@ fn extract_shell_command_ids_from_source(source: &str) -> Vec<String> {
         }
         if let Some((_, rest)) = trimmed.split_once('"')
             && let Some((id, _)) = rest.split_once('"')
-            && id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+            && id
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
         {
             found.push(id.to_string());
         }

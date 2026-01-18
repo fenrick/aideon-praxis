@@ -50,4 +50,3 @@ fn default_capability_maps_enabled_plugins() {
         );
     }
 }
-

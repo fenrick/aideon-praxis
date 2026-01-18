@@ -42,7 +42,10 @@ async fn splash_is_only_closed_after_both_tasks_complete() {
     {
         let state_ref = app.state::<std::sync::Mutex<SetupState>>();
         let guard = state_ref.lock().expect("lock");
-        assert!(!guard.close_scheduled, "must not schedule close after frontend only");
+        assert!(
+            !guard.close_scheduled,
+            "must not schedule close after frontend only"
+        );
     }
 
     let response = system_setup_complete(
@@ -62,7 +65,10 @@ async fn splash_is_only_closed_after_both_tasks_complete() {
     {
         let state_ref = app.state::<std::sync::Mutex<SetupState>>();
         let guard = state_ref.lock().expect("lock");
-        assert!(guard.close_scheduled, "must schedule close after both tasks complete");
+        assert!(
+            guard.close_scheduled,
+            "must schedule close after both tasks complete"
+        );
     }
 }
 

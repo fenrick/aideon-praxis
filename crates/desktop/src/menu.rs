@@ -299,13 +299,15 @@ mod mac {
         let help = Submenu::new(app, "Help", true).map_err(to_string)?;
         menu.append(&help).map_err(to_string)?;
 
-        let debug = Submenu::new(app, "Debug", true).map_err(to_string)?;
-        let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
-            .build(app)
-            .map_err(to_string)?;
-        ids.styleguide = style_item.id().as_ref().to_string();
-        debug.append(&style_item).map_err(to_string)?;
-        menu.append(&debug).map_err(to_string)?;
+        if cfg!(debug_assertions) {
+            let debug = Submenu::new(app, "Debug", true).map_err(to_string)?;
+            let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
+                .build(app)
+                .map_err(to_string)?;
+            ids.styleguide = style_item.id().as_ref().to_string();
+            debug.append(&style_item).map_err(to_string)?;
+            menu.append(&debug).map_err(to_string)?;
+        }
 
         Ok(())
     }
@@ -406,13 +408,15 @@ mod desktop {
         .map_err(to_string)?;
         menu.append(&help).map_err(to_string)?;
 
-        let debug = Submenu::new(app, "Debug", false).map_err(to_string)?;
-        let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
-            .build(app)
-            .map_err(to_string)?;
-        ids.styleguide = style_item.id().as_ref().to_string();
-        debug.append(&style_item).map_err(to_string)?;
-        menu.append(&debug).map_err(to_string)?;
+        if cfg!(debug_assertions) {
+            let debug = Submenu::new(app, "Debug", false).map_err(to_string)?;
+            let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
+                .build(app)
+                .map_err(to_string)?;
+            ids.styleguide = style_item.id().as_ref().to_string();
+            debug.append(&style_item).map_err(to_string)?;
+            menu.append(&debug).map_err(to_string)?;
+        }
 
         Ok(())
     }
