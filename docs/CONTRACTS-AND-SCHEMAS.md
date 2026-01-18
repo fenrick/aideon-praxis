@@ -122,6 +122,13 @@ drift visible in code review and enforceable in CI.
 - Generation (target): `cargo run -p aideon_xtask -- event-manifest`
 - Rule: renderer subscriptions must target only events present in this manifest.
 
+### Shell command manifest
+
+- File: `docs/contracts/shell-command-manifest.json`
+- Contents: the authoritative list of host `shell_command` ids and their payload schema keys.
+- Generation (target): `cargo run -p aideon_xtask -- shell-command-manifest`
+- Rule: renderer-side handling must only target command ids present in this manifest.
+
 ### Update discipline
 
 - When a command or event changes, update:

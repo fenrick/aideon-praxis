@@ -33,7 +33,7 @@ import { useTheme } from 'next-themes';
 import { useAideonShellControls } from './shell-controls';
 
 import { SidebarTrigger, useSidebar } from 'design-system/desktop-shell';
-import { HOST_EVENT_NAMES } from '../../adapters/host-events';
+import { HOST_EVENT_NAMES, HOST_SHELL_COMMAND_IDS } from '../../adapters/host-events';
 import { openStyleguideWindow } from '../../adapters/system-ipc';
 import { AideonCommandPalette, type AideonCommandItem } from './command-palette';
 import { KeyboardShortcutsDialog } from './keyboard-shortcuts-dialog';
@@ -163,7 +163,7 @@ function buildShellCommands({
     ...(sidebar
       ? ([
           {
-            id: 'toggle_navigation',
+            id: HOST_SHELL_COMMAND_IDS.toggleNavigation,
             group: 'View',
             label: 'Toggle navigation',
             shortcut: shortcutLabelFor('B'),
@@ -176,7 +176,7 @@ function buildShellCommands({
     ...(shell
       ? ([
           {
-            id: 'toggle_inspector',
+            id: HOST_SHELL_COMMAND_IDS.toggleInspector,
             group: 'View',
             label: 'Toggle inspector',
             shortcut: shortcutLabelFor('I'),
@@ -309,16 +309,16 @@ function useTauriShellCommandListener({
             const command = event.payload.command;
             const payload = event.payload.payload;
 
-            if (command === 'toggle_navigation') {
+            if (command === HOST_SHELL_COMMAND_IDS.toggleNavigation) {
               sidebar?.toggleSidebar();
             }
-            if (command === 'toggle_inspector') {
+            if (command === HOST_SHELL_COMMAND_IDS.toggleInspector) {
               shell?.toggleInspector();
             }
-            if (command === 'open_command_palette') {
+            if (command === HOST_SHELL_COMMAND_IDS.openCommandPalette) {
               openCommandPalette();
             }
-            if (command === 'file_print') {
+            if (command === HOST_SHELL_COMMAND_IDS.filePrint) {
               globalThis.print();
             }
 

@@ -7,6 +7,11 @@ use tauri::{
 use tauri_plugin_dialog::DialogExt;
 
 use crate::contracts::EVENT_SHELL_COMMAND;
+use crate::shell_commands::{
+    SHELL_COMMAND_FILE_OPEN, SHELL_COMMAND_FILE_PRINT, SHELL_COMMAND_FILE_SAVE_AS,
+    SHELL_COMMAND_OPEN_COMMAND_PALETTE, SHELL_COMMAND_TOGGLE_INSPECTOR,
+    SHELL_COMMAND_TOGGLE_NAVIGATION,
+};
 use crate::windows::{open_about, open_settings, open_styleguide};
 
 #[derive(Clone, Debug, Serialize)]
@@ -38,12 +43,12 @@ fn classify_menu_event(event_id: &str, styleguide_id: &str) -> MenuAction {
     match event_id {
         "about" | "help_about" => MenuAction::OpenAbout,
         "preferences" => MenuAction::OpenSettings,
-        "view_toggle_navigation" => MenuAction::EmitShellCommand("toggle_navigation"),
-        "view_toggle_inspector" => MenuAction::EmitShellCommand("toggle_inspector"),
-        "view_command_palette" => MenuAction::EmitShellCommand("open_command_palette"),
+        "view_toggle_navigation" => MenuAction::EmitShellCommand(SHELL_COMMAND_TOGGLE_NAVIGATION),
+        "view_toggle_inspector" => MenuAction::EmitShellCommand(SHELL_COMMAND_TOGGLE_INSPECTOR),
+        "view_command_palette" => MenuAction::EmitShellCommand(SHELL_COMMAND_OPEN_COMMAND_PALETTE),
         "file_open" => MenuAction::PickOpenFile,
         "file_save_as" => MenuAction::PickSaveFile,
-        "file_print" => MenuAction::EmitShellCommand("file_print"),
+        "file_print" => MenuAction::EmitShellCommand(SHELL_COMMAND_FILE_PRINT),
         "file_quit" => MenuAction::Quit,
         _ if !styleguide_id.is_empty() && event_id == styleguide_id => MenuAction::OpenStyleguide,
         _ => MenuAction::Noop,
@@ -122,7 +127,11 @@ fn pick_open_file<R: Runtime>(app: &AppHandle<R>) {
     handle.dialog().file().pick_file(move |file| {
         if let Some(file) = file {
             let path = file.to_string();
-            emit_shell_command_with_payload(&handle, "file_open", Some(json!({ "path": path })));
+            emit_shell_command_with_payload(
+                &handle,
+                SHELL_COMMAND_FILE_OPEN,
+                Some(json!({ "path": path })),
+            );
         }
     });
 }
@@ -132,7 +141,11 @@ fn pick_save_file<R: Runtime>(app: &AppHandle<R>) {
     handle.dialog().file().save_file(move |file| {
         if let Some(file) = file {
             let path = file.to_string();
-            emit_shell_command_with_payload(&handle, "file_save_as", Some(json!({ "path": path })));
+            emit_shell_command_with_payload(
+                &handle,
+                SHELL_COMMAND_FILE_SAVE_AS,
+                Some(json!({ "path": path })),
+            );
         }
     });
 }

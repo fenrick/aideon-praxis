@@ -9,6 +9,7 @@ mod menu;
 mod mneme;
 mod praxis_api;
 mod scene;
+mod shell_commands;
 mod setup;
 mod temporal;
 mod windows;
