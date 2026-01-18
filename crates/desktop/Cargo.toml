@@ -36,3 +36,4 @@ window-vibrancy = { version = "0.6" }
 tempfile = "3.24"
 tauri = { version = "2", features = ["test"] }
 regex = "1"
+toml = "0.8"
