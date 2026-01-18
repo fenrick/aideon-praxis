@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode
 
 import { AideonDesktopRoot } from '@/root';
 import { HOST_EVENT_NAMES } from '../adapters/host-events';
-import { setSetupComplete } from '../adapters/system-ipc';
+import { getSetupState, setSetupComplete } from '../adapters/system-ipc';
 import { SplashScreen as PraxisSplashScreen } from '../components/splash/splash-screen';
 import { Badge } from '../design-system/components/ui/badge';
 import {
@@ -54,6 +54,7 @@ export function SplashScreenRoute() {
 
   const [currentLine, setCurrentLine] = useState<string>(loadLines[0] ?? '');
   const [backendReady, setBackendReady] = useState(false);
+  const [setupPhase, setSetupPhase] = useState<string>('starting');
 
   useEffect(() => {
     if (!isTauriRuntime()) {
@@ -61,6 +62,7 @@ export function SplashScreenRoute() {
     }
     let cancelled = false;
     let unlistenBackend: undefined | (() => void);
+    let unlistenProgress: undefined | (() => void);
     const subscribe = async () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
@@ -70,6 +72,12 @@ export function SplashScreenRoute() {
         unlistenBackend = await listen(HOST_EVENT_NAMES.setupBackendReady, () => {
           setBackendReady(true);
         });
+        unlistenProgress = await listen<{ phase?: string }>(HOST_EVENT_NAMES.setupProgress, (ev) => {
+          const phase = ev.payload.phase;
+          if (typeof phase === 'string' && phase.length > 0) {
+            setSetupPhase(phase);
+          }
+        });
       } catch {
         // ignore missing tauri event module (browser preview)
       }
@@ -78,7 +86,21 @@ export function SplashScreenRoute() {
     return () => {
       cancelled = true;
       unlistenBackend?.();
+      unlistenProgress?.();
     };
+  }, []);
+
+  useEffect(() => {
+    if (!isTauriRuntime()) {
+      return;
+    }
+    getSetupState()
+      .then((state) => {
+        if (state.backend) {
+          setBackendReady(true);
+        }
+      })
+      .catch(() => false);
   }, []);
 
   useEffect(() => {
@@ -88,13 +110,17 @@ export function SplashScreenRoute() {
         setCurrentLine('Backend ready…');
         return;
       }
+      if (setupPhase === 'migrating') {
+        setCurrentLine('Migrating…');
+        return;
+      }
       setCurrentLine(loadLines[ix % loadLines.length] ?? '');
       ix += 1;
     }, 800);
     return () => {
       clearInterval(interval);
     };
-  }, [backendReady, loadLines]);
+  }, [backendReady, loadLines, setupPhase]);
 
   return (
     <FrontendReady enabled={shouldSignalFrontendReady}>

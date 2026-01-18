@@ -44,6 +44,7 @@ The renderer should treat events as a typed envelope with a stable shape:
 
 - `setup_backend_ready` payload `{}` — host finished backend setup.
 - `setup_frontend_ready_ack` payload `{}` — host acknowledged frontend readiness.
+- `setup_progress` payload `{ phase }` — host setup progress update (`starting`, `migrating`, ...).
 - `workspace_opened` payload `{ workspace_id }`
 - `workspace_closed` payload `{ workspace_id }`
 

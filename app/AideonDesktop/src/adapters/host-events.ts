@@ -3,6 +3,7 @@ export const HOST_EVENT_NAMES = {
   mnemeChangeEvent: 'mneme_change_event',
   setupBackendReady: 'setup_backend_ready',
   setupFrontendReadyAck: 'setup_frontend_ready_ack',
+  setupProgress: 'setup_progress',
 } as const;
 
 export const HOST_SHELL_COMMAND_IDS = {

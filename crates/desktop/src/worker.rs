@@ -13,6 +13,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, Wry};
 use tokio::sync::{Mutex, oneshot};
 
+use crate::setup::emit_setup_progress;
+
 /// Shared application state giving command handlers access to the temporal engine.
 pub struct WorkerState {
     engine: TemporalEngine,
@@ -66,6 +68,7 @@ impl WorkerState {
 
 /// Lazily initialize the temporal engine and store it in Tauri managed state.
 pub async fn init_temporal(app: &AppHandle<Wry>) -> Result<(), String> {
+    emit_setup_progress(app, "migrating");
     let storage_root = app
         .path()
         .app_data_dir()

@@ -6,7 +6,7 @@ use tauri::async_runtime::spawn;
 use tokio::time::sleep;
 
 use crate::menu::{build_menu, handle_menu_event};
-use crate::setup::{SetupState, run_backend_setup};
+use crate::setup::{SetupState, emit_setup_progress, run_backend_setup};
 use crate::windows::create_windows;
 use tauri_plugin_log::log::LevelFilter;
 
@@ -32,6 +32,7 @@ pub fn run() {
             });
 
             create_windows(app)?;
+            emit_setup_progress(&app.handle(), "starting");
 
             let app_handle = app.handle().clone();
             spawn(async move {

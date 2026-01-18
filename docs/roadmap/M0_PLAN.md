@@ -44,16 +44,16 @@ Actions (8–10):
 6. [ ] Add a dedicated “Setup/Status” UX path for setup failures that avoids crash loops and
        supports retry/copy diagnostics. Refs: `docs/UX-DESIGN.md`, `app/AideonDesktop/DESIGN.md`,
        `crates/desktop/DESIGN.md`.
-7. [~] Make setup progress visible (at minimum: “starting”, “migrating”, “ready”), sourced from host
-   events rather than polling. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/UX-DESIGN.md`,
-   `crates/desktop/DESIGN.md`.
+7. [x] Make setup progress visible (at minimum: “starting”, “migrating”, “ready”), sourced from host
+       events rather than polling. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/UX-DESIGN.md`,
+       `crates/desktop/DESIGN.md`.
 8. [ ] Ensure first-run seeding is deterministic and idempotent (safe to re-run); record what was
        seeded and at what schema version. Refs: `crates/mneme_store/DESIGN.md`, `crates/desktop/DESIGN.md`.
 9. [ ] Provide a “factory reset” / “safe wipe” action gated by explicit confirmation and
        capabilities (for development and recovery). Refs: `crates/desktop/DESIGN.md`,
        `ARCHITECTURE-BOUNDARY.md`, `docs/UX-DESIGN.md`.
-10. [~] Establish a “setup contract” snapshot (commands/events involved in setup) and cover it with
-    contract tests. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/TESTING-STRATEGY.md`.
+10. [x] Establish a “setup contract” snapshot (commands/events involved in setup) and cover it with
+        contract tests. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/TESTING-STRATEGY.md`.
 
 ## M0.2 Outcome — Security boundaries are enforced by default (no renderer HTTP, no open TCP ports)
 
@@ -83,9 +83,9 @@ Actions (8–10):
 8. [ ] Ensure “remote mode” remains off by default; any network features must be host-owned and
        explicitly configured. Refs: `ARCHITECTURE-BOUNDARY.md`, `docs/DESIGN.md`,
        `crates/desktop/DESIGN.md`.
-9. [~] Provide security regression checklist automation in CI (no renderer HTTP, no TCP listeners,
-   no new privileged plugins without capability mapping). Refs: `docs/CODING-STANDARDS.md`,
-   `docs/TESTING-STRATEGY.md`, `ARCHITECTURE-BOUNDARY.md`.
+9. [x] Provide security regression checklist automation in CI (no renderer HTTP, no TCP listeners,
+       no new privileged plugins without capability mapping). Refs: `docs/CODING-STANDARDS.md`,
+       `docs/TESTING-STRATEGY.md`, `ARCHITECTURE-BOUNDARY.md`.
 10. [ ] Add a short “security invariants” section to module UX docs for any workspace that triggers
         OS actions (at M0, at least shell + Praxis). Refs: `docs/UX-DESIGN.md`,
         `app/AideonDesktop/docs/praxis-workspace/DESIGN.md`, `crates/desktop/DESIGN.md`.
@@ -268,9 +268,9 @@ Actions (8–10):
 7. [ ] Ensure startup failures are tested (migration fails, workspace open fails) and the UI
        remains navigable (Status window reachable, retry possible). Refs: `docs/UX-DESIGN.md`,
        `crates/desktop/DESIGN.md`.
-8. [~] Add a “security posture regression” suite (no renderer HTTP usage, no TCP listeners, deny-by-default
-   capabilities) and run it as part of CI. Refs: `ARCHITECTURE-BOUNDARY.md`,
-   `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`.
+8. [x] Add a “security posture regression” suite (no renderer HTTP usage, no TCP listeners, deny-by-default
+       capabilities) and run it as part of CI. Refs: `ARCHITECTURE-BOUNDARY.md`,
+       `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`.
 9. [ ] Ensure docs are in sync with what is validated (tests reflect contract docs; roadmap items
        are checked only when verification exists). Refs: `docs/ROADMAP.md`, `docs/TESTING-STRATEGY.md`.
 10. [ ] Mark M0 complete only when every M0 outcome and the DoD line are `[x]`, and record the

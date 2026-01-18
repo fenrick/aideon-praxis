@@ -22,6 +22,12 @@
       "payloadKeys": []
     },
     {
+      "name": "setup_progress",
+      "payloadKeys": [
+        "phase"
+      ]
+    },
+    {
       "name": "shell_command",
       "payloadKeys": [
         "command",

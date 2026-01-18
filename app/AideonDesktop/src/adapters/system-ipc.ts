@@ -4,6 +4,7 @@ export type SetupTask = 'frontend' | 'backend';
 
 export const SYSTEM_IPC_COMMANDS = {
   setupComplete: 'system_setup_complete',
+  setupState: 'system_setup_state',
   windowOpen: 'system_window_open',
 } as const;
 
@@ -13,6 +14,18 @@ export const SYSTEM_IPC_COMMANDS = {
  */
 export async function setSetupComplete(task: SetupTask): Promise<void> {
   await invokeIpc(SYSTEM_IPC_COMMANDS.setupComplete, { task });
+}
+
+export interface SetupStateFlags {
+  readonly frontend: boolean;
+  readonly backend: boolean;
+}
+
+/**
+ * Read the host setup state (one-time query; avoid polling).
+ */
+export async function getSetupState(): Promise<SetupStateFlags> {
+  return await invokeIpc<SetupStateFlags>(SYSTEM_IPC_COMMANDS.setupState, {});
 }
 
 /**

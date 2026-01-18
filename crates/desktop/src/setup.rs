@@ -6,7 +6,9 @@ use serde::Deserialize;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State, Wry};
 
-use crate::contracts::{EVENT_SETUP_BACKEND_READY, EVENT_SETUP_FRONTEND_READY_ACK};
+use crate::contracts::{
+    EVENT_SETUP_BACKEND_READY, EVENT_SETUP_FRONTEND_READY_ACK, EVENT_SETUP_PROGRESS,
+};
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::worker::init_temporal;
 
@@ -49,12 +51,16 @@ fn mark_complete(state: &mut SetupState, task: SetupTask) {
     }
 }
 
-fn emit_setup_event<R: Runtime>(app: &AppHandle<R>, event: &str) {
+fn emit_setup_event<R: Runtime>(app: &AppHandle<R>, event: &str, payload: serde_json::Value) {
     for window_id in ["splash", "main"] {
         if let Some(window) = app.get_webview_window(window_id) {
-            let _ = window.emit(event, serde_json::json!({}));
+            let _ = window.emit(event, payload.clone());
         }
     }
+}
+
+pub fn emit_setup_progress<R: Runtime>(app: &AppHandle<R>, phase: &'static str) {
+    emit_setup_event(app, EVENT_SETUP_PROGRESS, serde_json::json!({ "phase": phase }));
 }
 
 fn all_complete(state: &SetupState) -> bool {
@@ -94,9 +100,9 @@ pub async fn set_complete<R: Runtime>(
     mark_complete(&mut state_lock, parsed);
 
     match parsed {
-        SetupTask::Backend if !was_backend => emit_setup_event(&app, EVENT_SETUP_BACKEND_READY),
+        SetupTask::Backend if !was_backend => emit_setup_event(&app, EVENT_SETUP_BACKEND_READY, serde_json::json!({})),
         SetupTask::Frontend if !was_frontend => {
-            emit_setup_event(&app, EVENT_SETUP_FRONTEND_READY_ACK);
+            emit_setup_event(&app, EVENT_SETUP_FRONTEND_READY_ACK, serde_json::json!({}));
         }
         _ => {}
     }

@@ -62,6 +62,7 @@ dependencies = [
  "aideon_praxis",
  "dirs",
  "log",
+ "regex",
  "serde",
  "serde_json",
  "tauri",
