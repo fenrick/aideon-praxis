@@ -108,9 +108,9 @@ Actions (8–10):
        Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/TESTING-STRATEGY.md`.
 6. [x] Add the same level of contract discipline for host→renderer events (manifest + contract
        tests), starting with M0-required events. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`.
-7. [ ] Document versioning policy for commands/events (additive changes, deprecation windows,
+7. [x] Document versioning policy for commands/events (additive changes, deprecation windows,
        schemaVersion bumps). Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `crates/desktop/DESIGN.md`.
-8. [ ] Establish “contract change workflow” as a checklist that must be followed in PRs. Refs:
+8. [x] Establish “contract change workflow” as a checklist that must be followed in PRs. Refs:
        `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/CODING-STANDARDS.md`.
 9. [ ] Ensure every IPC command has at least one meaningful test path (success + one failure) to
        validate envelopes and error codes. Refs: `docs/TESTING-STRATEGY.md`,

@@ -103,6 +103,31 @@ Shell commands are ids carried inside the `shell_command` event payload.
 
 ---
 
+## Versioning policy (commands + events)
+
+This repository treats IPC commands and host→renderer events as **public API**.
+
+- **Additive-first:** adding new fields to payloads and results is allowed; removing or renaming is not.
+- **Stable identifiers:** command names, event names, and `HostError.code` values are stable identifiers.
+- **Schema snapshots:** manifests under `docs/contracts/` are the canonical, reviewed snapshots.
+  - `schemaVersion` is bumped when the snapshot format changes (not for every new entry).
+- **Deprecation:** if an identifier must change, keep the old one as an alias for at least one
+  release and update docs + tests to cover both during the window.
+
+## Contract change workflow (required)
+
+When you change a cross-boundary contract (command, event, or DTO shape), do all of the following in the same change:
+
+1. Update the Rust implementation (host/engine structs and handlers).
+2. Update the TS mirror (renderer DTOs and adapters).
+3. Update contract docs in this file (including payload keys where applicable).
+4. Regenerate snapshots:
+   - `cargo run -p aideon_xtask -- ipc-manifest`
+   - `cargo run -p aideon_xtask -- event-manifest`
+   - `cargo run -p aideon_xtask -- shell-command-manifest`
+5. Update/extend contract tests (Rust + TypeScript) to prevent drift.
+6. Ensure errors remain stable (`HostError.code` and `IpcResponse` envelope shape).
+
 ## Synchronization model
 
 - DTOs are mirrored manually with **contract tests** in both stacks.
