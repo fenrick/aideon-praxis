@@ -26,6 +26,28 @@ afterAll(() => {
   ensureWindowStub();
 });
 
+// React 19's scheduler can run callbacks after Vitest/jsdom teardown. Vitest
+// deletes `window` during teardown; re-stub it ASAP without interfering with
+// teardown (do not make it non-configurable).
+const windowStubPumpKey = '__aideon_window_stub_pump__';
+if (!(globalThis as unknown as Record<string, unknown>)[windowStubPumpKey]) {
+  (globalThis as unknown as Record<string, unknown>)[windowStubPumpKey] = true;
+  let stopped = false;
+  const pump = () => {
+    if (stopped) {
+      return;
+    }
+    ensureWindowStub();
+    const handle = setImmediate(pump);
+    (handle as unknown as { unref?: () => void }).unref?.();
+  };
+  const handle = setImmediate(pump);
+  (handle as unknown as { unref?: () => void }).unref?.();
+  afterAll(() => {
+    stopped = true;
+  });
+}
+
 if (typeof globalThis.ResizeObserver === 'undefined') {
   class ResizeObserverFallback implements ResizeObserver {
     private readonly callback: ResizeObserverCallback;
