@@ -152,6 +152,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",
     "@phosphor-icons/react": "^2.1.10",
     "@stylistic/eslint-plugin": "^5.6.1",
+    "@tauri-apps/plugin-log": "^2.8.0",
     "eslint-plugin-jest": "^29.12.1",
     "eslint-plugin-jest-dom": "^5.5.0",
     "eslint-plugin-jsdoc": "^61.5.0",
