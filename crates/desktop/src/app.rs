@@ -5,8 +5,8 @@ use std::time::Duration;
 use tauri::async_runtime::spawn;
 use tokio::time::sleep;
 
-use crate::logging;
 use crate::log_event;
+use crate::logging;
 use crate::menu::{build_menu, handle_menu_event};
 use crate::setup::{SetupState, emit_setup_progress, run_backend_setup};
 use crate::windows::create_windows;
@@ -143,6 +143,7 @@ pub fn run() {
             crate::workspace::workspace_templates_save,
             crate::setup::system_setup_state,
             crate::logging::system_logging_context,
+            crate::telemetry::system_metrics_snapshot,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

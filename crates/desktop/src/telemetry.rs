@@ -1,6 +1,10 @@
 use crate::ipc::HostError;
+use crate::metrics::{
+    MetricsSnapshot, record_command_duration, record_command_failure, record_job_duration,
+    record_job_failure, snapshot,
+};
 use serde_json::json;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub fn command_invoked(command: &str, correlation_id: &str) {
     crate::log_event!(
@@ -27,6 +31,7 @@ pub fn command_completed(command: &str, correlation_id: &str, duration: Duration
             "duration_ms": duration.as_millis()
         })
     );
+    record_command_duration(command, duration);
 }
 
 pub fn command_failed(
@@ -55,6 +60,7 @@ pub fn command_failed(
         correlation_id = correlation_id,
         metadata = payload
     );
+    record_command_failure(command);
 }
 
 pub fn job_started(job: &str, correlation_id: &str) {
@@ -80,6 +86,7 @@ pub fn job_completed(job: &str, correlation_id: &str, duration: Duration) {
             "duration_ms": duration.as_millis()
         })
     );
+    record_job_duration(job, duration);
 }
 
 pub fn job_failed(job: &str, correlation_id: &str, kind: &str, message: &str) {
@@ -95,4 +102,14 @@ pub fn job_failed(job: &str, correlation_id: &str, kind: &str, message: &str) {
             "error.message": message
         })
     );
+    record_job_failure(job);
+}
+
+#[tauri::command]
+pub fn system_metrics_snapshot() -> MetricsSnapshot {
+    command_invoked("system_metrics_snapshot", "metrics");
+    let start = Instant::now();
+    let snapshot = snapshot();
+    command_completed("system_metrics_snapshot", "metrics", start.elapsed());
+    snapshot
 }
