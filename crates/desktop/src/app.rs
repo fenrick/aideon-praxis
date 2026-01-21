@@ -5,10 +5,13 @@ use std::time::Duration;
 use tauri::async_runtime::spawn;
 use tokio::time::sleep;
 
+use crate::logging;
+use crate::log_event;
 use crate::menu::{build_menu, handle_menu_event};
 use crate::setup::{SetupState, emit_setup_progress, run_backend_setup};
 use crate::windows::create_windows;
 use tauri_plugin_log::log::LevelFilter;
+use uuid::Uuid;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -30,6 +33,16 @@ pub fn run() {
             app.on_menu_event(move |app, event| {
                 handle_menu_event(app, event);
             });
+
+            let session_id = Uuid::new_v4().to_string();
+            let _ = logging::init_context(session_id);
+            log_event!(
+                severity = 5,
+                component = "core",
+                event = "app_start",
+                message = "Application bootstrap starting",
+                correlation_id = "startup"
+            );
 
             create_windows(app)?;
             emit_setup_progress(app.handle(), "starting");
@@ -128,10 +141,19 @@ pub fn run() {
             crate::workspace::workspace_projects_list,
             crate::workspace::workspace_templates_list,
             crate::workspace::workspace_templates_save,
-            crate::setup::system_setup_state
+            crate::setup::system_setup_state,
+            crate::logging::system_logging_context,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    log_event!(
+        severity = 5,
+        component = "core",
+        event = "app_shutdown",
+        message = "Application shutting down",
+        correlation_id = "shutdown"
+    );
 }
 
 fn log_level() -> LevelFilter {

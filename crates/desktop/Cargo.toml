@@ -21,10 +21,12 @@ tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
 window-vibrancy = { version = "0.6", optional = true }
 serde = { version = "1", features = ["derive"] }
- tokio = { version = "1", features = ["fs", "macros", "rt", "time"] }
+tokio = { version = "1", features = ["fs", "macros", "rt", "time"] }
 log = "0.4"
 serde_json = "1"
 dirs = "6"
+uuid = { version = "1", features = ["v4"] }
+once_cell = "1"
 aideon_praxis = { path = "../praxis" }
 aideon_chrona = { path = "../chrona" }
 time = { version = "0.3", features = ["formatting"] }
@@ -37,3 +39,4 @@ tempfile = "3.24"
 tauri = { version = "2", features = ["test"] }
 regex = "1"
 toml = "0.8"
+logtest = "2.0"

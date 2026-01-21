@@ -5,13 +5,15 @@ use std::time::{Duration, Instant};
 use log::{error, info, warn};
 use serde::Deserialize;
 use serde::Serialize;
+use serde_json::json;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State, Wry};
 
 use crate::contracts::{
     EVENT_SETUP_BACKEND_READY, EVENT_SETUP_FAILED, EVENT_SETUP_FRONTEND_READY_ACK,
-    EVENT_SETUP_PROGRESS,
+    EVENT_SETUP_PROGRESS, EVENT_SETUP_SEED_SUMMARY,
 };
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
+use crate::log_event;
 use crate::worker::init_temporal;
 
 pub struct SetupState {
@@ -62,6 +64,14 @@ fn emit_setup_event<R: Runtime>(app: &AppHandle<R>, event: &str, payload: serde_
 }
 
 pub fn emit_setup_progress<R: Runtime>(app: &AppHandle<R>, phase: &'static str) {
+    log_event!(
+        severity = 5,
+        component = "core",
+        event = "setup_progress",
+        message = "setup progress update",
+        correlation_id = "setup",
+        metadata = json!({ "phase": phase })
+    );
     emit_setup_event(
         app,
         EVENT_SETUP_PROGRESS,
@@ -70,6 +80,14 @@ pub fn emit_setup_progress<R: Runtime>(app: &AppHandle<R>, phase: &'static str) 
 }
 
 pub fn emit_setup_failed<R: Runtime>(app: &AppHandle<R>, error: &HostError) {
+    log_event!(
+        severity = 3,
+        component = "core",
+        event = "setup_failed",
+        message = "setup failure",
+        correlation_id = "setup",
+        metadata = json!({ "code": error.code, "message": error.message })
+    );
     emit_setup_event(
         app,
         EVENT_SETUP_FAILED,
@@ -112,6 +130,34 @@ pub struct SetupFlags {
     backend: bool,
 }
 
+#[derive(Debug)]
+pub struct SetupSeedSummary {
+    pub dataset_version: String,
+    pub metamodel_version: String,
+}
+
+pub fn emit_setup_seed_summary<R: Runtime>(app: &AppHandle<R>, summary: &SetupSeedSummary) {
+    log_event!(
+        severity = 5,
+        component = "core",
+        event = "setup_seed_summary",
+        message = "setup seed summary recorded",
+        correlation_id = "setup",
+        metadata = json!({
+            "dataset_version": summary.dataset_version,
+            "metamodel_version": summary.metamodel_version,
+        })
+    );
+    emit_setup_event(
+        app,
+        EVENT_SETUP_SEED_SUMMARY,
+        serde_json::json!({
+            "datasetVersion": summary.dataset_version,
+            "metamodelVersion": summary.metamodel_version,
+        }),
+    );
+}
+
 #[tauri::command]
 pub async fn set_complete<R: Runtime>(
     app: AppHandle<R>,
@@ -144,6 +190,14 @@ pub async fn set_complete<R: Runtime>(
 
     if all_complete(&state_lock) && !state_lock.close_scheduled {
         state_lock.close_scheduled = true;
+        log_event!(
+            severity = 6,
+            component = "core",
+            event = "app_ready",
+            message = "Setup complete and UI ready",
+            correlation_id = "setup",
+            metadata = json!({ "phase": "ready" })
+        );
         let delay = close_delay(&state_lock);
         info!(
             "host: setup complete; showing main window after {:?} delay",
