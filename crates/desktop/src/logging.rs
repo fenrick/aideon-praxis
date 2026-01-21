@@ -182,8 +182,8 @@ macro_rules! log_event {
         correlation_id = $correlation:expr)? $(,
         metadata = $metadata:expr)? $(,)?
     ) => {{
-        let correlation = log_event!(@corr $($correlation)?);
-        let metadata = log_event!(@meta $($metadata)?);
+        let correlation = $crate::log_event!(@corr $($correlation)?);
+        let metadata = $crate::log_event!(@meta $($metadata)?);
         $crate::logging::log_record(
             $severity,
             $component,

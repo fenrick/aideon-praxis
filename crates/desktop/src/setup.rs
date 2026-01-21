@@ -14,6 +14,7 @@ use crate::contracts::{
 };
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::log_event;
+use crate::telemetry::{command_completed, command_failed, command_invoked};
 use crate::worker::init_temporal;
 
 pub struct SetupState {
@@ -164,12 +165,19 @@ pub async fn set_complete<R: Runtime>(
     state: State<'_, Mutex<SetupState>>,
     task: String,
 ) -> Result<(), HostError> {
+    let started_at = Instant::now();
+    command_invoked("set_complete", "setup");
     let mut state_lock = state.lock().unwrap();
 
-    let parsed = parse_task(task.as_str()).ok_or_else(|| {
-        warn!("host: set_complete called with invalid task '{task}'");
-        HostError::invalid_input("invalid task")
-    })?;
+    let parsed = match parse_task(task.as_str()) {
+        Some(value) => value,
+        None => {
+            warn!("host: set_complete called with invalid task '{task}'");
+            let err = HostError::invalid_input("invalid task");
+            command_failed("set_complete", "setup", &err, Some(started_at.elapsed()));
+            return Err(err);
+        }
+    };
     let was_frontend = state_lock.frontend_task;
     let was_backend = state_lock.backend_task;
     info!(
@@ -222,6 +230,7 @@ pub async fn set_complete<R: Runtime>(
         });
     }
 
+    command_completed("set_complete", "setup", started_at.elapsed());
     Ok(())
 }
 
