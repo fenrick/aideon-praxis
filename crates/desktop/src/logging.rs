@@ -157,8 +157,7 @@ pub struct LoggingContextDto {
     pub platform_arch: String,
 }
 
-#[tauri::command]
-pub fn system_logging_context() -> std::result::Result<LoggingContextDto, String> {
+pub fn get_logging_context() -> std::result::Result<LoggingContextDto, String> {
     if let Some(ctx) = CONTEXT.get() {
         Ok(LoggingContextDto {
             session_id: ctx.session_id.clone(),

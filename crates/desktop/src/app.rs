@@ -142,7 +142,7 @@ pub fn run() {
             crate::workspace::workspace_templates_list,
             crate::workspace::workspace_templates_save,
             crate::setup::system_setup_state,
-            crate::logging::system_logging_context,
+            crate::telemetry::system_logging_context,
             crate::telemetry::system_metrics_snapshot,
         ])
         .run(tauri::generate_context!())

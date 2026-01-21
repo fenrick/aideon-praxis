@@ -1,4 +1,6 @@
 use crate::ipc::HostError;
+use crate::logging::LoggingContextDto;
+use crate::logging::get_logging_context;
 use crate::metrics::{
     MetricsSnapshot, record_command_duration, record_command_failure, record_job_duration,
     record_job_failure, snapshot,
@@ -103,6 +105,23 @@ pub fn job_failed(job: &str, correlation_id: &str, kind: &str, message: &str) {
         })
     );
     record_job_failure(job);
+}
+
+#[tauri::command]
+pub fn system_logging_context() -> std::result::Result<LoggingContextDto, String> {
+    command_invoked("system_logging_context", "logging_context");
+    let start = Instant::now();
+    let result = get_logging_context();
+    match &result {
+        Ok(_) => command_completed("system_logging_context", "logging_context", start.elapsed()),
+        Err(err) => command_failed(
+            "system_logging_context",
+            "logging_context",
+            &HostError::internal(err.clone()),
+            Some(start.elapsed()),
+        ),
+    }
+    result
 }
 
 #[tauri::command]
