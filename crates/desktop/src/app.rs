@@ -16,7 +16,7 @@ use crate::windows::create_windows;
 use once_cell::sync::OnceCell;
 use serde_json::json;
 use tauri::{AppHandle, Manager, Runtime};
-use tauri_plugin_log::log::LevelFilter;
+use tauri_plugin_log::{Target, TargetKind, log::LevelFilter};
 use uuid::Uuid;
 
 static SESSION_MARKER_PATH: OnceCell<PathBuf> = OnceCell::new();
@@ -27,10 +27,11 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()
-                .clear_targets()
-                .target(tauri_plugin_log::Target::new(
-                    tauri_plugin_log::TargetKind::Stdout,
-                ))
+                .targets([
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::LogDir { file_name: None }),
+                    Target::new(TargetKind::Webview),
+                ])
                 .level(log_level)
                 .build(),
         )
