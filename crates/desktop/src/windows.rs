@@ -6,6 +6,8 @@ use tauri::{App, AppHandle, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 
 use crate::ipc::{HostError, IpcRequest, IpcResponse};
 use crate::setup::{SetupState, set_complete};
+use crate::telemetry::{command_completed, command_failed, command_invoked};
+use std::time::Instant;
 
 const ROUTE_SPLASH: &str = "splash/";
 const ROUTE_MAIN: &str = "index.html";
@@ -169,24 +171,31 @@ pub fn system_window_open<R: Runtime>(
     app: AppHandle<R>,
     request: IpcRequest<OpenWindowPayload>,
 ) -> Result<IpcResponse<()>, HostError> {
-    let request_id = request.request_id;
-    let response = match parse_window_target(&request.payload.window) {
-        Ok(SystemWindowTarget::Settings) => match open_settings(app) {
-            Ok(()) => IpcResponse::ok(request_id, ()),
-            Err(err) => IpcResponse::err(request_id, err),
-        },
-        Ok(SystemWindowTarget::About) => match open_about(app) {
-            Ok(()) => IpcResponse::ok(request_id, ()),
-            Err(err) => IpcResponse::err(request_id, err),
-        },
-        Ok(SystemWindowTarget::Status) => match open_status(app) {
-            Ok(()) => IpcResponse::ok(request_id, ()),
-            Err(err) => IpcResponse::err(request_id, err),
-        },
-        Ok(SystemWindowTarget::Styleguide) => match open_styleguide(app) {
-            Ok(()) => IpcResponse::ok(request_id, ()),
-            Err(err) => IpcResponse::err(request_id, err),
-        },
+    let request_id = request.request_id.clone();
+    command_invoked("system_window_open", &request_id);
+    let start = Instant::now();
+    let outcome = match parse_window_target(&request.payload.window) {
+        Ok(SystemWindowTarget::Settings) => open_settings(app),
+        Ok(SystemWindowTarget::About) => open_about(app),
+        Ok(SystemWindowTarget::Status) => open_status(app),
+        Ok(SystemWindowTarget::Styleguide) => open_styleguide(app),
+        Err(err) => Err(err),
+    };
+    match &outcome {
+        Ok(_) => {
+            command_completed("system_window_open", &request_id, start.elapsed());
+        }
+        Err(err) => {
+            command_failed(
+                "system_window_open",
+                &request_id,
+                err,
+                Some(start.elapsed()),
+            );
+        }
+    }
+    let response = match outcome {
+        Ok(()) => IpcResponse::ok(request_id, ()),
         Err(err) => IpcResponse::err(request_id, err),
     };
     Ok(response)

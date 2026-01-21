@@ -297,8 +297,20 @@ pub async fn system_setup_complete<R: Runtime>(
     state: State<'_, Mutex<SetupState>>,
     request: IpcRequest<SetupCompletePayload>,
 ) -> Result<IpcResponse<()>, HostError> {
-    let request_id = request.request_id;
-    let response = match set_complete(app, state, request.payload.task).await {
+    let request_id = request.request_id.clone();
+    command_invoked("system_setup_complete", &request_id);
+    let started_at = Instant::now();
+    let result = set_complete(app, state, request.payload.task).await;
+    match &result {
+        Ok(_) => command_completed("system_setup_complete", &request_id, started_at.elapsed()),
+        Err(err) => command_failed(
+            "system_setup_complete",
+            &request_id,
+            err,
+            Some(started_at.elapsed()),
+        ),
+    }
+    let response = match result {
         Ok(()) => IpcResponse::ok(request_id, ()),
         Err(err) => IpcResponse::err(request_id, err),
     };
@@ -342,7 +354,19 @@ pub async fn system_factory_reset<R: Runtime>(
     request: IpcRequest<FactoryResetPayload>,
 ) -> Result<IpcResponse<()>, HostError> {
     let request_id = request.request_id.clone();
-    let response = match perform_factory_reset(app, &request).await {
+    command_invoked("system_factory_reset", &request_id);
+    let started_at = Instant::now();
+    let result = perform_factory_reset(app, &request).await;
+    match &result {
+        Ok(_) => command_completed("system_factory_reset", &request_id, started_at.elapsed()),
+        Err(err) => command_failed(
+            "system_factory_reset",
+            &request_id,
+            err,
+            Some(started_at.elapsed()),
+        ),
+    }
+    let response = match result {
         Ok(()) => IpcResponse::ok(request_id, ()),
         Err(err) => IpcResponse::err(request_id, err),
     };
@@ -356,7 +380,19 @@ pub fn system_setup_state(
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<SetupFlags>, HostError> {
     let request_id = request.request_id;
-    let response = match get_setup_state(state) {
+    command_invoked("system_setup_state", &request_id);
+    let started_at = Instant::now();
+    let result = get_setup_state(state);
+    match &result {
+        Ok(_) => command_completed("system_setup_state", &request_id, started_at.elapsed()),
+        Err(err) => command_failed(
+            "system_setup_state",
+            &request_id,
+            err,
+            Some(started_at.elapsed()),
+        ),
+    }
+    let response = match result {
         Ok(flags) => IpcResponse::ok(request_id, flags),
         Err(err) => IpcResponse::err(request_id, err),
     };
