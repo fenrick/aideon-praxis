@@ -14,7 +14,9 @@ use crate::contracts::{
 };
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::log_event;
-use crate::telemetry::{command_completed, command_failed, command_invoked};
+use crate::telemetry::{
+    command_completed, command_failed, command_invoked, job_completed, job_failed, job_started,
+};
 use crate::worker::init_temporal;
 
 pub struct SetupState {
@@ -244,11 +246,19 @@ pub fn get_setup_state(state: State<'_, Mutex<SetupState>>) -> Result<SetupFlags
 }
 
 pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), HostError> {
+    let job_start = Instant::now();
+    job_started("backend_setup", "setup");
     info!("host: backend setup started");
     if let Err(message) = init_temporal(&app).await {
         let error = HostError::internal(message);
         emit_setup_progress(&app, "failed");
         emit_setup_failed(&app, &error);
+        job_failed(
+            "backend_setup",
+            "setup",
+            "temporal_init_failed",
+            &error.message,
+        );
         return Err(error);
     }
 
@@ -260,10 +270,17 @@ pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), HostError> {
     .await
     {
         error!("host: set_complete backend failed: {error_message}");
+        job_failed(
+            "backend_setup",
+            "setup",
+            &error_message.code,
+            &error_message.message,
+        );
         return Err(error_message);
     }
 
     info!("host: backend setup marked complete");
+    job_completed("backend_setup", "setup", job_start.elapsed());
     Ok(())
 }
 
