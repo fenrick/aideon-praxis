@@ -81,8 +81,8 @@ fn splash_delay_respects_minimum() {
     assert!(delay > Duration::from_secs(2));
 }
 
-#[test]
-fn setup_state_roundtrips_over_ipc_envelope() {
+#[tokio::test]
+async fn setup_state_roundtrips_over_ipc_envelope() {
     let app = tauri::test::mock_app();
     app.manage(std::sync::Mutex::new(SetupState::new()));
 
@@ -103,6 +103,7 @@ fn setup_state_roundtrips_over_ipc_envelope() {
             payload: crate::ipc::EmptyPayload {},
         },
     )
+    .await
     .expect("system setup state");
     assert_eq!(response.status, "ok");
     assert!(response.result.expect("flags").frontend);

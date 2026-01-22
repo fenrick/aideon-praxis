@@ -50,6 +50,7 @@ async fn tauri_routes_and_ipc_smoke() {
             },
         },
     )
+    .await
     .expect("settings response");
     assert_eq!(response.status, "ok");
     let settings = app.get_webview_window("settings").expect("settings window");
@@ -68,6 +69,7 @@ async fn tauri_routes_and_ipc_smoke() {
             },
         },
     )
+    .await
     .expect("status response");
     assert_eq!(response.status, "ok");
     let status = app.get_webview_window("status").expect("status window");
@@ -101,6 +103,7 @@ async fn tauri_routes_and_ipc_smoke() {
             },
         },
     )
+    .await
     .expect("styleguide response");
     assert_eq!(response.status, "ok");
     let styleguide = app
@@ -121,6 +124,7 @@ async fn tauri_routes_and_ipc_smoke() {
             },
         },
     )
+    .await
     .expect("about response");
     assert_eq!(response.status, "ok");
     let about = app.get_webview_window("about").expect("about window");
