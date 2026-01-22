@@ -8,7 +8,6 @@ import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mo
 
 import {
   __test__,
-  MNEME_IPC_COMMANDS,
   clearPropertyInterval,
   compileEffectiveSchema,
   counterUpdate,
@@ -41,6 +40,7 @@ import {
   listFailedJobs,
   listJobs,
   listValidationRules,
+  MNEME_IPC_COMMANDS,
   mnemeAnalyticsApi,
   mnemeExportApi,
   mnemeImportApi,
