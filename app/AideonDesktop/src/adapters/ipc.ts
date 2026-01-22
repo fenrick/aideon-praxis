@@ -193,10 +193,10 @@ function resolveResultFromRecord(
       eventName: 'command_completed',
       message: 'Command completed',
       correlationId: requestId,
-    metadata: buildMetadata(command, requestId, { status }),
-    source: IPC_SOURCE,
-  });
-  return record.result;
+      metadata: buildMetadata(command, requestId, { status }),
+      source: IPC_SOURCE,
+    });
+    return record.result;
   }
 
   if (status !== 'error') {
