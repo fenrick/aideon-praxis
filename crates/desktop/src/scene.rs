@@ -31,12 +31,12 @@ pub struct CanvasScenePayload {
 pub async fn praxis_canvas_get_scene(
     request: IpcRequest<CanvasScenePayload>,
 ) -> Result<IpcResponse<Vec<CanvasShape>>, HostError> {
-    let request_id = request.request_id;
-    let response = match canvas_scene(request.payload.as_of).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request(
+        "praxis_canvas_get_scene",
+        request,
+        |payload| async move { canvas_scene(payload.as_of).await },
+    )
+    .await
 }
 
 /// Reduce an identifier into a safe path segment (no separators).
@@ -262,12 +262,12 @@ pub async fn graph_layout_get(
 pub async fn praxis_graph_layout_get(
     request: IpcRequest<GraphLayoutGetRequest>,
 ) -> Result<IpcResponse<Option<GraphLayoutSaveRequest>>, HostError> {
-    let request_id = request.request_id;
-    let response = match graph_layout_get(request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request(
+        "praxis_graph_layout_get",
+        request,
+        |payload| async move { graph_layout_get(payload).await },
+    )
+    .await
 }
 
 /// Namespaced + requestId-wrapped graph layout persistence command.
@@ -275,12 +275,12 @@ pub async fn praxis_graph_layout_get(
 pub async fn praxis_graph_layout_save(
     request: IpcRequest<GraphLayoutSaveRequest>,
 ) -> Result<IpcResponse<()>, HostError> {
-    let request_id = request.request_id;
-    let response = match graph_layout_save(request.payload).await {
-        Ok(()) => IpcResponse::ok(request_id, ()),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request(
+        "praxis_graph_layout_save",
+        request,
+        |payload| async move { graph_layout_save(payload).await },
+    )
+    .await
 }
 
 /// Namespaced + requestId-wrapped canvas layout load command.
@@ -288,12 +288,12 @@ pub async fn praxis_graph_layout_save(
 pub async fn praxis_canvas_get_layout(
     request: IpcRequest<CanvasLayoutGetRequest>,
 ) -> Result<IpcResponse<Option<CanvasLayoutSaveRequest>>, HostError> {
-    let request_id = request.request_id;
-    let response = match canvas_get_layout(request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request(
+        "praxis_canvas_get_layout",
+        request,
+        |payload| async move { canvas_get_layout(payload).await },
+    )
+    .await
 }
 
 /// Namespaced + requestId-wrapped canvas layout persistence command.
@@ -301,12 +301,12 @@ pub async fn praxis_canvas_get_layout(
 pub async fn praxis_canvas_save_layout(
     request: IpcRequest<CanvasLayoutSaveRequest>,
 ) -> Result<IpcResponse<()>, HostError> {
-    let request_id = request.request_id;
-    let response = match canvas_save_layout(request.payload).await {
-        Ok(()) => IpcResponse::ok(request_id, ()),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request(
+        "praxis_canvas_save_layout",
+        request,
+        |payload| async move { canvas_save_layout(payload).await },
+    )
+    .await
 }
 
 #[cfg(test)]

@@ -6,13 +6,11 @@
 use aideon_praxis::continuum::{FileSnapshotStore, SnapshotStore};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::future::Future;
-use std::time::Instant;
 use tauri::State;
 
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::praxis_api::ScenarioSummary;
-use crate::telemetry::{command_completed, command_failed, command_invoked};
+use crate::telemetry::respond_with_request;
 use crate::worker::WorkerState;
 
 #[derive(Debug, Serialize)]
@@ -45,11 +43,10 @@ pub async fn workspace_projects_list(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<Vec<ProjectPayload>>, HostError> {
-    instrument_command(
-        "workspace_projects_list",
-        request.request_id,
-        list_projects(state),
-    )
+    respond_with_request("workspace_projects_list", request, move |_payload| {
+        let state = state.clone();
+        async move { list_projects(state).await }
+    })
     .await
 }
 
@@ -94,10 +91,10 @@ pub async fn list_templates() -> Result<Vec<TemplatePayload>, HostError> {
 pub async fn workspace_templates_list(
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<Vec<TemplatePayload>>, HostError> {
-    instrument_command(
+    respond_with_request(
         "workspace_templates_list",
-        request.request_id,
-        list_templates(),
+        request,
+        move |_payload| async move { list_templates().await },
     )
     .await
 }
@@ -130,10 +127,10 @@ pub async fn save_template(payload: TemplatePayload) -> Result<TemplatePayload, 
 pub async fn workspace_templates_save(
     request: IpcRequest<TemplatePayload>,
 ) -> Result<IpcResponse<TemplatePayload>, HostError> {
-    instrument_command(
+    respond_with_request(
         "workspace_templates_save",
-        request.request_id,
-        save_template(request.payload),
+        request,
+        move |payload| async move { save_template(payload).await },
     )
     .await
 }
@@ -303,28 +300,6 @@ fn store_templates(templates: &[TemplatePayload]) -> Result<(), HostError> {
         .put(key, &json)
         .map_err(|e| HostError::internal(e.to_string()))?;
     Ok(())
-}
-
-async fn instrument_command<T, Fut>(
-    name: &'static str,
-    request_id: String,
-    fut: Fut,
-) -> Result<IpcResponse<T>, HostError>
-where
-    Fut: Future<Output = Result<T, HostError>>,
-{
-    command_invoked(name, &request_id);
-    let start = Instant::now();
-    let result = fut.await;
-    match &result {
-        Ok(_) => command_completed(name, &request_id, start.elapsed()),
-        Err(err) => command_failed(name, &request_id, err, Some(start.elapsed())),
-    }
-    let response = match result {
-        Ok(value) => IpcResponse::ok(request_id, value),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
 }
 
 #[cfg(test)]

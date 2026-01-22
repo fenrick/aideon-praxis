@@ -7,8 +7,7 @@ use log::{debug, info};
 use tauri::State;
 
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
-use crate::telemetry::{command_completed, command_invoked};
-use std::time::Instant;
+use crate::telemetry::respond_with_request;
 
 /// Return the current worker health snapshot.
 #[cfg(test)]
@@ -28,12 +27,11 @@ pub async fn system_worker_health(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<WorkerHealth>, HostError> {
-    let request_id = request.request_id.clone();
-    command_invoked("system_worker_health", &request_id);
-    let start = Instant::now();
-    let snapshot = health_snapshot(state.inner());
-    command_completed("system_worker_health", &request_id, start.elapsed());
-    Ok(IpcResponse::ok(request_id, snapshot))
+    respond_with_request("system_worker_health", request, move |_payload| {
+        let state = state.clone();
+        async move { Ok(health_snapshot(state.inner())) }
+    })
+    .await
 }
 
 fn health_snapshot(state: &WorkerState) -> WorkerHealth {

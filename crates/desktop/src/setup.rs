@@ -297,24 +297,16 @@ pub async fn system_setup_complete<R: Runtime>(
     state: State<'_, Mutex<SetupState>>,
     request: IpcRequest<SetupCompletePayload>,
 ) -> Result<IpcResponse<()>, HostError> {
-    let request_id = request.request_id.clone();
-    command_invoked("system_setup_complete", &request_id);
-    let started_at = Instant::now();
-    let result = set_complete(app, state, request.payload.task).await;
-    match &result {
-        Ok(_) => command_completed("system_setup_complete", &request_id, started_at.elapsed()),
-        Err(err) => command_failed(
-            "system_setup_complete",
-            &request_id,
-            err,
-            Some(started_at.elapsed()),
-        ),
-    }
-    let response = match result {
-        Ok(()) => IpcResponse::ok(request_id, ()),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request(
+        "system_setup_complete",
+        request,
+        move |payload: SetupCompletePayload| {
+            let app = app.clone();
+            let state = state.clone();
+            async move { set_complete(app, state, payload.task).await }
+        },
+    )
+    .await
 }
 
 #[allow(dead_code)]
@@ -330,19 +322,16 @@ pub struct FactoryResetPayload {
 #[allow(dead_code)]
 async fn perform_factory_reset<R: Runtime>(
     app: AppHandle<R>,
-    request: &IpcRequest<FactoryResetPayload>,
+    payload: FactoryResetPayload,
 ) -> Result<(), HostError> {
-    if request.payload.confirmation != FACTORY_RESET_CONFIRMATION {
+    if payload.confirmation != FACTORY_RESET_CONFIRMATION {
         return Err(HostError::invalid_input(
             "factory reset requires explicit confirmation",
         ));
     }
     let storage_root = storage_root_path(&app)?;
     clear_storage_root(storage_root).await?;
-    info!(
-        "host: factory reset completed (request id: {})",
-        request.request_id
-    );
+    info!("host: factory reset completed");
     Ok(())
 }
 
@@ -353,50 +342,28 @@ pub async fn system_factory_reset<R: Runtime>(
     app: AppHandle<R>,
     request: IpcRequest<FactoryResetPayload>,
 ) -> Result<IpcResponse<()>, HostError> {
-    let request_id = request.request_id.clone();
-    command_invoked("system_factory_reset", &request_id);
-    let started_at = Instant::now();
-    let result = perform_factory_reset(app, &request).await;
-    match &result {
-        Ok(_) => command_completed("system_factory_reset", &request_id, started_at.elapsed()),
-        Err(err) => command_failed(
-            "system_factory_reset",
-            &request_id,
-            err,
-            Some(started_at.elapsed()),
-        ),
-    }
-    let response = match result {
-        Ok(()) => IpcResponse::ok(request_id, ()),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request("system_factory_reset", request, move |payload| {
+        let app = app.clone();
+        async move { perform_factory_reset(app, payload).await }
+    })
+    .await
 }
 
 /// Namespaced + requestId-wrapped setup state query.
 #[tauri::command]
-pub fn system_setup_state(
+pub async fn system_setup_state(
     state: State<'_, Mutex<SetupState>>,
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<SetupFlags>, HostError> {
-    let request_id = request.request_id;
-    command_invoked("system_setup_state", &request_id);
-    let started_at = Instant::now();
-    let result = get_setup_state(state);
-    match &result {
-        Ok(_) => command_completed("system_setup_state", &request_id, started_at.elapsed()),
-        Err(err) => command_failed(
-            "system_setup_state",
-            &request_id,
-            err,
-            Some(started_at.elapsed()),
-        ),
-    }
-    let response = match result {
-        Ok(flags) => IpcResponse::ok(request_id, flags),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request(
+        "system_setup_state",
+        request,
+        move |_payload: EmptyPayload| {
+            let state = state.clone();
+            async move { get_setup_state(state) }
+        },
+    )
+    .await
 }
 
 #[cfg(test)]

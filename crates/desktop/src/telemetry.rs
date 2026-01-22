@@ -1,4 +1,4 @@
-use crate::ipc::HostError;
+use crate::ipc::{HostError, IpcRequest, IpcResponse};
 use crate::logging::LoggingContextDto;
 use crate::logging::get_logging_context;
 use crate::metrics::{
@@ -6,6 +6,7 @@ use crate::metrics::{
     record_job_failure, snapshot,
 };
 use serde_json::json;
+use std::future::Future;
 use std::time::{Duration, Instant};
 
 pub fn command_invoked(command: &str, correlation_id: &str) {
@@ -105,6 +106,45 @@ pub fn job_failed(job: &str, correlation_id: &str, kind: &str, message: &str) {
         })
     );
     record_job_failure(job);
+}
+
+pub async fn record_command<FutureType, Value>(
+    command: &str,
+    correlation_id: &str,
+    future: FutureType,
+) -> Result<Value, HostError>
+where
+    FutureType: Future<Output = Result<Value, HostError>>,
+{
+    command_invoked(command, correlation_id);
+    let started = Instant::now();
+    match future.await {
+        Ok(value) => {
+            command_completed(command, correlation_id, started.elapsed());
+            Ok(value)
+        }
+        Err(error) => {
+            command_failed(command, correlation_id, &error, Some(started.elapsed()));
+            Err(error)
+        }
+    }
+}
+
+pub async fn respond_with_request<P, ResultType, Handler, HandlerFuture>(
+    command: &'static str,
+    request: IpcRequest<P>,
+    handler: Handler,
+) -> Result<IpcResponse<ResultType>, HostError>
+where
+    Handler: FnOnce(P) -> HandlerFuture,
+    HandlerFuture: Future<Output = Result<ResultType, HostError>>,
+{
+    let correlation_id = request.request_id.clone();
+    let record = record_command(command, &correlation_id, handler(request.payload)).await;
+    match record {
+        Ok(payload) => Ok(IpcResponse::ok(correlation_id, payload)),
+        Err(error) => Ok(IpcResponse::err(correlation_id, error)),
+    }
 }
 
 #[tauri::command]
