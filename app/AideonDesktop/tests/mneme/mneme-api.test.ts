@@ -8,6 +8,7 @@ import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mo
 
 import {
   __test__,
+  MNEME_IPC_COMMANDS,
   clearPropertyInterval,
   compileEffectiveSchema,
   counterUpdate,
@@ -1535,6 +1536,11 @@ describe('mneme-api helpers', () => {
   it('returns identity invoke arguments', () => {
     const arguments_ = __test__.toInvokeArguments({ hello: 'world' });
     expect(arguments_).toEqual({ hello: 'world' });
+  });
+
+  it('exposes mneme IPC command constants', () => {
+    expect(MNEME_IPC_COMMANDS.listJobs).toBe('mneme_store_list_jobs');
+    expect(MNEME_IPC_COMMANDS.compileEffectiveSchema).toBe('mneme_store_compile_effective_schema');
   });
 });
 
