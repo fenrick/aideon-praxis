@@ -18,22 +18,42 @@ vi.mock('@tauri-apps/plugin-log', () => ({
 
 import { logMessage } from '@/lib/logging';
 
-function parseStructuredLog(line?: string) {
+interface StructuredLogPayload {
+  readonly component?: string;
+  readonly event_name?: string;
+  readonly ['syslog.severity']?: number;
+  readonly correlation_id?: string;
+  readonly session_id?: string;
+  readonly source?: {
+    readonly module?: string;
+    readonly function?: string;
+  };
+  readonly user_impact?: string;
+}
+
+/**
+ * Extract the JSON payload from a structured log line.
+ * @param line NDJSON line to inspect.
+ */
+function parseStructuredLog(line?: string): StructuredLogPayload | undefined {
   if (!line) {
-    return null;
+    return undefined;
   }
   const start = line.indexOf('{');
   if (start === -1) {
-    return null;
+    return undefined;
   }
-  return JSON.parse(line.slice(start));
+  const parsed = JSON.parse(line.slice(start)) as unknown;
+  if (typeof parsed === 'object' && parsed !== null) {
+    return parsed as StructuredLogPayload;
+  }
+  return undefined;
 }
 
 describe('logMessage helper', () => {
   it('writes structured NDJSON with required fields', async () => {
-    const plugin = await import('@tauri-apps/plugin-log');
+    const plugin = vi.mocked(await import('@tauri-apps/plugin-log'), true);
     plugin.info.mockClear();
-    const spy = vi.spyOn(console, 'info').mockImplementation(() => {});
     await logMessage({
       severity: 'notice',
       component: 'core',
@@ -44,23 +64,22 @@ describe('logMessage helper', () => {
       source: { module: 'ui', function: 'start' },
     });
 
-    expect(spy).toHaveBeenCalledTimes(1);
-    const callArg = spy.mock.calls[0]?.[0];
-    expect(callArg).toBeDefined();
-    const payload = parseStructuredLog(callArg as string);
+    expect(plugin.info).toHaveBeenCalledTimes(1);
+    const pluginLine = plugin.info.mock.calls[0]?.[0];
+    expect(pluginLine).toBeDefined();
+    const payload = parseStructuredLog(pluginLine);
     expect(payload?.component).toBe('core');
     expect(payload?.event_name).toBe('app_start');
     expect(payload?.['syslog.severity']).toBe(5);
     expect(payload?.correlation_id).toBe('corr-id');
     expect(payload?.session_id).toBe('session-1');
-    expect(payload?.source.module).toBe('ui');
-    expect(payload?.source.function).toBe('start');
-
-    spy.mockRestore();
+    const source = payload?.source;
+    expect(source?.module).toBe('ui');
+    expect(source?.function).toBe('start');
   });
 
   it('forwards NDJSON records to the Tauri logging plugin', async () => {
-    const plugin = await import('@tauri-apps/plugin-log');
+    const plugin = vi.mocked(await import('@tauri-apps/plugin-log'), true);
     plugin.info.mockClear();
     await logMessage({
       severity: 'error',
@@ -72,8 +91,9 @@ describe('logMessage helper', () => {
     });
 
     expect(plugin.info).toHaveBeenCalledTimes(1);
-    const pluginArg = plugin.info.mock.calls[0]?.[0];
-    const payload = parseStructuredLog(pluginArg as string);
+    const pluginLine = plugin.info.mock.calls[0]?.[0];
+    expect(pluginLine).toBeDefined();
+    const payload = parseStructuredLog(pluginLine);
     expect(payload?.event_name).toBe('ui_error');
     expect(payload?.user_impact).toBe('blocked');
   });

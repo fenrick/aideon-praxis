@@ -5,6 +5,7 @@ export const HOST_EVENT_NAMES = {
   setupFrontendReadyAck: 'setup_frontend_ready_ack',
   setupProgress: 'setup_progress',
   setupFailed: 'setup_failed',
+  setupSeedSummary: 'setup_seed_summary',
 } as const;
 
 export const HOST_SHELL_COMMAND_IDS = {

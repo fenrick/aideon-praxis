@@ -9,11 +9,10 @@ export interface LoggingContext {
   readonly platformArch: string;
 }
 
-let contextPromise: Promise<LoggingContext> | null = null;
+let contextPromise: Promise<LoggingContext> | undefined;
 
+/** Returns a memoized context object shared across logging consumers. */
 export function getLoggingContext(): Promise<LoggingContext> {
-  if (!contextPromise) {
-    contextPromise = invokeIpc<LoggingContext>(SYSTEM_IPC_COMMANDS.loggingContext, {});
-  }
+  contextPromise ??= invokeIpc<LoggingContext>(SYSTEM_IPC_COMMANDS.loggingContext, {});
   return contextPromise;
 }

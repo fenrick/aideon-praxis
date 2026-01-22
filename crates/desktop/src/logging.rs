@@ -1,8 +1,6 @@
 use once_cell::sync::OnceCell;
 use serde_json::{Map, Value, json};
-use std::fmt::Display;
 use time::OffsetDateTime;
-use time::UtcOffset;
 use time::format_description::well_known::Rfc3339;
 
 #[derive(Clone, Debug)]
@@ -29,10 +27,7 @@ pub fn init_context(session_id: String) -> Option<&'static LoggingContext> {
     CONTEXT.get()
 }
 
-pub fn context() -> Option<&'static LoggingContext> {
-    CONTEXT.get()
-}
-
+#[allow(clippy::too_many_arguments)]
 pub fn log_record(
     severity: u8,
     component: &str,
@@ -57,7 +52,7 @@ pub fn log_record(
     let mut record = Map::new();
     record.insert("timestamp".into(), Value::String(timestamp));
     record.insert("level".into(), Value::String(level_name.to_string()));
-    record.insert("syslog.severity".into(), Value::from(severity as u8));
+    record.insert("syslog.severity".into(), Value::from(severity));
     record.insert(
         "syslog.severity_text".into(),
         Value::String(severity_text(severity).to_string()),
@@ -100,11 +95,9 @@ pub fn log_record(
         }),
     );
 
-    if let Some(payload) = metadata {
-        if let Value::Object(map) = payload {
-            for (key, value) in map {
-                record.entry(key).or_insert(value);
-            }
+    if let Some(Value::Object(map)) = metadata {
+        for (key, value) in map {
+            record.entry(key).or_insert(value);
         }
     }
 

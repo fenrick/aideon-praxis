@@ -21,58 +21,18 @@ type NormalizedSeverity =
   | 'informational'
   | 'debug';
 
-const severityToNumber: Record<NormalizedSeverity, number> = {
-  emergency: 0,
-  alert: 1,
-  critical: 2,
-  error: 3,
-  warning: 4,
-  notice: 5,
-  informational: 6,
-  debug: 7,
-};
-
-const severityText: Record<NormalizedSeverity, string> = {
-  emergency: 'Emergency',
-  alert: 'Alert',
-  critical: 'Critical',
-  error: 'Error',
-  warning: 'Warning',
-  notice: 'Notice',
-  informational: 'Informational',
-  debug: 'Debug',
-};
-
-const severityToLevel: Record<NormalizedSeverity, 'ERROR' | 'WARN' | 'INFO' | 'DEBUG'> = {
-  emergency: 'ERROR',
-  alert: 'ERROR',
-  critical: 'ERROR',
-  error: 'ERROR',
-  warning: 'WARN',
-  notice: 'INFO',
-  informational: 'INFO',
-  debug: 'DEBUG',
-};
-
-const consoleMethod: Record<NormalizedSeverity, keyof Console> = {
-  emergency: 'error',
-  alert: 'error',
-  critical: 'error',
-  error: 'error',
-  warning: 'warn',
-  notice: 'info',
-  informational: 'info',
-  debug: 'debug',
-};
-
-function normalizeSeverity(severity: Severity): NormalizedSeverity {
-  return severity === 'info' ? 'informational' : severity;
+interface SeverityAttributes {
+  readonly level: 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
+  readonly severityNumber: number;
+  readonly severityText: string;
+  readonly consoleMethod: 'error' | 'warn' | 'info' | 'debug';
 }
 
-type Source = {
+/** @public */
+export interface LogSource {
   readonly module?: string;
   readonly function?: string;
-};
+}
 
 export interface LogEntry {
   readonly severity: Severity;
@@ -80,10 +40,107 @@ export interface LogEntry {
   readonly eventName: string;
   readonly message: string;
   readonly correlationId?: string;
-  readonly source?: Source;
+  readonly source?: LogSource;
   readonly metadata?: Record<string, unknown>;
 }
 
+/**
+ * Normalize `info` severity so the downstream sinks receive a stable set of labels.
+ * @param severity severity value from the caller.
+ */
+function normalizeSeverity(severity: Severity): NormalizedSeverity {
+  return severity === 'info' ? 'informational' : severity;
+}
+
+/**
+ * Describe the attributes that every severity level maps to.
+ * @param severity normalized severity label.
+ * @returns characteristics for the requested level.
+ */
+function describeSeverity(severity: NormalizedSeverity): SeverityAttributes {
+  switch (severity) {
+    case 'emergency': {
+      return {
+        level: 'ERROR',
+        severityNumber: 0,
+        severityText: 'Emergency',
+        consoleMethod: 'error',
+      };
+    }
+    case 'alert': {
+      return {
+        level: 'ERROR',
+        severityNumber: 1,
+        severityText: 'Alert',
+        consoleMethod: 'error',
+      };
+    }
+    case 'critical': {
+      return {
+        level: 'ERROR',
+        severityNumber: 2,
+        severityText: 'Critical',
+        consoleMethod: 'error',
+      };
+    }
+    case 'error': {
+      return {
+        level: 'ERROR',
+        severityNumber: 3,
+        severityText: 'Error',
+        consoleMethod: 'error',
+      };
+    }
+    case 'warning': {
+      return {
+        level: 'WARN',
+        severityNumber: 4,
+        severityText: 'Warning',
+        consoleMethod: 'warn',
+      };
+    }
+    case 'notice': {
+      return {
+        level: 'INFO',
+        severityNumber: 5,
+        severityText: 'Notice',
+        consoleMethod: 'info',
+      };
+    }
+    case 'informational': {
+      return {
+        level: 'INFO',
+        severityNumber: 6,
+        severityText: 'Informational',
+        consoleMethod: 'info',
+      };
+    }
+    case 'debug': {
+      return {
+        level: 'DEBUG',
+        severityNumber: 7,
+        severityText: 'Debug',
+        consoleMethod: 'debug',
+      };
+    }
+    default: {
+      return assertNever(severity);
+    }
+  }
+}
+
+/**
+ * Helper that throws when the compiler believes an exhaustive switch is not completed.
+ * @param _value value that should never be reachable.
+ */
+function assertNever(_value: never): never {
+  throw new Error('Unhandled severity level');
+}
+
+/**
+ * Forward a structured JSON line to the Tauri logging plugin when available.
+ * @param line serialized log line to ship.
+ */
 async function forwardToTauri(line: string): Promise<void> {
   try {
     const log = await import('@tauri-apps/plugin-log');
@@ -93,14 +150,20 @@ async function forwardToTauri(line: string): Promise<void> {
   }
 }
 
+/**
+ * Emit a structured log entry to both console and the Tauri plugin.
+ * @param entry log payload provided by callers.
+ */
 export async function logMessage(entry: LogEntry): Promise<void> {
   const context = await getLoggingContext();
   const severity = normalizeSeverity(entry.severity);
+  const severityAttributes = describeSeverity(severity);
+
   const record = {
     timestamp: new Date().toISOString(),
-    level: severityToLevel[severity],
-    'syslog.severity': severityToNumber[severity],
-    'syslog.severity_text': severityText[severity],
+    level: severityAttributes.level,
+    'syslog.severity': severityAttributes.severityNumber,
+    'syslog.severity_text': severityAttributes.severityText,
     message: entry.message,
     component: entry.component,
     event_name: entry.eventName,
@@ -123,8 +186,28 @@ export async function logMessage(entry: LogEntry): Promise<void> {
   };
 
   const line = JSON.stringify(record);
-  const method = consoleMethod[severity] ?? 'log';
-  const logger = console[method] ?? console.log;
-  logger.call(console, `[${severity}] ${line}`);
+  const consoleReference = (globalThis as typeof globalThis & { console: Console }).console;
+  const formattedLine = `[${severity}] ${line}`;
+  switch (severityAttributes.consoleMethod) {
+    case 'error': {
+      consoleReference.error(formattedLine);
+      break;
+    }
+    case 'warn': {
+      consoleReference.warn(formattedLine);
+      break;
+    }
+    case 'info': {
+      consoleReference.info(formattedLine);
+      break;
+    }
+    case 'debug': {
+      consoleReference.debug(formattedLine);
+      break;
+    }
+    default: {
+      assertNever(severityAttributes.consoleMethod);
+    }
+  }
   await forwardToTauri(line);
 }
