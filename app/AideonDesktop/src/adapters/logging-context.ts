@@ -1,4 +1,4 @@
-import { invokeIpc } from './ipc';
+import { invoke } from '@tauri-apps/api/core';
 import { SYSTEM_IPC_COMMANDS } from './system-ipc';
 
 export interface LoggingContext {
@@ -13,6 +13,6 @@ let contextPromise: Promise<LoggingContext> | undefined;
 
 /** Returns a memoized context object shared across logging consumers. */
 export function getLoggingContext(): Promise<LoggingContext> {
-  contextPromise ??= invokeIpc<LoggingContext>(SYSTEM_IPC_COMMANDS.loggingContext, {});
+  contextPromise ??= invoke<LoggingContext>(SYSTEM_IPC_COMMANDS.loggingContext, {});
   return contextPromise;
 }
