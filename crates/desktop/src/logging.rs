@@ -193,3 +193,26 @@ macro_rules! log_event {
     (@meta $value:expr) => { Some($value) };
     (@meta) => { None };
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn init_context_and_get_logging_context_roundtrip() {
+        let session_id = "test-session".to_string();
+        let ctx = init_context(session_id.clone());
+        assert!(ctx.is_some());
+        let dto = get_logging_context().expect("context should be initialised");
+        assert_eq!(dto.session_id, session_id);
+        assert_eq!(dto.build_version, env!("CARGO_PKG_VERSION"));
+    }
+
+    #[test]
+    fn severity_helpers_cover_text_mappings() {
+        assert_eq!(severity_to_level(0), log::Level::Error);
+        assert_eq!(severity_to_level(5), log::Level::Info);
+        assert_eq!(level_to_str(log::Level::Warn), "WARN");
+        assert_eq!(severity_text(3), "Error");
+    }
+}
