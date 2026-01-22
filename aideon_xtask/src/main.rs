@@ -309,6 +309,10 @@ fn payload_keys_for_event(name: &str) -> Vec<String> {
             .into_iter()
             .map(String::from)
             .collect(),
+        "setup_seed_summary" => vec!["datasetVersion", "metamodelVersion"]
+            .into_iter()
+            .map(String::from)
+            .collect(),
         _ => Vec::new(),
     }
 }
@@ -425,22 +429,24 @@ async fn export_shell_command_manifest(args: ShellCommandManifestArgs) -> Result
 }
 
 fn is_contract_command(command: &str) -> bool {
-    const PREFIXES: [&str; 14] = [
-    "chrona_temporal_",
-    "mneme_store_",
-    "praxis_artefact_",
-    "praxis_canvas_",
-    "praxis_graph_layout_",
-    "praxis_metamodel_",
-    "praxis_scenario_",
-    "praxis_task_",
-    "system_setup_",
-    "system_window_",
-    "system_factory_",
-    "system_worker_",
-    "workspace_projects_",
-    "workspace_templates_",
-];
+    const PREFIXES: [&str; 16] = [
+        "chrona_temporal_",
+        "mneme_store_",
+        "praxis_artefact_",
+        "praxis_canvas_",
+        "praxis_graph_layout_",
+        "praxis_metamodel_",
+        "praxis_scenario_",
+        "praxis_task_",
+        "system_setup_",
+        "system_window_",
+        "system_factory_",
+        "system_worker_",
+        "system_logging_",
+        "system_metrics_",
+        "workspace_projects_",
+        "workspace_templates_",
+    ];
     PREFIXES.iter().any(|prefix| command.starts_with(prefix))
 }
 

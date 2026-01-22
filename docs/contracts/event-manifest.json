@@ -30,6 +30,10 @@
       "payloadKeys": ["phase"]
     },
     {
+      "name": "setup_seed_summary",
+      "payloadKeys": ["datasetVersion", "metamodelVersion"]
+    },
+    {
       "name": "shell_command",
       "payloadKeys": ["command", "payload"]
     }

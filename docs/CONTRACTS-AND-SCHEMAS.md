@@ -46,6 +46,7 @@ The renderer should treat events as a typed envelope with a stable shape:
 - `setup_frontend_ready_ack` payload `{}` — host acknowledged frontend readiness.
 - `setup_progress` payload `{ phase }` — host setup progress update (`starting`, `migrating`, `failed`, ...).
 - `setup_failed` payload `{ code, message }` — host setup failed; UI should surface diagnostics and provide a Status/recovery path.
+- `setup_seed_summary` payload `{ datasetVersion, metamodelVersion }` — host reports the baseline dataset and schema version that backed the first-run seed.
 - `workspace_opened` payload `{ workspace_id }`
 - `workspace_closed` payload `{ workspace_id }`
 
