@@ -47,8 +47,9 @@ Actions (8–10):
 7. [x] Make setup progress visible (at minimum: “starting”, “migrating”, “ready”), sourced from host
        events rather than polling. Refs: `docs/CONTRACTS-AND-SCHEMAS.md`, `docs/UX-DESIGN.md`,
        `crates/desktop/DESIGN.md`.
-8. [~] Ensure first-run seeding is deterministic and idempotent (safe to re-run); record what was
-       seeded and at what schema version. Refs: `crates/mneme_store/DESIGN.md`, `crates/desktop/DESIGN.md`.
+8. [x] Ensure first-run seeding is deterministic and idempotent (safe to re-run); record what was
+       seeded and at what schema version (host now emits `setup_seed_summary` so Status/Diagnostics
+       surfaces dataset/ metamodel versions). Refs: `crates/mneme_store/DESIGN.md`, `crates/desktop/DESIGN.md`.
 9. [x] Provide a “factory reset” / “safe wipe” action gated by explicit confirmation and
        capabilities (for development and recovery). Refs: `crates/desktop/DESIGN.md`,
        `ARCHITECTURE-BOUNDARY.md`, `docs/UX-DESIGN.md`.
