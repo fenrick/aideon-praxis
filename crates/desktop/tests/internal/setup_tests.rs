@@ -92,9 +92,10 @@ async fn setup_state_roundtrips_over_ipc_envelope() {
     assert!(!state.backend);
 
     let state_ref = app.state::<std::sync::Mutex<SetupState>>();
-    let mut guard = state_ref.lock().expect("lock");
-    mark_complete(&mut guard, SetupTask::Frontend);
-    drop(guard);
+    {
+        let mut guard = state_ref.lock().expect("lock");
+        mark_complete(&mut guard, SetupTask::Frontend);
+    }
 
     let response = system_setup_state(
         app.state::<std::sync::Mutex<SetupState>>(),
