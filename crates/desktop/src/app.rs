@@ -21,6 +21,7 @@ use uuid::Uuid;
 
 static SESSION_MARKER_PATH: OnceCell<PathBuf> = OnceCell::new();
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let log_level = log_level();
     tauri::Builder::default()
@@ -42,9 +43,7 @@ pub fn run() {
                 handle_menu_event(app, event);
             });
 
-            let handle = app.handle();
-            let handle_ref = &handle;
-            let previous_session = detect_previous_session(handle_ref);
+            let previous_session = detect_previous_session(&app.handle());
             let session_id = Uuid::new_v4().to_string();
             let _ = logging::init_context(session_id.clone());
             install_panic_hook();
@@ -63,7 +62,7 @@ pub fn run() {
                 );
             }
 
-            if let Some(marker_path) = session_marker_path(handle_ref) {
+            if let Some(marker_path) = session_marker_path(&app.handle()) {
                 register_session_marker_path(marker_path.clone());
                 if let Err(error) = session_marker::persist_marker(&marker_path, &session_id) {
                     log::warn!(
@@ -83,7 +82,7 @@ pub fn run() {
             );
 
             create_windows(app)?;
-            emit_setup_progress(handle_ref, "starting");
+            emit_setup_progress(app.handle(), "starting");
 
             log_event!(
                 severity = 6,
@@ -93,10 +92,10 @@ pub fn run() {
                 correlation_id = "startup"
             );
 
-            let backend_handle = handle.clone();
+            let app_handle = app.handle().clone();
             spawn(async move {
                 sleep(Duration::from_millis(120)).await;
-                if let Err(error) = run_backend_setup(backend_handle).await {
+                if let Err(error) = run_backend_setup(app_handle).await {
                     log::error!(
                         "host: backend setup failed: {} ({})",
                         error.message,
@@ -234,11 +233,11 @@ fn session_marker_path<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> {
 
 fn install_panic_hook() {
     let previous_hook = panic::take_hook();
-    panic::set_hook(Box::new(move |info: &std::panic::PanicHookInfo| {
+    panic::set_hook(Box::new(move |info: &std::panic::PanicInfo| {
         let payload = info.payload();
         let message = payload
             .downcast_ref::<&str>()
-            .copied()
+            .map(|s| *s)
             .or_else(|| payload.downcast_ref::<String>().map(|s| s.as_str()))
             .unwrap_or("panic");
         let location = info.location();

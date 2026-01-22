@@ -7,7 +7,6 @@ export const SYSTEM_IPC_COMMANDS = {
   setupState: 'system_setup_state',
   windowOpen: 'system_window_open',
   factoryReset: 'system_factory_reset',
-  loggingContext: 'system_logging_context',
 } as const;
 
 /**

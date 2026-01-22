@@ -23,13 +23,6 @@ mod util;
 pub use config::PraxisEngineConfig;
 use state::Inner;
 
-/// Metadata emitted when first-run seeding completes.
-#[derive(Clone, Debug)]
-pub struct SeedMetadata {
-    pub dataset_version: String,
-    pub metamodel_version: String,
-}
-
 #[derive(Clone)]
 pub struct PraxisEngine {
     inner: Arc<Mutex<Inner>>,
@@ -120,15 +113,5 @@ impl PraxisEngine {
     pub async fn merge(&self, request: MergeRequest) -> PraxisResult<MergeResponse> {
         let mut guard = self.lock().await;
         ops::merge(&mut guard, request).await
-    }
-
-    pub async fn seed_metadata(&self) -> Option<SeedMetadata> {
-        let guard = self.lock().await;
-        guard.seed_metadata.clone()
-    }
-
-    async fn set_seed_metadata(&self, metadata: SeedMetadata) {
-        let mut guard = self.lock().await;
-        guard.seed_metadata = Some(metadata);
     }
 }

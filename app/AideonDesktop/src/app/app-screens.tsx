@@ -150,7 +150,7 @@ export function SplashScreenRoute() {
   return (
     <FrontendReady enabled={shouldSignalFrontendReady}>
       <PraxisSplashScreen line={currentLine} />
-      {setupError && (
+      {setupError ? (
         <div className="fixed inset-0 flex items-end justify-end p-6">
           <Card className="w-full max-w-md border-destructive/50 bg-card/90 shadow-lg">
             <CardHeader>
@@ -179,7 +179,7 @@ export function SplashScreenRoute() {
             </CardContent>
           </Card>
         </div>
-      )}
+      ) : undefined}
     </FrontendReady>
   );
 }
@@ -188,64 +188,11 @@ export function SplashScreenRoute() {
  * Minimal host status window.
  */
 export function StatusScreen() {
-  const [seedSummary, setSeedSummary] = useState<
-    | {
-        readonly datasetVersion?: string;
-        readonly metamodelVersion?: string;
-      }
-    | undefined
-  >();
-
-  useEffect(() => {
-    if (!isTauriRuntime()) {
-      return;
-    }
-    let cancelled = false;
-    let unlistenSeed: undefined | (() => void);
-    const subscribe = async () => {
-      try {
-        const { listen } = await import('@tauri-apps/api/event');
-        unlistenSeed = await listen<{
-          readonly datasetVersion?: string;
-          readonly metamodelVersion?: string;
-        }>(HOST_EVENT_NAMES.setupSeedSummary, (event) => {
-          if (cancelled) {
-            return;
-          }
-          let datasetVersion: string | undefined;
-          if (typeof event.payload.datasetVersion === 'string') {
-            datasetVersion = event.payload.datasetVersion;
-          }
-          let metamodelVersion: string | undefined;
-          if (typeof event.payload.metamodelVersion === 'string') {
-            metamodelVersion = event.payload.metamodelVersion;
-          }
-          if (datasetVersion || metamodelVersion) {
-            setSeedSummary({ datasetVersion, metamodelVersion });
-          }
-        });
-      } catch {
-        // ignore missing tauri event module (browser preview)
-      }
-    };
-    subscribe().catch(() => false);
-    return () => {
-      cancelled = true;
-      unlistenSeed?.();
-    };
-  }, []);
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
       <div className="rounded-lg border border-border/70 bg-card/90 px-6 py-4 shadow-md">
         <p className="text-sm font-medium">Host status</p>
         <p className="text-xs text-muted-foreground">All services initialising…</p>
-        {seedSummary && (
-          <div className="mt-2 space-y-1 rounded border border-border/40 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-            <p>Baseline dataset: {seedSummary.datasetVersion ?? 'unknown'}</p>
-            <p>Schema version: {seedSummary.metamodelVersion ?? 'unknown'}</p>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -309,8 +256,10 @@ export function SettingsScreen() {
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{option.label}</span>
-                      {option.id === 'corp-blue' && <Badge variant="secondary">Default</Badge>}
-                      {option.source && <Badge variant="outline">{option.source}</Badge>}
+                      {option.id === 'corp-blue' ? (
+                        <Badge variant="secondary">Default</Badge>
+                      ) : undefined}
+                      {option.source ? <Badge variant="outline">{option.source}</Badge> : undefined}
                     </div>
                     <p className="text-xs text-muted-foreground">{option.description}</p>
                   </div>

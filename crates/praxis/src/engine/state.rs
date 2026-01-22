@@ -1,6 +1,5 @@
 //! Praxis engine-internal state representation.
 
-use super::SeedMetadata;
 use crate::engine::config::PraxisEngineConfig;
 use crate::error::PraxisResult;
 use crate::graph::GraphSnapshot;
@@ -17,7 +16,6 @@ pub(super) struct Inner {
     pub(super) config: PraxisEngineConfig,
     pub(super) store: Arc<dyn Store>,
     pub(super) registry: Arc<MetaModelRegistry>,
-    pub(super) seed_metadata: Option<SeedMetadata>,
 }
 
 #[derive(Clone, Debug)]
@@ -53,7 +51,6 @@ impl Inner {
             config,
             store,
             registry,
-            seed_metadata: None,
         })
     }
 

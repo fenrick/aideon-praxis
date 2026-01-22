@@ -13,7 +13,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, Wry};
 use tokio::sync::{Mutex, oneshot};
 
-use crate::setup::{SetupSeedSummary, emit_setup_progress, emit_setup_seed_summary};
+use crate::setup::emit_setup_progress;
 
 /// Shared application state giving command handlers access to the temporal engine.
 pub struct WorkerState {
@@ -81,7 +81,6 @@ pub async fn init_temporal(app: &AppHandle<Wry>) -> Result<(), String> {
     let engine = PraxisEngine::with_sqlite(&db_path)
         .await
         .map_err(|err| format!("temporal engine init failed: {err}"))?;
-    let seed_metadata = engine.seed_metadata().await;
     let temporal = TemporalEngine::from_engine(engine);
     let mneme_root = storage_root.join("mneme");
     fs::create_dir_all(&mneme_root).map_err(|err| format!("failed to prepare mneme dir: {err}"))?;
@@ -90,13 +89,6 @@ pub async fn init_temporal(app: &AppHandle<Wry>) -> Result<(), String> {
         .map_err(|err| format!("mneme store init failed: {err}"))?;
     app.manage(WorkerState::new(temporal, mneme));
     info!("host: temporal engine registered with application state");
-    if let Some(metadata) = seed_metadata {
-        let summary = SetupSeedSummary {
-            dataset_version: metadata.dataset_version,
-            metamodel_version: metadata.metamodel_version,
-        };
-        emit_setup_seed_summary(app, &summary);
-    }
     Ok(())
 }
 

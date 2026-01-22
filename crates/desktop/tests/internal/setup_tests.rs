@@ -1,8 +1,8 @@
 #![cfg(not(target_os = "windows"))]
 use super::*;
 use std::time::Duration;
-use tauri::Manager;
 use tempfile::tempdir;
+use tauri::Manager;
 
 #[test]
 fn parse_task_accepts_known_values() {

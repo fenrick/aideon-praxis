@@ -1,6 +1,5 @@
 //! Praxis engine data seeding and bootstrapping.
 
-use super::SeedMetadata;
 use crate::PraxisEngine;
 use crate::dataset::BaselineDataset;
 use crate::engine::ops;
@@ -13,7 +12,6 @@ use std::collections::BTreeMap;
 impl PraxisEngine {
     /// Ensure the commit log contains an initial design sample commit.
     pub async fn ensure_seeded(&self) -> PraxisResult<()> {
-        let dataset = BaselineDataset::embedded()?;
         let needs_seed = {
             let inner = self.lock().await;
             inner
@@ -23,11 +21,12 @@ impl PraxisEngine {
                 .is_none()
         };
 
-        if needs_seed {
-            self.bootstrap_with_dataset(&dataset).await?;
+        if !needs_seed {
+            return Ok(());
         }
 
-        self.record_seed_metadata(&dataset).await?;
+        let dataset = BaselineDataset::embedded()?;
+        self.bootstrap_with_dataset(&dataset).await?;
         Ok(())
     }
 
@@ -115,18 +114,5 @@ impl PraxisEngine {
         }
 
         ops::commit(&mut inner, request).await
-    }
-
-    async fn record_seed_metadata(&self, dataset: &BaselineDataset) -> PraxisResult<()> {
-        let metamodel_version = {
-            let guard = self.lock().await;
-            guard.registry.document().version.clone()
-        };
-        let metadata = SeedMetadata {
-            dataset_version: dataset.version.clone(),
-            metamodel_version,
-        };
-        self.set_seed_metadata(metadata).await;
-        Ok(())
     }
 }

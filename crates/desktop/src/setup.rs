@@ -273,7 +273,7 @@ pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), HostError> {
         job_failed(
             "backend_setup",
             "setup",
-            error_message.code,
+            &error_message.code,
             &error_message.message,
         );
         return Err(error_message);

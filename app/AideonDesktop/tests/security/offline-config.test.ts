@@ -6,7 +6,7 @@ describe('offline-first Next config', () => {
   });
 
   it('exports a static app with no production asset prefix', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
+    process.env.NODE_ENV = 'production';
     const { default: nextConfig } = await import('../../next.config.mjs');
     expect(nextConfig.output).toBe('export');
     expect(nextConfig.assetPrefix).toBeUndefined();
@@ -14,8 +14,8 @@ describe('offline-first Next config', () => {
   });
 
   it('limits assetPrefix to loopback host in development', async () => {
-    vi.stubEnv('NODE_ENV', 'development');
-    vi.stubEnv('TAURI_DEV_HOST', '127.0.0.1');
+    process.env.NODE_ENV = 'development';
+    process.env.TAURI_DEV_HOST = '127.0.0.1';
     const { default: nextConfig } = await import('../../next.config.mjs');
     expect(nextConfig.assetPrefix).toContain('127.0.0.1:1420');
   });

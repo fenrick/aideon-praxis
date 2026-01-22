@@ -38,7 +38,5 @@ describe('Setup contract', () => {
     expect(eventNames.has('setup_frontend_ready_ack')).toBe(true);
     expect(eventNames.has('setup_progress')).toBe(true);
     expect(eventNames.has('setup_failed')).toBe(true);
-    expect(eventNames.has('setup_seed_summary')).toBe(true);
-    expect(eventNames.has('setup_seed_summary')).toBe(true);
   });
 });
