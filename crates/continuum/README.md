@@ -24,6 +24,6 @@ checks.
 
 ## Design and architecture
 
-Continuum follows the adapter and orchestration guidance in `ARCHITECTURE-BOUNDARY.md`. As more
+Continuum follows the adapter and orchestration guidance in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`. As more
 connectors and schedules are added, capture internal design in
 `crates/continuum/DESIGN.md`.

@@ -84,22 +84,8 @@ For the full script list, use `pnpm -w run` (and see root `package.json`).
 
 ---
 
-## 4) Issues workflow (optional)
-
-The repo includes helpers that use `gh` and can derive the repo slug from the git remote. You only
-need `AIDEON_GH_REPO` if you’re working with a non-standard remote.
-
-```bash
-pnpm run issues:start 123
-pnpm run issues:dod
-pnpm run issues:mirror
-```
-
----
-
 ## Troubleshooting
 
-- `gh: not logged in`: run `gh auth login` or set `GH_TOKEN` in your environment.
 - Rust toolchain missing: install rustup and run `rustup default stable`.
 - Tauri build failures: confirm system dependencies for your OS; retry with `pnpm tauri dev`.
 - WebDriver failures on Linux: install `webkit2gtk-driver` and `xvfb` (headless); ensure `tauri-driver` is in `PATH`.

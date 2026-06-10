@@ -23,15 +23,15 @@ Rust engines.
 - Rust checks (workspace): `pnpm run host:lint && pnpm run host:check`
 - Rust tests (host only): `cargo test -p aideon_desktop`
 
-See `docs/GETTING-STARTED.md` for host + renderer dev workflow.
+See `docs/02-standards/GETTING-STARTED.md` for host + renderer dev workflow.
 
 ## Design and architecture
 
 Host/renderer boundaries, capabilities, and time-first engine contracts are described in
-`ARCHITECTURE-BOUNDARY.md` and `docs/DESIGN.md`.
+`docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and `docs/03-design/DESIGN.md`.
 
 ## Related global docs
 
-- Architecture and layering: `ARCHITECTURE-BOUNDARY.md`
-- Coding standards: `docs/CODING-STANDARDS.md`
-- Testing strategy: `docs/TESTING-STRATEGY.md`
+- Architecture and layering: `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`
+- Coding standards: `docs/02-standards/CODING-STANDARDS.md`
+- Testing strategy: `docs/02-standards/TESTING-STRATEGY.md`

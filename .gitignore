@@ -324,6 +324,3 @@ target
 .env.example
 
 **/gen/
-
-docs/issues/
-docs/schedule/

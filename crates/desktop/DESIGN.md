@@ -1231,7 +1231,7 @@ The host is **not** responsible for:
 - traversal logic
 - rendering logic
 
-This aligns with `ARCHITECTURE-BOUNDARY.md` where host “wraps engine traits” and enforces “no open TCP ports” in desktop mode.
+This aligns with `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` where host “wraps engine traits” and enforces “no open TCP ports” in desktop mode.
 
 ---
 

@@ -12,19 +12,37 @@ code toward the modern stack instead of extending old seams.
 
 Before making changes, agents should read:
 
+- [`docs/00-index/README.md`](docs/00-index/README.md) (docs entry point)
 - Root `README.md` (suite overview and modules)
-- `docs/DESIGN.md` (suite-level design and principles)
-- `ARCHITECTURE-BOUNDARY.md` (layers, adapters, time-first boundaries)
-- `docs/CODING-STANDARDS.md` (coding rules and boundaries)
-- `docs/TESTING-STRATEGY.md` (testing expectations)
+- [`docs/03-design/DESKTOP-FIRST-WORKSPACE.md`](docs/03-design/DESKTOP-FIRST-WORKSPACE.md) and
+  [`docs/06-adrs/ADRS.md`](docs/06-adrs/ADRS.md) (the canonical-authority thesis)
+- [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md) (suite-level design and principles)
+- [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md) (layers, adapters, time-first boundaries)
+- [`docs/02-standards/CODING-STANDARDS.md`](docs/02-standards/CODING-STANDARDS.md) (coding rules and boundaries)
+- [`docs/02-standards/TESTING-STRATEGY.md`](docs/02-standards/TESTING-STRATEGY.md) (testing expectations)
 - The `README.md` and `DESIGN.md` for the module they are working in
 
 ## Documentation index
 
-- **Canonical**: `README.md`, `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`, `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`, `docs/DESIGN-SYSTEM.md`, `docs/UX-DESIGN.md`, and module-level `README.md` + `DESIGN.md`.
+- **Start here**: [`docs/00-index/README.md`](docs/00-index/README.md).
+- **Canonical**: the numbered tree under `docs/` (`00-index` … `06-adrs`) plus module-level
+  `README.md` + `DESIGN.md` in each crate. Key docs:
+  [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md),
+  [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md),
+  [`docs/02-standards/CODING-STANDARDS.md`](docs/02-standards/CODING-STANDARDS.md),
+  [`docs/02-standards/TESTING-STRATEGY.md`](docs/02-standards/TESTING-STRATEGY.md),
+  [`docs/03-design/DESIGN-SYSTEM.md`](docs/03-design/DESIGN-SYSTEM.md),
+  [`docs/03-design/UX-DESIGN.md`](docs/03-design/UX-DESIGN.md).
+- **Contracts**: [`docs/04-contracts/`](docs/04-contracts/) — the typed IPC surface and the
+  temporal, projection, and accepted-work contracts.
+- **Governance**: durable decisions follow
+  [`docs/02-standards/DESIGN-GOVERNANCE.md`](docs/02-standards/DESIGN-GOVERNANCE.md) and are
+  written as ADRs using [`docs/02-standards/ADR-FORMAT.md`](docs/02-standards/ADR-FORMAT.md).
 - Legacy Svelte renderer (`app/PraxisDesktop/`) has been removed; ignore any remaining references to it.
 
-> **Scope:** These instructions apply exclusively to the `aideon-praxis` codebase. Do not spend time optimising for downstream consumers, SDKs, or hypothetical adopters outside this repository unless explicitly directed in a task.
+> **Scope:** These instructions apply to the `aideon-desktop` codebase (Aideon Suite). Do not
+> spend time optimising for downstream consumers, SDKs, or hypothetical adopters outside this
+> repository unless explicitly directed in a task.
 
 ## Who this is for
 
@@ -66,7 +84,7 @@ design docs require it.
 
 ## Repository boundaries (monorepo)
 
-High-level module boundaries are documented in `ARCHITECTURE-BOUNDARY.md` and in each module’s
+High-level module boundaries are documented in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and in each module’s
 `README.md`/`DESIGN.md` (see the “Aideon Suite modules” table in `README.md`). Never cross those
 boundaries with imports or side-effects (e.g., no renderer ↔ DB access, no engines importing Tauri).
 
@@ -75,7 +93,7 @@ boundaries with imports or side-effects (e.g., no renderer ↔ DB access, no eng
 This repository is an evergreen, fast-evolving codebase. Code, docs, and patterns are continuously improved and may change frequently. When resolving conflicts or ambiguity, use the following order of precedence:
 
 - **1. Code on `main`** is always authoritative.
-- **2. Suite-level docs:** `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`, `docs/CODING-STANDARDS.md`, `docs/TESTING-STRATEGY.md`, `docs/ROADMAP.md`.
+- **2. Suite-level docs:** `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`, `docs/02-standards/CODING-STANDARDS.md`, `docs/02-standards/TESTING-STRATEGY.md`.
 - **3. Module docs:** `<module>/README.md`, `<module>/DESIGN.md`.
 - **4. Supporting docs in `docs/`** (not listed above).
 - **Anything else** is informational only and does not override the above.
@@ -115,7 +133,7 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 **When touching a boundary (Rust ↔ host ↔ renderer)**
 
 - Update/validate DTO types on both sides (TS in `app/PraxisDtos`, Rust in `crates/mneme`).
-- Update `docs/CONTRACTS-AND-SCHEMAS.md` when schemas or IPC error shapes change.
+- Update `docs/04-contracts/CONTRACTS-AND-SCHEMAS.md` when schemas or IPC error shapes change.
 - Ensure error structures are documented and consistent across layers before merging.
 
 **When adding or changing UI components (Praxis Canvas)**
@@ -136,7 +154,7 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 - Analytics in the Rust worker crates (Chrona/Metis) with tests and metrics.
 - Connectors via Continuum scheduler (e.g., CMDB), CSV wizard features, PII redaction,
   encryption‑at‑rest.
-- Docs: module `README.md`/`DESIGN.md`, global README, `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`,
+- Docs: module `README.md`/`DESIGN.md`, global README, `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`,
   ROADMAP, C4 diagrams-as-code.
 
 ## Examples (golden patterns)
@@ -148,17 +166,10 @@ host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicabl
 
 ## Issues, PRs & tracking
 
-### GitHub as source of truth
+### Tracking
 
-- Source of truth is GitHub issues and a Projects v2 board. Local Markdown under `docs/issues/` is a mirror only.
-- Use the provided CLI helpers (backed by `gh`) to keep tracking tight:
-  - `pnpm run issues:start <#>`: assign yourself, add `status/in-progress`, create local branch `issue-#/slug`, sync to Project, mirror docs.
-  - `pnpm run issues:split <parent#> --items "Subtask A" "Subtask B"` (or `--file tasks.txt`): creates linked secondary issues, updates parent checklist, syncs/mirrors.
-  - `pnpm run issues:project` (or `:dry`): ensure all repo issues are on the configured Project and set its `Status` from labels per `.env` mapping.
-  - `pnpm run issues:dod`: ensures a “Definition of Done” section exists on all `status/in-progress` issues.
-  - `pnpm run issues:linkify`: comments on issues with links to recent PRs.
-  - `pnpm run issues:backfill [--since YYYY-MM-DD] [--close]`: comments on issues referenced in commits on `main`; with `--close` will close issues referenced by Fixes/Closes/Resolves.
-  - `pnpm run issues:mirror`: refresh local docs/issues from GitHub; pre‑push enforces freshness via `issues:mirror:check`.
+- Issues and pull requests are tracked on GitHub. Reference the issue a change belongs to
+  in the PR, and follow the Definition of Done below.
 
 ### Environment
 
@@ -166,19 +177,9 @@ Remember that this is a desktop application: everything runs inside packaged bin
 
 The Tauri stack already ships with helpers that are safe to use in these environments: the `tauri-plugin-fs` plugin (file system helpers), `tauri-plugin-dialog` (choose files/directories, prompts), `tauri-plugin-window-state` (persist size/position), etc. Reach for these plugins instead of rolling your own file handling when wiring renderer/host logic so you benefit from the packaged, multiplatform behavior they expose.
 
-Copy `.env.example` to `.env` and set:
-
-- `AIDEON_GH_REPO=owner/repo`
-- `AIDEON_GH_PROJECT_OWNER=<org_or_user>`
-- `AIDEON_GH_PROJECT_NUMBER=<number>`
-- `AIDEON_GH_STATUS_FIELD=Status`
-- `AIDEON_GH_STATUS_MAP={"status/todo":"Todo","status/in-progress":"In Progress","status/blocked":"Blocked","status/done":"Done"}`
-
-Token scopes required: `repo`, `project`, `read:project`, and `read:org` if the project is under an organization. Token may be stored in `.env` (not committed). The `.aideon/` local cache and mirrors are ignored via `.gitignore`.
-
 ### Definition of Done (DoD)
 
-For any item labeled `status/in-progress`, ensure the issue body contains this section (added via `pnpm run issues:dod`):
+For any item labeled `status/in-progress`, ensure the issue body contains this section:
 
 - CI: lint, typecheck, unit tests updated
 - Docs: user & dev docs updated (README/CHANGELOG)
@@ -223,7 +224,7 @@ defaults consistent with this guide.
 ## Coding standards
 
 For coding standards (quality gates, coverage targets, tooling, and CI rules), see
-`docs/CODING-STANDARDS.md`. For testing expectations, see `docs/TESTING-STRATEGY.md`.
+`docs/02-standards/CODING-STANDARDS.md`. For testing expectations, see `docs/02-standards/TESTING-STRATEGY.md`.
 
 ## Per-module guidance (where to look)
 
@@ -233,12 +234,12 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
   - Tests: JS/TS tests via `pnpm run node:test` (Vitest).
 
 - **Aideon Host (`crates/desktop`)**
-  - Read: `crates/desktop/README.md`, `crates/desktop/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`.
+  - Read: `crates/desktop/README.md`, `crates/desktop/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`.
   - Constraints: no renderer HTTP; no open ports in desktop mode; typed commands only.
   - Tests: Rust tests via `cargo test -p aideon_desktop`; workspace checks via `pnpm run host:lint && pnpm run host:check`.
 
 - **Engines (`crates/praxis`, `crates/chrona`, `crates/metis`, `crates/continuum`, `crates/mneme`)**
-  - Read: each crate’s `README.md`, `DESIGN.md` (where present), `docs/DESIGN.md`, `ARCHITECTURE-BOUNDARY.md`.
+  - Read: each crate’s `README.md`, `DESIGN.md` (where present), `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`.
   - Constraints: no Tauri or UI dependencies; obey time-first commit model and adapter boundaries.
   - Tests: crate-level `cargo test -p <crate>` plus workspace Rust checks.
 
@@ -248,7 +249,7 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 
 – Node 24, React 19. Strict TS config; ESLint + Prettier. All new surface/canvas work targets the
 React + React Flow + shadcn/ui stack
-described in `docs/UX-DESIGN.md`, `docs/DESIGN-SYSTEM.md`, and
+described in `docs/03-design/UX-DESIGN.md`, `docs/03-design/DESIGN-SYSTEM.md`, and
 `app/AideonDesktop/docs/praxis-canvas/DESIGN.md`.
 
 - Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict
@@ -280,7 +281,7 @@ described in `docs/UX-DESIGN.md`, `docs/DESIGN-SYSTEM.md`, and
 ### Docs
 
 - Markdown, markdownlint clean (no heading jumps; 2‑space nested bullets).
-- Diagrams‑as‑code preferred (Structurizr DSL, Mermaid, PlantUML) stored under `docs/c4/`.
+- Diagrams‑as‑code preferred (Structurizr DSL, Mermaid, PlantUML) stored under `docs/01-architecture/c4/`.
 - When updating docs, prefer editing existing suite/module docs; avoid creating new `.md`
   files unless they are a new module `README.md`/`DESIGN.md`.
 
@@ -320,8 +321,8 @@ The current worker jobs and time APIs are defined by engine contracts and module
 
 ## Performance & SLO gates
 
-- Performance SLOs for temporal APIs and analytics are defined in `docs/ROADMAP.md` (SLO section) and
-  in module design docs for engine crates. When you change code that could affect performance, call
+- Performance SLOs for temporal APIs and analytics are defined in the module design docs for the
+  engine crates. When you change code that could affect performance, call
   out expected impact in **CHECKS** and add a quick benchmark or test as appropriate.
 
 ## Testing guidance

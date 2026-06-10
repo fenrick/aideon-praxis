@@ -22,15 +22,24 @@ engines evolve behind typed boundaries.
 | Chrona Visualisation   | `crates/chrona`     | Time/scenario UX primitives and temporal helpers.                             |
 | Continuum Orchestrator | `crates/continuum`  | Orchestration, scheduling, connectors.                                        |
 
-## Central design docs
+## Documentation
 
-- Suite overview: `docs/DESIGN.md`
-- Boundaries: `ARCHITECTURE-BOUNDARY.md`
-- Host runtime: `crates/desktop/DESIGN.md`
-- Praxis semantics: `crates/praxis/DESIGN.md`
-- Mneme storage: `crates/mneme/DESIGN.md`
-- UX contract: `docs/UX-DESIGN.md`
+Docs use a numbered tree. **Start at [`docs/00-index/README.md`](docs/00-index/README.md).**
+
+- Desktop-first thesis: [`docs/03-design/DESKTOP-FIRST-WORKSPACE.md`](docs/03-design/DESKTOP-FIRST-WORKSPACE.md)
+- Architecture decisions: [`docs/06-adrs/ADRS.md`](docs/06-adrs/ADRS.md) — the canonical
+  authority is the **portable workspace**, not a database file (see
+  [ADR-0001](docs/06-adrs/ADR-0001-workspace-is-canonical-authority.md)).
+- Boundaries: [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md)
+- Suite overview: [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md) ·
+  UX contract: [`docs/03-design/UX-DESIGN.md`](docs/03-design/UX-DESIGN.md)
+- Module design: per-module docs under [`docs/05-modules/`](docs/05-modules/)
+  (`mneme`, `praxis`, `metis`, `chrona`, `continuum`, `host`), with deeper crate notes in
+  each `crates/*/DESIGN.md`.
+- Contracts: [`docs/04-contracts/`](docs/04-contracts/) — typed IPC, temporal & scenario
+  context, projection & invalidation, accepted-work & events.
 
 ## Getting started
 
-See `docs/GETTING-STARTED.md`. For available scripts, use `pnpm -w run`.
+See [`docs/02-standards/GETTING-STARTED.md`](docs/02-standards/GETTING-STARTED.md).
+For available scripts, use `pnpm -w run`.

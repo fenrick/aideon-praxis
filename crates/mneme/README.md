@@ -59,4 +59,4 @@ schema and APIs.
 ## Design and architecture
 
 `crates/mneme/DESIGN.md` is the authoritative design spec. Update it when storage semantics or
-APIs change. Keep `docs/storage/SQLITE.md` aligned with the current schema and migration strategy.
+APIs change. Keep `docs/05-modules/mneme/SQLITE.md` aligned with the current schema and migration strategy.

@@ -6,7 +6,7 @@ environment, and what we expect in issues and pull requests.
 ## Values
 
 - **Time-first, graph-native:** keep the meta-model and `state_at()` semantics authoritative.
-- **Commits define time:** follow the standards in `ARCHITECTURE-BOUNDARY.md#time-&-commit-model-—-authoring-standards` when modelling change history.
+- **Commits define time:** follow the standards in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md#time-&-commit-model-—-authoring-standards` when modelling change history.
 - **Local-first, cloud-ready:** do not break desktop mode; design for a clean switch to server.
 - **Security by default:** safe IPC, PII redaction, least privilege.
 - **Evidence & tests:** measurable SLOs; PRs come with tests/docs.
@@ -68,7 +68,7 @@ Quality gates
 - Verify locally:
   - App: `pnpm run node:test:coverage`
   - Rust crates: `cargo test --all --all-targets` (use coverage tooling when available)
-- See `docs/CODING-STANDARDS.md` for full coding standards and CI rules.
+- See `docs/02-standards/CODING-STANDARDS.md` for full coding standards and CI rules.
 
 ## Repository structure
 
@@ -77,7 +77,7 @@ Quality gates
 - `crates/{engine, chrona, metis, continuum, mneme, aideon_praxis}` — domain crates for graph/time/analytics, orchestration, persistence, and the facade.
 - `app/AideonDesktop` — React/Tauri renderer (canvas, design system, adapters, DTOs).
 - `docs/` — Architecture content, design docs, C4 diagrams.
-- `scripts/` — Minimal tooling entrypoints (issues.py). Legacy node scripts removed.
+- `scripts/` — Minimal tooling entrypoints (version injection, coverage).
 
 - **Adapters are contracts.** Do not leak backend specifics into the renderer.
 - **Worker traits stay typed.** No open TCP ports in desktop mode; remote adapters must preserve the same command surface.
@@ -101,8 +101,8 @@ Quality gates
 
 - Link an issue and milestone.
 - Describe problem, approach, trade-offs, and testing.
-- Update docs/ROADMAP if APIs or modules change.
-- Keep `ARCHITECTURE-BOUNDARY.md` accurate when touching host/renderer/worker boundaries.
+- Update the relevant design or module docs if APIs or modules change.
+- Keep `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` accurate when touching host/renderer/worker boundaries.
 - Add/adjust tests and SLO baselines where relevant.
 
 ### PR checklist
@@ -116,9 +116,9 @@ Quality gates
 When a change affects the **RPC boundary**, **adapters**, **time semantics**, or **security posture**,
 update:
 
-- `ARCHITECTURE-BOUNDARY.md`
+- `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`
 - The relevant module `DESIGN.md`
-- Any affected suite docs (`docs/DESIGN.md`, `docs/UX-DESIGN.md`)
+- Any affected suite docs (`docs/03-design/DESIGN.md`, `docs/03-design/UX-DESIGN.md`)
 
 ## Issue hygiene
 
