@@ -135,3 +135,7 @@ _Avoid_: report, diagram, document, export (those are forms or outputs, not the 
 **Artefact result**:
 The output of executing an **Artefact** at a specific **Viewpoint** — a bounded, content-classified, provenance-carrying projection **derived from** the resolved **Snapshot** and shaped by the artefact's form, scope, inclusion rules, classification rules, and presentation contract. It is _not_ the snapshot: one snapshot can back many artefact results, and one artefact yields different results at different viewpoints.
 _Avoid_: snapshot (a result is derived from a snapshot, not equal to it); artefact (that is the reusable definition).
+
+**Form**:
+The presentation shape of an artefact result — how the result is structured and rendered. A controlled but extensible set: view, catalogue, matrix, map, report, page. A form shapes the result contract (a matrix has rows and columns; a map has nodes and relationships; a report has sections) but does not change the underlying twin, viewpoint, facts, or artefact family.
+_Avoid_: artefact type (Type means the metamodel kind of an entity/relationship); diagram (only one form among several); treating form as the business question (that belongs to the Artefact and artefact family).
