@@ -1,9 +1,8 @@
 version: '1.0.0'
 released: 2025-11-11
 description: >
-  Canonical baseline dataset spanning value streams, capabilities, applications,
-  plan events, and technology so new workspaces immediately reflect a realistic
-  digital-twin graph.
+  Canonical baseline dataset spanning value streams, capabilities, applications, plan events, and technology so new workspaces immediately reflect a realistic digital-twin graph.
+
 defaults:
   branch: main
   author: baseline
