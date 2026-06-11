@@ -180,15 +180,8 @@ mod telemetry_tests {
     use logtest::Logger;
     use serde_json::Value;
 
-    // `logtest` captures the global `log` facade. Serialise the telemetry tests that emit
-    // log records so they cannot pollute each other's captured output under parallel runs.
-    static TELEMETRY_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
     #[tokio::test]
     async fn respond_with_request_wraps_success() {
-        let _telemetry_guard = TELEMETRY_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let request = IpcRequest {
             request_id: "req-ok".to_string(),
             payload: "payload".to_string(),
@@ -208,9 +201,6 @@ mod telemetry_tests {
 
     #[tokio::test]
     async fn respond_with_request_wraps_failure() {
-        let _telemetry_guard = TELEMETRY_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let request = IpcRequest {
             request_id: "req-err".to_string(),
             payload: (),
@@ -234,9 +224,6 @@ mod telemetry_tests {
 
     #[tokio::test]
     async fn record_command_propagates_successful_result() {
-        let _telemetry_guard = TELEMETRY_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let result =
             record_command::<_, i32>("record_success", "corr-id", async { Ok(32i32) }).await;
         assert_eq!(result.unwrap(), 32);
@@ -244,9 +231,6 @@ mod telemetry_tests {
 
     #[tokio::test]
     async fn record_command_propagates_error() {
-        let _telemetry_guard = TELEMETRY_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let err = record_command::<_, ()>("record_failure", "corr-id", async {
             Err::<(), HostError>(HostError::internal("boom"))
         })
@@ -258,9 +242,6 @@ mod telemetry_tests {
 
     #[test]
     fn telemetry_logging_records_milestones() {
-        let _telemetry_guard = TELEMETRY_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut logger = Logger::start();
         command_invoked("setup:init", "corr-id");
         command_completed("setup:init", "corr-id", Duration::from_millis(312));

@@ -153,6 +153,10 @@ __MACOSX/
 .LSOverride
 # macOS custom volume icon file (Icon\r). The '?' matches the carriage-return byte.
 Icon?
+# The rule above matches the `icons/` directory case-insensitively on macOS; keep the
+# Tauri application icons tracked.
+!/src-tauri/icons/
+!/src-tauri/icons/**
 
 # Thumbnails
 ._*
