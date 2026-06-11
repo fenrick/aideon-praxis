@@ -30,7 +30,7 @@ The renderer is a presentation layer, not a durable store. It consumes read proj
 
 ## Consequences
 
-- The desktop UI is a static React bundle packaged into Tauri, not a server-rendered shell. The existing `app/ + src/` is treated as the design-system/interaction seed.
+- The desktop UI is a static React bundle packaged into Tauri, not a server-rendered shell. The existing `src/` renderer is treated as the design-system/interaction seed.
 - The desktop default is a local single-user auth context with no browser session. A hosted auth adapter (bearer/JWKS) is a deployment variant, not the primary model.
 - Security relies on capability scoping plus, for sharing, **filtered exports** and (later) encryption — role metadata inside a cleartext workspace is policy, not enforcement.
 - The accepted-work contract is specified in [`../04-contracts/ACCEPTED-WORK-AND-EVENTS.md`](../04-contracts/ACCEPTED-WORK-AND-EVENTS.md).

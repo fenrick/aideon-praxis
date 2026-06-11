@@ -2,7 +2,7 @@
 
 What each module's tests must cover. These are the minimum obligations on top of the layer rules ([test-layers.md](./test-layers.md)) and the boundary discipline ([boundary-and-contract-tests.md](./boundary-and-contract-tests.md)); the coverage targets are in [coverage-and-gates.md](./coverage-and-gates.md).
 
-## `app/ + src/` (Renderer)
+## `src/` (Renderer)
 
 - **Unit:** adapters, hooks, store reducers, utility functions.
 - **Contract:** all IPC commands in `ipc-manifest.json` ([boundary-and-contract-tests.md](./boundary-and-contract-tests.md)).
