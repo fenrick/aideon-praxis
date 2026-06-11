@@ -80,6 +80,22 @@ _Avoid_: branch, variant, what-if, version (scenario is the canonical term); lay
 The "which part" coordinate of a viewpoint — the selection that narrows a question to a slice of the twin (a snapshot, diff, export, impact, centrality, or any query). Composable, not one fixed mechanism: select by type, by explicit entity set, by traversal from seed refs (e.g. dependencies within N hops), by relationship filter, by attribute filter, and later by named saved scopes. Scope changes what is _included_ in the question and answer; it never changes the underlying twin.
 _Avoid_: filter, query, selection, view (those are partial mechanisms; scope is the composable selection coordinate as a whole).
 
+**Content classification**:
+A per-claim axis stating _what kind of claim_ a fact carries — **Asserted**, **Inferred**, or **Generated**. Orthogonal to **layer** (actual/plan/forecast/…) and to the producing **Change Event** (what authored the change): a fact has a layer, a content classification, and an asserted time independently.
+_Avoid_: provenance (that is the source/origin; content classification is the claim kind), confidence (a separate quality signal).
+
+**Asserted** (content):
+A claim that has been explicitly stated or accepted as a claim — by a user, source system, import, or approved process. The controlled truth of the model; not silently overwritten by automation.
+_Avoid_: confusing with **asserted time** — asserted time is _when_ the claim entered canonical history; Asserted content is _what kind_ of claim it is. A fact can be Asserted, Inferred, or Generated content, each with its own asserted time. (Do not rename to "stated"/"authored"; Asserted is canonical.)
+
+**Inferred** (content):
+A claim the system derived from asserted facts via declared rules, structure, or analytics. Traceable to its inputs and automatically reconsidered when they change. Grounded in assertions, but not itself a human assertion.
+_Avoid_: computed, calculated (acceptable informally, but Inferred is the canonical classification).
+
+**Generated** (content):
+A claim produced by an LLM/ML process (summary, suggested mapping, draft, annotation). A suggestion until accepted. Acceptance is a **new operation** that records an Asserted claim — the original Generated item is never mutated in place and remains traceable as provenance.
+_Avoid_: AI content, draft (Generated is the canonical classification); treating Generated as fact before acceptance.
+
 **Change Event**:
 The user-facing authoring object: it captures intent and context — owner, rationale, source, approval state, grouping, dependencies, lifecycle. When applied it compiles into one or more **operations**. **Plan Event** is a subtype that authors a non-actual layer; other subtypes represent observation, import, reconciliation, or correction (which may author the actual layer).
 _Avoid_: operation (an op is the canonical storage mutation a Change Event compiles into), transaction, command (Change Event is the canonical term for the authoring object).
