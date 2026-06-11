@@ -336,3 +336,17 @@ CHECKS
 NOTES
 
 - Next: add SVG compare export and benchmark on 50k/200k dataset.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues (`aideon-ai/aideon-desktop`) via the `gh` CLI; issue forms live in `.github/ISSUE_TEMPLATE/` and the repo carries a `type/area/module/priority/status` label taxonomy. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles map 1:1 to existing repo labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` at the repo root (created lazily) + ADRs at `docs/06-adrs/`. See `docs/agents/domain.md`.

@@ -19,3 +19,4 @@ These ADRs establish a single cross-runtime authority: **the portable workspace 
 | [0005](./ADR-0005-sync-and-conflict-model.md)            | Sync and conflict model                          | Proposed | Stable seam + deferred    |
 | [0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md) | Tauri trust boundary and typed IPC               | Accepted | Invariant + stable seam   |
 | [0007](./ADR-0007-deterministic-package-export.md)       | Deterministic `.aideonpkg` export/import         | Proposed | Stable seam               |
+| [0008](./ADR-0008-diff-compares-two-viewpoints.md)       | Diffs compare two viewpoints; delta kind derived | Accepted | Stable seam               |
