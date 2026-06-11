@@ -31,7 +31,7 @@ Aideon Desktop has six contract families. Error-envelope standards apply across 
 
 ## 1) IPC Envelope Contracts
 
-Defined in `crates/desktop/src/ipc.rs`. All IPC commands use the same request and response shapes.
+Defined in `src-tauri/src/ipc.rs`. All IPC commands use the same request and response shapes.
 
 ### IpcRequest
 
@@ -138,7 +138,7 @@ See [TEMPORAL-AND-SCENARIO-CONTEXT.md](TEMPORAL-AND-SCENARIO-CONTEXT.md) for the
 
 ## 3) Mneme Store Operation Contracts
 
-Defined in `crates/desktop/src/mneme/payloads_graph.rs` and `payloads_processing.rs`. All structs use `#[serde(rename_all = "camelCase")]`.
+Defined in `src-tauri/src/mneme/payloads_graph.rs` and `payloads_processing.rs`. All structs use `#[serde(rename_all = "camelCase")]`.
 
 ### Write operations
 
@@ -343,7 +343,7 @@ See [PROJECTION-AND-INVALIDATION.md](PROJECTION-AND-INVALIDATION.md) for project
 
 ### 5c) Canvas and graph layout persistence
 
-Layout geometry is persisted by the host and keyed by time context. Renderer-side TS types are in `app/AideonDesktop/src/dtos/canvas.ts` and `dtos/graph-layout.ts`.
+Layout geometry is persisted by the host and keyed by time context. Renderer-side TS types are in `src/dtos/canvas.ts` and `dtos/graph-layout.ts`.
 
 | Command | Payload | Result |
 |---------|---------|--------|

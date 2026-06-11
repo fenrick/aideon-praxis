@@ -1,6 +1,6 @@
 # Host — Tauri Runtime
 
-The Host (`crates/desktop`) is the Tauri v2 runtime that forms the sole security boundary between the renderer and every engine in the Aideon Desktop process.
+The Host (`src-tauri`) is the Tauri v2 runtime that forms the sole security boundary between the renderer and every engine in the Aideon Desktop process.
 
 ---
 
@@ -30,7 +30,7 @@ The host is **not** responsible for domain logic, analytics, graph traversal, or
 └───────────────────┬─────────────────────────┘
                     │ Tauri IPC — capability-gated, typed
 ┌───────────────────┴─────────────────────────┐
-│ Host  (crates/desktop)                       │
+│ Host  (src-tauri)                       │
 │  windows · setup · ipc · workspace · jobs   │
 │  health · events · scene · temporal bridge  │
 └───────────────────┬─────────────────────────┘
@@ -54,7 +54,7 @@ The host is **not** responsible for domain logic, analytics, graph traversal, or
 
 ### Tauri Capabilities and Permissions
 
-Capabilities are declared in `crates/desktop/capabilities/default.json` and cover all six window labels (`splash`, `main`, `settings`, `about`, `status`, `styleguide`). The active permission set is the `appcommands` bundle defined in `crates/desktop/permissions/appcommands.toml`.
+Capabilities are declared in `src-tauri/capabilities/default.json` and cover all six window labels (`splash`, `main`, `settings`, `about`, `status`, `styleguide`). The active permission set is the `appcommands` bundle defined in `src-tauri/permissions/appcommands.toml`.
 
 Every IPC command must appear in `appcommands.toml`; absent commands are denied at the Tauri layer before the Rust handler is reached.
 
@@ -86,7 +86,7 @@ The `AIDEON_TEST_DATA_DIR` environment variable overrides the root in test and C
 
 ## IPC Envelope Contract
 
-All commands accept a single `IpcRequest<T>` argument and return `IpcResponse<U>` or `Result<IpcResponse<U>, HostError>`. The envelope is defined in `crates/desktop/src/ipc.rs`.
+All commands accept a single `IpcRequest<T>` argument and return `IpcResponse<U>` or `Result<IpcResponse<U>, HostError>`. The envelope is defined in `src-tauri/src/ipc.rs`.
 
 **Request**
 ```json
@@ -117,7 +117,7 @@ Rules:
 
 ## Command Surface
 
-Commands are registered in `crates/desktop/src/app.rs` via `tauri::generate_handler!` and explicitly allowed in `permissions/appcommands.toml`. The full set is grouped below by domain.
+Commands are registered in `src-tauri/src/app.rs` via `tauri::generate_handler!` and explicitly allowed in `permissions/appcommands.toml`. The full set is grouped below by domain.
 
 ### System
 
@@ -264,7 +264,7 @@ The host holds engine trait objects in `WorkerState` (managed Tauri state):
 
 IPC handlers receive `State<'_, WorkerState>` from Tauri and call `state.engine()` or `state.mneme()` to reach the correct engine. Handlers are thin: they validate the request envelope, delegate to an `_inner` function, and map errors to `HostError`.
 
-Engine lifecycle follows the hooks pattern documented in `crates/desktop/DESIGN.md` sections 32–33: `on_host_start`, `on_workspace_open`, `on_workspace_close`, `on_host_shutdown`. The host orchestrates multi-engine workflows as single jobs; the renderer sees one progress stream and one result.
+Engine lifecycle follows the hooks pattern documented in `src-tauri/DESIGN.md` sections 32–33: `on_host_start`, `on_workspace_open`, `on_workspace_close`, `on_host_shutdown`. The host orchestrates multi-engine workflows as single jobs; the renderer sees one progress stream and one result.
 
 ---
 
@@ -345,7 +345,7 @@ The renderer must tolerate missed events. Fallback polling is permitted only as 
 
 ---
 
-## Module Layout (`crates/desktop/src/`)
+## Module Layout (`src-tauri/src/`)
 
 | File / Folder | Responsibility |
 |---|---|

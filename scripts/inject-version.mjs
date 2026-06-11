@@ -60,10 +60,10 @@ async function main() {
 
   // Desktop renderer version file (React). Legacy Svelte renderer removed.
   updatedFiles.push(
-    await writeTypeScriptVersion(path.join(repoRoot, 'app/AideonDesktop/src/version.ts'), version),
+    await writeTypeScriptVersion(path.join(repoRoot, 'src/version.ts'), version),
   );
 
-  const rendererPackage = path.join(repoRoot, 'app/AideonDesktop/package.json');
+  const rendererPackage = path.join(repoRoot, 'package.json');
   if (await fileExists(rendererPackage)) {
     updatedFiles.push(
       await updateJsonVersion(rendererPackage, version, (data, newVersion) => {
@@ -82,7 +82,7 @@ async function main() {
   }
 
   // Update Tauri configuration so bundles use the semantic-release version
-  const tauriConfigPath = path.join(repoRoot, 'crates/desktop/tauri.conf.json');
+  const tauriConfigPath = path.join(repoRoot, 'src-tauri/tauri.conf.json');
   if (await fileExists(tauriConfigPath)) {
     updatedFiles.push(
       await updateJsonVersion(tauriConfigPath, version, (data, newVersion) => {

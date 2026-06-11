@@ -59,9 +59,9 @@
           "CHANGELOG.md",
           "Cargo.toml",
           "package.json",
-          "app/AideonDesktop/package.json",
-          "app/AideonDesktop/src/version.ts",
-          "crates/desktop/tauri.conf.json",
+          "package.json",
+          "src/version.ts",
+          "src-tauri/tauri.conf.json",
           "crates/**/Cargo.toml",
           "aideon_xtask/Cargo.toml"
         ],

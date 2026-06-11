@@ -365,7 +365,7 @@ The design system uses these libraries as its building material. Product surface
 ## File Structure
 
 ```
-app/AideonDesktop/src/design-system/
+src/design-system/
 ├── styles/
 │   ├── globals.css          # CSS custom properties — the token contract
 │   └── tokens.ts            # JS/TS token helpers for layout decisions

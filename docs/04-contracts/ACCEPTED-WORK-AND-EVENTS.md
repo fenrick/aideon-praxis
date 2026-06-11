@@ -34,7 +34,7 @@ Every Tauri command that initiates long-running work returns an `AcceptedJob`. T
 stores this immediately and subscribes to events filtered by `runId`.
 
 ```typescript
-// TypeScript — app/AideonDesktop/src/dtos/accepted-job.ts
+// TypeScript — src/dtos/accepted-job.ts
 interface AcceptedJob {
   /** Stable identifier for this run; correlates all progress events. */
   runId: string;
@@ -53,7 +53,7 @@ interface AcceptedJob {
 ```
 
 ```rust
-// Rust — crates/desktop/src/jobs.rs (canonical shape)
+// Rust — src-tauri/src/jobs.rs (canonical shape)
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AcceptedJob {
@@ -142,7 +142,7 @@ All run progress arrives via Tauri events, not by polling. Events are emitted on
 ### Event Envelope
 
 ```typescript
-// TypeScript — app/AideonDesktop/src/dtos/run-event.ts
+// TypeScript — src/dtos/run-event.ts
 interface RunEvent {
   /** Stable unique event identifier. */
   eventId: string;
@@ -166,7 +166,7 @@ interface RunEvent {
 ```
 
 ```rust
-// Rust — crates/desktop/src/jobs.rs
+// Rust — src-tauri/src/jobs.rs
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunEvent {
@@ -465,7 +465,7 @@ interface RetentionPolicy {
 ```
 
 These are test-gated commands today (`#[cfg(test)]` in
-`crates/desktop/src/mneme/commands_processing.rs`). The shape is stable; the production
+`src-tauri/src/mneme/commands_processing.rs`). The shape is stable; the production
 command surface will expose a subset through the capability system described in ADR-0006.
 
 ---

@@ -6,7 +6,7 @@ Defines the allowed dependency graph for Aideon Desktop's Rust crates and the re
 
 Four rules govern the entire graph. They hold regardless of how crates are split or merged in future.
 
-1. **Host depends on modules; modules do not depend on host.** `crates/desktop` composes capability crates. No engine crate imports `aideon_desktop`.
+1. **Host depends on modules; modules do not depend on host.** `src-tauri` composes capability crates. No engine crate imports `aideon_desktop`.
 2. **Engine-to-engine cycles are architecture violations.** If removing a crate from the graph would produce a cycle in what remains, the graph is already wrong.
 3. **Shared contracts sit below their consumers.** Types shared across module boundaries belong in a lower, neutral crate — not inside a module that then forces an upward import.
 4. **The design system stays domain-free.** The renderer's design-system components carry no engine logic, no IPC calls, and no business rules.
@@ -16,7 +16,7 @@ Four rules govern the entire graph. They hold regardless of how crates are split
 
 | Crate | Cargo name | Role |
 |---|---|---|
-| `crates/desktop` | `aideon_desktop` | Tauri runtime, IPC command handlers, capability registration, job lifecycle, workspace initialisation |
+| `src-tauri` | `aideon_desktop` | Tauri runtime, IPC command handlers, capability registration, job lifecycle, workspace initialisation |
 | `crates/praxis` | `aideon_praxis` | Metamodel, task and artefact APIs, integrity, rule engine |
 | `crates/mneme` | `aideon_mneme` | Re-export facade for the Mneme sub-crates; stable public surface |
 | `crates/mneme_core` | `aideon_mneme_core` | Bi-temporal op log, schema-as-data, projection traits, storage abstraction traits |
@@ -24,17 +24,17 @@ Four rules govern the entire graph. They hold regardless of how crates are split
 | `crates/metis` | `aideon_metis` | Analytics algorithms and ranking jobs |
 | `crates/chrona` | `aideon_chrona` | Time/scenario UX primitives and temporal helpers |
 | `crates/continuum` | `aideon_continuum` | Local durable executor, scheduling, connector orchestration |
-| `app/AideonDesktop` | — (renderer) | React renderer, design system, workspace surfaces, IPC adapters, DTOs |
+| `app/ + src/` | — (renderer) | React renderer, design system, workspace surfaces, IPC adapters, DTOs |
 
 ## Allowed Dependency Graph
 
 ```mermaid
 graph TD
-    subgraph renderer["Renderer (app/AideonDesktop)"]
+    subgraph renderer["Renderer (app/ + src/)"]
         APP[AideonDesktop React app]
     end
 
-    subgraph host["Host crate (crates/desktop)"]
+    subgraph host["Host crate (src-tauri)"]
         DESKTOP[aideon_desktop]
     end
 

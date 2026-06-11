@@ -44,7 +44,7 @@ export default defineConfig([
     'dist/**',
     'build/**',
     'coverage/**',
-    'app/AideonDesktop/src/design-system/components/**',
+    'src/design-system/components/**',
     '**/.pnpm/**',
     '**/out/**',
   ]),
@@ -72,7 +72,7 @@ export default defineConfig([
       // Allow import/no-unresolved to pick up TS path aliases in package tsconfigs.
       'import/resolver': {
         typescript: {
-          project: ['./app/AideonDesktop/tsconfig.json'],
+          project: ['./tsconfig.json'],
           alwaysTryTypes: true,
         },
         node: true,
@@ -131,7 +131,7 @@ export default defineConfig([
       parser: tseslint.parser,
       parserOptions: {
         projectService: false,
-        project: ['./app/AideonDesktop/tsconfig.json'],
+        project: ['./tsconfig.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },

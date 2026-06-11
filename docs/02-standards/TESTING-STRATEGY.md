@@ -24,7 +24,7 @@ Most regressions surface at boundaries. Every layer targets the seam, not just t
 | Language / crate group | Lines | Branches | Functions | Statements |
 |---|---|---|---|---|
 | TypeScript / React (new code) | ≥ 80 % | ≥ 80 % | ≥ 80 % | ≥ 80 % |
-| Rust host (`crates/desktop`) | ≥ 80 % | ≥ 80 % | ≥ 80 % | — |
+| Rust host (`src-tauri`) | ≥ 80 % | ≥ 80 % | ≥ 80 % | — |
 | Rust engines (`crates/praxis`, `crates/chrona`, `crates/metis`, `crates/continuum`, `crates/mneme`) | ≥ 90 % | ≥ 90 % | ≥ 90 % | — |
 
 Coverage gates are hard failures in CI. Overall coverage must trend upward; never regress existing baselines.
@@ -102,7 +102,7 @@ test('temporal_state_at returns a valid StateAtResponse envelope', async () => {
 
 When a DTO type is added or changed:
 
-- Update the TypeScript definition in `app/AideonDesktop/src/dtos/`.
+- Update the TypeScript definition in `src/dtos/`.
 - Update the Rust definition in `crates/mneme` (or the owning crate).
 - Add a contract test asserting that the serialised form from the Rust side deserialises cleanly into the TypeScript type.
 
@@ -115,7 +115,7 @@ Engine traits defined in `crates/praxis`, `crates/chrona`, `crates/metis`, `crat
 - Test engine-to-engine flows through typed traits, not through Tauri commands.
 - Test host ↔ engine wiring: verify that a `WorkerState` dispatch reaches the correct engine trait method and the response flows back correctly.
 - Test storage round-trips: write an op, read it back, assert canonical form matches.
-- Use the patterns in `crates/desktop/src/temporal.rs` and `crates/praxis/tests/merge_flow.rs` as golden paths.
+- Use the patterns in `src-tauri/src/temporal.rs` and `crates/praxis/tests/merge_flow.rs` as golden paths.
 
 ### Replay / Rebuild Tests
 
@@ -206,7 +206,7 @@ Every changed boundary must cover the relevant rows:
 
 ## Per-Module Obligations
 
-### `app/AideonDesktop` (Renderer)
+### `app/ + src/` (Renderer)
 
 - Unit: adapters, hooks, store reducers, utility functions.
 - Contract: all IPC commands in `ipc-manifest.json` (see [IPC Contract](#ipc-contract-typescript) above).
@@ -214,7 +214,7 @@ Every changed boundary must cover the relevant rows:
 - UI component smoke: loading, error, and empty states covered by Vitest + Testing Library.
 - Renderer boundary: tests assert that no `fetch` / `XMLHttpRequest` / FS calls are made outside IPC; use `mockIPC` / `mockWindows` exclusively.
 
-### `crates/desktop` (Host)
+### `src-tauri` (Host)
 
 - Unit: command handlers, error mapping, config resolution.
 - Integration: `WorkerState` dispatch to engine traits; cold-start workspace resolution; capability / permission checks.

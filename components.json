@@ -1,0 +1,27 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "aliases": {
+    "components": "design-system/components",
+    "hooks": "design-system/hooks",
+    "lib": "design-system/lib",
+    "ui": "design-system/components/ui",
+    "utils": "design-system/lib/utils"
+  },
+  "iconLibrary": "lucide",
+  "menuAccent": "subtle",
+  "menuColor": "default-translucent",
+  "rsc": true,
+  "style": "radix-rhea",
+  "tailwind": {
+    "baseColor": "mist",
+    "config": "",
+    "css": "src/design-system/styles/globals.css",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "tsx": true,
+  "rtl": false,
+  "registries": {
+    "@reactflow": "https://ui.reactflow.dev/{name}", "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json"
+  }
+}

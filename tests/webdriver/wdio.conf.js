@@ -71,7 +71,7 @@ export const config = {
   host: '127.0.0.1',
   port: driverPort,
   onPrepare: () => {
-    run('pnpm tauri build --no-bundle --config crates/desktop/tauri.conf.json');
+    run('pnpm tauri build --no-bundle --config src-tauri/tauri.conf.json');
     ensureAppBinary();
   },
   beforeSession: (_config, capabilities) => {

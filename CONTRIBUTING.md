@@ -73,9 +73,9 @@ Quality gates
 ## Repository structure
 
 - Legacy Svelte renderer has been removed; React + Tauri desktop is now the only renderer.
-- `crates/desktop` — Rust desktop host (Tauri) and IPC surface.
+- `src-tauri` — Rust desktop host (Tauri) and IPC surface.
 - `crates/{engine, chrona, metis, continuum, mneme, aideon_praxis}` — domain crates for graph/time/analytics, orchestration, persistence, and the facade.
-- `app/AideonDesktop` — React/Tauri renderer (canvas, design system, adapters, DTOs).
+- `app/ + src/` — React/Tauri renderer (canvas, design system, adapters, DTOs).
 - `docs/` — Architecture content, design docs, C4 diagrams.
 - `scripts/` — Minimal tooling entrypoints (version injection, coverage).
 

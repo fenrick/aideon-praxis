@@ -1,7 +1,11 @@
-packages:
-  - app/AideonDesktop
-  - tests/webdriver
-
+# Single Tauri app — no JS workspace. Settings only (read by pnpm).
+overrides:
+  csstype: 3.2.1
 ignoredBuiltDependencies:
   - esbuild
   - msw
+  - sharp
+onlyBuiltDependencies:
+  - edgedriver
+  - geckodriver
+  - unrs-resolver

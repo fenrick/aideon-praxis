@@ -178,7 +178,7 @@ fn extract_tauri_commands(source: &str) -> Vec<String> {
 
 fn build_ipc_manifest() -> Result<IpcManifest> {
     let mut files = Vec::new();
-    let desktop_src = repo_root().join("crates/desktop/src");
+    let desktop_src = repo_root().join("src-tauri/src");
     collect_rs_files(&desktop_src, &mut files)?;
 
     let mut commands = std::collections::BTreeSet::<String>::new();

@@ -2,8 +2,8 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
-const srcRoot = path.resolve(__dirname, 'app/AideonDesktop/src');
-const testsRoot = path.resolve(__dirname, 'app/AideonDesktop/tests');
+const srcRoot = path.resolve(__dirname, 'src');
+const testsRoot = path.resolve(__dirname, 'tests');
 
 const praxisRoot = path.join(srcRoot, 'workspaces/praxis');
 
@@ -28,8 +28,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: [path.resolve(__dirname, 'tests/setup.ts')],
     include: [
-      'app/AideonDesktop/src/**/*.{test,spec}.{ts,tsx,js,jsx}',
-      'app/AideonDesktop/tests/**/*.{test,spec}.{ts,tsx,js,jsx}',
+      'src/**/*.{test,spec}.{ts,tsx,js,jsx}',
+      'tests/**/*.{test,spec}.{ts,tsx,js,jsx}',
     ],
     exclude: ['tests/webdriver/**'],
     coverage: {
@@ -42,7 +42,7 @@ export default defineConfig({
         branches: 0.8,
         statements: 0.8,
       },
-      include: ['app/AideonDesktop/src/**/*.{ts,tsx}'],
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
         '**/*.d.ts',
         '**/*.test.*',
@@ -55,8 +55,8 @@ export default defineConfig({
         '**/node_modules/**',
         '**/*.tsbuildinfo',
         '**/*.map',
-        'crates/desktop/target/**',
-        'app/AideonDesktop/src/design-system/components/**',
+        'src-tauri/target/**',
+        'src/design-system/components/**',
       ],
     },
   },

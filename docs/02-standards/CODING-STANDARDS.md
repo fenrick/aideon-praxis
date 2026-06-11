@@ -41,7 +41,7 @@ The renderer communicates with the host exclusively over typed Tauri IPC. This b
 
 ### Ownership and generated types
 
-- **Rust owns the wire shape.** All command argument and return types are defined in Rust (`crates/mneme` for shared DTOs, `crates/desktop` for host commands) and serialised via serde.
+- **Rust owns the wire shape.** All command argument and return types are defined in Rust (`crates/mneme` for shared DTOs, `src-tauri` for host commands) and serialised via serde.
 - **TypeScript consumes generated types.** The TS side is the generated consumer; it must not invent its own representations of IPC-crossing data.
 - **Adapters own all IPC calls.** React components must not call `invoke()` directly; they call the typed `praxisApi` wrapper (or equivalent adapter module). No component imports `@tauri-apps/api` directly.
 - **Validate at the boundary.** Sanitise and validate data crossing IPC in both directions; do not leak privileged host data into the renderer.
@@ -52,7 +52,7 @@ The renderer communicates with the host exclusively over typed Tauri IPC. This b
 Every command returns a result envelope. The Rust host maps typed errors to this envelope before sending to the renderer:
 
 ```rust
-// crates/desktop/src/error.rs (illustrative)
+// src-tauri/src/error.rs (illustrative)
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IpcError {

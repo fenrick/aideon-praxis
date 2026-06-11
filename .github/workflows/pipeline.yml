@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    # Minimal Rust gating (fmt/clippy) for crates/desktop only; no Tauri build yet.
+    # Minimal Rust gating (fmt/clippy) for src-tauri only; no Tauri build yet.
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -99,19 +99,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p crates/desktop/binaries
+          mkdir -p src-tauri/binaries
           case "${{ runner.os }}" in
             Linux)
-              touch crates/desktop/binaries/aideon-worker-x86_64-unknown-linux-gnu
-              chmod +x crates/desktop/binaries/aideon-worker-x86_64-unknown-linux-gnu
+              touch src-tauri/binaries/aideon-worker-x86_64-unknown-linux-gnu
+              chmod +x src-tauri/binaries/aideon-worker-x86_64-unknown-linux-gnu
               ;;
             macOS)
-              touch crates/desktop/binaries/aideon-worker-aarch64-apple-darwin
-              chmod +x crates/desktop/binaries/aideon-worker-aarch64-apple-darwin
+              touch src-tauri/binaries/aideon-worker-aarch64-apple-darwin
+              chmod +x src-tauri/binaries/aideon-worker-aarch64-apple-darwin
               ;;
             Windows)
               # create placeholder executable for Windows; chmod is a no-op under Git Bash
-              touch crates/desktop/binaries/aideon-worker-x86_64-pc-windows-msvc.exe
+              touch src-tauri/binaries/aideon-worker-x86_64-pc-windows-msvc.exe
               ;;
           esac
 
@@ -125,11 +125,11 @@ jobs:
         run: pnpm run host:lint
 
       - name: Cargo check (typecheck)
-        working-directory: crates/desktop
+        working-directory: src-tauri
         run: pnpm run host:check
 
       - name: Cargo test
-        working-directory: crates/desktop
+        working-directory: src-tauri
         run: pnpm run host:test
 
       - name: Cache RustSec advisory DB
@@ -146,7 +146,7 @@ jobs:
           tool: cargo-audit
 
       - name: Cargo audit (advisories)
-        working-directory: crates/desktop
+        working-directory: src-tauri
         shell: bash
         run: |
           # Do not fail the pipeline on third-party advisory noise yet; surface as warnings
@@ -253,8 +253,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            crates/desktop/target
-          key: ${{ runner.os }}-tauri-build-${{ hashFiles('crates/desktop/Cargo.toml', 'pnpm-lock.yaml') }}
+            src-tauri/target
+          key: ${{ runner.os }}-tauri-build-${{ hashFiles('src-tauri/Cargo.toml', 'pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-tauri-build-
 
@@ -262,7 +262,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Tauri bundles
-        run: pnpm tauri build --ci --config crates/desktop/tauri.conf.json
+        run: pnpm tauri build --ci --config src-tauri/tauri.conf.json
 
   webdriver_tests:
     name: WebDriver Tests (${{ matrix.os }})

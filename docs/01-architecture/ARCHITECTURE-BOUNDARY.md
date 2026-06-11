@@ -29,7 +29,7 @@ flowchart TB
     subgraph Renderer["Renderer (WebView — untrusted)"]
         direction TB
         R1[React UI / design system]
-        R2[Typed TS adapters\napp/AideonDesktop/src/adapters]
+        R2[Typed TS adapters\nsrc/adapters]
     end
 
     subgraph IPC["Tauri IPC Boundary"]
@@ -97,7 +97,7 @@ The renderer is a static bundle loaded inside the WebView. It is untrusted by th
 **Allowed:**
 - Render artefact results, diagram specs, and signal surfaces received from the host.
 - Maintain local UI state: selection, filters, tabs, layout, undo/redo stacks for in-flight edits.
-- Call the host exclusively through typed adapter modules under `app/AideonDesktop/src/adapters`.
+- Call the host exclusively through typed adapter modules under `src/adapters`.
 - Listen to typed push events emitted by the host (progress, invalidation, watch notifications).
 - Display honest partial, stale, and generated states; propagate backpressure feedback to the user.
 
@@ -122,7 +122,7 @@ The boundary between renderer and Rust. Rust defines the wire shape; TypeScript 
 - Every response uses the stable error envelope with machine-readable codes:  
   `WORKSPACE_NOT_FOUND`, `WORKSPACE_LOCKED`, `SCHEMA_TOO_NEW`, `CONFLICT_RECORDED`, `BACKPRESSURE`, and so on.
 - Commands are capability-gated; the default posture is deny.
-- Capability definitions live in `crates/desktop/capabilities/default.json`.
+- Capability definitions live in `src-tauri/capabilities/default.json`.
 - Rust→TS type generation runs during build; CI enforces drift is zero.
 
 **Long-running work — accepted-work model:**
@@ -322,7 +322,7 @@ See [Artefacts and Viewpoints](../03-design/ARTEFACTS-AND-VIEWPOINTS.md) and [Pr
 | Renderer HTTP | Forbidden as primary communication seam |
 | Local TCP ports | No open ports in desktop mode |
 | Filesystem access | Mediated by host; scoped to workspace directories and app data |
-| Capability scope | Per-window; default deny; declared in `crates/desktop/capabilities/default.json` |
+| Capability scope | Per-window; default deny; declared in `src-tauri/capabilities/default.json` |
 | PII on export | Deny-by-default; redaction required for any export surface |
 | Blob sharing | Content-addressed — a hash uniquely identifies content, not a path |
 | Hosted auth | Demoted to an adapter contract; desktop default is local single-user context |
