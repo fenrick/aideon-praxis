@@ -2,20 +2,14 @@
 
 ## Purpose
 
-Describe the structure and workflow for the baseline dataset used to seed new Praxis partitions:
-where the data payloads live, how they are imported, and how changes are versioned and validated.
+Describe the structure and workflow for the baseline dataset used to seed new Praxis partitions: where the data payloads live, how they are imported, and how changes are versioned and validated.
 
-The files under `docs/data` describe the versioned baseline that seeds new Praxis datastores. They
-are treated as **data-first** artefacts so changes stay reviewable, testable, and reproducible across
-CI and local builds.
+The files under `docs/data` describe the versioned baseline that seeds new Praxis datastores. They are treated as **data-first** artefacts so changes stay reviewable, testable, and reproducible across CI and local builds.
 
 ## Layout
 
-- `meta/` - reference schema payloads used for validation/regression checks. Canonical schema
-  definitions are owned by Praxis metamodel packages.
-- `base/` - versioned strategy-to-execution datasets expressed as YAML. Each file contains an
-  ordered set of operations/facts that seed elements, relationships, and artefacts with time/scenario
-  context.
+- `meta/` - reference schema payloads used for validation/regression checks. Canonical schema definitions are owned by Praxis metamodel packages.
+- `base/` - versioned strategy-to-execution datasets expressed as YAML. Each file contains an ordered set of operations/facts that seed elements, relationships, and artefacts with time/scenario context.
 
 ```
 docs/data/
@@ -29,8 +23,7 @@ docs/data/
 
 ## Editing workflow
 
-1. Update `base/baseline.yaml`, keeping operations append-only where possible. Use semantic versions
-   in the `version` field and document the change in `CHANGELOG.md`.
+1. Update `base/baseline.yaml`, keeping operations append-only where possible. Use semantic versions in the `version` field and document the change in `CHANGELOG.md`.
 2. Run the importer against a scratch datastore to validate:
    ```sh
    cargo aideon_xtask import-dataset --dataset docs/data/base/baseline.yaml \

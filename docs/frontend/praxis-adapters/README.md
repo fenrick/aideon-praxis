@@ -4,9 +4,7 @@ _Flatten note: adapters now live at `src/adapters` within the desktop package; i
 
 ## Purpose
 
-Praxis Adapters defines the TypeScript interfaces and contracts that form the UI boundary for
-calling Host commands. Implementations are backend-agnostic and must not introduce backend
-specifics into the renderer boundary.
+Praxis Adapters defines the TypeScript interfaces and contracts that form the UI boundary for calling Host commands. Implementations are backend-agnostic and must not introduce backend specifics into the renderer boundary.
 
 Adapters call Host commands via invoke().
 
@@ -28,14 +26,11 @@ Adapters call Host commands via invoke().
 - Typecheck (suite-wide): `pnpm run node:typecheck`
 - Tests (suite-wide, including adapters): `pnpm run node:test`
 
-In module-specific tests, provide stub/fake implementations (e.g. `DevelopmentMemoryGraph`) to
-exercise UI flows without a real backend.
+In module-specific tests, provide stub/fake implementations (e.g. `DevelopmentMemoryGraph`) to exercise UI flows without a real backend.
 
 ## Design and architecture
 
-Praxis Adapters encode the adapter pattern described in `ARCHITECTURE-BOUNDARY.md` for Graph,
-Storage, and Worker boundaries. For suite-wide schema and meta-model details, see `docs/DESIGN.md`
-and `docs/meta/README.md`.
+Praxis Adapters encode the adapter pattern described in `ARCHITECTURE-BOUNDARY.md` for Graph, Storage, and Worker boundaries. For suite-wide schema and meta-model details, see `docs/DESIGN.md` and `docs/meta/README.md`.
 
 ## Related global docs
 

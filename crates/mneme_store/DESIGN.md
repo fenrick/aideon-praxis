@@ -2,8 +2,7 @@
 
 ## Purpose & scope
 
-Mneme Store is the persistence layer for Mneme. It is responsible for database wiring, migrations,
-and storage performance while remaining isolated from the host UI/runtime.
+Mneme Store is the persistence layer for Mneme. It is responsible for database wiring, migrations, and storage performance while remaining isolated from the host UI/runtime.
 
 ## Allowed dependencies / frameworks
 

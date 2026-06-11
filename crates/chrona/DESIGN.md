@@ -2,9 +2,7 @@
 
 ## Purpose & scope
 
-Chrona Visualisation produces **time-aware views** over the Praxis digital twin. In practice, this
-crate is a thin, IPC-friendly façade over the Praxis commit/time model, plus small helpers that
-support time-centric UI (time cursor, diffs, topology deltas, layout helpers).
+Chrona Visualisation produces **time-aware views** over the Praxis digital twin. In practice, this crate is a thin, IPC-friendly façade over the Praxis commit/time model, plus small helpers that support time-centric UI (time cursor, diffs, topology deltas, layout helpers).
 
 Chrona exists to:
 
@@ -20,10 +18,8 @@ Chrona does **not** own persistence or semantics. It delegates:
 ## Allowed dependencies / frameworks
 
 - Rust 2024 with workspace defaults.
-- Core deps: `tokio` for async, `serde`/`serde_json` for (de)serialisation, `thiserror` for errors,
-  `tracing` + `log` facade for logging.
-- Twin access via `praxis` and persistence through `mneme` traits only;
-  no direct DB drivers here.
+- Core deps: `tokio` for async, `serde`/`serde_json` for (de)serialisation, `thiserror` for errors, `tracing` + `log` facade for logging.
+- Twin access via `praxis` and persistence through `mneme` traits only; no direct DB drivers here.
 
 ## Anti-goals
 
@@ -51,15 +47,12 @@ All Chrona outputs must be:
 
 ## Public surface (Rust)
 
-- Traits/functions that expose temporal summaries: `state_at`, `diff`, `topology_delta`, and
-  timeline-friendly aggregates.
-- Data transfer structs tuned for canvas widgets (timeline segments, plateau/gap markers,
-  selection overlays).
+- Traits/functions that expose temporal summaries: `state_at`, `diff`, `topology_delta`, and timeline-friendly aggregates.
+- Data transfer structs tuned for canvas widgets (timeline segments, plateau/gap markers, selection overlays).
 
 ### TemporalEngine façade (current)
 
-Chrona exports `TemporalEngine` as a stable name used by the host. It wraps a `PraxisEngine` and
-delegates to Praxis time/commit primitives:
+Chrona exports `TemporalEngine` as a stable name used by the host. It wraps a `PraxisEngine` and delegates to Praxis time/commit primitives:
 
 - `state_at(args)` → state-at summary for a reference and optional scenario
 - `commit(request)` → commit a change set
@@ -80,13 +73,11 @@ Chrona must preserve the suite-wide time-first semantics:
 - **Layer**: plan vs actual precedence.
 - **Scenario**: what-if overlays.
 
-Chrona does not invent semantics; it enforces that every temporal operation carries explicit
-context and delegates the meaning to Praxis.
+Chrona does not invent semantics; it enforces that every temporal operation carries explicit context and delegates the meaning to Praxis.
 
 ### Diff semantics (bounded)
 
-Chrona diff outputs are designed for UI affordances (counts, warnings, and “go deeper” actions),
-not for shipping entire change graphs.
+Chrona diff outputs are designed for UI affordances (counts, warnings, and “go deeper” actions), not for shipping entire change graphs.
 
 Minimum expectations:
 
@@ -107,8 +98,7 @@ Topology delta is a structure-only view:
 
 ### Layout helpers
 
-Chrona includes small deterministic layout helpers intended for “good enough” defaults and test
-scaffolding (e.g., rectangle packing to mimic ELK defaults). These helpers:
+Chrona includes small deterministic layout helpers intended for “good enough” defaults and test scaffolding (e.g., rectangle packing to mimic ELK defaults). These helpers:
 
 - never mutate model semantics,
 - are user-triggered when applied to persisted layouts,

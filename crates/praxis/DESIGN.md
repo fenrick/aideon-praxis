@@ -10,8 +10,7 @@ Praxis provides:
 - **Unlimited extensibility** via domain types (inheritance, defaults, rules)
 - A **task-oriented interaction model** that stays consistent even as the metamodel grows
 - A **quality and integrity system** that keeps analytics meaningful (PageRank, dependency risk, change impact)
-- A strict separation where **Mneme owns persistence** (core + store crates using SeaORM/SQLx)
-  and **Praxis owns meaning**
+- A strict separation where **Mneme owns persistence** (core + store crates using SeaORM/SQLx) and **Praxis owns meaning**
 
 Praxis never generates SQL and never exposes storage mechanics.
 
@@ -21,14 +20,11 @@ Praxis never generates SQL and never exposes storage mechanics.
 
 Praxis reconciles three different needs:
 
-1. **Users think in tasks**
-   “Create a journey”, “link service to capability”, “compare scenarios”.
+1. **Users think in tasks** “Create a journey”, “link service to capability”, “compare scenarios”.
 
-2. **Architects think in concepts**
-   Service, capability, application module, release train, contract, control, etc.
+2. **Architects think in concepts** Service, capability, application module, release train, contract, control, etc.
 
-3. **Analytics needs stable structure**
-   Consistent directionality, repeatable patterns, minimal semantic ambiguity.
+3. **Analytics needs stable structure** Consistent directionality, repeatable patterns, minimal semantic ambiguity.
 
 Praxis achieves this with a **three-layer model**:
 
@@ -74,36 +70,28 @@ Each domain type must inherit from exactly one master type.
 #### 4.1.1 Master node types
 
 1. **Actor**
-   - parties who act or are acted upon
-     Examples: customer, persona, role, team, vendor, regulator
+   - parties who act or are acted upon Examples: customer, persona, role, team, vendor, regulator
 
 2. **Intent**
-   - motivations and evaluative drivers
-     Examples: goal, objective, pain, gain, driver, influence, brand attribute, principle
+   - motivations and evaluative drivers Examples: goal, objective, pain, gain, driver, influence, brand attribute, principle
 
 3. **Value**
-   - value propositions and value flow constructs
-     Examples: product, service, journey, touchpoint, feature, outcome, value stream
+   - value propositions and value flow constructs Examples: product, service, journey, touchpoint, feature, outcome, value stream
 
 4. **Capability**
-   - stable abilities the enterprise needs
-     Examples: business capability, enabling capability, operational capability
+   - stable abilities the enterprise needs Examples: business capability, enabling capability, operational capability
 
 5. **Execution**
-   - operational realisation mechanisms
-     Examples: process, operating model, control, policy, information asset, conceptual model
+   - operational realisation mechanisms Examples: process, operating model, control, policy, information asset, conceptual model
 
 6. **Technology**
-   - technology landscape at logical and physical levels
-     Examples: logical app, module, API, batch interface, physical app, platform, infrastructure, logical tech
+   - technology landscape at logical and physical levels Examples: logical app, module, API, batch interface, physical app, platform, infrastructure, logical tech
 
 7. **Structure**
-   - organisational and structural containers
-     Examples: org unit, location, portfolio structure, contracts container, domain boundaries
+   - organisational and structural containers Examples: org unit, location, portfolio structure, contracts container, domain boundaries
 
 8. **Change**
-   - change over time and delivery constructs
-     Examples: project, programme, portfolio, plateau, release train, roadmap milestone
+   - change over time and delivery constructs Examples: project, programme, portfolio, plateau, release train, roadmap milestone
 
 > Note: “Service above Capability” is implemented as a **default domain model** under these anchors (Value → Capability), not by making Service a master type.
 
@@ -111,32 +99,23 @@ Each domain type must inherit from exactly one master type.
 
 Master edges define the **meaning and direction** required for analytics and integrity.
 
-1. **Influences** (Intent/Actor → Intent/Value/Capability/Change)
-   “A influences B” (incoming = depends-on influence)
+1. **Influences** (Intent/Actor → Intent/Value/Capability/Change) “A influences B” (incoming = depends-on influence)
 
-2. **Realises** (Value → Capability)
-   “Value proposition is realised by capability”
+2. **Realises** (Value → Capability) “Value proposition is realised by capability”
 
-3. **IsRealisedBy** (Capability → Execution)
-   “Capability is realised by execution”
+3. **IsRealisedBy** (Capability → Execution) “Capability is realised by execution”
 
-4. **Enables** (Execution/Technology/Structure → Execution/Capability/Value)
-   “A enables B” (direction = dependency)
+4. **Enables** (Execution/Technology/Structure → Execution/Capability/Value) “A enables B” (direction = dependency)
 
-5. **Implements** (Technology logical → Technology physical)
-   “Logical concept implemented by physical”
+5. **Implements** (Technology logical → Technology physical) “Logical concept implemented by physical”
 
-6. **DependsOn** (Any → Any)
-   Generic dependency when no stronger verb applies (discouraged in default modelling)
+6. **DependsOn** (Any → Any) Generic dependency when no stronger verb applies (discouraged in default modelling)
 
-7. **BelongsTo** (Any → Structure/Value/Change container)
-   Membership/containment (used for modules in platforms, features in products, etc.)
+7. **BelongsTo** (Any → Structure/Value/Change container) Membership/containment (used for modules in platforms, features in products, etc.)
 
-8. **Changes** (Change → Any)
-   Planned or executed change affecting target(s)
+8. **Changes** (Change → Any) Planned or executed change affecting target(s)
 
-9. **Consumes/Produces** (Execution/Technology ↔ Information assets)
-   Data and info flow (direction matters for lineage and analytics variants)
+9. **Consumes/Produces** (Execution/Technology ↔ Information assets) Data and info flow (direction matters for lineage and analytics variants)
 
 Praxis may offer domain-friendly verbs that map to these anchors.
 
@@ -221,9 +200,7 @@ Praxis expresses metamodel and all modelling operations using Mneme’s types/fi
 
 ### 7.1 Stable IDs
 
-All master types, domain types, fields, and edge types use **stable UUIDs** committed in source.
-No regeneration allowed.
-The core meta-model JSON (`docs/data/meta/core-v1.json`) stores these UUIDs alongside human keys.
+All master types, domain types, fields, and edge types use **stable UUIDs** committed in source. No regeneration allowed. The core meta-model JSON (`docs/data/meta/core-v1.json`) stores these UUIDs alongside human keys.
 
 ### 7.2 Praxis metamodel compilation output
 
@@ -1603,8 +1580,7 @@ Praxis writes resolution ops explicitly.
 
 ### 45.2 Score calculation
 
-Each dimension yields 0–1 score.
-Overall integrity = weighted average (configurable).
+Each dimension yields 0–1 score. Overall integrity = weighted average (configurable).
 
 Integrity score is:
 
@@ -1803,8 +1779,7 @@ User-supplied parameters (filters, seeds):
 
 ### 52.3 Tenant isolation
 
-Artefacts are partition-scoped by default.
-Cross-partition artefacts require explicit admin configuration.
+Artefacts are partition-scoped by default. Cross-partition artefacts require explicit admin configuration.
 
 ---
 
@@ -2777,26 +2752,19 @@ Extensions must:
 
 Praxis supports the full lifecycle:
 
-1. **Model**
-   Task-oriented authoring across CX → capability → technology → change
+1. **Model** Task-oriented authoring across CX → capability → technology → change
 
-2. **Explore**
-   Views, catalogues, matrices, maps
+2. **Explore** Views, catalogues, matrices, maps
 
-3. **Analyse**
-   Rankings, risk, impact, diagnostics
+3. **Analyse** Rankings, risk, impact, diagnostics
 
-4. **Plan**
-   Scenarios, plateaus, roadmaps
+4. **Plan** Scenarios, plateaus, roadmaps
 
-5. **Decide**
-   Reviews, decisions, approvals
+5. **Decide** Reviews, decisions, approvals
 
-6. **Communicate**
-   Pages, reports, exports
+6. **Communicate** Pages, reports, exports
 
-7. **Evolve**
-   Metamodel extensions, artefact refinement
+7. **Evolve** Metamodel extensions, artefact refinement
 
 All while remaining:
 

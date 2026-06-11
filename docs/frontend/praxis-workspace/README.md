@@ -2,9 +2,7 @@
 
 ## Purpose
 
-Praxis Workspace is the React/Tauri renderer surface for the **Aideon Desktop** app. It
-hosts the primary workspace UI (widgets + time controls) and surfaces graph, catalogue, matrix, and
-chart views over the time-first digital twin.
+Praxis Workspace is the React/Tauri renderer surface for the **Aideon Desktop** app. It hosts the primary workspace UI (widgets + time controls) and surfaces graph, catalogue, matrix, and chart views over the time-first digital twin.
 
 ## Responsibilities
 
@@ -30,7 +28,4 @@ For multi-terminal dev workflow, see `docs/GETTING-STARTED.md`.
 
 ## Design and architecture
 
-Praxis Workspace is the primary renderer surface for the digital twin, built on React, XYFlow
-(React Flow), and the shared design system. Internal layout, state, and widget composition are
-described in `docs/praxis-workspace/DESIGN.md`. The shell contract is defined in
-`DESIGN.md`. Suite-level architecture lives in `ARCHITECTURE-BOUNDARY.md`.
+Praxis Workspace is the primary renderer surface for the digital twin, built on React, XYFlow (React Flow), and the shared design system. Internal layout, state, and widget composition are described in `docs/praxis-workspace/DESIGN.md`. The shell contract is defined in `DESIGN.md`. Suite-level architecture lives in `ARCHITECTURE-BOUNDARY.md`.

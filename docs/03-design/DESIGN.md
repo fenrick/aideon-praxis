@@ -92,14 +92,14 @@ graph TD
     Continuum --> Mneme
 ```
 
-| Module        | Responsibility                                                                                        |
-| ------------- | ----------------------------------------------------------------------------------------------------- |
-| **Praxis**    | Metamodel, master/domain types, task semantics, artefact execution, integrity scoring, explainability |
-| **Mneme**     | Operation log, temporal facts, schema-as-data, blob store, indexes, projections, engine trait         |
-| **Metis**     | Analytics, scoring, pattern detection, ML-assisted insights                                           |
-| **Chrona**    | Temporal navigation UX, scenario composition, Plan/Actual layer switching                             |
-| **Continuum** | Local durable job executor, retry, cancellation, progress events                                      |
-| **Host**      | Tauri runtime, IPC surface, capabilities, workspace lifecycle, OS integration                         |
+| Module | Responsibility |
+| --- | --- |
+| **Praxis** | Metamodel, master/domain types, task semantics, artefact execution, integrity scoring, explainability |
+| **Mneme** | Operation log, temporal facts, schema-as-data, blob store, indexes, projections, engine trait |
+| **Metis** | Analytics, scoring, pattern detection, ML-assisted insights |
+| **Chrona** | Temporal navigation UX, scenario composition, Plan/Actual layer switching |
+| **Continuum** | Local durable job executor, retry, cancellation, progress events |
+| **Host** | Tauri runtime, IPC surface, capabilities, workspace lifecycle, OS integration |
 
 Module substitution is possible at any typed boundary. No engine-to-engine cycles are permitted. The design system is domain-free and carries no module-specific semantics.
 
@@ -178,22 +178,22 @@ sequenceDiagram
 
 ## Shared vocabulary
 
-| Term              | Definition                                                                                                                   |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **Workspace**     | The canonical portable folder that is the unit of isolation and portability.                                                 |
-| **Partition**     | The runtime boundary for all facts and schema within a workspace.                                                            |
-| **Scenario**      | An overlay within a partition for what-if changes. Baseline is always the implicit anchor.                                   |
-| **Master type**   | A stable structural role in the semantic spine (Actor, Intent, Value, Capability, Execution, Technology, Structure, Change). |
-| **Domain type**   | An extensible business concept inheriting from a master type.                                                                |
-| **Element**       | A node instance of a domain type.                                                                                            |
-| **Relationship**  | An edge instance of a domain verb mapped to master semantics.                                                                |
-| **Task**          | A user-facing authoring operation that mutates the twin (create, link, set, move, tombstone).                                |
-| **Artefact**      | A stored declarative definition executed at a time/scenario context to produce a UI-ready result.                            |
-| **Op**            | An append-only record in the canonical operation log.                                                                        |
-| **Projection**    | A derived read-optimised structure rebuilt from the op log.                                                                  |
-| **Blob**          | A content-addressed binary stored by SHA-256 hash under `objects/sha256/`.                                                   |
-| **Accepted work** | A job that has been accepted by the host and is executing asynchronously with observable status.                             |
-| **HLC**           | Hybrid Logical Clock timestamp used for asserted time across distributed writes.                                             |
+| Term | Definition |
+| --- | --- |
+| **Workspace** | The canonical portable folder that is the unit of isolation and portability. |
+| **Partition** | The runtime boundary for all facts and schema within a workspace. |
+| **Scenario** | An overlay within a partition for what-if changes. Baseline is always the implicit anchor. |
+| **Master type** | A stable structural role in the semantic spine (Actor, Intent, Value, Capability, Execution, Technology, Structure, Change). |
+| **Domain type** | An extensible business concept inheriting from a master type. |
+| **Element** | A node instance of a domain type. |
+| **Relationship** | An edge instance of a domain verb mapped to master semantics. |
+| **Task** | A user-facing authoring operation that mutates the twin (create, link, set, move, tombstone). |
+| **Artefact** | A stored declarative definition executed at a time/scenario context to produce a UI-ready result. |
+| **Op** | An append-only record in the canonical operation log. |
+| **Projection** | A derived read-optimised structure rebuilt from the op log. |
+| **Blob** | A content-addressed binary stored by SHA-256 hash under `objects/sha256/`. |
+| **Accepted work** | A job that has been accepted by the host and is executing asynchronously with observable status. |
+| **HLC** | Hybrid Logical Clock timestamp used for asserted time across distributed writes. |
 
 ---
 
@@ -201,14 +201,14 @@ sequenceDiagram
 
 Every artefact result and long-running operation must carry honest state signals. The renderer must surface these; it must not paper over them.
 
-| Signal             | When required                                                                   |
-| ------------------ | ------------------------------------------------------------------------------- |
-| Partial or bounded | Result was capped by a fanout, depth, or size limit                             |
-| Stale              | The underlying projection has not been refreshed since the last canonical write |
-| Inferred           | The fact was derived by an integrity or ML pass, not asserted by a user         |
-| Generated          | Content was produced by an LLM or automation and has not been confirmed         |
-| In progress        | Accepted work is still executing; the result shown is a prior snapshot          |
-| Error              | Execution failed; partial results are shown with explicit coverage indication   |
+| Signal | When required |
+| --- | --- |
+| Partial or bounded | Result was capped by a fanout, depth, or size limit |
+| Stale | The underlying projection has not been refreshed since the last canonical write |
+| Inferred | The fact was derived by an integrity or ML pass, not asserted by a user |
+| Generated | Content was produced by an LLM or automation and has not been confirmed |
+| In progress | Accepted work is still executing; the result shown is a prior snapshot |
+| Error | Execution failed; partial results are shown with explicit coverage indication |
 
 ---
 
@@ -233,17 +233,17 @@ Every artefact result and long-running operation must carry honest state signals
 
 ## References
 
-| Document                                                                                               | Content                                                                      |
-| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| [DESKTOP-FIRST-WORKSPACE.md](./DESKTOP-FIRST-WORKSPACE.md)                                             | Workspace authority split, canonical vs derived rules, portability rationale |
-| [UX-DESIGN.md](./UX-DESIGN.md)                                                                         | Full UX interaction contract                                                 |
-| [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)                                                                 | Shell primitives, tokens, reusable blocks                                    |
-| [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md)                                           | Artefact families, viewpoint strategy, explanation design                    |
-| [METAMODEL-PACKAGES.md](./METAMODEL-PACKAGES.md)                                                       | Master types, domain types, semantic spine detail                            |
-| [SIGNAL-SURFACES.md](./SIGNAL-SURFACES.md)                                                             | Trust signals, provenance, quality indicators                                |
-| [docs/01-architecture/ARCHITECTURE-BOUNDARY.md](../01-architecture/ARCHITECTURE-BOUNDARY.md)           | Module boundaries and typed seams                                            |
-| [docs/04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Temporal context contract                                                    |
-| [docs/04-contracts/CONTRACTS-AND-SCHEMAS.md](../04-contracts/CONTRACTS-AND-SCHEMAS.md)                 | IPC schemas, DTO versioning                                                  |
-| [docs/05-modules/praxis/README.md](../05-modules/praxis/README.md)                                     | Praxis module detail                                                         |
-| [docs/05-modules/mneme/README.md](../05-modules/mneme/README.md)                                       | Mneme module detail                                                          |
-| [docs/06-adrs/ADRS.md](../06-adrs/ADRS.md)                                                             | Architecture decision records                                                |
+| Document | Content |
+| --- | --- |
+| [DESKTOP-FIRST-WORKSPACE.md](./DESKTOP-FIRST-WORKSPACE.md) | Workspace authority split, canonical vs derived rules, portability rationale |
+| [UX-DESIGN.md](./UX-DESIGN.md) | Full UX interaction contract |
+| [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md) | Shell primitives, tokens, reusable blocks |
+| [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md) | Artefact families, viewpoint strategy, explanation design |
+| [METAMODEL-PACKAGES.md](./METAMODEL-PACKAGES.md) | Master types, domain types, semantic spine detail |
+| [SIGNAL-SURFACES.md](./SIGNAL-SURFACES.md) | Trust signals, provenance, quality indicators |
+| [docs/01-architecture/ARCHITECTURE-BOUNDARY.md](../01-architecture/ARCHITECTURE-BOUNDARY.md) | Module boundaries and typed seams |
+| [docs/04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Temporal context contract |
+| [docs/04-contracts/CONTRACTS-AND-SCHEMAS.md](../04-contracts/CONTRACTS-AND-SCHEMAS.md) | IPC schemas, DTO versioning |
+| [docs/05-modules/praxis/README.md](../05-modules/praxis/README.md) | Praxis module detail |
+| [docs/05-modules/mneme/README.md](../05-modules/mneme/README.md) | Mneme module detail |
+| [docs/06-adrs/ADRS.md](../06-adrs/ADRS.md) | Architecture decision records |

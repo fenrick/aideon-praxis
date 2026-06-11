@@ -148,10 +148,8 @@ Explainability UX requirements:
 Renderer/host contract (target end state):
 
 - Renderer uses typed IPC only; no renderer HTTP.
-- Metis workspace DTOs live in `src/dtos/metis.ts` and are re-exported from
-  `src/dtos/index.ts`.
-- The workspace calls the host exclusively via an adapter surface under
-  `src/workspaces/metis/` (no ad-hoc invokes).
+- Metis workspace DTOs live in `src/dtos/metis.ts` and are re-exported from `src/dtos/index.ts`.
+- The workspace calls the host exclusively via an adapter surface under `src/workspaces/metis/` (no ad-hoc invokes).
 - Event consumption:
   - `job_updated` / `job_completed` for analytics runs and job tray updates,
   - `analytics_updated` for invalidation and refresh hints.

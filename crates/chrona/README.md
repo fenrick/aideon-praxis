@@ -2,9 +2,7 @@
 
 ## Purpose
 
-Chrona Visualisation provides temporal views over the digital twin. It implements helpers for
-`state_at`, `diff`, and future topology/time-based visualisations consumed by Praxis Canvas and
-other clients.
+Chrona Visualisation provides temporal views over the digital twin. It implements helpers for `state_at`, `diff`, and future topology/time-based visualisations consumed by Praxis Canvas and other clients.
 
 ## Responsibilities
 
@@ -24,6 +22,4 @@ other clients.
 
 ## Design and architecture
 
-Chrona follows the time-first principles captured in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and `docs/03-design/DESIGN.md`
-while focusing purely on temporal views. As this crate evolves, document internal modules and
-performance constraints in `crates/chrona/DESIGN.md`.
+Chrona follows the time-first principles captured in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and `docs/03-design/DESIGN.md` while focusing purely on temporal views. As this crate evolves, document internal modules and performance constraints in `crates/chrona/DESIGN.md`.

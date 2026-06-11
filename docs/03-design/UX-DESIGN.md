@@ -74,13 +74,13 @@ Using the same outer frame across all families means the user reads them as rela
 
 Selection is global inside a workspace. Once the user selects something meaningful, the rest of the workspace responds predictably.
 
-| Property           | Behaviour                                                                                                            |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Selection kinds    | `node`, `edge`, `cell`, `artefact`, `none`                                                                           |
-| Cardinality        | Single primary selection; multi-select is permitted but one item remains primary                                     |
-| Context            | Selection carries the originating artefact or widget id                                                              |
+| Property | Behaviour |
+| --- | --- |
+| Selection kinds | `node`, `edge`, `cell`, `artefact`, `none` |
+| Cardinality | Single primary selection; multi-select is permitted but one item remains primary |
+| Context | Selection carries the originating artefact or widget id |
 | Inspector response | Updates immediately to properties, explanation, provenance, differences, and valid actions for the primary selection |
-| Action sharpening  | Available actions narrow to those valid for the selected object in its current state                                 |
+| Action sharpening | Available actions narrow to those valid for the selected object in its current state |
 
 Selection is not decoration. It is the mechanism that keeps the inspector, the action strip, and the drill-down path coherent. If selection behaves inconsistently across surfaces, the whole interaction spine breaks.
 
@@ -197,11 +197,11 @@ When the write queue is saturated, the UI renders an explicit **BACKPRESSURE / q
 
 ### Backpressure states
 
-| State          | What it means                                 | What the UI shows                                         |
-| -------------- | --------------------------------------------- | --------------------------------------------------------- |
-| `queued`       | Write accepted but queued behind earlier work | Queue depth indicator, estimated wait if available        |
-| `backpressure` | Queue saturated, new writes are held          | Explicit notice: "System is busy — your change is queued" |
-| `resumed`      | Queue draining, writes proceeding             | Backpressure notice clears, strip updates                 |
+| State | What it means | What the UI shows |
+| --- | --- | --- |
+| `queued` | Write accepted but queued behind earlier work | Queue depth indicator, estimated wait if available |
+| `backpressure` | Queue saturated, new writes are held | Explicit notice: "System is busy — your change is queued" |
+| `resumed` | Queue draining, writes proceeding | Backpressure notice clears, strip updates |
 
 ### Rules
 
@@ -218,14 +218,14 @@ The UI must never present a partial, stale, generated, or bounded result as if i
 
 ### State vocabulary
 
-| State          | Meaning                                                           | Required treatment                                                     |
-| -------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| **Partial**    | Result was bounded by size, time, or query limits                 | Show what was omitted, capped, or bounded in the caveat area           |
-| **Stale**      | Cached result is out of date relative to current inputs           | Surface staleness cue with the last-computed timestamp; offer refresh  |
-| **Rebuilding** | A background recompute is in progress; last result is still shown | Show a rebuilding indicator; do not hide the last result               |
-| **Generated**  | Content was produced by an inference or AI process                | Mark as generated; expose review path; do not present as asserted fact |
-| **Asserted**   | Fact was explicitly entered by a user or authoritative source     | No special flag needed; this is the baseline                           |
-| **Inferred**   | Fact was derived from other asserted facts by a rule              | Mark as inferred; expose the derivation path                           |
+| State | Meaning | Required treatment |
+| --- | --- | --- |
+| **Partial** | Result was bounded by size, time, or query limits | Show what was omitted, capped, or bounded in the caveat area |
+| **Stale** | Cached result is out of date relative to current inputs | Surface staleness cue with the last-computed timestamp; offer refresh |
+| **Rebuilding** | A background recompute is in progress; last result is still shown | Show a rebuilding indicator; do not hide the last result |
+| **Generated** | Content was produced by an inference or AI process | Mark as generated; expose review path; do not present as asserted fact |
+| **Asserted** | Fact was explicitly entered by a user or authoritative source | No special flag needed; this is the baseline |
+| **Inferred** | Fact was derived from other asserted facts by a rule | Mark as inferred; expose the derivation path |
 
 ### Caveat area
 
@@ -313,56 +313,56 @@ Component names here are authoritative. Any design-system implementation of thes
 
 ### Artefact and dashboard containers
 
-| Component      | Role                                                                                                                   |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Artefact frame | Generic container for all artefact families: graph, table, matrix, map, chart, page, report                            |
-| Widget frame   | Dashboard or workbench unit: title, scope subtitle, action slot, body, state region, footer metadata                   |
-| Table shell    | Dense analytical list or grid with integrated filter, sort, grouping, selection summary, and bounded-state treatment   |
-| Chart shell    | Chart wrapper: title, question/measure label, legend, chart region, caveat area — never a decorative colour patch      |
-| Canvas shell   | Graph and direct-manipulation surface: local command strip, view controls, canvas region, overlay slot, inspector path |
+| Component | Role |
+| --- | --- |
+| Artefact frame | Generic container for all artefact families: graph, table, matrix, map, chart, page, report |
+| Widget frame | Dashboard or workbench unit: title, scope subtitle, action slot, body, state region, footer metadata |
+| Table shell | Dense analytical list or grid with integrated filter, sort, grouping, selection summary, and bounded-state treatment |
+| Chart shell | Chart wrapper: title, question/measure label, legend, chart region, caveat area — never a decorative colour patch |
+| Canvas shell | Graph and direct-manipulation surface: local command strip, view controls, canvas region, overlay slot, inspector path |
 
 ### Editing and inspector components
 
-| Component         | Role                                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------------------- |
+| Component | Role |
+| --- | --- |
 | Inspector section | Vertical unit inside the inspector; heading + body + optional summary row or local actions; stacks well |
-| Field row         | Shared editing unit: label, value or control, help text, validation message, status cue                 |
-| Property list     | Read-heavy inspector content: term + value pairs, optional badge treatment, action links                |
-| Difference block  | Changed values, compared contexts, scenario deltas: before/after states, optional reason or impact cue  |
-| Provenance block  | Source, freshness, generation context: origin, time/scenario, freshness cue, evidence path              |
-| Action strip      | Contextual actions: primary, secondary, destructive (visually separated), disabled/review-state cues    |
+| Field row | Shared editing unit: label, value or control, help text, validation message, status cue |
+| Property list | Read-heavy inspector content: term + value pairs, optional badge treatment, action links |
+| Difference block | Changed values, compared contexts, scenario deltas: before/after states, optional reason or impact cue |
+| Provenance block | Source, freshness, generation context: origin, time/scenario, freshness cue, evidence path |
+| Action strip | Contextual actions: primary, secondary, destructive (visually separated), disabled/review-state cues |
 
 ### Feedback and status components
 
-| Component                        | Role                                                                                                                    |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Loading block                    | Known work in progress: short label, optional progress cue, placeholder content sized close to eventual surface         |
-| Empty state                      | Valid absence: plain explanation, current scope/filter restatement, next useful action                                  |
-| Warning and partial-result panel | Severity label, problem statement, affected scope, reason, next action; partial variant names what was omitted          |
-| Error panel                      | Blocked work: failure statement, affected scope, safety of prior content, next reasonable action (retry/inspect/return) |
-| Accepted-work strip              | Running or recently completed work: label, state, progress, recency, detail link                                        |
+| Component | Role |
+| --- | --- |
+| Loading block | Known work in progress: short label, optional progress cue, placeholder content sized close to eventual surface |
+| Empty state | Valid absence: plain explanation, current scope/filter restatement, next useful action |
+| Warning and partial-result panel | Severity label, problem statement, affected scope, reason, next action; partial variant names what was omitted |
+| Error panel | Blocked work: failure statement, affected scope, safety of prior content, next reasonable action (retry/inspect/return) |
+| Accepted-work strip | Running or recently completed work: label, state, progress, recency, detail link |
 
 ### Host-surface components
 
-| Component            | Role                                                                                                                 |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Workbench card       | Workspace home / resume: title, why-it-matters summary, context row, status/queue cue, entry action                  |
-| Queue strip          | Compact horizontal summary: one label, one count or state, small metadata note, open action                          |
-| Scorecard frame      | Executive briefing unit: measure title, scope and time context, current value, caveat area, evidence drill-down      |
+| Component | Role |
+| --- | --- |
+| Workbench card | Workspace home / resume: title, why-it-matters summary, context row, status/queue cue, entry action |
+| Queue strip | Compact horizontal summary: one label, one count or state, small metadata note, open action |
+| Scorecard frame | Executive briefing unit: measure title, scope and time context, current value, caveat area, evidence drill-down |
 | Admin section layout | Settings container: section title, scope label, grouped controls, warning area for consequential actions, audit link |
 
 ### Assisted-work and signal components
 
-| Component                | Role                                                                                                                          |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| Assistant entry bar      | Contextual prompt start: prompt field, visible context tokens, submit action, optional mode switch                            |
-| Assistant response frame | Declares response type, shows context used, carries body, evidence/caveat slot, next-action slot                              |
-| Suggestion list          | Multiple reviewable suggestions: list heading, item rows with visible status, list-level action only where batch review helps |
-| Mapping suggestion row   | One proposed match: match, reason, confidence/caveat cue, accept/reject/inspect actions — no silent auto-accept               |
-| Signal banner / panel    | Signal type declaration, statement, affected scope, strength cue, evidence link, next action                                  |
-| Ranked list frame        | Prioritised outputs: ranking question stated plainly, ordered items, score/rank cue, context note, explanation path           |
-| Recommendation card      | One proposed action: recommendation, reason, caveat/confidence cue, inspect/accept/defer actions                              |
-| Review task row          | Work from a signal or rule: task label, trigger summary, owner/target, status, due/recency cue, open action                   |
+| Component | Role |
+| --- | --- |
+| Assistant entry bar | Contextual prompt start: prompt field, visible context tokens, submit action, optional mode switch |
+| Assistant response frame | Declares response type, shows context used, carries body, evidence/caveat slot, next-action slot |
+| Suggestion list | Multiple reviewable suggestions: list heading, item rows with visible status, list-level action only where batch review helps |
+| Mapping suggestion row | One proposed match: match, reason, confidence/caveat cue, accept/reject/inspect actions — no silent auto-accept |
+| Signal banner / panel | Signal type declaration, statement, affected scope, strength cue, evidence link, next action |
+| Ranked list frame | Prioritised outputs: ranking question stated plainly, ordered items, score/rank cue, context note, explanation path |
+| Recommendation card | One proposed action: recommendation, reason, caveat/confidence cue, inspect/accept/defer actions |
+| Review task row | Work from a signal or rule: task label, trigger summary, owner/target, status, due/recency cue, open action |
 
 ---
 
@@ -379,14 +379,14 @@ Component names here are authoritative. Any design-system implementation of thes
 
 ## Related Documents
 
-| Document                                                                                             | What it covers                                         |
-| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [DESIGN.md](./DESIGN.md)                                                                             | Overall design contract and shell layout               |
-| [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)                                                               | Pixel-level tokens, components, and visual language    |
-| [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md)                                         | Artefact families, viewpoint taxonomy, rendering specs |
-| [SIGNAL-SURFACES.md](./SIGNAL-SURFACES.md)                                                           | Signal, recommendation, and review-task surfaces       |
-| [DESKTOP-FIRST-WORKSPACE.md](./DESKTOP-FIRST-WORKSPACE.md)                                           | Desktop-specific workspace layout and split-pane rules |
-| [../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Temporal and scenario context contract                 |
-| [../04-contracts/ACCEPTED-WORK-AND-EVENTS.md](../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)           | Accepted-work lifecycle and event schema               |
-| [../05-modules/chrona/README.md](../05-modules/chrona/README.md)                                     | Chrona module: time and scenario engine                |
-| [../05-modules/host/README.md](../05-modules/host/README.md)                                         | Host module: IPC, command routing, renderer contract   |
+| Document | What it covers |
+| --- | --- |
+| [DESIGN.md](./DESIGN.md) | Overall design contract and shell layout |
+| [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md) | Pixel-level tokens, components, and visual language |
+| [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md) | Artefact families, viewpoint taxonomy, rendering specs |
+| [SIGNAL-SURFACES.md](./SIGNAL-SURFACES.md) | Signal, recommendation, and review-task surfaces |
+| [DESKTOP-FIRST-WORKSPACE.md](./DESKTOP-FIRST-WORKSPACE.md) | Desktop-specific workspace layout and split-pane rules |
+| [../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Temporal and scenario context contract |
+| [../04-contracts/ACCEPTED-WORK-AND-EVENTS.md](../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) | Accepted-work lifecycle and event schema |
+| [../05-modules/chrona/README.md](../05-modules/chrona/README.md) | Chrona module: time and scenario engine |
+| [../05-modules/host/README.md](../05-modules/host/README.md) | Host module: IPC, command routing, renderer contract |

@@ -2,11 +2,9 @@
 
 ## Purpose & scope
 
-Metis implements **analytics** over the Praxis digital twin. It is responsible for deterministic,
-bounded algorithms and for shaping outputs into explainable, UI-consumable results.
+Metis implements **analytics** over the Praxis digital twin. It is responsible for deterministic, bounded algorithms and for shaping outputs into explainable, UI-consumable results.
 
-Metis is not a UI layer and does not own persistence. It consumes time-context snapshots from
-Praxis/Mneme and produces analytics outputs suitable for:
+Metis is not a UI layer and does not own persistence. It consumes time-context snapshots from Praxis/Mneme and produces analytics outputs suitable for:
 
 - on-demand artefacts (rankings, diagnostics, impact reports),
 - background jobs (long-running analytics with progress),
@@ -17,8 +15,7 @@ This document defines the target end state.
 ## Allowed dependencies / frameworks
 
 - Rust 2024 with workspace defaults.
-- `tokio` for async where needed, `serde`/`serde_json` for payloads, `thiserror` for error types,
-  `tracing` + `log` facade for metrics/observability.
+- `tokio` for async where needed, `serde`/`serde_json` for payloads, `thiserror` for error types, `tracing` + `log` facade for metrics/observability.
 - Graph/metrics helpers (e.g., `petgraph`) are acceptable; keep them behind crate-local abstractions.
 - Depends on `praxis` for time-context reads and `mneme` for persistence traits.
 
@@ -55,18 +52,14 @@ Metis should prefer consuming **projection-friendly** graph views rather than ra
 
 ## Public surface (target)
 
-- Traits and structs for analytics jobs (snake_case job kinds such as `analytics_centrality`,
-  `analytics_impact`, `analytics_shortest_path`, `finance_tco`, and other temporal/diagnostic
-  summaries as needed).
+- Traits and structs for analytics jobs (snake_case job kinds such as `analytics_centrality`, `analytics_impact`, `analytics_shortest_path`, `finance_tco`, and other temporal/diagnostic summaries as needed).
 - Deterministic helpers to run algorithms against engine snapshots; testable without I/O.
 
 ### Analytics requests (conceptual)
 
-Metis should expose an API shaped around **requests** and **results**, not around “run algorithm X
-over raw DB”.
+Metis should expose an API shaped around **requests** and **results**, not around “run algorithm X over raw DB”.
 
-Examples of request categories (names shown here are conceptual; IPC/job identifiers should be
-snake_case):
+Examples of request categories (names shown here are conceptual; IPC/job identifiers should be snake_case):
 
 - centrality (degree, betweenness, closeness; optional scope)
 - impact (seed refs + filters; bounded traversal)

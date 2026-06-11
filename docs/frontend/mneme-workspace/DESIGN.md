@@ -9,8 +9,7 @@ The Mneme workspace provides operator-facing surfaces for storage and processing
 - integrity head / schema head summaries
 - schema manifest visibility (read-only)
 
-This workspace is not a general modelling surface; it exists to make the system observable and
-recoverable without leaving the desktop app.
+This workspace is not a general modelling surface; it exists to make the system observable and recoverable without leaving the desktop app.
 
 ## Explicit intent (non-negotiable)
 

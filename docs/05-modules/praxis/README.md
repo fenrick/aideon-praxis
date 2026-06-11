@@ -121,15 +121,15 @@ See [Mneme module](../mneme/README.md) and [Architecture Boundary](../../01-arch
 
 The canonical relationship vocabulary is defined in [EDGE-CATALOGUE.md](./EDGE-CATALOGUE.md). The catalogue is standards-aligned: seven relationships with stable IDs, explicit direction, endpoint constraints, and seeding status.
 
-| Relationship ID  | Direction       | Core meaning                                                           |
-| ---------------- | --------------- | ---------------------------------------------------------------------- |
-| `contributes_to` | source → target | Capability contributes to a value stream stage outcome                 |
-| `delivers`       | source → target | Application or component delivers business capability/process outcomes |
-| `uses_data`      | source → target | Source reads or writes a data entity                                   |
-| `deployed_on`    | source → target | Application is hosted on a technology component                        |
-| `change_affects` | source → target | Planned change affects a target element                                |
-| `depends_on`     | source → target | Generic dependency fallback when no stronger verb applies              |
-| `belongs_to`     | source → target | Membership/containment for hierarchy and roll-up                       |
+| Relationship ID | Direction | Core meaning |
+| --- | --- | --- |
+| `contributes_to` | source → target | Capability contributes to a value stream stage outcome |
+| `delivers` | source → target | Application or component delivers business capability/process outcomes |
+| `uses_data` | source → target | Source reads or writes a data entity |
+| `deployed_on` | source → target | Application is hosted on a technology component |
+| `change_affects` | source → target | Planned change affects a target element |
+| `depends_on` | source → target | Generic dependency fallback when no stronger verb applies |
+| `belongs_to` | source → target | Membership/containment for hierarchy and roll-up |
 
 Rules enforced by the rule engine:
 
@@ -147,15 +147,15 @@ The starter payload (`core-v1.json`) ships `contributes_to`, `delivers`, `uses_d
 
 Every Praxis operation resolves against an explicit commit-based temporal model. The key types:
 
-| Type                             | Role                                                                  |
-| -------------------------------- | --------------------------------------------------------------------- |
-| `CommitRef`                      | Points to a commit by ID, branch head, or branch head at a given time |
-| `ChangeSet`                      | Batched node/edge creates, updates, and deletes                       |
-| `GraphSnapshot`                  | Immutable materialised state at a given commit                        |
-| `StateAtArgs`                    | Query inputs: `as_of` ref, optional `scenario`, optional `layer`      |
-| `DiffSummary`                    | Change count breakdown between two refs                               |
-| `TopologyDeltaResult`            | Node/edge add/delete counts (no property diffs)                       |
-| `MergeRequest` / `MergeResponse` | Merge two branches; returns conflicts in domain language              |
+| Type | Role |
+| --- | --- |
+| `CommitRef` | Points to a commit by ID, branch head, or branch head at a given time |
+| `ChangeSet` | Batched node/edge creates, updates, and deletes |
+| `GraphSnapshot` | Immutable materialised state at a given commit |
+| `StateAtArgs` | Query inputs: `as_of` ref, optional `scenario`, optional `layer` |
+| `DiffSummary` | Change count breakdown between two refs |
+| `TopologyDeltaResult` | Node/edge add/delete counts (no property diffs) |
+| `MergeRequest` / `MergeResponse` | Merge two branches; returns conflicts in domain language |
 
 Scenarios are overlays on baseline snapshots. The `resolve_snapshot` call takes a `CommitRef` and optional scenario ID, materialises the base snapshot, and applies the overlay. `state_at` returns counts; `diff_summary` and `topology_delta` return structural deltas. Merge conflicts are returned as `MergeConflict` records with a `kind` and human-readable `message` — never as raw store errors.
 
@@ -167,11 +167,11 @@ See [Temporal and Scenario Context](../../04-contracts/TEMPORAL-AND-SCENARIO-CON
 
 Praxis depends on:
 
-| Dependency         | Why                                                                                       |
-| ------------------ | ----------------------------------------------------------------------------------------- |
-| `aideon_mneme`     | Storage: entity persistence, traversal, projection edges, op-log                          |
-| `aideon_continuum` | Contracts: shared temporal and scenario context types                                     |
-| `aideon_metis`     | Analytics computation (algorithm execution; Praxis frames questions and explains results) |
+| Dependency | Why |
+| --- | --- |
+| `aideon_mneme` | Storage: entity persistence, traversal, projection edges, op-log |
+| `aideon_continuum` | Contracts: shared temporal and scenario context types |
+| `aideon_metis` | Analytics computation (algorithm execution; Praxis frames questions and explains results) |
 
 Praxis does **not** depend on the Tauri host, the desktop shell, or the Continuum or Metis _implementations_ beyond their capability traits. It exposes capability traits that consuming modules implement against.
 

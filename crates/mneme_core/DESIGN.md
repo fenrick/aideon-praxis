@@ -2,11 +2,9 @@
 
 ## Purpose & scope
 
-Mneme Core is the **contract and domain foundation** for the Mneme storage engine. It provides the
-types and trait interfaces that make higher layers portable across storage backends.
+Mneme Core is the **contract and domain foundation** for the Mneme storage engine. It provides the types and trait interfaces that make higher layers portable across storage backends.
 
-This crate exists to keep the storage contract stable while allowing the store implementation
-(migrations, database wiring, performance work) to evolve independently.
+This crate exists to keep the storage contract stable while allowing the store implementation (migrations, database wiring, performance work) to evolve independently.
 
 ## Allowed dependencies / frameworks
 

@@ -177,13 +177,13 @@ The single privileged process. It holds the Tauri runtime, enforces capabilities
 
 In-process Rust crates called by the host through typed trait boundaries. Each engine owns a specific capability; none own another engine's capability.
 
-| Engine        | Owns                                                                                                                  |
-| ------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Praxis**    | Meaning: ontology, edge catalogue, artefact execution, diagram spec generation, metamodel packages                    |
-| **Mneme**     | Storage: workspace reads/writes, append-only op segments, blob store, runtime index engine, projections, invalidation |
-| **Metis**     | Analytics: signal surfaces, aggregation, dashboard projections                                                        |
-| **Chrona**    | Time/scenario UX: temporal helpers, scenario overlay resolution, Plan/Actual layer management                         |
-| **Continuum** | Orchestration and automation: local durable executor, workflow steps, retries, compensation                           |
+| Engine | Owns |
+| --- | --- |
+| **Praxis** | Meaning: ontology, edge catalogue, artefact execution, diagram spec generation, metamodel packages |
+| **Mneme** | Storage: workspace reads/writes, append-only op segments, blob store, runtime index engine, projections, invalidation |
+| **Metis** | Analytics: signal surfaces, aggregation, dashboard projections |
+| **Chrona** | Time/scenario UX: temporal helpers, scenario overlay resolution, Plan/Actual layer management |
+| **Continuum** | Orchestration and automation: local durable executor, workflow steps, retries, compensation |
 
 **Allowed:**
 
@@ -248,18 +248,18 @@ An engine-pluggable local index and cache rebuilt on demand from canonical files
 
 When the question is "where does this live?", apply this rule:
 
-| Category                       | Examples                                    | Status                  |
-| ------------------------------ | ------------------------------------------- | ----------------------- |
-| Operations written by the user | `model/ops/*.ops` segments                  | **Canonical**           |
-| Temporal facts                 | Every asserted fact with valid-time and HLC | **Canonical**           |
-| Schema declarations            | `model/schema/` files                       | **Canonical**           |
-| Blob bytes                     | `objects/sha256/<hash>`                     | **Canonical**           |
-| Effective graph views          | Adjacency, reachability queries             | **Derived**             |
-| Tuple indexes                  | Entity/edge lookup tables                   | **Derived**             |
-| Search and vector sidecars     | Full-text, embedding indexes                | **Derived**             |
-| Runtime database               | SQLite DB in `.aideon/runtime/`             | **Derived**             |
-| UI state                       | Selection, layout, in-flight edits          | **Derived / ephemeral** |
-| Blob previews and thumbnails   | Rendered preview files                      | **Derived**             |
+| Category | Examples | Status |
+| --- | --- | --- |
+| Operations written by the user | `model/ops/*.ops` segments | **Canonical** |
+| Temporal facts | Every asserted fact with valid-time and HLC | **Canonical** |
+| Schema declarations | `model/schema/` files | **Canonical** |
+| Blob bytes | `objects/sha256/<hash>` | **Canonical** |
+| Effective graph views | Adjacency, reachability queries | **Derived** |
+| Tuple indexes | Entity/edge lookup tables | **Derived** |
+| Search and vector sidecars | Full-text, embedding indexes | **Derived** |
+| Runtime database | SQLite DB in `.aideon/runtime/` | **Derived** |
+| UI state | Selection, layout, in-flight edits | **Derived / ephemeral** |
+| Blob previews and thumbnails | Rendered preview files | **Derived** |
 
 If something is derived, it is rebuilable from canonical files alone. If it is not rebuilable, it is canonical and belongs in `model/` or `objects/`.
 
@@ -351,20 +351,20 @@ See [Security](../02-standards/SECURITY.md) for the full security posture.
 
 ## Cross-References
 
-| Document                                                                          | Relationship                                 |
-| --------------------------------------------------------------------------------- | -------------------------------------------- |
-| [Module Dependency Map](./MODULE-DEPENDENCY-MAP.md)                               | Full crate dependency graph                  |
-| [Desktop-First Workspace](../03-design/DESKTOP-FIRST-WORKSPACE.md)                | The design thesis this document enforces     |
-| [Contracts and Schemas](../04-contracts/CONTRACTS-AND-SCHEMAS.md)                 | IPC payload and error envelope contracts     |
-| [Temporal and Scenario Context](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Time context fields and resolution rules     |
-| [Accepted Work and Events](../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)           | AcceptedJob lifecycle and event shapes       |
-| [Projection and Invalidation](../04-contracts/PROJECTION-AND-INVALIDATION.md)     | How derived state is invalidated and rebuilt |
-| [Mneme — Runtime and Engine](../05-modules/mneme/RUNTIME-AND-ENGINE.md)           | Storage engine abstraction and write queue   |
-| [Host module](../05-modules/host/README.md)                                       | Tauri runtime, capabilities, IPC handlers    |
-| [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md)               | Workspace is canonical authority             |
-| [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)                      | Portable workspace format                    |
-| [ADR-0003](../06-adrs/ADR-0003-content-addressed-object-store.md)                 | Content-addressed object store               |
-| [ADR-0004](../06-adrs/ADR-0004-storage-engine-abstraction.md)                     | Storage engine abstraction                   |
-| [ADR-0005](../06-adrs/ADR-0005-sync-and-conflict-model.md)                        | Sync and conflict model                      |
-| [ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)             | Tauri trust boundary and typed IPC           |
-| [ADR-0007](../06-adrs/ADR-0007-deterministic-package-export.md)                   | Deterministic package export                 |
+| Document | Relationship |
+| --- | --- |
+| [Module Dependency Map](./MODULE-DEPENDENCY-MAP.md) | Full crate dependency graph |
+| [Desktop-First Workspace](../03-design/DESKTOP-FIRST-WORKSPACE.md) | The design thesis this document enforces |
+| [Contracts and Schemas](../04-contracts/CONTRACTS-AND-SCHEMAS.md) | IPC payload and error envelope contracts |
+| [Temporal and Scenario Context](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Time context fields and resolution rules |
+| [Accepted Work and Events](../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) | AcceptedJob lifecycle and event shapes |
+| [Projection and Invalidation](../04-contracts/PROJECTION-AND-INVALIDATION.md) | How derived state is invalidated and rebuilt |
+| [Mneme — Runtime and Engine](../05-modules/mneme/RUNTIME-AND-ENGINE.md) | Storage engine abstraction and write queue |
+| [Host module](../05-modules/host/README.md) | Tauri runtime, capabilities, IPC handlers |
+| [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md) | Workspace is canonical authority |
+| [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md) | Portable workspace format |
+| [ADR-0003](../06-adrs/ADR-0003-content-addressed-object-store.md) | Content-addressed object store |
+| [ADR-0004](../06-adrs/ADR-0004-storage-engine-abstraction.md) | Storage engine abstraction |
+| [ADR-0005](../06-adrs/ADR-0005-sync-and-conflict-model.md) | Sync and conflict model |
+| [ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md) | Tauri trust boundary and typed IPC |
+| [ADR-0007](../06-adrs/ADR-0007-deterministic-package-export.md) | Deterministic package export |

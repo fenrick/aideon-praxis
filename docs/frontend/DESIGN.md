@@ -74,8 +74,7 @@ Module-level UX designs live under `docs/frontend/`:
 
 - The splash window remains visible for at least 3 seconds to avoid flash-on-load.
 - The host closes the splash only after both frontend and backend setup signals are complete.
-- The splash UI reflects host-owned phases via events (`setup_progress`, `setup_backend_ready`) and
-  uses `system_setup_state` once on mount to avoid missed-event races.
+- The splash UI reflects host-owned phases via events (`setup_progress`, `setup_backend_ready`) and uses `system_setup_state` once on mount to avoid missed-event races.
 - Setup failures are surfaced via `setup_failed` and provide an explicit Status/recovery path.
 
 ## Next.js static export constraints

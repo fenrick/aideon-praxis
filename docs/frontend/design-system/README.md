@@ -1,13 +1,10 @@
 # Aideon Design System (flattened)
 
-This module used to live in `app/AideonDesignSystem`. All React UI primitives, shadcn wrappers,
-and React Flow proxies are now co-located inside the Aideon Desktop package at
-`src/design-system`. Import directly from that tree (no package aliases).
+This module used to live in `app/AideonDesignSystem`. All React UI primitives, shadcn wrappers, and React Flow proxies are now co-located inside the Aideon Desktop package at `src/design-system`. Import directly from that tree (no package aliases).
 
 ## Purpose
 
-Centralises shadcn/ui primitives, React Flow registry components, and Praxis-specific proxy blocks
-so React renderers share a consistent look and feel and token set.
+Centralises shadcn/ui primitives, React Flow registry components, and Praxis-specific proxy blocks so React renderers share a consistent look and feel and token set.
 
 ## Responsibilities
 
@@ -17,7 +14,6 @@ so React renderers share a consistent look and feel and token set.
 
 ## Notes after flattening
 
-- Do **not** recreate a separate workspace; add/modify components directly under
-  `src/design-system/*`.
+- Do **not** recreate a separate workspace; add/modify components directly under `src/design-system/*`.
 - Legacy registry files from `app/AideonDesignSystem` were moved with history into the new path.
 - Guard script `tools/design-system-guard.mjs` prevents stray UI under `src/lib/ui`.

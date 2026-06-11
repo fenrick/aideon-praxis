@@ -10,8 +10,7 @@ Chrona time UX is the renderer-facing contract for:
 - handling merges (including conflicts),
 - surfacing a “time context summary” that applies to all artefacts.
 
-This UX is used primarily inside the Praxis workspace today, but it is a shell-level pattern that
-other workspaces should adopt for consistent time-first behaviour.
+This UX is used primarily inside the Praxis workspace today, but it is a shell-level pattern that other workspaces should adopt for consistent time-first behaviour.
 
 ## Explicit intent (non-negotiable)
 
@@ -54,8 +53,7 @@ The golden implementation pattern is a hook returning `[state, actions]`.
 
 Reference implementation (non-authoritative):
 
-- The desktop should keep a single “golden” implementation of this contract and reuse it across
-  workspaces. Code location may change; the contract in this document is the source of truth.
+- The desktop should keep a single “golden” implementation of this contract and reuse it across workspaces. Code location may change; the contract in this document is the source of truth.
 
 ### State (required)
 

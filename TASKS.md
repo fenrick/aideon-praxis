@@ -386,8 +386,7 @@ If any of these are missing, the agent should:
 
 **Tests**
 
-- ✅ `DesktopPropertiesPanel` tests cover empty and selected states; root test mocks selection
-  propagation.
+- ✅ `DesktopPropertiesPanel` tests cover empty and selected states; root test mocks selection propagation.
 
 **Definition of done**
 

@@ -1143,8 +1143,7 @@ All read/write APIs accept optional `scenario_id`:
 - `partition_id`
 - `actor_id`
 - `asserted_at`
-- `node_id`
-  Optional:
+- `node_id` Optional:
 - `type_id`
 
 ### 17.2 Required fields for edge creation
@@ -1155,8 +1154,7 @@ All read/write APIs accept optional `scenario_id`:
 - `edge_id`
 - `src_id`
 - `dst_id`
-- `exists_valid_from`
-  Optional:
+- `exists_valid_from` Optional:
 - `exists_valid_to`
 - `type_id`
 - `layer` (default Actual)
@@ -1170,8 +1168,7 @@ All read/write APIs accept optional `scenario_id`:
 - `entity_id`
 - `field_id`
 - `value`
-- `valid_from`
-  Optional:
+- `valid_from` Optional:
 - `valid_to`
 - `layer` (default Actual)
 
@@ -1181,8 +1178,7 @@ Required:
 
 - `type_id`, `applies_to`, `label`, `is_abstract`
 - `field_id`, `label`, `value_type`, `cardinality`, `merge_policy`, `is_indexed`
-- `type_id + field_id` attachments with at least required flag
-  Optional:
+- `type_id + field_id` attachments with at least required flag Optional:
 - `parent_type_id`
 - `default_value`
 - edge-type rules
@@ -1196,15 +1192,13 @@ Required:
 Traversal must be O(degree) for:
 
 - out edges by `(partition, src, type)`
-- in edges by `(partition, dst, type)`
-  Indexes in `aideon_edges` are mandatory.
+- in edges by `(partition, dst, type)` Indexes in `aideon_edges` are mandatory.
 
 ### 18.2 Time slice filtering
 
 Edges must filter by existence facts at time T:
 
-- query existence facts by `(partition, edge_id)` + containment
-  Indexes on `(partition, edge_id, valid_from)` and `(partition, edge_id, valid_to)` are mandatory.
+- query existence facts by `(partition, edge_id)` + containment Indexes on `(partition, edge_id, valid_from)` and `(partition, edge_id, valid_to)` are mandatory.
 
 ### 18.3 Time-slider optimisation (portable)
 
@@ -1213,8 +1207,7 @@ Mneme must implement **bucketed containment**:
 - `valid_bucket` computed in code for fact rows
 - typical buckets:
   - day bucket for UI scrubbing
-  - optional week/month for higher levels
-    The bucket column and index allow limiting candidate rows before containment filtering.
+  - optional week/month for higher levels The bucket column and index allow limiting candidate rows before containment filtering.
 
 ### 18.4 Field filtering
 
@@ -1755,8 +1748,7 @@ Mneme implements a **database-backed job queue** using SeaORM tables, so it work
 - `lease_expires_at` (i64, nullable) — for worker leasing
 - `created_asserted_at` (i64)
 - `updated_asserted_at` (i64)
-- `payload` (blob/text) — job parameters
-  Indexes:
+- `payload` (blob/text) — job parameters Indexes:
 - `aideon_jobs__idx_pending` on `(partition_id, status, priority, created_asserted_at)`
 - `aideon_jobs__idx_lease` on `(partition_id, lease_expires_at)`
 
@@ -1809,8 +1801,7 @@ To avoid job storms during bulk ingest or batch metamodel updates:
 
 Add column:
 
-- `dedupe_key` (nullable text)
-  Index:
+- `dedupe_key` (nullable text) Index:
 - `(partition_id, job_type, dedupe_key, status)` to support conflict checks (portable)
 
 ### 24.8 Processor specifications (required in v1)
@@ -1908,8 +1899,7 @@ These tables are derived and can be rebuilt at any time. They improve performanc
 - `entity_id` (PK part)
 - `out_degree` (int)
 - `in_degree` (int)
-- `computed_asserted_at` (i64)
-  Index:
+- `computed_asserted_at` (i64) Index:
 - `(partition_id, scenario_id, as_of_valid_time, out_degree)`
 - `(partition_id, scenario_id, as_of_valid_time, in_degree)`
 
@@ -1917,8 +1907,7 @@ Computed incrementally from `aideon_graph_projection_edges` filtered by existenc
 
 #### 24.9.2 `aideon_graph_edge_type_counts`
 
-- `partition_id`, `scenario_id`, `edge_type_id`, `count`, `computed_asserted_at`
-  Index:
+- `partition_id`, `scenario_id`, `edge_type_id`, `count`, `computed_asserted_at` Index:
 - `(partition_id, scenario_id, edge_type_id)`
 
 ### 24.10 Integrity reporting tables (recommended)
@@ -2058,8 +2047,7 @@ Guarantee: eventual completion; progress observable via job tables and APIs.
 
 ### 24.15 Bulk ingest behaviour
 
-During bulk import, Mneme must avoid per-op expensive processing.
-Mechanism:
+During bulk import, Mneme must avoid per-op expensive processing. Mechanism:
 
 - a “bulk mode” flag in write options:
   - `WriteOptions { bulk_mode: bool }`
@@ -2248,8 +2236,7 @@ If in-process events are not enough, persist a feed:
 - `asserted_at`
 - `entity_id` (nullable)
 - `change_kind` (tiny int)
-- `payload` (optional small json)
-  PK: `(partition_id, sequence)`
+- `payload` (optional small json) PK: `(partition_id, sequence)`
 
 Mneme appends to this in the same transaction as writes (Category A).
 
@@ -3070,8 +3057,7 @@ For a fixed op stream:
 
 Mneme should structure DB access behind repositories:
 
-- `OpsRepo`, `EntitiesRepo`, `FactsRepo`, `SchemaRepo`, `JobsRepo`, `ProjectionRepo`
-  Each repository:
+- `OpsRepo`, `EntitiesRepo`, `FactsRepo`, `SchemaRepo`, `JobsRepo`, `ProjectionRepo` Each repository:
 - accepts `&DatabaseConnection` or `&DatabaseTransaction`
 - uses only SeaORM query builders
 
@@ -3080,8 +3066,7 @@ Mneme should structure DB access behind repositories:
 Use `insert_many` with chunk sizes:
 
 - SQLite: smaller chunks (e.g., 200–500)
-- Postgres/MySQL: larger chunks (e.g., 2k–10k)
-  Chunk size determined by backend capability flags (no raw SQL).
+- Postgres/MySQL: larger chunks (e.g., 2k–10k) Chunk size determined by backend capability flags (no raw SQL).
 
 ### 45.3 Upsert patterns
 

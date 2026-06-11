@@ -1,7 +1,6 @@
 ## C4 Diagrams (DSL Source)
 
-This folder contains the Structurizr DSL source for the Aideon Desktop System Context and Container
-views used during M0. CI no longer renders diagrams; these are design-time artifacts.
+This folder contains the Structurizr DSL source for the Aideon Desktop System Context and Container views used during M0. CI no longer renders diagrams; these are design-time artifacts.
 
 ### Local rendering (optional)
 
@@ -25,8 +24,7 @@ Option A — Use Structurizr CLI + PlantUML directly
 
 Option B — Use Docker
 
-- `docker run --rm -v "$PWD":/work ghcr.io/structurizr/cli:latest \
-export -workspace /work/docs/c4/workspace_dsl -format plantuml -output /work/docs/c4/out/plantuml`
+- `docker run --rm -v "$PWD":/work ghcr.io/structurizr/cli:latest \ export -workspace /work/docs/c4/workspace_dsl -format plantuml -output /work/docs/c4/out/plantuml`
 - Then render PNGs via PlantUML container or local tools.
 
 Outputs are written under `docs/c4/out/plantuml` and `docs/c4/out/png` (gitignored).

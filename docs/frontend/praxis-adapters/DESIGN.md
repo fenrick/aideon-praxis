@@ -2,8 +2,7 @@
 
 ## Purpose & scope
 
-Praxis Adapters defines TypeScript interfaces for the renderer/host boundary (graph, storage,
-worker). It is type-only and backend-agnostic.
+Praxis Adapters defines TypeScript interfaces for the renderer/host boundary (graph, storage, worker). It is type-only and backend-agnostic.
 
 ## Allowed dependencies / frameworks
 
@@ -19,8 +18,7 @@ worker). It is type-only and backend-agnostic.
 
 ## Public surface
 
-- Adapter interfaces: `GraphAdapter`, `MutableGraphAdapter`, `MetaModelProvider`, `StorageAdapter`,
-  `WorkerClient` and worker job contracts.
+- Adapter interfaces: `GraphAdapter`, `MutableGraphAdapter`, `MetaModelProvider`, `StorageAdapter`, `WorkerClient` and worker job contracts.
 - Shared types re-exported from `src/dtos` plus `ensureIsoDateTime` helper.
 - Test fakes (e.g., `DevelopmentMemoryGraph`) for consumers.
 

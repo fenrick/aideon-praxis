@@ -4,8 +4,7 @@ _Flatten note: DTOs now live at `src/dtos` within the desktop package; import vi
 
 ## Purpose
 
-Praxis DTOs defines shared TypeScript data-transfer objects used across Praxis workspace, Praxis
-Desktop, and host adapters. It keeps IPC contracts consistent and strongly typed.
+Praxis DTOs defines shared TypeScript data-transfer objects used across Praxis workspace, Praxis Desktop, and host adapters. It keeps IPC contracts consistent and strongly typed.
 
 ## Responsibilities
 
@@ -28,6 +27,4 @@ DTOs are also typechecked as part of the suite-wide command: `pnpm run node:type
 
 ## Design and architecture
 
-For suite-wide schema and meta-model design, see `docs/DESIGN.md`, `docs/meta/README.md`, and
-`docs/data/README.md`. If this package gains additional logic (codegen, versioning), extend
-documentation in `docs/praxis-dtos/DESIGN.md`.
+For suite-wide schema and meta-model design, see `docs/DESIGN.md`, `docs/meta/README.md`, and `docs/data/README.md`. If this package gains additional logic (codegen, versioning), extend documentation in `docs/praxis-dtos/DESIGN.md`.

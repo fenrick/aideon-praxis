@@ -6,8 +6,7 @@
 
 ## 1. Purpose and positioning
 
-Aideon Desktop is a **native, offline-first, extensible enterprise digital twin environment**.
-It embeds multiple analytical and modelling engines (Praxis, Mneme, Metis, Chrona, etc.) inside a secure desktop shell, providing:
+Aideon Desktop is a **native, offline-first, extensible enterprise digital twin environment**. It embeds multiple analytical and modelling engines (Praxis, Mneme, Metis, Chrona, etc.) inside a secure desktop shell, providing:
 
 - Rich, interactive visual modelling
 - Time-aware and scenario-based analysis
@@ -53,8 +52,7 @@ Single OS process, multi-layered:
 └──────────────────────────────────────────────┘
 ```
 
-**Invariant:**
-The renderer never directly touches storage, the filesystem, or the network.
+**Invariant:** The renderer never directly touches storage, the filesystem, or the network.
 
 ---
 
@@ -205,8 +203,7 @@ Failure paths must surface:
 └──────────────────────────────┴─────────┘
 ```
 
-Workspaces **fill slots**.
-They never own the chrome.
+Workspaces **fill slots**. They never own the chrome.
 
 ---
 
@@ -264,8 +261,7 @@ Each job has:
 
 #### 8.2.1 Job DTO (canonical, snake_case)
 
-Jobs must have a stable cross-boundary DTO so the renderer can render progress consistently and
-persistently.
+Jobs must have a stable cross-boundary DTO so the renderer can render progress consistently and persistently.
 
 ```json
 {
@@ -332,8 +328,7 @@ Host → Renderer events:
 - Analytics completion
 - Sync events (future)
 
-Renderer subscribes declaratively.
-Polling is discouraged except for fallback.
+Renderer subscribes declaratively. Polling is discouraged except for fallback.
 
 ---
 
@@ -391,19 +386,14 @@ Renderer never infers meaning.
 
 Security posture is **deny-by-default**.
 
-The renderer is untrusted and cannot access host privileges unless explicitly granted via Tauri
-capabilities and allowlisted command permissions.
+The renderer is untrusted and cannot access host privileges unless explicitly granted via Tauri capabilities and allowlisted command permissions.
 
 Required invariants:
 
-- **No renderer HTTP**: the UI must not use `fetch`/`XMLHttpRequest`/`axios`; the host owns any
-  networking (future remote mode).
+- **No renderer HTTP**: the UI must not use `fetch`/`XMLHttpRequest`/`axios`; the host owns any networking (future remote mode).
 - **No open TCP ports in desktop mode**: the host must not bind listeners.
-- **Only allowlisted IPC commands are invocable**: command exposure is declared via the Tauri
-  permission `appcommands` (`src-tauri/permissions/appcommands.toml`) and enabled by default
-  capability (`src-tauri/capabilities/default.json`).
-- **Only allowlisted plugins are enabled**: adding a plugin requires updating capabilities and
-  contracts first.
+- **Only allowlisted IPC commands are invocable**: command exposure is declared via the Tauri permission `appcommands` (`src-tauri/permissions/appcommands.toml`) and enabled by default capability (`src-tauri/capabilities/default.json`).
+- **Only allowlisted plugins are enabled**: adding a plugin requires updating capabilities and contracts first.
 
 ### 13.2 CSP
 
@@ -637,9 +627,7 @@ Default policy:
 - Renderer starts with **read-only**
 - Write/admin capabilities require explicit enablement
 
-Host IPC permissions are declared in `src-tauri/permissions/` and enabled via
-`src-tauri/capabilities/default.json`. The default capability must include the
-permission set covering the app command surface.
+Host IPC permissions are declared in `src-tauri/permissions/` and enabled via `src-tauri/capabilities/default.json`. The default capability must include the permission set covering the app command surface.
 
 ### 20.3 User-visible prompts (future-ready)
 
@@ -991,8 +979,7 @@ Example lifecycle hooks (conceptual):
 - `on_job_cancel`
 - `on_host_shutdown`
 
-**Rule:**
-The host never calls engine internals directly; all interaction is via registered traits.
+**Rule:** The host never calls engine internals directly; all interaction is via registered traits.
 
 ---
 
@@ -1210,8 +1197,7 @@ Only excluded:
 - optional sync
 - update checks (deferred)
 
-**Rule:**
-No feature may silently degrade due to lack of connectivity.
+**Rule:** No feature may silently degrade due to lack of connectivity.
 
 ---
 
@@ -1285,23 +1271,17 @@ This avoids silent erosion of the architecture.
 
 ## 42. Final system invariants (non-negotiable)
 
-1. **The renderer is disposable**
-   Losing UI state must never lose model state.
+1. **The renderer is disposable** Losing UI state must never lose model state.
 
-2. **The host is authoritative**
-   All side effects flow through it.
+2. **The host is authoritative** All side effects flow through it.
 
-3. **Engines are replaceable**
-   Their contracts matter more than their internals.
+3. **Engines are replaceable** Their contracts matter more than their internals.
 
-4. **Time and scenario are first-class**
-   No “current state only” shortcuts.
+4. **Time and scenario are first-class** No “current state only” shortcuts.
 
-5. **Analytics must be explainable**
-   If you can’t explain it, you can’t trust it.
+5. **Analytics must be explainable** If you can’t explain it, you can’t trust it.
 
-6. **Users never manage branches**
-   They manage scenarios and decisions.
+6. **Users never manage branches** They manage scenarios and decisions.
 
 ---
 
@@ -1354,20 +1334,15 @@ This aligns with `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` where host “w
 
 Required modules:
 
-- `app.rs`
-  Tauri builder, plugin init, invoke handler registration, managed state setup.
+- `app.rs` Tauri builder, plugin init, invoke handler registration, managed state setup.
 
-- `windows.rs`
-  All window creation, labels, sizing, platform styling. No engine calls.
+- `windows.rs` All window creation, labels, sizing, platform styling. No engine calls.
 
-- `menu.rs`
-  Native menu and accelerators. Emits events to renderer or calls host window commands.
+- `menu.rs` Native menu and accelerators. Emits events to renderer or calls host window commands.
 
-- `setup.rs`
-  Splash gating and backend initialisation. Owns setup state machine.
+- `setup.rs` Splash gating and backend initialisation. Owns setup state machine.
 
-- `ipc/`
-  Host IPC organized by responsibility/domain.
+- `ipc/` Host IPC organized by responsibility/domain.
   - `ipc/mod.rs` – registry glue and shared DTO helpers
 - `ipc/system.rs` – version, environment, diagnostics toggles
 - `ipc/workspace.rs` – open/close/list/backup/restore
@@ -1378,14 +1353,11 @@ Required modules:
   - `ipc/metis.rs` – analytics job entrypoints
   - `ipc/continuum.rs` – orchestration/scheduler entrypoints (when enabled)
 
-- `health.rs`
-  Host + engine health aggregation.
+- `health.rs` Host + engine health aggregation.
 
-- `events.rs`
-  Host→renderer event bus wrappers and event schema.
+- `events.rs` Host→renderer event bus wrappers and event schema.
 
-- `jobs.rs`
-  Host job manager + persistence + cancellation token plumbing.
+- `jobs.rs` Host job manager + persistence + cancellation token plumbing.
 
 This is the required structure.
 
@@ -1401,8 +1373,7 @@ Rules:
 
 Example mapping:
 
-- Adapter method: `chrona_temporal_state_at()`
-  Calls host command: `chrona_temporal_state_at`
+- Adapter method: `chrona_temporal_state_at()` Calls host command: `chrona_temporal_state_at`
 
 ---
 
@@ -1445,15 +1416,12 @@ Notes:
 
 - The splash is closed only when **both** backend + frontend readiness tasks are complete.
 - Backend readiness is set by the host after engine/bootstrap initialisation completes.
-- Frontend readiness is set by the host when the splash route finishes loading (and is also
-  queryable via `system_setup_state` to avoid “missed event” races).
+- Frontend readiness is set by the host when the splash route finishes loading (and is also queryable via `system_setup_state` to avoid “missed event” races).
 
 Failure modes (current M0 baseline):
 
-- If backend setup fails, the host logs the error and setup does not complete (splash remains).
-  Recovery access is still expected via host-owned windows (Status/About).
-- If the splash never reaches “frontend ready”, setup does not complete; this should be treated as
-  a UI boot failure and is investigated via diagnostics.
+- If backend setup fails, the host logs the error and setup does not complete (splash remains). Recovery access is still expected via host-owned windows (Status/About).
+- If the splash never reaches “frontend ready”, setup does not complete; this should be treated as a UI boot failure and is investigated via diagnostics.
 
 Implementation reference:
 
@@ -1511,8 +1479,7 @@ The renderer must assume **no** platform-specific CSS hacks are required to make
 
 Window behaviour MUST be deterministic across platforms:
 
-- Each window label is **single-instance** within the process (`splash`, `main`, `settings`,
-  `status`, `about`, `styleguide`).
+- Each window label is **single-instance** within the process (`splash`, `main`, `settings`, `status`, `about`, `styleguide`).
 - “Open window” operations MUST be host-owned and implemented as:
   - if the window exists: focus it
   - else: create it with the canonical route + size constraints
@@ -1535,23 +1502,17 @@ This aligns with `DESIGN.md` and extends it to support more modules and long-liv
 
 `src/` must contain:
 
-- `app/`
-  Window-aware screens and routing glue (`app-screens.tsx` etc.)
+- `app/` Window-aware screens and routing glue (`app-screens.tsx` etc.)
 
-- `design-system/`
-  Aideon-wrapped shadcn primitives and tokens. Product screens never import raw shadcn.
+- `design-system/` Aideon-wrapped shadcn primitives and tokens. Product screens never import raw shadcn.
 
-- `shell/`
-  `AideonDesktopShell` and slot composition.
+- `shell/` `AideonDesktopShell` and slot composition.
 
-- `workspaces/`
-  Workspace modules registered in `registry.ts` and implementing `WorkspaceModule`.
+- `workspaces/` Workspace modules registered in `registry.ts` and implementing `WorkspaceModule`.
 
-- `adapters/`
-  IPC adapters and contracts.
+- `adapters/` IPC adapters and contracts.
 
-- `state/`
-  Global store slices:
+- `state/` Global store slices:
   - system
   - workspace
   - context (time/scenario/layer)
@@ -1559,8 +1520,7 @@ This aligns with `DESIGN.md` and extends it to support more modules and long-liv
   - notifications
   - artefact cache
 
-- `testing/` (or `tests/`)
-  Test harnesses and golden fixtures.
+- `testing/` (or `tests/`) Test harnesses and golden fixtures.
 
 ---
 
@@ -1709,11 +1669,8 @@ Renderer never sees filesystem paths.
 
 ### 49.4 Factory reset
 
-- The host exposes `system_factory_reset` (payload `{ confirmation }`) that clears the `AideonPraxis`
-  storage tree after receiving the literal `CONFIRM-FACTORY-RESET` token. The command runs under the
-  `workspace_admin` capability and emits diagnostics in the Status window if anything fails.
-- Renderer surfaces this action only inside recovery/Status contexts, archives logs before invoking, and
-  never calls the command automatically.
+- The host exposes `system_factory_reset` (payload `{ confirmation }`) that clears the `AideonPraxis` storage tree after receiving the literal `CONFIRM-FACTORY-RESET` token. The command runs under the `workspace_admin` capability and emits diagnostics in the Status window if anything fails.
+- Renderer surfaces this action only inside recovery/Status contexts, archives logs before invoking, and never calls the command automatically.
 
 ---
 
@@ -1772,10 +1729,8 @@ E2E must be deterministic:
 
 Reference tests:
 
-- `src-tauri/tests/internal/tauri_e2e_smoke.rs` smoke checks window routes + IPC wiring via a
-  Tauri mock app (runs on non-Windows during `cargo test -p aideon_desktop`).
-- `tests/e2e/specs/tauri-smoke.e2e.mjs` Node-driven smoke test using `tauri-driver` + WebdriverIO
-  to invoke real Rust commands through the app window.
+- `src-tauri/tests/internal/tauri_e2e_smoke.rs` smoke checks window routes + IPC wiring via a Tauri mock app (runs on non-Windows during `cargo test -p aideon_desktop`).
+- `tests/e2e/specs/tauri-smoke.e2e.mjs` Node-driven smoke test using `tauri-driver` + WebdriverIO to invoke real Rust commands through the app window.
 
 ---
 

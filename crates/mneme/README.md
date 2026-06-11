@@ -2,11 +2,7 @@
 
 ## Purpose
 
-Mneme is the persistence layer for Aideon Suite. It provides the op-log, bi-temporal fact storage,
-schema-as-data, and graph projections described in `crates/mneme_core/DESIGN.md` and
-`crates/mneme_store/DESIGN.md`.
-SQLite is the first implementation; other RDBMS backends are expected to follow the same logical
-schema and APIs.
+Mneme is the persistence layer for Aideon Suite. It provides the op-log, bi-temporal fact storage, schema-as-data, and graph projections described in `crates/mneme_core/DESIGN.md` and `crates/mneme_store/DESIGN.md`. SQLite is the first implementation; other RDBMS backends are expected to follow the same logical schema and APIs.
 
 ## Package layout
 
@@ -17,8 +13,7 @@ schema and APIs.
 ## Responsibilities
 
 - Own the only SQL/RDBMS access layer in the suite.
-- Provide storage APIs for entities, edge existence, typed property facts, schema metadata, and
-  analytics projections (PageRank-ready adjacency).
+- Provide storage APIs for entities, edge existence, typed property facts, schema metadata, and analytics projections (PageRank-ready adjacency).
 - Maintain the operation log used for sync and deterministic replication.
 - Run DDL and migrations for the storage engine.
 - Support scenario overlays via `scenario_id` scoped facts and reads.
@@ -42,8 +37,7 @@ schema and APIs.
 
 ### Workers and processing
 
-- Use `trigger_rebuild_effective_schema`, `trigger_refresh_integrity`, and
-  `trigger_refresh_analytics_projections` to enqueue jobs.
+- Use `trigger_rebuild_effective_schema`, `trigger_refresh_integrity`, and `trigger_refresh_analytics_projections` to enqueue jobs.
 - Call `run_processing_worker` to lease and execute jobs inside the host process.
 
 ### Export and import
@@ -53,8 +47,7 @@ schema and APIs.
 
 ### Retention and compaction
 
-- Schedule `trigger_retention` daily or weekly with a `RetentionPolicy` to bound op-log, fact, job,
-  and PageRank history.
+- Schedule `trigger_retention` daily or weekly with a `RetentionPolicy` to bound op-log, fact, job, and PageRank history.
 - Schedule `trigger_compaction` after retention windows to rebuild index tables from facts.
 
 ## Design and architecture
@@ -64,6 +57,4 @@ Authoritative designs live in:
 - `crates/mneme_core/DESIGN.md` (domain contracts + traits)
 - `crates/mneme_store/DESIGN.md` (store semantics, migrations, jobs, exports)
 
-`crates/mneme/DESIGN.md` remains as an umbrella overview; keep it aligned with the split design so
-the narrative stays coherent. Keep `docs/05-modules/mneme/SQLITE.md` aligned with the current schema and
-migration strategy.
+`crates/mneme/DESIGN.md` remains as an umbrella overview; keep it aligned with the split design so the narrative stays coherent. Keep `docs/05-modules/mneme/SQLITE.md` aligned with the current schema and migration strategy.

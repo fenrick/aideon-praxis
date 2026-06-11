@@ -2,9 +2,7 @@
 
 ## Purpose
 
-Mneme Core defines the storage-engine **domain contracts** shared by the host and engines:
-identifiers, value types, error types, and trait surfaces. It is deliberately storage-backend
-agnostic.
+Mneme Core defines the storage-engine **domain contracts** shared by the host and engines: identifiers, value types, error types, and trait surfaces. It is deliberately storage-backend agnostic.
 
 ## Responsibilities
 

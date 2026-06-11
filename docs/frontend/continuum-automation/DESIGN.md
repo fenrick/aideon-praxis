@@ -229,10 +229,8 @@ Minimum test fixtures:
 ## Data model and APIs (target end state)
 
 - Renderer uses typed IPC only; no renderer HTTP.
-- Continuum automation DTOs live in `src/dtos/continuum.ts` and are re-exported
-  from `src/dtos/index.ts`.
-- The automation surface calls the host exclusively via an adapter surface under
-  `src/workspaces/continuum/` (or an equivalent workspace module).
+- Continuum automation DTOs live in `src/dtos/continuum.ts` and are re-exported from `src/dtos/index.ts`.
+- The automation surface calls the host exclusively via an adapter surface under `src/workspaces/continuum/` (or an equivalent workspace module).
 - Host-side automation runs as jobs and emits:
   - `job_updated` / `job_completed` (progress and completion),
   - `sync_updated` when connector sync status changes.

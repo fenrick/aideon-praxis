@@ -6,12 +6,12 @@ Praxis owns meaning; Mneme owns storage. This document describes how metamodel p
 
 ## Scope and Responsibilities
 
-| Concern                         | Owner                       | What It Does                                                                            |
-| ------------------------------- | --------------------------- | --------------------------------------------------------------------------------------- |
-| Type and relationship semantics | Praxis (`crates/praxis`)    | Defines `MetaModelDocument`: types, relationships, validation rules                     |
-| Schema-as-data persistence      | Mneme (`crates/mneme_core`) | Persists `MetamodelBatch` and exposes `EffectiveSchema` queries                         |
-| Domain ↔ storage translation    | Praxis registry             | Maps human-readable domain keys to Mneme `type_id` / `field_id` / `edge_type_id` values |
-| Canonical schema files          | Workspace `model/schema/`   | Portable, version-controlled, the authority for every open project                      |
+| Concern | Owner | What It Does |
+| --- | --- | --- |
+| Type and relationship semantics | Praxis (`crates/praxis`) | Defines `MetaModelDocument`: types, relationships, validation rules |
+| Schema-as-data persistence | Mneme (`crates/mneme_core`) | Persists `MetamodelBatch` and exposes `EffectiveSchema` queries |
+| Domain ↔ storage translation | Praxis registry | Maps human-readable domain keys to Mneme `type_id` / `field_id` / `edge_type_id` values |
+| Canonical schema files | Workspace `model/schema/` | Portable, version-controlled, the authority for every open project |
 
 The invariant is absolute: nothing above Mneme ever handles raw storage IDs directly. The registry is the only crossing point.
 
@@ -101,11 +101,11 @@ pub struct MetaModelConfig {
 
 After merging, `MetaModelRegistry::from_document` compiles the document into three in-memory indexes that Praxis uses at runtime:
 
-| Index                                                             | Purpose                                                     |
-| ----------------------------------------------------------------- | ----------------------------------------------------------- |
-| `TypeDescriptor` map                                              | Flattened attribute set per type, with inheritance resolved |
-| `RelationshipDescriptor` map                                      | Allowed `from`/`to` sets and attribute set per relationship |
-| UUID maps (`type_uuids`, `relationship_uuids`, `attribute_uuids`) | String-keyed lookups for stable identity                    |
+| Index | Purpose |
+| --- | --- |
+| `TypeDescriptor` map | Flattened attribute set per type, with inheritance resolved |
+| `RelationshipDescriptor` map | Allowed `from`/`to` sets and attribute set per relationship |
+| UUID maps (`type_uuids`, `relationship_uuids`, `attribute_uuids`) | String-keyed lookups for stable identity |
 
 Inheritance is resolved depth-first. A type's effective attribute set is its parent's set (recursively flattened) overridden by its own declarations. Cycles are detected and rejected immediately.
 
@@ -132,9 +132,9 @@ Praxis publishes the batch; Mneme stores it. Neither side inverts this flow.
 
 Type, relationship, and attribute identifiers are part of the long-term compatibility surface. Two identifier namespaces exist:
 
-| Namespace                 | Key                                                            | Stability guarantee                                                        |
-| ------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Praxis string ID          | `MetaType.id`, `MetaRelationship.id`                           | Never change after first publication                                       |
+| Namespace | Key | Stability guarantee |
+| --- | --- | --- |
+| Praxis string ID | `MetaType.id`, `MetaRelationship.id` | Never change after first publication |
 | UUID compatibility handle | `MetaType.uuid`, `MetaRelationship.uuid`, `MetaAttribute.uuid` | Stable across document versions; used for cross-document identity matching |
 
 UUIDs are version-5 values committed as JSON strings. The registry builds lookup maps (`type_uuids`, `relationship_uuids`, `attribute_uuids`) keyed on the string IDs so callers can resolve either form:
@@ -215,10 +215,10 @@ Validation is a `PraxisResult` — errors are typed `PraxisError::ValidationFail
 
 Schema data lives in two places:
 
-| Location                      | Form                                     | Authority                                 |
-| ----------------------------- | ---------------------------------------- | ----------------------------------------- |
+| Location | Form | Authority |
+| --- | --- | --- |
 | `docs/data/meta/core-v1.json` | Versioned JSON, embedded at compile time | Source of record for the built-in package |
-| Workspace `model/schema/`     | Portable JSON files, version-controlled  | Source of record for project-local schema |
+| Workspace `model/schema/` | Portable JSON files, version-controlled | Source of record for project-local schema |
 
 The built-in package is compiled into the `praxis` binary via `include_str!`. Project workspaces may carry additional schema files in `model/schema/` that Praxis loads as overlays. Both paths go through `MetaModelSource` and the same `merge_documents` pipeline.
 

@@ -28,15 +28,15 @@ Every projection-backed read surface carries a `ProjectionDescriptor`. It is the
 
 ### Required Fields
 
-| Field                   | Type     | Description                                                                       |
-| ----------------------- | -------- | --------------------------------------------------------------------------------- |
-| `projection_id`         | string   | Stable identifier for this projection family                                      |
-| `projection_version`    | string   | Monotonically increasing version string; increment on schema or logic changes     |
-| `freshness_class`       | enum     | One of `on_demand`, `incremental`, `batch_rebuild`, `scenario_specific`           |
-| `max_staleness_seconds` | integer  | Acceptable staleness window; enforced by observability                            |
-| `context_dimensions`    | string[] | Dimensions that scope a projection instance; must include at least `workspace_id` |
-| `owner`                 | string   | Module responsible for maintaining this projection                                |
-| `failure_mode`          | enum     | One of `serve_stale_with_indicator`, `block_on_stale`, `fail_open`                |
+| Field | Type | Description |
+| --- | --- | --- |
+| `projection_id` | string | Stable identifier for this projection family |
+| `projection_version` | string | Monotonically increasing version string; increment on schema or logic changes |
+| `freshness_class` | enum | One of `on_demand`, `incremental`, `batch_rebuild`, `scenario_specific` |
+| `max_staleness_seconds` | integer | Acceptable staleness window; enforced by observability |
+| `context_dimensions` | string[] | Dimensions that scope a projection instance; must include at least `workspace_id` |
+| `owner` | string | Module responsible for maintaining this projection |
+| `failure_mode` | enum | One of `serve_stale_with_indicator`, `block_on_stale`, `fail_open` |
 
 A descriptor with missing required fields is rejected with `PROJECTION_DESCRIPTOR_INVALID`.
 
@@ -46,11 +46,11 @@ A descriptor with missing required fields is rejected with `PROJECTION_DESCRIPTO
 
 Every projection declares exactly one freshness class. The class determines when the projection is refreshed, what staleness is acceptable, and what rebuild trigger applies.
 
-| Class               | Refresh trigger                                        | Acceptable staleness          | Typical projections                                         |
-| ------------------- | ------------------------------------------------------ | ----------------------------- | ----------------------------------------------------------- |
-| `on_demand`         | Computed at read time                                  | None — always current         | Small or rare derived surfaces; simple fact lookups         |
-| `incremental`       | Op-append event; applied after each write              | Configurable; default ≤ 30 s  | Effective graph, adjacency index, entity status             |
-| `batch_rebuild`     | Scheduled or explicit maintenance trigger              | Minutes to hours              | Full-text search index, vector sidecar, bulk analytics      |
+| Class | Refresh trigger | Acceptable staleness | Typical projections |
+| --- | --- | --- | --- |
+| `on_demand` | Computed at read time | None — always current | Small or rare derived surfaces; simple fact lookups |
+| `incremental` | Op-append event; applied after each write | Configurable; default ≤ 30 s | Effective graph, adjacency index, entity status |
+| `batch_rebuild` | Scheduled or explicit maintenance trigger | Minutes to hours | Full-text search index, vector sidecar, bulk analytics |
 | `scenario_specific` | Scenario activation or op-append within scenario scope | Per-scenario staleness budget | Scenario-scoped graphs, comparison views, planning surfaces |
 
 ### Class Rules
@@ -130,12 +130,12 @@ Delta-apply tasks for `incremental` projections run immediately after commit on 
 
 A projection instance at a given `(projection_id, projection_version, context_dimensions)` is in exactly one of four freshness states:
 
-| State        | Meaning                                                                          | UI indicator                          |
-| ------------ | -------------------------------------------------------------------------------- | ------------------------------------- |
-| `fresh`      | Projection is current; no pending invalidation                                   | None (default)                        |
-| `stale`      | An invalidation event has been emitted; delta-apply or rebuild has not completed | Staleness badge; age in seconds       |
-| `rebuilding` | A full rebuild workflow is in progress                                           | Rebuilding spinner                    |
-| `failed`     | The last refresh or rebuild attempt failed                                       | Error indicator with retry affordance |
+| State | Meaning | UI indicator |
+| --- | --- | --- |
+| `fresh` | Projection is current; no pending invalidation | None (default) |
+| `stale` | An invalidation event has been emitted; delta-apply or rebuild has not completed | Staleness badge; age in seconds |
+| `rebuilding` | A full rebuild workflow is in progress | Rebuilding spinner |
+| `failed` | The last refresh or rebuild attempt failed | Error indicator with retry affordance |
 
 ### Reporting Freshness to the UI
 
@@ -190,11 +190,11 @@ Projection version mismatches between the descriptor and the stored projection a
 
 A projection instance is only correct for the context dimensions it was built against. Cache correctness depends on three axes:
 
-| Axis               | Description                                                                                                                                                                        |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Time context       | The `effective_as_of` timestamp used when the projection was built. A projection built at T₁ is not correct for reads at T₂ unless the op log contains no mutations in `(T₁, T₂)`. |
-| Scenario context   | A projection built for `scenario_id = null` (workspace baseline) is not correct for a scenario-scoped read. Scenario projections are keyed separately.                             |
-| Projection version | A stored projection at `pv_N` is not served for a descriptor at `pv_N+1`. Version increment triggers rebuild before serving.                                                       |
+| Axis | Description |
+| --- | --- |
+| Time context | The `effective_as_of` timestamp used when the projection was built. A projection built at T₁ is not correct for reads at T₂ unless the op log contains no mutations in `(T₁, T₂)`. |
+| Scenario context | A projection built for `scenario_id = null` (workspace baseline) is not correct for a scenario-scoped read. Scenario projections are keyed separately. |
+| Projection version | A stored projection at `pv_N` is not served for a descriptor at `pv_N+1`. Version increment triggers rebuild before serving. |
 
 The descriptor's `context_dimensions` field lists the dimensions that scope each instance. Serving a projection for a context outside its declared dimensions is an error (`PROJECTION_CONTEXT_MISMATCH`).
 
@@ -204,25 +204,25 @@ The descriptor's `context_dimensions` field lists the dimensions that scope each
 
 The following signals are tracked and surfaced to the local diagnostic log:
 
-| Signal                        | Condition                                                          | Error code                            |
-| ----------------------------- | ------------------------------------------------------------------ | ------------------------------------- |
-| Projection lag                | Time from `stale_since` to `fresh` exceeds `max_staleness_seconds` | `PROJECTION_STALE_THRESHOLD_EXCEEDED` |
-| Refresh failure               | Delta-apply or rebuild fails                                       | `PROJECTION_REFRESH_FAILED`           |
-| Invalidation emission failure | `projection.invalidate` not recorded before write commit           | `INVALIDATION_EMIT_FAILED`            |
-| Descriptor invalid            | Required field missing or malformed                                | `PROJECTION_DESCRIPTOR_INVALID`       |
-| Context mismatch              | Projection served outside declared context dimensions              | `PROJECTION_CONTEXT_MISMATCH`         |
+| Signal | Condition | Error code |
+| --- | --- | --- |
+| Projection lag | Time from `stale_since` to `fresh` exceeds `max_staleness_seconds` | `PROJECTION_STALE_THRESHOLD_EXCEEDED` |
+| Refresh failure | Delta-apply or rebuild fails | `PROJECTION_REFRESH_FAILED` |
+| Invalidation emission failure | `projection.invalidate` not recorded before write commit | `INVALIDATION_EMIT_FAILED` |
+| Descriptor invalid | Required field missing or malformed | `PROJECTION_DESCRIPTOR_INVALID` |
+| Context mismatch | Projection served outside declared context dimensions | `PROJECTION_CONTEXT_MISMATCH` |
 
 ---
 
 ## Error Codes
 
-| Code                                  | Meaning                                                                         |
-| ------------------------------------- | ------------------------------------------------------------------------------- |
-| `PROJECTION_DESCRIPTOR_INVALID`       | Descriptor is missing required fields or carries an unsupported class           |
-| `PROJECTION_STALE_THRESHOLD_EXCEEDED` | Projection staleness window has been exceeded                                   |
-| `PROJECTION_REFRESH_FAILED`           | Delta-apply or rebuild workflow failed                                          |
-| `PROJECTION_CONTEXT_MISMATCH`         | Read context is outside the projection's declared context dimensions            |
-| `INVALIDATION_EMIT_FAILED`            | Invalidation event could not be recorded; write is not acknowledged as complete |
+| Code | Meaning |
+| --- | --- |
+| `PROJECTION_DESCRIPTOR_INVALID` | Descriptor is missing required fields or carries an unsupported class |
+| `PROJECTION_STALE_THRESHOLD_EXCEEDED` | Projection staleness window has been exceeded |
+| `PROJECTION_REFRESH_FAILED` | Delta-apply or rebuild workflow failed |
+| `PROJECTION_CONTEXT_MISMATCH` | Read context is outside the projection's declared context dimensions |
+| `INVALIDATION_EMIT_FAILED` | Invalidation event could not be recorded; write is not acknowledged as complete |
 
 ---
 

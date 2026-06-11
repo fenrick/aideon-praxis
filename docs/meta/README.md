@@ -2,13 +2,9 @@
 
 ## Purpose
 
-Explain how the Aideon Suite metamodel is delivered and managed as **packages** rather than hard-
-coded enums: where package definitions live, how they are published into Mneme, and how the Praxis
-registry maps domain concepts to storage IDs.
+Explain how the Aideon Suite metamodel is delivered and managed as **packages** rather than hard- coded enums: where package definitions live, how they are published into Mneme, and how the Praxis registry maps domain concepts to storage IDs.
 
-Praxis owns the **meaning** of the twin (master types, domain types, verbs). Mneme owns the
-**persistence** of schema data (types, fields, edge rules). This split keeps the system portable and
-extensible without leaking storage details to the UI.
+Praxis owns the **meaning** of the twin (master types, domain types, verbs). Mneme owns the **persistence** of schema data (types, fields, edge rules). This split keeps the system portable and extensible without leaking storage details to the UI.
 
 ## Structure
 
@@ -39,11 +35,8 @@ The registry is used by task APIs so callers never need to handle storage IDs di
 
 ## Overrides and extensions
 
-Additional packages can be installed per partition. Package evolution is versioned and can be
-validated before publication. Praxis enforces single inheritance, endpoint constraints, and rule
-compatibility when packages are applied.
+Additional packages can be installed per partition. Package evolution is versioned and can be validated before publication. Praxis enforces single inheritance, endpoint constraints, and rule compatibility when packages are applied.
 
 ## Storage notes
 
-Mneme persists schema and edge semantics in its portable tables; no raw SQL is used in migrations or
-runtime paths. See `crates/mneme_core/DESIGN.md` and `crates/mneme_store/DESIGN.md` for schema details.
+Mneme persists schema and edge semantics in its portable tables; no raw SQL is used in migrations or runtime paths. See `crates/mneme_core/DESIGN.md` and `crates/mneme_store/DESIGN.md` for schema details.

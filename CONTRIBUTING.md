@@ -1,7 +1,6 @@
 # Contributing to Aideon Desktop
 
-Thanks for your interest in contributing! This guide explains how we work, how to set up your
-environment, and what we expect in issues and pull requests.
+Thanks for your interest in contributing! This guide explains how we work, how to set up your environment, and what we expect in issues and pull requests.
 
 ## Values
 
@@ -18,8 +17,7 @@ environment, and what we expect in issues and pull requests.
 - **Docs:** fix typos, improve examples, add diagrams/captions.
 - **Code:** pick a labeled issue, discuss approach, then open a PR.
 
-Labels to look for: `good first issue`, `priority/P1`, `area/*`, `module/*`. Milestones (M0–M6)
-track staged delivery (see `ROADMAP.md`).
+Labels to look for: `good first issue`, `priority/P1`, `area/*`, `module/*`. Milestones (M0–M6) track staged delivery (see `ROADMAP.md`).
 
 ## Development setup
 
@@ -87,8 +85,7 @@ Quality gates
 ### Branching
 
 - `main`: protected, always releasable.
-- Feature branches: `feat/<short-name>`; fixes: `fix/<short-name>`; chores/docs:
-  `chore/<short-name>`, `docs/<short-name>`.
+- Feature branches: `feat/<short-name>`; fixes: `fix/<short-name>`; chores/docs: `chore/<short-name>`, `docs/<short-name>`.
 
 ### Conventional Commits
 
@@ -113,8 +110,7 @@ Quality gates
 
 ## Architecture changes
 
-When a change affects the **RPC boundary**, **adapters**, **time semantics**, or **security posture**,
-update:
+When a change affects the **RPC boundary**, **adapters**, **time semantics**, or **security posture**, update:
 
 - `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`
 - The relevant module `DESIGN.md`
@@ -142,8 +138,7 @@ Use labels (`type/*`, `area/*`, `module/*`, `priority/*`) and assign the **miles
 - Never open worker TCP ports in desktop mode.
 - Renderer calls Host via Tauri invoke (typed adapters). Desktop mode runs engines in-process. No sockets.
 - Redact PII on exports by default.
-- “No renderer HTTP” means no renderer-initiated backend/network calls in desktop mode; the dev
-  toolchain may use a loopback dev server for HMR.
+- “No renderer HTTP” means no renderer-initiated backend/network calls in desktop mode; the dev toolchain may use a loopback dev server for HMR.
 - Report vulnerabilities privately: <security@yourdomain.tld> (replace with project address).
 
 ## Releases

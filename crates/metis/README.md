@@ -2,8 +2,7 @@
 
 ## Purpose
 
-Metis Analytics is the analytics engine for Aideon Suite. It implements graph algorithms and
-financial analytics (e.g. shortest path, centrality, impact, TCO) over the time-first digital twin.
+Metis Analytics is the analytics engine for Aideon Suite. It implements graph algorithms and financial analytics (e.g. shortest path, centrality, impact, TCO) over the time-first digital twin.
 
 ## Responsibilities
 
@@ -23,6 +22,4 @@ financial analytics (e.g. shortest path, centrality, impact, TCO) over the time-
 
 ## Design and architecture
 
-Metis honours the RPC and job contracts described in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and `docs/03-design/DESIGN.md`.
-As algorithms land, extend `crates/metis/DESIGN.md` to capture structures, SLOs,
-and test datasets.
+Metis honours the RPC and job contracts described in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and `docs/03-design/DESIGN.md`. As algorithms land, extend `crates/metis/DESIGN.md` to capture structures, SLOs, and test datasets.

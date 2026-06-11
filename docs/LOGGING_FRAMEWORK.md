@@ -155,8 +155,7 @@ Implementation rules:
 - Rust logs MUST be written via the official Tauri logging plugin into LogDir.
 - WebView logs MUST be forwarded into the same Tauri logging pipeline.
 
-Tauri logging plugin (v2): <https://v2.tauri.app/plugin/logging/>
-Tauri JS log API: <https://v2.tauri.app/reference/javascript/log/>
+Tauri logging plugin (v2): <https://v2.tauri.app/plugin/logging/> Tauri JS log API: <https://v2.tauri.app/reference/javascript/log/>
 
 ### 5.1 Centralisation
 

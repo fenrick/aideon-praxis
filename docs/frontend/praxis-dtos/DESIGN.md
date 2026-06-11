@@ -2,15 +2,12 @@
 
 ## Purpose & scope
 
-Praxis DTOs holds shared TypeScript data-transfer objects for temporal state/diff snapshots,
-meta-model documents, plan events, and worker job payloads. It keeps IPC and worker contracts
-consistent across renderer, host, and engines.
+Praxis DTOs holds shared TypeScript data-transfer objects for temporal state/diff snapshots, meta-model documents, plan events, and worker job payloads. It keeps IPC and worker contracts consistent across renderer, host, and engines.
 
 ## Allowed dependencies / frameworks
 
 - TypeScript (strict), ESM modules.
-- Minimal runtime code; DTOs are type-first. Helpers may use standard library only (e.g., date
-  parsing in `ensureIsoDateTime`).
+- Minimal runtime code; DTOs are type-first. Helpers may use standard library only (e.g., date parsing in `ensureIsoDateTime`).
 - No React, Tauri, DOM, or networking dependencies.
 
 ## Anti-goals

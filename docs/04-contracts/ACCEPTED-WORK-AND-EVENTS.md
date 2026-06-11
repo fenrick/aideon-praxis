@@ -1,37 +1,27 @@
 # Accepted Work and Events
 
-The contract for long-running work on Aideon Desktop: the `AcceptedJob` shape, the run and
-step lifecycle, the typed Tauri event model, the local durable run ledger, and the backpressure
-contract.
+The contract for long-running work on Aideon Desktop: the `AcceptedJob` shape, the run and step lifecycle, the typed Tauri event model, the local durable run ledger, and the backpressure contract.
 
 ---
 
 ## Why This Contract Exists
 
-Long-running work — schema rebuilds, blob ingestion, analytics refresh, import pipelines,
-re-indexing, and connector-driven ingest — must not block the renderer thread and must not
-disappear silently into a background process the user cannot inspect. The pattern is:
+Long-running work — schema rebuilds, blob ingestion, analytics refresh, import pipelines, re-indexing, and connector-driven ingest — must not block the renderer thread and must not disappear silently into a background process the user cannot inspect. The pattern is:
 
 1. A Tauri command returns an `AcceptedJob` immediately.
 2. Progress arrives as a stream of typed Tauri events.
-3. A durable run ledger in the workspace records the full lifecycle so runs are auditable after
-   the fact.
-4. When the write queue is saturated, the command returns a `BACKPRESSURE` error and the UI
-   shows a queued state.
+3. A durable run ledger in the workspace records the full lifecycle so runs are auditable after the fact.
+4. When the write queue is saturated, the command returns a `BACKPRESSURE` error and the UI shows a queued state.
 
-This is the desktop translation of the platform's "202 Accepted" semantics. The lifecycle is
-identical; there is no HTTP — only Tauri commands and events.
+This is the desktop translation of the platform's "202 Accepted" semantics. The lifecycle is identical; there is no HTTP — only Tauri commands and events.
 
-The authoritative boundary rules are in
-[ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md). The UX obligations for
-status surfaces are in [UX-DESIGN.md](../03-design/UX-DESIGN.md).
+The authoritative boundary rules are in [ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md). The UX obligations for status surfaces are in [UX-DESIGN.md](../03-design/UX-DESIGN.md).
 
 ---
 
 ## Accepted Job Shape
 
-Every Tauri command that initiates long-running work returns an `AcceptedJob`. The renderer
-stores this immediately and subscribes to events filtered by `runId`.
+Every Tauri command that initiates long-running work returns an `AcceptedJob`. The renderer stores this immediately and subscribes to events filtered by `runId`.
 
 ```typescript
 // TypeScript — src/dtos/accepted-job.ts
@@ -136,8 +126,7 @@ running → step.failed → failed
 
 ## Typed Event Model
 
-All run progress arrives via Tauri events, not by polling. Events are emitted on the
-`run:progress` channel. The renderer subscribes once and filters by `runId`.
+All run progress arrives via Tauri events, not by polling. Events are emitted on the `run:progress` channel. The renderer subscribes once and filters by `runId`.
 
 ### Event Envelope
 
@@ -221,8 +210,7 @@ interface ProgressPayload {
 }
 ```
 
-`phase` values are stable per `WorkQueueClass` family and must not change between runs without
-a contract version bump.
+`phase` values are stable per `WorkQueueClass` family and must not change between runs without a contract version bump.
 
 ### Example: schema rebuild event sequence
 
@@ -281,8 +269,7 @@ a contract version bump.
 
 ## Local Durable Run Ledger
 
-The run ledger is persisted in the workspace, not in a hosted service. It is the source of
-truth for run history, step lineage, and artefact provenance.
+The run ledger is persisted in the workspace, not in a hosted service. It is the source of truth for run history, step lineage, and artefact provenance.
 
 ### Storage Location
 
@@ -302,8 +289,7 @@ truth for run history, step lineage, and artefact provenance.
             └── ...
 ```
 
-The `AcceptedJob.ledgerRef` is a workspace-relative path pointing to the `run.json` for that
-run (e.g. `ops/runs/run_abc/run.json`).
+The `AcceptedJob.ledgerRef` is a workspace-relative path pointing to the `run.json` for that run (e.g. `ops/runs/run_abc/run.json`).
 
 ### RunRecord Shape
 
@@ -374,8 +360,7 @@ interface RunError {
 
 - Every command that initiates long-running work must supply an `idempotencyKey`.
 - The executor checks the run ledger before creating a new run record.
-- A duplicate submission with the same `idempotencyKey` returns the existing `AcceptedJob`
-  without creating a second run.
+- A duplicate submission with the same `idempotencyKey` returns the existing `AcceptedJob` without creating a second run.
 - The idempotency window is the lifetime of the workspace run ledger.
 
 ---
@@ -394,8 +379,7 @@ interface RunCancelRequest {
 }
 ```
 
-The executor marks the run `cancelled` and emits a `run.cancelled` event. Steps that are
-already terminal are not re-opened.
+The executor marks the run `cancelled` and emits a `run.cancelled` event. Steps that are already terminal are not re-opened.
 
 ### Retry
 
@@ -410,15 +394,13 @@ interface RunRetryRequest {
 }
 ```
 
-Retry creates a new `RunRecord` linked to the original `runId` via a `retriedFromRunId` field.
-The original record is not mutated.
+Retry creates a new `RunRecord` linked to the original `runId` via a `retriedFromRunId` field. The original record is not mutated.
 
 ---
 
 ## Backpressure Contract
 
-When the internal write queue reaches its capacity threshold the executor returns a structured
-error instead of accepting new work:
+When the internal write queue reaches its capacity threshold the executor returns a structured error instead of accepting new work:
 
 ```typescript
 // IpcResponse.error
@@ -429,29 +411,23 @@ error instead of accepting new work:
 }
 ```
 
-The renderer treats `BACKPRESSURE` as a distinct UI state: the initiating action shows a
-_queued_ badge, not a failure. The caller may retry the command once queue depth drops.
-`BACKPRESSURE` is not retried automatically by the host — retry is a renderer responsibility.
+The renderer treats `BACKPRESSURE` as a distinct UI state: the initiating action shows a _queued_ badge, not a failure. The caller may retry the command once queue depth drops. `BACKPRESSURE` is not retried automatically by the host — retry is a renderer responsibility.
 
-Saturated-queue behaviour is distinct from a normal `BACKPRESSURE` on an individual write
-operation (e.g. `append_ops`); both use the same error code but the `queueClass` field in
-`details` disambiguates the source.
+Saturated-queue behaviour is distinct from a normal `BACKPRESSURE` on an individual write operation (e.g. `append_ops`); both use the same error code but the `queueClass` field in `details` disambiguates the source.
 
 ---
 
 ## Trigger Commands (Mneme Processing)
 
-The processing triggers listed below are the primary sources of accepted work from the Mneme
-engine. Each trigger command enqueues background work and returns `AcceptedJob` or `()` on
-synchronous scheduling.
+The processing triggers listed below are the primary sources of accepted work from the Mneme engine. Each trigger command enqueues background work and returns `AcceptedJob` or `()` on synchronous scheduling.
 
-| Tauri Command                                 | Queue Class         | Trigger Shape                                                   |
-| --------------------------------------------- | ------------------- | --------------------------------------------------------------- |
-| `mneme_trigger_rebuild_effective_schema`      | `rebuild`           | `{ partitionId, scenarioId?, reason }`                          |
-| `mneme_trigger_refresh_integrity`             | `rebuild`           | `{ partitionId, scenarioId?, reason }`                          |
-| `mneme_trigger_refresh_analytics_projections` | `analytics_refresh` | `{ partitionId, scenarioId?, reason }`                          |
-| `mneme_trigger_retention`                     | `retention`         | `{ partitionId, scenarioId?, policy: RetentionPolicy, reason }` |
-| `mneme_trigger_compaction`                    | `compaction`        | `{ partitionId, scenarioId?, reason }`                          |
+| Tauri Command | Queue Class | Trigger Shape |
+| --- | --- | --- |
+| `mneme_trigger_rebuild_effective_schema` | `rebuild` | `{ partitionId, scenarioId?, reason }` |
+| `mneme_trigger_refresh_integrity` | `rebuild` | `{ partitionId, scenarioId?, reason }` |
+| `mneme_trigger_refresh_analytics_projections` | `analytics_refresh` | `{ partitionId, scenarioId?, reason }` |
+| `mneme_trigger_retention` | `retention` | `{ partitionId, scenarioId?, policy: RetentionPolicy, reason }` |
+| `mneme_trigger_compaction` | `compaction` | `{ partitionId, scenarioId?, reason }` |
 
 `RetentionPolicy`:
 
@@ -464,9 +440,7 @@ interface RetentionPolicy {
 }
 ```
 
-These are test-gated commands today (`#[cfg(test)]` in
-`src-tauri/src/mneme/commands_processing.rs`). The shape is stable; the production
-command surface will expose a subset through the capability system described in ADR-0006.
+These are test-gated commands today (`#[cfg(test)]` in `src-tauri/src/mneme/commands_processing.rs`). The shape is stable; the production command surface will expose a subset through the capability system described in ADR-0006.
 
 ---
 

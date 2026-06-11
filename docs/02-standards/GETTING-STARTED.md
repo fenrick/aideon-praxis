@@ -2,9 +2,7 @@
 
 ## Purpose
 
-Set up a local dev environment for Aideon Suite (desktop renderer + host + engines). This guide is
-about reproducible setup and common workflows; architecture lives in `docs/DESIGN.md` and
-`ARCHITECTURE-BOUNDARY.md`.
+Set up a local dev environment for Aideon Suite (desktop renderer + host + engines). This guide is about reproducible setup and common workflows; architecture lives in `docs/DESIGN.md` and `ARCHITECTURE-BOUNDARY.md`.
 
 ---
 
@@ -45,10 +43,8 @@ pnpm tauri dev
 
 Notes:
 
-- Dev builds may use a local dev server; packaged builds load local assets and do not require
-  network ports.
-- Desktop baseline security rules still apply: renderer calls host via typed IPC and must not do
-  ad-hoc HTTP.
+- Dev builds may use a local dev server; packaged builds load local assets and do not require network ports.
+- Desktop baseline security rules still apply: renderer calls host via typed IPC and must not do ad-hoc HTTP.
 
 ---
 

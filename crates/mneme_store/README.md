@@ -2,9 +2,7 @@
 
 ## Purpose
 
-Mneme Store provides the **concrete persistence implementation** for Mneme (migrations, database
-connections, and storage performance). It implements the Mneme traits using SeaORM/SQLx-backed
-datastores (SQLite in desktop mode by default).
+Mneme Store provides the **concrete persistence implementation** for Mneme (migrations, database connections, and storage performance). It implements the Mneme traits using SeaORM/SQLx-backed datastores (SQLite in desktop mode by default).
 
 ## Responsibilities
 

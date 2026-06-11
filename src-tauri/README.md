@@ -2,9 +2,7 @@
 
 ## Purpose
 
-Aideon Host is the Tauri-based desktop host for Aideon Suite. It owns window management, OS
-integration, capabilities, and the typed IPC surface that connects the React renderer to the
-Rust engines.
+Aideon Host is the Tauri-based desktop host for Aideon Suite. It owns window management, OS integration, capabilities, and the typed IPC surface that connects the React renderer to the Rust engines.
 
 ## Responsibilities
 
@@ -27,8 +25,7 @@ See `docs/02-standards/GETTING-STARTED.md` for host + renderer dev workflow.
 
 ## Design and architecture
 
-Host/renderer boundaries, capabilities, and time-first engine contracts are described in
-`docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and `docs/03-design/DESIGN.md`.
+Host/renderer boundaries, capabilities, and time-first engine contracts are described in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and `docs/03-design/DESIGN.md`.
 
 ## Related global docs
 

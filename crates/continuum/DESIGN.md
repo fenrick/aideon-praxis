@@ -9,16 +9,13 @@ Continuum Orchestrator is the **automation plane** for Aideon Suite. It coordina
 - replayable ingest workflows (provenance-preserving ops + facts),
 - bounded, job-driven execution for long-running automation.
 
-Continuum does not own UI and does not bypass the host boundary. It provides orchestration and
-adapter interfaces that the host can run as jobs.
+Continuum does not own UI and does not bypass the host boundary. It provides orchestration and adapter interfaces that the host can run as jobs.
 
 ## Allowed dependencies / frameworks
 
 - Rust 2024 with workspace defaults.
-- `tokio` for async scheduling, `serde`/`serde_json` for configs and job payloads, `thiserror` for
-  error types, `tracing` + `log` facade for observability.
-- Orchestration interfaces depend on `praxis` and `mneme`; connector
-  integrations live behind traits/adapters.
+- `tokio` for async scheduling, `serde`/`serde_json` for configs and job payloads, `thiserror` for error types, `tracing` + `log` facade for observability.
+- Orchestration interfaces depend on `praxis` and `mneme`; connector integrations live behind traits/adapters.
 
 ## Anti-goals
 
@@ -51,9 +48,7 @@ adapter interfaces that the host can run as jobs.
 
 ### SnapshotStore (current)
 
-Continuum currently exposes a minimal `SnapshotStore` trait and a `FileSnapshotStore` implementation
-for desktop mode. This is intended as a persistence boundary for “opaque bytes with a key” where the
-host controls the root directory.
+Continuum currently exposes a minimal `SnapshotStore` trait and a `FileSnapshotStore` implementation for desktop mode. This is intended as a persistence boundary for “opaque bytes with a key” where the host controls the root directory.
 
 Rules:
 
