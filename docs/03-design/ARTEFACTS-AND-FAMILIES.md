@@ -1,4 +1,4 @@
-# Artefacts and Viewpoints
+# Artefacts and Artefact Families
 
 Artefacts are the primary UX product of Aideon Desktop. Every view, catalogue, matrix, map, report, and page is executed against an explicit time and scenario context, declares its own purpose and quality, and carries the full provenance of what it shows. This document is the intellectual core of that design.
 
@@ -9,7 +9,7 @@ Artefacts are the primary UX product of Aideon Desktop. Every view, catalogue, m
 1. [What an Artefact Is](#1-what-an-artefact-is)
 2. [The Artefact Contract](#2-the-artefact-contract)
 3. [Asserted, Inferred, and Generated Content](#3-asserted-inferred-and-generated-content)
-4. [Viewpoint Levels and Families](#4-viewpoint-levels-and-families)
+4. [Abstraction Levels and Artefact Families](#4-abstraction-levels-and-artefact-families)
 5. [Explanation Surfaces](#5-explanation-surfaces)
 6. [Intelligence and Automation](#6-intelligence-and-automation)
 7. [Participation Modes and Trust Cues](#7-participation-modes-and-trust-cues)
@@ -35,7 +35,7 @@ Artefacts take several forms:
 
 All six forms share the same contract. The form changes the rendering shape. The obligations do not change.
 
-Praxis owns artefact identity, execution, and the viewpoint families that give artefacts their starting shape. Mneme owns the underlying storage that artefact execution reads. The renderer is a thin, trusted display surface over typed IPC — it holds no traversal logic, no analytics, and no artefact semantics.
+Praxis owns artefact identity, execution, and the artefact families that give artefacts their starting shape. Mneme owns the underlying storage that artefact execution reads. The renderer is a thin, trusted display surface over typed IPC — it holds no traversal logic, no analytics, and no artefact semantics.
 
 ---
 
@@ -75,7 +75,7 @@ The execution context comprises:
 
 - **Valid time** — the modelled moment in reality the artefact describes
 - **Asserted time** — the point at which the facts were recorded
-- **Layer** — Plan vs Actual precedence rules
+- **Layer** — which layer or layer policy applies (plan, actual, …; a selectable policy, not a fixed precedence — see ADR-0009)
 - **Scenario** — the baseline or named what-if overlay applied at execution
 
 Changing any of these dimensions produces a materially different artefact. Two copies of the same artefact template executed at different contexts are not the same result.
@@ -111,7 +111,7 @@ A tidy surface that hides these states is still misleading. Completeness and fre
 
 ---
 
-## 4. Viewpoint Levels and Families
+## 4. Abstraction Levels and Artefact Families
 
 ### Levels
 
@@ -239,12 +239,12 @@ Imports, large comparisons, recalculations, scenario promotions, and export gene
 
 Aideon cannot be built only for architects. If the product only works for experts, it remains accurate in pockets and stale everywhere else. Four participation modes describe how different roles enter the same product with different levels of power and different expectations of structure.
 
-| Mode          | Who                             | What they need                                                                                                      |
-| ------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Expert**    | Architects, analysts, modellers | Full modelling and artefact control — structural editing, scenario management, viewpoint authoring, deep inspection |
-| **Guided**    | Business contributors, SMEs     | Bounded contribution flows that ask the right questions in plain language, without requiring model literacy         |
-| **Steward**   | Review owners, data owners      | Queues, comparisons, approvals, and remediation paths — work as structured review, not open editing                 |
-| **Read-only** | Executives, decision-makers     | Concise, trustworthy outputs — legible without specialist training, defensible under questioning                    |
+| Mode          | Who                             | What they need                                                                                                            |
+| ------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Expert**    | Architects, analysts, modellers | Full modelling and artefact control — structural editing, scenario management, artefact-family authoring, deep inspection |
+| **Guided**    | Business contributors, SMEs     | Bounded contribution flows that ask the right questions in plain language, without requiring model literacy               |
+| **Steward**   | Review owners, data owners      | Queues, comparisons, approvals, and remediation paths — work as structured review, not open editing                       |
+| **Read-only** | Executives, decision-makers     | Concise, trustworthy outputs — legible without specialist training, defensible under questioning                          |
 
 These are not four separate products. They are four entry points into the same product. The underlying model is shared. The surface adapts to the level of authority and the kind of work required.
 
@@ -290,7 +290,7 @@ It favours:
 
 - Recent work that is still worth returning to
 - Active scenarios, review queues, and accepted work that need attention
-- Saved viewpoints, templates, and common entry points
+- Saved artefact families, templates, and common entry points
 - Enough context to explain why an item matters before the user opens it
 
 It does not become a dashboard graveyard, a dumping ground for every card somebody wants on the front page, or a second navigation system competing with the shell.
@@ -312,7 +312,7 @@ It supports:
 
 It does not become a slide factory disconnected from the model, a performance dashboard that mistakes movement for meaning, or a dead-end presentation surface with no route back to evidence.
 
-Ownership: host shell for briefing workspace entry and packaging flow; Praxis for viewpoint families, report and page artefacts, and narrative structure; Metis for rankings, warnings, score inputs, and analytical payloads.
+Ownership: host shell for briefing workspace entry and packaging flow; Praxis for artefact families, report and page artefacts, and narrative structure; Metis for rankings, warnings, score inputs, and analytical payloads.
 
 ### Administration and Controls
 
@@ -387,7 +387,7 @@ The shell has four permanent jobs:
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | **Workspace home**              | Get users back into useful work quickly — recency, relevance, active scenarios, unfinished work                          |
 | **Modelling studio**            | Expert surface — structured editing, exploration, scenario awareness, explainability, artefact authoring                 |
-| **Viewpoint library**           | Start from known-good artefacts organised by question, audience, and level of abstraction                                |
+| **Artefact family library**     | Start from known-good artefacts organised by question, audience, and level of abstraction                                |
 | **Scenario studio**             | Explicit baseline, target, and alternative futures — create, compare, explain, review, promote                           |
 | **Review and contribution**     | Bounded workspace for SMEs and stewards — useful work in business language, without requiring full model literacy        |
 | **Executive briefing**          | Legible in meetings, defensible under questioning, usable in packaged output                                             |
@@ -404,7 +404,7 @@ The shell has four permanent jobs:
 | [UX-DESIGN.md](UX-DESIGN.md)                                                         | UX contract — component patterns, interaction model, renderer obligations |
 | [DESKTOP-FIRST-WORKSPACE.md](DESKTOP-FIRST-WORKSPACE.md)                             | Desktop-first workspace and shell design                                  |
 | [../04-contracts/CONTRACTS-AND-SCHEMAS.md](../04-contracts/CONTRACTS-AND-SCHEMAS.md) | Temporal and scenario context contracts; IPC schema definitions           |
-| [../05-modules/praxis/README.md](../05-modules/praxis/README.md)                     | Praxis — meaning, artefact execution, viewpoint families, metamodel       |
+| [../05-modules/praxis/README.md](../05-modules/praxis/README.md)                     | Praxis — meaning, artefact execution, artefact families, metamodel        |
 | [../05-modules/metis/README.md](../05-modules/metis/README.md)                       | Metis — analytical engine, ML signals, scoring                            |
 | [../05-modules/chrona/README.md](../05-modules/chrona/README.md)                     | Chrona — temporal query, scenario management                              |
 | [../05-modules/mneme/README.md](../05-modules/mneme/README.md)                       | Mneme — storage, op log, audit, replay                                    |

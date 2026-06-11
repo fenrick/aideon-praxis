@@ -49,7 +49,7 @@ It opens with a clear selection summary and then stacks the relevant sections: p
 
 ## Artefacts as Primary Outputs
 
-Aideon is not a generic admin surface with diagrams dropped into it. The product opens on a useful viewpoint, not on empty chrome.
+Aideon is not a generic admin surface with diagrams dropped into it. The product opens on a useful artefact, not on empty chrome.
 
 The main artefact families are **views**, **catalogues**, **matrices**, **maps**, and **report or page surfaces**. All artefacts execute with explicit time and scenario context. The UI surfaces those inputs and sends them on every relevant request.
 
@@ -281,9 +281,9 @@ Gets users back into useful work quickly. Favours recency, active scenarios, and
 
 The expert work surface. Structured editing, exploration, scenario awareness, explainability, and artefact authoring come together here. Uses the **canvas shell** as its primary content surface.
 
-### Viewpoint library
+### Artefact family library
 
-The antidote to blank-canvas thinking. Users start from known-good artefacts organised by question, audience, and abstraction level. Backed by [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md).
+The antidote to blank-canvas thinking. Users start from known-good artefacts organised by question, audience, and abstraction level. Backed by [ARTEFACTS-AND-FAMILIES.md](./ARTEFACTS-AND-FAMILIES.md).
 
 ### Scenario studio
 
@@ -383,7 +383,7 @@ Component names here are authoritative. Any design-system implementation of thes
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | [DESIGN.md](./DESIGN.md)                                                                             | Overall design contract and shell layout               |
 | [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)                                                               | Pixel-level tokens, components, and visual language    |
-| [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md)                                         | Artefact families, viewpoint taxonomy, rendering specs |
+| [ARTEFACTS-AND-FAMILIES.md](./ARTEFACTS-AND-FAMILIES.md)                                             | Artefact families, family taxonomy, rendering specs    |
 | [SIGNAL-SURFACES.md](./SIGNAL-SURFACES.md)                                                           | Signal, recommendation, and review-task surfaces       |
 | [DESKTOP-FIRST-WORKSPACE.md](./DESKTOP-FIRST-WORKSPACE.md)                                           | Desktop-specific workspace layout and split-pane rules |
 | [../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Temporal and scenario context contract                 |

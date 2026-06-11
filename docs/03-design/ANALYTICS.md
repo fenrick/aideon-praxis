@@ -158,5 +158,5 @@ No third-party browser trackers. No renderer-initiated HTTP to external endpoint
 ## References
 
 - Metis module overview: [docs/05-modules/metis/README.md](../05-modules/metis/README.md)
-- Artefacts and viewpoints: [docs/03-design/ARTEFACTS-AND-VIEWPOINTS.md](ARTEFACTS-AND-VIEWPOINTS.md)
+- Artefacts and artefact families: [docs/03-design/ARTEFACTS-AND-FAMILIES.md](ARTEFACTS-AND-FAMILIES.md)
 - Contracts and schemas: [docs/04-contracts/CONTRACTS-AND-SCHEMAS.md](../04-contracts/CONTRACTS-AND-SCHEMAS.md)

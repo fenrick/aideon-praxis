@@ -7,3 +7,6 @@ cargo.lock
 next-env.d.ts
 app/AideonDesignSystem/**
 src/design-system/components/**
+
+# Vendored agent-skill definitions — third-party content, not ours to format.
+.agents/

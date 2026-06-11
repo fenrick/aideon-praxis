@@ -320,7 +320,7 @@ Praxis executes artefacts and returns UI-ready results and diagram specs to the 
 - Artefact results reference blobs by hash; the renderer requests blob bytes through a separate IPC command if it needs them.
 - Diagram specs are data payloads, not executable renderer instructions.
 
-See [Artefacts and Viewpoints](../03-design/ARTEFACTS-AND-VIEWPOINTS.md) and [Praxis Edge Catalogue](../05-modules/praxis/EDGE-CATALOGUE.md).
+See [Artefacts and Artefact Families](../03-design/ARTEFACTS-AND-FAMILIES.md) and [Praxis Edge Catalogue](../05-modules/praxis/EDGE-CATALOGUE.md).
 
 ---
 

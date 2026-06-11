@@ -14,13 +14,13 @@ Without this module, time handling spreads into UI widgets, API handlers, semant
 
 ## Core invariants
 
-| Invariant                     | What it means                                                                                                                                                   |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Explicit temporal context** | Every temporal result carries the active `TemporalContext` — `effective` time, `resolution.layer`, and `scenario_id` if set. No ambient time is assumed.        |
-| **Re-resolution on change**   | A time or scenario change triggers real re-resolution through Mneme. Chrona never mutates a cached view in place and presents it as if the context had changed. |
-| **Derived results**           | Chrona outputs are derived from canonical facts in Mneme. Chrona does not hold authoritative storage.                                                           |
-| **Honest partial states**     | Where a result is bounded or partially resolved, the payload names the limit explicitly rather than silently collapsing it.                                     |
-| **No metamodel internals**    | Chrona depends on contracts and DTO-level types from Praxis. It does not import metamodel or rule engine internals from other crates.                           |
+| Invariant                   | What it means                                                                                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Explicit viewpoint**      | Every temporal result carries the active `Viewpoint` — as-of valid time, as-of asserted time, layer (or layer policy), scenario, and scope if set. No ambient time is assumed. |
+| **Re-resolution on change** | A time or scenario change triggers real re-resolution through Mneme. Chrona never mutates a cached view in place and presents it as if the context had changed.                |
+| **Derived results**         | Chrona outputs are derived from canonical facts in Mneme. Chrona does not hold authoritative storage.                                                                          |
+| **Honest partial states**   | Where a result is bounded or partially resolved, the payload names the limit explicitly rather than silently collapsing it.                                                    |
+| **No metamodel internals**  | Chrona depends on contracts and DTO-level types from Praxis. It does not import metamodel or rule engine internals from other crates.                                          |
 
 ---
 
@@ -30,12 +30,12 @@ Without this module, time handling spreads into UI widgets, API handlers, semant
 
 Chrona answers bounded questions about the twin at a given context:
 
-- state at a valid-time instant or interval
+- state at an as-of valid time (instant or interval)
 - state within a scenario overlay
-- layer-aware reads (`actual` vs `plan`)
-- state comparisons across time slices
+- layer-aware reads via the viewpoint's layer policy (e.g. `actual` only, or `actual_over_plan`)
+- snapshot comparisons (diffs) across viewpoints
 
-This is not raw storage filtering. It is the module-level logic that turns the temporal resolution rules into coherent answers. The full resolution rule chain — valid-time containment, layer precedence, interval specificity, asserted-time ordering, op-id tie-break — is defined in [`docs/04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md`](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md).
+This is not raw storage filtering. It is the module-level logic that turns the temporal resolution rules into coherent answers. The full resolution rule chain — valid-time containment, interval specificity, asserted-time ordering, op-id tie-break, combined across layers by the viewpoint's layer policy — is defined in [`docs/04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md`](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md).
 
 ### 2. Scenario and plateau views
 
@@ -51,7 +51,7 @@ Scenarios, plateaus, and what-if overlays are first-class product concepts. Chro
 
 Chrona is the natural home for:
 
-- state diffs between two effective instants
+- snapshot diffs between two viewpoints (valid-time, belief, layer/variance, or scenario deltas)
 - topology deltas between commit references
 - time-based summaries
 - timeline-friendly aggregates
@@ -124,30 +124,32 @@ Layout helpers. `apply_rect_packing(shapes, max_row_width, spacing)` implements 
 
 Chrona's public outputs group into four families. Every response in each family carries enough context to stay interpretable without inspecting the request:
 
-| Family              | Key fields                                                         |
-| ------------------- | ------------------------------------------------------------------ |
-| `state_at`          | effective time, scenario identity, resolution layer, fact count    |
-| `diff`              | left ref, right ref, added/removed/changed counts, scenario if set |
-| `topology_delta`    | left ref, right ref, node and edge deltas, scenario if set         |
-| timeline aggregates | segments, plateau markers, gap indicators, active effective range  |
+| Family              | Key fields                                                                        |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `state_at`          | as-of valid time, scenario identity, layer (policy), fact count                   |
+| `diff`              | left viewpoint, right viewpoint, derived delta kind, added/removed/changed counts |
+| `topology_delta`    | left viewpoint, right viewpoint, node and edge deltas, scenario if set            |
+| timeline aggregates | segments, plateau markers, gap indicators, active effective interval              |
 
 Where a result is partial or bounded, a `warnings` field names the limit.
 
 ---
 
-## Comparison context
+## Comparison context (diff)
 
-Range and diff reads carry an explicit `ComparisonContext` rather than a single `effective`:
+A diff compares two snapshots, one per viewpoint. Each side carries a full viewpoint; the delta kind is **derived** from which coordinates differ, not chosen from a fixed list (see [ADR-0008](../../06-adrs/ADR-0008-diff-compares-two-viewpoints.md)):
 
 ```json
 {
-  "kind": "scenario_delta",
-  "left": { "as_of": "2026-06-10T00:00:00Z", "scenario_id": null },
-  "right": { "as_of": "2026-06-10T00:00:00Z", "scenario_id": "scn_plan_q3" }
+  "left": { "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" }, "scenario": null },
+  "right": {
+    "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" },
+    "scenario": { "scenario_id": "scn_plan_q3" }
+  }
 }
 ```
 
-Allowed `kind` values are `time_delta`, `scenario_delta`, and `scenario_vs_scenario`. The full contract is in [`docs/04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md`](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md).
+The derived delta may be a valid-time, asserted/belief, layer (variance), scenario, or mixed delta. The full contract is in [`docs/04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md`](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md).
 
 ---
 
@@ -155,8 +157,8 @@ Allowed `kind` values are `time_delta`, `scenario_delta`, and `scenario_vs_scena
 
 When the renderer changes the active time or scenario, it must request a fresh resolution — it must not apply a delta to the previous payload or mutate visible state locally. The sequence is:
 
-1. Renderer dispatches a Tauri command carrying the new `TemporalContext`.
-2. `TemporalEngine` resolves against Mneme with the updated context.
+1. Renderer dispatches a Tauri command carrying the new `Viewpoint`.
+2. `TemporalEngine` resolves against Mneme with the updated viewpoint.
 3. The full result payload is returned and replaces the previous view.
 
 This rule is unconditional. There is no "small change" optimisation that bypasses re-resolution. Cache invalidation and projection lifecycle are governed by [`docs/04-contracts/PROJECTION-AND-INVALIDATION.md`](../../04-contracts/PROJECTION-AND-INVALIDATION.md).

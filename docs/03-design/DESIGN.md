@@ -45,7 +45,7 @@ Time and scenario are model-level context, not UI-only filters. Chrona owns the 
 
 ### 5. Artefacts are the primary UX product
 
-Users consume **artefacts** — views, catalogues, matrices, maps, reports, and pages — executed against an explicit time and scenario context. The renderer does not embed traversal rules, analytics logic, or semantic meaning. Artefact results carry their own explainability, integrity gates, and provenance signals. See [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md).
+Users consume **artefacts** — views, catalogues, matrices, maps, reports, and pages — executed against an explicit time and scenario context. The renderer does not embed traversal rules, analytics logic, or semantic meaning. Artefact results carry their own explainability, integrity gates, and provenance signals. See [ARTEFACTS-AND-FAMILIES.md](./ARTEFACTS-AND-FAMILIES.md).
 
 ### 6. Host is the security boundary
 
@@ -238,7 +238,7 @@ Every artefact result and long-running operation must carry honest state signals
 | [DESKTOP-FIRST-WORKSPACE.md](./DESKTOP-FIRST-WORKSPACE.md)                                             | Workspace authority split, canonical vs derived rules, portability rationale |
 | [UX-DESIGN.md](./UX-DESIGN.md)                                                                         | Full UX interaction contract                                                 |
 | [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)                                                                 | Shell primitives, tokens, reusable blocks                                    |
-| [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md)                                           | Artefact families, viewpoint strategy, explanation design                    |
+| [ARTEFACTS-AND-FAMILIES.md](./ARTEFACTS-AND-FAMILIES.md)                                               | Artefact families, artefact strategy, explanation design                     |
 | [METAMODEL-PACKAGES.md](./METAMODEL-PACKAGES.md)                                                       | Master types, domain types, semantic spine detail                            |
 | [SIGNAL-SURFACES.md](./SIGNAL-SURFACES.md)                                                             | Trust signals, provenance, quality indicators                                |
 | [docs/01-architecture/ARCHITECTURE-BOUNDARY.md](../01-architecture/ARCHITECTURE-BOUNDARY.md)           | Module boundaries and typed seams                                            |

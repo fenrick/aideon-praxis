@@ -229,7 +229,7 @@ crates/praxis/src/
 
 - [EDGE-CATALOGUE.md](./EDGE-CATALOGUE.md) — canonical relationship vocabulary, endpoint rules, seed alignment
 - [Metamodel Packages](../../03-design/METAMODEL-PACKAGES.md) — package structure, compilation, and governance model
-- [Artefacts and Viewpoints](../../03-design/ARTEFACTS-AND-VIEWPOINTS.md) — artefact kinds, execution pipeline, viewpoint families
+- [Artefacts and Artefact Families](../../03-design/ARTEFACTS-AND-FAMILIES.md) — artefact kinds, execution pipeline, artefact families
 - [Design overview](../../03-design/DESIGN.md) — cross-module design
 - [Mneme module](../mneme/README.md) — storage layer
 - [Architecture Boundary](../../01-architecture/ARCHITECTURE-BOUNDARY.md) — module boundary definitions

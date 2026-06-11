@@ -246,7 +246,7 @@ Extension rules:
 ## Related Documents
 
 - [DESIGN.md](./DESIGN.md) — design axioms, workspace layout, and canonical authority split
-- [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md) — how artefact kinds map onto types and viewpoints
+- [ARTEFACTS-AND-FAMILIES.md](./ARTEFACTS-AND-FAMILIES.md) — how artefact kinds map onto types and artefact families
 - [docs/05-modules/praxis/README.md](../05-modules/praxis/README.md) — Praxis module overview
 - [docs/05-modules/praxis/EDGE-CATALOGUE.md](../05-modules/praxis/EDGE-CATALOGUE.md) — semantic edge families and shipped domain verbs
 - [docs/05-modules/mneme/README.md](../05-modules/mneme/README.md) — Mneme module overview

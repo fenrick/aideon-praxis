@@ -75,16 +75,15 @@ Mneme carries two orthogonal time axes on every fact:
 
 The `Hlc` packs a physical timestamp into the upper bits and a monotone counter into the lower 12 bits. This keeps HLC values comparable as plain `i64`s across nodes without a coordination step.
 
-The **Plan / Actual layer** (`Layer::Plan = 10`, `Layer::Actual = 20`) adds a third precedence axis: Actual facts beat Plan facts at the same valid time.
+The **layer** (`Layer::Plan = 10`, `Layer::Actual = 20`, extensibly forecast / budget / target) is a resolution coordinate, not a fixed precedence: plan and actual facts coexist for the same slot at the same valid time. How layers combine on a read is the viewpoint's **layer policy** (e.g. `actual_over_plan` for a blended operational view, or side-by-side for variance). The numeric ordering only sets priority for blend policies that let a higher layer override a lower one.
 
-Deterministic resolution at valid time `T` for a `(entity, field)` pair:
+Deterministic resolution at valid time `T` for a `(entity, field)` pair, **within a layer**:
 
 1. Valid containment: `valid_from ≤ T AND (valid_to IS NULL OR T < valid_to)`
-2. Layer precedence: higher layer wins
-3. Interval specificity: narrower interval wins; `NULL valid_to` is widest
-4. Stable tie-break: higher `asserted_at`, then `op_id` lexicographic
+2. Interval specificity: narrower interval wins; `NULL valid_to` is widest
+3. Stable tie-break: higher `asserted_at`, then `op_id` lexicographic
 
-See [TEMPORAL-AND-SCENARIO-CONTEXT](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) for the full semantics contract.
+Cross-layer results are then combined per the viewpoint's layer policy. See [TEMPORAL-AND-SCENARIO-CONTEXT](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) for the full semantics contract.
 
 ### Schema-as-data (`MetamodelBatch`)
 
