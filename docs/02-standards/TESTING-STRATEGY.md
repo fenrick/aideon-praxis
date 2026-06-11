@@ -8,24 +8,24 @@ Most regressions surface at boundaries. Every layer targets the seam, not just t
 
 ## Test Layers
 
-| Layer | Tooling | Scope |
-| --- | --- | --- |
-| Unit | Vitest (TS), `cargo test` (Rust) | Pure functions, utilities, adapters in isolation |
-| Contract / boundary | Vitest + `@tauri-apps/api/mocks` (TS), `cargo test` (Rust) | IPC command envelopes, DTO shape parity, typed trait surfaces |
-| Integration | `cargo test --all-targets` | Engine-to-engine flows, host ↔ engine trait calls, storage round-trips |
-| Replay / rebuild | `cargo test` (dedicated test binary) | Rebuild derived state from canonical ops-log; verify graph equivalence |
-| Crash recovery | `cargo test` (with controlled process termination) | Kill-during-append, kill-during-blob-attach, kill-during-projection-rebuild |
-| E2E / smoke | Tauri WebDriver (`tauri-driver`) | Packaged binary; critical user flows end-to-end |
+| Layer               | Tooling                                                    | Scope                                                                       |
+| ------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Unit                | Vitest (TS), `cargo test` (Rust)                           | Pure functions, utilities, adapters in isolation                            |
+| Contract / boundary | Vitest + `@tauri-apps/api/mocks` (TS), `cargo test` (Rust) | IPC command envelopes, DTO shape parity, typed trait surfaces               |
+| Integration         | `cargo test --all-targets`                                 | Engine-to-engine flows, host ↔ engine trait calls, storage round-trips      |
+| Replay / rebuild    | `cargo test` (dedicated test binary)                       | Rebuild derived state from canonical ops-log; verify graph equivalence      |
+| Crash recovery      | `cargo test` (with controlled process termination)         | Kill-during-append, kill-during-blob-attach, kill-during-projection-rebuild |
+| E2E / smoke         | Tauri WebDriver (`tauri-driver`)                           | Packaged binary; critical user flows end-to-end                             |
 
 ---
 
 ## Coverage Targets
 
-| Language / crate group | Lines | Branches | Functions | Statements |
-| --- | --- | --- | --- | --- |
-| TypeScript / React (new code) | ≥ 80 % | ≥ 80 % | ≥ 80 % | ≥ 80 % |
-| Rust host (`src-tauri`) | ≥ 80 % | ≥ 80 % | ≥ 80 % | — |
-| Rust engines (`crates/praxis`, `crates/chrona`, `crates/metis`, `crates/continuum`, `crates/mneme`) | ≥ 90 % | ≥ 90 % | ≥ 90 % | — |
+| Language / crate group                                                                              | Lines  | Branches | Functions | Statements |
+| --------------------------------------------------------------------------------------------------- | ------ | -------- | --------- | ---------- |
+| TypeScript / React (new code)                                                                       | ≥ 80 % | ≥ 80 %   | ≥ 80 %    | ≥ 80 %     |
+| Rust host (`src-tauri`)                                                                             | ≥ 80 % | ≥ 80 %   | ≥ 80 %    | —          |
+| Rust engines (`crates/praxis`, `crates/chrona`, `crates/metis`, `crates/continuum`, `crates/mneme`) | ≥ 90 % | ≥ 90 %   | ≥ 90 %    | —          |
 
 Coverage gates are hard failures in CI. Overall coverage must trend upward; never regress existing baselines.
 
@@ -153,11 +153,11 @@ Crash recovery tests simulate an unclean shutdown at each critical write boundar
 
 Three required scenarios:
 
-| Scenario | Injection point | Expected post-recovery state |
-| --- | --- | --- |
-| Kill during op append | After write begins, before fsync | Op either fully present or fully absent; no partial write |
-| Kill during blob attach | After blob write begins, before content-address index update | Blob either indexed and retrievable or fully absent; no dangling reference |
-| Kill during projection rebuild | After runtime DB is partially written | Runtime is discarded; next cold start triggers a clean rebuild from canonical |
+| Scenario                       | Injection point                                              | Expected post-recovery state                                                  |
+| ------------------------------ | ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Kill during op append          | After write begins, before fsync                             | Op either fully present or fully absent; no partial write                     |
+| Kill during blob attach        | After blob write begins, before content-address index update | Blob either indexed and retrievable or fully absent; no dangling reference    |
+| Kill during projection rebuild | After runtime DB is partially written                        | Runtime is discarded; next cold start triggers a clean rebuild from canonical |
 
 Each test uses a controllable fault-injection wrapper that panics (or signals) at the designated point, then re-launches a fresh host process against the same workspace directory.
 
@@ -194,16 +194,16 @@ E2E tests live under `tests/e2e/specs/`. Avoid timeout-based assertions; use det
 
 Every changed boundary must cover the relevant rows:
 
-| Boundary | What to test |
-| --- | --- |
-| Temporal context (valid-time / asserted-time / HLC) | Correct time propagation through IPC and engine calls; `as-of` queries return state consistent with the supplied timestamp |
-| Scenario context | Ops scoped to a scenario do not bleed into the base layer; scenario branch/merge is covered |
-| Accepted-work + backpressure | Long jobs return an accepted-work response; the caller polls or subscribes; cancellation stops the job cleanly |
-| Projection freshness | A write that affects a projection triggers an invalidation or refresh; stale reads are not served after a write is committed |
-| Stable error envelopes | All IPC commands return the same error envelope shape on failure; renderer parses error type from envelope, not from message string |
-| Renderer isolation | No renderer HTTP calls; no renderer FS access; renderer receives only typed IPC responses |
-| Content-addressed blobs | A stored blob is retrievable by its content address; re-attaching identical content does not duplicate storage |
-| Single-writer queue | Concurrent writes are serialised; no two writes corrupt each other's op record |
+| Boundary                                            | What to test                                                                                                                        |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Temporal context (valid-time / asserted-time / HLC) | Correct time propagation through IPC and engine calls; `as-of` queries return state consistent with the supplied timestamp          |
+| Scenario context                                    | Ops scoped to a scenario do not bleed into the base layer; scenario branch/merge is covered                                         |
+| Accepted-work + backpressure                        | Long jobs return an accepted-work response; the caller polls or subscribes; cancellation stops the job cleanly                      |
+| Projection freshness                                | A write that affects a projection triggers an invalidation or refresh; stale reads are not served after a write is committed        |
+| Stable error envelopes                              | All IPC commands return the same error envelope shape on failure; renderer parses error type from envelope, not from message string |
+| Renderer isolation                                  | No renderer HTTP calls; no renderer FS access; renderer receives only typed IPC responses                                           |
+| Content-addressed blobs                             | A stored blob is retrievable by its content address; re-attaching identical content does not duplicate storage                      |
+| Single-writer queue                                 | Concurrent writes are serialised; no two writes corrupt each other's op record                                                      |
 
 ---
 
@@ -265,11 +265,11 @@ Every changed boundary must cover the relevant rows:
 
 CI runs the full test suite on all three platforms. Platform-specific behaviour is explicitly tested, not assumed to be equivalent.
 
-| Platform | Unit + integration | Contract (IPC) | Replay / rebuild | Crash recovery | E2E smoke |
-| --- | --- | --- | --- | --- | --- |
-| macOS (arm64 / x86_64) | required | required | required | required | optional (binary signed) |
-| Windows (x86_64) | required | required | required | required | required |
-| Linux (x86_64, Ubuntu 24.04) | required | required | required | required | required (headless `xvfb-run`) |
+| Platform                     | Unit + integration | Contract (IPC) | Replay / rebuild | Crash recovery | E2E smoke                      |
+| ---------------------------- | ------------------ | -------------- | ---------------- | -------------- | ------------------------------ |
+| macOS (arm64 / x86_64)       | required           | required       | required         | required       | optional (binary signed)       |
+| Windows (x86_64)             | required           | required       | required         | required       | required                       |
+| Linux (x86_64, Ubuntu 24.04) | required           | required       | required         | required       | required (headless `xvfb-run`) |
 
 Platform-specific notes:
 

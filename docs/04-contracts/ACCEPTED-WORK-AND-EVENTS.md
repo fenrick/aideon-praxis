@@ -421,13 +421,13 @@ Saturated-queue behaviour is distinct from a normal `BACKPRESSURE` on an individ
 
 The processing triggers listed below are the primary sources of accepted work from the Mneme engine. Each trigger command enqueues background work and returns `AcceptedJob` or `()` on synchronous scheduling.
 
-| Tauri Command | Queue Class | Trigger Shape |
-| --- | --- | --- |
-| `mneme_trigger_rebuild_effective_schema` | `rebuild` | `{ partitionId, scenarioId?, reason }` |
-| `mneme_trigger_refresh_integrity` | `rebuild` | `{ partitionId, scenarioId?, reason }` |
-| `mneme_trigger_refresh_analytics_projections` | `analytics_refresh` | `{ partitionId, scenarioId?, reason }` |
-| `mneme_trigger_retention` | `retention` | `{ partitionId, scenarioId?, policy: RetentionPolicy, reason }` |
-| `mneme_trigger_compaction` | `compaction` | `{ partitionId, scenarioId?, reason }` |
+| Tauri Command                                 | Queue Class         | Trigger Shape                                                   |
+| --------------------------------------------- | ------------------- | --------------------------------------------------------------- |
+| `mneme_trigger_rebuild_effective_schema`      | `rebuild`           | `{ partitionId, scenarioId?, reason }`                          |
+| `mneme_trigger_refresh_integrity`             | `rebuild`           | `{ partitionId, scenarioId?, reason }`                          |
+| `mneme_trigger_refresh_analytics_projections` | `analytics_refresh` | `{ partitionId, scenarioId?, reason }`                          |
+| `mneme_trigger_retention`                     | `retention`         | `{ partitionId, scenarioId?, policy: RetentionPolicy, reason }` |
+| `mneme_trigger_compaction`                    | `compaction`        | `{ partitionId, scenarioId?, reason }`                          |
 
 `RetentionPolicy`:
 

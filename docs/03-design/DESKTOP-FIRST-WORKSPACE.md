@@ -10,14 +10,14 @@ Authority lives in the workspace, not in a database file and not in a local serv
 
 ## How the constraints map to the design
 
-| Constraint | Design consequence |
-| --- | --- |
-| Desktop-first, no server install | The canonical workspace opens locally without a service. |
-| Portability and sharing | Canonical data is a folder/package, not an opaque runtime database. |
-| Offline operation | Writes append locally first; any sync is asynchronous. |
-| Multi-user merge | Reconcile operations and semantic facts, not file diffs. |
-| Binary handling | Blobs live outside the fact log, referenced by hash. |
-| Optional hosted mode | A hosted store materialises the same workspace semantics behind the persistence interface. |
+| Constraint                       | Design consequence                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| Desktop-first, no server install | The canonical workspace opens locally without a service.                                   |
+| Portability and sharing          | Canonical data is a folder/package, not an opaque runtime database.                        |
+| Offline operation                | Writes append locally first; any sync is asynchronous.                                     |
+| Multi-user merge                 | Reconcile operations and semantic facts, not file diffs.                                   |
+| Binary handling                  | Blobs live outside the fact log, referenced by hash.                                       |
+| Optional hosted mode             | A hosted store materialises the same workspace semantics behind the persistence interface. |
 
 ## The authority split
 

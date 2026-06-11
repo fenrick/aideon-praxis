@@ -68,9 +68,9 @@ The op log is append-only and idempotent on ingest — the same `(partition, op_
 
 Mneme carries two orthogonal time axes on every fact:
 
-| Axis | Type | Semantics |
-| --- | --- | --- |
-| **Valid time** | `ValidTime(i64)` — epoch microseconds UTC | When the fact is true in the modelled world |
+| Axis              | Type                                                 | Semantics                                                              |
+| ----------------- | ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Valid time**    | `ValidTime(i64)` — epoch microseconds UTC            | When the fact is true in the modelled world                            |
 | **Asserted time** | `Hlc(i64)` — packed physical-micros + 12-bit counter | When the fact was recorded; used for audit, ordering, and tie-breaking |
 
 The `Hlc` packs a physical timestamp into the upper bits and a monotone counter into the lower 12 bits. This keeps HLC values comparable as plain `i64`s across nodes without a coordination step.
@@ -150,12 +150,12 @@ No consumer module generates SQL or accesses the database directly. All access i
 
 ### Read surface
 
-| Trait | Responsibility |
-| --- | --- |
-| `GraphReadApi` | Read entity at valid time, traverse edges, list entities with field filters |
-| `AnalyticsApi` | Directed projection edges, degree stats, edge-type counts |
-| `AnalyticsResultsApi` | Store and retrieve PageRank run scores |
-| `ChangeFeedApi` | Poll or subscribe to the per-partition change stream |
+| Trait                 | Responsibility                                                              |
+| --------------------- | --------------------------------------------------------------------------- |
+| `GraphReadApi`        | Read entity at valid time, traverse edges, list entities with field filters |
+| `AnalyticsApi`        | Directed projection edges, degree stats, edge-type counts                   |
+| `AnalyticsResultsApi` | Store and retrieve PageRank run scores                                      |
+| `ChangeFeedApi`       | Poll or subscribe to the per-partition change stream                        |
 
 All reads accept `scenario_id` and `as_of_asserted_at` for audit-mode reads.
 
@@ -235,11 +235,11 @@ Large binary values are not inlined into fact rows. They are written to `objects
 
 ## Derived artefact pipeline (three consistency tiers)
 
-| Tier | When updated | Examples |
-| --- | --- | --- |
-| **Sync-in-tx** | Inside the write transaction | Field index tables, projection edge rows, entity timestamps, change feed rows |
-| **Near-real-time async** | Job queue, bounded latency | Effective schema cache, connectivity checks, pre-aggregations |
-| **Batch / on-demand** | Scheduled or triggered | PageRank scores, integrity audits, compaction |
+| Tier                     | When updated                 | Examples                                                                      |
+| ------------------------ | ---------------------------- | ----------------------------------------------------------------------------- |
+| **Sync-in-tx**           | Inside the write transaction | Field index tables, projection edge rows, entity timestamps, change feed rows |
+| **Near-real-time async** | Job queue, bounded latency   | Effective schema cache, connectivity checks, pre-aggregations                 |
+| **Batch / on-demand**    | Scheduled or triggered       | PageRank scores, integrity audits, compaction                                 |
 
 Jobs are deduplicated by a `dedupe_key` — bulk ingest of a thousand metamodel ops enqueues one schema-compile job per type, not a thousand. Failures are retried with backoff; they never corrupt authoritative data.
 
@@ -277,16 +277,16 @@ Mneme does not own:
 
 ## Architecture and ADR references
 
-| Document | What it covers |
-| --- | --- |
-| [ARCHITECTURE-BOUNDARY](../../01-architecture/ARCHITECTURE-BOUNDARY.md) | Module seam definitions |
-| [DESKTOP-FIRST-WORKSPACE](../../03-design/DESKTOP-FIRST-WORKSPACE.md) | Workspace folder layout |
-| [METAMODEL-PACKAGES](../../03-design/METAMODEL-PACKAGES.md) | How Praxis publishes to Mneme |
-| [TEMPORAL-AND-SCENARIO-CONTEXT](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Bi-temporal + scenario contract |
-| [PROJECTION-AND-INVALIDATION](../../04-contracts/PROJECTION-AND-INVALIDATION.md) | Projection lifecycle contract |
-| [ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md) | Workspace-is-canonical-authority |
-| [ADR-0002](../../06-adrs/ADR-0002-portable-workspace-format.md) | Portable workspace format |
-| [ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md) | Content-addressed blob store |
-| [ADR-0004](../../06-adrs/ADR-0004-storage-engine-abstraction.md) | Storage engine abstraction |
-| [RUNTIME-AND-ENGINE.md](./RUNTIME-AND-ENGINE.md) | Keyspace layout, engine bake-off, single-writer queue |
-| [SQLITE.md](./SQLITE.md) | Embedded SQLite schema specification |
+| Document                                                                             | What it covers                                        |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| [ARCHITECTURE-BOUNDARY](../../01-architecture/ARCHITECTURE-BOUNDARY.md)              | Module seam definitions                               |
+| [DESKTOP-FIRST-WORKSPACE](../../03-design/DESKTOP-FIRST-WORKSPACE.md)                | Workspace folder layout                               |
+| [METAMODEL-PACKAGES](../../03-design/METAMODEL-PACKAGES.md)                          | How Praxis publishes to Mneme                         |
+| [TEMPORAL-AND-SCENARIO-CONTEXT](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Bi-temporal + scenario contract                       |
+| [PROJECTION-AND-INVALIDATION](../../04-contracts/PROJECTION-AND-INVALIDATION.md)     | Projection lifecycle contract                         |
+| [ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md)               | Workspace-is-canonical-authority                      |
+| [ADR-0002](../../06-adrs/ADR-0002-portable-workspace-format.md)                      | Portable workspace format                             |
+| [ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md)                 | Content-addressed blob store                          |
+| [ADR-0004](../../06-adrs/ADR-0004-storage-engine-abstraction.md)                     | Storage engine abstraction                            |
+| [RUNTIME-AND-ENGINE.md](./RUNTIME-AND-ENGINE.md)                                     | Keyspace layout, engine bake-off, single-writer queue |
+| [SQLITE.md](./SQLITE.md)                                                             | Embedded SQLite schema specification                  |

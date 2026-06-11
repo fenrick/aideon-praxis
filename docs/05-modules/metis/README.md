@@ -8,14 +8,14 @@ Metis is the analytical layer of Aideon Desktop. It computes scores, rankings, i
 
 ## What Metis Computes
 
-| Capability family | Representative jobs |
-| --- | --- |
-| **Centrality and ranking** | PageRank-style node scoring, concentration analysis, hotspot identification |
-| **Impact and blast radius** | Upstream/downstream impact sets, dependency spread |
-| **Path and reachability** | Shortest paths, reachability queries, dependency chains |
-| **Risk and diagnostics** | Concentration risk, structural weak points, result warnings |
-| **Cost and optimisation** | TCO rollups, scenario-sensitive comparisons, cost-oriented metrics |
-| **Temporal summaries** | Change summaries and comparison across time or scenario contexts |
+| Capability family           | Representative jobs                                                         |
+| --------------------------- | --------------------------------------------------------------------------- |
+| **Centrality and ranking**  | PageRank-style node scoring, concentration analysis, hotspot identification |
+| **Impact and blast radius** | Upstream/downstream impact sets, dependency spread                          |
+| **Path and reachability**   | Shortest paths, reachability queries, dependency chains                     |
+| **Risk and diagnostics**    | Concentration risk, structural weak points, result warnings                 |
+| **Cost and optimisation**   | TCO rollups, scenario-sensitive comparisons, cost-oriented metrics          |
+| **Temporal summaries**      | Change summaries and comparison across time or scenario contexts            |
 
 Each family exposes typed Rust traits and structs: `Analytics.Centrality`, `Analytics.Impact`, `Analytics.ShortestPath`, `Finance.TCO`, and `Temporal.*` summaries as required by accepted-work consumers.
 
@@ -110,13 +110,13 @@ The crate exposes only traits, typed structs, and deterministic helpers. All alg
 
 ## Integration with the Platform
 
-| Platform surface | Metis role |
-| --- | --- |
-| Accepted-work commands | Receives analytics job requests; emits progress and completion events |
-| Projection contracts | Reads bounded, filtered graph snapshots for deterministic input |
-| Artefacts and dashboards | Supplies typed result envelopes, ranked lists, impact graphs, and evidence payloads |
-| Inspector and drill-down surfaces | Provides per-result evidence: contributors, paths, affected sets, warnings |
-| Report surfaces | Delivers scored tables, risk views, and cost summaries |
+| Platform surface                  | Metis role                                                                          |
+| --------------------------------- | ----------------------------------------------------------------------------------- |
+| Accepted-work commands            | Receives analytics job requests; emits progress and completion events               |
+| Projection contracts              | Reads bounded, filtered graph snapshots for deterministic input                     |
+| Artefacts and dashboards          | Supplies typed result envelopes, ranked lists, impact graphs, and evidence payloads |
+| Inspector and drill-down surfaces | Provides per-result evidence: contributors, paths, affected sets, warnings          |
+| Report surfaces                   | Delivers scored tables, risk views, and cost summaries                              |
 
 Metis is the engine that gives these surfaces something defensible to show. It does not own layout, workflow status UX, or dashboard structure.
 

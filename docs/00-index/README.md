@@ -6,14 +6,14 @@ Aideon Desktop is a **desktop-first, local-first, time-first digital-twin modell
 
 ## Layers
 
-| Folder | Contents |
-| --- | --- |
-| [`01-architecture/`](../01-architecture/) | System shape, boundary rules, module dependency map, C4. |
-| [`02-standards/`](../02-standards/) | Design governance, ADR format, coding standards, testing, security, getting started. |
-| [`03-design/`](../03-design/) | Product behaviour, the workspace thesis, UX contract, design system, artefacts & viewpoints, metamodel packages, signal surfaces, analytics. |
-| [`04-contracts/`](../04-contracts/) | Typed IPC contracts, temporal & scenario context, projection & invalidation, accepted-work & events. |
-| [`05-modules/`](../05-modules/) | Per-module design: `mneme`, `praxis`, `metis`, `chrona`, `continuum`, `host`. |
-| [`06-adrs/`](../06-adrs/) | Architecture decisions — start at [`ADRS.md`](../06-adrs/ADRS.md). |
+| Folder                                    | Contents                                                                                                                                     |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`01-architecture/`](../01-architecture/) | System shape, boundary rules, module dependency map, C4.                                                                                     |
+| [`02-standards/`](../02-standards/)       | Design governance, ADR format, coding standards, testing, security, getting started.                                                         |
+| [`03-design/`](../03-design/)             | Product behaviour, the workspace thesis, UX contract, design system, artefacts & viewpoints, metamodel packages, signal surfaces, analytics. |
+| [`04-contracts/`](../04-contracts/)       | Typed IPC contracts, temporal & scenario context, projection & invalidation, accepted-work & events.                                         |
+| [`05-modules/`](../05-modules/)           | Per-module design: `mneme`, `praxis`, `metis`, `chrona`, `continuum`, `host`.                                                                |
+| [`06-adrs/`](../06-adrs/)                 | Architecture decisions — start at [`ADRS.md`](../06-adrs/ADRS.md).                                                                           |
 
 ## Common entry points
 

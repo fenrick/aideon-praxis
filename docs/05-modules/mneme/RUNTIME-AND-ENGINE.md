@@ -73,12 +73,12 @@ The commit path is a small explicit state machine, not a loose bundle of async f
 
 The runtime engine sits behind the storage trait, so it is replaceable without touching the workspace format or any caller. **SQLite is the engine** (see [SQLITE.md](./SQLITE.md)): it is embedded, single-file, ordered, transactional, and easy to inspect, which also makes it the correctness oracle for the rebuild-from-workspace property. The trait keeps the door open to a Rust-native engine (redb), a high-write LSM engine (RocksDB), or a read-optimised engine (LMDB/MDBX) without changing the canonical data or the API.
 
-| Engine | Properties | Fit |
-| --- | --- | --- |
-| SQLite | Embedded, single-file, ordered, transactional, WAL, inspectable | The engine + correctness oracle |
-| redb | Pure-Rust, ACID, MVCC, crash-safe, low packaging friction | Rust-native alternative behind the same trait |
-| RocksDB | Ordered LSM KV, transactions, multithreaded compaction | Alternative for write-heavy projection rebuilds |
-| LMDB / MDBX | Memory-mapped, cheap range scans, many readers + one writer | Alternative for read-heavy traversal profiles |
+| Engine      | Properties                                                      | Fit                                             |
+| ----------- | --------------------------------------------------------------- | ----------------------------------------------- |
+| SQLite      | Embedded, single-file, ordered, transactional, WAL, inspectable | The engine + correctness oracle                 |
+| redb        | Pure-Rust, ACID, MVCC, crash-safe, low packaging friction       | Rust-native alternative behind the same trait   |
+| RocksDB     | Ordered LSM KV, transactions, multithreaded compaction          | Alternative for write-heavy projection rebuilds |
+| LMDB / MDBX | Memory-mapped, cheap range scans, many readers + one writer     | Alternative for read-heavy traversal profiles   |
 
 Whichever engine backs the runtime, the canonical workspace semantics are identical, the trait is identical, and the rebuild guarantee holds.
 

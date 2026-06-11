@@ -50,15 +50,15 @@ The Tauri CLI runs zero-config from the repo root: `src-tauri/` is the default c
 
 ## Modules
 
-| Module | Path | Responsibility |
-| --- | --- | --- |
-| Renderer | `app/`, `src/` | React renderer, design system, workspace surfaces, IPC adapters, DTOs. |
-| Host | `src-tauri/` | Tauri runtime, IPC, capabilities, jobs, workspace lifecycle. |
-| Praxis | `crates/praxis` | Metamodel, task APIs, artefact execution, integrity, analytics orchestration. |
-| Mneme | `crates/mneme`, `crates/mneme_core`, `crates/mneme_store` | Op log, bi-temporal facts, schema-as-data, projections, embedded store. |
-| Metis | `crates/metis` | Analytics algorithms and ranking jobs. |
-| Chrona | `crates/chrona` | Time/scenario interpretation and temporal UX primitives. |
-| Continuum | `crates/continuum` | Orchestration, scheduling, connectors (local durable executor). |
+| Module    | Path                                                      | Responsibility                                                                |
+| --------- | --------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Renderer  | `app/`, `src/`                                            | React renderer, design system, workspace surfaces, IPC adapters, DTOs.        |
+| Host      | `src-tauri/`                                              | Tauri runtime, IPC, capabilities, jobs, workspace lifecycle.                  |
+| Praxis    | `crates/praxis`                                           | Metamodel, task APIs, artefact execution, integrity, analytics orchestration. |
+| Mneme     | `crates/mneme`, `crates/mneme_core`, `crates/mneme_store` | Op log, bi-temporal facts, schema-as-data, projections, embedded store.       |
+| Metis     | `crates/metis`                                            | Analytics algorithms and ranking jobs.                                        |
+| Chrona    | `crates/chrona`                                           | Time/scenario interpretation and temporal UX primitives.                      |
+| Continuum | `crates/continuum`                                        | Orchestration, scheduling, connectors (local durable executor).               |
 
 Tauri is confined to `src-tauri/`; the engine crates are host-agnostic and depend only on each other and shared contracts (`src-tauri → crates/*`, one direction).
 

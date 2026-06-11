@@ -145,11 +145,11 @@ Commands are registered in `src-tauri/src/app.rs` via `tauri::generate_handler!`
 
 ### Workspace
 
-| Command | Purpose |
-| --- | --- |
-| `workspace_projects_list` | List projects for the active workspace (includes scenario summaries) |
-| `workspace_templates_list` | List canvas templates persisted by the host |
-| `workspace_templates_save` | Persist a canvas template; host is the source of truth |
+| Command                    | Purpose                                                              |
+| -------------------------- | -------------------------------------------------------------------- |
+| `workspace_projects_list`  | List projects for the active workspace (includes scenario summaries) |
+| `workspace_templates_list` | List canvas templates persisted by the host                          |
+| `workspace_templates_save` | Persist a canvas template; host is the source of truth               |
 
 ### Chrona — Temporal Engine
 
@@ -169,19 +169,19 @@ These commands bridge the renderer to the `TemporalEngine` inside `aideon_chrona
 
 ### Praxis — Artefacts and Tasks
 
-| Command | Purpose |
-| --- | --- |
-| `praxis_artefact_execute_graph` | Execute a `GraphViewDefinition` → `GraphViewModel` |
-| `praxis_artefact_execute_catalogue` | Execute a `CatalogueViewDefinition` → `CatalogueViewModel` |
-| `praxis_artefact_execute_matrix` | Execute a `MatrixViewDefinition` → `MatrixViewModel` |
-| `praxis_artefact_execute_chart` | Execute a `ChartViewDefinition` → `ChartViewModel` |
-| `praxis_task_apply_operations` | Apply a batch of `PraxisOperation`s and commit → `OperationBatchResult` |
-| `praxis_scenario_list` | List scenarios as `ScenarioSummary` items |
-| `praxis_canvas_get_scene` | Load a canvas scene document |
-| `praxis_canvas_get_layout` | Load a canvas layout document |
-| `praxis_canvas_save_layout` | Persist canvas layout changes |
-| `praxis_graph_layout_get` | Retrieve a stored graph layout |
-| `praxis_graph_layout_save` | Save a graph layout |
+| Command                             | Purpose                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------- |
+| `praxis_artefact_execute_graph`     | Execute a `GraphViewDefinition` → `GraphViewModel`                      |
+| `praxis_artefact_execute_catalogue` | Execute a `CatalogueViewDefinition` → `CatalogueViewModel`              |
+| `praxis_artefact_execute_matrix`    | Execute a `MatrixViewDefinition` → `MatrixViewModel`                    |
+| `praxis_artefact_execute_chart`     | Execute a `ChartViewDefinition` → `ChartViewModel`                      |
+| `praxis_task_apply_operations`      | Apply a batch of `PraxisOperation`s and commit → `OperationBatchResult` |
+| `praxis_scenario_list`              | List scenarios as `ScenarioSummary` items                               |
+| `praxis_canvas_get_scene`           | Load a canvas scene document                                            |
+| `praxis_canvas_get_layout`          | Load a canvas layout document                                           |
+| `praxis_canvas_save_layout`         | Persist canvas layout changes                                           |
+| `praxis_graph_layout_get`           | Retrieve a stored graph layout                                          |
+| `praxis_graph_layout_save`          | Save a graph layout                                                     |
 
 ### Mneme — Graph Store Writes
 
@@ -208,31 +208,31 @@ These commands bridge the renderer to the `TemporalEngine` inside `aideon_chrona
 
 ### Mneme — Graph Store Reads and Queries
 
-| Command | Purpose |
-| --- | --- |
-| `mneme_store_read_entity_at_time` | Read entity state at a valid-time / HLC |
-| `mneme_store_traverse_at_time` | Traverse edges from an entity at a valid-time |
-| `mneme_store_list_entities` | List entities with filters, pagination, valid-time |
-| `mneme_store_get_projection_edges` | Retrieve projection edges for analytics |
-| `mneme_store_get_graph_degree_stats` | Degree statistics for an entity set |
-| `mneme_store_get_graph_edge_type_counts` | Edge-type frequency counts |
-| `mneme_store_get_changes_since` | Ordered change feed from a sequence number |
-| `mneme_store_subscribe_partition` | Open a live change-event subscription; returns `subscription_id` |
-| `mneme_store_unsubscribe_partition` | Cancel a live subscription |
-| `mneme_store_get_partition_head` | Current partition sequence head |
-| `mneme_store_get_effective_schema` | Read compiled effective schema |
-| `mneme_store_list_edge_type_rules` | List edge-type validation rules |
-| `mneme_store_get_pagerank_scores` | Read stored PageRank results |
-| `mneme_store_list_validation_rules` | List validation rules |
-| `mneme_store_list_computed_rules` | List computed rules |
-| `mneme_store_list_computed_cache` | Read computed cache entries |
-| `mneme_store_get_integrity_head` | Current integrity head snapshot |
-| `mneme_store_get_last_schema_compile` | Timestamp/version of last schema compile |
-| `mneme_store_get_schema_manifest` | Full schema manifest |
-| `mneme_store_explain_resolution` | Explain fact resolution for a property |
-| `mneme_store_explain_traversal` | Explain path traversal |
-| `mneme_store_list_jobs` | List running and completed processing jobs |
-| `mneme_store_list_failed_jobs` | List failed processing jobs |
+| Command                                  | Purpose                                                          |
+| ---------------------------------------- | ---------------------------------------------------------------- |
+| `mneme_store_read_entity_at_time`        | Read entity state at a valid-time / HLC                          |
+| `mneme_store_traverse_at_time`           | Traverse edges from an entity at a valid-time                    |
+| `mneme_store_list_entities`              | List entities with filters, pagination, valid-time               |
+| `mneme_store_get_projection_edges`       | Retrieve projection edges for analytics                          |
+| `mneme_store_get_graph_degree_stats`     | Degree statistics for an entity set                              |
+| `mneme_store_get_graph_edge_type_counts` | Edge-type frequency counts                                       |
+| `mneme_store_get_changes_since`          | Ordered change feed from a sequence number                       |
+| `mneme_store_subscribe_partition`        | Open a live change-event subscription; returns `subscription_id` |
+| `mneme_store_unsubscribe_partition`      | Cancel a live subscription                                       |
+| `mneme_store_get_partition_head`         | Current partition sequence head                                  |
+| `mneme_store_get_effective_schema`       | Read compiled effective schema                                   |
+| `mneme_store_list_edge_type_rules`       | List edge-type validation rules                                  |
+| `mneme_store_get_pagerank_scores`        | Read stored PageRank results                                     |
+| `mneme_store_list_validation_rules`      | List validation rules                                            |
+| `mneme_store_list_computed_rules`        | List computed rules                                              |
+| `mneme_store_list_computed_cache`        | Read computed cache entries                                      |
+| `mneme_store_get_integrity_head`         | Current integrity head snapshot                                  |
+| `mneme_store_get_last_schema_compile`    | Timestamp/version of last schema compile                         |
+| `mneme_store_get_schema_manifest`        | Full schema manifest                                             |
+| `mneme_store_explain_resolution`         | Explain fact resolution for a property                           |
+| `mneme_store_explain_traversal`          | Explain path traversal                                           |
+| `mneme_store_list_jobs`                  | List running and completed processing jobs                       |
+| `mneme_store_list_failed_jobs`           | List failed processing jobs                                      |
 
 ### Mneme — Export and Import
 
@@ -381,13 +381,13 @@ The renderer must tolerate missed events. Fallback polling is permitted only as 
 
 ## Testing
 
-| Layer | What is tested |
-| --- | --- |
-| Rust unit | `IpcRequest`/`IpcResponse` serde round-trips; `HostError` envelope stability |
-| Rust integration (`tests/internal/`) | Per-command correctness; CSP and window config; command registration parity |
-| Rust E2E smoke (`tests/internal/tauri_e2e_smoke.rs`) | Mock-app window route and IPC wiring (non-Windows only) |
-| Node E2E (`tests/e2e/specs/tauri-smoke.e2e.mjs`) | Real Rust commands through `tauri-driver` + WebdriverIO |
-| TypeScript adapter | `invoke` mock assertions for command name, payload shape, and response mapping |
+| Layer                                                | What is tested                                                                 |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Rust unit                                            | `IpcRequest`/`IpcResponse` serde round-trips; `HostError` envelope stability   |
+| Rust integration (`tests/internal/`)                 | Per-command correctness; CSP and window config; command registration parity    |
+| Rust E2E smoke (`tests/internal/tauri_e2e_smoke.rs`) | Mock-app window route and IPC wiring (non-Windows only)                        |
+| Node E2E (`tests/e2e/specs/tauri-smoke.e2e.mjs`)     | Real Rust commands through `tauri-driver` + WebdriverIO                        |
+| TypeScript adapter                                   | `invoke` mock assertions for command name, payload shape, and response mapping |
 
 The command registration test (`app_tests.rs`) fails if a command is removed or renamed from the `generate_handler!` list, providing a contract check against `appcommands.toml`.
 
@@ -395,12 +395,12 @@ The command registration test (`app_tests.rs`) fails if a command is removed or 
 
 ## Related Documents
 
-| Document | What it covers |
-| --- | --- |
-| [ARCHITECTURE-BOUNDARY](../../01-architecture/ARCHITECTURE-BOUNDARY.md) | Process boundary rules; renderer/host/engine separation |
-| [MODULE-DEPENDENCY-MAP](../../01-architecture/MODULE-DEPENDENCY-MAP.md) | Crate dependency graph |
-| [CONTRACTS-AND-SCHEMAS](../../04-contracts/CONTRACTS-AND-SCHEMAS.md) | IPC envelope schema and DTO stability rules |
-| [ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) | Job model, progress events, backpressure |
-| [ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md) | Decision: Tauri trust boundary and typed IPC |
-| [ADR-0007](../../06-adrs/ADR-0007-deterministic-package-export.md) | Decision: deterministic package export |
-| [SECURITY](../../02-standards/SECURITY.md) | CSP, capability policy, filesystem boundary |
+| Document                                                                   | What it covers                                          |
+| -------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [ARCHITECTURE-BOUNDARY](../../01-architecture/ARCHITECTURE-BOUNDARY.md)    | Process boundary rules; renderer/host/engine separation |
+| [MODULE-DEPENDENCY-MAP](../../01-architecture/MODULE-DEPENDENCY-MAP.md)    | Crate dependency graph                                  |
+| [CONTRACTS-AND-SCHEMAS](../../04-contracts/CONTRACTS-AND-SCHEMAS.md)       | IPC envelope schema and DTO stability rules             |
+| [ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) | Job model, progress events, backpressure                |
+| [ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)   | Decision: Tauri trust boundary and typed IPC            |
+| [ADR-0007](../../06-adrs/ADR-0007-deterministic-package-export.md)         | Decision: deterministic package export                  |
+| [SECURITY](../../02-standards/SECURITY.md)                                 | CSP, capability policy, filesystem boundary             |

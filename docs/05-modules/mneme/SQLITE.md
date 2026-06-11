@@ -23,15 +23,15 @@ Content-addressed binary objects live in `objects/sha256/` (referenced by hash) 
 
 ## Portability Invariants
 
-| Rule | Detail |
-| --- | --- |
-| Column types | Only `INTEGER`, `TEXT`, `REAL`, `BLOB` (SQLite affinity) |
-| ID encoding | TEXT UUID strings (36 chars) on SQLite; UUID native on Postgres; `BINARY(16)` on MySQL — encoded in application code via `id_col()` |
-| Valid time | `INTEGER` microseconds since epoch |
-| HLC asserted time | `INTEGER` portable i64 (packed HLC) |
-| Upserts | `INSERT ... ON CONFLICT` throughout; never raw `INSERT` with retry |
-| JSON usage | Limited to metadata/rule-params fields and non-indexed values; never used for structured fact data |
-| SQLite WAL | WAL mode is applied at open time; `-wal` / `-shm` files are same-host-only transient state |
+| Rule              | Detail                                                                                                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Column types      | Only `INTEGER`, `TEXT`, `REAL`, `BLOB` (SQLite affinity)                                                                            |
+| ID encoding       | TEXT UUID strings (36 chars) on SQLite; UUID native on Postgres; `BINARY(16)` on MySQL — encoded in application code via `id_col()` |
+| Valid time        | `INTEGER` microseconds since epoch                                                                                                  |
+| HLC asserted time | `INTEGER` portable i64 (packed HLC)                                                                                                 |
+| Upserts           | `INSERT ... ON CONFLICT` throughout; never raw `INSERT` with retry                                                                  |
+| JSON usage        | Limited to metadata/rule-params fields and non-indexed values; never used for structured fact data                                  |
+| SQLite WAL        | WAL mode is applied at open time; `-wal` / `-shm` files are same-host-only transient state                                          |
 
 ---
 
@@ -64,28 +64,28 @@ Migrations run automatically at store open via `Migrator::up()`. SeaORM tracks i
 
 ### Infrastructure
 
-| Table | Purpose |
-| --- | --- |
-| `aideon_schema_version` | Application schema version log; columns: `version` (PK, TEXT), `applied_asserted_at_hlc` (INTEGER), `checksum` (TEXT), `app_version` (TEXT nullable) |
-| `aideon_partitions` | Registered partitions; columns: `partition_id` (PK), `created_at_asserted` (INTEGER), `created_by_actor` (nullable ID) |
-| `aideon_actors` | Actors within a partition; PK: `(partition_id, actor_id)`, plus `metadata_json` (TEXT nullable), `created_at_asserted` (INTEGER) |
-| `aideon_hlc_state` | Per-partition HLC watermark; PK: `partition_id`, column: `last_hlc` (INTEGER) |
-| `aideon_change_feed` | Ordered change events; PK: `(partition_id, sequence)`, columns: `op_id`, `asserted_at_hlc`, `entity_id` (nullable), `change_kind` (TINYINT), `payload_json` (TEXT nullable) |
+| Table                   | Purpose                                                                                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aideon_schema_version` | Application schema version log; columns: `version` (PK, TEXT), `applied_asserted_at_hlc` (INTEGER), `checksum` (TEXT), `app_version` (TEXT nullable)                        |
+| `aideon_partitions`     | Registered partitions; columns: `partition_id` (PK), `created_at_asserted` (INTEGER), `created_by_actor` (nullable ID)                                                      |
+| `aideon_actors`         | Actors within a partition; PK: `(partition_id, actor_id)`, plus `metadata_json` (TEXT nullable), `created_at_asserted` (INTEGER)                                            |
+| `aideon_hlc_state`      | Per-partition HLC watermark; PK: `partition_id`, column: `last_hlc` (INTEGER)                                                                                               |
+| `aideon_change_feed`    | Ordered change events; PK: `(partition_id, sequence)`, columns: `op_id`, `asserted_at_hlc`, `entity_id` (nullable), `change_kind` (TINYINT), `payload_json` (TEXT nullable) |
 
 ### Op Log
 
-| Table | Purpose |
-| --- | --- |
-| `aideon_ops` | Operation log; PK: `(partition_id, op_id)`, columns: `actor_id`, `asserted_at_hlc`, `tx_id` (nullable), `op_type` (SMALLINT), `payload` (BLOB), `schema_version_hint` (TEXT nullable), `ingested_asserted_at_hlc` (INTEGER nullable), `scenario_id` (nullable — added in migration 2) |
-| `aideon_op_deps` | Causal dependencies between ops; PK: `(partition_id, op_id, dep_op_id)` |
+| Table            | Purpose                                                                                                                                                                                                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aideon_ops`     | Operation log; PK: `(partition_id, op_id)`, columns: `actor_id`, `asserted_at_hlc`, `tx_id` (nullable), `op_type` (SMALLINT), `payload` (BLOB), `schema_version_hint` (TEXT nullable), `ingested_asserted_at_hlc` (INTEGER nullable), `scenario_id` (nullable — added in migration 2) |
+| `aideon_op_deps` | Causal dependencies between ops; PK: `(partition_id, op_id, dep_op_id)`                                                                                                                                                                                                               |
 
 ### Entities and Edges
 
-| Table | Purpose |
-| --- | --- |
-| `aideon_entities` | Entity rows; PK: `(partition_id, entity_id)`, scenario overlay via `scenario_id` (nullable), columns include `entity_kind` (TINYINT), `type_id` (nullable), `is_deleted` (BOOLEAN), `acl_group_id` (TEXT nullable), `owner_actor_id` (nullable), `visibility` (TINYINT nullable), `created_op_id`, `updated_op_id`, `created_asserted_at_hlc`, `updated_asserted_at_hlc` |
-| `aideon_edges` | Edge rows; PK: `(partition_id, edge_id)`, scenario overlay via `scenario_id` (nullable), columns: `src_entity_id`, `dst_entity_id`, `edge_type_id` (nullable) |
-| `aideon_edge_exists_facts` | Bitempoal existence facts for edges; PK: `(partition_id, edge_id, valid_from, asserted_at_hlc, op_id)`, scenario overlay, columns: `valid_to` (nullable), `valid_bucket` (INTEGER nullable), `layer` (TINYINT), `is_tombstone` (BOOLEAN) |
+| Table                      | Purpose                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `aideon_entities`          | Entity rows; PK: `(partition_id, entity_id)`, scenario overlay via `scenario_id` (nullable), columns include `entity_kind` (TINYINT), `type_id` (nullable), `is_deleted` (BOOLEAN), `acl_group_id` (TEXT nullable), `owner_actor_id` (nullable), `visibility` (TINYINT nullable), `created_op_id`, `updated_op_id`, `created_asserted_at_hlc`, `updated_asserted_at_hlc` |
+| `aideon_edges`             | Edge rows; PK: `(partition_id, edge_id)`, scenario overlay via `scenario_id` (nullable), columns: `src_entity_id`, `dst_entity_id`, `edge_type_id` (nullable)                                                                                                                                                                                                            |
+| `aideon_edge_exists_facts` | Bitempoal existence facts for edges; PK: `(partition_id, edge_id, valid_from, asserted_at_hlc, op_id)`, scenario overlay, columns: `valid_to` (nullable), `valid_bucket` (INTEGER nullable), `layer` (TINYINT), `is_tombstone` (BOOLEAN)                                                                                                                                 |
 
 ### Typed Property-Fact Tables
 
@@ -121,46 +121,46 @@ is_tombstone   BOOLEAN NOT NULL
 
 ### Schema Metadata
 
-| Table | Purpose |
-| --- | --- |
-| `aideon_types` | Type definitions; PK: `(partition_id, type_id)`, columns: `applies_to` (TINYINT), `label` (TEXT), `is_abstract` (BOOLEAN), `is_deleted` (BOOLEAN), `updated_asserted_at_hlc` |
-| `aideon_type_extends` | Single-parent type hierarchy; PK: `(partition_id, type_id)`, column: `parent_type_id` |
-| `aideon_fields` | Field definitions; PK: `(partition_id, field_id)`, columns: `label`, `value_type` (TINYINT), `cardinality` (TINYINT), `merge_policy` (TINYINT), `is_indexed` (BOOLEAN), `disallow_overlap` (BOOLEAN), `is_deleted` (BOOLEAN), `updated_asserted_at_hlc` |
-| `aideon_type_fields` | Field bindings to types; PK: `(partition_id, type_id, field_id)`, columns: `is_required`, `override_default`, `tighten_required`, `disallow_overlap` (nullable), per-type default value columns (one per value type, all nullable), `updated_asserted_at_hlc` |
-| `aideon_effective_schema_cache` | Materialised effective schema blobs; PK: `(partition_id, type_id, schema_version_hash)`, columns: `blob` (BLOB), `built_asserted_at_hlc` |
-| `aideon_type_schema_head` | Current schema version hash per type; PK: `(partition_id, type_id)`, columns: `schema_version_hash`, `updated_asserted_at_hlc` |
-| `aideon_metamodel_versions` | Applied metamodel version log; PK: `(partition_id, version)`, columns: `source` (TEXT nullable), `op_id` (nullable), `created_asserted_at_hlc` |
+| Table                           | Purpose                                                                                                                                                                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aideon_types`                  | Type definitions; PK: `(partition_id, type_id)`, columns: `applies_to` (TINYINT), `label` (TEXT), `is_abstract` (BOOLEAN), `is_deleted` (BOOLEAN), `updated_asserted_at_hlc`                                                                                  |
+| `aideon_type_extends`           | Single-parent type hierarchy; PK: `(partition_id, type_id)`, column: `parent_type_id`                                                                                                                                                                         |
+| `aideon_fields`                 | Field definitions; PK: `(partition_id, field_id)`, columns: `label`, `value_type` (TINYINT), `cardinality` (TINYINT), `merge_policy` (TINYINT), `is_indexed` (BOOLEAN), `disallow_overlap` (BOOLEAN), `is_deleted` (BOOLEAN), `updated_asserted_at_hlc`       |
+| `aideon_type_fields`            | Field bindings to types; PK: `(partition_id, type_id, field_id)`, columns: `is_required`, `override_default`, `tighten_required`, `disallow_overlap` (nullable), per-type default value columns (one per value type, all nullable), `updated_asserted_at_hlc` |
+| `aideon_effective_schema_cache` | Materialised effective schema blobs; PK: `(partition_id, type_id, schema_version_hash)`, columns: `blob` (BLOB), `built_asserted_at_hlc`                                                                                                                      |
+| `aideon_type_schema_head`       | Current schema version hash per type; PK: `(partition_id, type_id)`, columns: `schema_version_hash`, `updated_asserted_at_hlc`                                                                                                                                |
+| `aideon_metamodel_versions`     | Applied metamodel version log; PK: `(partition_id, version)`, columns: `source` (TEXT nullable), `op_id` (nullable), `created_asserted_at_hlc`                                                                                                                |
 
 ### Edge-Type Semantics
 
-| Table | Purpose |
-| --- | --- |
+| Table                    | Purpose                                                                                                                                                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `aideon_edge_type_rules` | Allowed endpoint types and direction semantics per edge type; PK: `(partition_id, edge_type_id)`, columns: `allowed_src_type_ids_json` (TEXT), `allowed_dst_type_ids_json` (TEXT), `semantic_direction` (TEXT nullable) |
 
 ### Projection and Analytics
 
-| Table | Purpose |
-| --- | --- |
+| Table                           | Purpose                                                                                                                                                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `aideon_graph_projection_edges` | Materialised view of currently-active edges for graph algorithms; PK: `(partition_id, edge_id)`, scenario overlay, columns: `src_entity_id`, `dst_entity_id`, `edge_type_id` (nullable), `weight` (REAL, default 1.0), `updated_asserted_at_hlc` |
-| `aideon_pagerank_runs` | PageRank run metadata; PK: `(partition_id, run_id)`, columns: `as_of_valid_time` (nullable), `as_of_asserted_at_hlc` (nullable), `params_json`, `created_asserted_at_hlc` |
-| `aideon_pagerank_scores` | PageRank scores per entity per run; PK: `(partition_id, run_id, entity_id)`, column: `score` (REAL) |
-| `aideon_graph_degree_stats` | Degree statistics per entity; PK: `(partition_id, scenario_id, entity_id, as_of_valid_time)`, columns: `out_degree`, `in_degree` (INTEGER), `computed_asserted_at_hlc` |
-| `aideon_graph_edge_type_counts` | Edge counts per type per scenario; PK: `(partition_id, scenario_id, edge_type_id)`, columns: `count` (INTEGER), `computed_asserted_at_hlc` |
+| `aideon_pagerank_runs`          | PageRank run metadata; PK: `(partition_id, run_id)`, columns: `as_of_valid_time` (nullable), `as_of_asserted_at_hlc` (nullable), `params_json`, `created_asserted_at_hlc`                                                                        |
+| `aideon_pagerank_scores`        | PageRank scores per entity per run; PK: `(partition_id, run_id, entity_id)`, column: `score` (REAL)                                                                                                                                              |
+| `aideon_graph_degree_stats`     | Degree statistics per entity; PK: `(partition_id, scenario_id, entity_id, as_of_valid_time)`, columns: `out_degree`, `in_degree` (INTEGER), `computed_asserted_at_hlc`                                                                           |
+| `aideon_graph_edge_type_counts` | Edge counts per type per scenario; PK: `(partition_id, scenario_id, edge_type_id)`, columns: `count` (INTEGER), `computed_asserted_at_hlc`                                                                                                       |
 
 ### Integrity
 
-| Table | Purpose |
-| --- | --- |
-| `aideon_integrity_runs` | Integrity check run metadata; PK: `(partition_id, run_id)`, scenario overlay, columns: `as_of_valid_time` (nullable), `as_of_asserted_at_hlc` (nullable), `params_json`, `created_asserted_at_hlc` |
-| `aideon_integrity_findings` | Individual findings from an integrity run; columns: `partition_id`, `run_id`, `finding_type` (TEXT), `severity` (TINYINT), `subject_entity_id` (nullable), `details_json` |
-| `aideon_integrity_head` | Most recent integrity run per partition/scenario; PK: `(partition_id, scenario_id)`, columns: `run_id`, `updated_asserted_at_hlc` |
+| Table                       | Purpose                                                                                                                                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aideon_integrity_runs`     | Integrity check run metadata; PK: `(partition_id, run_id)`, scenario overlay, columns: `as_of_valid_time` (nullable), `as_of_asserted_at_hlc` (nullable), `params_json`, `created_asserted_at_hlc` |
+| `aideon_integrity_findings` | Individual findings from an integrity run; columns: `partition_id`, `run_id`, `finding_type` (TEXT), `severity` (TINYINT), `subject_entity_id` (nullable), `details_json`                          |
+| `aideon_integrity_head`     | Most recent integrity run per partition/scenario; PK: `(partition_id, scenario_id)`, columns: `run_id`, `updated_asserted_at_hlc`                                                                  |
 
 ### Validation and Computed Rules
 
-| Table | Purpose |
-| --- | --- |
+| Table                     | Purpose                                                                                                                                                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `aideon_validation_rules` | Declared validation rules; PK: `(partition_id, rule_id)`, columns: `scope_kind` (TINYINT), `scope_id` (nullable), `severity` (TINYINT), `template_kind` (TEXT), `params_json`, `updated_asserted_at_hlc` |
-| `aideon_computed_rules` | Computed field derivation rules; PK: `(partition_id, rule_id)`, columns: `target_type_id` (nullable), `output_field_id` (nullable), `template_kind`, `params_json`, `updated_asserted_at_hlc` |
+| `aideon_computed_rules`   | Computed field derivation rules; PK: `(partition_id, rule_id)`, columns: `target_type_id` (nullable), `output_field_id` (nullable), `template_kind`, `params_json`, `updated_asserted_at_hlc`            |
 
 ### Computed Caches
 
@@ -196,10 +196,10 @@ Common indexed-field columns (in schema order): `partition_id`, `scenario_id` (n
 
 ### Background Jobs
 
-| Table | Purpose |
-| --- | --- |
-| `aideon_jobs` | Persistent job queue; PK: `(partition_id, job_id)`, columns: `job_type` (TEXT), `status` (TINYINT), `priority` (INTEGER), `attempts`, `max_attempts`, `lease_expires_at` (nullable), `next_run_after` (nullable), `created_asserted_at_hlc`, `updated_asserted_at_hlc`, `payload` (BLOB), `dedupe_key` (TEXT nullable), `last_error` (TEXT nullable); unique index on `(partition_id, job_type, dedupe_key, status)` |
-| `aideon_job_events` | Per-job event log; PK: `(partition_id, job_id, event_time)`, column: `message` (TEXT) |
+| Table               | Purpose                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aideon_jobs`       | Persistent job queue; PK: `(partition_id, job_id)`, columns: `job_type` (TEXT), `status` (TINYINT), `priority` (INTEGER), `attempts`, `max_attempts`, `lease_expires_at` (nullable), `next_run_after` (nullable), `created_asserted_at_hlc`, `updated_asserted_at_hlc`, `payload` (BLOB), `dedupe_key` (TEXT nullable), `last_error` (TEXT nullable); unique index on `(partition_id, job_type, dedupe_key, status)` |
+| `aideon_job_events` | Per-job event log; PK: `(partition_id, job_id, event_time)`, column: `message` (TEXT)                                                                                                                                                                                                                                                                                                                                |
 
 ---
 

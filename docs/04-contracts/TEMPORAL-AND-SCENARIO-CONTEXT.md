@@ -29,16 +29,16 @@ Every operation that reads or writes time-aware state carries a `TemporalContext
 
 ### Fields
 
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| `effective.as_of` | UTC ISO-8601 string | one of `as_of` / `interval` | point-in-time read |
-| `effective.interval` | `{ start, end }` UTC ISO-8601 | one of `as_of` / `interval` | range read; both ends inclusive |
-| `asserted` | `i64` (packed HLC) | write paths; optional on reads | see §HLC encoding below |
-| `resolution.layer` | `"plan" \| "actual"` | yes | resolution layer; `actual` takes precedence over `plan` |
-| `scenario.scenario_id` | string | no | omit for baseline view |
-| `scenario.mode` | `"overlay"` | if `scenario_id` present | only `overlay` is supported |
-| `workspace_id` | string | yes | identifies the portable workspace folder |
-| `tenant_id` | string \| null | no | optional; `null` on single-user desktop |
+| Field                  | Type                          | Required                       | Notes                                                   |
+| ---------------------- | ----------------------------- | ------------------------------ | ------------------------------------------------------- |
+| `effective.as_of`      | UTC ISO-8601 string           | one of `as_of` / `interval`    | point-in-time read                                      |
+| `effective.interval`   | `{ start, end }` UTC ISO-8601 | one of `as_of` / `interval`    | range read; both ends inclusive                         |
+| `asserted`             | `i64` (packed HLC)            | write paths; optional on reads | see §HLC encoding below                                 |
+| `resolution.layer`     | `"plan" \| "actual"`          | yes                            | resolution layer; `actual` takes precedence over `plan` |
+| `scenario.scenario_id` | string                        | no                             | omit for baseline view                                  |
+| `scenario.mode`        | `"overlay"`                   | if `scenario_id` present       | only `overlay` is supported                             |
+| `workspace_id`         | string                        | yes                            | identifies the portable workspace folder                |
+| `tenant_id`            | string \| null                | no                             | optional; `null` on single-user desktop                 |
 
 **Mutual exclusion:** exactly one of `effective.as_of` or `effective.interval` must be provided. Providing both or neither is a `TEMPORAL_CONTEXT_INVALID` error.
 
@@ -74,13 +74,13 @@ Asserted time is a **Hybrid Logical Clock** packed into a portable `i64`.
 
 When multiple candidate facts compete for the same resolved slot at a given effective time, the resolver applies this precedence chain in order and stops at the first rule that selects a unique winner:
 
-| Priority | Rule | Detail |
-| --- | --- | --- |
-| 1 | **Valid-time containment** | Only facts whose valid-time interval contains (or aligns with) the requested `effective.as_of` or `effective.interval` are candidates. |
-| 2 | **Layer precedence** | `actual` wins over `plan` for the same slot. |
-| 3 | **Interval specificity** | A narrower valid-time interval wins over a wider one. A fact valid for one day is preferred over one valid for a year. |
-| 4 | **Latest asserted time** | Among remaining ties, the fact with the largest HLC value wins (most-recently asserted). |
-| 5 | **Op-id tie-break** | If asserted HLCs are identical, the fact with the lexicographically larger operation identifier wins. This case is degenerate in practice but must be deterministic. |
+| Priority | Rule                       | Detail                                                                                                                                                               |
+| -------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | **Valid-time containment** | Only facts whose valid-time interval contains (or aligns with) the requested `effective.as_of` or `effective.interval` are candidates.                               |
+| 2        | **Layer precedence**       | `actual` wins over `plan` for the same slot.                                                                                                                         |
+| 3        | **Interval specificity**   | A narrower valid-time interval wins over a wider one. A fact valid for one day is preferred over one valid for a year.                                               |
+| 4        | **Latest asserted time**   | Among remaining ties, the fact with the largest HLC value wins (most-recently asserted).                                                                             |
+| 5        | **Op-id tie-break**        | If asserted HLCs are identical, the fact with the lexicographically larger operation identifier wins. This case is degenerate in practice but must be deterministic. |
 
 **Tombstones and overrides** enter the same pipeline — a tombstone at layer `actual` with a later asserted time suppresses an earlier `plan` fact by the same rules.
 
@@ -115,13 +115,13 @@ A scenario is an additive overlay on canonical temporal facts. Canonical truth i
 
 ### Scenario operations
 
-| Operation | Description |
-| --- | --- |
-| **create** | Initialise an overlay context from a base timeline and effective instant. |
-| **rebase** | Re-align the overlay against updated canonical facts; conflict slots are reported explicitly. |
+| Operation   | Description                                                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| **create**  | Initialise an overlay context from a base timeline and effective instant.                       |
+| **rebase**  | Re-align the overlay against updated canonical facts; conflict slots are reported explicitly.   |
 | **compare** | Compute a deterministic delta between the scenario view and baseline, or between two scenarios. |
-| **promote** | Materialise approved scenario deltas as canonical fact writes through a controlled workflow. |
-| **discard** | Retire the overlay; canonical facts are not mutated. |
+| **promote** | Materialise approved scenario deltas as canonical fact writes through a controlled workflow.    |
+| **discard** | Retire the overlay; canonical facts are not mutated.                                            |
 
 ### Scenario identity
 
@@ -143,11 +143,11 @@ Range and diff reads carry an explicit comparison pair instead of a single `effe
 
 Allowed `kind` values:
 
-| Kind | Description |
-| --- | --- |
-| `time_delta` | Same view (baseline or same scenario) at two different effective instants. |
-| `scenario_delta` | Same effective instant, baseline vs scenario. |
-| `scenario_vs_scenario` | Same effective instant, two different scenarios. |
+| Kind                   | Description                                                                |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `time_delta`           | Same view (baseline or same scenario) at two different effective instants. |
+| `scenario_delta`       | Same effective instant, baseline vs scenario.                              |
+| `scenario_vs_scenario` | Same effective instant, two different scenarios.                           |
 
 ---
 
@@ -159,12 +159,12 @@ Reads may request explainability metadata. The response then includes a per-slot
 
 ## Error codes
 
-| Code | Trigger |
-| --- | --- |
-| `TEMPORAL_CONTEXT_INVALID` | Both `as_of` and `interval` provided, or neither provided, or a field has an invalid type or value. |
-| `TEMPORAL_INTERVAL_INVALID` | `interval.start` is after `interval.end`, or either end is not valid UTC ISO-8601. |
-| `SCENARIO_CONTEXT_INVALID` | `scenario_id` is present but `mode` has an unsupported value, or the scenario does not exist. |
-| `COMPARISON_CONTEXT_INVALID` | `kind` is not a recognised value, or `left`/`right` carry incompatible context. |
+| Code                         | Trigger                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| `TEMPORAL_CONTEXT_INVALID`   | Both `as_of` and `interval` provided, or neither provided, or a field has an invalid type or value. |
+| `TEMPORAL_INTERVAL_INVALID`  | `interval.start` is after `interval.end`, or either end is not valid UTC ISO-8601.                  |
+| `SCENARIO_CONTEXT_INVALID`   | `scenario_id` is present but `mode` has an unsupported value, or the scenario does not exist.       |
+| `COMPARISON_CONTEXT_INVALID` | `kind` is not a recognised value, or `left`/`right` carry incompatible context.                     |
 
 ---
 

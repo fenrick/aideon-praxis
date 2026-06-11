@@ -10,13 +10,13 @@ Analytics covers two distinct concerns: the **Metis analytics engine** — deter
 
 Metis is the crate that earns the right to show a score, ranking, or impact path. It runs deterministic analytical work over the twin and returns typed, evidence-bearing results that the rest of the product can present honestly.
 
-| Capability family | Example questions answered |
-| --- | --- |
-| Centrality and ranking | Which nodes are most connected? What is the PageRank score for this resource? |
-| Impact and blast radius | Which downstream nodes are affected if this dependency changes? |
-| Path and reachability | What is the shortest dependency path between A and B? |
-| Risk and concentration | Where is dependency risk concentrated? Which structural weak points exist? |
-| Cost and optimisation | What is the TCO of this configuration? How do scenarios compare on cost? |
+| Capability family       | Example questions answered                                                    |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| Centrality and ranking  | Which nodes are most connected? What is the PageRank score for this resource? |
+| Impact and blast radius | Which downstream nodes are affected if this dependency changes?               |
+| Path and reachability   | What is the shortest dependency path between A and B?                         |
+| Risk and concentration  | Where is dependency risk concentrated? Which structural weak points exist?    |
+| Cost and optimisation   | What is the TCO of this configuration? How do scenarios compare on cost?      |
 
 Each family operates on a bounded input — a workspace, an explicit time context, an optional scenario, and a declared algorithm — and produces the same answer for the same inputs.
 
@@ -69,12 +69,12 @@ Lightweight queries — single-node lookups, small projection reads — may run 
 
 Metis returns structured result envelopes, not loose blobs. Stable shapes include:
 
-| Result kind | Fields |
-| --- | --- |
-| Ranked list | `items[]` (id, score, rank), `bounds`, `algorithm`, `computed_at` |
-| Score | `value`, `confidence`, `contributing_ids[]`, `bounds` |
-| Impact set | `affected[]` (id, relationship, depth), `source_id`, `path_sample[]`, `bounds` |
-| Path bundle | `paths[]`, `source_id`, `target_id`, `algorithm`, `bounds` |
+| Result kind       | Fields                                                                            |
+| ----------------- | --------------------------------------------------------------------------------- |
+| Ranked list       | `items[]` (id, score, rank), `bounds`, `algorithm`, `computed_at`                 |
+| Score             | `value`, `confidence`, `contributing_ids[]`, `bounds`                             |
+| Impact set        | `affected[]` (id, relationship, depth), `source_id`, `path_sample[]`, `bounds`    |
+| Path bundle       | `paths[]`, `source_id`, `target_id`, `algorithm`, `bounds`                        |
 | Execution summary | `job_id`, `algorithm`, `input_snapshot`, `duration_ms`, `warnings[]`, `truncated` |
 
 If outputs are too loose, every consuming layer invents its own schema. Stable shapes prevent that.

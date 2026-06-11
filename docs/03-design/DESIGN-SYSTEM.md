@@ -177,12 +177,12 @@ Animate compositor-friendly properties only: `transform`, `opacity`, `clip-path`
 
 The shell provides four named slots. Every product surface composes into these slots rather than shipping its own chrome.
 
-| Slot | Component | Role |
-| --- | --- | --- |
-| Navigation | `Sidebar` | Primary and secondary navigation, workspace switching |
-| Toolbar | `Toolbar` / `Menubar` | Contextual actions, time and scenario controls, view options |
-| Content surface | `ResizablePanelGroup` + `ResizablePanel` | The dominant working area — canvas, table, dashboard, report |
-| Inspector | `ResizablePanel` (trailing) | Context-sensitive detail, explanation, properties, provenance |
+| Slot            | Component                                | Role                                                          |
+| --------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| Navigation      | `Sidebar`                                | Primary and secondary navigation, workspace switching         |
+| Toolbar         | `Toolbar` / `Menubar`                    | Contextual actions, time and scenario controls, view options  |
+| Content surface | `ResizablePanelGroup` + `ResizablePanel` | The dominant working area — canvas, table, dashboard, report  |
+| Inspector       | `ResizablePanel` (trailing)              | Context-sensitive detail, explanation, properties, provenance |
 
 ### Sidebar
 
@@ -280,12 +280,12 @@ The canvas surface wraps XYFlow inside design-system containers:
 
 Every interactive component must implement all four interaction states. There are no exceptions.
 
-| State | Requirement |
-| --- | --- |
-| Hover | Visible change in background, border, or text colour. Must feel deliberate, not accidental. |
-| Focus | High-contrast focus ring using `--color-border-focus` token. Keyboard-navigable without pointer. Must meet WCAG 2.1 AA contrast. |
-| Active / Pressed | Distinct from hover. Typically a slight inward transform or deeper tone. |
-| Disabled | Reduced opacity using `--color-foreground-disabled`. Non-interactive. Does not respond to hover or active. |
+| State            | Requirement                                                                                                                      |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Hover            | Visible change in background, border, or text colour. Must feel deliberate, not accidental.                                      |
+| Focus            | High-contrast focus ring using `--color-border-focus` token. Keyboard-navigable without pointer. Must meet WCAG 2.1 AA contrast. |
+| Active / Pressed | Distinct from hover. Typically a slight inward transform or deeper tone.                                                         |
+| Disabled         | Reduced opacity using `--color-foreground-disabled`. Non-interactive. Does not respond to hover or active.                       |
 
 Selected, checked, and expanded states follow the same discipline — they use tokens, not hard-coded values.
 
@@ -297,18 +297,18 @@ Aideon surfaces live data with latency, partial results, and model outputs. The 
 
 These treatments are not bolt-ons. They are first-class components.
 
-| State | Treatment |
-| --- | --- |
-| **Loading** | Skeleton shimmer over the content region. Proportional to expected content shape. No spinner-only defaults. |
-| **Partial** | Content renders with a partial-result banner or inline indicator. Not silently truncated. |
-| **Stale** | Content renders with a stale-data badge near the affected region. Timestamp shown on hover. |
+| State          | Treatment                                                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Loading**    | Skeleton shimmer over the content region. Proportional to expected content shape. No spinner-only defaults.             |
+| **Partial**    | Content renders with a partial-result banner or inline indicator. Not silently truncated.                               |
+| **Stale**      | Content renders with a stale-data badge near the affected region. Timestamp shown on hover.                             |
 | **Rebuilding** | Content renders with a rebuilding indicator. Previous values remain visible. Progress token shown if duration is known. |
-| **Error** | Content region replaced with an error frame. Error message, retry action, and optional detail. Never a blank surface. |
-| **Empty** | Content region shows a purposeful empty state — contextual message, suggested action, no generic placeholder. |
-| **Generated** | Content cell or region carries a `generated` provenance mark using `--color-provenance-generated`. |
-| **Asserted** | Content cell or region carries an `asserted` provenance mark using `--color-provenance-asserted`. |
-| **Inferred** | Content cell or region carries an `inferred` provenance mark using `--color-provenance-inferred`. |
-| **Warning** | Inline warning badge or banner without blocking the surface. Action optional. |
+| **Error**      | Content region replaced with an error frame. Error message, retry action, and optional detail. Never a blank surface.   |
+| **Empty**      | Content region shows a purposeful empty state — contextual message, suggested action, no generic placeholder.           |
+| **Generated**  | Content cell or region carries a `generated` provenance mark using `--color-provenance-generated`.                      |
+| **Asserted**   | Content cell or region carries an `asserted` provenance mark using `--color-provenance-asserted`.                       |
+| **Inferred**   | Content cell or region carries an `inferred` provenance mark using `--color-provenance-inferred`.                       |
+| **Warning**    | Inline warning badge or banner without blocking the surface. Action optional.                                           |
 
 ### Provenance Distinction
 
@@ -351,15 +351,15 @@ Aideon is a serious work tool used in long sessions. The design system enforces 
 
 The design system uses these libraries as its building material. Product surfaces never import them directly.
 
-| Library | Role |
-| --- | --- |
-| **shadcn/ui** | Generated primitive base (Radix + Tailwind). Lives under `components/ui/`. Not edited directly — customised through wrapping. |
-| **Tailwind CSS** | Utility layer and token consumer. Config maps design tokens to utilities. |
-| **XYFlow** | Node-graph and canvas rendering. Wrapped in design-system canvas containers. |
-| **Phosphor Icons** | Icon set. Used through the `Icon` primitive, not imported ad-hoc. |
-| **React Hook Form** | Form state management. Integrated at the block layer with shared field and validation components. |
-| **react-resizable-panels** | Shell and workspace panel layout. |
-| **recharts** | Chart rendering substrate. Wrapped in design-system chart components. |
+| Library                    | Role                                                                                                                          |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **shadcn/ui**              | Generated primitive base (Radix + Tailwind). Lives under `components/ui/`. Not edited directly — customised through wrapping. |
+| **Tailwind CSS**           | Utility layer and token consumer. Config maps design tokens to utilities.                                                     |
+| **XYFlow**                 | Node-graph and canvas rendering. Wrapped in design-system canvas containers.                                                  |
+| **Phosphor Icons**         | Icon set. Used through the `Icon` primitive, not imported ad-hoc.                                                             |
+| **React Hook Form**        | Form state management. Integrated at the block layer with shared field and validation components.                             |
+| **react-resizable-panels** | Shell and workspace panel layout.                                                                                             |
+| **recharts**               | Chart rendering substrate. Wrapped in design-system chart components.                                                         |
 
 ---
 
@@ -406,14 +406,14 @@ pnpm --filter @aideon/desktop run components:refresh
 
 ## Placement Rules
 
-| Location | What lives there |
-| --- | --- |
-| `design-system/blocks/` | Shell, inspector, dashboard, artefact, and state patterns — no domain semantics |
-| `design-system/components/ui/` | Generated shadcn primitives |
-| `design-system/components/canvas/` | XYFlow wrappers |
-| `design-system/hooks/` | UI hooks with no domain dependency |
-| Feature modules | Domain-specific presenters and work surfaces that consume the design system |
-| App shell | Host-specific wiring of shared blocks into application layout |
+| Location                           | What lives there                                                                |
+| ---------------------------------- | ------------------------------------------------------------------------------- |
+| `design-system/blocks/`            | Shell, inspector, dashboard, artefact, and state patterns — no domain semantics |
+| `design-system/components/ui/`     | Generated shadcn primitives                                                     |
+| `design-system/components/canvas/` | XYFlow wrappers                                                                 |
+| `design-system/hooks/`             | UI hooks with no domain dependency                                              |
+| Feature modules                    | Domain-specific presenters and work surfaces that consume the design system     |
+| App shell                          | Host-specific wiring of shared blocks into application layout                   |
 
 ---
 
