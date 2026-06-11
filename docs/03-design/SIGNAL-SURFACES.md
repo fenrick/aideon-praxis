@@ -163,7 +163,7 @@ Cross-cutting signals — those that span multiple artefacts or require coordina
 
 ### Artefact provenance vs signal
 
-A signal is not the same as an artefact's provenance or freshness notice. Provenance describes the origin and computation trail of artefact content. A signal is an active prompt for a decision. The two appear in different places and use distinct visual treatments. See [ARTEFACTS-AND-VIEWPOINTS.md](./ARTEFACTS-AND-VIEWPOINTS.md) for the artefact contract.
+A signal is not the same as an artefact's provenance or freshness notice. Provenance describes the origin and computation trail of artefact content. A signal is an active prompt for a decision. The two appear in different places and use distinct visual treatments. See [ARTEFACTS-AND-FAMILIES.md](./ARTEFACTS-AND-FAMILIES.md) for the artefact contract.
 
 ---
 
@@ -199,7 +199,7 @@ These surfaces interact — a validation error may accompany a warning signal; p
 ## References
 
 - [UX Contract](./UX-DESIGN.md)
-- [Artefacts and Viewpoints](./ARTEFACTS-AND-VIEWPOINTS.md)
+- [Artefacts and Artefact Families](./ARTEFACTS-AND-FAMILIES.md)
 - [Design System](./DESIGN-SYSTEM.md)
 - [Metis — Analytics](../05-modules/metis/README.md)
 - [Chrona — Time and Scenario](../05-modules/chrona/README.md)

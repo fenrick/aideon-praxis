@@ -6,19 +6,19 @@ Aideon Desktop is a **desktop-first, local-first, time-first digital-twin modell
 
 ## Layers
 
-| Folder                                    | Contents                                                                                                                                     |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`01-architecture/`](../01-architecture/) | System shape, boundary rules, module dependency map, C4.                                                                                     |
-| [`02-standards/`](../02-standards/)       | Design governance, ADR format, coding standards, testing, security, getting started.                                                         |
-| [`03-design/`](../03-design/)             | Product behaviour, the workspace thesis, UX contract, design system, artefacts & viewpoints, metamodel packages, signal surfaces, analytics. |
-| [`04-contracts/`](../04-contracts/)       | Typed IPC contracts, temporal & scenario context, projection & invalidation, accepted-work & events.                                         |
-| [`05-modules/`](../05-modules/)           | Per-module design: `mneme`, `praxis`, `metis`, `chrona`, `continuum`, `host`.                                                                |
-| [`06-adrs/`](../06-adrs/)                 | Architecture decisions — start at [`ADRS.md`](../06-adrs/ADRS.md).                                                                           |
+| Folder                                    | Contents                                                                                                                                            |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`01-architecture/`](../01-architecture/) | System shape, boundary rules, module dependency map, C4.                                                                                            |
+| [`02-standards/`](../02-standards/)       | Design governance, ADR format, coding standards, testing, security, getting started.                                                                |
+| [`03-design/`](../03-design/)             | Product behaviour, the workspace thesis, UX contract, design system, artefacts & artefact families, metamodel packages, signal surfaces, analytics. |
+| [`04-contracts/`](../04-contracts/)       | Typed IPC contracts, temporal & scenario context, projection & invalidation, accepted-work & events.                                                |
+| [`05-modules/`](../05-modules/)           | Per-module design: `mneme`, `praxis`, `metis`, `chrona`, `continuum`, `host`.                                                                       |
+| [`06-adrs/`](../06-adrs/)                 | Architecture decisions — start at [`ADRS.md`](../06-adrs/ADRS.md).                                                                                  |
 
 ## Common entry points
 
 - **Architecture & boundaries** → [`01-architecture/ARCHITECTURE-BOUNDARY.md`](../01-architecture/ARCHITECTURE-BOUNDARY.md), [`MODULE-DEPENDENCY-MAP.md`](../01-architecture/MODULE-DEPENDENCY-MAP.md).
-- **The product design spine** → [`03-design/DESIGN.md`](../03-design/DESIGN.md), then [`UX-DESIGN.md`](../03-design/UX-DESIGN.md) and [`ARTEFACTS-AND-VIEWPOINTS.md`](../03-design/ARTEFACTS-AND-VIEWPOINTS.md).
+- **The product design spine** → [`03-design/DESIGN.md`](../03-design/DESIGN.md), then [`UX-DESIGN.md`](../03-design/UX-DESIGN.md) and [`ARTEFACTS-AND-FAMILIES.md`](../03-design/ARTEFACTS-AND-FAMILIES.md).
 - **Storage & the temporal model** → [`05-modules/mneme/`](../05-modules/mneme/README.md), [`04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md`](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md).
 - **The IPC boundary** → [`04-contracts/CONTRACTS-AND-SCHEMAS.md`](../04-contracts/CONTRACTS-AND-SCHEMAS.md), [`05-modules/host/README.md`](../05-modules/host/README.md).
 - **Making a durable decision** → [`02-standards/DESIGN-GOVERNANCE.md`](../02-standards/DESIGN-GOVERNANCE.md), then write an ADR per [`02-standards/ADR-FORMAT.md`](../02-standards/ADR-FORMAT.md).

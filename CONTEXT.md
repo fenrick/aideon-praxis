@@ -32,7 +32,7 @@ _Avoid_: effective time, effective date (say _effective interval_); conflating i
 
 **Viewpoint**:
 The complete frame for resolving or analysing the twin: an as-of **valid time**, an as-of **asserted time** (which belief — what the system knew as of that recording instant), a **layer** or **layer policy** (a single layer such as actual-only, or a blend such as actual-over-plan), a **scenario** (which world), and a **scope**. The first four answer _which version_ of the twin you are looking at; scope answers _which part_. A resolved snapshot or diff is not fully specified without all of them — which is why scope rides inside the viewpoint, not beside it. The asserted coordinate is part of the question, not just audit metadata: pinning it replays a past belief, leaving it at latest shows current belief.
-_Avoid_: subjective time, as-of context, temporal context (viewpoint is the canonical term); bare "as-of" (ambiguous — say _as-of valid time_ / _as-of asserted time_).
+_Avoid_: subjective time, as-of context, temporal context (viewpoint is the canonical term); bare "as-of" (ambiguous — say _as-of valid time_ / _as-of asserted time_); artefact family (that is the product-layer grouping/lens, not the query frame — see Artefact family).
 
 **Snapshot**:
 The twin's resolved state at a single viewpoint. A resolved _view_, not necessarily a stored copy — it is computed from facts for the given valid time, asserted time, layer policy, and scenario.
@@ -105,3 +105,9 @@ _Avoid_: class, category (category is one facet of a type, not the type itself).
 **Effective schema**:
 The compiled, flattened slot-and-rule set for a single type after inheritance and metamodel rules are applied. Derived from the **metamodel** and used by validation and resolution — never authored directly.
 _Avoid_: schema (bare), type definition (effective schema is the compiled view; the metamodel is the authored source).
+
+## Artefacts
+
+**Artefact family**:
+A named grouping of artefacts that corresponds to a recognisable business question or starting shape — e.g. business motivation, service blueprint, operating model, capability map, roadmap. It guides the initial structure and interpretation of an artefact, but it is **not** a temporal, scenario, layer, or scope frame.
+_Avoid_: viewpoint (in this project **Viewpoint** means the bitemporal/model query frame used to resolve or analyse the twin — see Viewpoint); lens, perspective.

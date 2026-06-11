@@ -56,7 +56,7 @@ These are not optional extras. They are part of the product posture.
 - Hidden context on surfaces where time, scenario, or freshness changes meaning
 - Custom status colours, local loader vocabularies, and one-off success theatre
 - Sparse, decorative layouts that waste space and slow serious work
-- Blank-canvas defaults where the product should start from a viewpoint, template, or task
+- Blank-canvas defaults where the product should start from an artefact family, template, or task
 - Domain semantics encoded in shared components — the design system is domain-free
 
 A design system that only enables and never forbids ends up being a polite suggestion.
