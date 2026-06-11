@@ -2,10 +2,10 @@
 
 import { ThemeProvider } from 'next-themes';
 
-import { Toaster } from '../src/design-system/components/ui/sonner';
-import { TooltipProvider } from '../src/design-system/components/ui/tooltip';
-import { ColorThemeProvider } from '../src/design-system/theme/color-theme';
-import { ErrorBoundary } from '../src/error-boundary';
+import { Toaster } from 'design-system/components/ui/sonner';
+import { TooltipProvider } from 'design-system/components/ui/tooltip';
+import { ColorThemeProvider } from 'design-system/theme/color-theme';
+import { ErrorBoundary } from 'error-boundary';
 
 /**
  * Compose theme, tooltip, error boundary, and toaster providers for the UI shell.

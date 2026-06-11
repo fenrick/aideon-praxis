@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import '../src/styles.css';
+import '../styles.css';
 import { AppProviders } from './providers';
 
 export const metadata: Metadata = {

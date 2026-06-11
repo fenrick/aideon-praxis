@@ -1,6 +1,6 @@
 'use client';
 
-import { StatusScreen } from '../../src/app/app-screens';
+import { StatusScreen } from '../app-screens';
 
 /**
  * Status window route.

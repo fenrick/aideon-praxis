@@ -1,6 +1,6 @@
 'use client';
 
-import { MainScreen } from '../src/app/app-screens';
+import { MainScreen } from './app-screens';
 
 /**
  * Main desktop route.

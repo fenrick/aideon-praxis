@@ -27,6 +27,6 @@
     "isolatedModules": true,
     "jsx": "preserve"
   },
-  "include": ["app", "next-env.d.ts", "src", "tests", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "src", "tests", ".next/types/**/*.ts"],
   "exclude": ["src/design-system/components/**/*", "tests/webdriver/**", "tests/e2e/**"]
 }

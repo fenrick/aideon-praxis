@@ -1,6 +1,6 @@
 'use client';
 
-import { SettingsScreen } from '../../src/app/app-screens';
+import { SettingsScreen } from '../app-screens';
 
 /**
  * Settings window route.
