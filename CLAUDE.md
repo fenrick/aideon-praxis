@@ -99,7 +99,7 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 
 **When touching a boundary (Rust ↔ host ↔ renderer)**
 
-- Update/validate DTO types on both sides (TS in `app/PraxisDtos`, Rust in `crates/mneme`).
+- Update/validate DTO types on both sides (TS in `src/dtos`, Rust in `crates/mneme`).
 - Update `docs/04-contracts/CONTRACTS-AND-SCHEMAS.md` when schemas or IPC error shapes change.
 - Ensure error structures are documented and consistent across layers before merging.
 
@@ -189,7 +189,7 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 
 ## Per-module guidance (where to look)
 
-- **Aideon Desktop (flattened) (`app/ + src/`)**
+- **Aideon Desktop (`src/`)**
   - Read: `DESIGN.md`, canvas/docs under `docs/*` (canvas, adapters, dtos, design system).
   - Contains the React canvas, design-system proxies, adapters, and DTOs in one package.
   - Tests: JS/TS tests via `pnpm run node:test` (Vitest).
@@ -206,7 +206,7 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 
 ## Technology & testing expectations
 
-### TypeScript / React (Praxis Canvas, app/PraxisAdapters)
+### TypeScript / React (Praxis Canvas, src/adapters)
 
 – Node 24, React 19. Strict TS config; ESLint + Prettier. All new surface/canvas work targets the React + React Flow + shadcn/ui stack described in `docs/03-design/UX-DESIGN.md`, `docs/03-design/DESIGN-SYSTEM.md`, and `docs/praxis-canvas/DESIGN.md`.
 
