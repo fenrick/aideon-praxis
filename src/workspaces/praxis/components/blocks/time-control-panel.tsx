@@ -155,7 +155,7 @@ export function TimeControlPanel({
         {state.mergeConflicts && state.mergeConflicts.length > 0 && (
           <MergeConflicts conflicts={state.mergeConflicts} />
         )}
-        {state.error && <p className="text-xs text-destructive">{state.error}</p>}
+        {state.error && <p className="text-destructive text-xs">{state.error}</p>}
         <PanelToolbar>
           <Button
             variant="secondary"
@@ -226,11 +226,11 @@ function CommitSummary({
   readonly selectedCommitId?: string;
 }) {
   if (commits.length === 0) {
-    return <p className="text-xs text-muted-foreground">Load a timeline to view moments.</p>;
+    return <p className="text-muted-foreground text-xs">Load a timeline to view moments.</p>;
   }
   const selectedCommit = commits.find((commit) => commit.id === selectedCommitId);
   return (
-    <p className="text-xs text-muted-foreground">
+    <p className="text-muted-foreground text-xs">
       {selectedCommit ? selectedCommit.message : 'Latest moment'}
     </p>
   );
@@ -256,8 +256,8 @@ function SnapshotStats({
   const formattedNodes = typeof nodes === 'number' ? nodes.toLocaleString() : '—';
   const formattedEdges = typeof edges === 'number' ? edges.toLocaleString() : '—';
   return (
-    <div className="rounded-2xl border border-border/70 bg-muted/20 p-3">
-      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Snapshot</p>
+    <div className="border-border/70 bg-muted/20 rounded-2xl border p-3">
+      <p className="text-muted-foreground text-xs tracking-[0.3em] uppercase">Snapshot</p>
       <div className="mt-2 grid grid-cols-2 gap-3">
         <Stat label="Nodes" value={formattedNodes} loading={loading} />
         <Stat label="Edges" value={formattedEdges} loading={loading} />
@@ -285,7 +285,7 @@ function Stat({
 }) {
   return (
     <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground text-xs">{label}</p>
       <p className="text-2xl font-semibold">{loading ? '…' : value}</p>
     </div>
   );
@@ -303,8 +303,8 @@ function MergeConflicts({
   readonly conflicts: NonNullable<TemporalPanelState['mergeConflicts']>;
 }) {
   return (
-    <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs">
-      <p className="font-semibold text-destructive">Overlap conflicts</p>
+    <div className="border-destructive/40 bg-destructive/5 rounded-xl border p-3 text-xs">
+      <p className="text-destructive font-semibold">Overlap conflicts</p>
       <ul className="mt-2 space-y-1">
         {conflicts.map((conflict, index) => (
           <li key={`${conflict.reference}-${index.toString()}`}>

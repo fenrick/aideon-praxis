@@ -37,7 +37,7 @@ export function DesktopTree() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   disabled
-                  className="text-left text-xs text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive text-left text-xs"
                 >
                   Failed to load workspaces: {error}
                 </SidebarMenuButton>
@@ -47,7 +47,7 @@ export function DesktopTree() {
             {!loading && !error && items.map((item) => <TreeNode key={item.id} item={item} />)}
           </SidebarMenu>
           {!loading && !error && items.length === 0 ? (
-            <Sidebar className="mt-2 rounded-md border border-dashed border-border/70 bg-muted/30 p-2 text-xs text-muted-foreground">
+            <Sidebar className="border-border/70 bg-muted/30 text-muted-foreground mt-2 rounded-md border border-dashed p-2 text-xs">
               No workspaces available yet.
             </Sidebar>
           ) : undefined}
@@ -67,9 +67,9 @@ function TreeNode({ item }: { readonly item: WorkspaceTreeItem }) {
     <SidebarMenuItem>
       <SidebarMenuButton asChild size="sm">
         <div className="flex flex-col gap-1 text-left">
-          <span className="font-medium text-sm">{item.label}</span>
+          <span className="text-sm font-medium">{item.label}</span>
           {item.children ? (
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               {item.children.length} workspace
               {item.children.length === 1 ? '' : 's'}
             </div>
@@ -77,12 +77,12 @@ function TreeNode({ item }: { readonly item: WorkspaceTreeItem }) {
         </div>
       </SidebarMenuButton>
       {item.children ? (
-        <div className="ml-3 mt-1 space-y-1">
+        <div className="mt-1 ml-3 space-y-1">
           {item.children.map((child) => (
             <SidebarMenuButton
               key={child.id}
               size="sm"
-              className="items-start gap-2 text-muted-foreground"
+              className="text-muted-foreground items-start gap-2"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ function TreeNode({ item }: { readonly item: WorkspaceTreeItem }) {
                   ) : undefined}
                 </div>
                 {child.meta?.branch ? (
-                  <div className="truncate text-[11px] text-muted-foreground/80">
+                  <div className="text-muted-foreground/80 truncate text-[11px]">
                     {child.meta.branch}
                   </div>
                 ) : undefined}

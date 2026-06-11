@@ -183,13 +183,13 @@ export function AideonDesktopShell({
   return (
     <SidebarProvider>
       <AideonShellControlsProvider value={{ inspectorCollapsed, toggleInspector }}>
-        <div className={cn('flex min-h-screen bg-background text-foreground', className)}>
+        <div className={cn('bg-background text-foreground flex min-h-screen', className)}>
           {navigation}
           <SidebarInset>
             {toolbar ? (
               <header
                 data-tauri-drag-region
-                className="bg-background/95 sticky top-0 z-20 flex shrink-0 items-center gap-2 border-b border-border px-4 py-3 backdrop-blur"
+                className="bg-background/95 border-border sticky top-0 z-20 flex shrink-0 items-center gap-2 border-b px-4 py-3 backdrop-blur"
               >
                 {toolbar}
               </header>
@@ -240,11 +240,11 @@ export function AideonDesktopShell({
                   setInspectorCollapsed(false);
                   persistInspectorCollapsed(false);
                 }}
-                className="min-w-[320px] max-w-[520px]"
+                className="max-w-[520px] min-w-[320px]"
                 data-testid="aideon-shell-panel-inspector"
               >
                 <ScrollArea
-                  className="h-full border-l border-border bg-sidebar text-sidebar-foreground shadow-none"
+                  className="border-border bg-sidebar text-sidebar-foreground h-full border-l shadow-none"
                   data-testid="aideon-shell-inspector"
                 >
                   <div

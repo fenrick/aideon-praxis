@@ -46,7 +46,7 @@ export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
     });
   }, [loadView, reloadVersion]);
 
-  let body: ReactNode = <p className="text-sm text-muted-foreground">Loading chart…</p>;
+  let body: ReactNode = <p className="text-muted-foreground text-sm">Loading chart…</p>;
   if (error) {
     body = <ChartError message={error} />;
   } else if (model) {
@@ -65,7 +65,7 @@ export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
           });
         }}
       />
-      <div className="flex-1 rounded-2xl border border-border/60 bg-background/40 p-4">{body}</div>
+      <div className="border-border/60 bg-background/40 flex-1 rounded-2xl border p-4">{body}</div>
     </div>
   );
 }
@@ -92,7 +92,7 @@ function ChartContent({ model }: { readonly model: ChartViewModel }) {
  */
 function ChartError({ message }: { readonly message: string }) {
   return (
-    <p className="flex items-center gap-2 text-sm text-destructive">
+    <p className="text-destructive flex items-center gap-2 text-sm">
       <AlertTriangle className="h-4 w-4" />
       {message}
     </p>
@@ -114,7 +114,7 @@ function KpiPanel({ summary }: { readonly summary: ChartViewModel['kpi'] }) {
   return (
     <div className="flex h-full flex-col justify-between">
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">KPI</p>
+        <p className="text-muted-foreground text-xs tracking-[0.2em] uppercase">KPI</p>
         <p className="text-5xl font-semibold">
           {summary.value.toLocaleString()} {summary.units ?? ''}
         </p>
@@ -136,7 +136,7 @@ function KpiPanel({ summary }: { readonly summary: ChartViewModel['kpi'] }) {
  */
 function LineChart({ series }: { readonly series?: ChartViewModel['series'][number] }) {
   if (!series) {
-    return <p className="text-sm text-muted-foreground">No data</p>;
+    return <p className="text-muted-foreground text-sm">No data</p>;
   }
   const resolvedSeries = series;
   const viewBox = { width: 260, height: 140, padding: 16 };
@@ -144,7 +144,7 @@ function LineChart({ series }: { readonly series?: ChartViewModel['series'][numb
   const path = points.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ');
   return (
     <div className="flex h-full flex-col justify-between">
-      <p className="text-sm font-semibold text-foreground">{resolvedSeries.label}</p>
+      <p className="text-foreground text-sm font-semibold">{resolvedSeries.label}</p>
       <svg
         viewBox={`0 0 ${viewBox.width.toString()} ${viewBox.height.toString()}`}
         className="h-32 w-full"
@@ -157,7 +157,7 @@ function LineChart({ series }: { readonly series?: ChartViewModel['series'][numb
           points={path}
         />
       </svg>
-      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex flex-wrap gap-3 text-xs">
         {resolvedSeries.points.map((point) => (
           <span key={point.label}>
             {point.label}:{point.value.toFixed(0)}
@@ -175,16 +175,16 @@ function LineChart({ series }: { readonly series?: ChartViewModel['series'][numb
  */
 function BarChart({ series }: { readonly series: ChartViewModel['series'] }) {
   if (series.length === 0) {
-    return <p className="text-sm text-muted-foreground">No data</p>;
+    return <p className="text-muted-foreground text-sm">No data</p>;
   }
   const primary = series[0];
   if (!primary) {
-    return <p className="text-sm text-muted-foreground">No data</p>;
+    return <p className="text-muted-foreground text-sm">No data</p>;
   }
   const categories = primary.points.map((point) => point.label);
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-4 text-xs">
         {series.map((entry) => (
           <span key={entry.id} className="flex items-center gap-1">
             <span
@@ -214,7 +214,7 @@ function BarChart({ series }: { readonly series: ChartViewModel['series'] }) {
                 );
               })}
             </div>
-            <p className="text-xs text-muted-foreground">{category}</p>
+            <p className="text-muted-foreground text-xs">{category}</p>
           </div>
         ))}
       </div>

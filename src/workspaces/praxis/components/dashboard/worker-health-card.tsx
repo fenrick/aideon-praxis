@@ -48,7 +48,7 @@ export function WorkerHealthCard() {
           </div>
           <AlertDescription className="space-y-1 text-sm">
             <p>{description}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {state.loading ? 'Pending response…' : `Updated ${timestamp}`}
             </p>
           </AlertDescription>

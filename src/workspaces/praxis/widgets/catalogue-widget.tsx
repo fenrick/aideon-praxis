@@ -104,7 +104,7 @@ export function CatalogueWidget({
           });
         }}
       />
-      <div className="flex-1 rounded-2xl border border-border/60 bg-background/40 p-3">{body}</div>
+      <div className="border-border/60 bg-background/40 flex-1 rounded-2xl border p-3">{body}</div>
     </div>
   );
 }
@@ -164,7 +164,7 @@ function CatalogueTable({
                 <TableCell key={`${row.id}-${column.id}`} className="text-sm">
                   <button
                     type="button"
-                    className="w-full rounded-md px-2 py-1 text-left transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="hover:bg-muted/40 focus-visible:ring-ring w-full rounded-md px-2 py-1 text-left transition focus-visible:ring-2 focus-visible:outline-none"
                     data-testid={`catalogue-cell-${row.id}-${column.id}`}
                     onClick={() => {
                       onRowActivate(row);
@@ -202,7 +202,7 @@ function formatValue(value: string | number | boolean | null | undefined): strin
  * @param root0.message
  */
 function Placeholder({ message }: { readonly message: string }) {
-  return <p className="text-sm text-muted-foreground">{message}</p>;
+  return <p className="text-muted-foreground text-sm">{message}</p>;
 }
 
 /**
@@ -212,7 +212,7 @@ function Placeholder({ message }: { readonly message: string }) {
  */
 function ErrorMessage({ message }: { readonly message: string }) {
   return (
-    <p className="flex items-center gap-2 text-sm text-destructive">
+    <p className="text-destructive flex items-center gap-2 text-sm">
       <AlertTriangle className="h-4 w-4" />
       {message}
     </p>

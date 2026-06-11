@@ -46,7 +46,7 @@ export function SelectionInspectorCard({
           <CardTitle>Selection</CardTitle>
           <CardDescription>{selectionSummary(selection)}</CardDescription>
           {!empty && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Source:
               {sourceLabel}
             </p>
@@ -89,15 +89,15 @@ function SelectionList({
 }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground text-xs tracking-[0.35em] uppercase">{label}</p>
       {values.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+        <p className="text-muted-foreground text-sm">{emptyLabel}</p>
       ) : (
         <ul className="mt-1 space-y-1">
           {values.map((value) => (
             <li
               key={value}
-              className="rounded-md border border-border/60 bg-muted/30 px-2 py-1 text-xs font-medium"
+              className="border-border/60 bg-muted/30 rounded-md border px-2 py-1 text-xs font-medium"
             >
               {value}
             </li>

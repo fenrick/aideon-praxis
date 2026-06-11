@@ -15,8 +15,8 @@ function ComingSoonCard({ message }: { readonly message?: string }) {
           <CardTitle>Coming soon</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">This workspace is not ready yet.</p>
-          {message ? <p className="text-xs text-muted-foreground">{message}</p> : undefined}
+          <p className="text-muted-foreground text-sm">This workspace is not ready yet.</p>
+          {message ? <p className="text-muted-foreground text-xs">{message}</p> : undefined}
         </CardContent>
       </Card>
     </div>

@@ -61,27 +61,27 @@ export function TemplateHeader({
     <Card className="border-border/70">
       <CardHeader className="gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {copy.scenarioLabel}
             {scenarioName ? ` · ${scenarioName}` : ''}
           </p>
-          <CardTitle className="text-3xl font-semibold leading-tight">
+          <CardTitle className="text-3xl leading-tight font-semibold">
             {loading ? (
-              <span className="inline-block h-7 w-48 animate-pulse rounded bg-muted" />
+              <span className="bg-muted inline-block h-7 w-48 animate-pulse rounded" />
             ) : (
               templateName
             )}
           </CardTitle>
-          <CardDescription className="text-base text-muted-foreground">
+          <CardDescription className="text-muted-foreground text-base">
             {loading ? (
-              <span className="inline-block h-4 w-64 animate-pulse rounded bg-muted" />
+              <span className="bg-muted inline-block h-4 w-64 animate-pulse rounded" />
             ) : (
               description
             )}
           </CardDescription>
         </div>
         <CardContent className="flex flex-col gap-3 p-0 lg:w-auto">
-          <Label className="text-xs font-medium text-muted-foreground" htmlFor="template-select">
+          <Label className="text-muted-foreground text-xs font-medium" htmlFor="template-select">
             {copy.templateLabel}
           </Label>
           <Select
@@ -100,7 +100,7 @@ export function TemplateHeader({
                 <SelectItem key={template.id} value={template.id}>
                   <div className="flex flex-col">
                     <span className="font-medium">{template.name}</span>
-                    <span className="text-xs text-muted-foreground">{template.description}</span>
+                    <span className="text-muted-foreground text-xs">{template.description}</span>
                   </div>
                 </SelectItem>
               ))}
@@ -115,7 +115,7 @@ export function TemplateHeader({
         </CardContent>
       </CardHeader>
       {templates.length === 0 && (
-        <CardContent className="text-sm text-muted-foreground">
+        <CardContent className="text-muted-foreground text-sm">
           No templates available. Add one to begin exploring the scenario.
         </CardContent>
       )}

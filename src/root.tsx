@@ -69,7 +69,7 @@ function persistWorkspaceId(id: WorkspaceId) {
  *
  */
 function EmptyInspector() {
-  return <div className="p-4 text-sm text-muted-foreground">No inspector available.</div>;
+  return <div className="text-muted-foreground p-4 text-sm">No inspector available.</div>;
 }
 
 /**

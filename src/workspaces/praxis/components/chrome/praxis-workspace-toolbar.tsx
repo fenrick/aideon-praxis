@@ -98,14 +98,14 @@ export function PraxisWorkspaceToolbar({
 
   return (
     <>
-      <div className="border-t border-border/60 bg-background/90 px-3 pb-3 pt-3 md:px-4">
+      <div className="border-border/60 bg-background/90 border-t px-3 pt-3 pb-3 md:px-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+            <p className="text-muted-foreground text-xs font-semibold tracking-[0.24em] uppercase">
               {headerEyebrow}
             </p>
-            <h1 className="text-xl font-semibold leading-tight text-foreground">{headerTitle}</h1>
-            <p className="text-sm text-muted-foreground line-clamp-1">{headerDescription}</p>
+            <h1 className="text-foreground text-xl leading-tight font-semibold">{headerTitle}</h1>
+            <p className="text-muted-foreground line-clamp-1 text-sm">{headerDescription}</p>
           </div>
           <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
             <div className="min-w-[200px]">
@@ -121,7 +121,7 @@ export function PraxisWorkspaceToolbar({
                     }
                   }}
                   className={cn(
-                    'h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
+                    'border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50',
                   )}
                 >
                   <option value="" disabled>
@@ -150,7 +150,7 @@ export function PraxisWorkspaceToolbar({
                       <SelectItem key={template.id} value={template.id}>
                         <div className="flex flex-col">
                           <span className="font-medium">{template.name}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             {template.description}
                           </span>
                         </div>
@@ -231,9 +231,9 @@ export function PraxisWorkspaceToolbar({
         title="Pages"
         description="Jump to a workspace page."
       >
-        <div className="space-y-2 text-sm text-foreground">
+        <div className="text-foreground space-y-2 text-sm">
           {HEADER_PAGES.map((page) => (
-            <div key={page} className="rounded-md border border-border/50 px-3 py-2">
+            <div key={page} className="border-border/50 rounded-md border px-3 py-2">
               {page}
             </div>
           ))}
@@ -279,7 +279,7 @@ function PageOverlay({
       />
       <dialog
         open
-        className="relative h-full w-full max-w-3xl max-h-[90vh] overflow-auto rounded-2xl bg-background p-6 shadow-2xl"
+        className="bg-background relative h-full max-h-[90vh] w-full max-w-3xl overflow-auto rounded-2xl p-6 shadow-2xl"
         aria-label={title}
         onCancel={(event) => {
           event.preventDefault();
@@ -289,7 +289,7 @@ function PageOverlay({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold">{title}</p>
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <p className="text-muted-foreground text-xs">{description}</p>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
             Close

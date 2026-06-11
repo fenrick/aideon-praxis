@@ -109,7 +109,7 @@ export function TimeCursorCard({ state, actions, triggerRef }: TimeCursorCardPro
             </SelectContent>
           </Select>
           {selectedCommit && (
-            <p className="text-xs text-muted-foreground">{selectedCommit.message}</p>
+            <p className="text-muted-foreground text-xs">{selectedCommit.message}</p>
           )}
         </div>
         <div className="space-y-2">
@@ -132,7 +132,7 @@ export function TimeCursorCard({ state, actions, triggerRef }: TimeCursorCardPro
               }
             }}
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             {copy.snapshotLabel}:{' '}
             {selectedCommit?.time
               ? new Date(selectedCommit.time).toLocaleString()
@@ -172,7 +172,7 @@ export function TimeCursorCard({ state, actions, triggerRef }: TimeCursorCardPro
             </Button>
           ) : undefined}
         </div>
-        {viewState.error && <p className="text-xs text-destructive">{viewState.error}</p>}
+        {viewState.error && <p className="text-destructive text-xs">{viewState.error}</p>}
       </CardContent>
     </Card>
   );

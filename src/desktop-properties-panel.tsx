@@ -26,7 +26,7 @@ export function DesktopPropertiesPanel({ selection }: DesktopPropertiesPanelProp
           <CardHeader>
             <CardTitle>Properties</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <CardContent className="text-muted-foreground space-y-3 text-sm">
             {hasSelection ? (
               <>
                 <p>

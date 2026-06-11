@@ -150,7 +150,7 @@ export function TemporalCommandMenu({
                 >
                   <div className="flex w-full flex-col text-left">
                     <span className="text-sm font-medium">{commit.message}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {commit.branch} ·{formatCommitTime(commit.time)}
                     </span>
                   </div>
@@ -176,7 +176,7 @@ export function TemporalCommandMenu({
                 >
                   <div className="flex w-full flex-col text-left">
                     <span className="text-sm font-medium">{entry.label}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {entry.owner ?? 'Unassigned'} ·{entry.state ?? 'No state'}
                     </span>
                   </div>
@@ -202,7 +202,7 @@ export function TemporalCommandMenu({
                 >
                   <div className="flex w-full flex-col text-left">
                     <span className="text-sm font-medium">{entry.label}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {entry.category} ·{entry.kind === 'type' ? 'Type' : 'Relationship'}
                     </span>
                   </div>

@@ -18,7 +18,7 @@ export const Panel = forwardRef<HTMLDivElement, PanelProperties>(function PanelI
   return (
     <Card
       ref={reference}
-      className={cn('rounded-2xl border-border/70 bg-card text-sm shadow-sm', className)}
+      className={cn('border-border/70 bg-card rounded-2xl text-sm shadow-sm', className)}
       {...properties}
     />
   );
@@ -36,7 +36,7 @@ export const PanelHeader = forwardRef<HTMLDivElement, PanelHeaderProperties>(
     return (
       <CardHeader
         ref={reference}
-        className={cn('space-y-1.5 border-b border-border/60 pb-4', className)}
+        className={cn('border-border/60 space-y-1.5 border-b pb-4', className)}
         {...properties}
       />
     );
@@ -75,7 +75,7 @@ export const PanelDescription = forwardRef<HTMLDivElement, PanelDescriptionPrope
     return (
       <CardDescription
         ref={reference}
-        className={cn('text-xs text-muted-foreground', className)}
+        className={cn('text-muted-foreground text-xs', className)}
         {...properties}
       />
     );
@@ -142,14 +142,14 @@ export function PanelField({
 }: PanelFieldProperties) {
   return (
     <div className={cn('space-y-2', className)} {...properties}>
-      <div className="flex items-center justify-between text-[0.65rem] uppercase tracking-[0.3em] text-muted-foreground">
+      <div className="text-muted-foreground flex items-center justify-between text-[0.65rem] tracking-[0.3em] uppercase">
         <span>{label}</span>
         {action ? (
-          <div className="text-[0.6rem] font-medium normal-case tracking-wide">{action}</div>
+          <div className="text-[0.6rem] font-medium tracking-wide normal-case">{action}</div>
         ) : undefined}
       </div>
       {children}
-      {helper ? <div className="text-xs text-muted-foreground">{helper}</div> : undefined}
+      {helper ? <div className="text-muted-foreground text-xs">{helper}</div> : undefined}
     </div>
   );
 }
@@ -176,7 +176,7 @@ export function PanelToolbar({
   return (
     <div
       className={cn(
-        'flex flex-wrap gap-2 border-t border-border/60 pt-4',
+        'border-border/60 flex flex-wrap gap-2 border-t pt-4',
         alignmentClass,
         className,
       )}

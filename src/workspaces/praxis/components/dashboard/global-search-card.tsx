@@ -151,15 +151,15 @@ export function GlobalSearchCard({
             <ShortcutHint keys={['⌘', 'K']} />
             <ShortcutHint keys={['Ctrl', 'K']} />
           </div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Recent moments</p>
+          <p className="text-muted-foreground text-xs tracking-[0.3em] uppercase">Recent moments</p>
           {commandStatus ? (
-            <p className="text-xs text-muted-foreground">Last command ·{commandStatus}</p>
+            <p className="text-muted-foreground text-xs">Last command ·{commandStatus}</p>
           ) : undefined}
           {catalogueError ? (
-            <p className="text-xs text-destructive">{catalogueError}</p>
+            <p className="text-destructive text-xs">{catalogueError}</p>
           ) : undefined}
           {recentCommits.length === 0 ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               No recent moments available. Start by creating a timeline.
             </p>
           ) : (
@@ -256,11 +256,11 @@ function buildMetaModelEntries(
  */
 function ShortcutHint({ keys }: { readonly keys: string[] }) {
   return (
-    <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+    <div className="text-muted-foreground inline-flex items-center gap-1 text-xs">
       {keys.map((key) => (
         <kbd
           key={key}
-          className="rounded border border-border/70 bg-muted/50 px-1 py-0.5 font-medium"
+          className="border-border/70 bg-muted/50 rounded border px-1 py-0.5 font-medium"
         >
           {key}
         </kbd>
@@ -286,9 +286,9 @@ function CommitPreview({
   readonly onSelectCommit: (commitId?: string) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-border/70 p-3">
+    <div className="border-border/70 rounded-2xl border p-3">
       <p className="text-sm font-semibold">{commit.message}</p>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-muted-foreground text-xs">
         {commit.branch} ·{commit.tags.map((tag) => `#${tag}`).join(' ') || 'No tags'}
       </p>
       <div className="mt-2 flex gap-2">

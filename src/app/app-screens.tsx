@@ -153,7 +153,7 @@ export function SplashScreenRoute() {
       <PraxisSplashScreen line={currentLine} />
       {setupError && (
         <div className="fixed inset-0 flex items-end justify-end p-6">
-          <Card className="w-full max-w-md border-destructive/50 bg-card/90 shadow-lg">
+          <Card className="border-destructive/50 bg-card/90 w-full max-w-md shadow-lg">
             <CardHeader>
               <CardTitle className="text-destructive">Setup failed</CardTitle>
               <CardDescription className="text-muted-foreground">
@@ -161,11 +161,11 @@ export function SplashScreenRoute() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+              <div className="border-border/60 bg-muted/30 rounded-md border px-3 py-2">
                 <p className="text-xs font-medium">
                   <span className="font-mono">{setupError.code}</span>
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">{setupError.message}</p>
+                <p className="text-muted-foreground mt-1 text-xs">{setupError.message}</p>
               </div>
               <div className="flex items-center justify-end gap-2">
                 <Button
@@ -237,12 +237,12 @@ export function StatusScreen() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-      <div className="rounded-lg border border-border/70 bg-card/90 px-6 py-4 shadow-md">
+    <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
+      <div className="border-border/70 bg-card/90 rounded-lg border px-6 py-4 shadow-md">
         <p className="text-sm font-medium">Host status</p>
-        <p className="text-xs text-muted-foreground">All services initialising…</p>
+        <p className="text-muted-foreground text-xs">All services initialising…</p>
         {seedSummary && (
-          <div className="mt-2 space-y-1 rounded border border-border/40 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          <div className="border-border/40 bg-muted/30 text-muted-foreground mt-2 space-y-1 rounded border px-3 py-2 text-xs">
             <p>Baseline dataset: {seedSummary.datasetVersion ?? 'unknown'}</p>
             <p>Schema version: {seedSummary.metamodelVersion ?? 'unknown'}</p>
           </div>
@@ -257,12 +257,12 @@ export function StatusScreen() {
  */
 export function AboutScreen() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-shell-background text-foreground">
-      <div className="flex flex-col items-center gap-5 rounded-xl border border-border/60 bg-card/90 px-8 py-8 text-center shadow-[var(--aideon-elevation-panel)]">
+    <div className="bg-shell-background text-foreground flex min-h-screen items-center justify-center">
+      <div className="border-border/60 bg-card/90 flex flex-col items-center gap-5 rounded-xl border px-8 py-8 text-center shadow-[var(--aideon-elevation-panel)]">
         <Logo variant="vertical" priority plate className="h-28 w-auto" />
         <div className="space-y-1">
           <h1 className="font-editorial text-2xl/[1.12] font-medium tracking-[-0.01em]">Aideon</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Desktop shell for Praxis workspaces and tools.
           </p>
         </div>
@@ -282,7 +282,7 @@ export function SettingsScreen() {
   }, [preloadThemes]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+    <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle>Settings</CardTitle>
@@ -292,7 +292,7 @@ export function SettingsScreen() {
           <div className="space-y-3">
             <div>
               <p className="text-sm font-semibold">Color theme</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Choose the primary color palette for the UI. Changes persist automatically.
               </p>
             </div>
@@ -307,7 +307,7 @@ export function SettingsScreen() {
                 <label
                   key={option.id}
                   htmlFor={`color-theme-${option.id}`}
-                  className="flex cursor-pointer items-center gap-4 rounded-lg border border-border/60 bg-card/80 p-4 transition hover:bg-muted/40"
+                  className="border-border/60 bg-card/80 hover:bg-muted/40 flex cursor-pointer items-center gap-4 rounded-lg border p-4 transition"
                 >
                   <RadioGroupItem value={option.id} id={`color-theme-${option.id}`} />
                   <div className="flex-1 space-y-1">
@@ -316,7 +316,7 @@ export function SettingsScreen() {
                       {option.id === 'corp-blue' && <Badge variant="secondary">Default</Badge>}
                       {option.source && <Badge variant="outline">{option.source}</Badge>}
                     </div>
-                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                    <p className="text-muted-foreground text-xs">{option.description}</p>
                   </div>
                   <ThemePreview themeId={option.id} />
                 </label>
@@ -334,10 +334,10 @@ export function SettingsScreen() {
  */
 export function StyleguideScreen() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-      <div className="space-y-3 rounded-lg border border-border/60 bg-card/90 px-6 py-5 shadow">
+    <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
+      <div className="border-border/60 bg-card/90 space-y-3 rounded-lg border px-6 py-5 shadow">
         <h1 className="text-lg font-semibold">Styleguide</h1>
-        <p className="text-sm text-muted-foreground">Design system documentation pending.</p>
+        <p className="text-muted-foreground text-sm">Design system documentation pending.</p>
       </div>
     </div>
   );
@@ -396,11 +396,11 @@ function ThemePreview({ themeId }: { readonly themeId: string }) {
   return (
     <div
       data-color-theme={dataTheme}
-      className="grid grid-cols-3 gap-1 rounded-md border border-border/60 bg-background p-2 text-foreground"
+      className="border-border/60 bg-background text-foreground grid grid-cols-3 gap-1 rounded-md border p-2"
     >
-      <span className="h-3 w-3 rounded-full bg-primary" />
-      <span className="h-3 w-3 rounded-full bg-accent" />
-      <span className="h-3 w-3 rounded-full bg-muted" />
+      <span className="bg-primary h-3 w-3 rounded-full" />
+      <span className="bg-accent h-3 w-3 rounded-full" />
+      <span className="bg-muted h-3 w-3 rounded-full" />
     </div>
   );
 }

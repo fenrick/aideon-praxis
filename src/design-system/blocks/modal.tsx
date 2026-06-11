@@ -23,7 +23,7 @@ export type ModalContentProperties = Readonly<ComponentPropsWithoutRef<typeof Di
 export function ModalContent({ className, ...properties }: ModalContentProperties) {
   return (
     <DialogContent
-      className={cn('rounded-3xl border-border/60 bg-card p-8 shadow-xl sm:max-w-xl', className)}
+      className={cn('border-border/60 bg-card rounded-3xl p-8 shadow-xl sm:max-w-xl', className)}
       {...properties}
     />
   );
@@ -65,7 +65,7 @@ export type ModalDescriptionProperties = Readonly<
  */
 export function ModalDescription({ className, ...properties }: ModalDescriptionProperties) {
   return (
-    <DialogDescription className={cn('text-sm text-muted-foreground', className)} {...properties} />
+    <DialogDescription className={cn('text-muted-foreground text-sm', className)} {...properties} />
   );
 }
 
