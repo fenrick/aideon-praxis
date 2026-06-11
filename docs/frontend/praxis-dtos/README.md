@@ -1,30 +1,34 @@
-# Praxis DTOs – Aideon Suite module
+# Praxis DTOs
 
-_Flatten note: DTOs now live at `src/dtos` within the desktop package; import via relative or `src`-rooted paths (no aliases)._
+The shared TypeScript data-transfer objects that cross the renderer/host boundary. This is a contract leaf — type-first, runtime-agnostic, with no React, Tauri, DOM, or network dependency ([package-layout.md](../package-layout.md)). It lives at `src/dtos` within the desktop package; import via relative or `src`-rooted paths, no aliases.
 
-## Purpose
+This README is the contract; [DESIGN.md](./DESIGN.md) carries the shape, branding, and versioning detail.
 
-Praxis DTOs defines shared TypeScript data-transfer objects used across Praxis workspace, Praxis Desktop, and host adapters. It keeps IPC contracts consistent and strongly typed.
+## What it provides
 
-## Responsibilities
+- DTOs for temporal state/diff snapshots, metamodel documents, plan events, and analytics/worker job payloads.
+- Branded id types and a typed `Viewpoint`, so a wrong-brand id fails `tsc` ([ipc-adapters-and-dtos.md](../ipc-adapters-and-dtos.md)).
+- ISO helpers (`ensureIsoDateTime`) and stable re-exports via `src/index.ts`.
 
-- DTOs must use camelCase across the boundary.
-- Define DTOs for temporal state/diff snapshots, meta-model documents, and analytics/job payloads.
-- Provide type-safe shapes for Praxis adapters (`src/adapters`) and React components.
-- Keep frontend-facing types aligned with Rust DTOs from Mneme/Praxis Engine.
+## Faces
 
-## Relationships
+The Rust DTOs from Mneme and Praxis. The host owns the wire shape with `serde`; the TS DTOs mirror it in camelCase and the generated types keep the renderer aligned ([ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)).
 
-- **Depends on:** TypeScript toolchain and shared linting/typecheck setup.
-- **Used by:** Praxis workspace, Aideon Desktop renderer, Praxis Adapters, and tests/fixtures.
+## Boundaries
+
+- camelCase across the boundary; type-first, with helpers using the standard library only.
+- No business logic, persistence, IPC implementation, UI, or Node-specific APIs.
+- Additive versioning preferred over breaking change ([ADR-0017](../../06-adrs/ADR-0017-contract-and-dto-versioning.md)).
 
 ## Running and testing
 
-- Typecheck DTOs: `pnpm --filter @aideon/desktop run typecheck`
-- Tests: `pnpm run node:test` (Vitest suite includes DTO tests)
+- Typecheck: `pnpm --filter @aideon/desktop run typecheck` (and suite-wide `pnpm run node:typecheck`).
+- Tests: `pnpm run node:test` — the Vitest suite includes DTO and zod-validation tests ([testing.md](../testing.md)).
 
-DTOs are also typechecked as part of the suite-wide command: `pnpm run node:typecheck`.
+## Related documents
 
-## Design and architecture
-
-For suite-wide schema and meta-model design, see `docs/DESIGN.md`, `docs/meta/README.md`, and `docs/data/README.md`. If this package gains additional logic (codegen, versioning), extend documentation in `docs/praxis-dtos/DESIGN.md`.
+| Document                                                          | What it covers                                                 |
+| ----------------------------------------------------------------- | -------------------------------------------------------------- |
+| [DESIGN.md](./DESIGN.md)                                          | The DTO shapes, branded types, zod validation, and versioning. |
+| [ipc-adapters-and-dtos.md](../ipc-adapters-and-dtos.md)           | The seam-level contract this package realises.                 |
+| [ADR-0017](../../06-adrs/ADR-0017-contract-and-dto-versioning.md) | The SemVer versioning of DTOs.                                 |

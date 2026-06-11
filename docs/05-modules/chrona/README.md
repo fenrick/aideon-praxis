@@ -1,204 +1,97 @@
 # Chrona
 
-Chrona provides temporal interpretation and UX primitives: what is true at time T, diffs between times and scenarios, scenario overlays, plateau/compare payloads, and the temporal helpers the renderer consumes. It refuses to fake the present tense — every result names its active time, scenario, and comparison basis; time and scenario changes trigger real re-resolution through Mneme, never silent local mutation.
+The time-and-scenario interpretation module for Aideon Desktop. Chrona turns the bitemporal facts Mneme stores into coherent, honest temporal answers: what is true at a viewpoint, what changed between two viewpoints, how scenarios compose, and how plateaus and transitions read. It refuses to fake the present tense — every result names its active time, scenario, and comparison basis, and a time or scenario change triggers real re-resolution through Mneme, never a silent local mutation.
+
+Chrona is named for _chronos_ — sequential, measurable, chronological time. It owns chronological and resolution time. Its planned counterpart **Kairos** owns _kairos_ — opportune time, the moment to act: investment and portfolio/programme/project planning ([ADR-0028](../../06-adrs/ADR-0028-investment-and-portfolio-planning-kairos.md), [DOCUMENTATION-STANDARD §10](../../02-standards/DOCUMENTATION-STANDARD.md)). The pairing is deliberate: Chrona answers _when is this true and what changed?_; Kairos answers _when must we act, and what will it cost?_
 
 ---
 
-## Purpose
+## Contents
 
-The Aideon model is time-first by design. Someone has to interpret time, scenario, and layer consistently enough that the product does not tell different stories from one surface to the next. Chrona keeps that work in one place.
+1. [Viewpoint resolution](./viewpoint-resolution.md) — the precedence chain and how Chrona drives it through Mneme.
+2. [Layer policy](./layer-policy.md) — single-layer reads, blends, and side-by-side variance.
+3. [Scenario composition](./scenario-composition.md) — overlay, rebase, compare, promote, discard.
+4. [Diff](./diff.md) — two viewpoints in, a derived delta out; the derived delta kinds.
+5. [Plateau and transitions](./plateau-and-transitions.md) — plateau markers and transitions, and how they relate to ArchiMate Plateau and Kairos backward planning.
+6. [The re-resolution rule](./re-resolution-rule.md) — why a context change is always a fresh resolution, never a local patch.
+7. [UX obligations](./ux-obligations.md) — what every temporal payload must carry to stay honest.
+8. [Bounds and failure modes](./bounds-and-failure-modes.md) — diff size bounds, tie-breaking under skew, topology-delta ordering.
 
-Without this module, time handling spreads into UI widgets, API handlers, semantic services, and storage callers. That is how systems end up with three different answers to the same "what changed?" question — a bad look for a product built around explainability.
+---
+
+## One-line responsibility
+
+Chrona interprets the [viewpoint](../../../CONTEXT.md) — as-of valid time, as-of asserted time, layer (or policy), scenario, scope — into [snapshots](../../../CONTEXT.md), [diffs](../../../CONTEXT.md), scenario compositions, and timeline payloads the renderer can use directly, with every result honest about its context and its limits.
+
+Without Chrona, time handling spreads into UI widgets, IPC handlers, semantic services, and storage callers — and the product ends up telling three different stories about the same "what changed?" question, which is fatal for a product built on explainability.
 
 ---
 
 ## Core invariants
 
-| Invariant                   | What it means                                                                                                                                                                  |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Explicit viewpoint**      | Every temporal result carries the active `Viewpoint` — as-of valid time, as-of asserted time, layer (or layer policy), scenario, and scope if set. No ambient time is assumed. |
-| **Re-resolution on change** | A time or scenario change triggers real re-resolution through Mneme. Chrona never mutates a cached view in place and presents it as if the context had changed.                |
-| **Derived results**         | Chrona outputs are derived from canonical facts in Mneme. Chrona does not hold authoritative storage.                                                                          |
-| **Honest partial states**   | Where a result is bounded or partially resolved, the payload names the limit explicitly rather than silently collapsing it.                                                    |
-| **No metamodel internals**  | Chrona depends on contracts and DTO-level types from Praxis. It does not import metamodel or rule engine internals from other crates.                                          |
+| Invariant                   | What it means                                                                                                                                               | Backed by                                                                                                                                                        |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Explicit viewpoint**      | Every temporal result carries the active viewpoint; no ambient "now" is assumed.                                                                            | [time-first-rule](../../01-architecture/boundary/time-first-rule.md), [ADR-0009](../../06-adrs/ADR-0009-temporal-model-valid-interval-layer-policy-viewpoint.md) |
+| **Re-resolution on change** | A time or scenario change triggers real re-resolution through Mneme; Chrona never mutates a cached view in place and presents it as if the context changed. | [re-resolution-rule](./re-resolution-rule.md)                                                                                                                    |
+| **Derived results**         | Chrona outputs are derived from canonical facts in Mneme; Chrona holds no authoritative storage.                                                            | [boundaries](#what-chrona-does-not-own)                                                                                                                          |
+| **Honest partial states**   | A bounded or partially-resolved result names its limit explicitly rather than collapsing it silently.                                                       | [bounds-and-failure-modes](./bounds-and-failure-modes.md), [DOCUMENTATION-STANDARD §9](../../02-standards/DOCUMENTATION-STANDARD.md)                             |
+| **Derived delta kind**      | A diff's delta kind is read off which viewpoint coordinates differ, never chosen from a closed list.                                                        | [ADR-0008](../../06-adrs/ADR-0008-diff-compares-two-viewpoints.md)                                                                                               |
+| **No metamodel internals**  | Chrona depends on contracts and DTO types only; it imports no metamodel or rule-engine internals.                                                           | [dependency-rules](../../01-architecture/boundary/dependency-rules.md)                                                                                           |
 
 ---
 
 ## What Chrona owns
 
-### 1. Time-slice resolution
-
-Chrona answers bounded questions about the twin at a given context:
-
-- state at an as-of valid time (instant or interval)
-- state within a scenario overlay
-- layer-aware reads via the viewpoint's layer policy (e.g. `actual` only, or `actual_over_plan`)
-- snapshot comparisons (diffs) across viewpoints
-
-This is not raw storage filtering. It is the module-level logic that turns the temporal resolution rules into coherent answers. The full resolution rule chain — valid-time containment, interval specificity, asserted-time ordering, op-id tie-break, combined across layers by the viewpoint's layer policy — is defined in [`docs/04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md`](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md).
-
-### 2. Scenario and plateau views
-
-Scenarios, plateaus, and what-if overlays are first-class product concepts. Chrona owns the shaping needed for:
-
-- baseline vs overlay reads
-- scenario-vs-baseline compare
-- scenario-vs-scenario compare
-- plateau markers and transitions
-- time-aware overlays in visual surfaces
-
-### 3. Temporal diffs and deltas
-
-Chrona is the natural home for:
-
-- snapshot diffs between two viewpoints (valid-time, belief, layer/variance, or scenario deltas)
-- topology deltas between commit references
-- time-based summaries
-- timeline-friendly aggregates
-
-These are temporal products in their own right, not generic analytics and not plain storage reads.
-
-### 4. UX-facing temporal payloads
-
-Chrona shapes payloads that the renderer can use directly:
-
-- timeline segments and gap indicators
-- time-slider update data
-- delta overlays and plateau markers
-- scenario-aware highlights in workspaces
-- compare widget data
-
-Chrona is not the UI, but it returns data the UI does not have to reverse-engineer.
-
----
+- **Viewpoint resolution as a product concern** — driving Mneme's resolution chain and shaping the result ([viewpoint-resolution](./viewpoint-resolution.md), [layer-policy](./layer-policy.md)).
+- **Scenario and plateau views** — baseline-vs-overlay reads, scenario compare, plateau markers and transitions ([scenario-composition](./scenario-composition.md), [plateau-and-transitions](./plateau-and-transitions.md)).
+- **Temporal diffs and deltas** — snapshot diffs, topology deltas, and time-based summaries ([diff](./diff.md)).
+- **UX-facing temporal payloads** — timeline segments, gap indicators, time-slider data, delta overlays, compare widgets ([ux-obligations](./ux-obligations.md)).
 
 ## What Chrona does not own
 
-| Not Chrona's                                       | Owned by                    |
-| -------------------------------------------------- | --------------------------- |
-| Durable storage and the op log                     | [Mneme](../mneme/README.md) |
-| Semantic modelling rules                           | Praxis                      |
-| Generic analytics algorithms                       | Metis                       |
-| Workflow orchestration and accepted-work lifecycle | Continuum                   |
-| Shell layout and design system                     | Host / renderer             |
-| Arbitrary UI component behaviour                   | Renderer                    |
+| Not Chrona's                                                | Owned by                            |
+| ----------------------------------------------------------- | ----------------------------------- |
+| Durable storage, the op log, and mechanical fact resolution | [Mneme](../mneme/README.md)         |
+| Semantic modelling rules and the metamodel                  | [Praxis](../praxis/README.md)       |
+| Generic analytics algorithms                                | [Metis](../metis/README.md)         |
+| Orchestration and accepted-work lifecycle                   | [Continuum](../continuum/README.md) |
+| Investment, portfolio, and backward planning                | Kairos _(planned)_                  |
+| Shell layout, design system, and component behaviour        | Host / renderer                     |
 
-Mneme stores time-aware facts. Praxis decides what the model means. Chrona interprets time and scenario in a way the rest of the system can use.
+Mneme stores time-aware facts and answers which fact wins. Praxis decides what the model means. Chrona interprets time and scenario so the rest of the system tells one story. The precise Mneme/Chrona seam is in [Mneme boundaries](../mneme/boundaries.md).
 
 ---
 
 ## Crate shape
 
-The `chrona` crate lives at `crates/chrona/` and exposes three modules.
+The `chrona` crate lives at `crates/chrona/` and exposes three modules:
 
-### `temporal`
+- **`temporal`** — the primary engine façade. `TemporalEngine` wraps the Praxis engine and exposes the IPC-friendly surface the host invokes: `state_at`, `diff_summary`, `topology_delta`, `resolve_snapshot`, `commit`, `create_branch`, `list_commits`, `list_branches`, `merge`, `meta_model`. All argument and result types are DTO-level structs; the engine holds no storage state of its own.
+- **`scene`** — deterministic scene generation for the canvas (`generate_demo_scene()`), so the renderer can test against a known layout without a live twin.
+- **`layout`** — layout helpers. `apply_rect_packing(shapes, max_row_width, spacing)` implements a row-based rectangle-packing heuristic (NFDH, matching `org.eclipse.elk.rectpacking` defaults).
 
-The primary temporal engine façade. `TemporalEngine` wraps `PraxisEngine` and exposes the IPC-friendly surface the Tauri host invokes:
-
-| Method                                        | Description                                                      |
-| --------------------------------------------- | ---------------------------------------------------------------- |
-| `state_at(StateAtArgs)`                       | Snapshot statistics at a given commit reference.                 |
-| `diff_summary(DiffArgs)`                      | Diff summary between two commit references.                      |
-| `topology_delta(TopologyDeltaArgs)`           | Topology delta between two commit references.                    |
-| `resolve_snapshot(CommitRef, Option<String>)` | Resolve a `GraphSnapshot` for a reference and optional scenario. |
-| `commit(CommitChangesRequest)`                | Commit a change set to the underlying Praxis engine.             |
-| `create_branch(name, Option<CommitRef>)`      | Create a branch from an optional base reference.                 |
-| `list_commits(branch)`                        | List commits for a branch oldest-to-newest.                      |
-| `list_branches()`                             | Enumerate branches with their current heads.                     |
-| `merge(MergeRequest)`                         | Merge one branch into another.                                   |
-| `meta_model()`                                | Return the active meta-model document.                           |
-
-All argument and result types are DTO-level structs from `aideon_praxis::temporal`. The engine holds no storage state of its own; persistence flows through `PraxisEngine` and ultimately through Mneme traits.
-
-### `scene`
-
-Scene generation utilities for the canvas. `generate_demo_scene()` produces a stable, deterministic set of `CanvasShape` values so the renderer can test against a known layout without a live twin connection.
-
-### `layout`
-
-Layout helpers. `apply_rect_packing(shapes, max_row_width, spacing)` implements a row-based rectangle-packing algorithm (NFDH heuristic, matching `org.eclipse.elk.rectpacking` defaults). Shapes are sorted by height descending and packed left-to-right into rows; a new row starts when the next shape would overflow `max_row_width`.
+Chrona depends upward through stable contracts only — Mneme traits for fact access, the Praxis engine façade for the semantic twin, DTO types for temporal and canvas shapes. It imports no Tauri, HTTP, or database driver; errors use `thiserror`, logging uses `tracing`.
 
 ---
 
-## Temporal result families
+## References & standards
 
-Chrona's public outputs group into four families. Every response in each family carries enough context to stay interpretable without inspecting the request:
+_Normative:_
 
-| Family              | Key fields                                                                        |
-| ------------------- | --------------------------------------------------------------------------------- |
-| `state_at`          | as-of valid time, scenario identity, layer (policy), fact count                   |
-| `diff`              | left viewpoint, right viewpoint, derived delta kind, added/removed/changed counts |
-| `topology_delta`    | left viewpoint, right viewpoint, node and edge deltas, scenario if set            |
-| timeline aggregates | segments, plateau markers, gap indicators, active effective interval              |
+- Snodgrass — _Developing Time-Oriented Database Applications in SQL_, 1999. The bitemporal model Chrona interprets.
+- Allen — _Maintaining Knowledge about Temporal Intervals_, 1983. The interval relations behind resolution and overlap ([viewpoint-resolution](./viewpoint-resolution.md)).
 
-Where a result is partial or bounded, a `warnings` field names the limit.
+_Informative:_
 
----
+- The Open Group — **ArchiMate 3.2 Specification**. The Plateau and Implementation & Migration vocabulary plateaus map to ([plateau-and-transitions](./plateau-and-transitions.md)).
 
-## Comparison context (diff)
+## Related documents
 
-A diff compares two snapshots, one per viewpoint. Each side carries a full viewpoint; the delta kind is **derived** from which coordinates differ, not chosen from a fixed list (see [ADR-0008](../../06-adrs/ADR-0008-diff-compares-two-viewpoints.md)):
-
-```json
-{
-  "left": { "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" }, "scenario": null },
-  "right": {
-    "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" },
-    "scenario": { "scenario_id": "scn_plan_q3" }
-  }
-}
-```
-
-The derived delta may be a valid-time, asserted/belief, layer (variance), scenario, or mixed delta. The full contract is in [`docs/04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md`](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md).
-
----
-
-## Re-resolution rule
-
-When the renderer changes the active time or scenario, it must request a fresh resolution — it must not apply a delta to the previous payload or mutate visible state locally. The sequence is:
-
-1. Renderer dispatches a Tauri command carrying the new `Viewpoint`.
-2. `TemporalEngine` resolves against Mneme with the updated viewpoint.
-3. The full result payload is returned and replaces the previous view.
-
-This rule is unconditional. There is no "small change" optimisation that bypasses re-resolution. Cache invalidation and projection lifecycle are governed by [`docs/04-contracts/PROJECTION-AND-INVALIDATION.md`](../../04-contracts/PROJECTION-AND-INVALIDATION.md).
-
----
-
-## Dependency posture
-
-Chrona depends upward through stable contracts only:
-
-| Dependency                     | Via                                    |
-| ------------------------------ | -------------------------------------- |
-| Time-aware fact access         | Mneme traits (`aideon_mneme`)          |
-| Semantic twin and commit model | Praxis engine façade (`aideon_praxis`) |
-| Temporal DTO types             | `aideon_praxis::temporal`              |
-| Canvas shape types             | `aideon_praxis::canvas`                |
-
-Chrona does not import Tauri, HTTP servers, or database drivers directly. No bespoke async runtimes beyond the workspace `tokio` default. Errors use `thiserror`; logging uses the `tracing` + `log` façade.
-
----
-
-## UX obligations
-
-Because Chrona feeds every temporal surface in the renderer, the UX contract it must satisfy is:
-
-- Every temporal result names the active time, scenario, and comparison context explicitly.
-- Temporal diffs stay explainable: the result must be traceable to what changed, between which contexts, and which scenario or layer contributed.
-- Plateau, compare, and overlay payloads fit the shared shell and inspector model.
-- Bounded or simplified temporal views expose their limits honestly via `warnings`.
-- The active time and scenario are always visible in the primary workspace — Chrona supplies the data that makes those controls truthful.
-
-See [`docs/03-design/UX-DESIGN.md`](../../03-design/UX-DESIGN.md) for the full UX contract.
-
----
-
-## References
-
-- [Temporal and Scenario Context contract](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md)
-- [Projection and Invalidation](../../04-contracts/PROJECTION-AND-INVALIDATION.md)
-- [UX Design](../../03-design/UX-DESIGN.md)
-- [Mneme module](../mneme/README.md)
-- [Module Dependency Map](../../01-architecture/MODULE-DEPENDENCY-MAP.md)
-- [Crate design notes](../../../crates/chrona/DESIGN.md)
+| Document                                                                             | What it covers                                                 |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| [Temporal and scenario context](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | The authoritative resolution, layer-policy, and diff contract. |
+| [Projection and invalidation](../../04-contracts/PROJECTION-AND-INVALIDATION.md)     | Cache invalidation and projection lifecycle.                   |
+| [Mneme module](../mneme/README.md)                                                   | The storage and mechanical resolution Chrona builds on.        |
+| [Time-first rule](../../01-architecture/boundary/time-first-rule.md)                 | Why every read and write carries a viewpoint.                  |
+| [UX-DESIGN](../../03-design/UX-DESIGN.md)                                            | The full UX contract Chrona's payloads feed.                   |
+| [ADR-0028](../../06-adrs/ADR-0028-investment-and-portfolio-planning-kairos.md)       | Kairos, Chrona's opportune-time counterpart.                   |

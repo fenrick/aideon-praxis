@@ -1,28 +1,53 @@
-# PraxisAdapters – Design
+# Praxis Adapters — Internal Design
 
-## Purpose & scope
+The adapter interfaces, the optimistic-UI contract, and the host→UI error mapping. This file is for anyone defining or implementing an adapter. The package contract is in [README.md](./README.md).
 
-Praxis Adapters defines TypeScript interfaces for the renderer/host boundary (graph, storage, worker). It is type-only and backend-agnostic.
+---
 
-## Allowed dependencies / frameworks
+## Scope
 
-- TypeScript (strict), ESM modules.
-- Shared DTOs from `src/dtos`.
-- Light utilities only (e.g., type guards). No React, Tauri, DOM, or network libraries.
+Praxis Adapters defines the TypeScript interfaces for the renderer/host boundary — graph, metamodel, storage, worker. It is type-only and backend-agnostic, with light utilities (type guards, `ensureIsoDateTime`) and no React, Tauri, DOM, or network dependency. Migrate any legacy Svelte-era or CommonJS shims to ESM/React-era contracts; prefer expanding an adapter interface over adding an ad-hoc IPC endpoint in a surface.
 
-## Anti-goals
+## The interfaces
 
-- No UI components, CSS, or renderer state.
-- No host/engine logic or IPC wiring; implementations live elsewhere.
-- No Node-specific APIs; keep packages portable across renderer and host contexts.
+| Interface             | Responsibility                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GraphAdapter`        | Read the effective graph at a viewpoint — time-sliced node/edge slices, bounded ([data-fetching.md](../data-fetching.md)).                        |
+| `MutableGraphAdapter` | The mutating extension: apply operations as commands, with an idempotency key and optimistic UI.                                                  |
+| `MetaModelProvider`   | Surface the metamodel/effective schema so the inspector builds edit forms dynamically rather than hard-coding fields.                             |
+| `StorageAdapter`      | Persist and load snapshot/layout geometry through host-managed commands, keyed by viewpoint ([praxis-workspace](../praxis-workspace/DESIGN.md)).  |
+| `WorkerClient`        | Dispatch analytics and temporal jobs and observe their lifecycle ([ACCEPTED-WORK-AND-EVENTS.md](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)). |
 
-## Public surface
+Each method takes a `Viewpoint` where the read or write is viewpoint-scoped ([state-architecture.md](../state-architecture.md)); the viewpoint is a typed value, not an ambient global.
 
-- Adapter interfaces: `GraphAdapter`, `MutableGraphAdapter`, `MetaModelProvider`, `StorageAdapter`, `WorkerClient` and worker job contracts.
-- Shared types re-exported from `src/dtos` plus `ensureIsoDateTime` helper.
-- Test fakes (e.g., `DevelopmentMemoryGraph`) for consumers.
+## Optimistic UI
 
-## Evergreen notes
+`MutableGraphAdapter` supports an optimistic update for immediate feedback ([data-fetching.md](../data-fetching.md)):
 
-- Migrate any legacy Svelte-specific or CommonJS shims to ESM/React-era contracts.
-- Prefer expanding adapter interfaces over adding ad-hoc IPC endpoints.
+1. The mutation carries an idempotency key so a retry is safe and does not double-apply ([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
+2. The cache may be updated optimistically; the optimistic value is clearly provisional.
+3. On the host's response and follow-on events, the affected keys are invalidated and the canonical state refetched ([data-fetching.md](../data-fetching.md)); the optimistic value is reconciled, not trusted.
+4. A `BACKPRESSURE` reply is a queued state, not success ([ux/backpressure-ux.md](../../03-design/ux/backpressure-ux.md)); a `CONFLICT_RECORDED` reply enters the conflict flow ([ux/multi-user-conflict-ux.md](../../03-design/ux/multi-user-conflict-ux.md)).
+
+Reconciliation of an optimistic update against `CONFLICT_RECORDED` is an open question ([ADR-0026](../../06-adrs/ADR-0026-frontend-state-architecture.md)); where it cannot be reconciled safely, the adapter waits for the host result before reflecting the change.
+
+## Error mapping: host → UI
+
+The adapter is the single place a host error becomes a UI outcome. The host returns the stable error envelope ([error-envelope.md](../../04-contracts/ipc/error-envelope.md), RFC 9457, [ADR-0016](../../06-adrs/ADR-0016-error-envelope-rfc9457.md)); the adapter maps the **code**, never the prose, to a message and a next action, preserving correlation ids ([error-loading-empty.md](../error-loading-empty.md)). A raw error object never reaches a component. The mapping table is in [error-loading-empty.md](../error-loading-empty.md); the adapter is where it is applied.
+
+## Validation
+
+Inbound payloads are validated with zod at the boundary before becoming DTOs ([praxis-dtos](../praxis-dtos/README.md)); an additive MINOR field is ignored, a violated invariant is surfaced as an error ([ADR-0017](../../06-adrs/ADR-0017-contract-and-dto-versioning.md)). A component always receives a validated, typed DTO.
+
+## Testing
+
+Consumers test against the test fakes (e.g. `DevelopmentMemoryGraph`) so UI flows run without a real backend; the real adapter is exercised against a Tauri-mock that returns DTO fixtures and emits the typed events a test needs ([testing.md](../testing.md)).
+
+## Related documents
+
+| Document                                                                      | What it covers                                          |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [README.md](./README.md)                                                      | The package contract.                                   |
+| [ipc-adapters-and-dtos.md](../ipc-adapters-and-dtos.md)                       | The seam-level contract, branded types, and versioning. |
+| [error-loading-empty.md](../error-loading-empty.md)                           | The error-code → UI mapping table.                      |
+| [ACCEPTED-WORK-AND-EVENTS.md](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) | The accepted-work lifecycle the worker client observes. |

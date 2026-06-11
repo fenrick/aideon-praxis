@@ -1,237 +1,89 @@
-# Praxis — Meaning & Artefacts
+# Praxis — meaning and artefacts
 
-Praxis is the semantic and interaction engine of the Aideon digital twin: it owns the metamodel, task APIs, artefact execution, integrity rules, and analytics orchestration. Mneme owns storage; Praxis owns meaning.
+Praxis is the semantic engine of the Aideon twin. It owns the modelling language and what the model means: the metamodel and its types, the canonical relationship vocabulary, the task APIs through which the twin is changed, artefact execution, integrity scoring, and explainability. Mneme owns storage; Praxis owns meaning. This folder is the design record for that boundary.
+
+This README is the index and the cross-cutting narrative; each focused topic lives in its own file below, per the [Documentation Standard §4](../../02-standards/DOCUMENTATION-STANDARD.md) granularity rule.
 
 ---
 
-## Responsibilities
+## Contents
 
-Praxis covers five tightly coupled responsibilities that together define what the twin _means_ and how users work with it.
+1. [Metamodel ownership](./metamodel-ownership.md) — Praxis owns meaning; what it owns and what Mneme owns; links to the metamodel design.
+2. [Tasks and Change Events](./tasks-and-change-events.md) — task APIs compile to operations via Change Events; atomicity of multi-operation tasks.
+3. [Artefact execution](./artefact-execution.md) — `Artefact + Viewpoint → Artefact result`; bounded execution limits; determinism and caching.
+4. [Integrity scoring](./integrity-scoring.md) — the five-dimension integrity model, weights, the gate threshold, and a worked score.
+5. [Explainability](./explainability.md) — spine-trace explanations and the evidence they carry.
+6. [Merge and conflict](./merge-and-conflict.md) — `MergeConflict` records and how scenario merges are surfaced.
+7. [Crate structure](./crate-structure.md) — the `praxis` crate layout.
+8. [Boundaries](./boundaries.md) — what Praxis depends on, what depends on it, and the acyclic rule.
+9. [Failure modes](./failure-modes.md) — how Praxis fails honestly and what each failure returns.
 
-### 1. Metamodel
+The canonical relationship vocabulary is documented in its own folder, [edge-catalogue/](./edge-catalogue/README.md). The metamodel design lives at [03-design/metamodel/](../../03-design/metamodel/README.md) and the lineage it forms at [03-design/semantic-spine/](../../03-design/semantic-spine/README.md); Praxis references these rather than duplicating them.
 
-Praxis defines the stable backbone of the twin as schema-as-data. The metamodel has two layers.
+---
 
-**Master types** are few, immutable, and act as structural anchors. Every domain type must inherit from exactly one of them. The current canonical anchor vocabulary is:
+## One-line responsibility
 
-| Master type           | Structural role                           |
-| --------------------- | ----------------------------------------- |
-| `Capability`          | Stable abilities the enterprise needs     |
-| `ValueStreamStage`    | Stages in a value stream                  |
-| `BusinessProcess`     | Operational realisation mechanisms        |
-| `Application`         | Logical and physical application concepts |
-| `DataEntity`          | Information and data constructs           |
-| `TechnologyComponent` | Technology platform and infrastructure    |
-| `PlanEvent`           | Change and delivery constructs            |
-
-**Domain types** are the concepts users work with — customer, journey, service, capability, process, control, release train, and so on. Each domain type inherits from a master type and declares its own fields, constraints, and allowed relationship verbs.
-
-The in-code representation is `MetaModelDocument`, a versioned document containing `Vec<MetaType>` and `Vec<MetaRelationship>`. `MetaType` carries stable `id`, optional `uuid`, single-inheritance via `extends`, and a flat list of `MetaAttribute` entries with types (`string`, `text`, `number`, `boolean`, `enum`, `datetime`, `blob`). `MetaRelationship` carries stable `id`, endpoint type constraints via `from`/`to` vectors, directionality, and multiplicity.
-
-Inheritance resolution is compile-time deterministic: `model::build_type_descriptors` walks the inheritance chain, detects cycles as hard integrity violations, and flattens parent attributes into each child descriptor.
-
-### 2. Metamodel compilation to storage
-
-Praxis compiles its metamodel packages into a `MetamodelBatch` and applies them to Mneme. The batch includes:
-
-- Types with stable UUIDs committed in source — regeneration is not allowed
-- Field definitions with types and constraints
-- Edge type rules encoding semantic direction and endpoint constraints
-- A domain registry mapping domain concept keys to Mneme entity IDs
-
-The core starter payload lives in `docs/05-modules/praxis/data/meta/core-v1.json` in the platform data assets. The `MetaModelRegistry` holds the compiled descriptors in memory and exposes validation methods (`validate_node`, `validate_edge`) that the graph snapshot engine calls on every write.
-
-Metamodel packages are versioned and can be installed per partition. The packages group domain types by area: customer and experience, product and service, strategy and motivation, capabilities and value delivery, organisation and operating model, information and data, application and technology, risk and controls, change and delivery.
-
-### 3. Task APIs
-
-Users and consuming modules interact with the twin through named tasks, not through free-form graph mutation. Praxis owns the task layer that translates modelling intent into validated operations.
-
-The canonical write contract is `CommitChangesRequest`, which carries a `ChangeSet` consisting of six operation families:
-
-| Operation      | Effect                                                    |
-| -------------- | --------------------------------------------------------- |
-| `node_creates` | Create a typed node with initial props                    |
-| `node_updates` | Replace a node's props by ID                              |
-| `node_deletes` | Tombstone a node (rejects if dangling edges would result) |
-| `edge_creates` | Create a typed, directed edge between two existing nodes  |
-| `edge_updates` | Replace an edge's props, resolved by ID or by endpoints   |
-| `edge_deletes` | Remove edges matching a from/to tombstone                 |
-
-Every operation is validated against the registry before the snapshot is updated: node type must be declared, edge endpoints must exist, edge type must be declared and must respect its `from`/`to` endpoint constraints, and duplicate edges are rejected for relationship types that declare `allow_duplicate: false`.
-
-Operations are grouped into commits. A commit carries an explicit `branch`, optional `parent`, `author`, `time`, `message`, tags, and the `ChangeSet`. The engine enforces compare-and-swap semantics on branch heads so concurrent writes surface as `ConcurrencyConflict` rather than silent overwrites.
-
-Task-oriented convenience wrappers (create element, link elements, set attribute, apply planned change) compose these primitives and add domain-language validation on top.
-
-### 4. Artefact execution at explicit time and scenario
-
-Praxis artefacts are declarative work products executed at an explicit time and scenario context. The artefact kinds are:
-
-| Kind       | Shape                                                                        |
-| ---------- | ---------------------------------------------------------------------------- |
-| Graph view | Bounded traversal returning nodes, edges, groups, and layout hints           |
-| Catalogue  | Filtered list of typed entities with grouping, sorting, and coverage metrics |
-| Matrix     | Sparse 2D relationship coverage grid with per-cell drill-down                |
-| Map        | Structured visual model (capability map, journey map, application landscape) |
-| Report     | Composed sections referencing other artefacts and text templates             |
-| Page       | Layout container referencing artefacts for dashboards and printable packs    |
-
-Every execution requires explicit context: `partition_id`, optional `scenario_id`, `at_valid_time`, optional `layer` (Plan or Actual). Praxis defaults `valid_from` to now, `layer` to Actual, and scenario to baseline. These are part of the operation contract, not UI conveniences.
-
-Artefact definitions carry a common versioned envelope (`schema_version`, `artefact_kind`, stable `id`, `visibility`, `parameters`) and a kind-specific `definition` body. Definitions are stored as time-valid properties in Mneme so that "view as-of last quarter" is always resolvable.
-
-Execution follows a bounded pipeline: resolve definition at time T → resolve seed set → traverse using allowed verbs up to declared depth → enrich node/edge fields → apply projection and aggregations → return `ViewResult` with integrity score and warnings attached. Limits are explicit: views return at most 5,000 nodes and 10,000 edges, matrices cap at 1,000 × 1,000 with sparse storage, catalogues require pagination with a page size ceiling of 200.
-
-The engine also supports branch-aware snapshots. `state_at` resolves a `CommitRef` (by ID, branch head, or branch head at a given time) and optionally applies a scenario overlay, returning node and edge counts for the resolved slice. `diff_summary` and `topology_delta` compare two refs and return typed change counts.
-
-### 5. Integrity rules and analytics orchestration
-
-Integrity is authoritative in the Rust core. Client-side validation is UX feedback only; the core never defers to it.
-
-The rule engine enforces:
-
-- **Directionality compliance** — all edges must have unambiguous dependency direction consistent with master edge semantics
-- **Endpoint constraints** — edge types respect their declared `from`/`to` type restrictions
-- **Self-link rules** — relationship types that declare `allow_self: false` reject self-referencing edges
-- **Duplicate rules** — relationship types that declare `allow_duplicate: false` reject redundant edges between the same endpoints
-- **Referential integrity** — edges always reference existing node endpoints; deleting a node with live edges is rejected
-
-Integrity is scored across five dimensions: directionality compliance, logical/physical separation, spine completeness, orphan rate, and conflict density. Each dimension yields a 0–1 score. The weighted average gates analytics: if the score falls below threshold, analytics run with a reduced-confidence warning or are blocked, depending on partition configuration.
-
-Analytics orchestration sits in Praxis even though algorithm execution may be delegated to Metis. Praxis frames the domain question ("most critical capabilities", "blast radius for this application", "what changed between baseline and scenario"), requests adjacency from Mneme projection edges, receives results, and generates structured explainability output: top inbound contributors, top dependency paths, and delta explanations between scenarios or times.
+Praxis turns a stored, time-versioned graph into a meaningful, queryable, explainable model of an organisation — and is the single place the rules of that model are enforced.
 
 ---
 
 ## The meaning / storage split
 
-Praxis depends on Mneme for all persistence. It never generates SQL, never exposes storage IDs to consumers, and never owns database drivers. The contract is:
+The product's central architectural division is that **meaning and storage are separate engines**. Praxis decides what an entity, relationship, type, or artefact _means_ and which rules it must obey; [Mneme](../mneme/README.md) decides how the underlying facts are stored, indexed, and resolved over time. The split is a design axiom ([DESIGN.md](../../03-design/DESIGN.md), axiom 4) and is fixed by the boundary documents ([canonical vs derived](../../01-architecture/boundary/canonical-vs-derived.md)).
 
-- Praxis calls Mneme APIs for entity creation, property facts, scenario overlays, time-valid traversal, projection edges, and op-log export/import.
-- Mneme stores and indexes; Praxis gives those records meaning.
-- Praxis exposes stable domain IDs that map 1:1 to Mneme entity IDs; internal Mneme IDs do not cross the Praxis boundary.
+Two consequences follow and are invariants:
 
-The `Store` trait abstracts commit persistence behind `put_commit`/`get_commit`/`compare_and_swap_branch`. Two implementations ship: `MemoryStore` for tests and `SqliteDb` for the local-first desktop runtime. The schema auto-migrates on open.
+- **Praxis never persists.** It generates no SQL, owns no database driver, and holds no canonical truth. It calls Mneme's published traits to read facts and append operations; the workspace op log is the only canonical store ([ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md)).
+- **Mneme never interprets.** It stores and resolves facts but does not know what a `Capability` is, which relationships the spine expects, or whether an artefact result is complete. That meaning is Praxis's alone.
 
-See [Mneme module](../mneme/README.md) and [Architecture Boundary](../../01-architecture/ARCHITECTURE-BOUNDARY.md).
-
----
-
-## Canonical edge catalogue
-
-The canonical relationship vocabulary is defined in [EDGE-CATALOGUE.md](./EDGE-CATALOGUE.md). The catalogue is standards-aligned: seven relationships with stable IDs, explicit direction, endpoint constraints, and seeding status.
-
-| Relationship ID  | Direction       | Core meaning                                                           |
-| ---------------- | --------------- | ---------------------------------------------------------------------- |
-| `contributes_to` | source → target | Capability contributes to a value stream stage outcome                 |
-| `delivers`       | source → target | Application or component delivers business capability/process outcomes |
-| `uses_data`      | source → target | Source reads or writes a data entity                                   |
-| `deployed_on`    | source → target | Application is hosted on a technology component                        |
-| `change_affects` | source → target | Planned change affects a target element                                |
-| `depends_on`     | source → target | Generic dependency fallback when no stronger verb applies              |
-| `belongs_to`     | source → target | Membership/containment for hierarchy and roll-up                       |
-
-Rules enforced by the rule engine:
-
-1. Prefer specific verbs over `depends_on`.
-2. Use `belongs_to` only for containment, never for runtime dependency.
-3. `uses_data` direction is required; it drives lineage and impact analysis.
-4. `change_affects` must originate from change-bearing objects (`PlanEvent`).
-5. Self-links are disallowed for `contributes_to`, `delivers`, `deployed_on`, and `change_affects`.
-
-The starter payload (`core-v1.json`) ships `contributes_to`, `delivers`, `uses_data`, `deployed_on`, and `change_affects`. The baseline dataset uses these same IDs throughout.
-
----
-
-## Temporal and scenario model
-
-Every Praxis operation resolves against an explicit commit-based temporal model. The key types:
-
-| Type                             | Role                                                                  |
-| -------------------------------- | --------------------------------------------------------------------- |
-| `CommitRef`                      | Points to a commit by ID, branch head, or branch head at a given time |
-| `ChangeSet`                      | Batched node/edge creates, updates, and deletes                       |
-| `GraphSnapshot`                  | Immutable materialised state at a given commit                        |
-| `StateAtArgs`                    | Query inputs: `as_of` ref, optional `scenario`, optional `layer`      |
-| `DiffSummary`                    | Change count breakdown between two refs                               |
-| `TopologyDeltaResult`            | Node/edge add/delete counts (no property diffs)                       |
-| `MergeRequest` / `MergeResponse` | Merge two branches; returns conflicts in domain language              |
-
-Scenarios are overlays on baseline snapshots. The `resolve_snapshot` call takes a `CommitRef` and optional scenario ID, materialises the base snapshot, and applies the overlay. `state_at` returns counts; `diff_summary` and `topology_delta` return structural deltas. Merge conflicts are returned as `MergeConflict` records with a `kind` and human-readable `message` — never as raw store errors.
-
-See [Temporal and Scenario Context](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) for the cross-module contract.
-
----
-
-## Dependency posture
-
-Praxis depends on:
-
-| Dependency         | Why                                                                                       |
-| ------------------ | ----------------------------------------------------------------------------------------- |
-| `aideon_mneme`     | Storage: entity persistence, traversal, projection edges, op-log                          |
-| `aideon_continuum` | Contracts: shared temporal and scenario context types                                     |
-| `aideon_metis`     | Analytics computation (algorithm execution; Praxis frames questions and explains results) |
-
-Praxis does **not** depend on the Tauri host, the desktop shell, or the Continuum or Metis _implementations_ beyond their capability traits. It exposes capability traits that consuming modules implement against.
-
-Consuming modules — the host command layer, Continuum, and the UI — depend on Praxis. The dependency flows one direction: Praxis is a stable semantic seam, not a generic middleware layer.
-
-See [Module Dependency Map](../../01-architecture/MODULE-DEPENDENCY-MAP.md).
-
----
-
-## Crate structure
-
-```
-crates/praxis/src/
-├── engine/          # PraxisEngine — commit, branch, diff, merge, snapshot resolution
-│   ├── mod.rs       # Public surface: commit, create_branch, state_at, diff_summary, …
-│   ├── config.rs    # PraxisEngineConfig
-│   ├── init.rs      # Engine initialisation
-│   ├── ops.rs       # Core operations (commit, merge, diff, topology_delta)
-│   ├── seed.rs      # Baseline seed loading
-│   ├── state.rs     # Inner mutable state (branches, registry, snapshot cache)
-│   └── util.rs      # Snapshot resolution helpers
-├── meta/            # Metamodel loading, compilation, and validation
-│   ├── mod.rs       # Public re-exports
-│   ├── config.rs    # MetaModelConfig — source (file/inline/default)
-│   ├── loader.rs    # JSON/YAML document loading
-│   ├── model.rs     # TypeDescriptor, RelationshipDescriptor, inheritance resolution
-│   ├── registry.rs  # MetaModelRegistry — validate_node, validate_edge, allows_duplicate
-│   ├── types.rs     # MetaModelDocument, MetaType, MetaRelationship, MetaAttribute, …
-│   └── validation.rs
-├── graph.rs         # GraphSnapshot — immutable apply/diff, endpoint integrity
-├── store.rs         # Store trait, MemoryStore, SqliteDb
-├── temporal.rs      # ChangeSet, CommitRef, StateAtArgs, DiffSummary, MergeRequest, …
-├── canvas.rs        # Canvas layout persistence
-├── dataset.rs       # Dataset helpers
-├── graph_layout.rs  # Graph layout types
-├── meta_seed.rs     # Core metamodel seed payload
-├── error.rs         # PraxisError, PraxisResult
-└── lib.rs
-```
+The split closes a door deliberately: a question that needs both the stored facts and their meaning cannot be answered inside one engine, so Praxis and Mneme exchange typed requests across a trait seam rather than sharing internals. The architecture accepts that indirection in exchange for a storage engine that can be replaced ([ADR-0004](../../06-adrs/ADR-0004-storage-engine-abstraction.md)) without touching meaning, and a meaning engine that can be reasoned about without a database.
 
 ---
 
 ## Key invariants
 
-- Artefacts are the primary product surface. The interaction model is task-first and artefact-first; blank-canvas and raw-graph-first entry points are not exposed.
-- The metamodel is schema-as-data compiled to a Mneme `MetamodelBatch`. All master types and domain types carry stable UUIDs committed in source.
-- Canonical edge meanings come from the fixed catalogue in [EDGE-CATALOGUE.md](./EDGE-CATALOGUE.md). Bespoke relationship vocabulary is not introduced without updating the catalogue.
-- Integrity and validation are authoritative in the Rust core. Client-side validation is supplementary UX only.
-- Ops and facts are canonical; projections and analytics results are derived.
-- Praxis depends on Mneme and on contracts. It does not depend on Metis or Continuum implementations.
+Praxis upholds these rules; they hold across every surface and are not negotiable per call.
+
+- **The metamodel is schema-as-data, compiled to a Mneme `MetamodelBatch`.** Types and relationships carry stable identifiers committed in source; their UUIDs are **UUIDv5** values minted by the compiler and are never hand-written ([metamodel ownership](./metamodel-ownership.md); [packages and registry](../../03-design/metamodel/packages-and-registry.md)).
+- **The canonical relationship vocabulary is the seed's ArchiMate-aligned set** — `serves`, `realises`, `accesses`, `hosts`, `plan_effect` — defined in the [edge catalogue](./edge-catalogue/README.md) and fixed by [ADR-0011](../../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md). Bespoke relationships are introduced only as documented extensions.
+- **The twin is changed through tasks, not free-form mutation.** A task compiles into one or more operations via a Change Event; a multi-operation task is atomic ([tasks and Change Events](./tasks-and-change-events.md)).
+- **Artefact execution is bounded.** Every execution carries depth, size, fanout, and time limits and is deterministic for a fixed snapshot; a result that hits a limit is marked **Partial / Bounded** ([artefact execution](./artefact-execution.md)).
+- **Integrity is authoritative in the Rust core and Inferred, never Asserted.** It is scored across the five dimensions of [ADR-0020](../../06-adrs/ADR-0020-integrity-scoring-model.md) and is always drillable ([integrity scoring](./integrity-scoring.md)). Client-side validation is supplementary UX only.
+- **Praxis depends on Mneme and on contracts; it does not depend on Metis, Chrona, or Continuum implementations** ([boundaries](./boundaries.md)).
 
 ---
 
+## How the responsibilities fit together
+
+A single user action runs through every responsibility in turn, which is why they live in one module:
+
+1. The user authors a change as a **Change Event**, which Praxis validates against the **metamodel** and compiles into **operations** Mneme appends ([tasks and Change Events](./tasks-and-change-events.md)).
+2. The user opens an **artefact** at a **viewpoint**; Praxis resolves the snapshot through Mneme, traverses it with the canonical relationships under explicit bounds, and returns an **Artefact result** ([artefact execution](./artefact-execution.md)).
+3. The result carries an **integrity score** over its content ([integrity scoring](./integrity-scoring.md)) and an **explanation** that traces along the semantic spine ([explainability](./explainability.md)).
+4. When the user works in a **scenario** and merges it, Praxis returns any **merge conflicts** in domain language ([merge and conflict](./merge-and-conflict.md)).
+
+Heavy graph computation behind step 3 — centrality, impact, paths, cost — is delegated to [Metis](../metis/README.md); Praxis frames the domain question and explains the answer, but does not reimplement the algorithms.
+
+---
+
+## References & standards
+
+_Normative:_
+
+- The Open Group — **ArchiMate 3.2 Specification**. The relationship and type vocabulary Praxis enforces.
+- The integrity-scoring model — **[ADR-0020](../../06-adrs/ADR-0020-integrity-scoring-model.md)** and [Documentation Standard §8.1](../../02-standards/DOCUMENTATION-STANDARD.md).
+
+Full bibliography: [STANDARDS-REGISTER.md](../../02-standards/STANDARDS-REGISTER.md).
+
 ## Related documents
 
-- [EDGE-CATALOGUE.md](./EDGE-CATALOGUE.md) — canonical relationship vocabulary, endpoint rules, seed alignment
-- [Metamodel Packages](../../03-design/METAMODEL-PACKAGES.md) — package structure, compilation, and governance model
-- [Artefacts and Artefact Families](../../03-design/ARTEFACTS-AND-FAMILIES.md) — artefact kinds, execution pipeline, artefact families
-- [Design overview](../../03-design/DESIGN.md) — cross-module design
-- [Mneme module](../mneme/README.md) — storage layer
-- [Architecture Boundary](../../01-architecture/ARCHITECTURE-BOUNDARY.md) — module boundary definitions
-- [Module Dependency Map](../../01-architecture/MODULE-DEPENDENCY-MAP.md) — dependency graph
-- [Temporal and Scenario Context](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) — shared temporal contract
+| Document                                                                                     | What it covers                                               |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [Edge catalogue](./edge-catalogue/README.md)                                                 | The canonical relationship vocabulary Praxis owns.           |
+| [The metamodel](../../03-design/metamodel/README.md)                                         | The metamodel design — types, slots, validation, packages.   |
+| [The semantic spine](../../03-design/semantic-spine/README.md)                               | The lineage integrity and explainability reason along.       |
+| [Mneme module](../mneme/README.md)                                                           | Storage: op log, facts, projections, the storage trait.      |
+| [Metis module](../metis/README.md)                                                           | Analytics: the engine Praxis delegates graph computation to. |
+| [Module dependency map](../../01-architecture/module-dependency-map.md)                      | The crate dependency graph and the acyclic invariant.        |
+| [Artefact execution boundary](../../01-architecture/boundary/artefact-execution-boundary.md) | Why artefacts execute in Praxis, not the renderer.           |

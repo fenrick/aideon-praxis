@@ -31,6 +31,18 @@
       "skillPath": "skills/canvas-design/SKILL.md",
       "computedHash": "3fa7ea60170023ad8268bf9fd734ea75dd404279a2ef8ddf5abaa1102ad8e5f4"
     },
+    "caveman": {
+      "source": "juliusbrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "dfbf85749fd474feeb0bbe60c779795ecd5dbec0083299b56e68916bc3ddd8c9"
+    },
+    "caveman-commit": {
+      "source": "juliusbrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-commit/SKILL.md",
+      "computedHash": "f456ea0564875e46858890ac39ee701ecb9c601c72a2da1e6ce6bd5f9fc5d817"
+    },
     "create-auth-skill": {
       "source": "better-auth/skills",
       "sourceType": "github",

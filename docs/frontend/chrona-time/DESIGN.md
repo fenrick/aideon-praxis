@@ -1,177 +1,82 @@
-# Chrona Time UX (Desktop) – Internal Design
+# Chrona Time — Internal Design
 
-## Purpose & scope
+The `useChrona` hook contract and the diff/merge UX. This file is for anyone building or reusing the viewpoint controls. The package contract is in [README.md](./README.md).
 
-Chrona time UX is the renderer-facing contract for:
+---
 
-- selecting a scenario/branch and a specific commit reference,
-- choosing layer (plan/actual),
-- viewing a bounded diff preview,
-- handling merges (including conflicts),
-- surfacing a “time context summary” that applies to all artefacts.
+## Scope
 
-This UX is used primarily inside the Praxis workspace today, but it is a shell-level pattern that other workspaces should adopt for consistent time-first behaviour.
+Chrona time UX is the renderer-facing contract for selecting a scenario/branch and a commit reference, choosing a layer (plan/actual), viewing a bounded diff preview, handling merges including conflicts, and surfacing a time-context summary that applies to every artefact. It is a shell-level pattern: the renderer keeps a single golden implementation and reuses it across workspaces ([shell.md](../shell.md)).
 
-## Explicit intent (non-negotiable)
+## Explicit intent
 
-- Time is never ambient. The UI must always show and propagate explicit time context.
-- The UI must never “fake” state by locally diffing or mutating artefact results.
-- Time navigation must be safe:
-  - bounded results,
-  - explainable output,
-  - clear error states,
-  - no silent fallbacks.
-- “Scenario” is a product concept (overlay), not a VCS concept; the UI must not imply Git semantics.
+- Time is never ambient; the UI always shows and propagates explicit time context.
+- The UI never fakes state by locally diffing or mutating artefact results ([state-architecture.md](../state-architecture.md)).
+- Time navigation is safe: bounded results, explainable output, clear error states, no silent fallbacks.
+- Scenario is a product overlay, not a VCS concept; the UI must not imply Git semantics.
 
-## Primary outcomes
+## Vocabulary
 
-- Users always know “what time/context am I looking at?”
-- Users can change time context without losing safety (no implicit state).
-- The UI remains responsive while loading time context data (branches, commits, snapshots).
-- Diffs and merges are explainable and bounded.
+- `branch` — a scenario branch identifier.
+- `commitId` — an immutable commit reference.
+- `asOf` — the read reference: a selected `commitId`, or the latest commit on the selected `branch`.
+- `layer` — plan/actual (the shared `Layer` DTO).
+- time context — `{ branch?, commitId?, layer }` plus any workspace-scoped scenario id; the renderer-facing projection of the full `Viewpoint` ([TEMPORAL-AND-SCENARIO-CONTEXT.md](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md)).
 
-## Surface placement (shell)
+## The `useChrona` hook contract
 
-- Time context controls live in the primary workspace chrome (toolbar slot) and remain visible.
-- The detailed temporal panel (branches/commits/diff/merge) may be presented as:
-  - a persistent panel inside the workspace content, or
-  - a popover/drawer triggered from the toolbar.
-
-## Vocabulary and identifiers
-
-- `branch`: a scenario branch identifier (string).
-- `commit_id`: an immutable commit reference identifier (string).
-- `as_of`: the reference used for reads. In UI, this is represented as either:
-  - a selected `commit_id`, or
-  - the latest commit on the selected `branch`.
-- `layer`: plan/actual precedence (shared `dtos.Layer`).
-- `time context`: `{ branch?, commit_id?, layer }` plus any workspace-scoped selection of scenario id if present.
-
-## State and actions (hook contract)
-
-The golden implementation pattern is a hook returning `[state, actions]`.
-
-Reference implementation (non-authoritative):
-
-- The desktop should keep a single “golden” implementation of this contract and reuse it across workspaces. Code location may change; the contract in this document is the source of truth.
+The golden implementation is the `useChrona` hook returning `[state, actions]` ([state-architecture.md](../state-architecture.md)). The code location may change; this contract is the source of truth.
 
 ### State (required)
 
-- `branches[]` and active `branch`
-- `commits[]` and active `commit_id`
-- `layer` (plan/actual)
-- `snapshot` summary for the selected reference (bounded, UI-friendly)
-- `diff` preview between recent references (bounded)
-- `loading`/`snapshot_loading` flags
-- `error` (human-readable)
-- merge flow state (`merging`, `merge_conflicts`)
+- `branches[]` and the active `branch`.
+- `commits[]` and the active `commitId`.
+- `layer` (plan/actual).
+- `snapshot` summary for the selected reference (bounded, UI-friendly).
+- `diff` preview between recent references (bounded).
+- `loading` / `snapshotLoading` flags.
+- `error` (human-readable, mapped from the envelope, [error-loading-empty.md](../error-loading-empty.md)).
+- merge flow state (`merging`, `mergeConflicts`).
 
 ### State (derived, recommended)
 
-- `time_context_summary`: a short human-readable summary string, e.g.:
-  - “Plan · Scenario: CX Redesign · Commit: c42”
-  - “Actual · Scenario: baseline · Latest”
-- `is_dirty_context`: whether the UI has pending changes that would be committed (workspace-owned).
-- `can_merge`: true when merge prerequisites are satisfied and capability allows it.
-- `can_commit`: true when there are staged changes and capability allows it (workspace-owned).
+- `timeContextSummary` — a short human-readable string, e.g. "Plan · Scenario: CX Redesign · Commit: c42" or "Actual · Scenario: baseline · Latest".
+- `isDirtyContext` — whether there are pending changes that would be committed (workspace-owned).
+- `canMerge` — merge prerequisites satisfied and capability allows it.
+- `canCommit` — staged changes exist and capability allows it (workspace-owned).
 
 ### Actions (required)
 
-- select branch
-- select commit (including clearing selection)
-- select layer
-- refresh branches
-- merge branch into baseline (or selected target)
+- select branch; select commit (including clearing); select layer; refresh branches; merge branch into baseline or a selected target.
 
 ## Behaviour rules
 
-### Branch and commit selection
+**Branch and commit selection.** Selecting a branch refreshes the commit list, the snapshot for the latest commit, and the bounded diff. Selecting a commit refreshes its snapshot. A branch with no commits shows a clear empty state, not a silent failure. Switching branches never keeps a stale `commitId` from the previous branch. A snapshot load failure does not erase the prior snapshot unless the UI explicitly transitions to an error state that explains why.
 
-- Branch selection triggers:
-  - commit list refresh,
-  - snapshot refresh for the latest commit (when available),
-  - diff refresh (bounded).
-- Commit selection triggers:
-  - snapshot refresh for the selected commit,
-  - selection preservation where safe; otherwise explicit clearing.
+**Layer switching.** Switching layer refreshes the snapshot for the active reference and applies consistently to every artefact execution. It does not change the selected branch/commit, and it **must** update any persistence key that includes layer — including the canvas layout snapshot key ([praxis-workspace](../praxis-workspace/DESIGN.md)).
 
-Additional rules:
+**Diff preview.** The diff is bounded and shows the reference pair (`from`, `to`), summary counts (adds/mods/dels), and a truncation warning when limited. It defaults to the most recent two commits in the active branch and labels what it represents (e.g. "Diff: previous → latest"). The diff kind is derived from which viewpoint coordinates differ, not chosen up front ([CONTEXT.md](../../../CONTEXT.md)).
 
-- Selecting a branch that has no commits must show a clear empty state (not a silent failure).
-- Switching branches must never keep a stale `commit_id` from the previous branch.
-- Snapshot load failures must not erase prior snapshot unless the UI explicitly transitions to an error state that explains why.
+**Merge flow.** Merge is a host-managed operation; the renderer never auto-resolves. Conflicts are first-class: the UI shows a conflict list with stable identifiers and messages, offers "view conflicts" as the primary next action, keeps the user in the same time context, and offers a return-to-safe-state path with no partial merges ([ux/multi-user-conflict-ux.md](../../03-design/ux/multi-user-conflict-ux.md)). The merge CTA is disabled when there is no active branch, the branch is already baseline, capability disallows merge, or a merge is in progress. A copy-to-clipboard diagnostic summary is provided for support.
 
-### Layer switching
+## Loading, error, empty
 
-- Switching layer triggers snapshot refresh for the active reference.
-- Layer must be applied to all artefact executions consistently.
+A loading state does not block the workspace; artefacts keep rendering against the last known good context where safe ([error-loading-empty.md](../error-loading-empty.md)). Errors map by code to a human-readable message and a next action — not-permitted → "request access"; not-found → refresh; invalid input → explain the input; internal → "open Status / copy diagnostics" ([error-loading-empty.md](../error-loading-empty.md)). Empty states (no branches/commits) explain how to create initial state.
 
-Additional rules:
+## Accessibility
 
-- Layer switching must not change the selected branch/commit.
-- Layer switching must update any persistence keys that include layer (layout snapshots).
+All controls are keyboard reachable; branch/commit lists carry accessible labels and announce selection changes; a time-context change announces via an `aria-live` region ("Time context updated…") ([accessibility.md](../accessibility.md)). Plan/actual and scenario state are never colour-only.
 
-### Diff preview
+## Testing
 
-- Diff preview is bounded and must display:
-  - reference pair (`from`, `to`),
-  - summary counts (adds/mods/dels),
-  - warnings when truncated or limited.
+Hook tests cover the state transitions — branch select, commit select, layer change, merge-conflict handling — and assert the viewpoint is part of the cache key ([testing.md](../testing.md)). Component tests cover loading/error/empty rendering. IPC is mocked at the boundary. Minimum fixtures: branch list empty/single/multiple; commits none/one/many; snapshot present/absent/loading/error; merge success/conflicts/failure.
 
-Recommended behaviour:
+## Related documents
 
-- Diff preview defaults to the most recent two commits in the active branch when available.
-- The UI must clearly label what the diff represents (e.g., “Diff: previous → latest”).
-
-### Merge flow
-
-- Merge is executed as a host-managed operation.
-- Merge conflicts are first-class:
-  - UI must show a conflict list with stable identifiers and messages,
-  - UI must not auto-resolve without explicit user action,
-  - UI must offer “return to safe state” (no partial merges).
-
-Merge UX requirements:
-
-- The merge CTA must be disabled when:
-  - no active branch,
-  - active branch is already baseline,
-  - host capability disallows merge,
-  - merge is already in progress.
-- If conflicts occur, the UI must:
-  - keep the user in the same time context (do not silently switch references),
-  - offer “view conflicts” as the primary next action,
-  - provide a copy-to-clipboard diagnostic summary for support/debugging.
-
-## Loading/error/empty contract
-
-- Loading states must not block the entire workspace; artefacts should continue rendering using the last known good context when safe.
-- Errors must be human-readable and actionable (retry, open status window, copy diagnostics when available).
-- Empty states (no branches/commits) must clearly indicate how to create initial state (seeded defaults or a safe “create branch” action when enabled).
-
-Explicit error mapping expectations:
-
-- Authentication/authorization failures: explain “not permitted” and provide next step (“request access” / “enable capability”).
-- Not found: explain that a referenced branch/commit no longer exists and offer refresh.
-- Invalid input: explain what input was invalid (e.g., unsupported layer string).
-- Internal: provide a stable message plus “open status window / copy diagnostics”.
-
-## Accessibility and interaction
-
-- All controls are keyboard reachable.
-- Branch/commit lists have accessible labels and announce selection changes.
-- Time context changes should announce via aria-live region (“Time context updated…”).
-- Do not use color-only indicators for plan/actual or scenario state.
-
-## Test expectations
-
-- Hook-level tests for state transitions (branch select, commit select, layer change, merge conflict handling).
-- Component tests for basic rendering of loading/error/empty states.
-- IPC mocked at the boundary; no renderer network calls.
-
-Minimum test fixtures:
-
-- branch list: empty, single, multiple
-- commits: none, one, many
-- snapshot: present, absent, loading, error
-- merge: success, conflicts, failure
+| Document                                                                                | What it covers                                    |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [README.md](./README.md)                                                                | The package contract.                             |
+| [TEMPORAL-AND-SCENARIO-CONTEXT.md](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | The viewpoint contract the time context projects. |
+| [ux/time-and-scenario-ux.md](../../03-design/ux/time-and-scenario-ux.md)                | The behaviour-level time-and-scenario rules.      |
+| [ux/multi-user-conflict-ux.md](../../03-design/ux/multi-user-conflict-ux.md)            | The conflict-resolution UX merges follow.         |
+| [state-architecture.md](../state-architecture.md)                                       | The viewpoint as a first-class state coordinate.  |
