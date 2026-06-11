@@ -75,7 +75,7 @@ The execution context comprises:
 
 - **Valid time** — the modelled moment in reality the artefact describes
 - **Asserted time** — the point at which the facts were recorded
-- **Layer** — Plan vs Actual precedence rules
+- **Layer** — which layer or layer policy applies (plan, actual, …; a selectable policy, not a fixed precedence — see ADR-0009)
 - **Scenario** — the baseline or named what-if overlay applied at execution
 
 Changing any of these dimensions produces a materially different artefact. Two copies of the same artefact template executed at different contexts are not the same result.

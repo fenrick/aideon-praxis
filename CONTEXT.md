@@ -111,3 +111,11 @@ _Avoid_: schema (bare), type definition (effective schema is the compiled view; 
 **Artefact family**:
 A named grouping of artefacts that corresponds to a recognisable business question or starting shape — e.g. business motivation, service blueprint, operating model, capability map, roadmap. It guides the initial structure and interpretation of an artefact, but it is **not** a temporal, scenario, layer, or scope frame.
 _Avoid_: viewpoint (in this project **Viewpoint** means the bitemporal/model query frame used to resolve or analyse the twin — see Viewpoint); lens, perspective.
+
+**Artefact**:
+A named, versioned, executable **definition**: it declares the business question being answered and how to answer it from the twin — purpose, audience, **artefact family**, **form**, default **scope**, inclusion rules, execution contract, and output expectations. Stored, reusable, and versioned. Distinct from an **Artefact result** (a single execution). Chain: _Artefact + Viewpoint → Artefact result._
+_Avoid_: report, diagram, document, export (those are forms or outputs, not the definition); using "artefact" for a single execution (that is an artefact result).
+
+**Artefact result**:
+The output of executing an **Artefact** at a specific **Viewpoint** — a bounded, content-classified, provenance-carrying projection **derived from** the resolved **Snapshot** and shaped by the artefact's form, scope, inclusion rules, classification rules, and presentation contract. It is _not_ the snapshot: one snapshot can back many artefact results, and one artefact yields different results at different viewpoints.
+_Avoid_: snapshot (a result is derived from a snapshot, not equal to it); artefact (that is the reusable definition).
