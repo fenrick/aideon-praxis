@@ -1,6 +1,6 @@
 //! Scene generation utilities for the Canvas MVP.
 
-use aideon_engine::canvas::CanvasShape;
+use aideon_praxis::canvas::CanvasShape;
 
 /// Generate a small synthetic scene of shapes for the renderer to display.
 /// Stable and deterministic so the UI can test against it.
@@ -28,13 +28,5 @@ pub fn generate_demo_scene() -> Vec<CanvasShape> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::generate_demo_scene;
-
-    #[test]
-    fn returns_two_rects() {
-        let s = generate_demo_scene();
-        assert_eq!(s.len(), 2);
-        assert_eq!(s[0].type_id, "rect");
-    }
-}
+#[path = "../tests/internal/scene_tests.rs"]
+mod tests;

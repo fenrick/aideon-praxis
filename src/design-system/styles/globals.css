@@ -1,0 +1,582 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  @import '@xyflow/react/dist/style.css';
+  .typography {
+    max-width: 65ch;
+    color: var(--color-foreground);
+  }
+  .typography h1:not(.not-typography h1) {
+    scroll-margin: calc(var(--spacing) * 20);
+    font-size: var(--text-4xl);
+    line-height: var(--text-4xl--line-height);
+    font-weight: 800;
+    letter-spacing: var(--tracking-tight);
+  }
+  .typography h2:not(.not-typography h2) {
+    scroll-margin: calc(var(--spacing) * 20);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: calc(var(--spacing) * 2);
+    font-size: var(--text-3xl);
+    line-height: var(--text-3xl--line-height);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    margin-top: calc(var(--spacing) * 12);
+  }
+  .typography h2:not(.not-typography h2):first-child {
+    margin-top: 0;
+  }
+  .typography h3:not(.not-typography h3) {
+    scroll-margin: calc(var(--spacing) * 20);
+    font-size: var(--text-2xl);
+    line-height: var(--text-2xl--line-height);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    margin-top: calc(var(--spacing) * 12);
+  }
+  .typography h3:not(.not-typography h3):first-child {
+    margin-top: 0;
+  }
+  .typography h4:not(.not-typography h4) {
+    scroll-margin: calc(var(--spacing) * 20);
+    font-size: var(--text-xl);
+    line-height: var(--text-xl--line-height);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    margin-top: calc(var(--spacing) * 12);
+  }
+  .typography h4:not(.not-typography h4):first-child {
+    margin-top: 0;
+  }
+  .typography h5:not(.not-typography h5) {
+    scroll-margin: calc(var(--spacing) * 20);
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    margin-top: calc(var(--spacing) * 12);
+  }
+  .typography h5:not(.not-typography h5):first-child {
+    margin-top: 0;
+  }
+  .typography h6:not(.not-typography h6) {
+    scroll-margin: calc(var(--spacing) * 20);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    margin-top: calc(var(--spacing) * 12);
+  }
+  .typography h6:not(.not-typography h6):first-child {
+    margin-top: 0;
+  }
+  .typography h1:not(.not-typography h1) + p,
+  .typography h2:not(.not-typography h2) + p,
+  .typography h3:not(.not-typography h3) + p,
+  .typography h4:not(.not-typography h4) + p,
+  .typography h5:not(.not-typography h5) + p,
+  .typography h6:not(.not-typography h6) + p {
+    margin-top: 0;
+  }
+  .typography p:not(.not-typography p) {
+    line-height: 1.75;
+  }
+  .typography p:not(.not-typography p):not(:first-child) {
+    margin-top: calc(var(--spacing) * 6);
+  }
+  .typography li:not(.not-typography li) {
+    line-height: 1.75;
+  }
+  .typography a:not(.not-typography a) {
+    font-weight: 500;
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: var(--spacing);
+  }
+  .typography blockquote:not(.not-typography blockquote) {
+    margin-top: calc(var(--spacing) * 6);
+    border-left: 2px solid var(--color-border);
+    padding-left: calc(var(--spacing) * 6);
+    font-style: italic;
+  }
+  .typography table:not(.not-typography table) {
+    margin-top: calc(var(--spacing) * 6);
+    margin-bottom: calc(var(--spacing) * 6);
+    width: 100%;
+    overflow-y: auto;
+  }
+  .typography table:not(.not-typography table) thead tr {
+    margin: 0;
+    border-top: 1px solid var(--color-border);
+    padding: 0;
+  }
+  .typography table:not(.not-typography table) thead tr:nth-child(even) {
+    background-color: var(--color-muted);
+  }
+  .typography table:not(.not-typography table) th {
+    border: 1px solid var(--color-border);
+    padding: calc(var(--spacing) * 2) calc(var(--spacing) * 4);
+    text-align: left;
+    font-weight: 700;
+  }
+  .typography table:not(.not-typography table) th[align='center'] {
+    text-align: center;
+  }
+  .typography table:not(.not-typography table) th[align='right'] {
+    text-align: right;
+  }
+  .typography table:not(.not-typography table) tbody tr {
+    margin: 0;
+    border-top: 1px solid var(--color-border);
+    padding: 0;
+  }
+  .typography table:not(.not-typography table) tbody tr:nth-child(even) {
+    background-color: var(--color-muted);
+  }
+  .typography table:not(.not-typography table) td {
+    border: 1px solid var(--color-border);
+    padding: calc(var(--spacing) * 2) calc(var(--spacing) * 4);
+    text-align: left;
+  }
+  .typography table:not(.not-typography table) td[align='center'] {
+    text-align: center;
+  }
+  .typography table:not(.not-typography table) td[align='right'] {
+    text-align: right;
+  }
+  .typography ul:not(.not-typography ul) {
+    margin-top: calc(var(--spacing) * 6);
+    margin-left: calc(var(--spacing) * 6);
+    list-style: disc;
+  }
+  .typography ul:not(.not-typography ul) > li {
+    margin-top: calc(var(--spacing) * 2);
+  }
+  .typography ul:not(.not-typography ul) p {
+    margin-top: 0;
+    margin-bottom: 0;
+    display: inline;
+  }
+  .typography ol:not(.not-typography ol) {
+    margin-top: calc(var(--spacing) * 6);
+    margin-left: calc(var(--spacing) * 6);
+    list-style: decimal;
+  }
+  .typography ol:not(.not-typography ol) > li {
+    margin-top: calc(var(--spacing) * 2);
+  }
+  .typography ol:not(.not-typography ol) p {
+    margin-top: 0;
+    margin-bottom: 0;
+    display: inline;
+  }
+  .typography pre:not(.not-typography pre) {
+    background-color: var(--color-muted);
+    border-radius: calc(var(--radius) - 2px);
+    padding: calc(var(--spacing) * 4);
+    margin-top: calc(var(--spacing) * 6);
+    margin-bottom: calc(var(--spacing) * 6);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    overflow-y: auto;
+  }
+  .typography code:not(pre code):not(.not-typography code) {
+    position: relative;
+    border-radius: var(--radius);
+    background-color: var(--color-muted);
+    padding: calc(var(--spacing) * 0.2) calc(var(--spacing) * 0.3);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    font-weight: 600;
+  }
+  .typography .lead:not(.not-typography .lead) {
+    font-size: var(--text-xl);
+    line-height: var(--text-xl--line-height);
+    color: var(--color-muted-foreground);
+  }
+  .typography .large:not(.not-typography .large) {
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
+    font-weight: 600;
+  }
+  .typography .small:not(.not-typography .small) {
+    font-size: var(--text-sm);
+    line-height: 1;
+    font-weight: 500;
+  }
+  .typography .muted:not(.not-typography .muted) {
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    color: var(--color-muted-foreground);
+  }
+  .typography img:not(.not-typography img),
+  .typography picture:not(.not-typography picture),
+  .typography video:not(.not-typography video) {
+    margin-top: calc(var(--spacing) * 6);
+    margin-bottom: calc(var(--spacing) * 6);
+  }
+  .typography picture > img:not(.not-typography picture > img) {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .typography kbd:not(.not-typography kbd) {
+    border-radius: calc(var(--radius) - 2px);
+    background-color: var(--color-muted);
+    padding: calc(var(--spacing) * 0.5) calc(var(--spacing) * 1.5);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    font-weight: 600;
+  }
+  .typography hr {
+    margin-top: calc(var(--spacing) * 10);
+    margin-bottom: calc(var(--spacing) * 10);
+  }
+  .typography dl:not(.not-typography dl) {
+    margin-top: calc(var(--spacing) * 6);
+    margin-bottom: calc(var(--spacing) * 6);
+  }
+  .typography dl:not(.not-typography dl) dt {
+    font-weight: 600;
+    margin-top: calc(var(--spacing) * 6);
+    letter-spacing: var(--tracking-tight);
+  }
+  .typography dl:not(.not-typography dl) dt:first-child {
+    margin-top: 0;
+  }
+  .typography details:not(.not-typography details) {
+    margin-top: calc(var(--spacing) * 6);
+  }
+  .typography details:not(.not-typography details) summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: calc(var(--spacing) * 6);
+    letter-spacing: var(--tracking-tight);
+  }
+  .typography details:not(.not-typography details) p:first-of-type {
+    margin-top: calc(var(--spacing) * 2);
+  }
+  .typography mark:not(.not-typography mark) {
+    background-color: var(--color-yellow-300);
+  }
+  .typography small:not(.not-typography small) {
+    font-size: var(--text-xs);
+    line-height: 1;
+  }
+  /*
+ ---break---
+ */
+  @media (min-width: 1024px) {
+    .typography h1:not(.not-typography h1) {
+      font-size: var(--text-5xl);
+      line-height: var(--text-5xl--line-height);
+    }
+  }
+}
+
+/*
+ * Aideon design language.
+ *
+ * Core shadcn tokens (palette, radius, sidebar, charts) come from the canonical Aideon
+ * shadcn style — a teal primary on cool neutrals, radius 0.625rem. The --aideon-* layer
+ * (shell, status, spacing, elevation, motion) is the product-specific extension, retuned
+ * to the same cool/teal base. Fonts: Geist (sans), Newsreader (editorial/header),
+ * Geist Mono (mono).
+ */
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.148 0.004 228.8);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.148 0.004 228.8);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.148 0.004 228.8);
+  --primary: oklch(0.511 0.096 186.391);
+  --primary-foreground: oklch(0.984 0.014 180.72);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.963 0.002 197.1);
+  --muted-foreground: oklch(0.56 0.021 213.5);
+  --accent: oklch(0.963 0.002 197.1);
+  --accent-foreground: oklch(0.218 0.008 223.9);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.925 0.005 214.3);
+  --input: oklch(0.925 0.005 214.3);
+  --ring: oklch(0.723 0.014 214.4);
+  --chart-1: oklch(0.855 0.138 181.071);
+  --chart-2: oklch(0.704 0.14 182.503);
+  --chart-3: oklch(0.6 0.118 184.704);
+  --chart-4: oklch(0.511 0.096 186.391);
+  --chart-5: oklch(0.437 0.078 188.216);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.987 0.002 197.1);
+  --sidebar-foreground: oklch(0.148 0.004 228.8);
+  --sidebar-primary: oklch(0.6 0.118 184.704);
+  --sidebar-primary-foreground: oklch(0.984 0.014 180.72);
+  --sidebar-accent: oklch(0.963 0.002 197.1);
+  --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
+  --sidebar-border: oklch(0.925 0.005 214.3);
+  --sidebar-ring: oklch(0.723 0.014 214.4);
+
+  /* Aideon shell + surface neutrals (retuned to the cool/teal base) */
+  --aideon-shell-background: oklch(0.985 0.002 214.3);
+  --aideon-shell-panel: oklch(0.997 0.001 214.3);
+  --aideon-shell-toolbar: oklch(0.99 0.002 214.3 / 92%);
+  --aideon-shell-navigation: oklch(0.976 0.003 214.3);
+  --aideon-shell-inspector: oklch(0.993 0.001 214.3);
+  --aideon-shell-border-strong: oklch(0.86 0.006 214.3);
+  --aideon-workspace-surface: oklch(1 0 0);
+  --aideon-surface-subtle: oklch(0.971 0.003 214.3);
+
+  /* Aideon semantic status palette */
+  --aideon-status-info: oklch(0.52 0.09 234.4);
+  --aideon-status-info-soft: oklch(0.95 0.022 234.4);
+  --aideon-status-warning: oklch(0.67 0.15 80.3);
+  --aideon-status-warning-soft: oklch(0.962 0.036 83.5);
+  --aideon-status-partial: oklch(0.68 0.127 45.8);
+  --aideon-status-partial-soft: oklch(0.965 0.028 45.8);
+  --aideon-status-stale: oklch(0.56 0.021 213.5);
+  --aideon-status-stale-soft: oklch(0.963 0.002 214.3);
+  --aideon-status-error: oklch(0.577 0.245 27.325);
+  --aideon-status-error-soft: oklch(0.954 0.036 25.9);
+  --aideon-status-success: oklch(0.6 0.118 184.704);
+  --aideon-status-success-soft: oklch(0.952 0.03 183.5);
+  --aideon-status-neutral: var(--aideon-status-info);
+  --aideon-status-neutral-soft: var(--aideon-status-info-soft);
+  --aideon-status-danger: var(--aideon-status-error);
+  --aideon-status-danger-soft: var(--aideon-status-error-soft);
+  --aideon-status-muted: var(--aideon-status-stale);
+  --aideon-status-muted-soft: var(--aideon-status-stale-soft);
+
+  --aideon-space-2xs: 0.25rem;
+  --aideon-space-xs: 0.5rem;
+  --aideon-space-sm: 0.75rem;
+  --aideon-space-md: 1rem;
+  --aideon-space-lg: 1.25rem;
+  --aideon-space-xl: 1.5rem;
+  --aideon-space-2xl: 2rem;
+  --aideon-space-3xl: 3rem;
+
+  --aideon-navigation-width: 17.5rem;
+  --aideon-inspector-width: 22rem;
+  --aideon-toolbar-height: 3.75rem;
+  --aideon-shell-gap: 1.25rem;
+  --aideon-content-padding: 1.25rem;
+  --aideon-control-height: 2.75rem;
+  --aideon-space-cluster: var(--aideon-space-sm);
+  --aideon-space-field-gap: var(--aideon-space-xs);
+  --aideon-space-panel-padding: var(--aideon-space-xl);
+  --aideon-space-section: var(--aideon-space-xl);
+
+  --aideon-elevation-shell: 0 28px 72px -44px
+    color-mix(in oklab, var(--foreground) 18%, transparent);
+  --aideon-elevation-panel: 0 18px 40px -30px
+    color-mix(in oklab, var(--foreground) 16%, transparent);
+  --aideon-elevation-frame: 0 16px 34px -26px
+    color-mix(in oklab, var(--foreground) 14%, transparent);
+  --aideon-focus-ring: 0 0 0 3px color-mix(in oklab, var(--ring) 35%, transparent);
+  --aideon-motion-fast: 160ms;
+  --aideon-motion-standard: 220ms;
+  --aideon-motion-deliberate: 320ms;
+}
+
+.dark {
+  --background: oklch(0.148 0.004 228.8);
+  --foreground: oklch(0.987 0.002 197.1);
+  --card: oklch(0.218 0.008 223.9);
+  --card-foreground: oklch(0.987 0.002 197.1);
+  --popover: oklch(0.218 0.008 223.9);
+  --popover-foreground: oklch(0.987 0.002 197.1);
+  --primary: oklch(0.437 0.078 188.216);
+  --primary-foreground: oklch(0.984 0.014 180.72);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.275 0.011 216.9);
+  --muted-foreground: oklch(0.723 0.014 214.4);
+  --accent: oklch(0.275 0.011 216.9);
+  --accent-foreground: oklch(0.987 0.002 197.1);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.56 0.021 213.5);
+  --chart-1: oklch(0.855 0.138 181.071);
+  --chart-2: oklch(0.704 0.14 182.503);
+  --chart-3: oklch(0.6 0.118 184.704);
+  --chart-4: oklch(0.511 0.096 186.391);
+  --chart-5: oklch(0.437 0.078 188.216);
+  --sidebar: oklch(0.218 0.008 223.9);
+  --sidebar-foreground: oklch(0.987 0.002 197.1);
+  --sidebar-primary: oklch(0.704 0.14 182.503);
+  --sidebar-primary-foreground: oklch(0.277 0.046 192.524);
+  --sidebar-accent: oklch(0.275 0.011 216.9);
+  --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.56 0.021 213.5);
+
+  --aideon-shell-background: oklch(0.13 0.004 228.8);
+  --aideon-shell-panel: oklch(0.218 0.008 223.9);
+  --aideon-shell-toolbar: oklch(0.2 0.008 223.9 / 92%);
+  --aideon-shell-navigation: oklch(0.185 0.006 226);
+  --aideon-shell-inspector: oklch(0.205 0.008 223.9);
+  --aideon-shell-border-strong: oklch(0.38 0.012 220);
+  --aideon-workspace-surface: oklch(0.225 0.008 223.9);
+  --aideon-surface-subtle: oklch(0.19 0.007 224);
+
+  --aideon-status-info: oklch(0.78 0.09 234.4);
+  --aideon-status-info-soft: oklch(0.29 0.04 234.4);
+  --aideon-status-warning: oklch(0.82 0.13 84.1);
+  --aideon-status-warning-soft: oklch(0.3 0.035 84.1);
+  --aideon-status-partial: oklch(0.84 0.11 46.2);
+  --aideon-status-partial-soft: oklch(0.31 0.03 46.2);
+  --aideon-status-stale: oklch(0.723 0.014 214.4);
+  --aideon-status-stale-soft: oklch(0.275 0.011 216.9);
+  --aideon-status-error: oklch(0.704 0.191 22.216);
+  --aideon-status-error-soft: oklch(0.29 0.04 24.4);
+  --aideon-status-success: oklch(0.704 0.14 182.503);
+  --aideon-status-success-soft: oklch(0.29 0.035 183.5);
+  --aideon-status-neutral: var(--aideon-status-info);
+  --aideon-status-neutral-soft: var(--aideon-status-info-soft);
+  --aideon-status-danger: var(--aideon-status-error);
+  --aideon-status-danger-soft: var(--aideon-status-error-soft);
+  --aideon-status-muted: var(--aideon-status-stale);
+  --aideon-status-muted-soft: var(--aideon-status-stale-soft);
+
+  --aideon-elevation-shell: 0 24px 56px -40px color-mix(in oklab, black 48%, transparent);
+  --aideon-elevation-panel: 0 18px 36px -30px color-mix(in oklab, black 44%, transparent);
+  --aideon-elevation-frame: 0 14px 26px -24px color-mix(in oklab, black 42%, transparent);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-shell-background: var(--aideon-shell-background);
+  --color-shell-panel: var(--aideon-shell-panel);
+  --color-shell-toolbar: var(--aideon-shell-toolbar);
+  --color-shell-navigation: var(--aideon-shell-navigation);
+  --color-shell-inspector: var(--aideon-shell-inspector);
+  --color-shell-border-strong: var(--aideon-shell-border-strong);
+  --color-workspace-surface: var(--aideon-workspace-surface);
+  --color-surface-subtle: var(--aideon-surface-subtle);
+  --color-status-info: var(--aideon-status-info);
+  --color-status-info-soft: var(--aideon-status-info-soft);
+  --color-status-partial: var(--aideon-status-partial);
+  --color-status-partial-soft: var(--aideon-status-partial-soft);
+  --color-status-stale: var(--aideon-status-stale);
+  --color-status-stale-soft: var(--aideon-status-stale-soft);
+  --color-status-error: var(--aideon-status-error);
+  --color-status-error-soft: var(--aideon-status-error-soft);
+  --color-status-neutral: var(--aideon-status-neutral);
+  --color-status-neutral-soft: var(--aideon-status-neutral-soft);
+  --color-status-warning: var(--aideon-status-warning);
+  --color-status-warning-soft: var(--aideon-status-warning-soft);
+  --color-status-danger: var(--aideon-status-danger);
+  --color-status-danger-soft: var(--aideon-status-danger-soft);
+  --color-status-success: var(--aideon-status-success);
+  --color-status-success-soft: var(--aideon-status-success-soft);
+  --color-status-muted: var(--aideon-status-muted);
+  --color-status-muted-soft: var(--aideon-status-muted-soft);
+  --font-sans: var(--font-sans);
+  --font-editorial: var(--font-editorial);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body {
+    @apply bg-shell-background text-foreground min-h-svh;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply antialiased;
+  }
+
+  /* Cross-platform scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 hover:bg-muted-foreground/40 rounded-full;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::selection {
+    background-color: oklch(from var(--primary) l c h / 0.2);
+    color: var(--primary);
+  }
+}
+
+@layer utilities {
+  .bg-dot-pattern {
+    background-image: radial-gradient(
+      circle,
+      color-mix(in oklch, var(--muted-foreground) 30%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 20px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

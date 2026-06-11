@@ -1,12 +1,14 @@
 // eslint.config.mjs
 // ESLint v9 flat config, ESM, TS-aware, Sonar-style clean code
-// Prettier handles formatting; ESLint handles correctness/clean-code.
+// Prettier handles formatting (enforced via ESLint); ESLint handles correctness/clean-code.
 
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
 import stylistic from '@stylistic/eslint-plugin';
 import importPlugin from 'eslint-plugin-import';
 import jsdoc from 'eslint-plugin-jsdoc';
+import prettierPlugin from 'eslint-plugin-prettier';
 import promise from 'eslint-plugin-promise';
 import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
@@ -42,13 +44,35 @@ export default defineConfig([
     'dist/**',
     'build/**',
     'coverage/**',
-    'app/AideonDesktop/src/design-system/components/**',
+    // Vendored UI registry components (shadcn/reactflow); not strict-lint-policed.
+    'src/design-system/components/**',
+    // Vendored kibo-ui registry components — same posture as design-system/components.
+    'src/components/kibo-ui/**',
     '**/.pnpm/**',
     '**/out/**',
+    // E2E / WebDriver harness and root test infra are linted/maintained separately.
+    'tests/webdriver/**',
+    'tests/e2e/**',
+    'tests/setup.ts',
+    'tests/tauri-mocks.ts',
   ]),
 
   // Core JS recommendations (base for "clean code" checks)
   js.configs.recommended,
+
+  // Register the @typescript-eslint plugin globally so rules referenced outside the
+  // typed-config objects (e.g. project-level tightening) resolve across all files.
+  { plugins: { '@typescript-eslint': tseslint.plugin } },
+
+  // Next.js (core-web-vitals) recommended flat config
+  {
+    plugins: {
+      '@next/next': nextPlugin,
+    },
+    rules: {
+      ...nextPlugin.configs['core-web-vitals'].rules,
+    },
+  },
 
   // Base language options
   {
@@ -60,7 +84,7 @@ export default defineConfig([
       // Allow import/no-unresolved to pick up TS path aliases in package tsconfigs.
       'import/resolver': {
         typescript: {
-          project: ['./tsconfig.eslint.json', './app/AideonDesktop/tsconfig.json'],
+          project: ['./tsconfig.json'],
           alwaysTryTypes: true,
         },
         node: true,
@@ -109,6 +133,11 @@ export default defineConfig([
       ...reactHooks.configs.recommended.rules,
       // Tighten the most important one
       'react-hooks/exhaustive-deps': 'error',
+      // React Compiler diagnostics: the codebase is not yet RC-optimised and these fire on
+      // legitimate data-loading effects and manual memoization. Keep rules-of-hooks and
+      // exhaustive-deps as errors; treat the compiler bailout diagnostics as off for now.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
     },
   },
 
@@ -119,7 +148,7 @@ export default defineConfig([
       parser: tseslint.parser,
       parserOptions: {
         projectService: false,
-        project: ['./tsconfig.eslint.json'],
+        project: ['./tsconfig.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -449,6 +478,17 @@ export default defineConfig([
       'jsx-a11y/label-has-associated-control': 'error', // S6853
       'react/no-deprecated': 'error', // S6957
       'import/no-self-import': 'error', // S7060
+    },
+  },
+
+  // Enforce Prettier formatting as ESLint errors (so `eslint` covers `prettier --check`).
+  {
+    name: 'prettier',
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    rules: {
+      'prettier/prettier': ['error', {}, { usePrettierrc: true }],
     },
   },
   eslintConfigPrettier,

@@ -2,14 +2,17 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
-const srcRoot = path.resolve(__dirname, 'app/AideonDesktop/src');
-const testsRoot = path.resolve(__dirname, 'app/AideonDesktop/tests');
+const srcRoot = path.resolve(__dirname, 'src');
+const testsRoot = path.resolve(__dirname, 'tests');
+
+const praxisRoot = path.join(srcRoot, 'workspaces/praxis');
 
 export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: srcRoot },
-      { find: 'canvas', replacement: path.join(srcRoot, 'canvas') },
+      { find: 'aideon', replacement: path.join(srcRoot, 'aideon') },
+      { find: 'praxis', replacement: praxisRoot },
       {
         find: 'design-system/reactflow',
         replacement: path.join(srcRoot, 'design-system/components'),
@@ -17,16 +20,15 @@ export default defineConfig({
       { find: 'design-system', replacement: path.join(srcRoot, 'design-system') },
       { find: 'adapters', replacement: path.join(srcRoot, 'adapters') },
       { find: 'dtos', replacement: path.join(srcRoot, 'dtos') },
-      {
-        find: '@tauri-apps/api/core',
-        replacement: path.join(testsRoot, 'adapters/stubs/tauri-core.ts'),
-      },
+      { find: 'lib', replacement: path.join(srcRoot, 'lib') },
     ],
   },
   plugins: [react()],
   test: {
     environment: 'jsdom',
     setupFiles: [path.resolve(__dirname, 'tests/setup.ts')],
+    include: ['src/**/*.{test,spec}.{ts,tsx,js,jsx}', 'tests/**/*.{test,spec}.{ts,tsx,js,jsx}'],
+    exclude: ['tests/webdriver/**'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'lcov', 'html'],
@@ -37,17 +39,21 @@ export default defineConfig({
         branches: 0.8,
         statements: 0.8,
       },
-      include: ['app/AideonDesktop/src/**/*.{ts,tsx}'],
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
         '**/*.d.ts',
         '**/*.test.*',
         'app/**/dist/**',
         'scripts/**',
-        'app/AideonDesktop/src/design-system/components/**',
-        'app/AideonDesktop/src/types/**',
-        'app/AideonDesktop/src/main.tsx',
-        'app/AideonDesktop/src/canvas/main.tsx',
-        'app/AideonDesktop/src/canvas/canvas-runtime.tsx',
+        '**/dist/**',
+        '**/build/**',
+        '**/out/**',
+        '**/.pnpm/**',
+        '**/node_modules/**',
+        '**/*.tsbuildinfo',
+        '**/*.map',
+        'src-tauri/target/**',
+        'src/design-system/components/**',
       ],
     },
   },

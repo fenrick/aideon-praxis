@@ -1,19 +1,21 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/aideon_praxis_facade",
-  "crates/desktop",
-  "crates/engine",
+  "src-tauri",
+  "crates/praxis",
   "crates/chrona",
   "crates/metis",
   "crates/continuum",
   "crates/mneme",
+  "crates/mneme_core",
+  "crates/mneme_store",
   "aideon_xtask"
 ]
 
 [workspace.package]
 edition = "2024"
 license = "MIT"
+version = "0.2.0"
 
 [workspace.dependencies]
 # Shared dependencies can be declared here when the crates start sharing code.

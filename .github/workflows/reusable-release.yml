@@ -16,7 +16,6 @@ on:
 
 env:
   NODE_VERSION: '24'
-  PNPM_VERSION: '10.19.0'
 
 permissions:
   contents: write
@@ -50,10 +49,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm ${{ env.PNPM_VERSION }}
+      - name: Setup pnpm
         uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Get pnpm store directory
         id: pnpm-store-app
@@ -149,7 +146,7 @@ jobs:
           deps_dir="${target_dir}/deps"
           shopt -s nullglob
           found=false
-          for file in "${target_dir}"/libpraxis_engine_lib.* "${target_dir}"/praxis_engine_lib.*; do
+          for file in "${target_dir}"/libpraxis_engine_lib.* "${target_dir}"/praxis_engine_lib.* "${target_dir}"/libaideon_praxis.* "${target_dir}"/aideon_praxis.*; do
             if [[ -f "$file" ]]; then
               cp "$file" artifacts/worker/files/
               found=true

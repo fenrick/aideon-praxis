@@ -1,16 +1,78 @@
 import '@testing-library/jest-dom/vitest';
+import { afterAll, afterEach } from 'vitest';
 
 // Vitest occasionally runs pending React scheduler callbacks after the jsdom
 // environment has been torn down (seen on macOS runners), which leaves
 // `window` undefined and trips ReactDOM's access to `window.event`. Keep a
 // minimal stub so late callbacks don't throw even if jsdom has already cleaned
 // itself up.
-if (typeof globalThis.window === 'undefined') {
+const ensureWindowStub = () => {
+  if (typeof globalThis.window !== 'undefined') {
+    return;
+  }
   (globalThis as unknown as { window: typeof globalThis & { event?: unknown } }).window =
     globalThis as typeof globalThis & { event?: unknown };
   if (typeof (globalThis as { document?: Document }).document === 'undefined') {
     // Document is rarely touched in these late callbacks, but provide a stub for safety.
     (globalThis as unknown as { document: Partial<Document> }).document = {};
+  }
+};
+
+ensureWindowStub();
+afterEach(() => {
+  ensureWindowStub();
+});
+afterAll(() => {
+  ensureWindowStub();
+});
+
+// React 19's scheduler can run callbacks after Vitest/jsdom teardown. Vitest
+// deletes `window` during teardown; re-stub it ASAP without interfering with
+// teardown (do not make it non-configurable).
+const windowStubPumpKey = '__aideon_window_stub_pump__';
+if (!(globalThis as unknown as Record<string, unknown>)[windowStubPumpKey]) {
+  (globalThis as unknown as Record<string, unknown>)[windowStubPumpKey] = true;
+  let stopped = false;
+  const pump = () => {
+    if (stopped) {
+      return;
+    }
+    ensureWindowStub();
+    const handle = setImmediate(pump);
+    (handle as unknown as { unref?: () => void }).unref?.();
+  };
+  const handle = setImmediate(pump);
+  (handle as unknown as { unref?: () => void }).unref?.();
+  afterAll(() => {
+    stopped = true;
+  });
+}
+
+if (typeof EventTarget !== 'undefined') {
+  const dispatchPatchKey = '__aideon_dispatch_event_patch__';
+  if (!(globalThis as unknown as Record<string, unknown>)[dispatchPatchKey]) {
+    (globalThis as unknown as Record<string, unknown>)[dispatchPatchKey] = true;
+    const originalDispatchEvent = EventTarget.prototype.dispatchEvent;
+    const patchedDispatchEvent = function (this: EventTarget, event?: Event) {
+      if (!(event instanceof Event)) {
+        return true;
+      }
+      return originalDispatchEvent.call(this, event);
+    };
+    Object.defineProperty(EventTarget.prototype, 'dispatchEvent', {
+      configurable: true,
+      writable: true,
+      value: patchedDispatchEvent,
+    });
+    afterAll(() => {
+      if (EventTarget.prototype.dispatchEvent === patchedDispatchEvent) {
+        Object.defineProperty(EventTarget.prototype, 'dispatchEvent', {
+          configurable: true,
+          writable: true,
+          value: originalDispatchEvent,
+        });
+      }
+    });
   }
 }
 
@@ -76,5 +138,13 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: (query: string) => ({ ...mediaQueryMock, media: query }),
+  });
+}
+
+if (typeof Element !== 'undefined' && typeof Element.prototype.scrollIntoView !== 'function') {
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    configurable: true,
+    writable: true,
+    value() {},
   });
 }

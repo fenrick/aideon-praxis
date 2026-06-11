@@ -1,60 +1,92 @@
-# Aideon Suite
+# Aideon
 
-This repository contains **Aideon Suite**, a local-first, graph-native digital twin platform that
-treats **time as a first-class dimension**. The suite is built as a set of modules that share the
-same time-first meta-model, adapter patterns, and security posture.
+<p align="center">
+  <img src="public/brand/logo-horizontal.png" alt="Aideon" width="440" />
+</p>
 
-Within the suite:
+Aideon is a **desktop-first, local-first, time-first digital-twin** application, built with
+**Tauri v2** (Rust core) and **Next.js** (React renderer). It separates **meaning**,
+**storage**, and **runtime** so the UI stays stable while the engines evolve behind typed
+boundaries.
 
-- **Aideon Praxis** is the core desktop digital twin module (React/Tauri canvas + Rust engines).
-- **Aideon Chrona** provides time-based visualisation.
-- **Aideon Metis** focuses on analytics and reasoning.
-- **Aideon Continuum** handles orchestration and automation.
-- **Aideon Mneme** owns persistence and shared DTOs.
+## What makes it different
 
-See `docs/DESIGN.md` for suite-level product and conceptual design, and `Architecture-Boundary.md`
-for code-level layering and boundaries.
+- **Time-first facts** — valid time + asserted time, Plan/Actual layers, scenario overlays.
+- **Workspace is canonical** — the portable workspace folder (append-only ops + schema-as-data
+  - content-addressed blobs) is the source of truth; the runtime database is a derived,
+    rebuildable cache.
+- **Artefact-driven UX** — views, catalogues, matrices, maps, reports, and pages, executed at
+  an explicit time and scenario.
+- **Host is the security boundary** — the renderer is untrusted; all side effects flow through
+  typed Tauri IPC. No renderer filesystem access, no local HTTP server.
 
-## Aideon Suite modules
+## Quickstart
 
-The table below lists the primary modules in this repo. See each module’s README for details.
+```bash
+pnpm install
+pnpm tauri dev      # run the app (starts the Next dev server, then the Tauri shell)
+pnpm tauri build    # build a distributable
+```
 
-| Name                   | Path                          | Responsibility                                                                              | Type           |
-| ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------------- | -------------- |
-| Aideon Desktop         | `app/AideonDesktop`           | React/Tauri desktop shell containing canvas, design system, adapters, and DTOs (flattened). | Node/React app |
-| Aideon Host            | `crates/desktop`              | Tauri desktop host exposing typed commands and capabilities.                                | Rust crate     |
-| Praxis Engine          | `crates/engine`               | Core time-aware graph/commit engine for the digital twin.                                   | Rust crate     |
-| Praxis Facade          | `crates/aideon_praxis_facade` | Facade and orchestration layer over Praxis engine and adapters.                             | Rust crate     |
-| Chrona Visualisation   | `crates/chrona`               | Temporal visualisation and `state_at`/`diff` helpers.                                       | Rust crate     |
-| Metis Analytics        | `crates/metis`                | Analytics jobs (shortest path, centrality, impact, TCO).                                    | Rust crate     |
-| Continuum Orchestrator | `crates/continuum`            | Scheduler/connectors and snapshot/layout persistence orchestration.                         | Rust crate     |
-| Mneme Core             | `crates/mneme`                | Persistence layer (SQLite/other) and shared commit/ref/snapshot DTOs                        | Rust crate     |
+Frontend-only and Rust-only workflows:
 
-For module-level internal design, see each `<module>/DESIGN.md` (where present).
+```bash
+pnpm dev            # Next dev server on :1420
+pnpm build          # static export to ./out
+pnpm typecheck      # tsc --noEmit
+pnpm test           # vitest
+pnpm run host:check # cargo check (Rust workspace)
+pnpm run host:test  # cargo test
+```
 
-## Getting started
+## Project structure
 
-For a full walkthrough (prerequisites, setup, dev workflow, and issues helpers), see
-`docs/getting-started.md`. The commands below are the most common entry points.
+```text
+.
+├── app/            # Next.js routes (App Router)
+├── src/            # renderer source — design system, workspaces, adapters, DTOs
+├── public/         # static assets (brand logos; fonts are self-hosted via @fontsource)
+├── src-tauri/      # Tauri host crate — IPC, capabilities, window/jobs, tauri.conf.json
+├── crates/         # Rust engine crates (Cargo workspace members)
+├── docs/           # numbered documentation tree (see below)
+└── tests/          # unit (vitest) + e2e / webdriver
+```
 
-### Common commands (quick reference)
+The Tauri CLI runs zero-config from the repo root: `src-tauri/` is the default crate location,
+and the frontend is wired through `frontendDist` / `devUrl` / `beforeDevCommand` in
+`src-tauri/tauri.conf.json`.
 
-- Install deps: `corepack enable && pnpm install`
-- Dev (Praxis Canvas + Tauri host): see `docs/getting-started.md` for the recommended terminal layout.
-- Lint/typecheck/test (TS): `pnpm run node:lint && pnpm run node:typecheck && pnpm run node:test`
-- Rust checks: `pnpm run host:lint && pnpm run host:check`
+## Modules
 
-See `docs/getting-started.md` and `docs/commands.md` for the full list of pnpm commands used across
-JS/TS and the Rust workspace.
+| Module    | Path                                                      | Responsibility                                                                |
+| --------- | --------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Renderer  | `app/`, `src/`                                            | React renderer, design system, workspace surfaces, IPC adapters, DTOs.        |
+| Host      | `src-tauri/`                                              | Tauri runtime, IPC, capabilities, jobs, workspace lifecycle.                  |
+| Praxis    | `crates/praxis`                                           | Metamodel, task APIs, artefact execution, integrity, analytics orchestration. |
+| Mneme     | `crates/mneme`, `crates/mneme_core`, `crates/mneme_store` | Op log, bi-temporal facts, schema-as-data, projections, embedded store.       |
+| Metis     | `crates/metis`                                            | Analytics algorithms and ranking jobs.                                        |
+| Chrona    | `crates/chrona`                                           | Time/scenario interpretation and temporal UX primitives.                      |
+| Continuum | `crates/continuum`                                        | Orchestration, scheduling, connectors (local durable executor).               |
 
-## Key docs
+Tauri is confined to `src-tauri/`; the engine crates are host-agnostic and depend only on
+each other and shared contracts (`src-tauri → crates/*`, one direction).
 
-- Suite design: `docs/DESIGN.md`
-- Architecture and layering: `Architecture-Boundary.md`
-- Coding standards: `docs/CODING_STANDARDS.md`
-- Testing strategy: `docs/testing-strategy.md`
-- Agent guidance: `AGENTS.md`
-- Roadmap: `docs/ROADMAP.md`
+## Documentation
 
-For contributing guidelines, see `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`. The license for this
-repo is described in `LICENSE`.
+Docs use a numbered tree — **start at [`docs/00-index/README.md`](docs/00-index/README.md).**
+
+- Desktop-first thesis: [`docs/03-design/DESKTOP-FIRST-WORKSPACE.md`](docs/03-design/DESKTOP-FIRST-WORKSPACE.md)
+- Architecture decisions: [`docs/06-adrs/ADRS.md`](docs/06-adrs/ADRS.md) — the canonical
+  authority is the portable workspace, not a database file
+  ([ADR-0001](docs/06-adrs/ADR-0001-workspace-is-canonical-authority.md)).
+- Boundaries: [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md)
+  and the [module dependency map](docs/01-architecture/MODULE-DEPENDENCY-MAP.md).
+- Design spine: [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md) ·
+  UX contract: [`docs/03-design/UX-DESIGN.md`](docs/03-design/UX-DESIGN.md).
+- Per-module design under [`docs/05-modules/`](docs/05-modules/), with deeper notes in each
+  `crates/*/DESIGN.md`.
+- Contracts: [`docs/04-contracts/`](docs/04-contracts/) — typed IPC, temporal & scenario
+  context, projection & invalidation, accepted-work & events.
+
+See [`docs/02-standards/GETTING-STARTED.md`](docs/02-standards/GETTING-STARTED.md) for setup
+and [`CONTRIBUTING.md`](CONTRIBUTING.md) for contribution guidelines.

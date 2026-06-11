@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "events": [
+    {
+      "name": "mneme_change_event",
+      "payloadKeys": [
+        "partition",
+        "sequence",
+        "op_id",
+        "asserted_at",
+        "entity_id",
+        "change_kind",
+        "payload"
+      ]
+    },
+    {
+      "name": "setup_backend_ready",
+      "payloadKeys": []
+    },
+    {
+      "name": "setup_failed",
+      "payloadKeys": ["code", "message"]
+    },
+    {
+      "name": "setup_frontend_ready_ack",
+      "payloadKeys": []
+    },
+    {
+      "name": "setup_progress",
+      "payloadKeys": ["phase"]
+    },
+    {
+      "name": "setup_seed_summary",
+      "payloadKeys": ["datasetVersion", "metamodelVersion"]
+    },
+    {
+      "name": "shell_command",
+      "payloadKeys": ["command", "payload"]
+    }
+  ]
+}

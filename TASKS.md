@@ -4,7 +4,7 @@ Before starting, the agent should assume:
 
 - Tauri + React + shadcn/ui are already wired in the repo.
 - `app/PraxisCanvas` exists and currently behaves like a standalone app (has its own header/layout).
-- `app/AideonDesktop/src/design-system` (or similar) exists and is where shadcn components are proxied.
+- `src/design-system` (or similar) exists and is where shadcn components are proxied.
 
 If any of these are missing, the agent should:
 
@@ -21,7 +21,7 @@ If any of these are missing, the agent should:
 
 **Docs**
 
-1. ✅ Create `app/AideonDesktop/DESIGN.md` (if it does not exist) with:
+1. ✅ Create `DESIGN.md` (if it does not exist) with:
    - Purpose: Aideon Desktop is the main UX shell for the desktop product.
    - Regions:
      - Top toolbar (global actions, workspace switches).
@@ -48,7 +48,7 @@ If any of these are missing, the agent should:
 
 **Definition of done**
 
-- A new agent can read `app/AideonDesktop/DESIGN.md` + `AGENTS.md` and understand:
+- A new agent can read `DESIGN.md` + `AGENTS.md` and understand:
   - Aideon Desktop is the host shell.
   - Other UX modules (PraxisCanvas, future tools) live inside it.
 
@@ -62,7 +62,7 @@ If any of these are missing, the agent should:
 
 **Docs**
 
-1. ✅ Update `app/AideonDesktop/src/design-system/DESIGN.md`:
+1. ✅ Update `src/design-system/DESIGN.md`:
    - Add “Desktop shell primitives” section listing:
      - `Sidebar` (navigation + tree).
      - `Resizable` (pane splitting).
@@ -82,10 +82,10 @@ If any of these are missing, the agent should:
 1. ✅ Use shadcn CLI to add components (actual commands depend on your setup, but conceptually):
    - `sidebar`, `resizable`, `menubar`, `scroll-area`, `card`, `form`.
 
-2. ✅ In `app/AideonDesktop/src/design-system/src` create proxied components, e.g.:
+2. ✅ In `src/design-system/src` create proxied components, e.g.:
 
    ```tsx
-   // app/AideonDesktop/src/design-system/src/desktop-shell/sidebar.tsx
+   // src/design-system/src/desktop-shell/sidebar.tsx
    export {
      Sidebar,
      SidebarProvider,
@@ -127,7 +127,7 @@ If any of these are missing, the agent should:
 
 **Docs**
 
-1. ✅ Extend `app/AideonDesktop/DESIGN.md` with:
+1. ✅ Extend `DESIGN.md` with:
    - A simple ASCII/diagram of layout:
      - `[Menubar/Toolbar]`
      - `[Sidebar][Main][Properties]` with resizable separators.
@@ -139,7 +139,7 @@ If any of these are missing, the agent should:
 2. ✅ In the design system, implement `DesktopShell`:
 
    ```tsx
-   // app/AideonDesktop/src/design-system/src/desktop-shell/DesktopShell.tsx
+   // src/design-system/src/desktop-shell/DesktopShell.tsx
    import {
      SidebarProvider,
      Sidebar,
@@ -183,7 +183,7 @@ If any of these are missing, the agent should:
 
 **Tests**
 
-- ✅ In `app/AideonDesktop/src/design-system` tests:
+- ✅ In `src/design-system` tests:
   - Render `DesktopShell` with dummy slot content (e.g. “Tree”, “Toolbar”, etc.).
   - Assert that:
     - It renders without crashing.
@@ -205,17 +205,17 @@ If any of these are missing, the agent should:
 
 **Docs**
 
-1. ✅ Update `app/AideonDesktop/DESIGN.md`:
+1. ✅ Update `DESIGN.md`:
    - Describe the main entry component, e.g. `AideonDesktopRoot`.
    - Clarify: Tauri points at Aideon Desktop index.html; PraxisCanvas no longer owns the window.
 
 **Code**
 
-2. ✅ In `app/AideonDesktop/src` create:
+2. ✅ In `src` create:
 
    ```tsx
-   // app/AideonDesktop/src/root.tsx
-   import { DesktopShell } from 'app/AideonDesktop/src/design-system';
+   // src/root.tsx
+   import { DesktopShell } from 'src/design-system';
 
    export function AideonDesktopRoot() {
      return (
@@ -313,7 +313,7 @@ If any of these are missing, the agent should:
 
 **Docs**
 
-1. Extend `app/AideonDesktop/DESIGN.md`:
+1. Extend `DESIGN.md`:
    - Describe the tree’s purpose (projects/workspaces/nodes).
    - Specify that it uses the design system’s tree view (from shadcn) inside the Sidebar.
 
@@ -322,7 +322,7 @@ If any of these are missing, the agent should:
 2. ✅ Add a `DesktopTree` component in Aideon Desktop:
 
    ```tsx
-   // app/AideonDesktop/src/DesktopTree.tsx
+   // src/DesktopTree.tsx
    export function DesktopTree() {
      // For now: hard-coded nodes
      const items = [
@@ -369,7 +369,7 @@ If any of these are missing, the agent should:
 
    - Clarify the shape of selected entities (nodes, edges, timelines).
 
-2. Update `app/AideonDesktop/DESIGN.md`:
+2. Update `DESIGN.md`:
    - Define the contract:
      - Aideon Desktop subscribes to selection from PraxisCanvas.
      - It passes selection into a `PropertiesPanel` component.

@@ -1,0 +1,35 @@
+@import './design-system/styles/globals.css';
+
+/* Self-hosted variable fonts (offline-first; no runtime CDN). */
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+@import '@fontsource-variable/newsreader';
+
+/*
+ * Font roles for the Aideon design language:
+ *   --font-sans      Geist        — shell and surface UI text
+ *   --font-editorial Newsreader   — artefact titles and editorial / header text
+ *   --font-heading   = editorial  — the shadcn preset's heading utility resolves to Newsreader
+ *   --font-mono      Geist Mono   — code-like and token displays
+ *
+ * globals.css owns the base layer (border, shell background, antialiasing, selection);
+ * this file only sets font roles and color-scheme.
+ */
+:root {
+  --font-sans:
+    'Geist Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-editorial: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
+  --font-heading: var(--font-editorial);
+  --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+}

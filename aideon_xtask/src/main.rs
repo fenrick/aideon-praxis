@@ -3,15 +3,15 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use aideon_engine::{
-    BaselineDataset, GraphSnapshot, MetaModelRegistry, PraxisEngine, PraxisEngineConfig,
-};
-use aideon_mneme::temporal::{ChangeSet, CommitSummary};
-use aideon_mneme::{
-    MemoryStore, PersistedCommit, SqliteDb, Store, create_datastore, datastore_path,
+use aideon_mneme::{create_datastore, datastore_path};
+use aideon_praxis::temporal::{ChangeSet, CommitSummary};
+use aideon_praxis::{
+    BaselineDataset, GraphSnapshot, MemoryStore, MetaModelRegistry, PersistedCommit, PraxisEngine,
+    PraxisEngineConfig, SqliteDb, Store,
 };
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
+use serde::{Deserialize, Serialize};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,6 +20,9 @@ async fn main() -> Result<()> {
         Command::MigrateState(args) => migrate_state(args).await,
         Command::ImportDataset(args) => import_dataset(args).await,
         Command::Health(args) => check_health(args).await,
+        Command::IpcManifest(args) => export_ipc_manifest(args).await,
+        Command::EventManifest(args) => export_event_manifest(args).await,
+        Command::ShellCommandManifest(args) => export_shell_command_manifest(args).await,
     }
 }
 
@@ -27,7 +30,7 @@ async fn main() -> Result<()> {
 #[command(
     author,
     version,
-    about = "Developer utilities for the Aideon Praxis repo"
+    about = "Developer utilities for the Aideon Desktop repo"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -42,6 +45,12 @@ enum Command {
     ImportDataset(ImportDatasetArgs),
     /// Validate datastore integrity by scanning commits, heads, and snapshots.
     Health(HealthArgs),
+    /// Generate a manifest of host IPC command names (for contract tests).
+    IpcManifest(IpcManifestArgs),
+    /// Generate a manifest of host→renderer event names (for contract tests).
+    EventManifest(EventManifestArgs),
+    /// Generate a manifest of host shell command ids (for contract tests).
+    ShellCommandManifest(ShellCommandManifestArgs),
 }
 
 #[derive(Parser)]
@@ -84,6 +93,361 @@ struct HealthArgs {
     /// Reduce output to errors only.
     #[arg(long, default_value_t = false)]
     quiet: bool,
+}
+
+#[derive(Parser)]
+struct IpcManifestArgs {
+    /// Path to write the manifest JSON to (relative to repo root by default).
+    #[arg(long, default_value = "docs/contracts/ipc-manifest.json")]
+    out: PathBuf,
+}
+
+#[derive(Parser)]
+struct EventManifestArgs {
+    /// Path to write the manifest JSON to (relative to repo root by default).
+    #[arg(long, default_value = "docs/contracts/event-manifest.json")]
+    out: PathBuf,
+}
+
+#[derive(Parser)]
+struct ShellCommandManifestArgs {
+    /// Path to write the manifest JSON to (relative to repo root by default).
+    #[arg(long, default_value = "docs/contracts/shell-command-manifest.json")]
+    out: PathBuf,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct IpcManifest {
+    schema_version: u32,
+    commands: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct EventManifest {
+    schema_version: u32,
+    events: Vec<EventSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct EventSpec {
+    name: String,
+    payload_keys: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct ShellCommandManifest {
+    schema_version: u32,
+    commands: Vec<ShellCommandSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct ShellCommandSpec {
+    id: String,
+    payload_keys: Vec<String>,
+}
+
+fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("repo root")
+        .to_path_buf()
+}
+
+fn collect_rs_files(dir: &PathBuf, out: &mut Vec<PathBuf>) -> Result<()> {
+    for entry in fs::read_dir(dir).with_context(|| format!("read_dir {}", dir.display()))? {
+        let entry = entry?;
+        let path = entry.path();
+        let metadata = entry.metadata()?;
+        if metadata.is_dir() {
+            collect_rs_files(&path, out)?;
+            continue;
+        }
+        if metadata.is_file() && path.extension().is_some_and(|ext| ext == "rs") {
+            out.push(path);
+        }
+    }
+    Ok(())
+}
+
+fn extract_tauri_commands(source: &str) -> Vec<String> {
+    let mut found = Vec::new();
+    let mut pending_command_attr = false;
+    let mut in_attr = false;
+    let mut attr_buffer = String::new();
+
+    for line in source.lines() {
+        let trimmed = line.trim();
+
+        if in_attr {
+            attr_buffer.push_str(trimmed);
+            if trimmed.contains(']') {
+                in_attr = false;
+                pending_command_attr = attr_buffer.contains("#[tauri::command");
+                attr_buffer.clear();
+            }
+            continue;
+        }
+
+        if trimmed.contains("#[tauri::command") {
+            if trimmed.contains(']') {
+                pending_command_attr = true;
+            } else {
+                in_attr = true;
+                attr_buffer.push_str(trimmed);
+            }
+            continue;
+        }
+
+        if pending_command_attr
+            && let Some(name) = trimmed
+                .split_whitespace()
+                .skip_while(|segment| *segment != "fn")
+                .nth(1)
+        {
+            let name = name.trim_start_matches(|c: char| !c.is_alphabetic() && c != '_');
+            let name = name
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect::<String>();
+            if !name.is_empty() {
+                found.push(name);
+                pending_command_attr = false;
+            }
+        }
+    }
+
+    found
+}
+
+fn build_ipc_manifest() -> Result<IpcManifest> {
+    let mut files = Vec::new();
+    let desktop_src = repo_root().join("src-tauri/src");
+    collect_rs_files(&desktop_src, &mut files)?;
+
+    let mut commands = std::collections::BTreeSet::<String>::new();
+    for path in files {
+        let contents =
+            fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+        for command in extract_tauri_commands(&contents) {
+            if is_contract_command(&command) {
+                commands.insert(command);
+            }
+        }
+    }
+
+    Ok(IpcManifest {
+        schema_version: 2,
+        commands: commands.into_iter().collect(),
+    })
+}
+
+async fn export_ipc_manifest(args: IpcManifestArgs) -> Result<()> {
+    let repo = repo_root();
+    let out = if args.out.is_absolute() {
+        args.out
+    } else {
+        repo.join(args.out)
+    };
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("create_dir_all {}", parent.display()))?;
+    }
+    let manifest = build_ipc_manifest()?;
+    let json = serde_json::to_string_pretty(&manifest)?;
+    fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
+    println!("Wrote IPC manifest to {}", out.display());
+    Ok(())
+}
+
+fn extract_event_names_from_contracts_rs(source: &str) -> Vec<String> {
+    let mut found = Vec::new();
+
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("pub const EVENT_") {
+            continue;
+        }
+        if let Some((_, rest)) = trimmed.split_once('"')
+            && let Some((event, _)) = rest.split_once('"')
+            && event
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        {
+            found.push(event.to_string());
+        }
+    }
+
+    found
+}
+
+fn payload_keys_for_event(name: &str) -> Vec<String> {
+    match name {
+        "shell_command" => vec!["command", "payload"]
+            .into_iter()
+            .map(String::from)
+            .collect(),
+        "mneme_change_event" => vec![
+            "partition",
+            "sequence",
+            "op_id",
+            "asserted_at",
+            "entity_id",
+            "change_kind",
+            "payload",
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect(),
+        "setup_backend_ready" | "setup_frontend_ready_ack" => Vec::new(),
+        "setup_progress" => vec!["phase"].into_iter().map(String::from).collect(),
+        "setup_failed" => vec!["code", "message"]
+            .into_iter()
+            .map(String::from)
+            .collect(),
+        "setup_seed_summary" => vec!["datasetVersion", "metamodelVersion"]
+            .into_iter()
+            .map(String::from)
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
+fn build_event_manifest() -> Result<EventManifest> {
+    let repo = repo_root();
+    let contracts = repo.join("src-tauri/src/contracts.rs");
+    let raw =
+        fs::read_to_string(&contracts).with_context(|| format!("read {}", contracts.display()))?;
+
+    let mut events = std::collections::BTreeSet::<String>::new();
+    for name in extract_event_names_from_contracts_rs(&raw) {
+        events.insert(name);
+    }
+
+    let events = events
+        .into_iter()
+        .map(|name| EventSpec {
+            payload_keys: payload_keys_for_event(&name),
+            name,
+        })
+        .collect();
+
+    Ok(EventManifest {
+        schema_version: 1,
+        events,
+    })
+}
+
+async fn export_event_manifest(args: EventManifestArgs) -> Result<()> {
+    let repo = repo_root();
+    let out = if args.out.is_absolute() {
+        args.out
+    } else {
+        repo.join(args.out)
+    };
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("create_dir_all {}", parent.display()))?;
+    }
+    let manifest = build_event_manifest()?;
+    let json = serde_json::to_string_pretty(&manifest)?;
+    fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
+    println!("Wrote event manifest to {}", out.display());
+    Ok(())
+}
+
+fn extract_shell_command_ids_from_source(source: &str) -> Vec<String> {
+    let mut found = Vec::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("pub const SHELL_COMMAND_") {
+            continue;
+        }
+        if let Some((_, rest)) = trimmed.split_once('"')
+            && let Some((id, _)) = rest.split_once('"')
+            && id
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        {
+            found.push(id.to_string());
+        }
+    }
+    found
+}
+
+fn payload_keys_for_shell_command(id: &str) -> Vec<String> {
+    match id {
+        "file_open" | "file_save_as" => vec!["path".to_string()],
+        _ => Vec::new(),
+    }
+}
+
+fn build_shell_command_manifest() -> Result<ShellCommandManifest> {
+    let repo = repo_root();
+    let src = repo.join("src-tauri/src/shell_commands.rs");
+    let raw = fs::read_to_string(&src).with_context(|| format!("read {}", src.display()))?;
+
+    let mut ids = std::collections::BTreeSet::<String>::new();
+    for id in extract_shell_command_ids_from_source(&raw) {
+        ids.insert(id);
+    }
+
+    let commands = ids
+        .into_iter()
+        .map(|id| ShellCommandSpec {
+            payload_keys: payload_keys_for_shell_command(&id),
+            id,
+        })
+        .collect();
+
+    Ok(ShellCommandManifest {
+        schema_version: 1,
+        commands,
+    })
+}
+
+async fn export_shell_command_manifest(args: ShellCommandManifestArgs) -> Result<()> {
+    let repo = repo_root();
+    let out = if args.out.is_absolute() {
+        args.out
+    } else {
+        repo.join(args.out)
+    };
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("create_dir_all {}", parent.display()))?;
+    }
+    let manifest = build_shell_command_manifest()?;
+    let json = serde_json::to_string_pretty(&manifest)?;
+    fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
+    println!("Wrote shell command manifest to {}", out.display());
+    Ok(())
+}
+
+fn is_contract_command(command: &str) -> bool {
+    const PREFIXES: [&str; 16] = [
+        "chrona_temporal_",
+        "mneme_store_",
+        "praxis_artefact_",
+        "praxis_canvas_",
+        "praxis_graph_layout_",
+        "praxis_metamodel_",
+        "praxis_scenario_",
+        "praxis_task_",
+        "system_setup_",
+        "system_window_",
+        "system_factory_",
+        "system_worker_",
+        "system_logging_",
+        "system_metrics_",
+        "workspace_projects_",
+        "workspace_templates_",
+    ];
+    PREFIXES.iter().any(|prefix| command.starts_with(prefix))
 }
 
 async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
@@ -168,6 +532,262 @@ async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
         args.output.display()
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn cli_parses_health_defaults() {
+        let cli = Cli::parse_from(["xtask", "health"]);
+        match cli.command {
+            Command::Health(args) => {
+                assert_eq!(args.datastore, PathBuf::from(".praxis"));
+                assert!(args.branch.is_none());
+                assert!(!args.quiet);
+            }
+            _ => panic!("expected health command"),
+        }
+    }
+
+    #[test]
+    fn cli_parses_import_dataset_flags() {
+        let cli = Cli::parse_from([
+            "xtask",
+            "import-dataset",
+            "--dataset",
+            "path/to/data.yaml",
+            "--datastore",
+            "/tmp/praxis",
+            "--dry-run",
+            "--force",
+        ]);
+        match cli.command {
+            Command::ImportDataset(args) => {
+                assert_eq!(args.dataset, PathBuf::from("path/to/data.yaml"));
+                assert_eq!(args.datastore, PathBuf::from("/tmp/praxis"));
+                assert!(args.dry_run);
+                assert!(args.force);
+            }
+            _ => panic!("expected import-dataset command"),
+        }
+    }
+
+    #[test]
+    fn ipc_manifest_is_deterministic_and_checked_in() {
+        let repo = repo_root();
+        let manifest = build_ipc_manifest().expect("build manifest");
+        let path = repo.join("docs/contracts/ipc-manifest.json");
+        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run `cargo run -p aideon_xtask -- ipc-manifest` to generate it",
+                path.display()
+            )
+        });
+        let on_disk: IpcManifest = serde_json::from_str(&raw).expect("parse ipc-manifest.json");
+        assert_eq!(
+            on_disk, manifest,
+            "ipc-manifest.json drifted; rerun `cargo run -p aideon_xtask -- ipc-manifest`"
+        );
+    }
+
+    #[test]
+    fn event_manifest_is_deterministic_and_checked_in() {
+        let repo = repo_root();
+        let manifest = build_event_manifest().expect("build manifest");
+        let path = repo.join("docs/contracts/event-manifest.json");
+        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run `cargo run -p aideon_xtask -- event-manifest` to generate it",
+                path.display()
+            )
+        });
+        let on_disk: EventManifest = serde_json::from_str(&raw).expect("parse event-manifest.json");
+        assert_eq!(
+            on_disk, manifest,
+            "event-manifest.json drifted; rerun `cargo run -p aideon_xtask -- event-manifest`"
+        );
+    }
+
+    #[test]
+    fn shell_command_manifest_is_deterministic_and_checked_in() {
+        let repo = repo_root();
+        let manifest = build_shell_command_manifest().expect("build manifest");
+        let path = repo.join("docs/contracts/shell-command-manifest.json");
+        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run `cargo run -p aideon_xtask -- shell-command-manifest` to generate it",
+                path.display()
+            )
+        });
+        let on_disk: ShellCommandManifest =
+            serde_json::from_str(&raw).expect("parse shell-command-manifest.json");
+        assert_eq!(
+            on_disk, manifest,
+            "shell-command-manifest.json drifted; rerun `cargo run -p aideon_xtask -- shell-command-manifest`"
+        );
+    }
+
+    #[test]
+    fn extract_tauri_commands_handles_single_and_multiline_attributes() {
+        let source = r#"
+            #[tauri::command]
+            pub async fn demo() {}
+
+            #[tauri::command(
+              async,
+            )]
+            pub async fn demo2() {}
+
+            #[tauri::command]
+            pub async fn no_rename() {}
+        "#;
+        let mut commands = extract_tauri_commands(source);
+        commands.sort();
+        assert_eq!(
+            commands,
+            vec![
+                "demo".to_string(),
+                "demo2".to_string(),
+                "no_rename".to_string()
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn export_ipc_manifest_writes_json_file() {
+        let dir = tempdir().expect("tempdir");
+        let out = dir.path().join("ipc-manifest.json");
+        export_ipc_manifest(IpcManifestArgs { out: out.clone() })
+            .await
+            .expect("export manifest");
+        let raw = fs::read_to_string(&out).expect("read manifest");
+        let manifest: IpcManifest = serde_json::from_str(&raw).expect("parse manifest");
+        assert_eq!(manifest.schema_version, 2);
+        assert!(!manifest.commands.is_empty());
+    }
+
+    #[tokio::test]
+    async fn export_event_manifest_writes_json_file() {
+        let dir = tempdir().expect("tempdir");
+        let out = dir.path().join("event-manifest.json");
+        export_event_manifest(EventManifestArgs { out: out.clone() })
+            .await
+            .expect("export manifest");
+        let raw = fs::read_to_string(&out).expect("read manifest");
+        let manifest: EventManifest = serde_json::from_str(&raw).expect("parse manifest");
+        assert_eq!(manifest.schema_version, 1);
+        assert!(!manifest.events.is_empty());
+    }
+
+    #[tokio::test]
+    async fn export_shell_command_manifest_writes_json_file() {
+        let dir = tempdir().expect("tempdir");
+        let out = dir.path().join("shell-command-manifest.json");
+        export_shell_command_manifest(ShellCommandManifestArgs { out: out.clone() })
+            .await
+            .expect("export manifest");
+        let raw = fs::read_to_string(&out).expect("read manifest");
+        let manifest: ShellCommandManifest = serde_json::from_str(&raw).expect("parse manifest");
+        assert_eq!(manifest.schema_version, 1);
+        assert!(!manifest.commands.is_empty());
+    }
+
+    #[tokio::test]
+    async fn migrate_state_creates_sqlite_store_and_sets_main_head() {
+        let dir = tempdir().expect("tempdir");
+        let input = dir.path().join("legacy.json");
+        let output = dir.path().join("out");
+
+        let legacy = serde_json::json!({
+            "commits": [
+                {
+                    "summary": {
+                        "id": "c1",
+                        "parents": [],
+                        "branch": "main",
+                        "author": null,
+                        "time": null,
+                        "message": "init",
+                        "tags": [],
+                        "changeCount": 0
+                    },
+                    "change_set": {
+                        "nodeCreates": [],
+                        "nodeUpdates": [],
+                        "nodeDeletes": [],
+                        "edgeCreates": [],
+                        "edgeUpdates": [],
+                        "edgeDeletes": []
+                    }
+                }
+            ],
+            "branches": []
+        });
+        fs::write(&input, serde_json::to_vec_pretty(&legacy).expect("encode"))
+            .expect("write legacy");
+
+        migrate_state(MigrateStateArgs {
+            input,
+            output: output.clone(),
+            force: false,
+        })
+        .await
+        .expect("migrate state");
+
+        let db_path = output.join("praxis.sqlite");
+        assert!(db_path.exists());
+    }
+
+    #[tokio::test]
+    async fn migrate_state_rejects_existing_output_without_force() {
+        let dir = tempdir().expect("tempdir");
+        let input = dir.path().join("legacy.json");
+        fs::write(&input, "{\"commits\":[],\"branches\":[]}").expect("write legacy");
+
+        let output = dir.path().join("out");
+        fs::create_dir_all(&output).expect("mkdir");
+        fs::write(output.join("praxis.sqlite"), "").expect("touch sqlite");
+
+        let err = migrate_state(MigrateStateArgs {
+            input,
+            output,
+            force: false,
+        })
+        .await
+        .expect_err("should error");
+        assert!(err.to_string().contains("rerun with --force"));
+    }
+
+    #[tokio::test]
+    async fn import_dataset_dry_run_uses_embedded_dataset_when_missing() {
+        let dir = tempdir().expect("tempdir");
+        let datastore = dir.path().join(".praxis");
+        import_dataset(ImportDatasetArgs {
+            dataset: dir.path().join("missing.yaml"),
+            datastore: datastore.clone(),
+            dry_run: true,
+            force: false,
+        })
+        .await
+        .expect("dry-run import");
+        assert!(!datastore.exists());
+    }
+
+    #[tokio::test]
+    async fn health_check_errors_when_branch_filter_matches_none() {
+        let dir = tempdir().expect("tempdir");
+        let err = check_health(HealthArgs {
+            datastore: dir.path().join(".praxis"),
+            branch: Some("does-not-exist".to_string()),
+            quiet: true,
+        })
+        .await
+        .expect_err("missing datastore");
+        assert!(!err.to_string().is_empty());
+    }
 }
 
 async fn import_dataset(args: ImportDatasetArgs) -> Result<()> {

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "commands": [
+    {
+      "id": "file_open",
+      "payloadKeys": ["path"]
+    },
+    {
+      "id": "file_print",
+      "payloadKeys": []
+    },
+    {
+      "id": "file_save_as",
+      "payloadKeys": ["path"]
+    },
+    {
+      "id": "open_command_palette",
+      "payloadKeys": []
+    },
+    {
+      "id": "toggle_inspector",
+      "payloadKeys": []
+    },
+    {
+      "id": "toggle_navigation",
+      "payloadKeys": []
+    }
+  ]
+}
