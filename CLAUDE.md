@@ -267,7 +267,6 @@ described in `docs/03-design/UX-DESIGN.md`, `docs/03-design/DESIGN-SYSTEM.md`, a
 - Refactor code to satisfy linters and static analysis rather than suppressing warnings.
 - Use check-only hooks locally; CI enforces the same rules.
 - Coverage targets (Node/TS and Rust): Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code; overall should trend upward.
-- Sonar: `sonar.new_code.referenceBranch=main` configured; CI waits for the Sonar Quality Gate before merging.
 - Keep code paths single and explicit. Desktop mode runs engines in-process. Host calls engines via Rust traits. No sockets.
   - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime. For React widgets, add Vitest + Testing Library smoke tests alongside the new runtime as soon as it exists.
 
@@ -338,8 +337,7 @@ The current worker jobs and time APIs are defined by engine contracts and module
 - Lint + tests pass for TS and Rust on macOS/Windows/Linux.
 - For large algorithms, mark perf tests as optional but runnable locally; capture metrics in logs.
 - Coverage gates: verify Node/TS via `pnpm run node:test:coverage` and Rust via
-  `cargo test --all --all-targets` with coverage tooling when touching engine logic. Sonar Quality
-  Gate must pass.
+  `cargo test --all --all-targets` with coverage tooling when touching engine logic.
 
 ### Commit Hygiene
 
