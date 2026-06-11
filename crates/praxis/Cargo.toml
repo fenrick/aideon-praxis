@@ -9,18 +9,18 @@ license = "MIT"
 aideon_continuum = { path = "../continuum" }
 aideon_metis = { path = "../metis" }
 aideon_mneme = { path = "../mneme" }
-async-recursion = "1.1"
-async-trait = "0.1"
-blake3 = "1"
-rusqlite = "0.32"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-serde_yaml = "0.9"
-thiserror = "2"
-time = { version = "0.3", features = ["formatting", "parsing"] }
-tokio = { version = "1", features = ["sync"] }
-futures = "0.3"
+async-recursion = "1.1.1"
+async-trait = "0.1.89"
+blake3 = "1.8.5"
+rusqlite = "0.32.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+serde_yaml = "0.9.34"
+thiserror = "2.0.18"
+time = { version = "0.3.47", features = ["formatting", "parsing"] }
+tokio = { version = "1.52.3", features = ["sync"] }
+futures = "0.3.32"
 
 [dev-dependencies]
-tempfile = "3.24"
-tokio = { version = "1", features = ["macros", "rt"] }
+tempfile = "3.27"
+tokio = { version = "1.52.3", features = ["macros", "rt"] }

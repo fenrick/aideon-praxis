@@ -7,29 +7,29 @@ build = "build.rs"
 
 [dependencies]
 aideon_mneme_core = { path = "../mneme_core" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-thiserror = "2"
-async-trait = "0.1"
-sea-orm = { version = "2.0.0-rc.27", features = [
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+thiserror = "2.0.18"
+async-trait = "0.1.89"
+sea-orm = { version = "2.0.0-rc.40", features = [
   "macros",
   "runtime-tokio-rustls",
   "sqlx-sqlite",
   "sqlx-postgres",
   "sqlx-mysql",
 ] }
-sea-orm-migration = { version = "2.0.0-rc.27", features = [
+sea-orm-migration = { version = "2.0.0-rc.40", features = [
   "runtime-tokio-rustls",
   "sqlx-sqlite",
   "sqlx-postgres",
   "sqlx-mysql",
 ] }
-blake3 = "1"
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-unicode-normalization = "0.1"
-log = "0.4"
-base64 = "0.22"
-uuid = { version = "1", features = ["v4"] }
+blake3 = "1.8.5"
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros"] }
+unicode-normalization = "0.1.25"
+log = "0.4.32"
+base64 = "0.22.1"
+uuid = { version = "1.23.3", features = ["v4"] }
 
 [dev-dependencies]
-tempfile = "3.24"
+tempfile = "3.27"
