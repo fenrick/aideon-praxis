@@ -139,3 +139,17 @@ _Avoid_: snapshot (a result is derived from a snapshot, not equal to it); artefa
 **Form**:
 The presentation shape of an artefact result — how the result is structured and rendered. A controlled but extensible set: view, catalogue, matrix, map, report, page. A form shapes the result contract (a matrix has rows and columns; a map has nodes and relationships; a report has sections) but does not change the underlying twin, viewpoint, facts, or artefact family.
 _Avoid_: artefact type (Type means the metamodel kind of an entity/relationship); diagram (only one form among several); treating form as the business question (that belongs to the Artefact and artefact family).
+
+## Signals and quality
+
+**Signal**:
+A system-generated prompt for human judgement over the twin — a **warning**, **ranking**, **recommendation**, or **review task** (the four families). Each declares six required elements: signal type, affected scope, why it fired, strength (confidence), viewpoint context, and valid actions. A signal never commits truth, mutates an artefact, or resolves itself: acting on it is a **new operation** that records an **Asserted** claim attributed to the person, with the signal kept as provenance. Distinct from accepted-work status, validation errors, provenance notices, and assistant chat.
+_Avoid_: alert, notification (signal is the canonical term — not one undifferentiated alert layer); warning (that is one family, not the umbrella).
+
+**Confidence**:
+The unified quality scale qualifying how much a result, signal, or claim can be relied upon — High (≥ 0.85), Medium (0.60–0.85), Low (0.30–0.60), Indicative (< 0.30); ADR-0021. The same scale a fact's confidence and a signal's strength use; always bounded, never unqualified certainty.
+_Avoid_: integrity (that scores model content, not reliance — see Integrity); certainty, trust score (confidence is the canonical term).
+
+**Integrity**:
+How well-founded model **content** is — an entity, relationship, artefact result, or subgraph — across five dimensions (completeness, connectivity, recency, consistency, corroboration), computed by Praxis; ADR-0020. It scores the content itself, not the output about it.
+_Avoid_: confidence (that qualifies a result/signal; integrity qualifies the content — see Confidence); quality, health (too vague).
