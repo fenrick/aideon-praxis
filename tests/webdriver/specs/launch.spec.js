@@ -201,14 +201,13 @@ describe('Aideon Praxis desktop', () => {
     await expect(isMainPath(pathname)).toBe(true);
   });
 
-  it('opens auxiliary windows (settings/about/status/styleguide)', async () => {
+  it('opens production auxiliary windows (settings/about/status)', async () => {
     await ensureMainWindow();
 
     const windowsToOpen = [
       { window: 'settings', path: '/settings', text: 'Settings' },
       { window: 'about', path: '/about', text: 'Aideon' },
       { window: 'status', path: '/status', text: 'Host status' },
-      { window: 'styleguide', path: '/styleguide', text: 'Styleguide' },
     ];
 
     for (const entry of windowsToOpen) {
@@ -229,5 +228,48 @@ describe('Aideon Praxis desktop', () => {
         { timeout: 30000, timeoutMsg: `Window ${entry.path} did not appear` },
       );
     }
+  });
+
+  // The styleguide window is gated behind `cfg!(debug_assertions)` in the host
+  // (see src-tauri/src/windows.rs::open_styleguide). The WebDriver suite runs the
+  // release binary by default, so it must reject the request; only a debug build
+  // opens the window. Assert the active behaviour for the build under test.
+  it('gates the styleguide window to development builds', async () => {
+    await ensureMainWindow();
+    const isDebugBuild = (process.env.TAURI_PROFILE ?? 'release') === 'debug';
+
+    if (isDebugBuild) {
+      await invokeWithFallback(
+        SYSTEM_COMMANDS.windowOpen,
+        { window: 'styleguide' },
+        LEGACY_COMMANDS.openWindow('styleguide'),
+        {},
+      );
+      await browser.waitUntil(
+        async () => {
+          const found = await findWindow(
+            ({ pathname, text }) => pathname.includes('/styleguide') || text.includes('Styleguide'),
+          );
+          return Boolean(found?.handle);
+        },
+        { timeout: 30000, timeoutMsg: 'Styleguide window did not appear in debug build' },
+      );
+      return;
+    }
+
+    let rejection;
+    try {
+      await invokeWithFallback(
+        SYSTEM_COMMANDS.windowOpen,
+        { window: 'styleguide' },
+        LEGACY_COMMANDS.openWindow('styleguide'),
+        {},
+      );
+    } catch (error) {
+      rejection = error instanceof Error ? error.message : String(error);
+    }
+
+    await expect(rejection).toBeDefined();
+    await expect(/development builds/i.test(rejection ?? '')).toBe(true);
   });
 });
