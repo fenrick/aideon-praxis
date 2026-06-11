@@ -1,124 +1,88 @@
-# Continuum — Orchestration, Scheduling & Connectors
+# Continuum
 
-Continuum is the local durable executor: it owns orchestration, scheduling, and connector workflows, keeping all scheduled and triggered work visible, governed, and replayable under the shared accepted-work language.
+The local durable executor for Aideon Desktop. Continuum runs the multi-step, cross-engine work the product schedules or triggers — connector ingest, refresh pipelines, scheduled recompute — and keeps every run visible, governed, and replayable through a durable run ledger held in the workspace. There is no external orchestration service; the executor is in-process and workspace-backed, so work survives restarts and every run can answer what it did, why, what it wrote, what failed, and what is safe to retry.
 
-## What Continuum owns
+Continuum is named for continuous, durable execution over time. It is where the work that other modules _decide on_ actually _gets done_: it executes the work that the planned **Kairos** plans ([ADR-0028](../../06-adrs/ADR-0028-investment-and-portfolio-planning-kairos.md)) and the ingestion that the planned **Skopos** schedules ([DOCUMENTATION-STANDARD §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
-| Area                       | Responsibility                                                       |
-| -------------------------- | -------------------------------------------------------------------- |
-| Scheduling                 | Timed and recurring work, refresh policies, bounded retry windows    |
-| Triggers                   | Event-driven workflow invocation from host or connector events       |
-| Connector orchestration    | Adapter-driven ingest flows (CMDB, file imports, snapshot pulls)     |
-| Workflow execution         | Multi-step, cross-engine composition with step-level progress        |
-| Run ledger                 | Durable record of runs, steps, and events persisted in the workspace |
-| Snapshot persistence       | `SnapshotStore` abstraction and `FileSnapshotStore` implementation   |
-| Provenance & replayability | Structured run inputs, op/fact lineage, idempotent retries           |
+---
 
-Continuum does not own semantic modelling rules (Praxis), raw persistence internals (Mneme), user-facing accepted-work APIs (host), or UI shell behaviour.
+## Contents
 
-## Local durable executor model
+1. [The durable executor model](./durable-executor-model.md) — why execution is in-process, workspace-backed, and durable.
+2. [Run and step lifecycle](./run-and-step-lifecycle.md) — the run/step/event records, DAG step dependencies, cancellation, leases.
+3. [Retry and backoff](./retry-and-backoff.md) — exponential backoff with jitter; transient vs permanent.
+4. [Idempotency and deduplication](./idempotency-and-dedup.md) — exactly-once effect over at-least-once delivery.
+5. [The snapshot store and run ledger](./snapshot-store-and-ledger.md) — the `SnapshotStore` seam, the ledger schema, retention and GC.
+6. [Connector orchestration](./connector-orchestration.md) — adapter-driven ingest behind typed contracts.
+7. [Workflow composition](./workflow-composition.md) — composing engine and connector steps into governed workflows.
+8. [Scheduling and fairness](./scheduling-and-fairness.md) — timed and triggered work, queue classes, fairness.
+9. [Boundaries](./boundaries.md) — what Continuum owns and does not own.
 
-The orchestration runtime is an in-process, workspace-backed durable executor. There is no external orchestration service. All workflow state — runs, steps, retry counters, artefact references — persists in the local workspace ops/local store.
+---
 
-This model gives the product its automation guarantees:
+## One-line responsibility
 
-- work survives restarts because the run ledger is durable on disk
-- retries are deliberate and bounded, not implicit timer loops
-- every run is identifiable; every step is inspectable
-- the system can answer what ran, why, which inputs it used, what it wrote, what failed, and what can be retried safely
+Continuum owns local durable orchestration: scheduling, triggers, connector workflows, multi-step cross-engine composition, retries, and the durable run ledger. It composes the engines' capabilities into governed workflows; it does not own those engines, their semantics, or their storage.
 
-The scheduler is Tokio-driven. Bespoke thread pools and external scheduling services are explicitly out of scope.
+---
 
-## SnapshotStore abstraction
+## Core invariants
 
-```rust
-pub trait SnapshotStore: Send + Sync {
-    fn put(&self, key: &str, bytes: &[u8]) -> Result<(), String>;
-    fn get(&self, key: &str) -> Result<Vec<u8>, String>;
-}
-```
+| Invariant                                     | What it means                                                                                                                 | Backed by                                                              |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Durable runs**                              | Run, step, and event state persists in the workspace, so work survives a restart and every run is inspectable after the fact. | [durable-executor-model](./durable-executor-model.md)                  |
+| **Bounded, deliberate retries**               | Retries are bounded and backed off, never implicit timer loops; a permanent failure is not retried.                           | [retry-and-backoff](./retry-and-backoff.md)                            |
+| **Exactly-once effect**                       | A retried or re-delivered unit of work lands its effect at most once, under an idempotency key, over at-least-once delivery.  | [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)    |
+| **Replayability**                             | The exact input set, step events, and lineage of any run are recoverable from the ledger.                                     | [run-and-step-lifecycle](./run-and-step-lifecycle.md)                  |
+| **Ledger is the truth of automation history** | Hosted relays and connector services are optional adapters, never the authoritative record.                                   | [snapshot-store-and-ledger](./snapshot-store-and-ledger.md)            |
+| **No engine-to-engine cycle**                 | Continuum dispatches into engines through their capability traits; no engine depends on Continuum's implementation and back.  | [dependency-rules](../../01-architecture/boundary/dependency-rules.md) |
 
-`FileSnapshotStore` is the production implementation. Keys are paths relative to a base directory; parent directories are created on `put`. Additional backends (SQLite, object stores) implement the same trait without touching workflow logic.
+---
 
-The host wires a concrete `SnapshotStore` into Continuum at startup. Continuum holds only the trait reference.
+## What Continuum owns / does not own
 
-## Run ledger
+Continuum **owns**: scheduling and triggers; connector orchestration; workflow execution with step-level progress; the durable run ledger; the snapshot store seam; provenance and replayability; the bounded retry model.
 
-A run is the unit of durable work. Every workflow execution produces:
+Continuum **does not own**: semantic modelling rules ([Praxis](../praxis/README.md)); raw persistence internals ([Mneme](../mneme/README.md) — Continuum writes through Mneme's traits); user-facing accepted-work APIs and status surfaces ([Host](../host/README.md)); UI shell behaviour (renderer); investment _planning_ (Kairos, planned); discovery _scheduling policy_ (Skopos, planned — though Continuum executes the ingestion). The full list is in [boundaries](./boundaries.md).
 
-| Record              | Purpose                                                        |
-| ------------------- | -------------------------------------------------------------- |
-| `run`               | Identity, trigger type, start/end timestamps, terminal status  |
-| `run_step`          | Per-step name, status, start/end, connector or engine target   |
-| `run_event`         | Structured progress, warning, and failure events within a step |
-| Artefact references | Input and output lineage references for provenance             |
-| Idempotency key     | Enables safe retries without duplicate side effects            |
-
-The ledger persists in the workspace ops/local store. It is the source of truth for automation history; hosted relays and connector services are optional adapters, never authoritative.
-
-## Replayability
-
-Because run inputs are structured and artefact references carry provenance, any workflow can be re-examined after the fact:
-
-- the exact input set is recoverable from the run record
-- step-level events record what each connector or engine received and returned
-- retry decisions reference the ledger state, not implicit memory
-- support and audit queries against run history are first-class, not afterthoughts
+---
 
 ## Accepted-work status language
 
-Continuum emits the shared accepted-work statuses for all automated work: `accepted`, `running`, `warning`, `failed`, `cancelled`, `completed`. The host owns the user-facing status surfaces and progress subscriptions; Continuum owns what the workflow does, which steps run, and what counts as success, retry, or failure.
+Continuum emits the shared accepted-work statuses for all automated work: `accepted`, `running`, `warning`, `failed`, `cancelled`, `completed`. The host owns the user-facing status surfaces and progress subscriptions; Continuum owns what the workflow _does_, which steps run, and what counts as success, retry, or failure. The full contract is [ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md).
 
-See [ACCEPTED-WORK-AND-EVENTS.md](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) for the full contract.
-
-## Connector orchestration
-
-External integrations sit behind typed connector contracts. The workflow that coordinates those adapters lives in Continuum; connector-specific implementation detail lives behind the adapter boundary. Current adapter families:
-
-- CMDB ingest
-- File imports
-- External snapshot pulls
-
-Future sync scheduling, conflict surfacing, and federated workflow coordination are designed to enter the system through this same seam.
-
-## Workflow composition
-
-Multi-step workflows may span:
-
-1. Connector pull
-2. Semantic validation or shaping (Praxis-facing step)
-3. Persistence write (Mneme boundary)
-4. Downstream refresh or recompute trigger (Chrona, Metis)
-5. Run event emission and terminal status
-
-Each step is explicit. Continuum composes engine and connector capabilities into governed workflows; it does not own those engines.
-
-## Dependency posture
-
-Continuum depends on contracts and host wiring. It exposes capability traits that other modules' work is dispatched through. It does not depend on any other module that depends on it — there are no engine-to-engine cycles.
-
-| Dependency direction      | Notes                                                                 |
-| ------------------------- | --------------------------------------------------------------------- |
-| Continuum → host          | Receives `SnapshotStore` and accepted-work wiring at startup          |
-| Continuum → Praxis        | Dispatches semantic steps through Praxis capability traits            |
-| Continuum → Mneme         | Writes ops and facts through Mneme persistence traits                 |
-| Other modules → Continuum | Dispatch scheduled/triggered work through Continuum capability traits |
-
-See [MODULE-DEPENDENCY-MAP.md](../../01-architecture/MODULE-DEPENDENCY-MAP.md) for the full graph.
+---
 
 ## Crate shape
 
-| Path                          | Contents                                                  |
-| ----------------------------- | --------------------------------------------------------- |
-| `crates/continuum/src/lib.rs` | `SnapshotStore` trait, `FileSnapshotStore` implementation |
-| `crates/continuum/DESIGN.md`  | Scope, allowed dependencies, anti-goals, public surface   |
-| `crates/continuum/tests/`     | Integration tests                                         |
+| Path                          | Contents                                                              |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `crates/continuum/src/lib.rs` | The `SnapshotStore` trait and the `FileSnapshotStore` implementation. |
+| `crates/continuum/DESIGN.md`  | Scope, allowed dependencies, anti-goals, public surface.              |
+| `crates/continuum/tests/`     | Integration tests.                                                    |
 
-The crate is a library; it carries no Tauri bindings and no direct database coupling beyond Mneme traits.
+The crate is a library: no Tauri bindings, no direct database coupling beyond Mneme traits. The scheduler is Tokio-driven; bespoke thread pools and external scheduling services are out of scope.
 
-## References
+---
 
-- [Accepted-work contract](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)
-- [Host module](../host/README.md)
-- [Module dependency map](../../01-architecture/MODULE-DEPENDENCY-MAP.md)
-- [Cross-module design overview](../../03-design/DESIGN.md)
+## References & standards
+
+_Normative:_
+
+- Garcia-Molina & Salem — _Sagas_, 1987. Compensation for multi-step cross-engine work ([workflow-composition](./workflow-composition.md)).
+
+_Informative:_
+
+- Temporal.io — durable execution model. Deterministic replay, activity retries, workflow versioning ([durable-executor-model](./durable-executor-model.md)).
+- van der Aalst et al. — Workflow Patterns. The control-flow vocabulary ([workflow-composition](./workflow-composition.md)).
+
+## Related documents
+
+| Document                                                                       | What it covers                                                      |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| [Accepted-work and events](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)     | The accepted-job envelope, event taxonomy, and run ledger contract. |
+| [Host module](../host/README.md)                                               | The composition root that wires Continuum and owns status surfaces. |
+| [Mneme module](../mneme/README.md)                                             | The storage Continuum writes through.                               |
+| [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)            | Idempotency and deduplication.                                      |
+| [Module dependency map](../../01-architecture/module-dependency-map.md)        | The full engine graph.                                              |
+| [ADR-0028](../../06-adrs/ADR-0028-investment-and-portfolio-planning-kairos.md) | Kairos, whose committed plans Continuum executes.                   |

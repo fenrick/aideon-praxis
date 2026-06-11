@@ -1,131 +1,71 @@
-# Metis
+# Metis — analytics
 
-Deterministic analytics engine for the Aideon Desktop twin: ranking, impact, path analysis, and cost jobs over bounded graph snapshots.
+Metis is the analytical engine of the Aideon twin: deterministic, bounded graph computation — centrality, impact, paths, and cost — over a snapshot owned by Praxis and stored by Mneme. Every Metis result is **Inferred** content, derived and reproducible, never canonical. The human remains the authority; Metis produces evidenced signals that support judgement, not decisions that replace it.
 
-## Purpose
+> **Implementation status.** The `metis` crate (`aideon_metis`) is currently a placeholder. The analytics families, the named algorithms, the bounds, and the evidence model in this folder are **design intent** — the specification the engine is built to — and are labelled as such where they describe behaviour not yet in code. The boundary, determinism, and honest-state obligations are normative now and constrain the implementation when it lands.
 
-Metis is the analytical layer of Aideon Desktop. It computes scores, rankings, impact sets, paths, and cost-oriented results against the Praxis twin at an explicit time and scenario context. Every result is derived — never canonical — and reproducible for the same input snapshot. The human remains the authority; Metis produces signals and evidenced artefacts that support judgement, not decisions that replace it.
+This README is the index and the cross-cutting narrative; each focused topic lives in its own file, per the [Documentation Standard §4](../../02-standards/DOCUMENTATION-STANDARD.md) granularity rule.
 
-## What Metis Computes
+---
 
-| Capability family           | Representative jobs                                                         |
-| --------------------------- | --------------------------------------------------------------------------- |
-| **Centrality and ranking**  | PageRank-style node scoring, concentration analysis, hotspot identification |
-| **Impact and blast radius** | Upstream/downstream impact sets, dependency spread                          |
-| **Path and reachability**   | Shortest paths, reachability queries, dependency chains                     |
-| **Risk and diagnostics**    | Concentration risk, structural weak points, result warnings                 |
-| **Cost and optimisation**   | TCO rollups, scenario-sensitive comparisons, cost-oriented metrics          |
-| **Temporal summaries**      | Change summaries and comparison across time or scenario contexts            |
+## Contents
 
-Each family exposes typed Rust traits and structs: `Analytics.Centrality`, `Analytics.Impact`, `Analytics.ShortestPath`, `Finance.TCO`, and `Temporal.*` summaries as required by accepted-work consumers.
+1. [What Metis computes](./what-metis-computes.md) — the centrality, impact, path, and cost families.
+2. [Algorithms and bounds](./algorithms-and-bounds.md) — the named algorithms, their complexity, and iteration/approximation limits.
+3. [Determinism and bounds](./determinism-and-bounds.md) — the deterministic input scope and how truncation, approximation, and warnings are serialised.
+4. [Impact and change magnitude](./impact-and-change-magnitude.md) — blast radius and the magnitude vector Kairos sizes from.
+5. [Cost and TCO](./cost-and-tco.md) — the cost family, and how the FinOps (Oikos) concern folds in here.
+6. [Explainable evidence](./explainable-evidence.md) — contributing nodes and paths, and the sampling rule for huge graphs.
+7. [Model cards](./model-cards.md) — per-output disclosure for any ML-derived result.
+8. [Accepted-work execution](./accepted-work-execution.md) — how heavy jobs run as accepted work.
+9. [Boundaries](./boundaries.md) — what Metis depends on and the acyclic rule.
 
-## Determinism and Reproducibility
+---
 
-Analytics in Metis are deterministic and reproducible. Every job runs against a declared input:
+## One-line responsibility
 
-- a workspace or partition boundary
-- an explicit point-in-time and optional scenario context
-- a filtered graph projection or snapshot
+Metis computes scores, impact sets, paths, and cost rollups over a bounded graph snapshot at an explicit viewpoint, and returns them with the evidence and honest-state flags that let the rest of the product present them defensibly.
 
-Given the same input, the same algorithm produces the same output. This is a hard invariant. No analytics job reads ambient mutable state or derives results from a non-deterministic source.
+---
 
-See [PROJECTION-AND-INVALIDATION](../../04-contracts/PROJECTION-AND-INVALIDATION.md) for how snapshots and projection validity are managed.
+## The invariants
 
-## Derived, Not Canonical
+- **Derived, never canonical.** A Metis result is a view of the model at the instant it was computed, carrying its viewpoint; it is never the source of truth for any entity, relationship, or state ([canonical vs derived](../../01-architecture/boundary/canonical-vs-derived.md)). It goes stale when its projection is invalidated ([ADR-0027](../../06-adrs/ADR-0027-projection-consistency-model.md)).
+- **Deterministic and reproducible.** Given the same input — workspace boundary, viewpoint, and filtered projection — the same algorithm produces the same output. No job reads ambient mutable state or a non-deterministic source ([determinism and bounds](./determinism-and-bounds.md)).
+- **Bounded and honest.** Every job declares memory and time budgets; a job that hits a bound halts and reports it. A truncated result says so; an approximated result is marked; an incomplete-input result carries a warning rather than silent overconfidence ([algorithms and bounds](./algorithms-and-bounds.md)).
+- **One-directional dependency.** Metis reads snapshots and projections through Mneme traits and consumes Praxis contract types; neither Praxis nor Mneme depends on Metis, and Metis depends on no sibling engine ([boundaries](./boundaries.md)).
 
-Metis outputs are derived results — computed artefacts over a model owned by Praxis and persisted by Mneme. They are never the source of truth for any entity, relationship, or state. A result carries the time and scenario context at which it was computed. Consumers treat it as a view of the model at that instant, not as a durable fact about the world.
+---
 
-Results become stale when their underlying projection is invalidated. Metis does not update entity state; it produces analytical outputs that downstream surfaces present to the user.
+## How Metis fits the product
 
-## Accepted-Work Execution
+Praxis frames the domain question — "most critical capabilities", "blast radius for this application", "what changed between baseline and scenario" — and delegates the graph computation to Metis. Metis computes the answer and returns ranked items, impact sets, path bundles, and cost rollups with their contributing evidence; Praxis presents the result and its explanation ([explainability](../praxis/explainability.md)). The composition routes through the host, not through a Praxis→Metis or Metis→Praxis import, preserving the acyclic engine graph ([ADR-0011](../../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)).
 
-Heavy analytical jobs — centrality runs, large impact calculations, path analysis over dense graphs — execute as accepted work. Clients submit an analytics command through the host; the platform issues an `AcceptedJob` and routes execution through the worker contract. Metis emits typed progress events as work proceeds and a completion envelope when the job finishes.
+Two downstream consumers depend on Metis output in particular:
 
-Clients observe the standard accepted-work status model. There is no Metis-specific polling protocol.
+- **Kairos** (planned) sizes investments from the change-magnitude vector Metis computes ([impact and change magnitude](./impact-and-change-magnitude.md); [ADR-0028](../../06-adrs/ADR-0028-investment-and-portfolio-planning-kairos.md)).
+- **Signal surfaces** present Metis rankings and risk diagnostics to the user ([SIGNAL-SURFACES.md](../../03-design/SIGNAL-SURFACES.md)).
 
-See [ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) for the job lifecycle and event contracts.
+---
 
-## Honest Execution Bounds
+## References & standards
 
-Every result envelope carries execution metadata:
+_Normative:_
 
-- **Truncation flags** — when the output was bounded to stay within memory or time limits
-- **Approximation markers** — when an algorithm used a bounded approximation rather than an exact computation
-- **Warnings** — when input quality, coverage, or completeness affects confidence in the result
-- **Algorithm parameters** — the declared parameters under which the job ran, for reproducibility
+- Newman — _Networks_, 2nd ed., 2018. Centrality definitions and their interpretation.
+- Page & Brin — **PageRank**, 1998; Freeman — **betweenness centrality**, 1977; Brandes — fast betweenness, 2001. Named, bounded centrality algorithms.
+- Dijkstra, 1959; Bellman–Ford — shortest paths.
+- Mitchell et al. — **Model Cards for Model Reporting**, 2019. Per-output disclosure for ML results.
 
-Metis does not suppress execution facts. A result that required truncation says so. A result computed under incomplete data carries a warning rather than silent overconfidence.
+Full bibliography: [STANDARDS-REGISTER.md](../../02-standards/STANDARDS-REGISTER.md).
 
-## Typed Analytical Evidence
+## Related documents
 
-Results are structured, not free-form blobs. Each output carries the evidence that supports it:
-
-- ranked items with scores and contributing factors
-- impact sets with supporting dependency paths
-- path bundles with node and edge sequences
-- top contributors and affected-entity sets
-- algorithm metadata and execution timing
-
-This evidence layer exists so that the rest of the product — artefacts, dashboards, inspector surfaces, report views — can present results with honest supporting detail. See [ANALYTICS](../../03-design/ANALYTICS.md) and [SIGNAL-SURFACES](../../03-design/SIGNAL-SURFACES.md) for how analytical outputs surface in the product.
-
-## Performance-Aware Execution
-
-Analytics is the highest-cost computation in the system. Metis manages this through:
-
-- **Bounded execution** — jobs declare memory and time budgets; execution halts and reports when bounds are reached
-- **Streaming and iterator-shaped outputs** — results flow as iterators rather than fully materialised blobs where the output size is large
-- **Typed summaries with drill-down** — top-level result surfaces receive a typed summary; detailed evidence is available on demand
-- **Deterministic algorithm selection** — algorithm variants are chosen for reproducibility, not just raw speed
-
-Graph and metrics computation uses established crates (such as `petgraph`) behind crate-local abstractions. Metis does not re-implement proven graph primitives.
-
-## Dependency Posture
-
-Metis depends on Praxis and Mneme through narrow traits. It never accesses persistence internals directly and never imports Mneme or Praxis implementation details. Neither Praxis nor Mneme depends on Metis. The dependency graph is strictly one-directional: Metis → contracts → Praxis/Mneme.
-
-```
-Metis
-  └─ reads snapshots and projections via Mneme traits
-  └─ reads time-context via Praxis traits
-  └─ emits results via accepted-work and event contracts
-  └─ no Tauri, no UI, no direct DB access
-```
-
-See [MODULE-DEPENDENCY-MAP](../../01-architecture/MODULE-DEPENDENCY-MAP.md) for the full cross-module boundary diagram.
-
-## Crate Structure
-
-```
-crates/metis/
-├── src/
-│   ├── analytics/         # Capability families: centrality, impact, path, risk, cost
-│   ├── engine/            # Snapshot reader adapters, algorithm orchestration, bounded execution
-│   ├── jobs/              # Accepted-work handlers, progress events, completion envelopes
-│   ├── result/            # Typed result shapes, evidence structures, execution metadata
-│   └── lib.rs
-└── DESIGN.md
-```
-
-The crate exposes only traits, typed structs, and deterministic helpers. All algorithm implementations are testable without I/O. No UI, renderer, or Tauri dependency is permitted in this crate.
-
-## Integration with the Platform
-
-| Platform surface                  | Metis role                                                                          |
-| --------------------------------- | ----------------------------------------------------------------------------------- |
-| Accepted-work commands            | Receives analytics job requests; emits progress and completion events               |
-| Projection contracts              | Reads bounded, filtered graph snapshots for deterministic input                     |
-| Artefacts and dashboards          | Supplies typed result envelopes, ranked lists, impact graphs, and evidence payloads |
-| Inspector and drill-down surfaces | Provides per-result evidence: contributors, paths, affected sets, warnings          |
-| Report surfaces                   | Delivers scored tables, risk views, and cost summaries                              |
-
-Metis is the engine that gives these surfaces something defensible to show. It does not own layout, workflow status UX, or dashboard structure.
-
-## Related Documents
-
-- [Analytics design](../../03-design/ANALYTICS.md)
-- [Signal surfaces](../../03-design/SIGNAL-SURFACES.md)
-- [Accepted-work and events contract](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)
-- [Projection and invalidation contract](../../04-contracts/PROJECTION-AND-INVALIDATION.md)
-- [Module dependency map](../../01-architecture/MODULE-DEPENDENCY-MAP.md)
-- [Praxis module](../praxis/README.md)
-- [Mneme module](../mneme/README.md)
+| Document                                                                         | What it covers                                               |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [Analytics design](../../03-design/analytics/README.md)                          | The product framing of analytics.                            |
+| [Signal surfaces](../../03-design/SIGNAL-SURFACES.md)                            | How analytic outputs surface to the user.                    |
+| [Praxis module](../praxis/README.md)                                             | The semantic engine that frames the questions Metis answers. |
+| [Accepted work and events](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)       | The job lifecycle heavy analytics run under.                 |
+| [Projection and invalidation](../../04-contracts/PROJECTION-AND-INVALIDATION.md) | How projections stay valid and when results go stale.        |
+| [Module dependency map](../../01-architecture/module-dependency-map.md)          | The crate dependency graph and the acyclic invariant.        |

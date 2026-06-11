@@ -1,91 +1,51 @@
-# Aideon Design System – Internal Design
+# Design System (renderer-side) — Internal Design
 
-_Flatten note (December 2025): this design system now lives inside `src/design-system` instead of a standalone workspace. Import directly from the `src/design-system` tree (no package aliases)._
+The internal structure of `src/design-system`, its tokens, and its theming. This file is for anyone adding or theming a wrapper. The package contract is in [README.md](./README.md); the visual contract is [03-design/design-system](../../03-design/design-system/README.md).
 
-## Overview
+---
 
-The Aideon Design System centralises UI primitives and blocks for React-based modules. It wraps shadcn/ui and React Flow UI registry components and exposes a small, opinionated set of blocks and tokens to keep renderers consistent.
+## Scope
+
+The renderer-side design system centralises UI primitives and blocks for the React renderer: it wraps shadcn/ui and the XYFlow registry components behind the proxy boundary and exposes a small, opinionated set of blocks and tokens ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)). It lives inside `src/design-system`; import directly from that tree, no package aliases.
 
 ## Internal structure
 
-- `src/components/ui`: generated shadcn/ui and React Flow primitives (treated as read-only).
-- `src/ui`: thin wrappers and convenience exports.
-- `src/blocks`: higher-level blocks (panel, sidebar, toolbar, modal, etc.).
-- `src/components`: React Flow wrapper components for Praxis-specific nodes/edges.
-- `src/styles/globals.css`: CSS variables and Tailwind tokens shared by all consumers.
+| Path                                   | Holds                                                                                                                                 |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/design-system/components/ui`      | Generated shadcn/ui and XYFlow primitives — treated as read-only                                                                      |
+| `src/design-system/ui`                 | Thin wrappers and convenience exports                                                                                                 |
+| `src/design-system/blocks`             | Higher-level blocks — panel, sidebar, toolbar, modal, inspector, artefact frames                                                      |
+| `src/design-system/components`         | XYFlow node/edge wrappers — the renderer side of **Topos** ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)) |
+| `src/design-system/styles/globals.css` | The generated CSS variables and Tailwind token mappings                                                                               |
 
-## Theme tokens (shadcn CSS variables)
+Generated components are not edited directly; all customisation happens in wrappers and blocks, so `components:refresh` stays safe. New UI prefers existing primitives (`Button`, `Badge`, `Select`, `ToggleGroup`, `ScrollArea`, the canvas wrappers) over a bespoke tree; a wrapper is added only when multiple features share the exact composition.
 
-Theme tokens live in `src/design-system/styles/globals.css` and follow the shadcn CSS variable model. These variables are the single source of truth for color theming, and Tailwind utilities resolve through the `@theme inline` mappings.
+## Tokens
 
-Core tokens (light + dark):
+Tokens are the source of styling truth, authored in the W3C DTCG format and generated to CSS variables ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md), [tokens.md](../../03-design/design-system/tokens.md)). They are tiered: a **reference** token is a raw value (`teal.500`, `space.4`), a **semantic** token gives it a role (`color.action.destructive`, `surface.raised`). Product code and proxy components consume **semantic** tokens only, never raw values; this makes theming a remap rather than a find-and-replace. Tailwind v4 resolves utilities through the `@theme inline` mappings; a new token is a CSS variable in `:root`/`.dark` mapped to `--color-*`, never an edit to `components/ui`.
 
-- `--background`, `--foreground`
-- `--card`, `--card-foreground`
-- `--popover`, `--popover-foreground`
-- `--primary`, `--primary-foreground`
-- `--secondary`, `--secondary-foreground`
-- `--muted`, `--muted-foreground`
-- `--accent`, `--accent-foreground`
-- `--destructive`, `--destructive-foreground`
-- `--border`, `--input`, `--ring`
-- `--chart-1` through `--chart-5`
-- Sidebar tokens: `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring`
+Accessibility defaults live in the token layer: motion tokens resolve to minimal animation under a reduced-motion preference, and target-size tokens default to the WCAG 2.2 minimum, so a component inherits them by consuming the semantic token ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md), [accessibility.md](../accessibility.md)).
 
-Branding:
+## Theming
 
-- Corporate blue is defined as `--primary` (and `--sidebar-primary`) with the paired foreground tokens (`--primary-foreground`, `--sidebar-primary-foreground`).
-- Avoid hard-coded color utility classes in product code. Use semantic utilities (`bg-primary`, `text-foreground`, `border-border`, `bg-sidebar`, etc.) so themes can be swapped without refactors.
-- Maintain the background/foreground pairing convention (`bg-primary` + `text-primary-foreground`, `bg-card` + `text-card-foreground`) to align with shadcn styling expectations.
+Light and dark are semantic remaps — a theme rebinds semantic tokens to different reference values and components are unchanged ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)). Colour themes are override files; the runtime applies a `data-color-theme` attribute on the document root, lazily loads the theme CSS, and persists the choice locally as persistent UI state ([state-architecture.md](../state-architecture.md)). The active theme is not workspace truth.
 
-Tailwind v4 mapping:
+## The shell primitives
 
-- All color tokens must be exposed via `@theme inline` to keep utilities consistent.
-- Add new color tokens by defining CSS variables in `:root`/`.dark`, then mapping them to `--color-*` in `@theme inline`. Do not edit `components/ui` for theming.
+Application-level layout uses only the proxied primitives — `Sidebar`, `SidebarInset` + `SidebarTrigger`, `Resizable`, `Menubar`/`NavigationMenu` + `Toolbar`, and `ScrollArea`/`Card`/`Form` for inspector content ([shell.md](../shell.md)). No other primitive is used for the shell, so layout composition stays consistent across modules. The shell follows the shadcn sidebar layout: `SidebarProvider` wraps the shell, the workspace `Sidebar` is a sibling of `SidebarInset`, and `SidebarTrigger` lives in the header.
 
-## Color theme switching
+## Constraints
 
-- Color themes are defined in `src/design-system/styles/themes/*.css` as overrides for the core shadcn token set.
-- The runtime applies a `data-color-theme` attribute to the document root; selectors in the theme CSS apply on `:root[data-color-theme=...]` and on descendant previews.
-- Theme CSS is lazily loaded via dynamic import in `ColorThemeProvider`, then persisted to `localStorage` (key `aideon.colorTheme`). Default is `corp-blue`.
-- Theme palettes `claude`, `graphite`, `green`, and `violet` are sourced from shadcn example themes and are kept as override files to make `components:refresh` safe.
+- Generated components must not be edited directly; customise in wrappers/blocks.
+- Tokens stay centralised to avoid drift; no hard-coded colour utilities in product code.
+- The design system carries no domain semantics ([README.md](./README.md)); a block naming a domain type is rejected at review.
 
-## Desktop shell primitives
+## Related documents
 
-For application-level layout, use only the proxied shadcn primitives exposed by the design system:
-
-- `Sidebar` (navigation + tree container).
-- `SidebarInset` + `SidebarTrigger` (main content area + sidebar toggle).
-- `Resizable` (pane splitting between main workspace + properties panel).
-- `Menubar` or `NavigationMenu` + `Toolbar` (top bar composition).
-- `ScrollArea`, `Card`, `Form` for properties panel content.
-
-No other primitives should be used for the app shell; keep layout composition consistent across modules.
-
-### Shadcn-aligned composition
-
-- Follow the shadcn Sidebar layout: `SidebarProvider` wraps the shell; the workspace `Sidebar` sits as a sibling of `SidebarInset`; `SidebarTrigger` lives in the main header.
-- Desktop shell headers mirror the shadcn sidebar blocks: trigger + vertical separator, with the toolbar slot occupying the remaining header space. Keep the collapsible-height transition on the header (`group-has-data-[collapsible=icon]/sidebar-wrapper:h-12`) to match sidebar block behaviour.
-- Avoid editing generated sidebar component code. Instead, align layout and structure to the documented slots and data attributes, and keep custom styling in app-level blocks.
-- When refreshing components, use `pnpm run components:refresh` to pull upstream shadcn defaults without local forks, then adjust usage in app/layout code as needed.
-
-### Wrapped components
-
-- We wrap shadcn primitives only when we need consistent variants or composition (e.g., `Panel` in `blocks/panel`, React Flow node/edge wrappers). Most usage should import directly from `src/design-system/components/ui/*`.
-- New UI should **prefer existing primitives** (`Button`, `Badge`, `Select`, `ToggleGroup`, `ScrollArea`, React Flow wrappers) over creating bespoke component trees. Add a wrapper only when multiple features would share the exact composition.
-
-## Data model and APIs
-
-- Exposes React components and CSS only; no business logic or IPC.
-- Provides stable components under `src/design-system/ui/*` and `src/design-system/blocks/*`.
-
-## Interactions
-
-- Consumed by Praxis workspace (and future React apps) as the single source of UI primitives/blocks.
-- Refreshed via the `components:refresh` script, which updates generated components in `src/components/ui` from `components.json`.
-
-## Constraints and invariants
-
-- Generated components must not be edited directly; all customisation happens in wrappers/blocks.
-- Tokens remain centralised in `globals.css` to avoid drift between apps.
-- Keep `src/design-system/lib/utils.ts` as a compatibility shim for shadcn overwrites.
+| Document                                                                                    | What it covers                       |
+| ------------------------------------------------------------------------------------------- | ------------------------------------ |
+| [README.md](./README.md)                                                                    | The package contract.                |
+| [03-design/design-system/README.md](../../03-design/design-system/README.md)                | The visual contract and layer model. |
+| [tokens.md](../../03-design/design-system/tokens.md)                                        | The full token architecture.         |
+| [ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)                             | The DTCG, tiered token decision.     |
+| [ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md) | The proxy boundary and foundation.   |

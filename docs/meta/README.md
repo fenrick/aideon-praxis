@@ -1,42 +1,25 @@
-# Metamodel Packages and Registry
+# Metamodel packages — see the canonical design
 
-## Purpose
+The metamodel — how it is delivered as portable **packages** rather than hard-coded enums, how packages compile into Mneme, and how the domain↔storage registry keeps storage identifiers out of the rest of the product — is documented in full under **[`03-design/metamodel/`](../03-design/metamodel/README.md)**. This page is a redirect, not a second source: it existed before the metamodel design folder and its content has moved there to avoid duplication.
 
-Explain how the Aideon Suite metamodel is delivered and managed as **packages** rather than hard- coded enums: where package definitions live, how they are published into Mneme, and how the Praxis registry maps domain concepts to storage IDs.
+Read these for what this page used to cover:
 
-Praxis owns the **meaning** of the twin (master types, domain types, verbs). Mneme owns the **persistence** of schema data (types, fields, edge rules). This split keeps the system portable and extensible without leaking storage details to the UI.
+| You want                                                                                      | Read                                                                                                                                                                                              |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What the metamodel is and the meaning/storage split                                           | [what is the metamodel](../03-design/metamodel/what-is-the-metamodel.md)                                                                                                                          |
+| How packages compile to a `MetamodelBatch`; the domain↔storage registry; how UUIDs are minted | [packages and the registry](../03-design/metamodel/packages-and-registry.md)                                                                                                                      |
+| How a package extends the model per partition; SemVer evolution                               | [extension and versioning](../03-design/metamodel/extension-and-versioning.md)                                                                                                                    |
+| The implemented seed metamodel                                                                | [`data/meta/core-v1.json`](../data/meta/core-v1.json), tabulated in [entity types](../03-design/metamodel/entity-types.md) and [relationship types](../03-design/metamodel/relationship-types.md) |
+| How to add or deprecate a type, and UUID minting discipline                                   | [data/schema-governance.md](../data/schema-governance.md)                                                                                                                                         |
 
-## Structure
+Praxis owns the **meaning** of the twin; Mneme owns the **persistence** of schema data. That split — and the registry that mediates it — is set out in the metamodel design and governed by [ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md).
 
-Metamodel packages define:
+> **Terminology note.** Earlier drafts of this page used "master types" and named persistence tables (`aideon_types`, `aideon_fields`, `aideon_edge_type_rules`). The canonical design uses the [`CONTEXT.md`](../../CONTEXT.md) vocabulary — entity types, relationship types, slots, effective schema — and treats the persisted batch as a derived projection of the canonical JSON. Where the two differ, the [metamodel design](../03-design/metamodel/README.md) is authoritative.
 
-- Master types (anchors) and their semantics
-- Domain types (single inheritance) and defaults
-- Domain verbs mapped to master edge semantics
-- Field definitions and constraints
+## Related documents
 
-Packages are compiled by Praxis into a Mneme `MetamodelBatch`, which upserts:
-
-- `aideon_types` / `aideon_type_extends`
-- `aideon_fields` / `aideon_type_fields`
-- `aideon_edge_type_rules`
-
-All type/field/edge IDs are **stable UUIDs** committed in source to ensure long-term compatibility.
-
-## Domain registry
-
-Praxis maintains a registry that maps:
-
-- `DomainTypeKey` -> Mneme `type_id`
-- `DomainFieldKey` -> Mneme `field_id`
-- `DomainVerb` -> Mneme `edge_type_id` + direction
-
-The registry is used by task APIs so callers never need to handle storage IDs directly.
-
-## Overrides and extensions
-
-Additional packages can be installed per partition. Package evolution is versioned and can be validated before publication. Praxis enforces single inheritance, endpoint constraints, and rule compatibility when packages are applied.
-
-## Storage notes
-
-Mneme persists schema and edge semantics in its portable tables; no raw SQL is used in migrations or runtime paths. See `crates/mneme_core/DESIGN.md` and `crates/mneme_store/DESIGN.md` for schema details.
+| Document                                                  | What it covers                              |
+| --------------------------------------------------------- | ------------------------------------------- |
+| [03-design/metamodel](../03-design/metamodel/README.md)   | The canonical metamodel design record.      |
+| [data/schema-governance.md](../data/schema-governance.md) | Adding and deprecating types; UUID minting. |
+| [`CONTEXT.md`](../../CONTEXT.md)                          | The canonical glossary.                     |
