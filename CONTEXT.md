@@ -153,3 +153,7 @@ _Avoid_: integrity (that scores model content, not reliance — see Integrity); 
 **Integrity**:
 How well-founded model **content** is — an entity, relationship, artefact result, or subgraph — across five dimensions (completeness, connectivity, recency, consistency, corroboration), computed by Praxis; ADR-0020. It scores the content itself, not the output about it.
 _Avoid_: confidence (that qualifies a result/signal; integrity qualifies the content — see Confidence); quality, health (too vague).
+
+**Result state**:
+The user-visible honesty status of an artefact result, signal, analysis, or other derived output — whether it is current, outdated, incomplete, rebuilding, or awaiting human review. The current states: **Fresh** (current against its inputs and viewpoint), **Stale** (was valid but inputs / viewpoint / definition / dependencies changed), **Partial** (intentionally incomplete — some inputs, scope, permissions, or dependencies unavailable), **Rebuilding** (being regenerated; not final), **Awaiting review** (includes generated/inferred or review-gated content needing human acceptance before it is treated as asserted). The canonical labels, display rules, and allowed combinations are defined in **Documentation Standard §9** — the single source of truth; this entry names the concept, not the state machine.
+_Avoid_: duplicating the §9 state machine here; "status" used loosely where _result state_ is meant; hiding Stale or Partial behind neutral wording; treating Awaiting review as an error state.
