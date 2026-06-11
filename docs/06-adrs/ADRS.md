@@ -10,13 +10,14 @@ These ADRs establish a single cross-runtime authority: **the portable workspace 
 
 ## ADR set
 
-| ADR                                                      | Title                                            | Status   | Decision type             |
-| -------------------------------------------------------- | ------------------------------------------------ | -------- | ------------------------- |
-| [0001](./ADR-0001-workspace-is-canonical-authority.md)   | Portable workspace is the canonical authority    | Accepted | Invariant                 |
-| [0002](./ADR-0002-portable-workspace-format.md)          | Portable workspace folder format                 | Accepted | Invariant + stable seam   |
-| [0003](./ADR-0003-content-addressed-object-store.md)     | Content-addressed object store for binaries      | Accepted | Invariant + stable seam   |
-| [0004](./ADR-0004-storage-engine-abstraction.md)         | Storage-engine abstraction + single-writer queue | Accepted | Stable seam + provisional |
-| [0005](./ADR-0005-sync-and-conflict-model.md)            | Sync and conflict model                          | Proposed | Stable seam + deferred    |
-| [0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md) | Tauri trust boundary and typed IPC               | Accepted | Invariant + stable seam   |
-| [0007](./ADR-0007-deterministic-package-export.md)       | Deterministic `.aideonpkg` export/import         | Proposed | Stable seam               |
-| [0008](./ADR-0008-diff-compares-two-viewpoints.md)       | Diffs compare two viewpoints; delta kind derived | Accepted | Stable seam               |
+| ADR                                                                        | Title                                                      | Status   | Decision type             |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------- | -------- | ------------------------- |
+| [0001](./ADR-0001-workspace-is-canonical-authority.md)                     | Portable workspace is the canonical authority              | Accepted | Invariant                 |
+| [0002](./ADR-0002-portable-workspace-format.md)                            | Portable workspace folder format                           | Accepted | Invariant + stable seam   |
+| [0003](./ADR-0003-content-addressed-object-store.md)                       | Content-addressed object store for binaries                | Accepted | Invariant + stable seam   |
+| [0004](./ADR-0004-storage-engine-abstraction.md)                           | Storage-engine abstraction + single-writer queue           | Accepted | Stable seam + provisional |
+| [0005](./ADR-0005-sync-and-conflict-model.md)                              | Sync and conflict model                                    | Proposed | Stable seam + deferred    |
+| [0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md)                   | Tauri trust boundary and typed IPC                         | Accepted | Invariant + stable seam   |
+| [0007](./ADR-0007-deterministic-package-export.md)                         | Deterministic `.aideonpkg` export/import                   | Proposed | Stable seam               |
+| [0008](./ADR-0008-diff-compares-two-viewpoints.md)                         | Diffs compare two viewpoints; delta kind derived           | Accepted | Stable seam               |
+| [0009](./ADR-0009-temporal-model-valid-interval-layer-policy-viewpoint.md) | Temporal model: valid-interval, layer-as-policy, viewpoint | Accepted | Invariant + stable seam   |
