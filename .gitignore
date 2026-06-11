@@ -157,6 +157,8 @@ Icon?
 # Tauri application icons tracked.
 !/src-tauri/icons/
 !/src-tauri/icons/**
+# …but never macOS cruft re-admitted by the un-ignore above
+src-tauri/icons/.DS_Store
 
 # Thumbnails
 ._*
