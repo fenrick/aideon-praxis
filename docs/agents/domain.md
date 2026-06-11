@@ -29,7 +29,7 @@ If `CONTEXT.md` doesn't exist, **proceed silently**. Don't flag its absence or s
 
 ## Use the glossary's vocabulary
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md` and the design docs — e.g. *valid time* / *asserted time*, *scenario*, *plan vs actual*, *Plan Event*, *workspace as canonical authority*. Don't drift to synonyms the glossary explicitly avoids.
+When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md` and the design docs — e.g. _valid time_ / _asserted time_, _scenario_, _plan vs actual_, _Plan Event_, _workspace as canonical authority_. Don't drift to synonyms the glossary explicitly avoids.
 
 If the concept you need isn't in the glossary yet, that's a signal — either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/grill-with-docs`).
 

@@ -28,17 +28,17 @@ Every operation that reads or writes time-aware state carries a `Viewpoint` — 
 
 ### Fields
 
-| Field                       | Type                          | Required                       | Notes                                                                                       |
-| --------------------------- | ----------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------- |
-| `as_of_valid_time.instant`  | UTC ISO-8601 string           | one of `instant` / `interval`  | point read on the valid-time axis (which instant of the world)                              |
-| `as_of_valid_time.interval` | `{ start, end }` UTC ISO-8601 | one of `instant` / `interval`  | range read; both ends inclusive                                                             |
-| `as_of_asserted_at`         | `i64` (packed HLC)            | write paths; optional on reads | which belief; on reads, omission resolves against the latest assertions — see §HLC encoding |
+| Field                       | Type                          | Required                       | Notes                                                                                                                              |
+| --------------------------- | ----------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `as_of_valid_time.instant`  | UTC ISO-8601 string           | one of `instant` / `interval`  | point read on the valid-time axis (which instant of the world)                                                                     |
+| `as_of_valid_time.interval` | `{ start, end }` UTC ISO-8601 | one of `instant` / `interval`  | range read; both ends inclusive                                                                                                    |
+| `as_of_asserted_at`         | `i64` (packed HLC)            | write paths; optional on reads | which belief; on reads, omission resolves against the latest assertions — see §HLC encoding                                        |
 | `layer`                     | string \| `{ "policy": … }`   | yes                            | a single selected layer (e.g. `"actual"`) or a layer policy (e.g. `{ "policy": "actual_over_plan" }`); see §Layer and layer policy |
-| `scenario.scenario_id`      | string                        | no                             | omit for baseline view                                                                      |
-| `scenario.mode`             | `"overlay"`                   | if `scenario_id` present       | only `overlay` is supported                                                                 |
-| `scope`                     | object \| null                | no                             | selection narrowing (by type, entity set, traversal from seed refs, or filter); `null` = whole twin |
-| `workspace_id`              | string                        | yes                            | identifies the portable workspace folder                                                    |
-| `tenant_id`                 | string \| null                | no                             | optional; `null` on single-user desktop                                                     |
+| `scenario.scenario_id`      | string                        | no                             | omit for baseline view                                                                                                             |
+| `scenario.mode`             | `"overlay"`                   | if `scenario_id` present       | only `overlay` is supported                                                                                                        |
+| `scope`                     | object \| null                | no                             | selection narrowing (by type, entity set, traversal from seed refs, or filter); `null` = whole twin                                |
+| `workspace_id`              | string                        | yes                            | identifies the portable workspace folder                                                                                           |
+| `tenant_id`                 | string \| null                | no                             | optional; `null` on single-user desktop                                                                                            |
 
 **Mutual exclusion:** exactly one of `as_of_valid_time.instant` or `as_of_valid_time.interval` must be provided. Providing both or neither is a `TEMPORAL_CONTEXT_INVALID` error.
 
@@ -78,11 +78,11 @@ A **layer** answers "what kind of claim is this?" Layers are an open set — `pl
 
 How layers combine on a read is a **policy** chosen by the viewpoint's `layer` field, never a fixed precedence:
 
-| `layer` value                         | Behaviour                                                                                       |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `"actual"` (a single layer name)      | Resolve only that layer.                                                                         |
-| `{ "policy": "actual_over_plan" }`    | Blend: a higher-priority layer overrides a lower one where it exists (a blended operational view). |
-| `{ "policy": "side_by_side" }`        | Keep layers separate — required for variance comparison (plan vs actual); see [ADR-0008](../06-adrs/ADR-0008-diff-compares-two-viewpoints.md). |
+| `layer` value                      | Behaviour                                                                                                                                      |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"actual"` (a single layer name)   | Resolve only that layer.                                                                                                                       |
+| `{ "policy": "actual_over_plan" }` | Blend: a higher-priority layer overrides a lower one where it exists (a blended operational view).                                             |
+| `{ "policy": "side_by_side" }`     | Keep layers separate — required for variance comparison (plan vs actual); see [ADR-0008](../06-adrs/ADR-0008-diff-compares-two-viewpoints.md). |
 
 "Actual over plan" is therefore one selectable policy, not a universal rule.
 
@@ -109,11 +109,11 @@ When multiple candidate facts compete for the same resolved slot at a given as-o
 
 APIs that permit an omitted `as_of_valid_time` must document one of:
 
-| Policy token        | Meaning                                                                       |
-| ------------------- | ----------------------------------------------------------------------------- |
-| `now_utc`           | `as_of_valid_time` defaults to the wall-clock UTC instant at request time.    |
-| `workspace_default` | The workspace's configured default as-of valid time is used.                  |
-| `explicit_required` | The field is mandatory; omission is a `TEMPORAL_CONTEXT_INVALID` error.       |
+| Policy token        | Meaning                                                                    |
+| ------------------- | -------------------------------------------------------------------------- |
+| `now_utc`           | `as_of_valid_time` defaults to the wall-clock UTC instant at request time. |
+| `workspace_default` | The workspace's configured default as-of valid time is used.               |
+| `explicit_required` | The field is mandatory; omission is a `TEMPORAL_CONTEXT_INVALID` error.    |
 
 When a policy is not documented for an API, treat it as `explicit_required`.
 
@@ -132,13 +132,13 @@ A scenario is an additive overlay on canonical temporal facts. Canonical truth i
 
 ### Scenario operations
 
-| Operation   | Description                                                                                     |
-| ----------- | ----------------------------------------------------------------------------------------------- |
-| **create**  | Initialise an overlay from a base timeline and as-of valid time.                                |
-| **rebase**  | Re-align the overlay against updated canonical facts; conflict slots are reported explicitly.   |
+| Operation   | Description                                                                                        |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| **create**  | Initialise an overlay from a base timeline and as-of valid time.                                   |
+| **rebase**  | Re-align the overlay against updated canonical facts; conflict slots are reported explicitly.      |
 | **compare** | Compute a deterministic diff between the scenario snapshot and baseline, or between two scenarios. |
-| **promote** | Materialise approved scenario deltas as canonical fact writes through a controlled workflow.    |
-| **discard** | Retire the overlay; canonical facts are not mutated.                                            |
+| **promote** | Materialise approved scenario deltas as canonical fact writes through a controlled workflow.       |
+| **discard** | Retire the overlay; canonical facts are not mutated.                                               |
 
 ### Viewpoint identity
 
@@ -152,20 +152,30 @@ A **diff** compares two snapshots, one per viewpoint — see [ADR-0008](../06-ad
 
 ```json
 {
-  "left":  { "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" }, "as_of_asserted_at": null, "layer": "actual", "scenario": null },
-  "right": { "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" }, "as_of_asserted_at": null, "layer": "actual", "scenario": { "scenario_id": "scn_plan_q3" } }
+  "left": {
+    "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": null
+  },
+  "right": {
+    "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": { "scenario_id": "scn_plan_q3" }
+  }
 }
 ```
 
 Derived delta kinds (by which coordinate(s) differ between the two sides):
 
-| Coordinate that differs | Derived delta                                                        |
-| ----------------------- | -------------------------------------------------------------------- |
-| `as_of_valid_time`      | valid-time delta — same view at two instants                         |
-| `as_of_asserted_at`     | asserted / belief delta — what we believed then vs now               |
-| `layer`                 | layer delta — variance (e.g. plan vs actual)                         |
-| `scenario`              | scenario delta — baseline vs scenario, or scenario vs scenario       |
-| more than one           | mixed delta                                                          |
+| Coordinate that differs | Derived delta                                                  |
+| ----------------------- | -------------------------------------------------------------- |
+| `as_of_valid_time`      | valid-time delta — same view at two instants                   |
+| `as_of_asserted_at`     | asserted / belief delta — what we believed then vs now         |
+| `layer`                 | layer delta — variance (e.g. plan vs actual)                   |
+| `scenario`              | scenario delta — baseline vs scenario, or scenario vs scenario |
+| more than one           | mixed delta                                                    |
 
 The earlier closed `kind` enum (`time_delta`, `scenario_delta`, `scenario_vs_scenario`) is superseded by this derived classification.
 
@@ -179,12 +189,12 @@ Reads may request explainability metadata. The response then includes a per-slot
 
 ## Error codes
 
-| Code                         | Trigger                                                                                             |
-| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| Code                         | Trigger                                                                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `TEMPORAL_CONTEXT_INVALID`   | Both `as_of_valid_time.instant` and `as_of_valid_time.interval` provided, or neither provided, or a field has an invalid type or value. |
-| `TEMPORAL_INTERVAL_INVALID`  | `as_of_valid_time.interval.start` is after `.end`, or either end is not valid UTC ISO-8601.         |
-| `SCENARIO_CONTEXT_INVALID`   | `scenario_id` is present but `mode` has an unsupported value, or the scenario does not exist.       |
-| `COMPARISON_CONTEXT_INVALID` | A diff side carries an invalid viewpoint, or `left`/`right` viewpoints are incompatible.            |
+| `TEMPORAL_INTERVAL_INVALID`  | `as_of_valid_time.interval.start` is after `.end`, or either end is not valid UTC ISO-8601.                                             |
+| `SCENARIO_CONTEXT_INVALID`   | `scenario_id` is present but `mode` has an unsupported value, or the scenario does not exist.                                           |
+| `COMPARISON_CONTEXT_INVALID` | A diff side carries an invalid viewpoint, or `left`/`right` viewpoints are incompatible.                                                |
 
 ---
 

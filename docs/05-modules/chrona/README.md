@@ -14,13 +14,13 @@ Without this module, time handling spreads into UI widgets, API handlers, semant
 
 ## Core invariants
 
-| Invariant                     | What it means                                                                                                                                                   |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Explicit viewpoint**        | Every temporal result carries the active `Viewpoint` — as-of valid time, as-of asserted time, layer (or layer policy), scenario, and scope if set. No ambient time is assumed. |
-| **Re-resolution on change**   | A time or scenario change triggers real re-resolution through Mneme. Chrona never mutates a cached view in place and presents it as if the context had changed. |
-| **Derived results**           | Chrona outputs are derived from canonical facts in Mneme. Chrona does not hold authoritative storage.                                                           |
-| **Honest partial states**     | Where a result is bounded or partially resolved, the payload names the limit explicitly rather than silently collapsing it.                                     |
-| **No metamodel internals**    | Chrona depends on contracts and DTO-level types from Praxis. It does not import metamodel or rule engine internals from other crates.                           |
+| Invariant                   | What it means                                                                                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Explicit viewpoint**      | Every temporal result carries the active `Viewpoint` — as-of valid time, as-of asserted time, layer (or layer policy), scenario, and scope if set. No ambient time is assumed. |
+| **Re-resolution on change** | A time or scenario change triggers real re-resolution through Mneme. Chrona never mutates a cached view in place and presents it as if the context had changed.                |
+| **Derived results**         | Chrona outputs are derived from canonical facts in Mneme. Chrona does not hold authoritative storage.                                                                          |
+| **Honest partial states**   | Where a result is bounded or partially resolved, the payload names the limit explicitly rather than silently collapsing it.                                                    |
+| **No metamodel internals**  | Chrona depends on contracts and DTO-level types from Praxis. It does not import metamodel or rule engine internals from other crates.                                          |
 
 ---
 
@@ -124,12 +124,12 @@ Layout helpers. `apply_rect_packing(shapes, max_row_width, spacing)` implements 
 
 Chrona's public outputs group into four families. Every response in each family carries enough context to stay interpretable without inspecting the request:
 
-| Family              | Key fields                                                         |
-| ------------------- | ------------------------------------------------------------------ |
-| `state_at`          | as-of valid time, scenario identity, layer (policy), fact count    |
+| Family              | Key fields                                                                        |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `state_at`          | as-of valid time, scenario identity, layer (policy), fact count                   |
 | `diff`              | left viewpoint, right viewpoint, derived delta kind, added/removed/changed counts |
-| `topology_delta`    | left viewpoint, right viewpoint, node and edge deltas, scenario if set |
-| timeline aggregates | segments, plateau markers, gap indicators, active effective interval |
+| `topology_delta`    | left viewpoint, right viewpoint, node and edge deltas, scenario if set            |
+| timeline aggregates | segments, plateau markers, gap indicators, active effective interval              |
 
 Where a result is partial or bounded, a `warnings` field names the limit.
 
@@ -142,7 +142,10 @@ A diff compares two snapshots, one per viewpoint. Each side carries a full viewp
 ```json
 {
   "left": { "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" }, "scenario": null },
-  "right": { "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" }, "scenario": { "scenario_id": "scn_plan_q3" } }
+  "right": {
+    "as_of_valid_time": { "instant": "2026-06-10T00:00:00Z" },
+    "scenario": { "scenario_id": "scn_plan_q3" }
+  }
 }
 ```
 
