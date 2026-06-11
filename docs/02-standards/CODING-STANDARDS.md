@@ -272,11 +272,11 @@ These rules enforce the time-first, append-only commitment model across the code
 
 ### Coverage targets (new/changed code)
 
-| Scope | Lines | Branches | Functions |
-|---|---|---|---|
-| Node/TS renderer | ≥ 80% | ≥ 80% | ≥ 80% |
-| Rust host crate | ≥ 80% | ≥ 80% | ≥ 80% |
-| Rust engine crates | ≥ 90% | ≥ 90% | ≥ 90% |
+| Scope              | Lines | Branches | Functions |
+| ------------------ | ----- | -------- | --------- |
+| Node/TS renderer   | ≥ 80% | ≥ 80%    | ≥ 80%     |
+| Rust host crate    | ≥ 80% | ≥ 80%    | ≥ 80%     |
+| Rust engine crates | ≥ 90% | ≥ 90%    | ≥ 90%     |
 
 - Generated code and build artefacts are excluded; justify any additional exclusions with a comment and an issue reference.
 - Flaky tests: quarantine behind a tag and open an issue; fixing flakiness has higher priority than adding new tests.

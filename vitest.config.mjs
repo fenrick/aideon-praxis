@@ -27,10 +27,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: [path.resolve(__dirname, 'tests/setup.ts')],
-    include: [
-      'src/**/*.{test,spec}.{ts,tsx,js,jsx}',
-      'tests/**/*.{test,spec}.{ts,tsx,js,jsx}',
-    ],
+    include: ['src/**/*.{test,spec}.{ts,tsx,js,jsx}', 'tests/**/*.{test,spec}.{ts,tsx,js,jsx}'],
     exclude: ['tests/webdriver/**'],
     coverage: {
       provider: 'istanbul',

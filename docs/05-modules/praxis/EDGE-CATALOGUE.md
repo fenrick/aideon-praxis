@@ -8,30 +8,30 @@ Praxis uses a plain-language, standards-aligned relationship set. No proprietary
 
 ## Edge catalogue
 
-| Edge ID          | Direction        | Source entity kinds                                  | Target entity kinds                                                | Meaning                                                                                                                 | Cardinality       | Self-link |
-|------------------|------------------|------------------------------------------------------|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|-------------------|-----------|
-| `contributes_to` | source → target  | `Capability`                                         | `ValueStreamStage`                                                 | A capability contributes to the outcome of a value stream stage. Used to trace how capabilities realise business value.  | many-to-many      | disallowed |
-| `delivers`       | source → target  | `Application`, `TechnologyComponent`                 | `Capability`, `BusinessProcess`                                    | A technical or application element delivers a business capability or process outcome. Expresses the application layer's support for business intent. | many-to-many | disallowed |
-| `uses_data`      | source → target  | `Application`, `BusinessProcess`                     | `DataEntity`                                                       | The source reads or writes the target data entity. Direction is mandatory; it drives lineage tracing and impact analysis. The `mode` attribute (`read` \| `write` \| `readwrite`) is required on each edge instance. | many-to-many | disallowed |
-| `deployed_on`    | source → target  | `Application`                                        | `TechnologyComponent`                                              | An application is hosted or deployed on a technology component. Used in infrastructure impact and topology views.        | many-to-many      | disallowed |
-| `change_affects` | source → target  | `PlanEvent`                                          | `Capability`, `BusinessProcess`, `Application`, `TechnologyComponent` | A planned change event affects a target element. The `op` attribute (`create` \| `update` \| `delete` \| `link` \| `unlink`) and `target_ref` are required. Only `PlanEvent` entities may be the source of this edge. | many-to-many | disallowed |
-| `depends_on`     | source → target  | any                                                  | any                                                                | Generic fallback dependency. Use only when no more specific edge applies. Prefer a named edge wherever one exists.       | many-to-many      | disallowed |
-| `belongs_to`     | source → target  | any                                                  | container types (e.g. `ValueStreamStage`, grouping entities)       | Membership or containment. Use for hierarchy and roll-up only — never for runtime or functional dependency.              | many-to-one (typical) | disallowed |
+| Edge ID          | Direction       | Source entity kinds                  | Target entity kinds                                                   | Meaning                                                                                                                                                                                                               | Cardinality           | Self-link  |
+| ---------------- | --------------- | ------------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------- |
+| `contributes_to` | source → target | `Capability`                         | `ValueStreamStage`                                                    | A capability contributes to the outcome of a value stream stage. Used to trace how capabilities realise business value.                                                                                               | many-to-many          | disallowed |
+| `delivers`       | source → target | `Application`, `TechnologyComponent` | `Capability`, `BusinessProcess`                                       | A technical or application element delivers a business capability or process outcome. Expresses the application layer's support for business intent.                                                                  | many-to-many          | disallowed |
+| `uses_data`      | source → target | `Application`, `BusinessProcess`     | `DataEntity`                                                          | The source reads or writes the target data entity. Direction is mandatory; it drives lineage tracing and impact analysis. The `mode` attribute (`read` \| `write` \| `readwrite`) is required on each edge instance.  | many-to-many          | disallowed |
+| `deployed_on`    | source → target | `Application`                        | `TechnologyComponent`                                                 | An application is hosted or deployed on a technology component. Used in infrastructure impact and topology views.                                                                                                     | many-to-many          | disallowed |
+| `change_affects` | source → target | `PlanEvent`                          | `Capability`, `BusinessProcess`, `Application`, `TechnologyComponent` | A planned change event affects a target element. The `op` attribute (`create` \| `update` \| `delete` \| `link` \| `unlink`) and `target_ref` are required. Only `PlanEvent` entities may be the source of this edge. | many-to-many          | disallowed |
+| `depends_on`     | source → target | any                                  | any                                                                   | Generic fallback dependency. Use only when no more specific edge applies. Prefer a named edge wherever one exists.                                                                                                    | many-to-many          | disallowed |
+| `belongs_to`     | source → target | any                                  | container types (e.g. `ValueStreamStage`, grouping entities)          | Membership or containment. Use for hierarchy and roll-up only — never for runtime or functional dependency.                                                                                                           | many-to-one (typical) | disallowed |
 
 ## Edge attributes
 
 ### `uses_data`
 
-| Attribute | Type   | Values                            | Required |
-|-----------|--------|-----------------------------------|----------|
-| `mode`    | enum   | `read`, `write`, `readwrite`      | yes      |
+| Attribute | Type | Values                       | Required |
+| --------- | ---- | ---------------------------- | -------- |
+| `mode`    | enum | `read`, `write`, `readwrite` | yes      |
 
 ### `change_affects`
 
-| Attribute    | Type   | Values                                              | Required |
-|--------------|--------|-----------------------------------------------------|----------|
-| `op`         | enum   | `create`, `update`, `delete`, `link`, `unlink`      | yes      |
-| `target_ref` | string | identifier of the affected entity                   | yes      |
+| Attribute    | Type   | Values                                         | Required |
+| ------------ | ------ | ---------------------------------------------- | -------- |
+| `op`         | enum   | `create`, `update`, `delete`, `link`, `unlink` | yes      |
+| `target_ref` | string | identifier of the affected entity              | yes      |
 
 ## Temporal model
 

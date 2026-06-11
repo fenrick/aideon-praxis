@@ -6,11 +6,11 @@ Defines the trust boundary, capability scoping, workspace integrity, secrets han
 
 The Tauri invoke bridge is the sole security boundary between the renderer and the host. The renderer is an untrusted, disposable WebView. It receives product-scoped capabilities — not host capabilities — and cannot reach the filesystem, the object store, sync endpoints, or engine APIs by any other path.
 
-| Layer | Trust Level | Permitted Actions |
-|---|---|---|
-| Rust host | Fully trusted | All workspace IO, object store, sync, engine, OS key stores |
-| Tauri IPC | Enforced boundary | Typed commands; capability-gated per window |
-| WebView renderer | Untrusted | Invoke only; no filesystem, no TCP, no arbitrary shell |
+| Layer            | Trust Level       | Permitted Actions                                           |
+| ---------------- | ----------------- | ----------------------------------------------------------- |
+| Rust host        | Fully trusted     | All workspace IO, object store, sync, engine, OS key stores |
+| Tauri IPC        | Enforced boundary | Typed commands; capability-gated per window                 |
+| WebView renderer | Untrusted         | Invoke only; no filesystem, no TCP, no arbitrary shell      |
 
 All workspace reads and writes, object verification, sync calls, and engine invocations stay in Rust. The renderer never accesses workspace paths directly.
 
@@ -107,11 +107,11 @@ See [docs/04-contracts/CONTRACTS-AND-SCHEMAS.md](../04-contracts/CONTRACTS-AND-S
 
 Production binaries are signed and notarised before distribution.
 
-| Platform | Requirement |
-|---|---|
-| macOS | Developer ID Application certificate; notarisation via Apple notary service; stapled ticket |
-| Windows | Authenticode signing with a valid EV or OV code-signing certificate |
-| Linux | GPG-signed package or AppImage; SHA-256 checksums published alongside the release |
+| Platform | Requirement                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------- |
+| macOS    | Developer ID Application certificate; notarisation via Apple notary service; stapled ticket |
+| Windows  | Authenticode signing with a valid EV or OV code-signing certificate                         |
+| Linux    | GPG-signed package or AppImage; SHA-256 checksums published alongside the release           |
 
 Unsigned builds must not be distributed as release artifacts. CI must verify signing before publishing.
 

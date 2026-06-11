@@ -47,10 +47,19 @@ export default defineConfig([
     'src/design-system/components/**',
     '**/.pnpm/**',
     '**/out/**',
+    // E2E / WebDriver harness and root test infra are linted/maintained separately.
+    'tests/webdriver/**',
+    'tests/e2e/**',
+    'tests/setup.ts',
+    'tests/tauri-mocks.ts',
   ]),
 
   // Core JS recommendations (base for "clean code" checks)
   js.configs.recommended,
+
+  // Register the @typescript-eslint plugin globally so rules referenced outside the
+  // typed-config objects (e.g. project-level tightening) resolve across all files.
+  { plugins: { '@typescript-eslint': tseslint.plugin } },
 
   // Next.js (core-web-vitals) recommended flat config
   {

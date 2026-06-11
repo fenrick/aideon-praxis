@@ -8,11 +8,11 @@ export type SpacingToken = (typeof spacingTokenKeys)[number];
 
 export const spacingScale: Record<SpacingToken, string> = {
   '2xs': '0.25rem',
-  'xs': '0.5rem',
-  'sm': '0.75rem',
-  'md': '1rem',
-  'lg': '1.25rem',
-  'xl': '1.5rem',
+  xs: '0.5rem',
+  sm: '0.75rem',
+  md: '1rem',
+  lg: '1.25rem',
+  xl: '1.5rem',
   '2xl': '2rem',
   '3xl': '3rem',
 };

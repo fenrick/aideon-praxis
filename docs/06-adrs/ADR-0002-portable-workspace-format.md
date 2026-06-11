@@ -7,7 +7,7 @@
 ## Context
 
 [ADR-0001](./ADR-0001-workspace-is-canonical-authority.md) makes the workspace canonical.
-This ADR specifies what the workspace *is* on disk. The requirement is a folder layout that
+This ADR specifies what the workspace _is_ on disk. The requirement is a folder layout that
 is portable (copy, zip, or sync without a server), auditable (append-only, replayable),
 forward-tolerant (readable by newer software), and cleanly separated into canonical data and
 disposable derived state.
@@ -68,7 +68,7 @@ is derived: it may be deleted and rebuilt from the canonical files with no data 
   "kind": "entity.upsert | edge.upsert | fact.upsert | fact.tombstone | blob.attach | schema.upsert | conflict.recorded",
   "actor": { "userId": "...", "deviceId": "..." },
   "context": { "scenarioId": null, "validFrom": null, "validTo": null },
-  "body": { },
+  "body": {},
   "bodySha256": "..."
 }
 ```

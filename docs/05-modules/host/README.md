@@ -58,13 +58,13 @@ Capabilities are declared in `src-tauri/capabilities/default.json` and cover all
 
 Every IPC command must appear in `appcommands.toml`; absent commands are denied at the Tauri layer before the Rust handler is reached.
 
-| Capability plugin | Purpose |
-|---|---|
-| `core:default` | Window, webview, app, event primitives |
-| `appcommands` | Full Aideon command surface (see tables below) |
-| `log:default` | Structured logging from renderer |
-| `dialog:default` | Native file/confirmation dialogs |
-| `opener:default` | Open files or URLs in the OS default handler |
+| Capability plugin | Purpose                                        |
+| ----------------- | ---------------------------------------------- |
+| `core:default`    | Window, webview, app, event primitives         |
+| `appcommands`     | Full Aideon command surface (see tables below) |
+| `log:default`     | Structured logging from renderer               |
+| `dialog:default`  | Native file/confirmation dialogs               |
+| `opener:default`  | Open files or URLs in the OS default handler   |
 
 ### Content Security Policy
 
@@ -74,11 +74,11 @@ Production builds enforce a strict CSP. Remote assets are forbidden. Dev-only ex
 
 The renderer never receives filesystem paths. The host resolves workspace storage roots per OS:
 
-| Platform | Root |
-|---|---|
-| macOS | `~/Library/Application Support/AideonPraxis` |
-| Windows | `%APPDATA%\AideonPraxis` |
-| Linux | `~/.local/share/aideon` |
+| Platform | Root                                         |
+| -------- | -------------------------------------------- |
+| macOS    | `~/Library/Application Support/AideonPraxis` |
+| Windows  | `%APPDATA%\AideonPraxis`                     |
+| Linux    | `~/.local/share/aideon`                      |
 
 The `AIDEON_TEST_DATA_DIR` environment variable overrides the root in test and CI contexts.
 
@@ -89,16 +89,30 @@ The `AIDEON_TEST_DATA_DIR` environment variable overrides the root in test and C
 All commands accept a single `IpcRequest<T>` argument and return `IpcResponse<U>` or `Result<IpcResponse<U>, HostError>`. The envelope is defined in `src-tauri/src/ipc.rs`.
 
 **Request**
+
 ```json
-{ "requestId": "uuid", "payload": { /* command-specific */ } }
+{
+  "requestId": "uuid",
+  "payload": {
+    /* command-specific */
+  }
+}
 ```
 
 **Response — success**
+
 ```json
-{ "requestId": "uuid", "status": "ok", "result": { /* ... */ } }
+{
+  "requestId": "uuid",
+  "status": "ok",
+  "result": {
+    /* ... */
+  }
+}
 ```
 
 **Response — error**
+
 ```json
 {
   "requestId": "uuid",
@@ -108,6 +122,7 @@ All commands accept a single `IpcRequest<T>` argument and return `IpcResponse<U>
 ```
 
 Rules:
+
 - `requestId` always round-trips.
 - `code` is stable and machine-readable across releases.
 - Rust error internals never appear raw in `message`.
@@ -121,127 +136,127 @@ Commands are registered in `src-tauri/src/app.rs` via `tauri::generate_handler!`
 
 ### System
 
-| Command | Purpose |
-|---|---|
+| Command                 | Purpose                                                               |
+| ----------------------- | --------------------------------------------------------------------- |
 | `system_setup_complete` | Renderer signals a splash task complete (`"frontend"` or `"backend"`) |
-| `system_setup_state` | Query the current setup phase |
-| `system_worker_health` | Return engine health snapshot (`WorkerHealth`) |
-| `system_window_open` | Open a named window by its stable label |
+| `system_setup_state`    | Query the current setup phase                                         |
+| `system_worker_health`  | Return engine health snapshot (`WorkerHealth`)                        |
+| `system_window_open`    | Open a named window by its stable label                               |
 
 ### Workspace
 
-| Command | Purpose |
-|---|---|
-| `workspace_projects_list` | List projects for the active workspace (includes scenario summaries) |
-| `workspace_templates_list` | List canvas templates persisted by the host |
-| `workspace_templates_save` | Persist a canvas template; host is the source of truth |
+| Command                    | Purpose                                                              |
+| -------------------------- | -------------------------------------------------------------------- |
+| `workspace_projects_list`  | List projects for the active workspace (includes scenario summaries) |
+| `workspace_templates_list` | List canvas templates persisted by the host                          |
+| `workspace_templates_save` | Persist a canvas template; host is the source of truth               |
 
 ### Chrona — Temporal Engine
 
 These commands bridge the renderer to the `TemporalEngine` inside `aideon_chrona`. All accept `IpcRequest<T>` and return `IpcResponse<U>`.
 
-| Command | Purpose |
-|---|---|
-| `chrona_temporal_state_at` | Resolve graph snapshot at a commit ref / scenario |
-| `chrona_temporal_diff` | Compute a diff summary between two commit refs |
-| `chrona_temporal_commit_changes` | Commit a `ChangeSet` and return a `CommitId` |
-| `chrona_temporal_list_commits` | List commits on a branch |
-| `chrona_temporal_create_branch` | Create a named scenario branch |
-| `chrona_temporal_list_branches` | List all scenario branches |
-| `chrona_temporal_merge_branches` | Merge one branch into another |
-| `chrona_temporal_topology_delta` | Compute topology delta between two snapshots |
-| `praxis_metamodel_get` | Retrieve the active metamodel document |
+| Command                          | Purpose                                           |
+| -------------------------------- | ------------------------------------------------- |
+| `chrona_temporal_state_at`       | Resolve graph snapshot at a commit ref / scenario |
+| `chrona_temporal_diff`           | Compute a diff summary between two commit refs    |
+| `chrona_temporal_commit_changes` | Commit a `ChangeSet` and return a `CommitId`      |
+| `chrona_temporal_list_commits`   | List commits on a branch                          |
+| `chrona_temporal_create_branch`  | Create a named scenario branch                    |
+| `chrona_temporal_list_branches`  | List all scenario branches                        |
+| `chrona_temporal_merge_branches` | Merge one branch into another                     |
+| `chrona_temporal_topology_delta` | Compute topology delta between two snapshots      |
+| `praxis_metamodel_get`           | Retrieve the active metamodel document            |
 
 ### Praxis — Artefacts and Tasks
 
-| Command | Purpose |
-|---|---|
-| `praxis_artefact_execute_graph` | Execute a `GraphViewDefinition` → `GraphViewModel` |
-| `praxis_artefact_execute_catalogue` | Execute a `CatalogueViewDefinition` → `CatalogueViewModel` |
-| `praxis_artefact_execute_matrix` | Execute a `MatrixViewDefinition` → `MatrixViewModel` |
-| `praxis_artefact_execute_chart` | Execute a `ChartViewDefinition` → `ChartViewModel` |
-| `praxis_task_apply_operations` | Apply a batch of `PraxisOperation`s and commit → `OperationBatchResult` |
-| `praxis_scenario_list` | List scenarios as `ScenarioSummary` items |
-| `praxis_canvas_get_scene` | Load a canvas scene document |
-| `praxis_canvas_get_layout` | Load a canvas layout document |
-| `praxis_canvas_save_layout` | Persist canvas layout changes |
-| `praxis_graph_layout_get` | Retrieve a stored graph layout |
-| `praxis_graph_layout_save` | Save a graph layout |
+| Command                             | Purpose                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------- |
+| `praxis_artefact_execute_graph`     | Execute a `GraphViewDefinition` → `GraphViewModel`                      |
+| `praxis_artefact_execute_catalogue` | Execute a `CatalogueViewDefinition` → `CatalogueViewModel`              |
+| `praxis_artefact_execute_matrix`    | Execute a `MatrixViewDefinition` → `MatrixViewModel`                    |
+| `praxis_artefact_execute_chart`     | Execute a `ChartViewDefinition` → `ChartViewModel`                      |
+| `praxis_task_apply_operations`      | Apply a batch of `PraxisOperation`s and commit → `OperationBatchResult` |
+| `praxis_scenario_list`              | List scenarios as `ScenarioSummary` items                               |
+| `praxis_canvas_get_scene`           | Load a canvas scene document                                            |
+| `praxis_canvas_get_layout`          | Load a canvas layout document                                           |
+| `praxis_canvas_save_layout`         | Persist canvas layout changes                                           |
+| `praxis_graph_layout_get`           | Retrieve a stored graph layout                                          |
+| `praxis_graph_layout_save`          | Save a graph layout                                                     |
 
 ### Mneme — Graph Store Writes
 
-| Command | Purpose |
-|---|---|
-| `mneme_store_upsert_metamodel_batch` | Write a `MetamodelBatch` to the store |
-| `mneme_store_compile_effective_schema` | Compile the effective schema for a type |
-| `mneme_store_trigger_rebuild_effective_schema` | Trigger a full schema rebuild job |
-| `mneme_store_create_node` | Create a graph node |
-| `mneme_store_create_edge` | Create a graph edge |
-| `mneme_store_set_edge_existence_interval` | Set valid-time interval on an edge |
-| `mneme_store_tombstone_entity` | Soft-delete an entity |
-| `mneme_store_set_property_interval` | Set a property value over a valid-time interval |
-| `mneme_store_clear_property_interval` | Remove a property interval |
-| `mneme_store_or_set_update` | OR-set CRDT update on a property |
-| `mneme_store_counter_update` | Counter CRDT update on a property |
-| `mneme_store_upsert_validation_rules` | Write validation rule set |
-| `mneme_store_upsert_computed_rules` | Write computed rule set |
-| `mneme_store_upsert_computed_cache` | Persist computed cache entries |
-| `mneme_store_store_pagerank_scores` | Write PageRank results |
-| `mneme_store_create_scenario` | Create a Mneme scenario |
-| `mneme_store_delete_scenario` | Delete a Mneme scenario |
-| `mneme_store_ingest_ops` | Ingest a batch of raw ops |
+| Command                                        | Purpose                                         |
+| ---------------------------------------------- | ----------------------------------------------- |
+| `mneme_store_upsert_metamodel_batch`           | Write a `MetamodelBatch` to the store           |
+| `mneme_store_compile_effective_schema`         | Compile the effective schema for a type         |
+| `mneme_store_trigger_rebuild_effective_schema` | Trigger a full schema rebuild job               |
+| `mneme_store_create_node`                      | Create a graph node                             |
+| `mneme_store_create_edge`                      | Create a graph edge                             |
+| `mneme_store_set_edge_existence_interval`      | Set valid-time interval on an edge              |
+| `mneme_store_tombstone_entity`                 | Soft-delete an entity                           |
+| `mneme_store_set_property_interval`            | Set a property value over a valid-time interval |
+| `mneme_store_clear_property_interval`          | Remove a property interval                      |
+| `mneme_store_or_set_update`                    | OR-set CRDT update on a property                |
+| `mneme_store_counter_update`                   | Counter CRDT update on a property               |
+| `mneme_store_upsert_validation_rules`          | Write validation rule set                       |
+| `mneme_store_upsert_computed_rules`            | Write computed rule set                         |
+| `mneme_store_upsert_computed_cache`            | Persist computed cache entries                  |
+| `mneme_store_store_pagerank_scores`            | Write PageRank results                          |
+| `mneme_store_create_scenario`                  | Create a Mneme scenario                         |
+| `mneme_store_delete_scenario`                  | Delete a Mneme scenario                         |
+| `mneme_store_ingest_ops`                       | Ingest a batch of raw ops                       |
 
 ### Mneme — Graph Store Reads and Queries
 
-| Command | Purpose |
-|---|---|
-| `mneme_store_read_entity_at_time` | Read entity state at a valid-time / HLC |
-| `mneme_store_traverse_at_time` | Traverse edges from an entity at a valid-time |
-| `mneme_store_list_entities` | List entities with filters, pagination, valid-time |
-| `mneme_store_get_projection_edges` | Retrieve projection edges for analytics |
-| `mneme_store_get_graph_degree_stats` | Degree statistics for an entity set |
-| `mneme_store_get_graph_edge_type_counts` | Edge-type frequency counts |
-| `mneme_store_get_changes_since` | Ordered change feed from a sequence number |
-| `mneme_store_subscribe_partition` | Open a live change-event subscription; returns `subscription_id` |
-| `mneme_store_unsubscribe_partition` | Cancel a live subscription |
-| `mneme_store_get_partition_head` | Current partition sequence head |
-| `mneme_store_get_effective_schema` | Read compiled effective schema |
-| `mneme_store_list_edge_type_rules` | List edge-type validation rules |
-| `mneme_store_get_pagerank_scores` | Read stored PageRank results |
-| `mneme_store_list_validation_rules` | List validation rules |
-| `mneme_store_list_computed_rules` | List computed rules |
-| `mneme_store_list_computed_cache` | Read computed cache entries |
-| `mneme_store_get_integrity_head` | Current integrity head snapshot |
-| `mneme_store_get_last_schema_compile` | Timestamp/version of last schema compile |
-| `mneme_store_get_schema_manifest` | Full schema manifest |
-| `mneme_store_explain_resolution` | Explain fact resolution for a property |
-| `mneme_store_explain_traversal` | Explain path traversal |
-| `mneme_store_list_jobs` | List running and completed processing jobs |
-| `mneme_store_list_failed_jobs` | List failed processing jobs |
+| Command                                  | Purpose                                                          |
+| ---------------------------------------- | ---------------------------------------------------------------- |
+| `mneme_store_read_entity_at_time`        | Read entity state at a valid-time / HLC                          |
+| `mneme_store_traverse_at_time`           | Traverse edges from an entity at a valid-time                    |
+| `mneme_store_list_entities`              | List entities with filters, pagination, valid-time               |
+| `mneme_store_get_projection_edges`       | Retrieve projection edges for analytics                          |
+| `mneme_store_get_graph_degree_stats`     | Degree statistics for an entity set                              |
+| `mneme_store_get_graph_edge_type_counts` | Edge-type frequency counts                                       |
+| `mneme_store_get_changes_since`          | Ordered change feed from a sequence number                       |
+| `mneme_store_subscribe_partition`        | Open a live change-event subscription; returns `subscription_id` |
+| `mneme_store_unsubscribe_partition`      | Cancel a live subscription                                       |
+| `mneme_store_get_partition_head`         | Current partition sequence head                                  |
+| `mneme_store_get_effective_schema`       | Read compiled effective schema                                   |
+| `mneme_store_list_edge_type_rules`       | List edge-type validation rules                                  |
+| `mneme_store_get_pagerank_scores`        | Read stored PageRank results                                     |
+| `mneme_store_list_validation_rules`      | List validation rules                                            |
+| `mneme_store_list_computed_rules`        | List computed rules                                              |
+| `mneme_store_list_computed_cache`        | Read computed cache entries                                      |
+| `mneme_store_get_integrity_head`         | Current integrity head snapshot                                  |
+| `mneme_store_get_last_schema_compile`    | Timestamp/version of last schema compile                         |
+| `mneme_store_get_schema_manifest`        | Full schema manifest                                             |
+| `mneme_store_explain_resolution`         | Explain fact resolution for a property                           |
+| `mneme_store_explain_traversal`          | Explain path traversal                                           |
+| `mneme_store_list_jobs`                  | List running and completed processing jobs                       |
+| `mneme_store_list_failed_jobs`           | List failed processing jobs                                      |
 
 ### Mneme — Export and Import
 
 Long-running export and import operations return immediately with a job reference and emit typed progress events. See [Accepted Work and Events](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md).
 
-| Command | Purpose |
-|---|---|
-| `mneme_store_export_ops` | Export a bounded ops range |
-| `mneme_store_export_ops_stream` | Stream full ops log as a background job |
-| `mneme_store_import_ops_stream` | Replay an ops stream into the store |
-| `mneme_store_export_snapshot_stream` | Stream a full snapshot export |
-| `mneme_store_import_snapshot_stream` | Import a snapshot stream |
+| Command                              | Purpose                                 |
+| ------------------------------------ | --------------------------------------- |
+| `mneme_store_export_ops`             | Export a bounded ops range              |
+| `mneme_store_export_ops_stream`      | Stream full ops log as a background job |
+| `mneme_store_import_ops_stream`      | Replay an ops stream into the store     |
+| `mneme_store_export_snapshot_stream` | Stream a full snapshot export           |
+| `mneme_store_import_snapshot_stream` | Import a snapshot stream                |
 
 ### Mneme — Processing Triggers
 
 Each trigger enqueues a background processing job; the command returns immediately.
 
-| Command | Purpose |
-|---|---|
-| `mneme_store_trigger_refresh_integrity` | Recompute integrity check results |
-| `mneme_store_trigger_refresh_analytics_projections` | Refresh analytics projection cache |
-| `mneme_store_trigger_retention` | Apply retention policy |
-| `mneme_store_trigger_compaction` | Compact the event log |
-| `mneme_store_run_processing_worker` | Manually tick the processing worker |
+| Command                                             | Purpose                             |
+| --------------------------------------------------- | ----------------------------------- |
+| `mneme_store_trigger_refresh_integrity`             | Recompute integrity check results   |
+| `mneme_store_trigger_refresh_analytics_projections` | Refresh analytics projection cache  |
+| `mneme_store_trigger_retention`                     | Apply retention policy              |
+| `mneme_store_trigger_compaction`                    | Compact the event log               |
+| `mneme_store_run_processing_worker`                 | Manually tick the processing worker |
 
 ---
 
@@ -303,10 +318,10 @@ Export and import flows are jobs: they stream data, include manifest metadata, a
 
 Startup completes only when both tasks signal completion:
 
-| Task | Signal |
-|---|---|
-| Backend | `run_backend_setup()` succeeds; calls `system_setup_complete { task: "backend" }` |
-| Frontend | Renderer splash screen calls `system_setup_complete { task: "frontend" }` |
+| Task     | Signal                                                                            |
+| -------- | --------------------------------------------------------------------------------- |
+| Backend  | `run_backend_setup()` succeeds; calls `system_setup_complete { task: "backend" }` |
+| Frontend | Renderer splash screen calls `system_setup_complete { task: "frontend" }`         |
 
 `SetupState` (managed as a `Mutex<SetupState>`) tracks both flags. When both are true the splash window closes after a 3-second minimum display time and the main window becomes visible.
 
@@ -314,14 +329,14 @@ Startup completes only when both tasks signal completion:
 
 ## Window Model
 
-| Label | Purpose |
-|---|---|
-| `splash` | Startup gating screen |
-| `main` | Primary workspace shell |
-| `settings` | Preferences |
-| `status` | Health, jobs, diagnostics |
-| `about` | Version, licences |
-| `styleguide` | UI development reference |
+| Label        | Purpose                   |
+| ------------ | ------------------------- |
+| `splash`     | Startup gating screen     |
+| `main`       | Primary workspace shell   |
+| `settings`   | Preferences               |
+| `status`     | Health, jobs, diagnostics |
+| `about`      | Version, licences         |
+| `styleguide` | UI development reference  |
 
 Labels are stable and never change. The `system_window_open` command opens any window by label. Capabilities are granted to all six labels via `capabilities/default.json`.
 
@@ -331,15 +346,15 @@ Labels are stable and never change. The `system_window_open` command opens any w
 
 The host emits Tauri events to the renderer without polling. Renderer adapters subscribe in one place.
 
-| Event | Payload |
-|---|---|
-| `setup.backend_ready` | — |
-| `workspace_opened` | workspace id |
-| `workspace_closed` | workspace id |
-| `mneme_change_event` (per subscription) | `ChangeEvent` |
-| `job.updated` | job metadata |
-| `job.completed` | job result ref |
-| `integrity.warning` | rule + entities |
+| Event                                   | Payload         |
+| --------------------------------------- | --------------- |
+| `setup.backend_ready`                   | —               |
+| `workspace_opened`                      | workspace id    |
+| `workspace_closed`                      | workspace id    |
+| `mneme_change_event` (per subscription) | `ChangeEvent`   |
+| `job.updated`                           | job metadata    |
+| `job.completed`                         | job result ref  |
+| `integrity.warning`                     | rule + entities |
 
 The renderer must tolerate missed events. Fallback polling is permitted only as a safety net, not the primary update mechanism.
 
@@ -347,32 +362,32 @@ The renderer must tolerate missed events. Fallback polling is permitted only as 
 
 ## Module Layout (`src-tauri/src/`)
 
-| File / Folder | Responsibility |
-|---|---|
-| `app.rs` | Tauri builder, plugin init, invoke handler registration, managed state setup |
-| `windows.rs` | Window creation, labels, sizing, platform styling |
-| `menu.rs` | Native menu and accelerators |
-| `setup.rs` | Splash gating and backend initialisation state machine |
-| `ipc.rs` | Shared `IpcRequest`, `IpcResponse`, `HostError`, `ipc_handle` |
-| `worker.rs` | `WorkerState` — holds engine trait objects; exposes `.engine()` and `.mneme()` |
-| `health.rs` | `system_worker_health` — aggregated engine health snapshot |
-| `temporal.rs` | Chrona / Praxis temporal bridge commands |
-| `scene.rs` | Canvas scene and layout commands |
-| `workspace.rs` | Workspace project and template commands |
-| `praxis_api/` | Praxis artefact execution and task commands |
-| `mneme/` | Mneme store commands (write, read, analytics, processing, export/import) |
+| File / Folder  | Responsibility                                                                 |
+| -------------- | ------------------------------------------------------------------------------ |
+| `app.rs`       | Tauri builder, plugin init, invoke handler registration, managed state setup   |
+| `windows.rs`   | Window creation, labels, sizing, platform styling                              |
+| `menu.rs`      | Native menu and accelerators                                                   |
+| `setup.rs`     | Splash gating and backend initialisation state machine                         |
+| `ipc.rs`       | Shared `IpcRequest`, `IpcResponse`, `HostError`, `ipc_handle`                  |
+| `worker.rs`    | `WorkerState` — holds engine trait objects; exposes `.engine()` and `.mneme()` |
+| `health.rs`    | `system_worker_health` — aggregated engine health snapshot                     |
+| `temporal.rs`  | Chrona / Praxis temporal bridge commands                                       |
+| `scene.rs`     | Canvas scene and layout commands                                               |
+| `workspace.rs` | Workspace project and template commands                                        |
+| `praxis_api/`  | Praxis artefact execution and task commands                                    |
+| `mneme/`       | Mneme store commands (write, read, analytics, processing, export/import)       |
 
 ---
 
 ## Testing
 
-| Layer | What is tested |
-|---|---|
-| Rust unit | `IpcRequest`/`IpcResponse` serde round-trips; `HostError` envelope stability |
-| Rust integration (`tests/internal/`) | Per-command correctness; CSP and window config; command registration parity |
-| Rust E2E smoke (`tests/internal/tauri_e2e_smoke.rs`) | Mock-app window route and IPC wiring (non-Windows only) |
-| Node E2E (`tests/e2e/specs/tauri-smoke.e2e.mjs`) | Real Rust commands through `tauri-driver` + WebdriverIO |
-| TypeScript adapter | `invoke` mock assertions for command name, payload shape, and response mapping |
+| Layer                                                | What is tested                                                                 |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Rust unit                                            | `IpcRequest`/`IpcResponse` serde round-trips; `HostError` envelope stability   |
+| Rust integration (`tests/internal/`)                 | Per-command correctness; CSP and window config; command registration parity    |
+| Rust E2E smoke (`tests/internal/tauri_e2e_smoke.rs`) | Mock-app window route and IPC wiring (non-Windows only)                        |
+| Node E2E (`tests/e2e/specs/tauri-smoke.e2e.mjs`)     | Real Rust commands through `tauri-driver` + WebdriverIO                        |
+| TypeScript adapter                                   | `invoke` mock assertions for command name, payload shape, and response mapping |
 
 The command registration test (`app_tests.rs`) fails if a command is removed or renamed from the `generate_handler!` list, providing a contract check against `appcommands.toml`.
 
@@ -380,12 +395,12 @@ The command registration test (`app_tests.rs`) fails if a command is removed or 
 
 ## Related Documents
 
-| Document | What it covers |
-|---|---|
-| [ARCHITECTURE-BOUNDARY](../../01-architecture/ARCHITECTURE-BOUNDARY.md) | Process boundary rules; renderer/host/engine separation |
-| [MODULE-DEPENDENCY-MAP](../../01-architecture/MODULE-DEPENDENCY-MAP.md) | Crate dependency graph |
-| [CONTRACTS-AND-SCHEMAS](../../04-contracts/CONTRACTS-AND-SCHEMAS.md) | IPC envelope schema and DTO stability rules |
-| [ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) | Job model, progress events, backpressure |
-| [ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md) | Decision: Tauri trust boundary and typed IPC |
-| [ADR-0007](../../06-adrs/ADR-0007-deterministic-package-export.md) | Decision: deterministic package export |
-| [SECURITY](../../02-standards/SECURITY.md) | CSP, capability policy, filesystem boundary |
+| Document                                                                   | What it covers                                          |
+| -------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [ARCHITECTURE-BOUNDARY](../../01-architecture/ARCHITECTURE-BOUNDARY.md)    | Process boundary rules; renderer/host/engine separation |
+| [MODULE-DEPENDENCY-MAP](../../01-architecture/MODULE-DEPENDENCY-MAP.md)    | Crate dependency graph                                  |
+| [CONTRACTS-AND-SCHEMAS](../../04-contracts/CONTRACTS-AND-SCHEMAS.md)       | IPC envelope schema and DTO stability rules             |
+| [ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) | Job model, progress events, backpressure                |
+| [ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)   | Decision: Tauri trust boundary and typed IPC            |
+| [ADR-0007](../../06-adrs/ADR-0007-deterministic-package-export.md)         | Decision: deterministic package export                  |
+| [SECURITY](../../02-standards/SECURITY.md)                                 | CSP, capability policy, filesystem boundary             |

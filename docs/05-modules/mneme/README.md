@@ -31,11 +31,11 @@ workspace layout contract.
 
 ## Three crates
 
-| Crate | Role |
-|---|---|
-| `mneme_core` | Core types, op/fact/schema/time model, storage trait surface |
-| `mneme_store` | Embedded store implementation, projections, migrations |
-| `mneme` | Facade — re-exports both crates under `mneme::core` and `mneme::store` |
+| Crate         | Role                                                                   |
+| ------------- | ---------------------------------------------------------------------- |
+| `mneme_core`  | Core types, op/fact/schema/time model, storage trait surface           |
+| `mneme_store` | Embedded store implementation, projections, migrations                 |
+| `mneme`       | Facade — re-exports both crates under `mneme::core` and `mneme::store` |
 
 Consumers depend on `mneme`. Crate-internal implementation details live in `mneme_store`.
 Types shared across the boundary — including the full `MnemeStore` supertrait — come from
@@ -63,15 +63,15 @@ pub struct OpEnvelope {
 
 Op types cover the full mutation surface:
 
-| `OpType` | Meaning |
-|---|---|
-| `CreateNode` / `CreateEdge` | New entity or edge with an existence interval |
-| `SetEdgeExistenceInterval` | Modify edge existence without changing endpoints |
-| `TombstoneEntity` | Soft-delete a node or edge |
-| `SetProperty` / `ClearProperty` | Time-valid typed property interval |
-| `OrSetUpdate` / `CounterUpdate` | CRDT set and counter mutations |
-| `UpsertMetamodelBatch` | Batch type/field/rule schema update |
-| `CreateScenario` / `DeleteScenario` | What-if scenario lifecycle |
+| `OpType`                            | Meaning                                          |
+| ----------------------------------- | ------------------------------------------------ |
+| `CreateNode` / `CreateEdge`         | New entity or edge with an existence interval    |
+| `SetEdgeExistenceInterval`          | Modify edge existence without changing endpoints |
+| `TombstoneEntity`                   | Soft-delete a node or edge                       |
+| `SetProperty` / `ClearProperty`     | Time-valid typed property interval               |
+| `OrSetUpdate` / `CounterUpdate`     | CRDT set and counter mutations                   |
+| `UpsertMetamodelBatch`              | Batch type/field/rule schema update              |
+| `CreateScenario` / `DeleteScenario` | What-if scenario lifecycle                       |
 
 The op log is append-only and idempotent on ingest — the same `(partition, op_id)` pair is
 a no-op on replay, making the log safe for export/import and sync.
@@ -80,9 +80,9 @@ a no-op on replay, making the log safe for export/import and sync.
 
 Mneme carries two orthogonal time axes on every fact:
 
-| Axis | Type | Semantics |
-|---|---|---|
-| **Valid time** | `ValidTime(i64)` — epoch microseconds UTC | When the fact is true in the modelled world |
+| Axis              | Type                                                 | Semantics                                                              |
+| ----------------- | ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Valid time**    | `ValidTime(i64)` — epoch microseconds UTC            | When the fact is true in the modelled world                            |
 | **Asserted time** | `Hlc(i64)` — packed physical-micros + 12-bit counter | When the fact was recorded; used for audit, ordering, and tie-breaking |
 
 The `Hlc` packs a physical timestamp into the upper bits and a monotone counter into the
@@ -166,21 +166,21 @@ these traits.
 
 ### Write surface
 
-| Trait | Responsibility |
-|---|---|
-| `GraphWriteApi` | Create nodes and edges, set edge existence intervals, tombstone entities |
-| `PropertyWriteApi` | Set/clear typed property intervals; OR-set and counter updates |
-| `MetamodelApi` | Upsert metamodel batches, compile effective schemas, list edge type rules |
-| `ScenarioApi` | Create and delete scenario overlays |
+| Trait              | Responsibility                                                            |
+| ------------------ | ------------------------------------------------------------------------- |
+| `GraphWriteApi`    | Create nodes and edges, set edge existence intervals, tombstone entities  |
+| `PropertyWriteApi` | Set/clear typed property intervals; OR-set and counter updates            |
+| `MetamodelApi`     | Upsert metamodel batches, compile effective schemas, list edge type rules |
+| `ScenarioApi`      | Create and delete scenario overlays                                       |
 
 ### Read surface
 
-| Trait | Responsibility |
-|---|---|
-| `GraphReadApi` | Read entity at valid time, traverse edges, list entities with field filters |
-| `AnalyticsApi` | Directed projection edges, degree stats, edge-type counts |
-| `AnalyticsResultsApi` | Store and retrieve PageRank run scores |
-| `ChangeFeedApi` | Poll or subscribe to the per-partition change stream |
+| Trait                 | Responsibility                                                              |
+| --------------------- | --------------------------------------------------------------------------- |
+| `GraphReadApi`        | Read entity at valid time, traverse edges, list entities with field filters |
+| `AnalyticsApi`        | Directed projection edges, degree stats, edge-type counts                   |
+| `AnalyticsResultsApi` | Store and retrieve PageRank run scores                                      |
+| `ChangeFeedApi`       | Poll or subscribe to the per-partition change stream                        |
 
 All reads accept `scenario_id` and `as_of_asserted_at` for audit-mode reads.
 
@@ -278,11 +278,11 @@ store is addressed and immutable.
 
 ## Derived artefact pipeline (three consistency tiers)
 
-| Tier | When updated | Examples |
-|---|---|---|
-| **Sync-in-tx** | Inside the write transaction | Field index tables, projection edge rows, entity timestamps, change feed rows |
-| **Near-real-time async** | Job queue, bounded latency | Effective schema cache, connectivity checks, pre-aggregations |
-| **Batch / on-demand** | Scheduled or triggered | PageRank scores, integrity audits, compaction |
+| Tier                     | When updated                 | Examples                                                                      |
+| ------------------------ | ---------------------------- | ----------------------------------------------------------------------------- |
+| **Sync-in-tx**           | Inside the write transaction | Field index tables, projection edge rows, entity timestamps, change feed rows |
+| **Near-real-time async** | Job queue, bounded latency   | Effective schema cache, connectivity checks, pre-aggregations                 |
+| **Batch / on-demand**    | Scheduled or triggered       | PageRank scores, integrity audits, compaction                                 |
 
 Jobs are deduplicated by a `dedupe_key` — bulk ingest of a thousand metamodel ops enqueues
 one schema-compile job per type, not a thousand. Failures are retried with backoff; they
@@ -327,16 +327,16 @@ Mneme does not own:
 
 ## Architecture and ADR references
 
-| Document | What it covers |
-|---|---|
-| [ARCHITECTURE-BOUNDARY](../../01-architecture/ARCHITECTURE-BOUNDARY.md) | Module seam definitions |
-| [DESKTOP-FIRST-WORKSPACE](../../03-design/DESKTOP-FIRST-WORKSPACE.md) | Workspace folder layout |
-| [METAMODEL-PACKAGES](../../03-design/METAMODEL-PACKAGES.md) | How Praxis publishes to Mneme |
-| [TEMPORAL-AND-SCENARIO-CONTEXT](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Bi-temporal + scenario contract |
-| [PROJECTION-AND-INVALIDATION](../../04-contracts/PROJECTION-AND-INVALIDATION.md) | Projection lifecycle contract |
-| [ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md) | Workspace-is-canonical-authority |
-| [ADR-0002](../../06-adrs/ADR-0002-portable-workspace-format.md) | Portable workspace format |
-| [ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md) | Content-addressed blob store |
-| [ADR-0004](../../06-adrs/ADR-0004-storage-engine-abstraction.md) | Storage engine abstraction |
-| [RUNTIME-AND-ENGINE.md](./RUNTIME-AND-ENGINE.md) | Keyspace layout, engine bake-off, single-writer queue |
-| [SQLITE.md](./SQLITE.md) | Embedded SQLite schema specification |
+| Document                                                                             | What it covers                                        |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| [ARCHITECTURE-BOUNDARY](../../01-architecture/ARCHITECTURE-BOUNDARY.md)              | Module seam definitions                               |
+| [DESKTOP-FIRST-WORKSPACE](../../03-design/DESKTOP-FIRST-WORKSPACE.md)                | Workspace folder layout                               |
+| [METAMODEL-PACKAGES](../../03-design/METAMODEL-PACKAGES.md)                          | How Praxis publishes to Mneme                         |
+| [TEMPORAL-AND-SCENARIO-CONTEXT](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Bi-temporal + scenario contract                       |
+| [PROJECTION-AND-INVALIDATION](../../04-contracts/PROJECTION-AND-INVALIDATION.md)     | Projection lifecycle contract                         |
+| [ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md)               | Workspace-is-canonical-authority                      |
+| [ADR-0002](../../06-adrs/ADR-0002-portable-workspace-format.md)                      | Portable workspace format                             |
+| [ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md)                 | Content-addressed blob store                          |
+| [ADR-0004](../../06-adrs/ADR-0004-storage-engine-abstraction.md)                     | Storage engine abstraction                            |
+| [RUNTIME-AND-ENGINE.md](./RUNTIME-AND-ENGINE.md)                                     | Keyspace layout, engine bake-off, single-writer queue |
+| [SQLITE.md](./SQLITE.md)                                                             | Embedded SQLite schema specification                  |

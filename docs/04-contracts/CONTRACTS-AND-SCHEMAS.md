@@ -18,14 +18,14 @@ The manifest of all command names is the executable snapshot: [`./contracts/ipc-
 
 Aideon Desktop has six contract families. Error-envelope standards apply across all of them.
 
-| # | Family | Description |
-|---|--------|-------------|
-| 1 | IPC envelope | Request/response wire shape and error envelope |
-| 2 | Temporal query context | Time and scenario context carried on every time-aware call |
-| 3 | Mneme store operations | Fact writes, reads, and graph queries |
-| 4 | Chrona temporal operations | Branching, merging, commits, and diffs |
-| 5 | Praxis artefact and workspace | View execution, canvas, layout, templates, and task operations |
-| 6 | Accepted-work and events | Long-operation acceptance envelope and progress events |
+| #   | Family                        | Description                                                    |
+| --- | ----------------------------- | -------------------------------------------------------------- |
+| 1   | IPC envelope                  | Request/response wire shape and error envelope                 |
+| 2   | Temporal query context        | Time and scenario context carried on every time-aware call     |
+| 3   | Mneme store operations        | Fact writes, reads, and graph queries                          |
+| 4   | Chrona temporal operations    | Branching, merging, commits, and diffs                         |
+| 5   | Praxis artefact and workspace | View execution, canvas, layout, templates, and task operations |
+| 6   | Accepted-work and events      | Long-operation acceptance envelope and progress events         |
 
 ---
 
@@ -98,16 +98,16 @@ JSON on the wire:
 
 `code` is a contract-versioned identifier. Changing a code is a breaking change.
 
-| Code | Meaning |
-|------|---------|
-| `workspace_not_found` | The requested workspace does not exist |
-| `workspace_locked` | The workspace is locked by another operation |
-| `schema_too_new` | The stored schema version exceeds what this host supports |
-| `conflict_recorded` | A scenario conflict was recorded and operation halted |
-| `backpressure` | The host job queue is saturated; caller must retry |
-| `invalid_input` | Payload validation failed |
-| `invalid_time` | A time string could not be parsed or is out of range |
-| `internal_error` | An unexpected host-side error occurred |
+| Code                  | Meaning                                                   |
+| --------------------- | --------------------------------------------------------- |
+| `workspace_not_found` | The requested workspace does not exist                    |
+| `workspace_locked`    | The workspace is locked by another operation              |
+| `schema_too_new`      | The stored schema version exceeds what this host supports |
+| `conflict_recorded`   | A scenario conflict was recorded and operation halted     |
+| `backpressure`        | The host job queue is saturated; caller must retry        |
+| `invalid_input`       | Payload validation failed                                 |
+| `invalid_time`        | A time string could not be parsed or is out of range      |
+| `internal_error`      | An unexpected host-side error occurred                    |
 
 `details` is structured and optional; it carries machine-readable context for debugging and must not leak secrets or internal stack traces.
 
@@ -142,18 +142,18 @@ Defined in `src-tauri/src/mneme/payloads_graph.rs` and `payloads_processing.rs`.
 
 ### Write operations
 
-| Command | Payload | Description |
-|---------|---------|-------------|
-| `mneme_store_create_node` | `CreateNodePayload` | Assert a new node entity |
-| `mneme_store_create_edge` | `CreateEdgePayload` | Assert a new directed edge with existence interval |
-| `mneme_store_set_edge_existence_interval` | `SetEdgeExistencePayload` | Set or revise an edge's valid-time interval |
-| `mneme_store_set_property_interval` | `SetPropertyIntervalPayload` | Set a scalar property value over a valid-time interval |
-| `mneme_store_clear_property_interval` | `ClearPropertyIntervalPayload` | Clear a property over a valid-time interval |
-| `mneme_store_or_set_update` | `OrSetUpdatePayload` | Add/remove elements from an OR-set CRDT property |
-| `mneme_store_counter_update` | `CounterUpdatePayload` | Apply a signed delta to a counter CRDT property |
-| `mneme_store_tombstone_entity` | `TombstoneEntityPayload` | Mark an entity as tombstoned |
-| `mneme_store_ingest_ops` | `IngestOpsPayload` | Batch-ingest a set of ops |
-| `mneme_store_upsert_metamodel_batch` | — | Upsert metamodel type definitions in batch |
+| Command                                   | Payload                        | Description                                            |
+| ----------------------------------------- | ------------------------------ | ------------------------------------------------------ |
+| `mneme_store_create_node`                 | `CreateNodePayload`            | Assert a new node entity                               |
+| `mneme_store_create_edge`                 | `CreateEdgePayload`            | Assert a new directed edge with existence interval     |
+| `mneme_store_set_edge_existence_interval` | `SetEdgeExistencePayload`      | Set or revise an edge's valid-time interval            |
+| `mneme_store_set_property_interval`       | `SetPropertyIntervalPayload`   | Set a scalar property value over a valid-time interval |
+| `mneme_store_clear_property_interval`     | `ClearPropertyIntervalPayload` | Clear a property over a valid-time interval            |
+| `mneme_store_or_set_update`               | `OrSetUpdatePayload`           | Add/remove elements from an OR-set CRDT property       |
+| `mneme_store_counter_update`              | `CounterUpdatePayload`         | Apply a signed delta to a counter CRDT property        |
+| `mneme_store_tombstone_entity`            | `TombstoneEntityPayload`       | Mark an entity as tombstoned                           |
+| `mneme_store_ingest_ops`                  | `IngestOpsPayload`             | Batch-ingest a set of ops                              |
+| `mneme_store_upsert_metamodel_batch`      | —                              | Upsert metamodel type definitions in batch             |
 
 #### CreateNodePayload (representative shape)
 
@@ -190,15 +190,15 @@ Defined in `src-tauri/src/mneme/payloads_graph.rs` and `payloads_processing.rs`.
 
 ### Read operations
 
-| Command | Payload | Description |
-|---------|---------|-------------|
-| `mneme_store_read_entity_at_time` | `ReadEntityAtTimePayload` | Read an entity's resolved properties at a point in time |
-| `mneme_store_traverse_at_time` | `TraverseAtTimePayload` | Traverse edges from an entity at a point in time |
-| `mneme_store_list_entities` | `ListEntitiesPayload` | List entities with optional type and field filters |
-| `mneme_store_get_projection_edges` | `GetProjectionEdgesPayload` | Get materialised projection edges |
-| `mneme_store_get_changes_since` | `GetChangesSincePayload` | Retrieve ops log from a sequence number |
-| `mneme_store_explain_resolution` | `ExplainResolutionPayload` | Explain how a property value was resolved |
-| `mneme_store_explain_traversal` | `ExplainTraversalPayload` | Explain why an edge is or is not visible |
+| Command                            | Payload                     | Description                                             |
+| ---------------------------------- | --------------------------- | ------------------------------------------------------- |
+| `mneme_store_read_entity_at_time`  | `ReadEntityAtTimePayload`   | Read an entity's resolved properties at a point in time |
+| `mneme_store_traverse_at_time`     | `TraverseAtTimePayload`     | Traverse edges from an entity at a point in time        |
+| `mneme_store_list_entities`        | `ListEntitiesPayload`       | List entities with optional type and field filters      |
+| `mneme_store_get_projection_edges` | `GetProjectionEdgesPayload` | Get materialised projection edges                       |
+| `mneme_store_get_changes_since`    | `GetChangesSincePayload`    | Retrieve ops log from a sequence number                 |
+| `mneme_store_explain_resolution`   | `ExplainResolutionPayload`  | Explain how a property value was resolved               |
+| `mneme_store_explain_traversal`    | `ExplainTraversalPayload`   | Explain why an edge is or is not visible                |
 
 #### ReadEntityAtTimePayload
 
@@ -216,55 +216,55 @@ Defined in `src-tauri/src/mneme/payloads_graph.rs` and `payloads_processing.rs`.
 
 ### Schema and analytics operations
 
-| Command | Payload | Description |
-|---------|---------|-------------|
-| `mneme_store_get_effective_schema` | `GetEffectiveSchemaPayload` | Resolved schema for a type |
-| `mneme_store_compile_effective_schema` | — | Recompile effective schema |
-| `mneme_store_trigger_rebuild_effective_schema` | — | Trigger async schema rebuild |
-| `mneme_store_get_schema_manifest` | — | Full schema manifest |
-| `mneme_store_get_last_schema_compile` | — | Timestamp of last schema compile |
-| `mneme_store_upsert_validation_rules` | `UpsertValidationRulesPayload` | Upsert validation rule set |
-| `mneme_store_list_validation_rules` | `ListValidationRulesPayload` | List validation rules |
-| `mneme_store_list_edge_type_rules` | `ListEdgeTypeRulesPayload` | List edge-type resolution rules |
-| `mneme_store_upsert_computed_rules` | `UpsertComputedRulesPayload` | Upsert computed-field rules |
-| `mneme_store_list_computed_rules` | `ListComputedRulesPayload` | List computed-field rules |
-| `mneme_store_upsert_computed_cache` | `UpsertComputedCachePayload` | Upsert computed-field cache entries |
-| `mneme_store_list_computed_cache` | `ListComputedCachePayload` | List computed-field cache entries |
-| `mneme_store_get_graph_degree_stats` | `GetGraphDegreeStatsPayload` | Degree stats for entities |
-| `mneme_store_get_graph_edge_type_counts` | `GetGraphEdgeTypeCountsPayload` | Edge type frequency counts |
-| `mneme_store_get_pagerank_scores` | — | Retrieve stored PageRank scores |
-| `mneme_store_store_pagerank_scores` | — | Persist PageRank scores |
-| `mneme_store_get_integrity_head` | `IntegrityHeadPayload` | Integrity head for a partition |
-| `mneme_store_get_partition_head` | — | Partition head sequence number |
+| Command                                        | Payload                         | Description                         |
+| ---------------------------------------------- | ------------------------------- | ----------------------------------- |
+| `mneme_store_get_effective_schema`             | `GetEffectiveSchemaPayload`     | Resolved schema for a type          |
+| `mneme_store_compile_effective_schema`         | —                               | Recompile effective schema          |
+| `mneme_store_trigger_rebuild_effective_schema` | —                               | Trigger async schema rebuild        |
+| `mneme_store_get_schema_manifest`              | —                               | Full schema manifest                |
+| `mneme_store_get_last_schema_compile`          | —                               | Timestamp of last schema compile    |
+| `mneme_store_upsert_validation_rules`          | `UpsertValidationRulesPayload`  | Upsert validation rule set          |
+| `mneme_store_list_validation_rules`            | `ListValidationRulesPayload`    | List validation rules               |
+| `mneme_store_list_edge_type_rules`             | `ListEdgeTypeRulesPayload`      | List edge-type resolution rules     |
+| `mneme_store_upsert_computed_rules`            | `UpsertComputedRulesPayload`    | Upsert computed-field rules         |
+| `mneme_store_list_computed_rules`              | `ListComputedRulesPayload`      | List computed-field rules           |
+| `mneme_store_upsert_computed_cache`            | `UpsertComputedCachePayload`    | Upsert computed-field cache entries |
+| `mneme_store_list_computed_cache`              | `ListComputedCachePayload`      | List computed-field cache entries   |
+| `mneme_store_get_graph_degree_stats`           | `GetGraphDegreeStatsPayload`    | Degree stats for entities           |
+| `mneme_store_get_graph_edge_type_counts`       | `GetGraphEdgeTypeCountsPayload` | Edge type frequency counts          |
+| `mneme_store_get_pagerank_scores`              | —                               | Retrieve stored PageRank scores     |
+| `mneme_store_store_pagerank_scores`            | —                               | Persist PageRank scores             |
+| `mneme_store_get_integrity_head`               | `IntegrityHeadPayload`          | Integrity head for a partition      |
+| `mneme_store_get_partition_head`               | —                               | Partition head sequence number      |
 
 ### Worker and maintenance operations
 
-| Command | Payload | Description |
-|---------|---------|-------------|
-| `mneme_store_run_processing_worker` | `RunWorkerPayload` | Run background job worker for up to `maxJobs` jobs |
-| `mneme_store_list_jobs` | `ListJobsPayload` | List background jobs |
-| `mneme_store_list_failed_jobs` | `ListFailedJobsPayload` | List failed jobs |
-| `mneme_store_trigger_refresh_analytics_projections` | `TriggerProcessingPayload` | Trigger analytics projection refresh |
-| `mneme_store_trigger_refresh_integrity` | `TriggerProcessingPayload` | Trigger integrity rebuild |
-| `mneme_store_trigger_compaction` | `TriggerCompactionPayload` | Trigger storage compaction |
-| `mneme_store_trigger_retention` | `TriggerRetentionPayload` | Apply retention policy |
+| Command                                             | Payload                    | Description                                        |
+| --------------------------------------------------- | -------------------------- | -------------------------------------------------- |
+| `mneme_store_run_processing_worker`                 | `RunWorkerPayload`         | Run background job worker for up to `maxJobs` jobs |
+| `mneme_store_list_jobs`                             | `ListJobsPayload`          | List background jobs                               |
+| `mneme_store_list_failed_jobs`                      | `ListFailedJobsPayload`    | List failed jobs                                   |
+| `mneme_store_trigger_refresh_analytics_projections` | `TriggerProcessingPayload` | Trigger analytics projection refresh               |
+| `mneme_store_trigger_refresh_integrity`             | `TriggerProcessingPayload` | Trigger integrity rebuild                          |
+| `mneme_store_trigger_compaction`                    | `TriggerCompactionPayload` | Trigger storage compaction                         |
+| `mneme_store_trigger_retention`                     | `TriggerRetentionPayload`  | Apply retention policy                             |
 
 ### Streaming export/import operations
 
-| Command | Description |
-|---------|-------------|
-| `mneme_store_export_ops` | Export ops as a batch |
-| `mneme_store_export_ops_stream` | Stream ops export |
+| Command                              | Description                 |
+| ------------------------------------ | --------------------------- |
+| `mneme_store_export_ops`             | Export ops as a batch       |
+| `mneme_store_export_ops_stream`      | Stream ops export           |
 | `mneme_store_export_snapshot_stream` | Stream full snapshot export |
-| `mneme_store_import_ops_stream` | Stream ops import |
-| `mneme_store_import_snapshot_stream` | Stream snapshot import |
+| `mneme_store_import_ops_stream`      | Stream ops import           |
+| `mneme_store_import_snapshot_stream` | Stream snapshot import      |
 
 ### Subscription operations
 
-| Command | Payload | Description |
-|---------|---------|-------------|
-| `mneme_store_subscribe_partition` | `SubscribePartitionPayload` | Subscribe to partition change events; returns `{ subscriptionId }` |
-| `mneme_store_unsubscribe_partition` | `UnsubscribePartitionPayload` | Unsubscribe by subscription ID |
+| Command                             | Payload                       | Description                                                        |
+| ----------------------------------- | ----------------------------- | ------------------------------------------------------------------ |
+| `mneme_store_subscribe_partition`   | `SubscribePartitionPayload`   | Subscribe to partition change events; returns `{ subscriptionId }` |
+| `mneme_store_unsubscribe_partition` | `UnsubscribePartitionPayload` | Unsubscribe by subscription ID                                     |
 
 ---
 
@@ -272,15 +272,15 @@ Defined in `src-tauri/src/mneme/payloads_graph.rs` and `payloads_processing.rs`.
 
 The chrona module manages temporal branching, merging, and diff operations over the fact history.
 
-| Command | Description |
-|---------|-------------|
-| `chrona_temporal_create_branch` | Create a temporal branch |
-| `chrona_temporal_list_branches` | List all temporal branches |
-| `chrona_temporal_commit_changes` | Commit changes on a branch |
-| `chrona_temporal_list_commits` | List commits on a branch |
-| `chrona_temporal_merge_branches` | Merge branches |
-| `chrona_temporal_diff` | Compute a diff between two temporal states |
-| `chrona_temporal_state_at` | Read state at a specific temporal coordinate |
+| Command                          | Description                                      |
+| -------------------------------- | ------------------------------------------------ |
+| `chrona_temporal_create_branch`  | Create a temporal branch                         |
+| `chrona_temporal_list_branches`  | List all temporal branches                       |
+| `chrona_temporal_commit_changes` | Commit changes on a branch                       |
+| `chrona_temporal_list_commits`   | List commits on a branch                         |
+| `chrona_temporal_merge_branches` | Merge branches                                   |
+| `chrona_temporal_diff`           | Compute a diff between two temporal states       |
+| `chrona_temporal_state_at`       | Read state at a specific temporal coordinate     |
 | `chrona_temporal_topology_delta` | Compute graph topology change between two points |
 
 All chrona payloads carry explicit temporal context (branch reference, `at`, and `asOf` parameters). See [TEMPORAL-AND-SCENARIO-CONTEXT.md](TEMPORAL-AND-SCENARIO-CONTEXT.md) for the full semantics.
@@ -291,22 +291,22 @@ All chrona payloads carry explicit temporal context (branch reference, `at`, and
 
 ### 5a) Scenario management
 
-| Command | Payload | Description |
-|---------|---------|-------------|
-| `praxis_scenario_list` | — | List all scenarios available in the workspace |
-| `mneme_store_create_scenario` | — | Create a new scenario |
-| `mneme_store_delete_scenario` | — | Delete a scenario |
+| Command                       | Payload | Description                                   |
+| ----------------------------- | ------- | --------------------------------------------- |
+| `praxis_scenario_list`        | —       | List all scenarios available in the workspace |
+| `mneme_store_create_scenario` | —       | Create a new scenario                         |
+| `mneme_store_delete_scenario` | —       | Delete a scenario                             |
 
 ### 5b) Artefact execution (view projections)
 
 All execution payloads carry explicit time context (`asOf`, `scenario?`, `layer?`). Projections are derived; facts and ops are canonical.
 
-| Command | Payload | Result |
-|---------|---------|--------|
-| `praxis_artefact_execute_graph` | `GraphViewDefinition` | `GraphViewModel` |
+| Command                             | Payload                   | Result               |
+| ----------------------------------- | ------------------------- | -------------------- |
+| `praxis_artefact_execute_graph`     | `GraphViewDefinition`     | `GraphViewModel`     |
 | `praxis_artefact_execute_catalogue` | `CatalogueViewDefinition` | `CatalogueViewModel` |
-| `praxis_artefact_execute_matrix` | `MatrixViewDefinition` | `MatrixViewModel` |
-| `praxis_artefact_execute_chart` | `ChartViewDefinition` | `ChartViewModel` |
+| `praxis_artefact_execute_matrix`    | `MatrixViewDefinition`    | `MatrixViewModel`    |
+| `praxis_artefact_execute_chart`     | `ChartViewDefinition`     | `ChartViewModel`     |
 
 #### GraphViewDefinition (representative shape)
 
@@ -345,57 +345,57 @@ See [PROJECTION-AND-INVALIDATION.md](PROJECTION-AND-INVALIDATION.md) for project
 
 Layout geometry is persisted by the host and keyed by time context. Renderer-side TS types are in `src/dtos/canvas.ts` and `dtos/graph-layout.ts`.
 
-| Command | Payload | Result |
-|---------|---------|--------|
-| `praxis_canvas_get_layout` | `CanvasLayoutGetRequest { docId, asOf, scenario?, layer? }` | `CanvasLayoutSnapshot \| null` |
-| `praxis_canvas_save_layout` | `CanvasLayoutSnapshot { docId, asOf, scenario?, layer?, nodes[], edges[], groups[] }` | `()` |
-| `praxis_canvas_get_scene` | — | Canvas scene state |
-| `praxis_graph_layout_get` | `GraphLayoutGetRequest { docId, widgetId, asOf, scenario?, layer? }` | `GraphLayoutSnapshot \| null` |
-| `praxis_graph_layout_save` | `GraphLayoutSnapshot { docId, widgetId, asOf, scenario?, layer?, nodes[] }` | `()` |
+| Command                     | Payload                                                                               | Result                         |
+| --------------------------- | ------------------------------------------------------------------------------------- | ------------------------------ |
+| `praxis_canvas_get_layout`  | `CanvasLayoutGetRequest { docId, asOf, scenario?, layer? }`                           | `CanvasLayoutSnapshot \| null` |
+| `praxis_canvas_save_layout` | `CanvasLayoutSnapshot { docId, asOf, scenario?, layer?, nodes[], edges[], groups[] }` | `()`                           |
+| `praxis_canvas_get_scene`   | —                                                                                     | Canvas scene state             |
+| `praxis_graph_layout_get`   | `GraphLayoutGetRequest { docId, widgetId, asOf, scenario?, layer? }`                  | `GraphLayoutSnapshot \| null`  |
+| `praxis_graph_layout_save`  | `GraphLayoutSnapshot { docId, widgetId, asOf, scenario?, layer?, nodes[] }`           | `()`                           |
 
 ### 5d) Task operations (twin mutations)
 
 Praxis task operations mutate the twin through explicit operation payloads.
 
-| Command | Payload | Result |
-|---------|---------|--------|
+| Command                        | Payload                                      | Result                 |
+| ------------------------------ | -------------------------------------------- | ---------------------- |
 | `praxis_task_apply_operations` | `{ branch?, operations: PraxisOperation[] }` | `OperationBatchResult` |
 
 `PraxisOperation` is a camelCase tagged union:
 
-| Variant | Fields |
-|---------|--------|
+| Variant      | Fields               |
+| ------------ | -------------------- |
 | `createNode` | `{ node: TwinNode }` |
 | `updateNode` | `{ node: TwinNode }` |
-| `deleteNode` | `{ nodeId }` |
+| `deleteNode` | `{ nodeId }`         |
 | `createEdge` | `{ edge: TwinEdge }` |
 | `updateEdge` | `{ edge: TwinEdge }` |
-| `deleteEdge` | `{ edgeId }` |
+| `deleteEdge` | `{ edgeId }`         |
 
 `TwinNode`: `{ id, type?, props? }`
 `TwinEdge`: `{ id?, from, to, type?, directed?, props? }`
 
 ### 5e) Metamodel
 
-| Command | Description |
-|---------|-------------|
+| Command                | Description                              |
+| ---------------------- | ---------------------------------------- |
 | `praxis_metamodel_get` | Retrieve the active metamodel definition |
 
 ### 5f) Workspace templates
 
 Templates are persisted by the host. The host seeds a default template set on first run so the renderer always has initial artefacts.
 
-| Command | Payload | Result |
-|---------|---------|--------|
-| `workspace_templates_list` | `{}` | `TemplatePayload[]` |
-| `workspace_templates_save` | `TemplatePayload` | `TemplatePayload` |
+| Command                    | Payload           | Result              |
+| -------------------------- | ----------------- | ------------------- |
+| `workspace_templates_list` | `{}`              | `TemplatePayload[]` |
+| `workspace_templates_save` | `TemplatePayload` | `TemplatePayload`   |
 
 `TemplatePayload` (camelCase): `{ id, documentId, name, description, widgets[] }` where each widget is `{ id, title, size?, kind, view }` and `view` is the widget's view definition.
 
 ### 5g) Workspace projects
 
-| Command | Description |
-|---------|-------------|
+| Command                   | Description                    |
+| ------------------------- | ------------------------------ |
 | `workspace_projects_list` | List projects in the workspace |
 
 ---
@@ -442,12 +442,12 @@ See [ACCEPTED-WORK-AND-EVENTS.md](ACCEPTED-WORK-AND-EVENTS.md) for the full enve
 
 ## System Commands
 
-| Command | Description |
-|---------|-------------|
-| `system_setup_state` | Query first-run setup state |
-| `system_setup_complete` | Mark setup as complete |
-| `system_window_open` | Open a named window |
-| `system_worker_health` | Health check for the background worker |
+| Command                 | Description                            |
+| ----------------------- | -------------------------------------- |
+| `system_setup_state`    | Query first-run setup state            |
+| `system_setup_complete` | Mark setup as complete                 |
+| `system_window_open`    | Open a named window                    |
+| `system_worker_health`  | Health check for the background worker |
 
 ---
 

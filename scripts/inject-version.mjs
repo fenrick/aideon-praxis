@@ -59,9 +59,7 @@ async function main() {
   const updatedFiles = [];
 
   // Desktop renderer version file (React). Legacy Svelte renderer removed.
-  updatedFiles.push(
-    await writeTypeScriptVersion(path.join(repoRoot, 'src/version.ts'), version),
-  );
+  updatedFiles.push(await writeTypeScriptVersion(path.join(repoRoot, 'src/version.ts'), version));
 
   const rendererPackage = path.join(repoRoot, 'package.json');
   if (await fileExists(rendererPackage)) {

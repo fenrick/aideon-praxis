@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import type { Day as WeekDay } from "date-fns";
+import type { Day as WeekDay } from 'date-fns';
 import {
   differenceInCalendarDays,
   eachDayOfInterval,
@@ -11,17 +11,17 @@ import {
   nextDay,
   parseISO,
   subWeeks,
-} from "date-fns";
+} from 'date-fns';
+import { cn } from 'design-system/lib/utils';
 import {
-  type CSSProperties,
   createContext,
+  type CSSProperties,
   Fragment,
   type HTMLAttributes,
   type ReactNode,
   useContext,
   useMemo,
-} from "react";
-import { cn } from "design-system/lib/utils";
+} from 'react';
 
 export type Activity = {
   date: string;
@@ -47,27 +47,27 @@ type MonthLabel = {
 };
 
 const DEFAULT_MONTH_LABELS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 const DEFAULT_LABELS: Labels = {
   months: DEFAULT_MONTH_LABELS,
-  weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-  totalCount: "{{count}} activities in {{year}}",
+  weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  totalCount: '{{count}} activities in {{year}}',
   legend: {
-    less: "Less",
-    more: "More",
+    less: 'Less',
+    more: 'More',
   },
 };
 
@@ -88,16 +88,13 @@ type ContributionGraphContextType = {
   height: number;
 };
 
-const ContributionGraphContext =
-  createContext<ContributionGraphContextType | null>(null);
+const ContributionGraphContext = createContext<ContributionGraphContextType | null>(null);
 
 const useContributionGraph = () => {
   const context = useContext(ContributionGraphContext);
 
   if (!context) {
-    throw new Error(
-      "ContributionGraph components must be used within a ContributionGraph"
-    );
+    throw new Error('ContributionGraph components must be used within a ContributionGraph');
   }
 
   return context;
@@ -109,13 +106,9 @@ const fillHoles = (activities: Activity[]): Activity[] => {
   }
 
   // Sort activities by date to ensure correct date range
-  const sortedActivities = [...activities].sort((a, b) =>
-    a.date.localeCompare(b.date)
-  );
+  const sortedActivities = [...activities].sort((a, b) => a.date.localeCompare(b.date));
 
-  const calendar = new Map<string, Activity>(
-    activities.map((a) => [a.date, a])
-  );
+  const calendar = new Map<string, Activity>(activities.map((a) => [a.date, a]));
 
   const firstActivity = sortedActivities[0] as Activity;
   const lastActivity = sortedActivities.at(-1);
@@ -128,7 +121,7 @@ const fillHoles = (activities: Activity[]): Activity[] => {
     start: parseISO(firstActivity.date),
     end: parseISO(lastActivity.date),
   }).map((day) => {
-    const date = formatISO(day, { representation: "date" });
+    const date = formatISO(day, { representation: 'date' });
 
     if (calendar.has(date)) {
       return calendar.get(date) as Activity;
@@ -142,10 +135,7 @@ const fillHoles = (activities: Activity[]): Activity[] => {
   });
 };
 
-const groupByWeeks = (
-  activities: Activity[],
-  weekStart: WeekDay = 0
-): Week[] => {
+const groupByWeeks = (activities: Activity[], weekStart: WeekDay = 0): Week[] => {
   if (activities.length === 0) {
     return [];
   }
@@ -154,13 +144,11 @@ const groupByWeeks = (
   const firstActivity = normalizedActivities[0] as Activity;
   const firstDate = parseISO(firstActivity.date);
   const firstCalendarDate =
-    getDay(firstDate) === weekStart
-      ? firstDate
-      : subWeeks(nextDay(firstDate, weekStart), 1);
+    getDay(firstDate) === weekStart ? firstDate : subWeeks(nextDay(firstDate, weekStart), 1);
 
   const paddedActivities = [
     ...(new Array(differenceInCalendarDays(firstDate, firstCalendarDate)).fill(
-      undefined
+      undefined,
     ) as Activity[]),
     ...normalizedActivities,
   ];
@@ -169,34 +157,28 @@ const groupByWeeks = (
 
   return new Array(numberOfWeeks)
     .fill(undefined)
-    .map((_, weekIndex) =>
-      paddedActivities.slice(weekIndex * 7, weekIndex * 7 + 7)
-    );
+    .map((_, weekIndex) => paddedActivities.slice(weekIndex * 7, weekIndex * 7 + 7));
 };
 
 const getMonthLabels = (
   weeks: Week[],
-  monthNames: string[] = DEFAULT_MONTH_LABELS
+  monthNames: string[] = DEFAULT_MONTH_LABELS,
 ): MonthLabel[] => {
   return weeks
     .reduce<MonthLabel[]>((labels, week, weekIndex) => {
       const firstActivity = week.find((activity) => activity !== undefined);
 
       if (!firstActivity) {
-        throw new Error(
-          `Unexpected error: Week ${weekIndex + 1} is empty: [${week}].`
-        );
+        throw new Error(`Unexpected error: Week ${weekIndex + 1} is empty: [${week}].`);
       }
 
       const month = monthNames[getMonth(parseISO(firstActivity.date))];
 
       if (!month) {
-        const monthName = new Date(firstActivity.date).toLocaleString("en-US", {
-          month: "short",
+        const monthName = new Date(firstActivity.date).toLocaleString('en-US', {
+          month: 'short',
         });
-        throw new Error(
-          `Unexpected error: undefined month label for ${monthName}.`
-        );
+        throw new Error(`Unexpected error: undefined month label for ${monthName}.`);
       }
 
       const prevLabel = labels.at(-1);
@@ -258,13 +240,10 @@ export const ContributionGraph = ({
   const labels = { ...DEFAULT_LABELS, ...labelsProp };
   const labelHeight = fontSize + LABEL_MARGIN;
 
-  const year =
-    data.length > 0
-      ? getYear(parseISO(data[0]!.date))
-      : new Date().getFullYear();
+  const year = data.length > 0 ? getYear(parseISO(data[0]!.date)) : new Date().getFullYear();
 
   const totalCount =
-    typeof totalCountProp === "number"
+    typeof totalCountProp === 'number'
       ? totalCountProp
       : data.reduce((sum, activity) => sum + activity.count, 0);
 
@@ -295,7 +274,7 @@ export const ContributionGraph = ({
       }}
     >
       <div
-        className={cn("flex w-max max-w-full flex-col gap-2", className)}
+        className={cn('flex w-max max-w-full flex-col gap-2', className)}
         style={{ fontSize, ...style }}
         {...props}
       />
@@ -316,12 +295,11 @@ export const ContributionGraphBlock = ({
   className,
   ...props
 }: ContributionGraphBlockProps) => {
-  const { blockSize, blockMargin, blockRadius, labelHeight, maxLevel } =
-    useContributionGraph();
+  const { blockSize, blockMargin, blockRadius, labelHeight, maxLevel } = useContributionGraph();
 
   if (activity.level < 0 || activity.level > maxLevel) {
     throw new RangeError(
-      `Provided activity level ${activity.level} for ${activity.date} is out of range. It must be between 0 and ${maxLevel}.`
+      `Provided activity level ${activity.level} for ${activity.date} is out of range. It must be between 0 and ${maxLevel}.`,
     );
   }
 
@@ -333,7 +311,7 @@ export const ContributionGraphBlock = ({
         'data-[level="2"]:fill-muted-foreground/40',
         'data-[level="3"]:fill-muted-foreground/60',
         'data-[level="4"]:fill-muted-foreground/80',
-        className
+        className,
       )}
       data-count={activity.count}
       data-date={activity.date}
@@ -349,17 +327,10 @@ export const ContributionGraphBlock = ({
   );
 };
 
-export type ContributionGraphCalendarProps = Omit<
-  HTMLAttributes<HTMLDivElement>,
-  "children"
-> & {
+export type ContributionGraphCalendarProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
   hideMonthLabels?: boolean;
   className?: string;
-  children: (props: {
-    activity: Activity;
-    dayIndex: number;
-    weekIndex: number;
-  }) => ReactNode;
+  children: (props: { activity: Activity; dayIndex: number; weekIndex: number }) => ReactNode;
 };
 
 export const ContributionGraphCalendar = ({
@@ -368,19 +339,12 @@ export const ContributionGraphCalendar = ({
   children,
   ...props
 }: ContributionGraphCalendarProps) => {
-  const { weeks, width, height, blockSize, blockMargin, labels } =
-    useContributionGraph();
+  const { weeks, width, height, blockSize, blockMargin, labels } = useContributionGraph();
 
-  const monthLabels = useMemo(
-    () => getMonthLabels(weeks, labels.months),
-    [weeks, labels.months]
-  );
+  const monthLabels = useMemo(() => getMonthLabels(weeks, labels.months), [weeks, labels.months]);
 
   return (
-    <div
-      className={cn("max-w-full overflow-x-auto overflow-y-hidden", className)}
-      {...props}
-    >
+    <div className={cn('max-w-full overflow-x-auto overflow-y-hidden', className)} {...props}>
       <svg
         className="block overflow-visible"
         height={height}
@@ -412,7 +376,7 @@ export const ContributionGraphCalendar = ({
                 {children({ activity, dayIndex, weekIndex })}
               </Fragment>
             );
-          })
+          }),
         )}
       </svg>
     </div>
@@ -421,23 +385,11 @@ export const ContributionGraphCalendar = ({
 
 export type ContributionGraphFooterProps = HTMLAttributes<HTMLDivElement>;
 
-export const ContributionGraphFooter = ({
-  className,
-  ...props
-}: ContributionGraphFooterProps) => (
-  <div
-    className={cn(
-      "flex flex-wrap gap-1 whitespace-nowrap sm:gap-x-4",
-      className
-    )}
-    {...props}
-  />
+export const ContributionGraphFooter = ({ className, ...props }: ContributionGraphFooterProps) => (
+  <div className={cn('flex flex-wrap gap-1 whitespace-nowrap sm:gap-x-4', className)} {...props} />
 );
 
-export type ContributionGraphTotalCountProps = Omit<
-  HTMLAttributes<HTMLDivElement>,
-  "children"
-> & {
+export type ContributionGraphTotalCountProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
   children?: (props: { totalCount: number; year: number }) => ReactNode;
 };
 
@@ -453,20 +405,17 @@ export const ContributionGraphTotalCount = ({
   }
 
   return (
-    <div className={cn("text-muted-foreground", className)} {...props}>
+    <div className={cn('text-muted-foreground', className)} {...props}>
       {labels.totalCount
         ? labels.totalCount
-            .replace("{{count}}", String(totalCount))
-            .replace("{{year}}", String(year))
+            .replace('{{count}}', String(totalCount))
+            .replace('{{year}}', String(year))
         : `${totalCount} activities in ${year}`}
     </div>
   );
 };
 
-export type ContributionGraphLegendProps = Omit<
-  HTMLAttributes<HTMLDivElement>,
-  "children"
-> & {
+export type ContributionGraphLegendProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
   children?: (props: { level: number }) => ReactNode;
 };
 
@@ -478,13 +427,8 @@ export const ContributionGraphLegend = ({
   const { labels, maxLevel, blockSize, blockRadius } = useContributionGraph();
 
   return (
-    <div
-      className={cn("ml-auto flex items-center gap-[3px]", className)}
-      {...props}
-    >
-      <span className="mr-1 text-muted-foreground">
-        {labels.legend?.less || "Less"}
-      </span>
+    <div className={cn('ml-auto flex items-center gap-[3px]', className)} {...props}>
+      <span className="mr-1 text-muted-foreground">{labels.legend?.less || 'Less'}</span>
       {new Array(maxLevel + 1).fill(undefined).map((_, level) =>
         children ? (
           <Fragment key={level}>{children({ level })}</Fragment>
@@ -493,12 +437,12 @@ export const ContributionGraphLegend = ({
             <title>{`${level} contributions`}</title>
             <rect
               className={cn(
-                "stroke-[1px] stroke-border",
+                'stroke-[1px] stroke-border',
                 'data-[level="0"]:fill-muted',
                 'data-[level="1"]:fill-muted-foreground/20',
                 'data-[level="2"]:fill-muted-foreground/40',
                 'data-[level="3"]:fill-muted-foreground/60',
-                'data-[level="4"]:fill-muted-foreground/80'
+                'data-[level="4"]:fill-muted-foreground/80',
               )}
               data-level={level}
               height={blockSize}
@@ -507,11 +451,9 @@ export const ContributionGraphLegend = ({
               width={blockSize}
             />
           </svg>
-        )
+        ),
       )}
-      <span className="ml-1 text-muted-foreground">
-        {labels.legend?.more || "More"}
-      </span>
+      <span className="ml-1 text-muted-foreground">{labels.legend?.more || 'More'}</span>
     </div>
   );
 };

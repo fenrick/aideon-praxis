@@ -22,6 +22,7 @@
   "tsx": true,
   "rtl": false,
   "registries": {
-    "@reactflow": "https://ui.reactflow.dev/{name}", "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json"
+    "@reactflow": "https://ui.reactflow.dev/{name}",
+    "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json"
   }
 }

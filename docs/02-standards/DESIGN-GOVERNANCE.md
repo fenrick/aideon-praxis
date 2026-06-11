@@ -64,7 +64,7 @@ These should hold beyond the current implementation. Changing one forces wide re
 breaks the product model.
 
 - **The portable workspace is the canonical authority.** Append-only ops + schema-as-data
-  + content-addressed blobs are the truth; the runtime database is derived and rebuildable.
+  - content-addressed blobs are the truth; the runtime database is derived and rebuildable.
 - **Explicit time and scenario context** on every read and write (valid time, asserted
   time, layer, optional scenario).
 - **Contracts-first boundaries**; the Rust core owns the wire shape, the renderer consumes

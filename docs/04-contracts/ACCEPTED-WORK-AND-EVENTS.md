@@ -93,7 +93,7 @@ A run moves through a linear set of statuses. Terminal statuses are final.
 ### Run Status Enum
 
 | Status      | Terminal | Meaning                                                 |
-|-------------|----------|---------------------------------------------------------|
+| ----------- | -------- | ------------------------------------------------------- |
 | `accepted`  | No       | Job queued; executor has not yet started it.            |
 | `running`   | No       | Executor is actively processing.                        |
 | `succeeded` | Yes      | All steps completed without error.                      |
@@ -105,7 +105,7 @@ A run moves through a linear set of statuses. Terminal statuses are final.
 ### Step Status Enum
 
 | Status      | Terminal | Meaning                                     |
-|-------------|----------|---------------------------------------------|
+| ----------- | -------- | ------------------------------------------- |
 | `pending`   | No       | Step is queued within the run.              |
 | `running`   | No       | Step is executing.                          |
 | `retrying`  | No       | Step failed a non-terminal attempt.         |
@@ -157,7 +157,7 @@ interface RunEvent {
   /** Human-readable description suitable for a status surface. */
   message: string;
   /** Severity level. */
-  severity: "info" | "warning" | "error";
+  severity: 'info' | 'warning' | 'error';
   /** Step-scoped events carry the step identifier. */
   stepId?: string;
   /** Structured payload — shape is event-type specific. */
@@ -185,22 +185,22 @@ pub struct RunEvent {
 ### Event Taxonomy
 
 | Event Type             | Emitted When                                                   |
-|------------------------|----------------------------------------------------------------|
-| `run.created`          | Ledger entry written; job is in `accepted` state.             |
-| `run.started`          | Executor begins processing the run.                           |
-| `run.progress`         | Periodic progress snapshot for the overall run.               |
-| `run.warning`          | Non-fatal warning during execution.                           |
-| `run.succeeded`        | Run terminal: all steps complete without error.               |
-| `run.failed`           | Run terminal: one or more steps exhausted retries.            |
-| `run.cancelled`        | Run terminal: cancelled by operator or policy.                |
-| `step.started`         | A named step inside the run begins executing.                 |
-| `step.progress`        | Progress within a step (units completed / total).             |
-| `step.retrying`        | Step attempt failed; executor will retry.                     |
-| `step.succeeded`       | Step terminal: completed successfully.                        |
-| `step.failed`          | Step terminal: exhausted retry budget.                        |
-| `artefact.recorded`    | An output artefact or lineage reference was recorded.         |
-| `projection.refreshed` | A downstream projection was refreshed as a run side-effect.   |
-| `invalidation.emitted` | A cache or projection invalidation was emitted during the run.|
+| ---------------------- | -------------------------------------------------------------- |
+| `run.created`          | Ledger entry written; job is in `accepted` state.              |
+| `run.started`          | Executor begins processing the run.                            |
+| `run.progress`         | Periodic progress snapshot for the overall run.                |
+| `run.warning`          | Non-fatal warning during execution.                            |
+| `run.succeeded`        | Run terminal: all steps complete without error.                |
+| `run.failed`           | Run terminal: one or more steps exhausted retries.             |
+| `run.cancelled`        | Run terminal: cancelled by operator or policy.                 |
+| `step.started`         | A named step inside the run begins executing.                  |
+| `step.progress`        | Progress within a step (units completed / total).              |
+| `step.retrying`        | Step attempt failed; executor will retry.                      |
+| `step.succeeded`       | Step terminal: completed successfully.                         |
+| `step.failed`          | Step terminal: exhausted retry budget.                         |
+| `artefact.recorded`    | An output artefact or lineage reference was recorded.          |
+| `projection.refreshed` | A downstream projection was refreshed as a run side-effect.    |
+| `invalidation.emitted` | A cache or projection invalidation was emitted during the run. |
 
 ### Progress Payload
 
@@ -390,7 +390,7 @@ The renderer emits a cancel intent via the `run_cancel` Tauri command:
 // Command payload
 interface RunCancelRequest {
   runId: string;
-  reason: "operator_requested" | "workspace_closing" | "policy_timeout";
+  reason: 'operator_requested' | 'workspace_closing' | 'policy_timeout';
 }
 ```
 
@@ -430,7 +430,7 @@ error instead of accepting new work:
 ```
 
 The renderer treats `BACKPRESSURE` as a distinct UI state: the initiating action shows a
-*queued* badge, not a failure. The caller may retry the command once queue depth drops.
+_queued_ badge, not a failure. The caller may retry the command once queue depth drops.
 `BACKPRESSURE` is not retried automatically by the host — retry is a renderer responsibility.
 
 Saturated-queue behaviour is distinct from a normal `BACKPRESSURE` on an individual write
@@ -445,13 +445,13 @@ The processing triggers listed below are the primary sources of accepted work fr
 engine. Each trigger command enqueues background work and returns `AcceptedJob` or `()` on
 synchronous scheduling.
 
-| Tauri Command                                   | Queue Class          | Trigger Shape                                                |
-|-------------------------------------------------|----------------------|--------------------------------------------------------------|
-| `mneme_trigger_rebuild_effective_schema`        | `rebuild`            | `{ partitionId, scenarioId?, reason }`                       |
-| `mneme_trigger_refresh_integrity`               | `rebuild`            | `{ partitionId, scenarioId?, reason }`                       |
-| `mneme_trigger_refresh_analytics_projections`   | `analytics_refresh`  | `{ partitionId, scenarioId?, reason }`                       |
-| `mneme_trigger_retention`                       | `retention`          | `{ partitionId, scenarioId?, policy: RetentionPolicy, reason }` |
-| `mneme_trigger_compaction`                      | `compaction`         | `{ partitionId, scenarioId?, reason }`                       |
+| Tauri Command                                 | Queue Class         | Trigger Shape                                                   |
+| --------------------------------------------- | ------------------- | --------------------------------------------------------------- |
+| `mneme_trigger_rebuild_effective_schema`      | `rebuild`           | `{ partitionId, scenarioId?, reason }`                          |
+| `mneme_trigger_refresh_integrity`             | `rebuild`           | `{ partitionId, scenarioId?, reason }`                          |
+| `mneme_trigger_refresh_analytics_projections` | `analytics_refresh` | `{ partitionId, scenarioId?, reason }`                          |
+| `mneme_trigger_retention`                     | `retention`         | `{ partitionId, scenarioId?, policy: RetentionPolicy, reason }` |
+| `mneme_trigger_compaction`                    | `compaction`        | `{ partitionId, scenarioId?, reason }`                          |
 
 `RetentionPolicy`:
 
@@ -472,13 +472,13 @@ command surface will expose a subset through the capability system described in 
 
 ## Error Codes
 
-| Code                    | Meaning                                                     |
-|-------------------------|-------------------------------------------------------------|
-| `BACKPRESSURE`          | Write queue saturated; caller should retry later.           |
-| `RUN_NOT_FOUND`         | No run with the given `runId` in the ledger.                |
-| `RUN_ALREADY_TERMINAL`  | Attempted to cancel or retry a terminal run.                |
-| `IDEMPOTENCY_CONFLICT`  | A run with the given key exists in an incompatible state.   |
-| `STEP_NOT_FOUND`        | `fromStepId` in a retry request does not exist in the run.  |
+| Code                   | Meaning                                                    |
+| ---------------------- | ---------------------------------------------------------- |
+| `BACKPRESSURE`         | Write queue saturated; caller should retry later.          |
+| `RUN_NOT_FOUND`        | No run with the given `runId` in the ledger.               |
+| `RUN_ALREADY_TERMINAL` | Attempted to cancel or retry a terminal run.               |
+| `IDEMPOTENCY_CONFLICT` | A run with the given key exists in an incompatible state.  |
+| `STEP_NOT_FOUND`       | `fromStepId` in a retry request does not exist in the run. |
 
 ---
 

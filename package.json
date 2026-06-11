@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.2.0",
   "type": "module",
-  "description": "Aideon \u2014 a desktop-first, local-first, time-first digital-twin app (Tauri + Next.js)",
+  "description": "Aideon — a desktop-first, local-first, time-first digital-twin app (Tauri + Next.js)",
   "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48",
   "license": "MIT",
   "engines": {

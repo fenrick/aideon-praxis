@@ -14,13 +14,13 @@ Without this module, time handling spreads into UI widgets, API handlers, semant
 
 ## Core invariants
 
-| Invariant | What it means |
-|---|---|
-| **Explicit temporal context** | Every temporal result carries the active `TemporalContext` — `effective` time, `resolution.layer`, and `scenario_id` if set. No ambient time is assumed. |
-| **Re-resolution on change** | A time or scenario change triggers real re-resolution through Mneme. Chrona never mutates a cached view in place and presents it as if the context had changed. |
-| **Derived results** | Chrona outputs are derived from canonical facts in Mneme. Chrona does not hold authoritative storage. |
-| **Honest partial states** | Where a result is bounded or partially resolved, the payload names the limit explicitly rather than silently collapsing it. |
-| **No metamodel internals** | Chrona depends on contracts and DTO-level types from Praxis. It does not import metamodel or rule engine internals from other crates. |
+| Invariant                     | What it means                                                                                                                                                   |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Explicit temporal context** | Every temporal result carries the active `TemporalContext` — `effective` time, `resolution.layer`, and `scenario_id` if set. No ambient time is assumed.        |
+| **Re-resolution on change**   | A time or scenario change triggers real re-resolution through Mneme. Chrona never mutates a cached view in place and presents it as if the context had changed. |
+| **Derived results**           | Chrona outputs are derived from canonical facts in Mneme. Chrona does not hold authoritative storage.                                                           |
+| **Honest partial states**     | Where a result is bounded or partially resolved, the payload names the limit explicitly rather than silently collapsing it.                                     |
+| **No metamodel internals**    | Chrona depends on contracts and DTO-level types from Praxis. It does not import metamodel or rule engine internals from other crates.                           |
 
 ---
 
@@ -74,14 +74,14 @@ Chrona is not the UI, but it returns data the UI does not have to reverse-engine
 
 ## What Chrona does not own
 
-| Not Chrona's | Owned by |
-|---|---|
-| Durable storage and the op log | [Mneme](../mneme/README.md) |
-| Semantic modelling rules | Praxis |
-| Generic analytics algorithms | Metis |
-| Workflow orchestration and accepted-work lifecycle | Continuum |
-| Shell layout and design system | Host / renderer |
-| Arbitrary UI component behaviour | Renderer |
+| Not Chrona's                                       | Owned by                    |
+| -------------------------------------------------- | --------------------------- |
+| Durable storage and the op log                     | [Mneme](../mneme/README.md) |
+| Semantic modelling rules                           | Praxis                      |
+| Generic analytics algorithms                       | Metis                       |
+| Workflow orchestration and accepted-work lifecycle | Continuum                   |
+| Shell layout and design system                     | Host / renderer             |
+| Arbitrary UI component behaviour                   | Renderer                    |
 
 Mneme stores time-aware facts. Praxis decides what the model means. Chrona interprets time and scenario in a way the rest of the system can use.
 
@@ -95,18 +95,18 @@ The `chrona` crate lives at `crates/chrona/` and exposes three modules.
 
 The primary temporal engine façade. `TemporalEngine` wraps `PraxisEngine` and exposes the IPC-friendly surface the Tauri host invokes:
 
-| Method | Description |
-|---|---|
-| `state_at(StateAtArgs)` | Snapshot statistics at a given commit reference. |
-| `diff_summary(DiffArgs)` | Diff summary between two commit references. |
-| `topology_delta(TopologyDeltaArgs)` | Topology delta between two commit references. |
+| Method                                        | Description                                                      |
+| --------------------------------------------- | ---------------------------------------------------------------- |
+| `state_at(StateAtArgs)`                       | Snapshot statistics at a given commit reference.                 |
+| `diff_summary(DiffArgs)`                      | Diff summary between two commit references.                      |
+| `topology_delta(TopologyDeltaArgs)`           | Topology delta between two commit references.                    |
 | `resolve_snapshot(CommitRef, Option<String>)` | Resolve a `GraphSnapshot` for a reference and optional scenario. |
-| `commit(CommitChangesRequest)` | Commit a change set to the underlying Praxis engine. |
-| `create_branch(name, Option<CommitRef>)` | Create a branch from an optional base reference. |
-| `list_commits(branch)` | List commits for a branch oldest-to-newest. |
-| `list_branches()` | Enumerate branches with their current heads. |
-| `merge(MergeRequest)` | Merge one branch into another. |
-| `meta_model()` | Return the active meta-model document. |
+| `commit(CommitChangesRequest)`                | Commit a change set to the underlying Praxis engine.             |
+| `create_branch(name, Option<CommitRef>)`      | Create a branch from an optional base reference.                 |
+| `list_commits(branch)`                        | List commits for a branch oldest-to-newest.                      |
+| `list_branches()`                             | Enumerate branches with their current heads.                     |
+| `merge(MergeRequest)`                         | Merge one branch into another.                                   |
+| `meta_model()`                                | Return the active meta-model document.                           |
 
 All argument and result types are DTO-level structs from `aideon_praxis::temporal`. The engine holds no storage state of its own; persistence flows through `PraxisEngine` and ultimately through Mneme traits.
 
@@ -124,12 +124,12 @@ Layout helpers. `apply_rect_packing(shapes, max_row_width, spacing)` implements 
 
 Chrona's public outputs group into four families. Every response in each family carries enough context to stay interpretable without inspecting the request:
 
-| Family | Key fields |
-|---|---|
-| `state_at` | effective time, scenario identity, resolution layer, fact count |
-| `diff` | left ref, right ref, added/removed/changed counts, scenario if set |
-| `topology_delta` | left ref, right ref, node and edge deltas, scenario if set |
-| timeline aggregates | segments, plateau markers, gap indicators, active effective range |
+| Family              | Key fields                                                         |
+| ------------------- | ------------------------------------------------------------------ |
+| `state_at`          | effective time, scenario identity, resolution layer, fact count    |
+| `diff`              | left ref, right ref, added/removed/changed counts, scenario if set |
+| `topology_delta`    | left ref, right ref, node and edge deltas, scenario if set         |
+| timeline aggregates | segments, plateau markers, gap indicators, active effective range  |
 
 Where a result is partial or bounded, a `warnings` field names the limit.
 
@@ -142,7 +142,7 @@ Range and diff reads carry an explicit `ComparisonContext` rather than a single 
 ```json
 {
   "kind": "scenario_delta",
-  "left":  { "as_of": "2026-06-10T00:00:00Z", "scenario_id": null },
+  "left": { "as_of": "2026-06-10T00:00:00Z", "scenario_id": null },
   "right": { "as_of": "2026-06-10T00:00:00Z", "scenario_id": "scn_plan_q3" }
 }
 ```
@@ -167,12 +167,12 @@ This rule is unconditional. There is no "small change" optimisation that bypasse
 
 Chrona depends upward through stable contracts only:
 
-| Dependency | Via |
-|---|---|
-| Time-aware fact access | Mneme traits (`aideon_mneme`) |
+| Dependency                     | Via                                    |
+| ------------------------------ | -------------------------------------- |
+| Time-aware fact access         | Mneme traits (`aideon_mneme`)          |
 | Semantic twin and commit model | Praxis engine façade (`aideon_praxis`) |
-| Temporal DTO types | `aideon_praxis::temporal` |
-| Canvas shape types | `aideon_praxis::canvas` |
+| Temporal DTO types             | `aideon_praxis::temporal`              |
+| Canvas shape types             | `aideon_praxis::canvas`                |
 
 Chrona does not import Tauri, HTTP servers, or database drivers directly. No bespoke async runtimes beyond the workspace `tokio` default. Errors use `thiserror`; logging uses the `tracing` + `log` façade.
 

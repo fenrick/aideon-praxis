@@ -4,15 +4,15 @@ Continuum is the local durable executor: it owns orchestration, scheduling, and 
 
 ## What Continuum owns
 
-| Area | Responsibility |
-|---|---|
-| Scheduling | Timed and recurring work, refresh policies, bounded retry windows |
-| Triggers | Event-driven workflow invocation from host or connector events |
-| Connector orchestration | Adapter-driven ingest flows (CMDB, file imports, snapshot pulls) |
-| Workflow execution | Multi-step, cross-engine composition with step-level progress |
-| Run ledger | Durable record of runs, steps, and events persisted in the workspace |
-| Snapshot persistence | `SnapshotStore` abstraction and `FileSnapshotStore` implementation |
-| Provenance & replayability | Structured run inputs, op/fact lineage, idempotent retries |
+| Area                       | Responsibility                                                       |
+| -------------------------- | -------------------------------------------------------------------- |
+| Scheduling                 | Timed and recurring work, refresh policies, bounded retry windows    |
+| Triggers                   | Event-driven workflow invocation from host or connector events       |
+| Connector orchestration    | Adapter-driven ingest flows (CMDB, file imports, snapshot pulls)     |
+| Workflow execution         | Multi-step, cross-engine composition with step-level progress        |
+| Run ledger                 | Durable record of runs, steps, and events persisted in the workspace |
+| Snapshot persistence       | `SnapshotStore` abstraction and `FileSnapshotStore` implementation   |
+| Provenance & replayability | Structured run inputs, op/fact lineage, idempotent retries           |
 
 Continuum does not own semantic modelling rules (Praxis), raw persistence internals (Mneme), user-facing accepted-work APIs (host), or UI shell behaviour.
 
@@ -46,13 +46,13 @@ The host wires a concrete `SnapshotStore` into Continuum at startup. Continuum h
 
 A run is the unit of durable work. Every workflow execution produces:
 
-| Record | Purpose |
-|---|---|
-| `run` | Identity, trigger type, start/end timestamps, terminal status |
-| `run_step` | Per-step name, status, start/end, connector or engine target |
-| `run_event` | Structured progress, warning, and failure events within a step |
-| Artefact references | Input and output lineage references for provenance |
-| Idempotency key | Enables safe retries without duplicate side effects |
+| Record              | Purpose                                                        |
+| ------------------- | -------------------------------------------------------------- |
+| `run`               | Identity, trigger type, start/end timestamps, terminal status  |
+| `run_step`          | Per-step name, status, start/end, connector or engine target   |
+| `run_event`         | Structured progress, warning, and failure events within a step |
+| Artefact references | Input and output lineage references for provenance             |
+| Idempotency key     | Enables safe retries without duplicate side effects            |
 
 The ledger persists in the workspace ops/local store. It is the source of truth for automation history; hosted relays and connector services are optional adapters, never authoritative.
 
@@ -97,22 +97,22 @@ Each step is explicit. Continuum composes engine and connector capabilities into
 
 Continuum depends on contracts and host wiring. It exposes capability traits that other modules' work is dispatched through. It does not depend on any other module that depends on it — there are no engine-to-engine cycles.
 
-| Dependency direction | Notes |
-|---|---|
-| Continuum → host | Receives `SnapshotStore` and accepted-work wiring at startup |
-| Continuum → Praxis | Dispatches semantic steps through Praxis capability traits |
-| Continuum → Mneme | Writes ops and facts through Mneme persistence traits |
+| Dependency direction      | Notes                                                                 |
+| ------------------------- | --------------------------------------------------------------------- |
+| Continuum → host          | Receives `SnapshotStore` and accepted-work wiring at startup          |
+| Continuum → Praxis        | Dispatches semantic steps through Praxis capability traits            |
+| Continuum → Mneme         | Writes ops and facts through Mneme persistence traits                 |
 | Other modules → Continuum | Dispatch scheduled/triggered work through Continuum capability traits |
 
 See [MODULE-DEPENDENCY-MAP.md](../../01-architecture/MODULE-DEPENDENCY-MAP.md) for the full graph.
 
 ## Crate shape
 
-| Path | Contents |
-|---|---|
+| Path                          | Contents                                                  |
+| ----------------------------- | --------------------------------------------------------- |
 | `crates/continuum/src/lib.rs` | `SnapshotStore` trait, `FileSnapshotStore` implementation |
-| `crates/continuum/DESIGN.md` | Scope, allowed dependencies, anti-goals, public surface |
-| `crates/continuum/tests/` | Integration tests |
+| `crates/continuum/DESIGN.md`  | Scope, allowed dependencies, anti-goals, public surface   |
+| `crates/continuum/tests/`     | Integration tests                                         |
 
 The crate is a library; it carries no Tauri bindings and no direct database coupling beyond Mneme traits.
 

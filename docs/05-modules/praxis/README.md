@@ -6,7 +6,7 @@ Praxis is the semantic and interaction engine of the Aideon digital twin: it own
 
 ## Responsibilities
 
-Praxis covers five tightly coupled responsibilities that together define what the twin *means* and how users work with it.
+Praxis covers five tightly coupled responsibilities that together define what the twin _means_ and how users work with it.
 
 ### 1. Metamodel
 
@@ -14,15 +14,15 @@ Praxis defines the stable backbone of the twin as schema-as-data. The metamodel 
 
 **Master types** are few, immutable, and act as structural anchors. Every domain type must inherit from exactly one of them. The current canonical anchor vocabulary is:
 
-| Master type | Structural role |
-|---|---|
-| `Capability` | Stable abilities the enterprise needs |
-| `ValueStreamStage` | Stages in a value stream |
-| `BusinessProcess` | Operational realisation mechanisms |
-| `Application` | Logical and physical application concepts |
-| `DataEntity` | Information and data constructs |
-| `TechnologyComponent` | Technology platform and infrastructure |
-| `PlanEvent` | Change and delivery constructs |
+| Master type           | Structural role                           |
+| --------------------- | ----------------------------------------- |
+| `Capability`          | Stable abilities the enterprise needs     |
+| `ValueStreamStage`    | Stages in a value stream                  |
+| `BusinessProcess`     | Operational realisation mechanisms        |
+| `Application`         | Logical and physical application concepts |
+| `DataEntity`          | Information and data constructs           |
+| `TechnologyComponent` | Technology platform and infrastructure    |
+| `PlanEvent`           | Change and delivery constructs            |
 
 **Domain types** are the concepts users work with — customer, journey, service, capability, process, control, release train, and so on. Each domain type inherits from a master type and declares its own fields, constraints, and allowed relationship verbs.
 
@@ -49,14 +49,14 @@ Users and consuming modules interact with the twin through named tasks, not thro
 
 The canonical write contract is `CommitChangesRequest`, which carries a `ChangeSet` consisting of six operation families:
 
-| Operation | Effect |
-|---|---|
-| `node_creates` | Create a typed node with initial props |
-| `node_updates` | Replace a node's props by ID |
+| Operation      | Effect                                                    |
+| -------------- | --------------------------------------------------------- |
+| `node_creates` | Create a typed node with initial props                    |
+| `node_updates` | Replace a node's props by ID                              |
 | `node_deletes` | Tombstone a node (rejects if dangling edges would result) |
-| `edge_creates` | Create a typed, directed edge between two existing nodes |
-| `edge_updates` | Replace an edge's props, resolved by ID or by endpoints |
-| `edge_deletes` | Remove edges matching a from/to tombstone |
+| `edge_creates` | Create a typed, directed edge between two existing nodes  |
+| `edge_updates` | Replace an edge's props, resolved by ID or by endpoints   |
+| `edge_deletes` | Remove edges matching a from/to tombstone                 |
 
 Every operation is validated against the registry before the snapshot is updated: node type must be declared, edge endpoints must exist, edge type must be declared and must respect its `from`/`to` endpoint constraints, and duplicate edges are rejected for relationship types that declare `allow_duplicate: false`.
 
@@ -68,14 +68,14 @@ Task-oriented convenience wrappers (create element, link elements, set attribute
 
 Praxis artefacts are declarative work products executed at an explicit time and scenario context. The artefact kinds are:
 
-| Kind | Shape |
-|---|---|
-| Graph view | Bounded traversal returning nodes, edges, groups, and layout hints |
-| Catalogue | Filtered list of typed entities with grouping, sorting, and coverage metrics |
-| Matrix | Sparse 2D relationship coverage grid with per-cell drill-down |
-| Map | Structured visual model (capability map, journey map, application landscape) |
-| Report | Composed sections referencing other artefacts and text templates |
-| Page | Layout container referencing artefacts for dashboards and printable packs |
+| Kind       | Shape                                                                        |
+| ---------- | ---------------------------------------------------------------------------- |
+| Graph view | Bounded traversal returning nodes, edges, groups, and layout hints           |
+| Catalogue  | Filtered list of typed entities with grouping, sorting, and coverage metrics |
+| Matrix     | Sparse 2D relationship coverage grid with per-cell drill-down                |
+| Map        | Structured visual model (capability map, journey map, application landscape) |
+| Report     | Composed sections referencing other artefacts and text templates             |
+| Page       | Layout container referencing artefacts for dashboards and printable packs    |
 
 Every execution requires explicit context: `partition_id`, optional `scenario_id`, `at_valid_time`, optional `layer` (Plan or Actual). Praxis defaults `valid_from` to now, `layer` to Actual, and scenario to baseline. These are part of the operation contract, not UI conveniences.
 
@@ -121,15 +121,15 @@ See [Mneme module](../mneme/README.md) and [Architecture Boundary](../../01-arch
 
 The canonical relationship vocabulary is defined in [EDGE-CATALOGUE.md](./EDGE-CATALOGUE.md). The catalogue is standards-aligned: seven relationships with stable IDs, explicit direction, endpoint constraints, and seeding status.
 
-| Relationship ID | Direction | Core meaning |
-|---|---|---|
-| `contributes_to` | source → target | Capability contributes to a value stream stage outcome |
-| `delivers` | source → target | Application or component delivers business capability/process outcomes |
-| `uses_data` | source → target | Source reads or writes a data entity |
-| `deployed_on` | source → target | Application is hosted on a technology component |
-| `change_affects` | source → target | Planned change affects a target element |
-| `depends_on` | source → target | Generic dependency fallback when no stronger verb applies |
-| `belongs_to` | source → target | Membership/containment for hierarchy and roll-up |
+| Relationship ID  | Direction       | Core meaning                                                           |
+| ---------------- | --------------- | ---------------------------------------------------------------------- |
+| `contributes_to` | source → target | Capability contributes to a value stream stage outcome                 |
+| `delivers`       | source → target | Application or component delivers business capability/process outcomes |
+| `uses_data`      | source → target | Source reads or writes a data entity                                   |
+| `deployed_on`    | source → target | Application is hosted on a technology component                        |
+| `change_affects` | source → target | Planned change affects a target element                                |
+| `depends_on`     | source → target | Generic dependency fallback when no stronger verb applies              |
+| `belongs_to`     | source → target | Membership/containment for hierarchy and roll-up                       |
 
 Rules enforced by the rule engine:
 
@@ -147,15 +147,15 @@ The starter payload (`core-v1.json`) ships `contributes_to`, `delivers`, `uses_d
 
 Every Praxis operation resolves against an explicit commit-based temporal model. The key types:
 
-| Type | Role |
-|---|---|
-| `CommitRef` | Points to a commit by ID, branch head, or branch head at a given time |
-| `ChangeSet` | Batched node/edge creates, updates, and deletes |
-| `GraphSnapshot` | Immutable materialised state at a given commit |
-| `StateAtArgs` | Query inputs: `as_of` ref, optional `scenario`, optional `layer` |
-| `DiffSummary` | Change count breakdown between two refs |
-| `TopologyDeltaResult` | Node/edge add/delete counts (no property diffs) |
-| `MergeRequest` / `MergeResponse` | Merge two branches; returns conflicts in domain language |
+| Type                             | Role                                                                  |
+| -------------------------------- | --------------------------------------------------------------------- |
+| `CommitRef`                      | Points to a commit by ID, branch head, or branch head at a given time |
+| `ChangeSet`                      | Batched node/edge creates, updates, and deletes                       |
+| `GraphSnapshot`                  | Immutable materialised state at a given commit                        |
+| `StateAtArgs`                    | Query inputs: `as_of` ref, optional `scenario`, optional `layer`      |
+| `DiffSummary`                    | Change count breakdown between two refs                               |
+| `TopologyDeltaResult`            | Node/edge add/delete counts (no property diffs)                       |
+| `MergeRequest` / `MergeResponse` | Merge two branches; returns conflicts in domain language              |
 
 Scenarios are overlays on baseline snapshots. The `resolve_snapshot` call takes a `CommitRef` and optional scenario ID, materialises the base snapshot, and applies the overlay. `state_at` returns counts; `diff_summary` and `topology_delta` return structural deltas. Merge conflicts are returned as `MergeConflict` records with a `kind` and human-readable `message` — never as raw store errors.
 
@@ -167,13 +167,13 @@ See [Temporal and Scenario Context](../../04-contracts/TEMPORAL-AND-SCENARIO-CON
 
 Praxis depends on:
 
-| Dependency | Why |
-|---|---|
-| `aideon_mneme` | Storage: entity persistence, traversal, projection edges, op-log |
-| `aideon_continuum` | Contracts: shared temporal and scenario context types |
-| `aideon_metis` | Analytics computation (algorithm execution; Praxis frames questions and explains results) |
+| Dependency         | Why                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| `aideon_mneme`     | Storage: entity persistence, traversal, projection edges, op-log                          |
+| `aideon_continuum` | Contracts: shared temporal and scenario context types                                     |
+| `aideon_metis`     | Analytics computation (algorithm execution; Praxis frames questions and explains results) |
 
-Praxis does **not** depend on the Tauri host, the desktop shell, or the Continuum or Metis *implementations* beyond their capability traits. It exposes capability traits that consuming modules implement against.
+Praxis does **not** depend on the Tauri host, the desktop shell, or the Continuum or Metis _implementations_ beyond their capability traits. It exposes capability traits that consuming modules implement against.
 
 Consuming modules — the host command layer, Continuum, and the UI — depend on Praxis. The dependency flows one direction: Praxis is a stable semantic seam, not a generic middleware layer.
 

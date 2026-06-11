@@ -24,14 +24,14 @@ An artefact is a named, executable, self-describing product of the model. It is 
 
 Artefacts take several forms:
 
-| Form | Description |
-|---|---|
-| **View** | A focused graph or diagram over a bounded slice of the model |
+| Form          | Description                                                               |
+| ------------- | ------------------------------------------------------------------------- |
+| **View**      | A focused graph or diagram over a bounded slice of the model              |
 | **Catalogue** | A structured inventory of model objects filtered by type, layer, or scope |
-| **Matrix** | A relationship or comparison grid between two object populations |
-| **Map** | A spatial or topological rendering of model structure |
-| **Report** | A composed analytical output with narrative, tables, and signals |
-| **Page** | A packaged briefing surface for a specific audience and decision context |
+| **Matrix**    | A relationship or comparison grid between two object populations          |
+| **Map**       | A spatial or topological rendering of model structure                     |
+| **Report**    | A composed analytical output with narrative, tables, and signals          |
+| **Page**      | A packaged briefing surface for a specific audience and decision context  |
 
 All six forms share the same contract. The form changes the rendering shape. The obligations do not change.
 
@@ -45,18 +45,18 @@ Every artefact declares its contract. The contract is not optional metadata appe
 
 ### Contract Fields
 
-| Field | What It Declares |
-|---|---|
-| **Purpose** | One sentence: what this artefact is for |
-| **Question answered** | The specific question this artefact is designed to address |
-| **Audience** | The role or context this artefact is built to serve |
-| **Time context** | The valid time, asserted time, layer, and scenario under which it is executed |
-| **Inclusion rules** | What is in scope and what is explicitly excluded |
-| **Confidence** | An honest assessment of result quality, completeness, and reliability |
-| **Evidence** | Where the content comes from — source objects, imports, inputs |
-| **Content classification** | Whether each element is ASSERTED, INFERRED, or GENERATED |
-| **Staleness** | Whether any element is stale, partial, or awaiting review |
-| **Next action** | What the user can do from this result |
+| Field                      | What It Declares                                                              |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| **Purpose**                | One sentence: what this artefact is for                                       |
+| **Question answered**      | The specific question this artefact is designed to address                    |
+| **Audience**               | The role or context this artefact is built to serve                           |
+| **Time context**           | The valid time, asserted time, layer, and scenario under which it is executed |
+| **Inclusion rules**        | What is in scope and what is explicitly excluded                              |
+| **Confidence**             | An honest assessment of result quality, completeness, and reliability         |
+| **Evidence**               | Where the content comes from — source objects, imports, inputs                |
+| **Content classification** | Whether each element is ASSERTED, INFERRED, or GENERATED                      |
+| **Staleness**              | Whether any element is stale, partial, or awaiting review                     |
+| **Next action**            | What the user can do from this result                                         |
 
 ### The Four Questions
 
@@ -98,14 +98,14 @@ Content classification is part of the meaning of every result. These are not min
 
 ### Display Rules
 
-| Classification | Rendering cue | Trust level |
-|---|---|---|
-| ASSERTED | Standard display, no qualifier | Authoritative |
-| INFERRED | Qualifier label; derivation traceable via inspector | Derived, reviewable |
-| GENERATED | Distinct visual treatment; requires explicit acceptance | Suggestion only |
-| STALE | Staleness indicator; underlying fact has changed | Needs re-evaluation |
-| PARTIAL | Scope caveat visible inline | Bounded, not complete |
-| AWAITING REVIEW | Queue indicator; not yet confirmed | Pending |
+| Classification  | Rendering cue                                           | Trust level           |
+| --------------- | ------------------------------------------------------- | --------------------- |
+| ASSERTED        | Standard display, no qualifier                          | Authoritative         |
+| INFERRED        | Qualifier label; derivation traceable via inspector     | Derived, reviewable   |
+| GENERATED       | Distinct visual treatment; requires explicit acceptance | Suggestion only       |
+| STALE           | Staleness indicator; underlying fact has changed        | Needs re-evaluation   |
+| PARTIAL         | Scope caveat visible inline                             | Bounded, not complete |
+| AWAITING REVIEW | Queue indicator; not yet confirmed                      | Pending               |
 
 A tidy surface that hides these states is still misleading. Completeness and freshness are part of what the artefact says.
 
@@ -117,10 +117,10 @@ A tidy surface that hides these states is still misleading. Completeness and fre
 
 Aideon respects levels of abstraction. Different audiences are not simply asking for more or less detail — they are asking different questions. Flattening all abstraction into one surface forces every user to process material that is not relevant to their question.
 
-| Level | Scope | Typical question |
-|---|---|---|
-| **Conceptual** | Business meaning and scope | What is this organisation trying to do? |
-| **Logical** | Design-level structure and relationship | How are the parts designed to work together? |
+| Level                    | Scope                                      | Typical question                                          |
+| ------------------------ | ------------------------------------------ | --------------------------------------------------------- |
+| **Conceptual**           | Business meaning and scope                 | What is this organisation trying to do?                   |
+| **Logical**              | Design-level structure and relationship    | How are the parts designed to work together?              |
 | **Implementation-aware** | Concrete systems, components, and delivery | What are the specific systems and how are they connected? |
 
 Users move between levels deliberately. A strategy discussion does not need the implementation detail surface. An impact analysis should not be forced to disguise itself as a conceptual overview.
@@ -129,19 +129,19 @@ Users move between levels deliberately. A strategy discussion does not need the 
 
 Artefact families are named groupings that correspond to recognisable questions. They give users a credible starting shape instead of a blank canvas. The families are organised by the kind of question they answer, not by the type of diagram they produce.
 
-| Family | Question it answers |
-|---|---|
-| **Business motivation** | Why does this organisation exist and what drives its choices? |
-| **Value creation** | How does the organisation create and deliver value? |
-| **Business concept** | What are the fundamental business entities and their relationships? |
-| **Service portfolio** | What services does this organisation offer, and to whom? |
-| **Service concept** | How is a specific service designed to work? |
-| **Service blueprint** | What happens operationally when a service is delivered? |
-| **Operating model** | How are people, process, and technology organised to do the work? |
-| **Information dissemination** | What information is created, consumed, and shared — and by whom? |
-| **Application interaction** | How do applications exchange data and coordinate behaviour? |
-| **Application portfolio** | What applications exist, what do they support, and how healthy are they? |
-| **Technology portfolio** | What technology underpins the applications and operations? |
+| Family                        | Question it answers                                                      |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| **Business motivation**       | Why does this organisation exist and what drives its choices?            |
+| **Value creation**            | How does the organisation create and deliver value?                      |
+| **Business concept**          | What are the fundamental business entities and their relationships?      |
+| **Service portfolio**         | What services does this organisation offer, and to whom?                 |
+| **Service concept**           | How is a specific service designed to work?                              |
+| **Service blueprint**         | What happens operationally when a service is delivered?                  |
+| **Operating model**           | How are people, process, and technology organised to do the work?        |
+| **Information dissemination** | What information is created, consumed, and shared — and by whom?         |
+| **Application interaction**   | How do applications exchange data and coordinate behaviour?              |
+| **Application portfolio**     | What applications exist, what do they support, and how healthy are they? |
+| **Technology portfolio**      | What technology underpins the applications and operations?               |
 
 Families are reusable, comparable, and explainable. The product prefers them over one-off canvases that only make sense to the person who built them. A user who recognises a family name already knows what question they are answering before they open the artefact.
 
@@ -187,13 +187,13 @@ LLM output is always labelled GENERATED. It remains a suggestion until the user 
 
 ### LLM Guardrails
 
-| Guardrail | Behaviour |
-|---|---|
-| Suggested writes are reviewable | No LLM action lands in the model without explicit user acceptance |
-| Generated text stays labelled | GENERATED label is not removed until the user accepts |
+| Guardrail                                            | Behaviour                                                            |
+| ---------------------------------------------------- | -------------------------------------------------------------------- |
+| Suggested writes are reviewable                      | No LLM action lands in the model without explicit user acceptance    |
+| Generated text stays labelled                        | GENERATED label is not removed until the user accepts                |
 | Asserted/inferred/generated distinction is preserved | The system never conflates a generated suggestion with accepted fact |
-| Context-grounded explanation | The assistant uses model context, not free improvisation |
-| No authority bypass | The assistant cannot approve its own suggestions |
+| Context-grounded explanation                         | The assistant uses model context, not free improvisation             |
+| No authority bypass                                  | The assistant cannot approve its own suggestions                     |
 
 ### ML Signals
 
@@ -239,12 +239,12 @@ Imports, large comparisons, recalculations, scenario promotions, and export gene
 
 Aideon cannot be built only for architects. If the product only works for experts, it remains accurate in pockets and stale everywhere else. Four participation modes describe how different roles enter the same product with different levels of power and different expectations of structure.
 
-| Mode | Who | What they need |
-|---|---|---|
-| **Expert** | Architects, analysts, modellers | Full modelling and artefact control — structural editing, scenario management, viewpoint authoring, deep inspection |
-| **Guided** | Business contributors, SMEs | Bounded contribution flows that ask the right questions in plain language, without requiring model literacy |
-| **Steward** | Review owners, data owners | Queues, comparisons, approvals, and remediation paths — work as structured review, not open editing |
-| **Read-only** | Executives, decision-makers | Concise, trustworthy outputs — legible without specialist training, defensible under questioning |
+| Mode          | Who                             | What they need                                                                                                      |
+| ------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Expert**    | Architects, analysts, modellers | Full modelling and artefact control — structural editing, scenario management, viewpoint authoring, deep inspection |
+| **Guided**    | Business contributors, SMEs     | Bounded contribution flows that ask the right questions in plain language, without requiring model literacy         |
+| **Steward**   | Review owners, data owners      | Queues, comparisons, approvals, and remediation paths — work as structured review, not open editing                 |
+| **Read-only** | Executives, decision-makers     | Concise, trustworthy outputs — legible without specialist training, defensible under questioning                    |
 
 These are not four separate products. They are four entry points into the same product. The underlying model is shared. The surface adapts to the level of authority and the kind of work required.
 
@@ -383,28 +383,28 @@ The shell has four permanent jobs:
 
 ### Workspace Family
 
-| Workspace | Purpose |
-|---|---|
-| **Workspace home** | Get users back into useful work quickly — recency, relevance, active scenarios, unfinished work |
-| **Modelling studio** | Expert surface — structured editing, exploration, scenario awareness, explainability, artefact authoring |
-| **Viewpoint library** | Start from known-good artefacts organised by question, audience, and level of abstraction |
-| **Scenario studio** | Explicit baseline, target, and alternative futures — create, compare, explain, review, promote |
-| **Review and contribution** | Bounded workspace for SMEs and stewards — useful work in business language, without requiring full model literacy |
-| **Executive briefing** | Legible in meetings, defensible under questioning, usable in packaged output |
-| **Import and mapping** | Reviewable, reversible, explicit about uncertainty — quiet ingestion is how weak source material becomes false certainty |
-| **Administration and controls** | Access, templates, integration controls, automation rules, audit — plain and explicit |
+| Workspace                       | Purpose                                                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Workspace home**              | Get users back into useful work quickly — recency, relevance, active scenarios, unfinished work                          |
+| **Modelling studio**            | Expert surface — structured editing, exploration, scenario awareness, explainability, artefact authoring                 |
+| **Viewpoint library**           | Start from known-good artefacts organised by question, audience, and level of abstraction                                |
+| **Scenario studio**             | Explicit baseline, target, and alternative futures — create, compare, explain, review, promote                           |
+| **Review and contribution**     | Bounded workspace for SMEs and stewards — useful work in business language, without requiring full model literacy        |
+| **Executive briefing**          | Legible in meetings, defensible under questioning, usable in packaged output                                             |
+| **Import and mapping**          | Reviewable, reversible, explicit about uncertainty — quiet ingestion is how weak source material becomes false certainty |
+| **Administration and controls** | Access, templates, integration controls, automation rules, audit — plain and explicit                                    |
 
 ---
 
 ## Related Documents
 
-| Document | What it covers |
-|---|---|
-| [DESIGN.md](DESIGN.md) | Cross-module design axioms and structural invariants |
-| [UX-DESIGN.md](UX-DESIGN.md) | UX contract — component patterns, interaction model, renderer obligations |
-| [DESKTOP-FIRST-WORKSPACE.md](DESKTOP-FIRST-WORKSPACE.md) | Desktop-first workspace and shell design |
-| [../04-contracts/CONTRACTS-AND-SCHEMAS.md](../04-contracts/CONTRACTS-AND-SCHEMAS.md) | Temporal and scenario context contracts; IPC schema definitions |
-| [../05-modules/praxis/README.md](../05-modules/praxis/README.md) | Praxis — meaning, artefact execution, viewpoint families, metamodel |
-| [../05-modules/metis/README.md](../05-modules/metis/README.md) | Metis — analytical engine, ML signals, scoring |
-| [../05-modules/chrona/README.md](../05-modules/chrona/README.md) | Chrona — temporal query, scenario management |
-| [../05-modules/mneme/README.md](../05-modules/mneme/README.md) | Mneme — storage, op log, audit, replay |
+| Document                                                                             | What it covers                                                            |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| [DESIGN.md](DESIGN.md)                                                               | Cross-module design axioms and structural invariants                      |
+| [UX-DESIGN.md](UX-DESIGN.md)                                                         | UX contract — component patterns, interaction model, renderer obligations |
+| [DESKTOP-FIRST-WORKSPACE.md](DESKTOP-FIRST-WORKSPACE.md)                             | Desktop-first workspace and shell design                                  |
+| [../04-contracts/CONTRACTS-AND-SCHEMAS.md](../04-contracts/CONTRACTS-AND-SCHEMAS.md) | Temporal and scenario context contracts; IPC schema definitions           |
+| [../05-modules/praxis/README.md](../05-modules/praxis/README.md)                     | Praxis — meaning, artefact execution, viewpoint families, metamodel       |
+| [../05-modules/metis/README.md](../05-modules/metis/README.md)                       | Metis — analytical engine, ML signals, scoring                            |
+| [../05-modules/chrona/README.md](../05-modules/chrona/README.md)                     | Chrona — temporal query, scenario management                              |
+| [../05-modules/mneme/README.md](../05-modules/mneme/README.md)                       | Mneme — storage, op log, audit, replay                                    |

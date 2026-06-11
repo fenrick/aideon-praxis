@@ -33,13 +33,13 @@ A signal that cannot declare what it is, why it fired, how strong it is, and wha
 
 Signal surfaces cover system-generated review and decision inputs:
 
-| Category | Examples |
-|---|---|
-| Anomaly and quality warnings | missing coverage, outlier values, structural inconsistencies |
-| Rankings and concentration signals | entity scoring, dependency concentration, top-N by criterion |
-| Risk and impact alerts | change propagation, dependency hazards, scenario divergence |
-| Trend indicators | model drift over time, growth/decline curves, plateau detection |
-| Suggested review tasks | Metis- or Chrona-generated work items surfaced for acceptance |
+| Category                           | Examples                                                        |
+| ---------------------------------- | --------------------------------------------------------------- |
+| Anomaly and quality warnings       | missing coverage, outlier values, structural inconsistencies    |
+| Rankings and concentration signals | entity scoring, dependency concentration, top-N by criterion    |
+| Risk and impact alerts             | change propagation, dependency hazards, scenario divergence     |
+| Trend indicators                   | model drift over time, growth/decline curves, plateau detection |
+| Suggested review tasks             | Metis- or Chrona-generated work items surfaced for acceptance   |
 
 Signal surfaces do not cover generic workflow status, ordinary validation errors, provenance freshness notices, or free-form assistant responses. Those surfaces interact with signals but are distinct.
 
@@ -49,14 +49,14 @@ Signal surfaces do not cover generic workflow status, ordinary validation errors
 
 Every signal surface makes these elements easy to find without requiring a secondary click:
 
-| Element | What it answers |
-|---|---|
-| **Signal type** | What category of signal is this — warning, ranking, recommendation, review task? |
-| **Affected scope** | Which artefact, object, layer, or collection does this concern? |
-| **Why it fired** | What condition, threshold, or pattern triggered this signal? |
-| **Strength or confidence** | How strong is the signal? Is it a hard rule, a probabilistic score, or a heuristic flag? Express this as a bounded cue — a tier label, a confidence range, a score — never as unqualified certainty. |
-| **Temporal and scenario context** | At what active time and active scenario was this signal computed? Freshness matters. A stale signal computed against an obsolete scenario context must say so. |
-| **Valid actions** | What can the user do? At minimum: review the evidence, inspect the affected scope, suppress, accept, or request a rerun. |
+| Element                           | What it answers                                                                                                                                                                                      |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Signal type**                   | What category of signal is this — warning, ranking, recommendation, review task?                                                                                                                     |
+| **Affected scope**                | Which artefact, object, layer, or collection does this concern?                                                                                                                                      |
+| **Why it fired**                  | What condition, threshold, or pattern triggered this signal?                                                                                                                                         |
+| **Strength or confidence**        | How strong is the signal? Is it a hard rule, a probabilistic score, or a heuristic flag? Express this as a bounded cue — a tier label, a confidence range, a score — never as unqualified certainty. |
+| **Temporal and scenario context** | At what active time and active scenario was this signal computed? Freshness matters. A stale signal computed against an obsolete scenario context must say so.                                       |
+| **Valid actions**                 | What can the user do? At minimum: review the evidence, inspect the affected scope, suppress, accept, or request a rerun.                                                                             |
 
 If a signal cannot surface all six elements, it should not be promoted to a first-class surface. It belongs in a raw diagnostics panel with a clear label.
 
@@ -66,10 +66,10 @@ If a signal cannot surface all six elements, it should not be promoted to a firs
 
 The distinction between asserted, inferred, and generated content is always visible on signal surfaces. It is never collapsed.
 
-| Origin | Meaning | Visual treatment |
-|---|---|---|
-| **Asserted** | Entered or confirmed by a human | No modifier needed; it is the baseline |
-| **Inferred** | Derived algorithmically from asserted content | Labelled as inferred; carries the derivation path |
+| Origin        | Meaning                                                              | Visual treatment                                         |
+| ------------- | -------------------------------------------------------------------- | -------------------------------------------------------- |
+| **Asserted**  | Entered or confirmed by a human                                      | No modifier needed; it is the baseline                   |
+| **Inferred**  | Derived algorithmically from asserted content                        | Labelled as inferred; carries the derivation path        |
 | **Generated** | Produced by ML, heuristics, or synthesis without a direct data trail | Labelled as generated; carries confidence and provenance |
 
 A signal that blends inferred and generated sources labels both. A signal that presents generated output as if it were asserted truth is a product defect.
@@ -123,11 +123,11 @@ Review tasks generated by Metis, Chrona, or Continuum sit in the same task infra
 
 Signals are computed at a point in time against a specific scenario. The surface is honest about the freshness of that computation.
 
-| State | Required treatment |
-|---|---|
-| **Fresh** | No modifier needed |
-| **Partial** | Label indicates incomplete computation; scope of gap is named |
-| **Stale** | Label names the staleness; rerun action is available |
+| State                   | Required treatment                                                                           |
+| ----------------------- | -------------------------------------------------------------------------------------------- |
+| **Fresh**               | No modifier needed                                                                           |
+| **Partial**             | Label indicates incomplete computation; scope of gap is named                                |
+| **Stale**               | Label names the staleness; rerun action is available                                         |
 | **Scenario-mismatched** | Signal computed against a different scenario than the current view; label names the mismatch |
 
 A stale signal shown without a staleness indicator is actively misleading. A signal computed against scenario A while the user is viewing scenario B must not present itself as current.
@@ -169,13 +169,13 @@ A signal is not the same as an artefact's provenance or freshness notice. Proven
 
 ## 9. Ownership by Module
 
-| Module | Signal responsibility |
-|---|---|
-| [Metis](../05-modules/metis/README.md) | Analytical generation: rankings, anomaly detection, risk and concentration signals, trend computation |
-| [Chrona](../05-modules/chrona/README.md) | Temporal and scenario-aware comparison signals: plateau detection, scenario divergence, time-bounded trend |
-| Continuum | Rule-driven task creation, escalation workflows, reminder signals |
-| Praxis | Domain framing when a signal requires semantic explanation or task shaping |
-| Host (desktop shell) | Rendering all signals as visible, reviewable product surfaces; enforcing visual differentiation and interaction rules |
+| Module                                   | Signal responsibility                                                                                                 |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| [Metis](../05-modules/metis/README.md)   | Analytical generation: rankings, anomaly detection, risk and concentration signals, trend computation                 |
+| [Chrona](../05-modules/chrona/README.md) | Temporal and scenario-aware comparison signals: plateau detection, scenario divergence, time-bounded trend            |
+| Continuum                                | Rule-driven task creation, escalation workflows, reminder signals                                                     |
+| Praxis                                   | Domain framing when a signal requires semantic explanation or task shaping                                            |
+| Host (desktop shell)                     | Rendering all signals as visible, reviewable product surfaces; enforcing visual differentiation and interaction rules |
 
 No module bypasses the surface contract. Metis and Chrona produce signal payloads. The host shell renders them. Signal payloads carry all required elements; the host does not fabricate missing context.
 
@@ -185,12 +185,12 @@ No module bypasses the surface contract. Metis and Chrona produce signal payload
 
 Signals are distinct from:
 
-| Surface | How it differs |
-|---|---|
-| **Accepted-work status** | Status reflects completion state of committed work, not a prompt for a new decision |
-| **Validation errors** | Validation errors are synchronous, rule-bound, and block a specific action; signals are asynchronous, analytical, and invite judgement |
-| **Provenance notices** | Provenance describes origin and freshness of content; it is not a decision prompt |
-| **Assistant responses** | Free-form responses from an AI assistant are conversational outputs, not bounded analytical signals with declared confidence |
+| Surface                  | How it differs                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Accepted-work status** | Status reflects completion state of committed work, not a prompt for a new decision                                                    |
+| **Validation errors**    | Validation errors are synchronous, rule-bound, and block a specific action; signals are asynchronous, analytical, and invite judgement |
+| **Provenance notices**   | Provenance describes origin and freshness of content; it is not a decision prompt                                                      |
+| **Assistant responses**  | Free-form responses from an AI assistant are conversational outputs, not bounded analytical signals with declared confidence           |
 
 These surfaces interact — a validation error may accompany a warning signal; provenance context enriches a stale signal — but they do not collapse into one undifferentiated alert layer.
 

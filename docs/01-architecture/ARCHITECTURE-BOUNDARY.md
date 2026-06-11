@@ -95,6 +95,7 @@ The derived runtime sits to the side: it is rebuilt from canonical files at any 
 The renderer is a static bundle loaded inside the WebView. It is untrusted by the OS and by the Rust host.
 
 **Allowed:**
+
 - Render artefact results, diagram specs, and signal surfaces received from the host.
 - Maintain local UI state: selection, filters, tabs, layout, undo/redo stacks for in-flight edits.
 - Call the host exclusively through typed adapter modules under `src/adapters`.
@@ -102,6 +103,7 @@ The renderer is a static bundle loaded inside the WebView. It is untrusted by th
 - Display honest partial, stale, and generated states; propagate backpressure feedback to the user.
 
 **Forbidden:**
+
 - Node integration, OS APIs, or direct filesystem access of any kind.
 - Spawning shell processes or loading native plugins outside Tauri's capability model.
 - Direct access to the SQLite runtime database, workspace files, or blob store.
@@ -117,6 +119,7 @@ The renderer is a static bundle loaded inside the WebView. It is untrusted by th
 The boundary between renderer and Rust. Rust defines the wire shape; TypeScript consumes generated types. The renderer cannot see or influence what is not exposed here.
 
 **Command contract rules:**
+
 - Command names are namespaced: `<domain>.<capability>.<action>` (e.g. `workspace.lifecycle.open`, `ops.append`, `graph.slice`).
 - Payloads are single JSON objects; no positional arguments.
 - Every response uses the stable error envelope with machine-readable codes:  
@@ -151,6 +154,7 @@ The host watches canonical roots (`manifest.json`, `model/ops/`, `model/schema/`
 The single privileged process. It holds the Tauri runtime, enforces capabilities, and owns all side effects.
 
 **Allowed:**
+
 - Expose and enforce the typed IPC surface (commands + events).
 - Apply and enforce Tauri capability and CSP configuration.
 - Manage workspace lifecycle: open, close, watch, rebuild trigger, backup preparation.
@@ -160,6 +164,7 @@ The single privileged process. It holds the Tauri runtime, enforces capabilities
 - Emit typed push events to the renderer on behalf of engines.
 
 **Forbidden:**
+
 - Embedding domain semantics (model traversal, artefact execution, scenario resolution) inside IPC handler bodies — delegate to engine traits.
 - Allowing any IPC command to block indefinitely; long work must be dispatched as an accepted job.
 - Granting the renderer capabilities not declared in the capability manifest.
@@ -172,21 +177,23 @@ The single privileged process. It holds the Tauri runtime, enforces capabilities
 
 In-process Rust crates called by the host through typed trait boundaries. Each engine owns a specific capability; none own another engine's capability.
 
-| Engine | Owns |
-|---|---|
-| **Praxis** | Meaning: ontology, edge catalogue, artefact execution, diagram spec generation, metamodel packages |
-| **Mneme** | Storage: workspace reads/writes, append-only op segments, blob store, runtime index engine, projections, invalidation |
-| **Metis** | Analytics: signal surfaces, aggregation, dashboard projections |
-| **Chrona** | Time/scenario UX: temporal helpers, scenario overlay resolution, Plan/Actual layer management |
-| **Continuum** | Orchestration and automation: local durable executor, workflow steps, retries, compensation |
+| Engine        | Owns                                                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Praxis**    | Meaning: ontology, edge catalogue, artefact execution, diagram spec generation, metamodel packages                    |
+| **Mneme**     | Storage: workspace reads/writes, append-only op segments, blob store, runtime index engine, projections, invalidation |
+| **Metis**     | Analytics: signal surfaces, aggregation, dashboard projections                                                        |
+| **Chrona**    | Time/scenario UX: temporal helpers, scenario overlay resolution, Plan/Actual layer management                         |
+| **Continuum** | Orchestration and automation: local durable executor, workflow steps, retries, compensation                           |
 
 **Allowed:**
+
 - Implement domain logic behind the engine's published trait contract.
 - Perform deterministic computation independent of UI state and runtime details.
 - Persist only through Mneme's storage interface; no engine accesses the runtime database directly except Mneme.
 - Compose with other engines through the host (the host is the composition root); engines do not call each other peer-to-peer.
 
 **Forbidden:**
+
 - Importing Tauri, WebView, or UI-layer dependencies into engine crates.
 - Emitting events directly to the renderer — the host owns event publication.
 - Cross-engine private implementation imports that bypass published trait contracts (no engine↔engine dependency cycles).
@@ -210,6 +217,7 @@ my-project.aideon/
 ```
 
 **Rules:**
+
 - `model/ops/` is append-only; segments are never mutated after they are written.
 - `objects/sha256/` is content-addressed; blobs are referenced by hash in the fact log, never inlined as bytes ([ADR-0003](../06-adrs/ADR-0003-content-addressed-object-store.md)).
 - One single-writer queue per open workspace; concurrent writes serialise through Mneme's write queue, not through external locking.
@@ -228,6 +236,7 @@ Effective graphs, adjacency indexes, tuple indexes, search and vector sidecars, 
 An engine-pluggable local index and cache rebuilt on demand from canonical files. The current default engine is SQLite (via the `mneme` crate's storage implementation). The engine is replaceable behind the Mneme storage trait without changing the canonical workspace format or any layer above.
 
 **Rules:**
+
 - Deleting the entire `.aideon/runtime/` directory loses no user data; the host triggers a rebuild.
 - The runtime database is never the source of truth; it is a performance cache.
 - Hosted PostgreSQL, where used, is an optional adapter that materialises workspace semantics into a service store — it is not a replacement for the canonical workspace ([ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md)).
@@ -239,18 +248,18 @@ An engine-pluggable local index and cache rebuilt on demand from canonical files
 
 When the question is "where does this live?", apply this rule:
 
-| Category | Examples | Status |
-|---|---|---|
-| Operations written by the user | `model/ops/*.ops` segments | **Canonical** |
-| Temporal facts | Every asserted fact with valid-time and HLC | **Canonical** |
-| Schema declarations | `model/schema/` files | **Canonical** |
-| Blob bytes | `objects/sha256/<hash>` | **Canonical** |
-| Effective graph views | Adjacency, reachability queries | **Derived** |
-| Tuple indexes | Entity/edge lookup tables | **Derived** |
-| Search and vector sidecars | Full-text, embedding indexes | **Derived** |
-| Runtime database | SQLite DB in `.aideon/runtime/` | **Derived** |
-| UI state | Selection, layout, in-flight edits | **Derived / ephemeral** |
-| Blob previews and thumbnails | Rendered preview files | **Derived** |
+| Category                       | Examples                                    | Status                  |
+| ------------------------------ | ------------------------------------------- | ----------------------- |
+| Operations written by the user | `model/ops/*.ops` segments                  | **Canonical**           |
+| Temporal facts                 | Every asserted fact with valid-time and HLC | **Canonical**           |
+| Schema declarations            | `model/schema/` files                       | **Canonical**           |
+| Blob bytes                     | `objects/sha256/<hash>`                     | **Canonical**           |
+| Effective graph views          | Adjacency, reachability queries             | **Derived**             |
+| Tuple indexes                  | Entity/edge lookup tables                   | **Derived**             |
+| Search and vector sidecars     | Full-text, embedding indexes                | **Derived**             |
+| Runtime database               | SQLite DB in `.aideon/runtime/`             | **Derived**             |
+| UI state                       | Selection, layout, in-flight edits          | **Derived / ephemeral** |
+| Blob previews and thumbnails   | Rendered preview files                      | **Derived**             |
 
 If something is derived, it is rebuilable from canonical files alone. If it is not rebuilable, it is canonical and belongs in `model/` or `objects/`.
 
@@ -262,13 +271,13 @@ Every read and write carries explicit time context. No layer may assume "current
 
 Required context fields on all operations:
 
-| Field | Meaning |
-|---|---|
-| `partition_id` | Workspace partition scope |
-| `valid_time` | When the fact is true in the real world |
-| `asserted_time` | When the fact was recorded (HLC) |
-| `layer` | `Plan` or `Actual` |
-| `scenario_id` | Optional scenario overlay |
+| Field           | Meaning                                 |
+| --------------- | --------------------------------------- |
+| `partition_id`  | Workspace partition scope               |
+| `valid_time`    | When the fact is true in the real world |
+| `asserted_time` | When the fact was recorded (HLC)        |
+| `layer`         | `Plan` or `Actual`                      |
+| `scenario_id`   | Optional scenario overlay               |
 
 Chrona provides temporal helpers and scenario overlay resolution. Praxis and Mneme consume this context on every call. The renderer passes the current time context (from user selection or default) with every command.
 
@@ -317,15 +326,15 @@ See [Artefacts and Viewpoints](../03-design/ARTEFACTS-AND-VIEWPOINTS.md) and [Pr
 
 ## Security Constraints (Desktop Baseline)
 
-| Constraint | Rule |
-|---|---|
-| Renderer HTTP | Forbidden as primary communication seam |
-| Local TCP ports | No open ports in desktop mode |
-| Filesystem access | Mediated by host; scoped to workspace directories and app data |
-| Capability scope | Per-window; default deny; declared in `src-tauri/capabilities/default.json` |
-| PII on export | Deny-by-default; redaction required for any export surface |
-| Blob sharing | Content-addressed — a hash uniquely identifies content, not a path |
-| Hosted auth | Demoted to an adapter contract; desktop default is local single-user context |
+| Constraint        | Rule                                                                         |
+| ----------------- | ---------------------------------------------------------------------------- |
+| Renderer HTTP     | Forbidden as primary communication seam                                      |
+| Local TCP ports   | No open ports in desktop mode                                                |
+| Filesystem access | Mediated by host; scoped to workspace directories and app data               |
+| Capability scope  | Per-window; default deny; declared in `src-tauri/capabilities/default.json`  |
+| PII on export     | Deny-by-default; redaction required for any export surface                   |
+| Blob sharing      | Content-addressed — a hash uniquely identifies content, not a path           |
+| Hosted auth       | Demoted to an adapter contract; desktop default is local single-user context |
 
 See [Security](../02-standards/SECURITY.md) for the full security posture.
 
@@ -342,20 +351,20 @@ See [Security](../02-standards/SECURITY.md) for the full security posture.
 
 ## Cross-References
 
-| Document | Relationship |
-|---|---|
-| [Module Dependency Map](./MODULE-DEPENDENCY-MAP.md) | Full crate dependency graph |
-| [Desktop-First Workspace](../03-design/DESKTOP-FIRST-WORKSPACE.md) | The design thesis this document enforces |
-| [Contracts and Schemas](../04-contracts/CONTRACTS-AND-SCHEMAS.md) | IPC payload and error envelope contracts |
-| [Temporal and Scenario Context](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Time context fields and resolution rules |
-| [Accepted Work and Events](../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) | AcceptedJob lifecycle and event shapes |
-| [Projection and Invalidation](../04-contracts/PROJECTION-AND-INVALIDATION.md) | How derived state is invalidated and rebuilt |
-| [Mneme — Runtime and Engine](../05-modules/mneme/RUNTIME-AND-ENGINE.md) | Storage engine abstraction and write queue |
-| [Host module](../05-modules/host/README.md) | Tauri runtime, capabilities, IPC handlers |
-| [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md) | Workspace is canonical authority |
-| [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md) | Portable workspace format |
-| [ADR-0003](../06-adrs/ADR-0003-content-addressed-object-store.md) | Content-addressed object store |
-| [ADR-0004](../06-adrs/ADR-0004-storage-engine-abstraction.md) | Storage engine abstraction |
-| [ADR-0005](../06-adrs/ADR-0005-sync-and-conflict-model.md) | Sync and conflict model |
-| [ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md) | Tauri trust boundary and typed IPC |
-| [ADR-0007](../06-adrs/ADR-0007-deterministic-package-export.md) | Deterministic package export |
+| Document                                                                          | Relationship                                 |
+| --------------------------------------------------------------------------------- | -------------------------------------------- |
+| [Module Dependency Map](./MODULE-DEPENDENCY-MAP.md)                               | Full crate dependency graph                  |
+| [Desktop-First Workspace](../03-design/DESKTOP-FIRST-WORKSPACE.md)                | The design thesis this document enforces     |
+| [Contracts and Schemas](../04-contracts/CONTRACTS-AND-SCHEMAS.md)                 | IPC payload and error envelope contracts     |
+| [Temporal and Scenario Context](../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | Time context fields and resolution rules     |
+| [Accepted Work and Events](../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)           | AcceptedJob lifecycle and event shapes       |
+| [Projection and Invalidation](../04-contracts/PROJECTION-AND-INVALIDATION.md)     | How derived state is invalidated and rebuilt |
+| [Mneme — Runtime and Engine](../05-modules/mneme/RUNTIME-AND-ENGINE.md)           | Storage engine abstraction and write queue   |
+| [Host module](../05-modules/host/README.md)                                       | Tauri runtime, capabilities, IPC handlers    |
+| [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md)               | Workspace is canonical authority             |
+| [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)                      | Portable workspace format                    |
+| [ADR-0003](../06-adrs/ADR-0003-content-addressed-object-store.md)                 | Content-addressed object store               |
+| [ADR-0004](../06-adrs/ADR-0004-storage-engine-abstraction.md)                     | Storage engine abstraction                   |
+| [ADR-0005](../06-adrs/ADR-0005-sync-and-conflict-model.md)                        | Sync and conflict model                      |
+| [ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)             | Tauri trust boundary and typed IPC           |
+| [ADR-0007](../06-adrs/ADR-0007-deterministic-package-export.md)                   | Deterministic package export                 |
