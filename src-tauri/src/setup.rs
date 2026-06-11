@@ -1,12 +1,22 @@
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use log::{error, info, warn};
 use serde::Deserialize;
 use serde::Serialize;
-use tauri::{AppHandle, Manager, Runtime, State, Wry};
+use serde_json::json;
+use tauri::{AppHandle, Emitter, Manager, Runtime, State, Wry};
 
+use crate::contracts::{
+    EVENT_SETUP_BACKEND_READY, EVENT_SETUP_FAILED, EVENT_SETUP_FRONTEND_READY_ACK,
+    EVENT_SETUP_PROGRESS, EVENT_SETUP_SEED_SUMMARY,
+};
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
+use crate::log_event;
+use crate::telemetry::{
+    command_completed, command_failed, command_invoked, job_completed, job_failed, job_started,
+};
 use crate::worker::init_temporal;
 
 pub struct SetupState {
@@ -48,6 +58,65 @@ fn mark_complete(state: &mut SetupState, task: SetupTask) {
     }
 }
 
+fn emit_setup_event<R: Runtime>(app: &AppHandle<R>, event: &str, payload: serde_json::Value) {
+    for window_id in ["splash", "main"] {
+        if let Some(window) = app.get_webview_window(window_id) {
+            let _ = window.emit(event, payload.clone());
+        }
+    }
+}
+
+pub fn emit_setup_progress<R: Runtime>(app: &AppHandle<R>, phase: &'static str) {
+    log_event!(
+        severity = 5,
+        component = "core",
+        event = "setup_progress",
+        message = "setup progress update",
+        correlation_id = "setup",
+        metadata = json!({ "phase": phase })
+    );
+    emit_setup_event(
+        app,
+        EVENT_SETUP_PROGRESS,
+        serde_json::json!({ "phase": phase }),
+    );
+}
+
+pub fn emit_setup_failed<R: Runtime>(app: &AppHandle<R>, error: &HostError) {
+    log_event!(
+        severity = 3,
+        component = "core",
+        event = "setup_failed",
+        message = "setup failure",
+        correlation_id = "setup",
+        metadata = json!({ "code": error.code, "message": error.message })
+    );
+    emit_setup_event(
+        app,
+        EVENT_SETUP_FAILED,
+        serde_json::json!({ "code": error.code, "message": error.message }),
+    );
+}
+
+#[allow(dead_code)]
+fn storage_root_path<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, HostError> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|err| HostError::internal(err.to_string()))?;
+    Ok(app_data_dir.join("AideonPraxis"))
+}
+
+#[allow(dead_code)]
+pub(crate) async fn clear_storage_root(root: PathBuf) -> Result<(), HostError> {
+    if root.exists() {
+        tokio::fs::remove_dir_all(&root)
+            .await
+            .map_err(|err| HostError::internal(err.to_string()))?;
+    }
+    Ok(())
+}
+
 fn all_complete(state: &SetupState) -> bool {
     state.backend_task && state.frontend_task
 }
@@ -64,26 +133,81 @@ pub struct SetupFlags {
     backend: bool,
 }
 
+#[derive(Debug)]
+pub struct SetupSeedSummary {
+    pub dataset_version: String,
+    pub metamodel_version: String,
+}
+
+pub fn emit_setup_seed_summary<R: Runtime>(app: &AppHandle<R>, summary: &SetupSeedSummary) {
+    log_event!(
+        severity = 5,
+        component = "core",
+        event = "setup_seed_summary",
+        message = "setup seed summary recorded",
+        correlation_id = "setup",
+        metadata = json!({
+            "dataset_version": summary.dataset_version,
+            "metamodel_version": summary.metamodel_version,
+        })
+    );
+    emit_setup_event(
+        app,
+        EVENT_SETUP_SEED_SUMMARY,
+        serde_json::json!({
+            "datasetVersion": summary.dataset_version,
+            "metamodelVersion": summary.metamodel_version,
+        }),
+    );
+}
+
 #[tauri::command]
 pub async fn set_complete<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, Mutex<SetupState>>,
     task: String,
 ) -> Result<(), HostError> {
+    let started_at = Instant::now();
+    command_invoked("set_complete", "setup");
     let mut state_lock = state.lock().unwrap();
 
-    let parsed = parse_task(task.as_str()).ok_or_else(|| {
-        warn!("host: set_complete called with invalid task '{task}'");
-        HostError::invalid_input("invalid task")
-    })?;
+    let parsed = match parse_task(task.as_str()) {
+        Some(value) => value,
+        None => {
+            warn!("host: set_complete called with invalid task '{task}'");
+            let err = HostError::invalid_input("invalid task");
+            command_failed("set_complete", "setup", &err, Some(started_at.elapsed()));
+            return Err(err);
+        }
+    };
+    let was_frontend = state_lock.frontend_task;
+    let was_backend = state_lock.backend_task;
     info!(
         "host: set_complete({task}) frontend={} backend={}",
         state_lock.frontend_task, state_lock.backend_task
     );
     mark_complete(&mut state_lock, parsed);
 
+    match parsed {
+        SetupTask::Backend if !was_backend => {
+            emit_setup_event(&app, EVENT_SETUP_BACKEND_READY, serde_json::json!({}))
+        }
+        SetupTask::Frontend if !was_frontend => {
+            emit_setup_event(&app, EVENT_SETUP_FRONTEND_READY_ACK, serde_json::json!({}));
+        }
+        _ => {}
+    }
+
     if all_complete(&state_lock) && !state_lock.close_scheduled {
         state_lock.close_scheduled = true;
+        log_event!(
+            severity = 6,
+            component = "core",
+            event = "app_ready",
+            message = "Setup complete and UI ready",
+            correlation_id = "setup",
+            metadata = json!({ "phase": "ready" })
+        );
         let delay = close_delay(&state_lock);
         info!(
             "host: setup complete; showing main window after {:?} delay",
@@ -108,6 +232,7 @@ pub async fn set_complete<R: Runtime>(
         });
     }
 
+    command_completed("set_complete", "setup", started_at.elapsed());
     Ok(())
 }
 
@@ -121,8 +246,21 @@ pub fn get_setup_state(state: State<'_, Mutex<SetupState>>) -> Result<SetupFlags
 }
 
 pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), HostError> {
+    let job_start = Instant::now();
+    job_started("backend_setup", "setup");
     info!("host: backend setup started");
-    init_temporal(&app).await.map_err(HostError::internal)?;
+    if let Err(message) = init_temporal(&app).await {
+        let error = HostError::internal(message);
+        emit_setup_progress(&app, "failed");
+        emit_setup_failed(&app, &error);
+        job_failed(
+            "backend_setup",
+            "setup",
+            "temporal_init_failed",
+            &error.message,
+        );
+        return Err(error);
+    }
 
     if let Err(error_message) = set_complete(
         app.clone(),
@@ -132,10 +270,17 @@ pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), HostError> {
     .await
     {
         error!("host: set_complete backend failed: {error_message}");
+        job_failed(
+            "backend_setup",
+            "setup",
+            error_message.code,
+            &error_message.message,
+        );
         return Err(error_message);
     }
 
     info!("host: backend setup marked complete");
+    job_completed("backend_setup", "setup", job_start.elapsed());
     Ok(())
 }
 
@@ -152,26 +297,73 @@ pub async fn system_setup_complete<R: Runtime>(
     state: State<'_, Mutex<SetupState>>,
     request: IpcRequest<SetupCompletePayload>,
 ) -> Result<IpcResponse<()>, HostError> {
-    let request_id = request.request_id;
-    let response = match set_complete(app, state, request.payload.task).await {
-        Ok(()) => IpcResponse::ok(request_id, ()),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request(
+        "system_setup_complete",
+        request,
+        move |payload: SetupCompletePayload| {
+            let app = app.clone();
+            let state = state.clone();
+            async move { set_complete(app, state, payload.task).await }
+        },
+    )
+    .await
+}
+
+#[allow(dead_code)]
+const FACTORY_RESET_CONFIRMATION: &str = "CONFIRM-FACTORY-RESET";
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
+pub struct FactoryResetPayload {
+    pub confirmation: String,
+}
+
+#[allow(dead_code)]
+async fn perform_factory_reset<R: Runtime>(
+    app: AppHandle<R>,
+    payload: FactoryResetPayload,
+) -> Result<(), HostError> {
+    if payload.confirmation != FACTORY_RESET_CONFIRMATION {
+        return Err(HostError::invalid_input(
+            "factory reset requires explicit confirmation",
+        ));
+    }
+    let storage_root = storage_root_path(&app)?;
+    clear_storage_root(storage_root).await?;
+    info!("host: factory reset completed");
+    Ok(())
+}
+
+/// Namespaced + requestId-wrapped factory reset command.
+#[tauri::command]
+#[allow(dead_code)]
+pub async fn system_factory_reset<R: Runtime>(
+    app: AppHandle<R>,
+    request: IpcRequest<FactoryResetPayload>,
+) -> Result<IpcResponse<()>, HostError> {
+    crate::telemetry::respond_with_request("system_factory_reset", request, move |payload| {
+        let app = app.clone();
+        async move { perform_factory_reset(app, payload).await }
+    })
+    .await
 }
 
 /// Namespaced + requestId-wrapped setup state query.
 #[tauri::command]
-pub fn system_setup_state(
+pub async fn system_setup_state(
     state: State<'_, Mutex<SetupState>>,
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<SetupFlags>, HostError> {
-    let request_id = request.request_id;
-    let response = match get_setup_state(state) {
-        Ok(flags) => IpcResponse::ok(request_id, flags),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    crate::telemetry::respond_with_request(
+        "system_setup_state",
+        request,
+        move |_payload: EmptyPayload| {
+            let state = state.clone();
+            async move { get_setup_state(state) }
+        },
+    )
+    .await
 }
 
 #[cfg(test)]

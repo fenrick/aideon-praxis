@@ -2,13 +2,19 @@
 
 mod app;
 mod commands;
+mod contracts;
 mod health;
 mod ipc;
+mod logging;
 mod menu;
+mod metrics;
 mod mneme;
 mod praxis_api;
 mod scene;
+mod session_marker;
 mod setup;
+mod shell_commands;
+mod telemetry;
 mod temporal;
 mod windows;
 mod worker;

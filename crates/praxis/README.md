@@ -43,4 +43,4 @@ semantics, tasks, and integrity.
 
 Praxis follows the task-oriented, master-type digital twin model described in
 `crates/praxis/DESIGN.md`. Storage, time, and schema mechanics live in Mneme per
-`crates/mneme/DESIGN.md`.
+`crates/mneme_core/DESIGN.md` and `crates/mneme_store/DESIGN.md`.

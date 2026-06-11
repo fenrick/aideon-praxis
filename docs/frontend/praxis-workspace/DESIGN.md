@@ -38,7 +38,7 @@ embedding during tests or previews.
 - Canvas templates carry a stable `documentId` (distinct from the template `id`) used as the
   persistence key for layout snapshots; the renderer must not infer document identity from the
   active template id.
-- Templates are persisted by the host (via `workspace_templates_list/save`) and rehydrated by the
+- Templates are persisted by the host (via `workspace_templates_list` / `workspace_templates_save`) and rehydrated by the
   renderer; the host seeds default templates on first run so the workspace always has initial
   artefacts to render.
 
@@ -71,3 +71,10 @@ embedding during tests or previews.
 - Twin is the source of truth; React state mirrors but never replaces it.
 - Component and state boundaries should make it easy to plug in additional widgets (Chrona/Metis)
   without breaking existing flows.
+
+## Security invariants (M0)
+
+- No renderer HTTP (no `fetch`/`axios`); all privileged actions flow through host IPC.
+- Desktop mode must not open TCP listeners.
+- File dialogs and file paths come from the host; the renderer treats them as data and never reads
+  arbitrary paths directly.

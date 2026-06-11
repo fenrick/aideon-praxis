@@ -62,6 +62,9 @@ dependencies = [
  "aideon_praxis",
  "dirs",
  "log",
+ "logtest",
+ "once_cell",
+ "regex",
  "serde",
  "serde_json",
  "tauri",
@@ -72,6 +75,8 @@ dependencies = [
  "tempfile",
  "time",
  "tokio",
+ "toml 0.8.2",
+ "uuid",
  "window-vibrancy",
 ]
 
@@ -2633,6 +2638,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
 dependencies = [
  "value-bag",
+]
+
+[[package]]
+name = "logtest"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb3e43a8657c1d64516dcc9db8ca03826a4aceaf89d5ce1b37b59f6ff0e43026"
+dependencies = [
+ "lazy_static",
+ "log",
 ]
 
 [[package]]

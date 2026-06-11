@@ -7,10 +7,11 @@
 
 ## Layout regions
 
-- **Top toolbar:** global actions, workspace switching, and app-level menus plus a workspace toolbar slot.
+- **Header / toolbar:** global actions, workspace switching, and app-level menus plus a workspace toolbar slot.
 - **Left navigation:** workspace-provided navigation (projects/scenarios in Praxis today).
-- **Centre workspace:** active workspace content (Praxis initially).
+- **Main content:** active workspace content (Praxis initially).
 - **Right inspector:** workspace-provided contextual details and forms.
+- **Footer / status:** global status and job health surface.
 
 ## Principles
 
@@ -18,6 +19,11 @@
 - Use design-system primitives for all shell structure (Sidebar, Resizable, Menubar/Toolbar). Do not introduce ad‑hoc layout components.
 - Keep the shell local-first and Tauri-friendly: no renderer HTTP, typed IPC only.
 - Desktop keyboard shortcuts should be registered in the Tauri native menu (accelerators) and dispatched to the renderer; browser preview keeps lightweight fallback handlers.
+
+## Authority
+
+- This document defines the **renderer UX shell** end state only.
+- IPC/capabilities/security contracts are defined by the host (`src-tauri/DESIGN.md`) and the shared contract docs (`docs/CONTRACTS-AND-SCHEMAS.md`) and take precedence.
 
 ## Tree and properties panels
 
@@ -36,8 +42,14 @@ The shell is defined by a small set of slots that callers fill:
 Layout sketch:
 
 ```
-[ Toolbar / Menubar ]
-[ Sidebar ][ Main workspace ][ Properties ]
+┌────────────────────────────────────────┐
+│ Header / Toolbar (global + workspace)  │
+├──────────────┬─────────────────────────┤
+│ Left Nav     │ Main Content             │
+│ (workspace)  │ (artefacts, diagrams)   │
+├──────────────┴───────────────┬─────────┤
+│ Footer / Status               │ Inspector│
+└──────────────────────────────┴─────────┘
 ```
 
 The implementation uses the design-system proxies for Sidebar, Resizable, and Menubar/Toolbar components. Default sizing keeps the sidebar and properties panels narrow (≈20%) with the main workspace as the dominant pane.
@@ -48,10 +60,23 @@ The implementation uses the design-system proxies for Sidebar, Resizable, and Me
 - Workspace modules are registered in `src/workspaces/registry.ts` and follow the `WorkspaceModule` contract in `src/workspaces/types.ts`.
 - Tauri loads the static Next.js export (`out`) with window routes mapped to `app/*/page.tsx` and the shared screen logic in `src/app/app-screens.tsx`; workspace modules mount inside the shell rather than owning the window.
 
+## Workspace UX docs
+
+Module-level UX designs live under `docs/frontend/`:
+
+- Praxis workspace: `docs/frontend/praxis-workspace/DESIGN.md`
+- Mneme workspace: `docs/frontend/mneme-workspace/DESIGN.md`
+- Metis workspace: `docs/frontend/metis-workspace/DESIGN.md`
+- Chrona time UX: `docs/frontend/chrona-time/DESIGN.md`
+- Continuum automation UX: `docs/frontend/continuum-automation/DESIGN.md`
+
 ## Splash window
 
 - The splash window remains visible for at least 3 seconds to avoid flash-on-load.
 - The host closes the splash only after both frontend and backend setup signals are complete.
+- The splash UI reflects host-owned phases via events (`setup_progress`, `setup_backend_ready`) and
+  uses `system_setup_state` once on mount to avoid missed-event races.
+- Setup failures are surfaced via `setup_failed` and provide an explicit Status/recovery path.
 
 ## Next.js static export constraints
 

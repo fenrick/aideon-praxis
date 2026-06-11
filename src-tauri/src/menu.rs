@@ -6,10 +6,16 @@ use tauri::{
 };
 use tauri_plugin_dialog::DialogExt;
 
+use crate::contracts::EVENT_SHELL_COMMAND;
+use crate::shell_commands::{
+    SHELL_COMMAND_FILE_OPEN, SHELL_COMMAND_FILE_PRINT, SHELL_COMMAND_FILE_SAVE_AS,
+    SHELL_COMMAND_OPEN_COMMAND_PALETTE, SHELL_COMMAND_TOGGLE_INSPECTOR,
+    SHELL_COMMAND_TOGGLE_NAVIGATION,
+};
 use crate::windows::{open_about, open_settings, open_styleguide};
 
 #[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 struct ShellCommandPayload {
     command: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -35,15 +41,15 @@ enum MenuAction {
 
 fn classify_menu_event(event_id: &str, styleguide_id: &str) -> MenuAction {
     match event_id {
-        "about" | "help.about" => MenuAction::OpenAbout,
+        "about" | "help_about" => MenuAction::OpenAbout,
         "preferences" => MenuAction::OpenSettings,
-        "view.toggle_navigation" => MenuAction::EmitShellCommand("toggle-navigation"),
-        "view.toggle_inspector" => MenuAction::EmitShellCommand("toggle-inspector"),
-        "view.command_palette" => MenuAction::EmitShellCommand("open-command-palette"),
-        "file.open" => MenuAction::PickOpenFile,
-        "file.save_as" => MenuAction::PickSaveFile,
-        "file.print" => MenuAction::EmitShellCommand("file.print"),
-        "file.quit" => MenuAction::Quit,
+        "view_toggle_navigation" => MenuAction::EmitShellCommand(SHELL_COMMAND_TOGGLE_NAVIGATION),
+        "view_toggle_inspector" => MenuAction::EmitShellCommand(SHELL_COMMAND_TOGGLE_INSPECTOR),
+        "view_command_palette" => MenuAction::EmitShellCommand(SHELL_COMMAND_OPEN_COMMAND_PALETTE),
+        "file_open" => MenuAction::PickOpenFile,
+        "file_save_as" => MenuAction::PickSaveFile,
+        "file_print" => MenuAction::EmitShellCommand(SHELL_COMMAND_FILE_PRINT),
+        "file_quit" => MenuAction::Quit,
         _ if !styleguide_id.is_empty() && event_id == styleguide_id => MenuAction::OpenStyleguide,
         _ => MenuAction::Noop,
     }
@@ -89,7 +95,7 @@ pub fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) {
         MenuAction::PickOpenFile => pick_open_file(app),
         MenuAction::PickSaveFile => pick_save_file(app),
         MenuAction::Quit => {
-            log::info!("menu: file.quit");
+            log::info!("menu: file_quit");
             app.exit(0);
         }
         MenuAction::Noop => {}
@@ -107,7 +113,7 @@ fn emit_shell_command_with_payload<R: Runtime>(
 ) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.emit(
-            "aideon.shell.command",
+            EVENT_SHELL_COMMAND,
             ShellCommandPayload {
                 command: command.to_string(),
                 payload,
@@ -121,7 +127,11 @@ fn pick_open_file<R: Runtime>(app: &AppHandle<R>) {
     handle.dialog().file().pick_file(move |file| {
         if let Some(file) = file {
             let path = file.to_string();
-            emit_shell_command_with_payload(&handle, "file.open", Some(json!({ "path": path })));
+            emit_shell_command_with_payload(
+                &handle,
+                SHELL_COMMAND_FILE_OPEN,
+                Some(json!({ "path": path })),
+            );
         }
     });
 }
@@ -131,7 +141,11 @@ fn pick_save_file<R: Runtime>(app: &AppHandle<R>) {
     handle.dialog().file().save_file(move |file| {
         if let Some(file) = file {
             let path = file.to_string();
-            emit_shell_command_with_payload(&handle, "file.save_as", Some(json!({ "path": path })));
+            emit_shell_command_with_payload(
+                &handle,
+                SHELL_COMMAND_FILE_SAVE_AS,
+                Some(json!({ "path": path })),
+            );
         }
     });
 }
@@ -226,21 +240,21 @@ mod mac {
 
         let file = Submenu::new(app, "File", true).map_err(to_string)?;
         file.append(
-            &MenuItemBuilder::with_id("file.open", "Open…")
+            &MenuItemBuilder::with_id("file_open", "Open…")
                 .accelerator("CmdOrCtrl+O")
                 .build(app)
                 .map_err(to_string)?,
         )
         .map_err(to_string)?;
         file.append(
-            &MenuItemBuilder::with_id("file.save_as", "Save As…")
+            &MenuItemBuilder::with_id("file_save_as", "Save As…")
                 .accelerator("CmdOrCtrl+Shift+S")
                 .build(app)
                 .map_err(to_string)?,
         )
         .map_err(to_string)?;
         file.append(
-            &MenuItemBuilder::with_id("file.print", "Print…")
+            &MenuItemBuilder::with_id("file_print", "Print…")
                 .accelerator("CmdOrCtrl+P")
                 .build(app)
                 .map_err(to_string)?,
@@ -258,7 +272,7 @@ mod mac {
 
         let view = Submenu::new(app, "View", true).map_err(to_string)?;
         view.append(
-            &MenuItemBuilder::with_id("view.command_palette", "Command Palette…")
+            &MenuItemBuilder::with_id("view_command_palette", "Command Palette…")
                 .accelerator("CmdOrCtrl+K")
                 .build(app)
                 .map_err(to_string)?,
@@ -267,14 +281,14 @@ mod mac {
         view.append(&PredefinedMenuItem::separator(app).map_err(to_string)?)
             .map_err(to_string)?;
         view.append(
-            &MenuItemBuilder::with_id("view.toggle_navigation", "Toggle Navigation")
+            &MenuItemBuilder::with_id("view_toggle_navigation", "Toggle Navigation")
                 .accelerator("CmdOrCtrl+B")
                 .build(app)
                 .map_err(to_string)?,
         )
         .map_err(to_string)?;
         view.append(
-            &MenuItemBuilder::with_id("view.toggle_inspector", "Toggle Inspector")
+            &MenuItemBuilder::with_id("view_toggle_inspector", "Toggle Inspector")
                 .accelerator("CmdOrCtrl+I")
                 .build(app)
                 .map_err(to_string)?,
@@ -285,13 +299,15 @@ mod mac {
         let help = Submenu::new(app, "Help", true).map_err(to_string)?;
         menu.append(&help).map_err(to_string)?;
 
-        let debug = Submenu::new(app, "Debug", true).map_err(to_string)?;
-        let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
-            .build(app)
-            .map_err(to_string)?;
-        ids.styleguide = style_item.id().as_ref().to_string();
-        debug.append(&style_item).map_err(to_string)?;
-        menu.append(&debug).map_err(to_string)?;
+        if cfg!(debug_assertions) {
+            let debug = Submenu::new(app, "Debug", true).map_err(to_string)?;
+            let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
+                .build(app)
+                .map_err(to_string)?;
+            ids.styleguide = style_item.id().as_ref().to_string();
+            debug.append(&style_item).map_err(to_string)?;
+            menu.append(&debug).map_err(to_string)?;
+        }
 
         Ok(())
     }
@@ -313,28 +329,28 @@ mod desktop {
     ) -> Result<(), String> {
         let file = Submenu::new(app, "File", false).map_err(to_string)?;
         file.append(
-            &MenuItemBuilder::with_id("file.open", "Open…")
+            &MenuItemBuilder::with_id("file_open", "Open…")
                 .accelerator("CmdOrCtrl+O")
                 .build(app)
                 .map_err(to_string)?,
         )
         .map_err(to_string)?;
         file.append(
-            &MenuItemBuilder::with_id("file.save_as", "Save As…")
+            &MenuItemBuilder::with_id("file_save_as", "Save As…")
                 .accelerator("CmdOrCtrl+Shift+S")
                 .build(app)
                 .map_err(to_string)?,
         )
         .map_err(to_string)?;
         file.append(
-            &MenuItemBuilder::with_id("file.print", "Print…")
+            &MenuItemBuilder::with_id("file_print", "Print…")
                 .accelerator("CmdOrCtrl+P")
                 .build(app)
                 .map_err(to_string)?,
         )
         .map_err(to_string)?;
         file.append(
-            &MenuItemBuilder::with_id("file.quit", "Quit")
+            &MenuItemBuilder::with_id("file_quit", "Quit")
                 .build(app)
                 .map_err(to_string)?,
         )
@@ -353,21 +369,21 @@ mod desktop {
 
         let view = Submenu::new(app, "View", false).map_err(to_string)?;
         view.append(
-            &MenuItemBuilder::with_id("view.command_palette", "Command Palette…")
+            &MenuItemBuilder::with_id("view_command_palette", "Command Palette…")
                 .accelerator("CmdOrCtrl+K")
                 .build(app)
                 .map_err(to_string)?,
         )
         .map_err(to_string)?;
         view.append(
-            &MenuItemBuilder::with_id("view.toggle_navigation", "Toggle Navigation")
+            &MenuItemBuilder::with_id("view_toggle_navigation", "Toggle Navigation")
                 .accelerator("CmdOrCtrl+B")
                 .build(app)
                 .map_err(to_string)?,
         )
         .map_err(to_string)?;
         view.append(
-            &MenuItemBuilder::with_id("view.toggle_inspector", "Toggle Inspector")
+            &MenuItemBuilder::with_id("view_toggle_inspector", "Toggle Inspector")
                 .accelerator("CmdOrCtrl+I")
                 .build(app)
                 .map_err(to_string)?,
@@ -385,20 +401,22 @@ mod desktop {
 
         let help = Submenu::new(app, "Help", false).map_err(to_string)?;
         help.append(
-            &MenuItemBuilder::with_id("help.about", "About")
+            &MenuItemBuilder::with_id("help_about", "About")
                 .build(app)
                 .map_err(to_string)?,
         )
         .map_err(to_string)?;
         menu.append(&help).map_err(to_string)?;
 
-        let debug = Submenu::new(app, "Debug", false).map_err(to_string)?;
-        let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
-            .build(app)
-            .map_err(to_string)?;
-        ids.styleguide = style_item.id().as_ref().to_string();
-        debug.append(&style_item).map_err(to_string)?;
-        menu.append(&debug).map_err(to_string)?;
+        if cfg!(debug_assertions) {
+            let debug = Submenu::new(app, "Debug", false).map_err(to_string)?;
+            let style_item = MenuItemBuilder::with_id("debug_styleguide", "UI Style Guide")
+                .build(app)
+                .map_err(to_string)?;
+            ids.styleguide = style_item.id().as_ref().to_string();
+            debug.append(&style_item).map_err(to_string)?;
+            menu.append(&debug).map_err(to_string)?;
+        }
 
         Ok(())
     }

@@ -255,6 +255,7 @@ async fn mneme_trigger_retention_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_trigger_compaction(
     state: State<'_, WorkerState>,
     payload: TriggerCompactionPayload,
@@ -278,6 +279,7 @@ async fn mneme_trigger_compaction_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_run_processing_worker(
     state: State<'_, WorkerState>,
     payload: RunWorkerPayload,
@@ -303,6 +305,7 @@ async fn mneme_run_processing_worker_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_list_jobs(
     state: State<'_, WorkerState>,
     payload: ListJobsPayload,
@@ -322,6 +325,7 @@ async fn mneme_list_jobs_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_get_integrity_head(
     state: State<'_, WorkerState>,
     payload: IntegrityHeadPayload,
@@ -341,6 +345,7 @@ async fn mneme_get_integrity_head_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_get_last_schema_compile(
     state: State<'_, WorkerState>,
     payload: SchemaHeadPayload,
@@ -360,6 +365,7 @@ async fn mneme_get_last_schema_compile_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_list_failed_jobs(
     state: State<'_, WorkerState>,
     payload: ListFailedJobsPayload,
@@ -379,6 +385,7 @@ async fn mneme_list_failed_jobs_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_get_schema_manifest(
     state: State<'_, WorkerState>,
 ) -> Result<SchemaManifest, HostError> {
@@ -391,6 +398,7 @@ async fn mneme_get_schema_manifest_inner(state: &WorkerState) -> Result<SchemaMa
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_explain_resolution(
     state: State<'_, WorkerState>,
     payload: ExplainResolutionPayload,
@@ -423,6 +431,7 @@ async fn mneme_explain_resolution_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_explain_traversal(
     state: State<'_, WorkerState>,
     payload: ExplainTraversalPayload,
@@ -454,6 +463,7 @@ async fn mneme_explain_traversal_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_get_effective_schema(
     state: State<'_, WorkerState>,
     partition_id: PartitionId,
@@ -475,6 +485,7 @@ async fn mneme_get_effective_schema_inner(
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub async fn mneme_list_edge_type_rules(
     state: State<'_, WorkerState>,
     partition_id: PartitionId,

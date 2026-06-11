@@ -15,7 +15,7 @@ tokens to keep renderers consistent.
 - `src/components/ui`: generated shadcn/ui and React Flow primitives (treated as read-only).
 - `src/ui`: thin wrappers and convenience exports.
 - `src/blocks`: higher-level blocks (panel, sidebar, toolbar, modal, etc.).
-- `src/reactflow`: React Flow wrapper components for Praxis-specific nodes/edges.
+- `src/components`: React Flow wrapper components for Praxis-specific nodes/edges.
 - `src/styles/globals.css`: CSS variables and Tailwind tokens shared by all consumers.
 
 ## Theme tokens (shadcn CSS variables)

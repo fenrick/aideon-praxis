@@ -129,8 +129,8 @@ describe('AideonToolbar', () => {
       shortcutLabelFor: (letter) => `Cmd+${letter}`,
     });
 
-    expect(commands.some((command) => command.id === 'toggle-navigation')).toBe(true);
-    expect(commands.some((command) => command.id === 'toggle-inspector')).toBe(true);
+    expect(commands.some((command) => command.id === 'toggle_navigation')).toBe(true);
+    expect(commands.some((command) => command.id === 'toggle_inspector')).toBe(true);
     expect(commands.some((command) => command.id === 'theme.system')).toBe(true);
     expect(commands.some((command) => command.id === 'ws')).toBe(true);
 

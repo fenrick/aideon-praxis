@@ -75,6 +75,7 @@ import type {
   Value,
 } from 'dtos';
 
+import { HOST_EVENT_NAMES } from '../../adapters/host-events';
 import { invokeIpc } from '../../adapters/ipc';
 import { isTauri } from './platform';
 
@@ -1238,7 +1239,7 @@ export async function onChangeEvents(handler: (event: ChangeEvent) => void): Pro
       return;
     };
   }
-  const unlisten = await listen<RustChangeEvent>('mneme_change_event', (event) => {
+  const unlisten = await listen<RustChangeEvent>(HOST_EVENT_NAMES.mnemeChangeEvent, (event) => {
     handler(fromRustChangeEvent(event.payload));
   });
   return unlisten;

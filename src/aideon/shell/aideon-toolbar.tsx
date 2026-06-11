@@ -33,6 +33,7 @@ import { useTheme } from 'next-themes';
 import { useAideonShellControls } from './shell-controls';
 
 import { SidebarTrigger, useSidebar } from 'design-system/desktop-shell';
+import { HOST_EVENT_NAMES, HOST_SHELL_COMMAND_IDS } from '../../adapters/host-events';
 import { openStyleguideWindow } from '../../adapters/system-ipc';
 import { AideonCommandPalette, type AideonCommandItem } from './command-palette';
 import { KeyboardShortcutsDialog } from './keyboard-shortcuts-dialog';
@@ -162,7 +163,7 @@ function buildShellCommands({
     ...(sidebar
       ? ([
           {
-            id: 'toggle-navigation',
+            id: HOST_SHELL_COMMAND_IDS.toggleNavigation,
             group: 'View',
             label: 'Toggle navigation',
             shortcut: shortcutLabelFor('B'),
@@ -175,7 +176,7 @@ function buildShellCommands({
     ...(shell
       ? ([
           {
-            id: 'toggle-inspector',
+            id: HOST_SHELL_COMMAND_IDS.toggleInspector,
             group: 'View',
             label: 'Toggle inspector',
             shortcut: shortcutLabelFor('I'),
@@ -303,21 +304,21 @@ function useTauriShellCommandListener({
           return;
         }
         unlisten = await listen<{ command?: string; payload?: unknown }>(
-          'aideon.shell.command',
+          HOST_EVENT_NAMES.shellCommand,
           (event) => {
             const command = event.payload.command;
             const payload = event.payload.payload;
 
-            if (command === 'toggle-navigation') {
+            if (command === HOST_SHELL_COMMAND_IDS.toggleNavigation) {
               sidebar?.toggleSidebar();
             }
-            if (command === 'toggle-inspector') {
+            if (command === HOST_SHELL_COMMAND_IDS.toggleInspector) {
               shell?.toggleInspector();
             }
-            if (command === 'open-command-palette') {
+            if (command === HOST_SHELL_COMMAND_IDS.openCommandPalette) {
               openCommandPalette();
             }
-            if (command === 'file.print') {
+            if (command === HOST_SHELL_COMMAND_IDS.filePrint) {
               globalThis.print();
             }
 
@@ -720,9 +721,9 @@ export function AideonToolbar({
     const handleCommandPalette = () => {
       setCommandPaletteOpen(true);
     };
-    globalThis.addEventListener('aideon.workspace_open-command-palette', handleCommandPalette);
+    globalThis.addEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
     return () => {
-      globalThis.removeEventListener('aideon.workspace_open-command-palette', handleCommandPalette);
+      globalThis.removeEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
     };
   }, []);
 

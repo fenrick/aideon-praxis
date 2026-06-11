@@ -2,6 +2,7 @@
 use super::*;
 use std::time::Duration;
 use tauri::Manager;
+use tempfile::tempdir;
 
 #[test]
 fn parse_task_accepts_known_values() {
@@ -20,6 +21,58 @@ fn marking_tasks_tracks_completion() {
     assert!(all_complete(&state));
 }
 
+#[tokio::test]
+async fn splash_is_only_closed_after_both_tasks_complete() {
+    let app = tauri::test::mock_app();
+    app.manage(std::sync::Mutex::new(SetupState::new()));
+
+    let response = system_setup_complete(
+        app.handle().clone(),
+        app.state::<std::sync::Mutex<SetupState>>(),
+        crate::ipc::IpcRequest {
+            request_id: "req-frontend".to_string(),
+            payload: SetupCompletePayload {
+                task: "frontend".to_string(),
+            },
+        },
+    )
+    .await
+    .expect("frontend complete");
+    assert_eq!(response.status, "ok");
+
+    {
+        let state_ref = app.state::<std::sync::Mutex<SetupState>>();
+        let guard = state_ref.lock().expect("lock");
+        assert!(
+            !guard.close_scheduled,
+            "must not schedule close after frontend only"
+        );
+    }
+
+    let response = system_setup_complete(
+        app.handle().clone(),
+        app.state::<std::sync::Mutex<SetupState>>(),
+        crate::ipc::IpcRequest {
+            request_id: "req-backend".to_string(),
+            payload: SetupCompletePayload {
+                task: "backend".to_string(),
+            },
+        },
+    )
+    .await
+    .expect("backend complete");
+    assert_eq!(response.status, "ok");
+
+    {
+        let state_ref = app.state::<std::sync::Mutex<SetupState>>();
+        let guard = state_ref.lock().expect("lock");
+        assert!(
+            guard.close_scheduled,
+            "must schedule close after both tasks complete"
+        );
+    }
+}
+
 #[test]
 fn splash_delay_respects_minimum() {
     let state = SetupState::new();
@@ -28,8 +81,8 @@ fn splash_delay_respects_minimum() {
     assert!(delay > Duration::from_secs(2));
 }
 
-#[test]
-fn setup_state_roundtrips_over_ipc_envelope() {
+#[tokio::test]
+async fn setup_state_roundtrips_over_ipc_envelope() {
     let app = tauri::test::mock_app();
     app.manage(std::sync::Mutex::new(SetupState::new()));
 
@@ -39,9 +92,10 @@ fn setup_state_roundtrips_over_ipc_envelope() {
     assert!(!state.backend);
 
     let state_ref = app.state::<std::sync::Mutex<SetupState>>();
-    let mut guard = state_ref.lock().expect("lock");
-    mark_complete(&mut guard, SetupTask::Frontend);
-    drop(guard);
+    {
+        let mut guard = state_ref.lock().expect("lock");
+        mark_complete(&mut guard, SetupTask::Frontend);
+    }
 
     let response = system_setup_state(
         app.state::<std::sync::Mutex<SetupState>>(),
@@ -50,6 +104,7 @@ fn setup_state_roundtrips_over_ipc_envelope() {
             payload: crate::ipc::EmptyPayload {},
         },
     )
+    .await
     .expect("system setup state");
     assert_eq!(response.status, "ok");
     assert!(response.result.expect("flags").frontend);
@@ -92,4 +147,26 @@ async fn system_setup_complete_marks_tasks() {
         get_setup_state(app.state::<std::sync::Mutex<SetupState>>()).expect("get setup state");
     assert!(flags.frontend);
     assert!(flags.backend);
+}
+
+#[tokio::test]
+async fn factory_reset_clears_storage_dir() {
+    let tmp = tempdir().expect("tempdir");
+    let root = tmp.path().join("AideonPraxis");
+    std::fs::create_dir_all(&root).expect("create storage root");
+
+    clear_storage_root(root.clone())
+        .await
+        .expect("clear storage root");
+
+    assert!(!root.exists(), "storage root removed");
+}
+
+#[tokio::test]
+async fn factory_reset_is_idempotent_when_missing() {
+    let tmp = tempdir().expect("tempdir");
+    let root = tmp.path().join("AideonPraxis");
+    clear_storage_root(root)
+        .await
+        .expect("clear storage root missing");
 }

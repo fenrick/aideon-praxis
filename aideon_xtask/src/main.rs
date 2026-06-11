@@ -21,6 +21,8 @@ async fn main() -> Result<()> {
         Command::ImportDataset(args) => import_dataset(args).await,
         Command::Health(args) => check_health(args).await,
         Command::IpcManifest(args) => export_ipc_manifest(args).await,
+        Command::EventManifest(args) => export_event_manifest(args).await,
+        Command::ShellCommandManifest(args) => export_shell_command_manifest(args).await,
     }
 }
 
@@ -45,6 +47,10 @@ enum Command {
     Health(HealthArgs),
     /// Generate a manifest of host IPC command names (for contract tests).
     IpcManifest(IpcManifestArgs),
+    /// Generate a manifest of host→renderer event names (for contract tests).
+    EventManifest(EventManifestArgs),
+    /// Generate a manifest of host shell command ids (for contract tests).
+    ShellCommandManifest(ShellCommandManifestArgs),
 }
 
 #[derive(Parser)]
@@ -96,11 +102,53 @@ struct IpcManifestArgs {
     out: PathBuf,
 }
 
+#[derive(Parser)]
+struct EventManifestArgs {
+    /// Path to write the manifest JSON to (relative to repo root by default).
+    #[arg(long, default_value = "docs/contracts/event-manifest.json")]
+    out: PathBuf,
+}
+
+#[derive(Parser)]
+struct ShellCommandManifestArgs {
+    /// Path to write the manifest JSON to (relative to repo root by default).
+    #[arg(long, default_value = "docs/contracts/shell-command-manifest.json")]
+    out: PathBuf,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 struct IpcManifest {
     schema_version: u32,
     commands: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct EventManifest {
+    schema_version: u32,
+    events: Vec<EventSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct EventSpec {
+    name: String,
+    payload_keys: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct ShellCommandManifest {
+    schema_version: u32,
+    commands: Vec<ShellCommandSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct ShellCommandSpec {
+    id: String,
+    payload_keys: Vec<String>,
 }
 
 fn repo_root() -> PathBuf {
@@ -216,8 +264,172 @@ async fn export_ipc_manifest(args: IpcManifestArgs) -> Result<()> {
     Ok(())
 }
 
+fn extract_event_names_from_contracts_rs(source: &str) -> Vec<String> {
+    let mut found = Vec::new();
+
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("pub const EVENT_") {
+            continue;
+        }
+        if let Some((_, rest)) = trimmed.split_once('"')
+            && let Some((event, _)) = rest.split_once('"')
+            && event
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        {
+            found.push(event.to_string());
+        }
+    }
+
+    found
+}
+
+fn payload_keys_for_event(name: &str) -> Vec<String> {
+    match name {
+        "shell_command" => vec!["command", "payload"]
+            .into_iter()
+            .map(String::from)
+            .collect(),
+        "mneme_change_event" => vec![
+            "partition",
+            "sequence",
+            "op_id",
+            "asserted_at",
+            "entity_id",
+            "change_kind",
+            "payload",
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect(),
+        "setup_backend_ready" | "setup_frontend_ready_ack" => Vec::new(),
+        "setup_progress" => vec!["phase"].into_iter().map(String::from).collect(),
+        "setup_failed" => vec!["code", "message"]
+            .into_iter()
+            .map(String::from)
+            .collect(),
+        "setup_seed_summary" => vec!["datasetVersion", "metamodelVersion"]
+            .into_iter()
+            .map(String::from)
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
+fn build_event_manifest() -> Result<EventManifest> {
+    let repo = repo_root();
+    let contracts = repo.join("src-tauri/src/contracts.rs");
+    let raw =
+        fs::read_to_string(&contracts).with_context(|| format!("read {}", contracts.display()))?;
+
+    let mut events = std::collections::BTreeSet::<String>::new();
+    for name in extract_event_names_from_contracts_rs(&raw) {
+        events.insert(name);
+    }
+
+    let events = events
+        .into_iter()
+        .map(|name| EventSpec {
+            payload_keys: payload_keys_for_event(&name),
+            name,
+        })
+        .collect();
+
+    Ok(EventManifest {
+        schema_version: 1,
+        events,
+    })
+}
+
+async fn export_event_manifest(args: EventManifestArgs) -> Result<()> {
+    let repo = repo_root();
+    let out = if args.out.is_absolute() {
+        args.out
+    } else {
+        repo.join(args.out)
+    };
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("create_dir_all {}", parent.display()))?;
+    }
+    let manifest = build_event_manifest()?;
+    let json = serde_json::to_string_pretty(&manifest)?;
+    fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
+    println!("Wrote event manifest to {}", out.display());
+    Ok(())
+}
+
+fn extract_shell_command_ids_from_source(source: &str) -> Vec<String> {
+    let mut found = Vec::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("pub const SHELL_COMMAND_") {
+            continue;
+        }
+        if let Some((_, rest)) = trimmed.split_once('"')
+            && let Some((id, _)) = rest.split_once('"')
+            && id
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        {
+            found.push(id.to_string());
+        }
+    }
+    found
+}
+
+fn payload_keys_for_shell_command(id: &str) -> Vec<String> {
+    match id {
+        "file_open" | "file_save_as" => vec!["path".to_string()],
+        _ => Vec::new(),
+    }
+}
+
+fn build_shell_command_manifest() -> Result<ShellCommandManifest> {
+    let repo = repo_root();
+    let src = repo.join("src-tauri/src/shell_commands.rs");
+    let raw = fs::read_to_string(&src).with_context(|| format!("read {}", src.display()))?;
+
+    let mut ids = std::collections::BTreeSet::<String>::new();
+    for id in extract_shell_command_ids_from_source(&raw) {
+        ids.insert(id);
+    }
+
+    let commands = ids
+        .into_iter()
+        .map(|id| ShellCommandSpec {
+            payload_keys: payload_keys_for_shell_command(&id),
+            id,
+        })
+        .collect();
+
+    Ok(ShellCommandManifest {
+        schema_version: 1,
+        commands,
+    })
+}
+
+async fn export_shell_command_manifest(args: ShellCommandManifestArgs) -> Result<()> {
+    let repo = repo_root();
+    let out = if args.out.is_absolute() {
+        args.out
+    } else {
+        repo.join(args.out)
+    };
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("create_dir_all {}", parent.display()))?;
+    }
+    let manifest = build_shell_command_manifest()?;
+    let json = serde_json::to_string_pretty(&manifest)?;
+    fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
+    println!("Wrote shell command manifest to {}", out.display());
+    Ok(())
+}
+
 fn is_contract_command(command: &str) -> bool {
-    const PREFIXES: [&str; 13] = [
+    const PREFIXES: [&str; 16] = [
         "chrona_temporal_",
         "mneme_store_",
         "praxis_artefact_",
@@ -228,7 +440,10 @@ fn is_contract_command(command: &str) -> bool {
         "praxis_task_",
         "system_setup_",
         "system_window_",
+        "system_factory_",
         "system_worker_",
+        "system_logging_",
+        "system_metrics_",
         "workspace_projects_",
         "workspace_templates_",
     ];
@@ -379,6 +594,43 @@ mod tests {
     }
 
     #[test]
+    fn event_manifest_is_deterministic_and_checked_in() {
+        let repo = repo_root();
+        let manifest = build_event_manifest().expect("build manifest");
+        let path = repo.join("docs/contracts/event-manifest.json");
+        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run `cargo run -p aideon_xtask -- event-manifest` to generate it",
+                path.display()
+            )
+        });
+        let on_disk: EventManifest = serde_json::from_str(&raw).expect("parse event-manifest.json");
+        assert_eq!(
+            on_disk, manifest,
+            "event-manifest.json drifted; rerun `cargo run -p aideon_xtask -- event-manifest`"
+        );
+    }
+
+    #[test]
+    fn shell_command_manifest_is_deterministic_and_checked_in() {
+        let repo = repo_root();
+        let manifest = build_shell_command_manifest().expect("build manifest");
+        let path = repo.join("docs/contracts/shell-command-manifest.json");
+        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run `cargo run -p aideon_xtask -- shell-command-manifest` to generate it",
+                path.display()
+            )
+        });
+        let on_disk: ShellCommandManifest =
+            serde_json::from_str(&raw).expect("parse shell-command-manifest.json");
+        assert_eq!(
+            on_disk, manifest,
+            "shell-command-manifest.json drifted; rerun `cargo run -p aideon_xtask -- shell-command-manifest`"
+        );
+    }
+
+    #[test]
     fn extract_tauri_commands_handles_single_and_multiline_attributes() {
         let source = r#"
             #[tauri::command]
@@ -414,6 +666,32 @@ mod tests {
         let raw = fs::read_to_string(&out).expect("read manifest");
         let manifest: IpcManifest = serde_json::from_str(&raw).expect("parse manifest");
         assert_eq!(manifest.schema_version, 2);
+        assert!(!manifest.commands.is_empty());
+    }
+
+    #[tokio::test]
+    async fn export_event_manifest_writes_json_file() {
+        let dir = tempdir().expect("tempdir");
+        let out = dir.path().join("event-manifest.json");
+        export_event_manifest(EventManifestArgs { out: out.clone() })
+            .await
+            .expect("export manifest");
+        let raw = fs::read_to_string(&out).expect("read manifest");
+        let manifest: EventManifest = serde_json::from_str(&raw).expect("parse manifest");
+        assert_eq!(manifest.schema_version, 1);
+        assert!(!manifest.events.is_empty());
+    }
+
+    #[tokio::test]
+    async fn export_shell_command_manifest_writes_json_file() {
+        let dir = tempdir().expect("tempdir");
+        let out = dir.path().join("shell-command-manifest.json");
+        export_shell_command_manifest(ShellCommandManifestArgs { out: out.clone() })
+            .await
+            .expect("export manifest");
+        let raw = fs::read_to_string(&out).expect("read manifest");
+        let manifest: ShellCommandManifest = serde_json::from_str(&raw).expect("parse manifest");
+        assert_eq!(manifest.schema_version, 1);
         assert!(!manifest.commands.is_empty());
     }
 

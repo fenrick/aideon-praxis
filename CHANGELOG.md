@@ -65,4 +65,4 @@
 - **app:** expose typed stateAt; Renderer calls Host via Tauri invoke (typed adapters). ([ebc9948](https://github.com/fenrick/aideon-praxis/commit/ebc994838d6674c1b753eead7204142091890efe))
 - **app:** scaffold secure Electron host + React renderer with packaging ([fec07a4](https://github.com/fenrick/aideon-praxis/commit/fec07a442af9c4888b8090e71eaf48c2e7687410))
 - **e2e:** wire renderer↔host↔engines roundtrip; Renderer calls Host via Tauri invoke (typed adapters). Desktop mode runs engines in-process. Host calls engines via Rust traits. No sockets. ([1ce514e](https://github.com/fenrick/aideon-praxis/commit/1ce514e19cfd183a67966f862ca2bbef337b0c94))
-- **worker:** add Python sidecar with Temporal.StateAt and CLI ([1facad5](https://github.com/fenrick/aideon-praxis/commit/1facad5388ad795257fa65a21340b39f60288074))
+- **worker:** add Python sidecar with `temporal_state_at` (legacy naming: `Temporal.StateAt`) and CLI ([1facad5](https://github.com/fenrick/aideon-praxis/commit/1facad5388ad795257fa65a21340b39f60288074))

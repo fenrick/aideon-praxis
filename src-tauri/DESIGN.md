@@ -262,6 +262,48 @@ Each job has:
 - `result_ref` (optional)
 - `error` (optional)
 
+#### 8.2.1 Job DTO (canonical, snake_case)
+
+Jobs must have a stable cross-boundary DTO so the renderer can render progress consistently and
+persistently.
+
+```json
+{
+  "job_id": "uuid",
+  "workspace_id": "uuid",
+  "kind": "analytics | import | export | migration | projection | maintenance",
+  "status": "pending | running | completed | failed | cancelled | interrupted",
+  "progress": {
+    "percent": 0,
+    "stage": "string",
+    "detail": "optional string"
+  },
+  "created_at": "RFC3339 timestamp",
+  "updated_at": "RFC3339 timestamp",
+  "started_at": "optional RFC3339 timestamp",
+  "ended_at": "optional RFC3339 timestamp",
+  "result_ref": "optional opaque reference",
+  "error": {
+    "code": "string",
+    "message": "string"
+  }
+}
+```
+
+Rules:
+
+- `job_id` is globally unique and stable across restarts.
+- `status` is a closed set; add new states only with a versioned contract update.
+- `progress.percent` is monotonically non-decreasing for a given attempt.
+- `result_ref` is an opaque reference; the renderer must not assume it is a path.
+- `error` is stable enough for UI display (no raw Rust error dumps).
+
+#### 8.2.2 Idempotency and durability
+
+- Starting a job should be idempotent when a `dedupe_key` is present (host/engine-defined).
+- Job metadata is persisted; renderer can reconstruct state after restart via list commands and/or replay.
+- Cancellation is best-effort but observable: cancelled jobs must move to `cancelled` or `failed` with a reason.
+
 ### 8.3 Host responsibilities
 
 - Run jobs asynchronously
@@ -347,24 +389,55 @@ Renderer never infers meaning.
 
 ### 13.1 Capability registry
 
-Every IPC command declares:
+Security posture is **deny-by-default**.
 
-- Category
-- Privilege level
-- Required capability
+The renderer is untrusted and cannot access host privileges unless explicitly granted via Tauri
+capabilities and allowlisted command permissions.
 
-Default: **deny**.
+Required invariants:
+
+- **No renderer HTTP**: the UI must not use `fetch`/`XMLHttpRequest`/`axios`; the host owns any
+  networking (future remote mode).
+- **No open TCP ports in desktop mode**: the host must not bind listeners.
+- **Only allowlisted IPC commands are invocable**: command exposure is declared via the Tauri
+  permission `appcommands` (`src-tauri/permissions/appcommands.toml`) and enabled by default
+  capability (`src-tauri/capabilities/default.json`).
+- **Only allowlisted plugins are enabled**: adding a plugin requires updating capabilities and
+  contracts first.
 
 ### 13.2 CSP
 
-- Strict in production
-- No remote assets
-- Dev exceptions only in dev builds
+CSP and WebView hardening are non-negotiable:
+
+- `src-tauri/tauri.conf.json` MUST define a strict production CSP policy:
+  - `default-src 'none'`
+  - `connect-src` limited to `'self'` + `ipc:` + `tauri:` (no remote `http(s)`/`ws(s)` origins)
+- Dev-only allowances (e.g., HMR and `unsafe-eval`) MUST be scoped to `devPolicy` and loopback-only.
+- `withGlobalTauri` MUST remain `false` (do not rely on injected global Tauri APIs).
+
+Regression tests:
+
+- `src-tauri/tests/csp_and_windows.rs`
+- `src-tauri/tests/security_posture.rs`
 
 ### 13.3 Filesystem
 
 - Workspace-scoped access only
 - No arbitrary path access from renderer
+- **Export & PII posture**: exports run through host commands that declare the `filesystem_export` capability.
+- Host treats exports as **deny-by-default**:
+- - No command is exposed until a capability manifest explicitly includes it (see `src-tauri/permissions/appcommands.toml` plus `src-tauri/capabilities/*`).
+- - Export commands are audited and logged; the renderer never crafts arbitrary `fs` paths.
+- - All export payloads go through redaction-aware helpers before leaving the host (e.g., `mneme_store_export_*` commands annotate sensitive fields, or the renderer may filter them based on workspace policy).
+- - Tests/gated contracts must run without enabling `filesystem_export` for other flows.
+
+### 13.4 PII & export posture (UX notes)
+
+- The renderer must treat PII exports as **high-risk** operations:
+- - Export buttons/actions are disabled until the host enables `filesystem_export` capability and the user workflow passes explicit consent.
+- - Host events/commands describe what data is included and what redaction strategy is applied.
+- - Diagnostics or Status captures for `workspace`/`export` scenarios default to redacted fields unless a granular capability is granted.
+- - The host remains the only authority that can share `mneme_store_export_snapshot_stream`, `mneme_store_export_ops_stream`, or `mneme_store_export_ops`; these commands carry metadata to label exported fields.
 
 ---
 
@@ -458,24 +531,26 @@ This section defines **how IPC is organised**, not the full list of commands (th
 
 ### 19.1 Command namespace rules
 
-All IPC commands MUST follow:
+All IPC commands MUST follow snake_case naming:
 
 ```
-<domain>.<capability>.<action>
+<domain>_<capability>_<action>
 ```
 
 Examples:
 
 - `system_window_open`
 - `workspace_open`
-- `jobs.start`
-- `jobs.cancel`
+- `jobs_start`
+- `jobs_cancel`
 - `praxis_artefact_execute`
 - `praxis_task_apply`
 - `mneme_export_snapshot`
 - `mneme_import_replay`
-- `metis.analytics.run`
+- `metis_analytics_run`
 - `chrona_time_slice`
+
+Note: dot-separated names do not work on the IPC bridge; use snake_case only.
 
 This enables:
 
@@ -552,10 +627,10 @@ Attributes:
 | workspace_read    | model inspection     |
 | workspace_write   | model mutation       |
 | workspace_admin   | migrations, deletes  |
-| jobs.run          | background execution |
-| filesystem.export | export data          |
-| filesystem.import | import data          |
-| diagnostics.read  | logs, health         |
+| jobs_run          | background execution |
+| filesystem_export | export data          |
+| filesystem_import | import data          |
+| diagnostics_read  | logs, health         |
 
 Default policy:
 
@@ -592,7 +667,7 @@ Workspaces and modules are described declaratively.
   "name": "Praxis",
   "version": "1.0.0",
   "hostVersion": ">=1.0.0",
-  "capabilities": ["workspace_read", "workspace_write", "jobs.run"],
+  "capabilities": ["workspace_read", "workspace_write", "jobs_run"],
   "ui": {
     "navigation": true,
     "toolbar": true,
@@ -668,7 +743,7 @@ Artefact cache invalidation happens when:
 - workspace changes
 - scenario changes
 - valid time changes
-- host emits `model.changed`
+- host emits `model_changed`
 - job affecting artefact completes
 
 Never via implicit React re-renders.
@@ -691,16 +766,16 @@ Pending → Running → Completed
 
 ```json
 {
-  "jobId": "uuid",
+  "job_id": "uuid",
   "kind": "analytics | import | export | migration | projection",
-  "workspaceId": "uuid",
+  "workspace_id": "uuid",
   "progress": {
     "percent": 42,
     "stage": "Computing PageRank"
   },
-  "startedAt": "...",
-  "endedAt": "...",
-  "resultRef": "optional",
+  "started_at": "...",
+  "ended_at": "...",
+  "result_ref": "optional",
   "error": "optional"
 }
 ```
@@ -727,11 +802,11 @@ Renderer shows interrupted jobs explicitly.
 | ------------------- | --------------- |
 | `workspace_opened`  | workspace id    |
 | `workspace_closed`  | workspace id    |
-| `model.changed`     | scope summary   |
-| `job.updated`       | job metadata    |
-| `job.completed`     | job result ref  |
-| `integrity.warning` | rule + entities |
-| `analytics.updated` | artefact ids    |
+| `model_changed`     | scope summary   |
+| `job_updated`       | job metadata    |
+| `job_completed`     | job result ref  |
+| `integrity_warning` | rule + entities |
+| `analytics_updated` | artefact ids    |
 
 ### 24.2 Delivery guarantees
 
@@ -992,7 +1067,7 @@ Host normalises logs from all engines into:
 
 - unified log stream
 - severity levels
-- correlation IDs (jobId, requestId)
+- correlation IDs (`job_id`, `request_id`, `workspace_id`)
 
 ---
 
@@ -1013,6 +1088,44 @@ This window must remain usable even if:
 - an engine is degraded
 
 ---
+
+### 34.3 Audit and redaction contract
+
+The host is the audit and privacy boundary. Observability must not leak sensitive content.
+
+**Audit events (minimum)**
+
+- capability decisions (allow/deny) per IPC command
+- all write actions (command name, actor, time context, workspace)
+- job lifecycle transitions (created/running/completed/failed/cancelled)
+- workspace lifecycle (create/open/close/backup/restore)
+- export operations (what was exported, redaction policy applied)
+
+**Required structured fields (minimum)**
+
+- `request_id` (if applicable)
+- `job_id` (if applicable)
+- `workspace_id` (if applicable)
+- `command` (snake_case command name)
+- `capability` (snake_case capability id)
+- `status` (ok/error or job status)
+
+**Redaction rules**
+
+- Default to deny-by-default for export surfaces and logs.
+- Never log raw model payloads that may contain PII.
+- Prefer summary counts and stable identifiers over free-form text.
+- Error `details` may include debug context, but must remain safe to surface in the Status window.
+
+**Audit packs (exportable)**
+
+- Audit packs must be PII-redacted by default.
+- Audit packs should include:
+  - command/event manifests,
+  - job summaries,
+  - recent error summaries,
+  - version/build metadata,
+  - minimal diagnostic logs with correlation IDs.
 
 ## 35. Versioning and compatibility strategy
 
@@ -1106,7 +1219,7 @@ No feature may silently degrade due to lack of connectivity.
 
 The design must not block future sync.
 
-Preparation points already baked in:
+Preparation points baked into the design:
 
 - event-log-based storage (Mneme)
 - job-based background processing
@@ -1210,7 +1323,7 @@ With Sections **1–43**, the Aideon Desktop & Host design now covers:
 
 ## 44. Aideon Host (Rust/Tauri) detailed design
 
-This section makes the host buildable and maintainable as the suite expands beyond the currently documented modules.
+This section makes the host buildable and maintainable as the suite expands beyond the documented modules.
 
 ### 44.1 Host crate responsibilities (hard boundaries)
 
@@ -1218,7 +1331,7 @@ The host is responsible for:
 
 - **Windowing**: create, show/hide, focus, centre, size, vibrancy, menus.
 - **Security**: CSP, Tauri capabilities, command allowlists, filesystem boundaries.
-- **Workspace lifecycle**: open/close/create/list/backup/restore (even if initially stubbed).
+- **Workspace lifecycle**: open/close/create/list/backup/restore.
 - **IPC façade**: typed commands only, DTO validation, stable error envelopes.
 - **Job orchestration**: run background work across engines, progress, cancellation, persistence.
 - **Event distribution**: push events to renderer (job updates, model changed, sync status).
@@ -1253,45 +1366,43 @@ Required modules:
 - `setup.rs`
   Splash gating and backend initialisation. Owns setup state machine.
 
-- `ipc/` (new folder; consolidates today’s command sprawl)
+- `ipc/`
+  Host IPC organized by responsibility/domain.
   - `ipc/mod.rs` – registry glue and shared DTO helpers
-  - `ipc/system_rs` – version, environment, diagnostics toggles
-  - `ipc/workspace_rs` – open/close/list/backup/restore
+- `ipc/system.rs` – version, environment, diagnostics toggles
+- `ipc/workspace.rs` – open/close/list/backup/restore
   - `ipc/jobs.rs` – start/cancel/list, progress subscriptions
-  - `ipc/praxis_rs` – artefact execution + task application
-  - `ipc/mneme_rs` – storage primitives + export/import + subscriptions
-  - `ipc/chrona_rs` – time/scenario UX and temporal snapshots (where applicable)
+- `ipc/praxis.rs` – artefact execution + task application
+- `ipc/mneme.rs` – storage primitives + export/import + subscriptions
+- `ipc/chrona.rs` – time/scenario UX and temporal snapshots (where applicable)
   - `ipc/metis.rs` – analytics job entrypoints
   - `ipc/continuum.rs` – orchestration/scheduler entrypoints (when enabled)
 
 - `health.rs`
   Host + engine health aggregation.
 
-- `events.rs` (new)
+- `events.rs`
   Host→renderer event bus wrappers and event schema.
 
-- `jobs.rs` (new)
+- `jobs.rs`
   Host job manager + persistence + cancellation token plumbing.
 
-This does not require large refactors day one, but it is the target structure.
+This is the required structure.
 
 ---
 
-### 44.3 Command naming and compatibility with current code
+### 44.3 Command naming and adapter facades
 
-Your current host command names are flat (e.g. `temporal_state_at`, `mneme_create_node`) and registered in `app.rs`.
+Rules:
 
-Future-proof rule:
-
-- **Host keeps existing command names as stable IDs.**
-- **Renderer exposes namespaced methods via adapters.**
+- Host IPC command names are stable, snake_case identifiers.
+- Renderer calls the host only through typed adapters (no ad-hoc invokes).
+- Adapters provide readable method names while preserving stable command ids.
 
 Example mapping:
 
-- Adapter method: `chrona_time_stateAt()`
-  Calls host command: `temporal_state_at`
-
-This avoids breaking current code while giving you a scalable mental model for “all possible modules”.
+- Adapter method: `chrona_temporal_state_at()`
+  Calls host command: `chrona_temporal_state_at`
 
 ---
 
@@ -1299,13 +1410,55 @@ This avoids breaking current code while giving you a scalable mental model for �
 
 Host must manage these in Tauri state:
 
-- `SetupState` (already present)
-- `WorkspaceManager` (new)
-- `JobManager` (new)
-- `EventBus` (new)
-- `EngineRegistry` (new; trait objects for each engine)
+- `SetupState`
+- `WorkspaceManager`
+- `JobManager`
+- `EventBus`
+- `EngineRegistry` (trait objects for each engine)
 
 None of these are accessed directly by renderer. Renderer gets them through commands/events only.
+
+---
+
+### 44.5 Setup lifecycle (first-run) state machine
+
+The host owns first-run setup. The renderer only reflects setup progress and acknowledges readiness.
+
+Authoritative signals:
+
+- Events (host → renderer): `setup_progress`, `setup_backend_ready`, `setup_frontend_ready_ack`
+- Command (renderer → host): `system_setup_state` (for late subscribers / refresh)
+
+State machine (host-owned):
+
+```
+Boot
+  -> SplashVisible (main hidden)
+      -> BackendSetupRunning
+          -> BackendReady
+      -> FrontendReadyAck
+      -> SetupComplete (min splash duration respected)
+          -> SplashClosed + MainVisibleAndFocused
+```
+
+Notes:
+
+- The splash is closed only when **both** backend + frontend readiness tasks are complete.
+- Backend readiness is set by the host after engine/bootstrap initialisation completes.
+- Frontend readiness is set by the host when the splash route finishes loading (and is also
+  queryable via `system_setup_state` to avoid “missed event” races).
+
+Failure modes (current M0 baseline):
+
+- If backend setup fails, the host logs the error and setup does not complete (splash remains).
+  Recovery access is still expected via host-owned windows (Status/About).
+- If the splash never reaches “frontend ready”, setup does not complete; this should be treated as
+  a UI boot failure and is investigated via diagnostics.
+
+Implementation reference:
+
+- `src-tauri/src/setup.rs`
+- `src-tauri/src/windows.rs`
 
 ---
 
@@ -1322,7 +1475,7 @@ These labels must never change:
 - `about`
 - `styleguide`
 
-(Your current `windows.rs` already follows this pattern.)
+This is a hard compatibility requirement.
 
 ### 45.2 Route contract (renderer paths)
 
@@ -1354,6 +1507,24 @@ Host must set:
 
 The renderer must assume **no** platform-specific CSS hacks are required to make the shell look correct.
 
+### 45.4 Multi-window determinism (single-instance per label)
+
+Window behaviour MUST be deterministic across platforms:
+
+- Each window label is **single-instance** within the process (`splash`, `main`, `settings`,
+  `status`, `about`, `styleguide`).
+- “Open window” operations MUST be host-owned and implemented as:
+  - if the window exists: focus it
+  - else: create it with the canonical route + size constraints
+- `main` is created during boot but remains hidden until setup completion (splash gating).
+- `status` and `about` MUST remain available even if `main` fails to open (recovery guarantee).
+- Dev-only windows (e.g., `styleguide`) MUST never be exposed in release builds.
+
+Implementation reference:
+
+- `src-tauri/src/windows.rs`
+- `src-tauri/src/setup.rs`
+
 ---
 
 ## 46. Renderer (TypeScript/Next/shadcn) detailed design
@@ -1377,9 +1548,9 @@ This aligns with `DESIGN.md` and extends it to support more modules and long-liv
   Workspace modules registered in `registry.ts` and implementing `WorkspaceModule`.
 
 - `adapters/`
-  IPC adapters and contracts (`timegraph-ipc.ts` is the current exemplar).
+  IPC adapters and contracts.
 
-- `state/` (new if not already present)
+- `state/`
   Global store slices:
   - system
   - workspace
@@ -1426,21 +1597,22 @@ This keeps the product coherent as modules proliferate.
 
 ## 47. Host ↔ Renderer interaction model (beyond basic invoke)
 
-You already have request/response IPC for commands. You now need first-class **events**.
+The host/renderer interaction uses request/response IPC for commands and must also provide first-class **events**.
 
 ### 47.1 Event bus (host → renderer)
 
 Host emits events for:
 
-- `setup.backend_ready`
-- `setup.frontend_ready_ack`
+- `setup_backend_ready`
+- `setup_frontend_ready_ack`
+- `setup_failed`
 - `workspace_opened` / `workspace_closed`
-- `jobs.updated` (progress)
-- `jobs.completed`
-- `model.changed` (with scope)
-- `integrity.updated`
-- `analytics.updated`
-- `sync.updated` (future)
+- `job_updated` (progress)
+- `job_completed`
+- `model_changed` (with scope)
+- `integrity_warning`
+- `analytics_updated`
+- `sync_updated` (future)
 
 Renderer subscribes via a single adapter (e.g. `adapters/events-ipc.ts`).
 
@@ -1452,7 +1624,7 @@ Rule:
 
 ## 48. Job system (host-owned) build-ready specification
 
-Your repo already hints at job concepts (`mneme_list_jobs`, failed jobs, triggers). This section standardises it at the host level.
+Jobs are a first-class host concept. This section standardises the job system at the host level.
 
 ### 48.1 Job API surface (stable)
 
@@ -1527,18 +1699,34 @@ Only host may decide:
 
 Renderer never sees filesystem paths.
 
+### 49.3 First-run storage layout
+
+- **Storage roots** are created via `tauri::App::path().app_data_dir()` → `AideonPraxis/.praxis`. `src-tauri/src/worker.rs` ensures the directory exists before invoking the Praxis engine, and the renderer never accesses it directly.
+- A minimal schema consists of `praxis.sqlite` (managed by `PraxisEngine`) plus a `mneme` subdirectory (`.praxis/mneme`) that backs the Mneme store. Both are created before setup emits readiness events.
+- The host applies deterministic, forward-only migrations when initializing the database; migration metadata is surfaced in diagnostics so the Status window can explain version changes.
+- First-run seed data comes from the baseline dataset (`docs/data/base/baseline.yaml`) and the deterministic import tooling (`aideon_xtask import-dataset`). Re-running setup reconstructs the same workspace state; the host never seeds the renderer directly.
+- Exported data (snapshots, ops, diagnostics) sits in `mneme` partitions and is always gated through host commands such as `mneme_store_export_snapshot_stream` with PII-aware payloads.
+
+### 49.4 Factory reset
+
+- The host exposes `system_factory_reset` (payload `{ confirmation }`) that clears the `AideonPraxis`
+  storage tree after receiving the literal `CONFIRM-FACTORY-RESET` token. The command runs under the
+  `workspace_admin` capability and emits diagnostics in the Status window if anything fails.
+- Renderer surfaces this action only inside recovery/Status contexts, archives logs before invoking, and
+  never calls the command automatically.
+
 ---
 
-## 50. Testing regime (explicit and aligned to your repo)
+## 50. Testing regime (explicit and enforceable)
 
-Your repo already documents the testing strategy. This section turns it into wrapper-specific requirements.
+This section defines wrapper-specific requirements aligned to the suite testing strategy.
 
 ### 50.1 Rust tests (host)
 
 Must include:
 
-- **Invoke payload casing tests** (already present pattern)
-- **CSP and window config tests** (already present pattern)
+- **Invoke payload casing tests**
+- **CSP and window config tests**
 - **Command registration test**:
   - ensure command list in `app.rs` matches the expected registry
   - fails when commands are accidentally removed/renamed
@@ -1555,7 +1743,7 @@ Must include:
 - Store slice tests (context changes invalidating caches)
 - Shell composition tests (workspace slot contract)
 
-### 50.3 Cross-boundary contract tests (missing today; required)
+### 50.3 Cross-boundary contract tests (required)
 
 Add a generated artefact in CI:
 
@@ -1573,7 +1761,7 @@ E2E must run the real packaged (or dev) Tauri app and verify:
 - splash gating works
 - main window shows
 - settings window opens from menu
-- at least one real IPC call works (e.g., `temporal_state_at`)
+- at least one real IPC call works (e.g., `chrona_temporal_state_at`)
 - status window shows job list
 
 E2E must be deterministic:
@@ -1582,7 +1770,7 @@ E2E must be deterministic:
 - freeze time where required
 - disable network access
 
-Current coverage:
+Reference tests:
 
 - `src-tauri/tests/internal/tauri_e2e_smoke.rs` smoke checks window routes + IPC wiring via a
   Tauri mock app (runs on non-Windows during `cargo test -p aideon_desktop`).
@@ -1593,7 +1781,7 @@ Current coverage:
 
 ## 51. Extending to “all possible modules” (suite-level scaling rules)
 
-This is the key part of your ask: the wrapper must scale past today’s modules.
+The wrapper must scale across modules without changing the shell.
 
 ### 51.1 Module categories
 
@@ -1637,7 +1825,7 @@ The wrapper must support modules of these categories, without changing the shell
 
 - Settings, preferences, diagnostics
 - Import/export tooling
-- Plugin manager (if you allow external plugins)
+- Plugin manager (if external plugins are supported)
 
 ### 51.2 Wrapper invariants for all modules
 
@@ -1661,15 +1849,15 @@ These are the lowest-risk, highest-leverage next steps that align with your exis
 - host emits job+model events
 - renderer subscribes in one place
 
-2. **Introduce a host JobManager wrapper**
+2. **Introduce a host JobManager**
 
-- even if engines internally manage jobs today, unify the view for renderer
+- unify job lifecycle and visibility for the renderer
 
 3. **Add command manifest generation**
 
 - small Rust build step that outputs JSON manifest of commands/DTOs
 - TS test consumes it and validates adapters
 
-4. **Formalise workspace lifecycle stubs**
+4. **Formalise workspace lifecycle**
 
-- even if the underlying storage is “single workspace today”, the host surface should look like multi-workspace now
+- the host surface must be multi-workspace capable from the outset

@@ -1,5 +1,9 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
+
+import { listen } from '@tauri-apps/api/event';
 
 import {
   AboutScreen,
@@ -16,11 +20,13 @@ import { isTauriRuntime } from 'lib/runtime';
 import {
   clearTauriMocks,
   findIpcCall,
+  getIpcCalls,
   installTauriMocks,
   requestPayloadFromArguments,
 } from '../tauri-mocks';
 
 vi.mock('@/root', () => ({ AideonDesktopRoot: () => <div>Root</div> }));
+const listenMock = vi.mocked(listen);
 
 afterEach(() => {
   cleanup();
@@ -81,6 +87,38 @@ describe('app screens', () => {
     });
     const call = findIpcCall('system_setup_complete');
     expect(requestPayloadFromArguments(call?.arguments_)).toEqual({ task: 'frontend' });
+  });
+
+  it('surfaces setup failures and opens the Status window', async () => {
+    installTauriMocks({ currentWindow: 'splash' });
+    const handlers = new Map<string, (event: { payload: unknown }) => void>();
+
+    listenMock.mockImplementation((name, callback) => {
+      handlers.set(name, callback as (event: { payload: unknown }) => void);
+      return Promise.resolve(() => {
+        handlers.delete(name);
+      });
+    });
+
+    render(<SplashScreenRoute />);
+
+    await waitFor(() => {
+      expect(handlers.has('setup_failed')).toBe(true);
+    });
+
+    act(() => {
+      handlers.get('setup_failed')?.({ payload: { code: 'internal', message: 'boom' } });
+    });
+
+    expect(await screen.findByText('Setup failed')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Status' }));
+
+    await waitFor(() => {
+      const calls = getIpcCalls().filter((call) => call.command === 'system_window_open');
+      expect(calls.length).toBeGreaterThan(0);
+      const last = calls.at(-1);
+      expect(requestPayloadFromArguments(last?.arguments_)).toEqual({ window: 'status' });
+    });
   });
 
   it('renders status and about screens', () => {

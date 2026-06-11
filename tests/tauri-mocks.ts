@@ -15,6 +15,7 @@ interface TauriMockOptions {
 }
 
 const ipcCalls: IpcCall[] = [];
+const LOGGING_CONTEXT_COMMAND = 'system_logging_context';
 
 /**
  * Ensure a minimal window/document stub exists for late scheduler callbacks.
@@ -122,6 +123,14 @@ export function installTauriMocks(options: TauriMockOptions = {}) {
   mockWindows(currentWindow, ...additionalWindows);
   mockIPC((command, arguments_) => {
     ipcCalls.push({ command, arguments_: arguments_ as IpcArguments });
+    if (command === LOGGING_CONTEXT_COMMAND) {
+      return {
+        sessionId: 'test-session',
+        buildVersion: '0.0.0',
+        platformOs: 'vitest',
+        platformArch: 'x64',
+      };
+    }
     if (ipcHandler) {
       return ipcHandler(command, arguments_ as IpcArguments);
     }

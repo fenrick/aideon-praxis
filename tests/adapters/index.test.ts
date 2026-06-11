@@ -36,10 +36,10 @@ interface GraphAdapter {
 }
 
 type WorkerJobRequest =
-  | { type: 'Temporal.Diff'; payload: TemporalDiffParameters }
-  | { type: 'Analytics.ShortestPath'; payload: { from: string; to: string; maxHops: number } };
+  | { type: 'temporal_diff'; payload: TemporalDiffParameters }
+  | { type: 'analytics_shortest_path'; payload: { from: string; to: string; maxHops: number } };
 
-type WorkerJobResult<Job extends WorkerJobRequest> = Job['type'] extends 'Temporal.Diff'
+type WorkerJobResult<Job extends WorkerJobRequest> = Job['type'] extends 'temporal_diff'
   ? TemporalDiffSnapshot
   : { path: string[]; hopCount: number };
 
@@ -79,7 +79,7 @@ describe('adapter contracts', () => {
   });
 
   it('maps Worker job payloads to results', () => {
-    type DiffJob = Extract<WorkerJobRequest, { type: 'Temporal.Diff' }>;
+    type DiffJob = Extract<WorkerJobRequest, { type: 'temporal_diff' }>;
     const diffPayload: DiffJob['payload'] = {
       from: 'c1',
       to: 'c2',
@@ -89,7 +89,7 @@ describe('adapter contracts', () => {
     type DiffJobResult = WorkerJobResult<DiffJob>;
     expectTypeOf<DiffJobResult>().toEqualTypeOf<TemporalDiffSnapshot>();
 
-    type ShortestPathJob = Extract<WorkerJobRequest, { type: 'Analytics.ShortestPath' }>;
+    type ShortestPathJob = Extract<WorkerJobRequest, { type: 'analytics_shortest_path' }>;
     const payload: ShortestPathJob['payload'] = { from: 'node-a', to: 'node-b', maxHops: 6 };
     expectTypeOf(payload.maxHops).toEqualTypeOf<number>();
     type ShortestPathResult = WorkerJobResult<ShortestPathJob>;

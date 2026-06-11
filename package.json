@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.2.0",
   "type": "module",
-  "description": "Aideon — a desktop-first, local-first, time-first digital-twin app (Tauri + Next.js)",
+  "description": "Aideon \u2014 a desktop-first, local-first, time-first digital-twin app (Tauri + Next.js)",
   "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48",
   "license": "MIT",
   "engines": {
@@ -42,7 +42,19 @@
     "host:ci": "pnpm run host:clean && pnpm run host:lint && pnpm run host:check && pnpm run host:test && pnpm run host:format",
     "ci": "pnpm run node:ci && pnpm run host:ci",
     "release": "semantic-release",
-    "commitlint": "commitlint --from=origin/main --to=HEAD"
+    "commitlint": "commitlint --from=origin/main --to=HEAD",
+    "host:build": "cargo build --workspace",
+    "node:dev": "next dev -p 1420",
+    "node:build": "next build",
+    "node:typecheck": "tsc --noEmit",
+    "node:lint": "eslint --max-warnings=10 \"src/**/*.{ts,tsx,js}\" \"app/**/*.{ts,tsx,js}\" \"tests/**/*.{ts,tsx,js}\"",
+    "node:lint:fix": "eslint --max-warnings=10 \"src/**/*.{ts,tsx,js}\" \"app/**/*.{ts,tsx,js}\" \"tests/**/*.{ts,tsx,js}\" --fix",
+    "node:test": "vitest run --reporter=default",
+    "node:test:coverage": "vitest run --coverage.enabled=true --coverage.provider=istanbul --coverage.reporter=lcov --coverage.reporter=html --coverage.reporter=text",
+    "node:format": "prettier -w .",
+    "node:format:check": "prettier -c .",
+    "node:e2e": "node tests/e2e/run.mjs",
+    "webdriver:test:headless": "xvfb-run -a wdio run tests/webdriver/wdio.conf.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -110,7 +122,8 @@
     "tunnel-rat": "^0.1.2",
     "tw-animate-css": "^1.4.0",
     "vaul": "^1.1.2",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@tauri-apps/plugin-log": "^2.7.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",

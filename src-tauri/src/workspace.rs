@@ -10,6 +10,7 @@ use tauri::State;
 
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::praxis_api::ScenarioSummary;
+use crate::telemetry::respond_with_request;
 use crate::worker::WorkerState;
 
 #[derive(Debug, Serialize)]
@@ -42,12 +43,11 @@ pub async fn workspace_projects_list(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<Vec<ProjectPayload>>, HostError> {
-    let request_id = request.request_id;
-    let response = match list_projects(state).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    respond_with_request("workspace_projects_list", request, move |_payload| {
+        let state = state.clone();
+        async move { list_projects(state).await }
+    })
+    .await
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,12 +91,12 @@ pub async fn list_templates() -> Result<Vec<TemplatePayload>, HostError> {
 pub async fn workspace_templates_list(
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<Vec<TemplatePayload>>, HostError> {
-    let request_id = request.request_id;
-    let response = match list_templates().await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    respond_with_request(
+        "workspace_templates_list",
+        request,
+        move |_payload| async move { list_templates().await },
+    )
+    .await
 }
 
 /// Persist a template snapshot so the host is the source of truth.
@@ -127,12 +127,12 @@ pub async fn save_template(payload: TemplatePayload) -> Result<TemplatePayload, 
 pub async fn workspace_templates_save(
     request: IpcRequest<TemplatePayload>,
 ) -> Result<IpcResponse<TemplatePayload>, HostError> {
-    let request_id = request.request_id;
-    let response = match save_template(request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    };
-    Ok(response)
+    respond_with_request(
+        "workspace_templates_save",
+        request,
+        move |payload| async move { save_template(payload).await },
+    )
+    .await
 }
 
 fn workspace_snapshot_base() -> Result<std::path::PathBuf, HostError> {

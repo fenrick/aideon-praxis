@@ -35,8 +35,8 @@ fn parse_window_target_maps_known_ids() {
     assert!(parse_window_target("nope").is_err());
 }
 
-#[test]
-fn system_window_open_rejects_unknown_window() {
+#[tokio::test]
+async fn system_window_open_rejects_unknown_window() {
     let app = tauri::test::mock_app();
     let response = system_window_open(
         app.handle().clone(),
@@ -47,14 +47,15 @@ fn system_window_open_rejects_unknown_window() {
             },
         },
     )
+    .await
     .expect("response");
     assert_eq!(response.status, "error");
     assert!(response.error.is_some());
 }
 
-#[test]
+#[tokio::test]
 #[cfg(not(target_os = "windows"))]
-fn system_window_open_handles_known_windows() {
+async fn system_window_open_handles_known_windows() {
     let app = tauri::test::mock_app();
     let response = system_window_open(
         app.handle().clone(),
@@ -65,6 +66,7 @@ fn system_window_open_handles_known_windows() {
             },
         },
     )
+    .await
     .expect("response");
     assert!(matches!(response.status, "ok" | "error"));
 
@@ -77,6 +79,7 @@ fn system_window_open_handles_known_windows() {
             },
         },
     )
+    .await
     .expect("response");
     assert!(matches!(response.status, "ok" | "error"));
 }
@@ -96,6 +99,19 @@ fn window_openers_handle_existing_windows() {
 
     let _ = open_styleguide(app.handle().clone());
     let _ = open_styleguide(app.handle().clone());
+}
+
+#[test]
+#[cfg(not(target_os = "windows"))]
+fn status_and_about_open_without_main_window() {
+    let app = tauri::test::mock_app();
+    assert!(app.get_webview_window("main").is_none());
+
+    let _ = open_status(app.handle().clone());
+    let _ = open_about(app.handle().clone());
+
+    assert!(app.get_webview_window("status").is_some());
+    assert!(app.get_webview_window("about").is_some());
 }
 
 #[test]
