@@ -177,7 +177,7 @@
     "eslint-plugin-security-node": "^1.1.4",
     "eslint-plugin-sonarjs": "^3.0.7",
     "eslint-plugin-testing-library": "^7.16.2",
-    "eslint-plugin-unicorn": "^62.0.0",
+    "eslint-plugin-unicorn": "^65.0.1",
     "jsdom": "^27.4.0",
     "prettier": "^3.8.4",
     "prettier-plugin-organize-imports": "^4.3.0",
