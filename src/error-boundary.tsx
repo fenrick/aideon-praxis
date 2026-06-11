@@ -67,11 +67,11 @@ function ErrorBoundaryFallback({
   const { hasDetails, details } = buildErrorDetails({ error, componentStack });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-8">
+    <div className="bg-background flex min-h-screen items-center justify-center p-8">
       <Card className="w-full max-w-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangleIcon className="size-5 text-destructive" />
+            <AlertTriangleIcon className="text-destructive size-5" />
             Something went wrong
           </CardTitle>
           <CardDescription>
@@ -91,8 +91,8 @@ function ErrorBoundaryFallback({
           </Alert>
 
           {showDetails && hasDetails ? (
-            <ScrollArea className="h-[240px] rounded-lg border bg-muted/30">
-              <pre className="p-4 text-xs leading-relaxed text-foreground">{details}</pre>
+            <ScrollArea className="bg-muted/30 h-[240px] rounded-lg border">
+              <pre className="text-foreground p-4 text-xs leading-relaxed">{details}</pre>
             </ScrollArea>
           ) : undefined}
 

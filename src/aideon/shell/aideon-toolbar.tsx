@@ -549,7 +549,7 @@ function ToolbarStartSection({
           ) : undefined}
         </div>
         {subtitle ? (
-          <div className="truncate text-xs text-muted-foreground">{subtitle}</div>
+          <div className="text-muted-foreground truncate text-xs">{subtitle}</div>
         ) : undefined}
       </div>
     </ToolbarSection>
@@ -564,7 +564,7 @@ function ToolbarStartSection({
  */
 function ToolbarCenterSection({ center }: { readonly center?: ReactNode }) {
   return (
-    <ToolbarSection justify="center" className="hidden min-w-0 max-w-[520px] px-2 md:flex">
+    <ToolbarSection justify="center" className="hidden max-w-[520px] min-w-0 px-2 md:flex">
       {center}
     </ToolbarSection>
   );
@@ -600,7 +600,7 @@ function ToolbarStatusMessage({ statusMessage }: { readonly statusMessage?: stri
   return (
     <div
       className={cn(
-        'rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive',
+        'border-destructive/30 bg-destructive/5 text-destructive rounded-xl border px-3 py-2 text-xs',
         statusMessage ? 'block' : 'hidden',
       )}
     >
@@ -816,7 +816,7 @@ function AppMenu({
             }}
           >
             Command palette{' '}
-            <span className="ml-auto text-xs text-muted-foreground">{shortcutLabelFor('K')}</span>
+            <span className="text-muted-foreground ml-auto text-xs">{shortcutLabelFor('K')}</span>
           </MenubarItem>
           <MenubarItem
             disabled={!sidebar}

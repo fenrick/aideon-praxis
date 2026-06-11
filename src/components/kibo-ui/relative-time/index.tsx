@@ -125,7 +125,7 @@ export const RelativeTimeZoneDisplay = ({
   const display = formatTime(time, zone, timeFormatOptions);
 
   return (
-    <div className={cn('pl-8 text-muted-foreground tabular-nums', className)} {...properties}>
+    <div className={cn('text-muted-foreground pl-8 tabular-nums', className)} {...properties}>
       {display}
     </div>
   );
@@ -146,7 +146,7 @@ export type RelativeTimeZoneLabelProps = HTMLAttributes<HTMLDivElement>;
 export const RelativeTimeZoneLabel = ({ className, ...properties }: RelativeTimeZoneLabelProps) => (
   <div
     className={cn(
-      'flex h-4 items-center justify-center rounded-xs bg-secondary px-1.5 font-mono',
+      'bg-secondary flex h-4 items-center justify-center rounded-xs px-1.5 font-mono',
       className,
     )}
     {...properties}

@@ -111,7 +111,7 @@ export const MiniCalendar = ({
   return (
     <MiniCalendarContext.Provider value={contextValue}>
       <div
-        className={cn('flex items-center gap-2 rounded-lg border bg-background p-2', className)}
+        className={cn('bg-background flex items-center gap-2 rounded-lg border p-2', className)}
         {...properties}
       >
         {children}
@@ -203,13 +203,13 @@ export const MiniCalendarDay = ({ date, className, ...properties }: MiniCalendar
     >
       <span
         className={cn(
-          'font-medium text-[10px] text-muted-foreground',
+          'text-muted-foreground text-[10px] font-medium',
           isSelected && 'text-primary-foreground/70',
         )}
       >
         {month}
       </span>
-      <span className="font-semibold text-sm">{day}</span>
+      <span className="text-sm font-semibold">{day}</span>
     </Button>
   );
 };

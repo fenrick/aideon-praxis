@@ -22,7 +22,7 @@ export function CommitTimelineList({
 }: CommitTimelineListProperties) {
   if (commits.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground">No moments recorded yet for this timeline.</p>
+      <p className="text-muted-foreground text-xs">No moments recorded yet for this timeline.</p>
     );
   }
 
@@ -40,7 +40,7 @@ export function CommitTimelineList({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">{commit.message}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {commit.time ? new Date(commit.time).toLocaleString() : 'Unknown time'} ·{' '}
                   {commit.changeCount} changes
                 </p>

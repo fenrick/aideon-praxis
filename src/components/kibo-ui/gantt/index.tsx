@@ -294,12 +294,12 @@ export const GanttContentHeader: FC<GanttContentHeaderProperties> = ({
 
   return (
     <div
-      className="sticky top-0 z-20 grid w-full shrink-0 bg-backdrop/90 backdrop-blur-sm"
+      className="bg-backdrop/90 sticky top-0 z-20 grid w-full shrink-0 backdrop-blur-sm"
       style={{ height: 'var(--gantt-header-height)' }}
     >
       <div>
         <div
-          className="sticky inline-flex whitespace-nowrap px-3 py-2 text-muted-foreground text-xs"
+          className="text-muted-foreground sticky inline-flex px-3 py-2 text-xs whitespace-nowrap"
           style={{
             left: 'var(--gantt-sidebar-width)',
           }}
@@ -315,7 +315,7 @@ export const GanttContentHeader: FC<GanttContentHeaderProperties> = ({
       >
         {Array.from({ length: columns }).map((_, index) => (
           <div
-            className="shrink-0 border-border/50 border-b py-1 text-center text-xs"
+            className="border-border/50 shrink-0 border-b py-1 text-center text-xs"
             key={`${id}-${index}`}
           >
             {renderHeaderItem(index)}
@@ -406,7 +406,7 @@ export const GanttHeader: FC<GanttHeaderProperties> = ({ className }) => {
   const Header = headers[gantt.range];
 
   return (
-    <div className={cn('-space-x-px flex h-full w-max divide-x divide-border/50', className)}>
+    <div className={cn('divide-border/50 flex h-full w-max -space-x-px divide-x', className)}>
       <Header />
     </div>
   );
@@ -453,7 +453,7 @@ export const GanttSidebarItem: FC<GanttSidebarItemProperties> = ({
   return (
     <div
       className={cn(
-        'relative flex items-center gap-2.5 p-2.5 text-xs hover:bg-secondary',
+        'hover:bg-secondary relative flex items-center gap-2.5 p-2.5 text-xs',
         className,
       )}
       key={feature.id}
@@ -474,14 +474,14 @@ export const GanttSidebarItem: FC<GanttSidebarItemProperties> = ({
         }}
       />
       <p className="pointer-events-none flex-1 truncate text-left font-medium">{feature.name}</p>
-      <p className="pointer-events-none text-muted-foreground">{duration}</p>
+      <p className="text-muted-foreground pointer-events-none">{duration}</p>
     </div>
   );
 };
 
 export const GanttSidebarHeader: FC = () => (
   <div
-    className="sticky top-0 z-10 flex shrink-0 items-end justify-between gap-2.5 border-border/50 border-b bg-backdrop/90 p-2.5 font-medium text-muted-foreground text-xs backdrop-blur-sm"
+    className="border-border/50 bg-backdrop/90 text-muted-foreground sticky top-0 z-10 flex shrink-0 items-end justify-between gap-2.5 border-b p-2.5 text-xs font-medium backdrop-blur-sm"
     style={{ height: 'var(--gantt-header-height)' }}
   >
     {/* <Checkbox className="shrink-0" /> */}
@@ -503,12 +503,12 @@ export const GanttSidebarGroup: FC<GanttSidebarGroupProperties> = ({
 }) => (
   <div className={className}>
     <p
-      className="w-full truncate p-2.5 text-left font-medium text-muted-foreground text-xs"
+      className="text-muted-foreground w-full truncate p-2.5 text-left text-xs font-medium"
       style={{ height: 'var(--gantt-row-height)' }}
     >
       {name}
     </p>
-    <div className="divide-y divide-border/50">{children}</div>
+    <div className="divide-border/50 divide-y">{children}</div>
   </div>
 );
 
@@ -520,7 +520,7 @@ export interface GanttSidebarProperties {
 export const GanttSidebar: FC<GanttSidebarProperties> = ({ children, className }) => (
   <div
     className={cn(
-      'sticky left-0 z-30 h-max min-h-full overflow-clip border-border/50 border-r bg-background/90 backdrop-blur-md',
+      'border-border/50 bg-background/90 sticky left-0 z-30 h-max min-h-full overflow-clip border-r backdrop-blur-md',
       className,
     )}
     data-roadmap-ui="gantt-sidebar"
@@ -562,7 +562,7 @@ export const GanttAddFeatureHelper: FC<GanttAddFeatureHelperProperties> = ({ top
         onClick={handleClick}
         type="button"
       >
-        <PlusIcon className="pointer-events-none select-none text-muted-foreground" size={16} />
+        <PlusIcon className="text-muted-foreground pointer-events-none select-none" size={16} />
       </button>
     </div>
   );
@@ -621,7 +621,7 @@ export const GanttColumns: FC<GanttColumnsProperties> = ({ columns, isColumnSeco
 
   return (
     <div
-      className="divide grid h-full w-full divide-x divide-border/50"
+      className="divide divide-border/50 grid h-full w-full divide-x"
       style={{
         gridTemplateColumns: `repeat(${columns}, var(--gantt-column-width))`,
       }}
@@ -661,23 +661,23 @@ export const GanttCreateMarkerTrigger: FC<GanttCreateMarkerTriggerProperties> = 
   return (
     <div
       className={cn(
-        'group pointer-events-none absolute top-0 left-0 h-full w-full select-none overflow-visible',
+        'group pointer-events-none absolute top-0 left-0 h-full w-full overflow-visible select-none',
         className,
       )}
       ref={mouseReference}
     >
       <div
-        className="-ml-2 pointer-events-auto sticky top-6 z-20 flex w-4 flex-col items-center justify-center gap-1 overflow-visible opacity-0 group-hover:opacity-100"
+        className="pointer-events-auto sticky top-6 z-20 -ml-2 flex w-4 flex-col items-center justify-center gap-1 overflow-visible opacity-0 group-hover:opacity-100"
         style={{ transform: `translateX(${x}px)` }}
       >
         <button
-          className="z-50 inline-flex h-4 w-4 items-center justify-center rounded-full bg-card"
+          className="bg-card z-50 inline-flex h-4 w-4 items-center justify-center rounded-full"
           onClick={handleClick}
           type="button"
         >
           <PlusIcon className="text-muted-foreground" size={12} />
         </button>
-        <div className="whitespace-nowrap rounded-full border border-border/50 bg-background/90 px-2 py-1 text-foreground text-xs backdrop-blur-lg">
+        <div className="border-border/50 bg-background/90 text-foreground rounded-full border px-2 py-1 text-xs whitespace-nowrap backdrop-blur-lg">
           {formatDate(date, 'MMM dd, yyyy')}
         </div>
       </div>
@@ -710,7 +710,7 @@ export const GanttFeatureDragHelper: FC<GanttFeatureDragHelperProperties> = ({
   return (
     <div
       className={cn(
-        'group -translate-y-1/2 !cursor-col-resize absolute top-1/2 z-[3] h-full w-6 rounded-md outline-none',
+        'group absolute top-1/2 z-[3] h-full w-6 -translate-y-1/2 !cursor-col-resize rounded-md outline-none',
         direction === 'left' ? '-left-2.5' : '-right-2.5',
       )}
       ref={setNodeRef}
@@ -719,7 +719,7 @@ export const GanttFeatureDragHelper: FC<GanttFeatureDragHelperProperties> = ({
     >
       <div
         className={cn(
-          '-translate-y-1/2 absolute top-1/2 h-[80%] w-1 rounded-sm bg-muted-foreground opacity-0 transition-all',
+          'bg-muted-foreground absolute top-1/2 h-[80%] w-1 -translate-y-1/2 rounded-sm opacity-0 transition-all',
           direction === 'left' ? 'left-2.5' : 'right-2.5',
           direction === 'left' ? 'group-hover:left-0' : 'group-hover:right-0',
           isPressed && (direction === 'left' ? 'left-0' : 'right-0'),
@@ -730,7 +730,7 @@ export const GanttFeatureDragHelper: FC<GanttFeatureDragHelperProperties> = ({
       {date && (
         <div
           className={cn(
-            '-translate-x-1/2 absolute top-10 hidden whitespace-nowrap rounded-lg border border-border/50 bg-background/90 px-2 py-1 text-foreground text-xs backdrop-blur-lg group-hover:block',
+            'border-border/50 bg-background/90 text-foreground absolute top-10 hidden -translate-x-1/2 rounded-lg border px-2 py-1 text-xs whitespace-nowrap backdrop-blur-lg group-hover:block',
             isPressed && 'block',
           )}
         >
@@ -755,7 +755,7 @@ export const GanttFeatureItemCard: FC<GanttFeatureItemCardProps> = ({ id, childr
   }, [isPressed, setDragging]);
 
   return (
-    <Card className="h-full w-full rounded-md bg-background p-2 text-xs shadow-sm">
+    <Card className="bg-background h-full w-full rounded-md p-2 text-xs shadow-sm">
       <div
         className={cn(
           'flex h-full w-full items-center justify-between gap-2 text-left',
@@ -1032,7 +1032,7 @@ export const GanttMarker: FC<
 
   return (
     <div
-      className="pointer-events-none absolute top-0 left-0 z-20 flex h-full select-none flex-col items-center justify-center overflow-visible"
+      className="pointer-events-none absolute top-0 left-0 z-20 flex h-full flex-col items-center justify-center overflow-visible select-none"
       style={{
         width: 0,
         transform: `translateX(calc(var(--gantt-column-width) * ${offset} + ${innerOffset}px))`,
@@ -1042,7 +1042,7 @@ export const GanttMarker: FC<
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              'group pointer-events-auto sticky top-0 flex select-auto flex-col flex-nowrap items-center justify-center whitespace-nowrap rounded-b-md bg-card px-2 py-1 text-foreground text-xs',
+              'group bg-card text-foreground pointer-events-auto sticky top-0 flex flex-col flex-nowrap items-center justify-center rounded-b-md px-2 py-1 text-xs whitespace-nowrap select-auto',
               className,
             )}
           >
@@ -1055,7 +1055,7 @@ export const GanttMarker: FC<
         <ContextMenuContent>
           {onRemove ? (
             <ContextMenuItem
-              className="flex items-center gap-2 text-destructive"
+              className="text-destructive flex items-center gap-2"
               onClick={handleRemove}
             >
               <TrashIcon size={16} />
@@ -1064,7 +1064,7 @@ export const GanttMarker: FC<
           ) : null}
         </ContextMenuContent>
       </ContextMenu>
-      <div className={cn('h-full w-px bg-card', className)} />
+      <div className={cn('bg-card h-full w-px', className)} />
     </div>
   );
 });
@@ -1294,7 +1294,7 @@ export const GanttProvider: FC<GanttProviderProperties> = ({
     >
       <div
         className={cn(
-          'gantt relative isolate grid h-full w-full flex-none select-none overflow-auto rounded-sm bg-secondary',
+          'gantt bg-secondary relative isolate grid h-full w-full flex-none overflow-auto rounded-sm select-none',
           range,
           className,
         )}
@@ -1347,7 +1347,7 @@ export const GanttToday: FC<GanttTodayProperties> = ({ className }) => {
 
   return (
     <div
-      className="pointer-events-none absolute top-0 left-0 z-20 flex h-full select-none flex-col items-center justify-center overflow-visible"
+      className="pointer-events-none absolute top-0 left-0 z-20 flex h-full flex-col items-center justify-center overflow-visible select-none"
       style={{
         width: 0,
         transform: `translateX(calc(var(--gantt-column-width) * ${offset} + ${innerOffset}px))`,
@@ -1355,7 +1355,7 @@ export const GanttToday: FC<GanttTodayProperties> = ({ className }) => {
     >
       <div
         className={cn(
-          'group pointer-events-auto sticky top-0 flex select-auto flex-col flex-nowrap items-center justify-center whitespace-nowrap rounded-b-md bg-card px-2 py-1 text-foreground text-xs',
+          'group bg-card text-foreground pointer-events-auto sticky top-0 flex flex-col flex-nowrap items-center justify-center rounded-b-md px-2 py-1 text-xs whitespace-nowrap select-auto',
           className,
         )}
       >
@@ -1364,7 +1364,7 @@ export const GanttToday: FC<GanttTodayProperties> = ({ className }) => {
           {formatDate(date, 'MMM dd, yyyy')}
         </span>
       </div>
-      <div className={cn('h-full w-px bg-card', className)} />
+      <div className={cn('bg-card h-full w-px', className)} />
     </div>
   );
 };

@@ -36,7 +36,7 @@ export function AideonDesktopNavigation({
   return (
     <div className={cn('flex h-full', className)}>
       <TooltipProvider>
-        <div className="flex w-14 flex-col items-center gap-3 border-r border-border/70 bg-sidebar px-2 py-3">
+        <div className="border-border/70 bg-sidebar flex w-14 flex-col items-center gap-3 border-r px-2 py-3">
           {workspaceOptions.map((workspace) => {
             const {
               id: workspaceId,

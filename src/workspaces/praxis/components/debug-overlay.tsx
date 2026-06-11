@@ -26,7 +26,7 @@ export const DebugOverlay = memo(function DebugOverlayComponent({
   const events = recentAnalytics().slice(0, 6);
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-[340px] rounded-xl border border-border/60 bg-background/95 p-3 text-xs shadow-lg">
+    <div className="border-border/60 bg-background/95 fixed right-4 bottom-4 z-50 w-[340px] rounded-xl border p-3 text-xs shadow-lg">
       <div className="mb-2 flex items-center justify-between font-semibold">
         <span>Debug overlay</span>
         <span className="text-muted-foreground">dev-only</span>
@@ -43,16 +43,16 @@ export const DebugOverlay = memo(function DebugOverlayComponent({
         {events.length === 0 ? (
           <p className="text-muted-foreground">No events yet.</p>
         ) : (
-          <ul className="divide-y divide-border/60">
+          <ul className="divide-border/60 divide-y">
             {events.map((event) => (
               <li key={`${event.event}-${String(event.at)}`} className="py-1">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{event.event}</span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-muted-foreground text-[10px]">
                     {new Date(event.at).toLocaleTimeString()}
                   </span>
                 </div>
-                <pre className="mt-1 overflow-x-auto rounded bg-muted/30 p-1 text-[10px] leading-tight text-muted-foreground">
+                <pre className="bg-muted/30 text-muted-foreground mt-1 overflow-x-auto rounded p-1 text-[10px] leading-tight">
                   {JSON.stringify(event.payload ?? {}, undefined, 2)}
                 </pre>
               </li>

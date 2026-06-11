@@ -37,7 +37,7 @@ export type PillButtonProps = ComponentProps<typeof Button>;
 
 export const PillButton = ({ className, ...properties }: PillButtonProps) => (
   <Button
-    className={cn('-my-2 -mr-2 size-6 rounded-full p-0.5 hover:bg-foreground/5', className)}
+    className={cn('hover:bg-foreground/5 -my-2 -mr-2 size-6 rounded-full p-0.5', className)}
     size="icon"
     variant="ghost"
     {...properties}
@@ -95,7 +95,7 @@ export interface PillDeltaProperties {
 
 export const PillDelta = ({ className, delta }: PillDeltaProperties) => {
   if (!delta) {
-    return <MinusIcon className={cn('size-3 text-muted-foreground', className)} />;
+    return <MinusIcon className={cn('text-muted-foreground size-3', className)} />;
   }
 
   if (delta > 0) {
@@ -111,7 +111,7 @@ export interface PillIconProperties {
 }
 
 export const PillIcon = ({ icon: Icon, className, ...properties }: PillIconProperties) => (
-  <Icon className={cn('size-3 text-muted-foreground', className)} size={12} {...properties} />
+  <Icon className={cn('text-muted-foreground size-3', className)} size={12} {...properties} />
 );
 
 export interface PillAvatarGroupProperties {
@@ -126,7 +126,7 @@ export const PillAvatarGroup = ({
 }: PillAvatarGroupProperties) => (
   <div
     className={cn(
-      '-space-x-1 flex items-center',
+      'flex items-center -space-x-1',
       '[&>*:not(:first-of-type)]:[mask-image:radial-gradient(circle_9px_at_-4px_50%,transparent_99%,white_100%)]',
       className,
     )}

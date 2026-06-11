@@ -10,7 +10,7 @@ export const SidebarShell = forwardRef<HTMLElement, SidebarShellProperties>(
     return (
       <aside
         ref={reference}
-        className={cn('flex w-72 flex-col border-r border-border/60 bg-card/40 text-sm', className)}
+        className={cn('border-border/60 bg-card/40 flex w-72 flex-col border-r text-sm', className)}
         {...properties}
       />
     );
@@ -41,7 +41,7 @@ export const SidebarHeading = forwardRef<HTMLHeadingElement, SidebarHeadingPrope
       <h2
         ref={reference}
         className={cn(
-          'text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground',
+          'text-muted-foreground text-xs font-semibold tracking-[0.3em] uppercase',
           className,
         )}
         {...properties}
@@ -61,7 +61,7 @@ export const SidebarNav = forwardRef<HTMLElement, SidebarNavProperties>(function
   return (
     <nav
       ref={reference}
-      className={cn('flex flex-col gap-1 text-sm text-muted-foreground', className)}
+      className={cn('text-muted-foreground flex flex-col gap-1 text-sm', className)}
       {...properties}
     />
   );

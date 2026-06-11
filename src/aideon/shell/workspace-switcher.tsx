@@ -53,7 +53,7 @@ export function WorkspaceSwitcher({
           className={cn('h-8 gap-2 rounded-full', className)}
           aria-label="Switch workspace"
         >
-          <LayoutGridIcon className="size-4 text-muted-foreground" />
+          <LayoutGridIcon className="text-muted-foreground size-4" />
           <span className="max-w-[140px] truncate">{current}</span>
         </Button>
       </DropdownMenuTrigger>
@@ -70,7 +70,7 @@ export function WorkspaceSwitcher({
           >
             <span className="flex-1">{opt.label}</span>
             {opt.id === currentId ? (
-              <CheckIcon className="size-4 text-muted-foreground" />
+              <CheckIcon className="text-muted-foreground size-4" />
             ) : undefined}
           </DropdownMenuItem>
         ))}

@@ -343,7 +343,7 @@ export function GraphWidget({
           });
         }}
       />
-      <div className="h-full min-h-[360px] w-full rounded-2xl border border-border/60 bg-muted/20">
+      <div className="border-border/60 bg-muted/20 h-full min-h-[360px] w-full rounded-2xl border">
         <ReactFlowProvider>
           <ReactFlow
             nodes={nodes}
@@ -374,12 +374,12 @@ export function GraphWidget({
                 position="top-right"
                 nodeColor={() => 'hsl(var(--primary) / 0.85)'}
                 maskColor="hsl(var(--background) / 0.85)"
-                className="rounded-xl border border-border/60 bg-background/80 shadow-sm"
+                className="border-border/60 bg-background/80 rounded-xl border shadow-sm"
               />
             ) : undefined}
             <Panel
               position="top-left"
-              className="rounded-2xl border border-border/60 bg-background/90 p-3 text-xs text-muted-foreground shadow"
+              className="border-border/60 bg-background/90 text-muted-foreground rounded-2xl border p-3 text-xs shadow"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <ToggleGroup
@@ -431,7 +431,7 @@ export function GraphWidget({
                   Auto layout
                 </Button>
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground/90">
+              <p className="text-muted-foreground/90 mt-2 text-[11px]">
                 Use node search or right-click selection for meta actions.
               </p>
               <Button
@@ -540,7 +540,7 @@ function GraphWidgetOverlay({ message, isError }: GraphWidgetOverlayProperties) 
  */
 function AlertBadge() {
   return (
-    <span className="mr-2 text-xs font-semibold uppercase tracking-wide text-destructive">
+    <span className="text-destructive mr-2 text-xs font-semibold tracking-wide uppercase">
       Error
     </span>
   );
@@ -564,12 +564,12 @@ function GraphContextMenu({
 }) {
   return (
     <div
-      className="fixed z-50 min-w-[160px] rounded-lg border border-border/70 bg-popover text-sm shadow-xl"
+      className="border-border/70 bg-popover fixed z-50 min-w-[160px] rounded-lg border text-sm shadow-xl"
       style={{ top: y, left: x }}
     >
       <button
         type="button"
-        className="block w-full px-4 py-2 text-left hover:bg-muted"
+        className="hover:bg-muted block w-full px-4 py-2 text-left"
         onClick={onFocus}
       >
         View meta-model entry

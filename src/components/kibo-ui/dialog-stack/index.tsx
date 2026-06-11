@@ -136,8 +136,8 @@ export const DialogStackTrigger = ({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium text-sm',
-        'ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2',
+        'inline-flex items-center justify-center rounded-md text-sm font-medium whitespace-nowrap',
+        'ring-offset-background transition-colors focus-visible:ring-2 focus-visible:outline-none',
         'focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
         'bg-primary text-primary-foreground hover:bg-primary/90',
         'h-10 px-4 py-2',
@@ -275,7 +275,7 @@ export const DialogStackContent = ({
     // biome-ignore lint/a11y/useKeyWithClickEvents: "This is a clickable dialog"
     <div
       className={cn(
-        'h-auto w-full rounded-lg border bg-background p-6 shadow-lg transition-all duration-300',
+        'bg-background h-auto w-full rounded-lg border p-6 shadow-lg transition-all duration-300',
         className,
       )}
       onClick={handleClick}
@@ -293,7 +293,7 @@ export const DialogStackContent = ({
       <div
         className={cn(
           'h-full w-full transition-all duration-300',
-          context.activeIndex !== index && 'pointer-events-none select-none opacity-0',
+          context.activeIndex !== index && 'pointer-events-none opacity-0 select-none',
         )}
       >
         {children}
@@ -306,7 +306,7 @@ export type DialogStackTitleProps = HTMLAttributes<HTMLHeadingElement>;
 
 export const DialogStackTitle = ({ children, className, ...properties }: DialogStackTitleProps) => (
   <h2
-    className={cn('font-semibold text-lg leading-none tracking-tight', className)}
+    className={cn('text-lg leading-none font-semibold tracking-tight', className)}
     {...properties}
   >
     {children}
@@ -387,7 +387,7 @@ export const DialogStackNext = ({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        'ring-offset-background focus-visible:ring-ring inline-flex items-center justify-center rounded-md text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
         className,
       )}
       disabled={context.activeIndex >= context.totalDialogs - 1}
@@ -441,7 +441,7 @@ export const DialogStackPrevious = ({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        'ring-offset-background focus-visible:ring-ring inline-flex items-center justify-center rounded-md text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
         className,
       )}
       disabled={context.activeIndex <= 0}

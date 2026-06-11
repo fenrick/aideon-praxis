@@ -73,14 +73,14 @@ export function WorkspaceTabs({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-border/70 bg-background/90 p-6 shadow-inner">
+    <div className="border-border/70 bg-background/90 flex flex-col gap-4 rounded-3xl border p-6 shadow-inner">
       <TabRoot value={tab} onValueChange={handleTabChange} className="space-y-4">
-        <TabList className="grid grid-cols-4 gap-2 rounded-lg border border-border/60 bg-muted/20 p-[3px] text-xs font-semibold">
+        <TabList className="border-border/60 bg-muted/20 grid grid-cols-4 gap-2 rounded-lg border p-[3px] text-xs font-semibold">
           {tabOptions.map((entry) => (
             <TabTrigger
               key={entry.value}
               value={entry.value}
-              className="relative flex h-9 items-center justify-center rounded-md border border-transparent bg-transparent px-3 text-sm font-semibold text-foreground transition hover:bg-background/90 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="text-foreground hover:bg-background/90 data-[state=active]:bg-background relative flex h-9 items-center justify-center rounded-md border border-transparent bg-transparent px-3 text-sm font-semibold transition data-[state=active]:shadow-sm"
             >
               {entry.label}
             </TabTrigger>
@@ -120,7 +120,7 @@ interface OverviewTabProperties {
 function OverviewTab({ state }: OverviewTabProperties) {
   if (state.loading && !state.snapshot) {
     return (
-      <div className="rounded-2xl border border-border/70 p-6 text-sm text-muted-foreground">
+      <div className="border-border/70 text-muted-foreground rounded-2xl border p-6 text-sm">
         Loading snapshot…
       </div>
     );
@@ -154,8 +154,8 @@ function OverviewTab({ state }: OverviewTabProperties) {
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           {overviewStats.map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            <div key={stat.label} className="border-border/70 bg-muted/20 rounded-2xl border p-4">
+              <p className="text-muted-foreground text-xs tracking-[0.3em] uppercase">
                 {stat.label}
               </p>
               <p className="text-2xl font-semibold">{stat.value ?? '—'}</p>
@@ -178,7 +178,7 @@ function OverviewTab({ state }: OverviewTabProperties) {
               ].map((metric) => (
                 <div
                   key={metric.label}
-                  className="rounded-2xl border border-border/70 bg-muted/10 p-3"
+                  className="border-border/70 bg-muted/10 rounded-2xl border p-3"
                 >
                   <p className="text-2xs text-muted-foreground">{metric.label}</p>
                   <p className="text-xs font-semibold">{metric.details}</p>
@@ -186,13 +186,13 @@ function OverviewTab({ state }: OverviewTabProperties) {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Diff metrics pending snapshot comparison.
             </p>
           )}
         </div>
         {state.mergeConflicts && state.mergeConflicts.length > 0 && (
-          <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-xs">
+          <div className="border-destructive/40 bg-destructive/5 rounded-2xl border p-4 text-xs">
             <p className="text-destructive font-semibold">Overlap conflicts detected</p>
             <ul className="mt-2 space-y-2">
               {state.mergeConflicts.map((conflict) => (
@@ -204,7 +204,7 @@ function OverviewTab({ state }: OverviewTabProperties) {
             </ul>
           </div>
         )}
-        {state.error && <p className="text-xs text-destructive">{state.error}</p>}
+        {state.error && <p className="text-destructive text-xs">{state.error}</p>}
       </CardContent>
     </Card>
   );
@@ -226,7 +226,7 @@ function TimelineTab({ state, actions }: TimelineTabProperties) {
   let content: ReactNode;
 
   if (state.loading) {
-    content = <p className="text-sm text-muted-foreground">Loading moments…</p>;
+    content = <p className="text-muted-foreground text-sm">Loading moments…</p>;
   } else if (hasCommits) {
     content = (
       <CommitTimelineList
@@ -237,7 +237,7 @@ function TimelineTab({ state, actions }: TimelineTabProperties) {
     );
   } else {
     content = (
-      <p className="text-xs text-muted-foreground">No moments recorded yet for this timeline.</p>
+      <p className="text-muted-foreground text-xs">No moments recorded yet for this timeline.</p>
     );
   }
 

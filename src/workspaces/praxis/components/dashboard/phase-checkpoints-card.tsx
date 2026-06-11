@@ -30,14 +30,14 @@ export function PhaseCheckpointsCard() {
         {PHASES.map((phase) => (
           <div key={phase.title} className="flex items-center gap-3">
             <span
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-muted/30"
+              className="border-border/70 bg-muted/30 flex h-8 w-8 items-center justify-center rounded-full border"
               aria-hidden
             >
               <CheckCircle2 className={statusIconClass(phase.status)} />
             </span>
             <div>
-              <p className="text-sm font-medium text-foreground">{phase.title}</p>
-              <p className="text-xs text-muted-foreground capitalize">{phase.status}</p>
+              <p className="text-foreground text-sm font-medium">{phase.title}</p>
+              <p className="text-muted-foreground text-xs capitalize">{phase.status}</p>
             </div>
           </div>
         ))}

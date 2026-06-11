@@ -52,7 +52,7 @@ export const Banner = ({
     <BannerContext.Provider value={{ show, setShow }}>
       <div
         className={cn(
-          'flex w-full items-center justify-between gap-2 bg-primary px-4 py-2 text-primary-foreground',
+          'bg-primary text-primary-foreground flex w-full items-center justify-between gap-2 px-4 py-2',
           inset && 'rounded-lg',
           className,
         )}
@@ -71,7 +71,7 @@ export type BannerIconProps = HTMLAttributes<HTMLDivElement> & {
 export const BannerIcon = ({ icon: Icon, className, ...properties }: BannerIconProps) => (
   <div
     className={cn(
-      'rounded-full border border-background/20 bg-background/10 p-1 shadow-sm',
+      'border-background/20 bg-background/10 rounded-full border p-1 shadow-sm',
       className,
     )}
     {...properties}
@@ -96,7 +96,7 @@ export const BannerAction = ({
 }: BannerActionProps) => (
   <Button
     className={cn(
-      'shrink-0 bg-transparent hover:bg-background/10 hover:text-background',
+      'hover:bg-background/10 hover:text-background shrink-0 bg-transparent',
       className,
     )}
     size={size}
@@ -124,7 +124,7 @@ export const BannerClose = ({
   return (
     <Button
       className={cn(
-        'shrink-0 bg-transparent hover:bg-background/10 hover:text-background',
+        'hover:bg-background/10 hover:text-background shrink-0 bg-transparent',
         className,
       )}
       onClick={handleClick}

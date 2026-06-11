@@ -47,14 +47,14 @@ export function AppSidebar({ scenarios, loading }: AppSidebarProperties) {
     <Sidebar collapsible="icon" variant="inset" className="h-full">
       <SidebarHeader className="gap-3 px-4 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-accent/60 text-lg font-semibold text-sidebar-accent-foreground">
+          <div className="bg-sidebar-accent/60 text-sidebar-accent-foreground flex h-10 w-10 items-center justify-center rounded-full text-lg font-semibold">
             PX
           </div>
           <div>
-            <p className="text-sm uppercase tracking-wide text-sidebar-foreground/70">
+            <p className="text-sidebar-foreground/70 text-sm tracking-wide uppercase">
               Praxis Workspace
             </p>
-            <p className="text-base font-semibold text-sidebar-foreground">Digital Twin</p>
+            <p className="text-sidebar-foreground text-base font-semibold">Digital Twin</p>
           </div>
         </div>
       </SidebarHeader>
@@ -79,21 +79,21 @@ export function AppSidebar({ scenarios, loading }: AppSidebarProperties) {
         <SidebarGroup>
           <SidebarGroupLabel>Active Scenario</SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="rounded-lg border border-sidebar-border/60 bg-sidebar-accent/40 p-3 text-xs text-sidebar-foreground/70">
-              <p className="text-sm font-semibold text-sidebar-foreground">
+            <div className="border-sidebar-border/60 bg-sidebar-accent/40 text-sidebar-foreground/70 rounded-lg border p-3 text-xs">
+              <p className="text-sidebar-foreground text-sm font-semibold">
                 {loading
                   ? 'Resolving scenario...'
                   : (activeScenario?.name ?? 'No scenario selected')}
               </p>
-              <p className="text-xs text-sidebar-foreground/75">{subtitle}</p>
-              <p className="mt-2 text-[0.65rem] uppercase tracking-[0.35em] text-sidebar-foreground/60">
+              <p className="text-sidebar-foreground/75 text-xs">{subtitle}</p>
+              <p className="text-sidebar-foreground/60 mt-2 text-[0.65rem] tracking-[0.35em] uppercase">
                 {branchLabel}
               </p>
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border/60 p-3">
+      <SidebarFooter className="border-sidebar-border/60 border-t p-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton>

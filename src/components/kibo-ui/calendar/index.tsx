@@ -154,7 +154,7 @@ interface OutOfBoundsDayProperties {
 }
 
 const OutOfBoundsDay = ({ day }: OutOfBoundsDayProperties) => (
-  <div className="relative h-full w-full bg-secondary p-1 text-muted-foreground text-xs">{day}</div>
+  <div className="bg-secondary text-muted-foreground relative h-full w-full p-1 text-xs">{day}</div>
 );
 
 export interface CalendarBodyProperties {
@@ -223,13 +223,13 @@ export const CalendarBody = ({ features, children }: CalendarBodyProperties) => 
 
     days.push(
       <div
-        className="relative flex h-full w-full flex-col gap-1 p-1 text-muted-foreground text-xs"
+        className="text-muted-foreground relative flex h-full w-full flex-col gap-1 p-1 text-xs"
         key={day}
       >
         {day}
         <div>{featuresForDay.slice(0, 3).map((feature) => children({ feature }))}</div>
         {featuresForDay.length > 3 && (
-          <span className="block text-muted-foreground text-xs">
+          <span className="text-muted-foreground block text-xs">
             +{featuresForDay.length - 3} more
           </span>
         )}
@@ -397,7 +397,7 @@ export const CalendarHeader = ({ className }: CalendarHeaderProperties) => {
   return (
     <div className={cn('grid flex-grow grid-cols-7', className)}>
       {daysData.map((day) => (
-        <div className="p-3 text-right text-muted-foreground text-xs" key={day}>
+        <div className="text-muted-foreground p-3 text-right text-xs" key={day}>
           {day}
         </div>
       ))}

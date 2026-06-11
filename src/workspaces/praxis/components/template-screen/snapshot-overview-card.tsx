@@ -45,15 +45,15 @@ export function SnapshotOverviewCard({ state }: SnapshotOverviewCardProperties) 
           {metrics.map((metric) => (
             <div
               key={metric.label}
-              className="rounded-2xl border border-border/70 bg-muted/20 p-3"
+              className="border-border/70 bg-muted/20 rounded-2xl border p-3"
               aria-label={`${metric.label} metric`}
             >
-              <p className="text-xs text-muted-foreground">{metric.label}</p>
+              <p className="text-muted-foreground text-xs">{metric.label}</p>
               <p className="text-2xl font-semibold">{formatMetric(metric.value)}</p>
             </div>
           ))}
         </div>
-        {state.error ? <p className="text-xs text-destructive">{state.error}</p> : undefined}
+        {state.error ? <p className="text-destructive text-xs">{state.error}</p> : undefined}
       </CardContent>
     </Card>
   );

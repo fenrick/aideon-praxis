@@ -42,7 +42,7 @@ export function ActivityTimelinePanel({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+        <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
           <Button
             size="sm"
             variant="secondary"

@@ -29,14 +29,14 @@ export const GlimpseTrigger = (properties: GlimpseTriggerProps) => (
 export type GlimpseTitleProps = ComponentProps<'p'>;
 
 export const GlimpseTitle = ({ className, ...properties }: GlimpseTitleProps) => {
-  return <p className={cn('truncate font-semibold text-sm', className)} {...properties} />;
+  return <p className={cn('truncate text-sm font-semibold', className)} {...properties} />;
 };
 
 export type GlimpseDescriptionProps = ComponentProps<'p'>;
 
 export const GlimpseDescription = ({ className, ...properties }: GlimpseDescriptionProps) => {
   return (
-    <p className={cn('line-clamp-2 text-muted-foreground text-sm', className)} {...properties} />
+    <p className={cn('text-muted-foreground line-clamp-2 text-sm', className)} {...properties} />
   );
 };
 

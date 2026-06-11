@@ -87,7 +87,7 @@ function renderProjectScenarioMenuItems(parameters: {
         </SidebarMenuButton>
       </SidebarMenuItem>,
       <SidebarMenuItem key={`${project.id}-empty`}>
-        <SidebarMenuButton disabled className="text-left text-xs text-muted-foreground">
+        <SidebarMenuButton disabled className="text-muted-foreground text-left text-xs">
           No scenarios yet.
         </SidebarMenuButton>
       </SidebarMenuItem>,
@@ -106,7 +106,7 @@ function renderProjectScenarioMenuItems(parameters: {
         <SidebarMenuItem key={scenario.id}>
           <SidebarMenuButton
             size="sm"
-            className="flex flex-col items-start gap-1 text-left data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground"
+            className="data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground flex flex-col items-start gap-1 text-left"
             onClick={() => {
               onSelectScenario?.(scenario.id);
               onRevealSidebar?.();
@@ -117,7 +117,7 @@ function renderProjectScenarioMenuItems(parameters: {
               <span className="text-sm font-medium">{scenario.name}</span>
               {scenario.isDefault ? <Badge variant="outline">Default</Badge> : undefined}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Timeline {scenario.branch} · Updated {formatDate(scenario.updatedAt)}
             </p>
           </SidebarMenuButton>
@@ -178,7 +178,7 @@ function renderProjectsSidebarMenu(parameters: {
       <SidebarMenuItem>
         <SidebarMenuButton
           disabled
-          className="text-left text-xs text-destructive hover:text-destructive"
+          className="text-destructive hover:text-destructive text-left text-xs"
         >
           Failed to load scenarios: {errorMessage}
         </SidebarMenuButton>
@@ -200,7 +200,7 @@ function renderProjectsSidebarMenu(parameters: {
   if (projectList.length === 0) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton disabled className="text-left text-sm text-muted-foreground">
+        <SidebarMenuButton disabled className="text-muted-foreground text-left text-sm">
           No projects yet.
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -210,7 +210,7 @@ function renderProjectsSidebarMenu(parameters: {
   if (query.trim() && filteredProjects.length === 0) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton disabled className="text-left text-sm text-muted-foreground">
+        <SidebarMenuButton disabled className="text-muted-foreground text-left text-sm">
           No scenarios match “{query.trim()}”.
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -414,7 +414,7 @@ export function ProjectsSidebar({
         <Sidebar collapsible="none" className="flex-1">
           <SidebarHeader className="gap-3.5 border-b p-4">
             <div className="flex w-full items-center justify-between">
-              <div className="text-base font-medium text-foreground">{activeSectionLabel}</div>
+              <div className="text-foreground text-base font-medium">{activeSectionLabel}</div>
               <Badge variant="secondary" className="text-xs">
                 {scenarioCount.toString()} scenarios
               </Badge>
@@ -431,7 +431,7 @@ export function ProjectsSidebar({
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup className="space-y-1">
-              <SidebarGroupLabel className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
+              <SidebarGroupLabel className="text-muted-foreground text-xs tracking-[0.08em] uppercase">
                 Navigation
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -459,7 +459,7 @@ export function ProjectsSidebar({
             <Separator />
             {favoriteItems.length > 0 ? <FavoritesList items={favoriteItems} /> : undefined}
             <SidebarGroup>
-              <SidebarGroupLabel className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              <SidebarGroupLabel className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
                 Projects
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -482,7 +482,7 @@ export function ProjectsSidebar({
               </SidebarGroupContent>
             </SidebarGroup>
             <SidebarGroup>
-              <SidebarGroupLabel className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              <SidebarGroupLabel className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
                 Files
               </SidebarGroupLabel>
               <SidebarGroupContent>

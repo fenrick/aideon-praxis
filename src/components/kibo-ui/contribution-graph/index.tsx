@@ -434,7 +434,7 @@ export const ContributionGraphLegend = ({
 
   return (
     <div className={cn('ml-auto flex items-center gap-[3px]', className)} {...properties}>
-      <span className="mr-1 text-muted-foreground">{labels.legend?.less || 'Less'}</span>
+      <span className="text-muted-foreground mr-1">{labels.legend?.less || 'Less'}</span>
       {Array.from({ length: maxLevel + 1 }, (_, level) => level).map((level) =>
         children ? (
           <Fragment key={level}>{children({ level })}</Fragment>
@@ -443,7 +443,7 @@ export const ContributionGraphLegend = ({
             <title>{`${level} contributions`}</title>
             <rect
               className={cn(
-                'stroke-[1px] stroke-border',
+                'stroke-border stroke-[1px]',
                 'data-[level="0"]:fill-muted',
                 'data-[level="1"]:fill-muted-foreground/20',
                 'data-[level="2"]:fill-muted-foreground/40',
@@ -459,7 +459,7 @@ export const ContributionGraphLegend = ({
           </svg>
         ),
       )}
-      <span className="ml-1 text-muted-foreground">{labels.legend?.more || 'More'}</span>
+      <span className="text-muted-foreground ml-1">{labels.legend?.more || 'More'}</span>
     </div>
   );
 };

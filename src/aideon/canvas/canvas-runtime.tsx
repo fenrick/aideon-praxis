@@ -290,7 +290,7 @@ function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({
     <div
       ref={containerReference}
       className={cn(
-        'relative h-full w-full overflow-hidden bg-background bg-dot-pattern cursor-grab active:cursor-grabbing group/canvas',
+        'bg-background bg-dot-pattern group/canvas relative h-full w-full cursor-grab overflow-hidden active:cursor-grabbing',
         className,
       )}
       {...events}
@@ -310,7 +310,7 @@ function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({
         {/* Page Breaks Overlay */}
         {showPageBreaks ? (
           <div
-            className="pointer-events-none absolute -top-[10000px] -left-[10000px] w-[20000px] h-[20000px] z-0 opacity-20"
+            className="pointer-events-none absolute -top-[10000px] -left-[10000px] z-0 h-[20000px] w-[20000px] opacity-20"
             style={{
               backgroundImage:
                 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
@@ -345,25 +345,25 @@ function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({
       </div>
 
       {/* Floating Canvas Controls */}
-      <div className="absolute bottom-6 right-6 flex flex-col gap-2 rounded-lg border border-border/50 bg-background/80 p-1.5 shadow-lg backdrop-blur-md transition-opacity hover:opacity-100 opacity-60">
+      <div className="border-border/50 bg-background/80 absolute right-6 bottom-6 flex flex-col gap-2 rounded-lg border p-1.5 opacity-60 shadow-lg backdrop-blur-md transition-opacity hover:opacity-100">
         <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} title="Zoom In">
           <ZoomIn className="h-4 w-4" />
         </Button>
-        <div className="text-center text-[10px] font-mono text-muted-foreground select-none">
+        <div className="text-muted-foreground text-center font-mono text-[10px] select-none">
           {Math.round(viewport.scale * 100)}%
         </div>
         <Button variant="ghost" size="icon-sm" onClick={handleZoomOut} title="Zoom Out">
           <ZoomOut className="h-4 w-4" />
         </Button>
-        <div className="h-px bg-border/50 my-0.5" />
+        <div className="bg-border/50 my-0.5 h-px" />
         <Button variant="ghost" size="icon-sm" onClick={handleResetView} title="Reset View">
           <Maximize className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Hint */}
-      <div className="absolute bottom-6 left-6 pointer-events-none opacity-0 group-hover/canvas:opacity-40 transition-opacity">
-        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-background/50 px-2 py-1 rounded-md backdrop-blur-sm">
+      <div className="pointer-events-none absolute bottom-6 left-6 opacity-0 transition-opacity group-hover/canvas:opacity-40">
+        <div className="text-muted-foreground bg-background/50 flex items-center gap-2 rounded-md px-2 py-1 text-xs font-medium backdrop-blur-sm">
           <MousePointer2 className="h-3 w-3" />
           <span>Middle Click or Shift+Drag to Pan · Scroll to Zoom</span>
         </div>

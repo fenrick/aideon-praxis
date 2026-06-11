@@ -66,7 +66,7 @@ export function MetaModelPanel({ focusEntryId }: MetaModelPanelProperties = {}) 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-xs">
           <Badge variant="secondary">Version ·{schema?.version ?? 'loading'}</Badge>
           <Badge variant="outline">{status === 'ready' ? 'Live' : status}</Badge>
           <Button
@@ -113,8 +113,8 @@ const renderSchemaState = ({
 }) => {
   if (status === 'error') {
     return (
-      <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-xs">
-        <p className="font-semibold text-destructive">Failed to load meta-model</p>
+      <div className="border-destructive/40 bg-destructive/5 rounded-2xl border p-4 text-xs">
+        <p className="text-destructive font-semibold">Failed to load meta-model</p>
         <p className="text-destructive/80">{error}</p>
         <Button variant="outline" size="sm" className="mt-3" onClick={onRetry}>
           Retry load
@@ -123,10 +123,10 @@ const renderSchemaState = ({
     );
   }
   if (status === 'loading' && !schema) {
-    return <p className="text-xs text-muted-foreground">Fetching schema…</p>;
+    return <p className="text-muted-foreground text-xs">Fetching schema…</p>;
   }
   if (!schema) {
-    return <p className="text-xs text-muted-foreground">Schema not available yet.</p>;
+    return <p className="text-muted-foreground text-xs">Schema not available yet.</p>;
   }
   return <SchemaDetails schema={schema} focusEntryId={focusEntryId} />;
 };
@@ -159,7 +159,7 @@ function SchemaDetails({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 rounded-2xl border border-border/60 bg-muted/10 p-4 text-center text-sm">
+      <div className="border-border/60 bg-muted/10 grid gap-4 rounded-2xl border p-4 text-center text-sm">
         <StatBlock label="Types" value={schema.types.length} />
         <StatBlock label="Relationships" value={schema.relationships.length} />
       </div>
@@ -220,7 +220,7 @@ function SchemaDetails({
 function StatBlock({ label, value }: { readonly label: string; readonly value: number }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground text-xs tracking-[0.3em] uppercase">{label}</p>
       <p className="text-2xl font-semibold">{value}</p>
     </div>
   );
@@ -261,10 +261,10 @@ function MetaModelEntryCard({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold">{label}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="text-muted-foreground text-xs">{description}</p>
         </div>
         {extra && (
-          <Badge variant="secondary" className="text-[0.6rem] uppercase tracking-[0.3em]">
+          <Badge variant="secondary" className="text-[0.6rem] tracking-[0.3em] uppercase">
             {extra}
           </Badge>
         )}
@@ -285,7 +285,7 @@ function AttributesList({
   readonly attributes?: MetaModelSchema['types'][number]['attributes'];
 }) {
   if (!attributes || attributes.length === 0) {
-    return <p className="pt-2 text-xs text-muted-foreground">No attributes defined.</p>;
+    return <p className="text-muted-foreground pt-2 text-xs">No attributes defined.</p>;
   }
   return (
     <dl className="mt-2 space-y-2 text-xs">
@@ -294,7 +294,7 @@ function AttributesList({
           <dt className="font-medium">
             {attribute.name}
             {attribute.required && (
-              <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[0.65rem] text-destructive">
+              <span className="bg-destructive/10 text-destructive ml-2 rounded-full px-2 py-0.5 text-[0.65rem]">
                 required
               </span>
             )}

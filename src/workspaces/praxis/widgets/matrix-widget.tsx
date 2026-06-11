@@ -134,7 +134,7 @@ export function MatrixWidget({
           });
         }}
       />
-      <div className="flex-1 space-y-3 rounded-2xl border border-border/60 bg-background/40 p-3">
+      <div className="border-border/60 bg-background/40 flex-1 space-y-3 rounded-2xl border p-3">
         {body}
       </div>
     </div>
@@ -181,7 +181,7 @@ function MatrixTable(parameters: {
       <Table className="min-w-[480px] border-collapse text-xs">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-48 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <TableHead className="text-muted-foreground w-48 text-xs font-semibold tracking-[0.2em] uppercase">
               Rows / Columns
             </TableHead>
             {columns.map((column) => (
@@ -289,7 +289,7 @@ function MatrixCellView({
  */
 function Legend() {
   return (
-    <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+    <div className="text-muted-foreground flex flex-wrap gap-4 text-xs">
       <LegendItem colorClass="bg-primary/20 text-primary" label="Connected" />
       <LegendItem colorClass="bg-muted/30" label="Missing" />
       <LegendItem colorClass="ring-2 ring-primary/40" label="Selection overlap" />
@@ -324,7 +324,7 @@ function LegendItem({
  * @param root0.message
  */
 function Placeholder({ message }: { readonly message: string }) {
-  return <p className="text-sm text-muted-foreground">{message}</p>;
+  return <p className="text-muted-foreground text-sm">{message}</p>;
 }
 
 /**
@@ -334,7 +334,7 @@ function Placeholder({ message }: { readonly message: string }) {
  */
 function ErrorMessage({ message }: { readonly message: string }) {
   return (
-    <p className="flex items-center gap-2 text-sm text-destructive">
+    <p className="text-destructive flex items-center gap-2 text-sm">
       <AlertTriangle className="h-4 w-4" />
       {message}
     </p>

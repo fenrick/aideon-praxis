@@ -108,7 +108,7 @@ export function CanvasRuntimeCard({
           <StatTile label="Nodes" value={stats?.nodes} />
           <StatTile label="Edges" value={stats?.edges} />
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : undefined}
+        {error ? <p className="text-destructive text-sm">{error}</p> : undefined}
         <div className="h-[380px] w-full">
           <AideonCanvasRuntime
             widgets={widgets}
@@ -172,8 +172,8 @@ interface StatTileProperties {
  */
 function StatTile({ label, value }: StatTileProperties) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card px-4 py-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <div className="border-border/70 bg-card rounded-2xl border px-4 py-3">
+      <p className="text-muted-foreground text-xs">{label}</p>
       <p className="text-3xl font-semibold tracking-tight">
         {typeof value === 'number' ? value : '—'}
       </p>

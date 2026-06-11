@@ -48,7 +48,7 @@ function DesktopShellLayout({ tree, toolbar, main, properties }: Readonly<Deskto
     <>
       {tree}
       <SidebarInset>
-        <header className="bg-background flex h-16 shrink-0 items-center gap-2 border-b border-border transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+        <header className="bg-background border-border flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex flex-1 items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
@@ -58,13 +58,13 @@ function DesktopShellLayout({ tree, toolbar, main, properties }: Readonly<Deskto
 
         <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
           <ResizablePanel defaultSize={70} minSize={50} className="min-w-[320px]">
-            <div className="flex h-full flex-col overflow-hidden bg-background p-4">{main}</div>
+            <div className="bg-background flex h-full flex-col overflow-hidden p-4">{main}</div>
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={30} minSize={20} className="min-w-[240px] max-w-[520px]">
-            <div className="h-full overflow-hidden border-l border-border/60 bg-card">
+          <ResizablePanel defaultSize={30} minSize={20} className="max-w-[520px] min-w-[240px]">
+            <div className="border-border/60 bg-card h-full overflow-hidden border-l">
               {properties}
             </div>
           </ResizablePanel>

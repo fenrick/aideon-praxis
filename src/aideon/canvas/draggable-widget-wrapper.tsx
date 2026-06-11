@@ -161,7 +161,7 @@ export function DraggableWidgetWrapper({
   return (
     <div
       className={cn(
-        'group absolute flex flex-col rounded-xl bg-card shadow-sm transition-shadow',
+        'group bg-card absolute flex flex-col rounded-xl shadow-sm transition-shadow',
         isDragging ? 'z-50 cursor-grabbing shadow-xl' : 'z-10 hover:shadow-md',
         isResizing ? 'z-50 cursor-se-resize' : undefined,
       )}
@@ -177,8 +177,8 @@ export function DraggableWidgetWrapper({
       {children}
 
       {/* Resize Handle */}
-      <div className="resize-handle absolute bottom-0 right-0 h-6 w-6 cursor-se-resize p-1 opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100">
-        <div className="h-full w-full rounded-br-lg border-b-2 border-r-2 border-muted-foreground/40" />
+      <div className="resize-handle absolute right-0 bottom-0 h-6 w-6 cursor-se-resize p-1 opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100">
+        <div className="border-muted-foreground/40 h-full w-full rounded-br-lg border-r-2 border-b-2" />
       </div>
     </div>
   );

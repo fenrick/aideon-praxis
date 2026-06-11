@@ -3,8 +3,8 @@
  * Explicitly list plugins to avoid Prettier auto-loading legacy Svelte plugins.
  */
 export default {
-  plugins: ['prettier-plugin-organize-imports'],
-  pluginSearchDirs: false,
+  // prettier-plugin-tailwindcss must be listed last (it overrides class order).
+  plugins: ['prettier-plugin-organize-imports', 'prettier-plugin-tailwindcss'],
 
   // optional but recommended to make formatting deterministic:
   semi: true,

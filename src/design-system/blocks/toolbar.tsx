@@ -18,7 +18,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProperties>(function To
     <div
       ref={reference}
       className={cn(
-        'flex min-h-10 items-center gap-2 rounded-full border border-border/70 bg-card/90 px-3 py-1 text-sm shadow-sm backdrop-blur',
+        'border-border/70 bg-card/90 flex min-h-10 items-center gap-2 rounded-full border px-3 py-1 text-sm shadow-sm backdrop-blur',
         className,
       )}
       {...properties}
@@ -51,7 +51,7 @@ export type ToolbarSeparatorProperties = Readonly<ComponentPropsWithoutRef<'div'
  * @param root0.className - Optional custom classes.
  */
 export function ToolbarSeparator({ className, ...properties }: ToolbarSeparatorProperties) {
-  return <div className={cn('h-5 w-px bg-border/70', className)} {...properties} />;
+  return <div className={cn('bg-border/70 h-5 w-px', className)} {...properties} />;
 }
 
 /**

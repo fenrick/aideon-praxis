@@ -237,9 +237,9 @@ export function PraxisCanvasWorkspace({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      {activeError ? <p className="text-sm text-destructive">{activeError}</p> : undefined}
+      {activeError ? <p className="text-destructive text-sm">{activeError}</p> : undefined}
 
-      <Card className="flex-1 overflow-hidden relative rounded-2xl border border-dashed border-border/60 bg-muted/30">
+      <Card className="border-border/60 bg-muted/30 relative flex-1 overflow-hidden rounded-2xl border border-dashed">
         {showLoadingPlaceholder && (
           <div className="absolute inset-0">
             <Skeleton className="h-full w-full" />
@@ -249,7 +249,7 @@ export function PraxisCanvasWorkspace({
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
             <Card className="pointer-events-auto w-full max-w-xl space-y-4 rounded-2xl shadow-xl">
               <CardHeader className="space-y-2 p-4">
-                <CardTitle className="text-lg font-semibold text-foreground">
+                <CardTitle className="text-foreground text-lg font-semibold">
                   Nothing on this page yet
                 </CardTitle>
                 <CardDescription>
@@ -257,7 +257,7 @@ export function PraxisCanvasWorkspace({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 p-4">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Choose a widget type or browse templates to jump-start the storyboard.
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -265,7 +265,7 @@ export function PraxisCanvasWorkspace({
                     <Badge
                       key={widgetLabel}
                       variant="outline"
-                      className="px-3 py-1 text-xs uppercase tracking-wide text-muted-foreground"
+                      className="text-muted-foreground px-3 py-1 text-xs tracking-wide uppercase"
                     >
                       {widgetLabel}
                     </Badge>

@@ -109,7 +109,7 @@ interface MultiSelectionPanelProperties {
 function MultiSelectionPanel({ selectionCount }: MultiSelectionPanelProperties) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         {selectionCount} widgets selected. Align, distribute, or delete them in one go.
       </p>
     </div>
@@ -138,7 +138,7 @@ interface WidgetFormPanelProperties {
  */
 function DataSection({ form, copy }: WidgetFormPanelProperties) {
   return (
-    <AccordionItem value="data" className="rounded-2xl border border-border/60">
+    <AccordionItem value="data" className="border-border/60 rounded-2xl border">
       <AccordionTrigger>Data</AccordionTrigger>
       <AccordionContent className="space-y-4 pt-3">
         <FormField
@@ -186,7 +186,7 @@ function DisplaySection({
   readonly copy: typeof templateScreenCopy.properties;
 }) {
   return (
-    <AccordionItem value="display" className="rounded-2xl border border-border/60">
+    <AccordionItem value="display" className="border-border/60 rounded-2xl border">
       <AccordionTrigger>Display</AccordionTrigger>
       <AccordionContent className="space-y-4 pt-3">
         <FormField
@@ -254,7 +254,7 @@ function DisplaySection({
  */
 function FiltersSection({ form }: { readonly form: UseFormReturn<FormValues> }) {
   return (
-    <AccordionItem value="filters" className="rounded-2xl border border-border/60">
+    <AccordionItem value="filters" className="border-border/60 rounded-2xl border">
       <AccordionTrigger>Filters</AccordionTrigger>
       <AccordionContent className="space-y-4 pt-3">
         <FormField
@@ -282,7 +282,7 @@ function FiltersSection({ form }: { readonly form: UseFormReturn<FormValues> }) 
  */
 function InteractionsSection({ form }: { readonly form: UseFormReturn<FormValues> }) {
   return (
-    <AccordionItem value="interactions" className="rounded-2xl border border-border/60">
+    <AccordionItem value="interactions" className="border-border/60 rounded-2xl border">
       <AccordionTrigger>Interactions</AccordionTrigger>
       <AccordionContent className="space-y-4 pt-3">
         <FormField
@@ -345,7 +345,7 @@ function NodeFormPanel({ form, typeLabel }: NodeFormPanelProperties) {
   return (
     <Form {...form}>
       <Accordion type="single" collapsible defaultValue="details" className="space-y-3">
-        <AccordionItem value="details" className="rounded-2xl border border-border/60">
+        <AccordionItem value="details" className="border-border/60 rounded-2xl border">
           <AccordionTrigger>Details</AccordionTrigger>
           <AccordionContent className="space-y-4 pt-3">
             <FormField
@@ -407,7 +407,7 @@ function EdgeFormPanel({ form, typeLabel, from, to }: EdgeFormPanelProperties) {
   return (
     <Form {...form}>
       <Accordion type="single" collapsible defaultValue="details" className="space-y-3">
-        <AccordionItem value="details" className="rounded-2xl border border-border/60">
+        <AccordionItem value="details" className="border-border/60 rounded-2xl border">
           <AccordionTrigger>Details</AccordionTrigger>
           <AccordionContent className="space-y-4 pt-3">
             <FormField
@@ -477,16 +477,16 @@ function CellDetailsPanel({ selectionId }: CellDetailsPanelProperties) {
   const parsed = parseCellSelectionId(selectionId);
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         Cell edits are coming next. For now, review row/column context.
       </p>
       <div className="grid gap-3">
-        <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Row</p>
+        <div className="border-border/60 bg-muted/20 rounded-2xl border p-3">
+          <p className="text-muted-foreground text-xs tracking-[0.3em] uppercase">Row</p>
           <p className="text-sm font-semibold">{parsed?.rowId ?? '—'}</p>
         </div>
-        <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Column</p>
+        <div className="border-border/60 bg-muted/20 rounded-2xl border p-3">
+          <p className="text-muted-foreground text-xs tracking-[0.3em] uppercase">Column</p>
           <p className="text-sm font-semibold">{parsed?.columnId ?? '—'}</p>
         </div>
       </div>
@@ -655,7 +655,7 @@ export function PropertiesInspector({
         <Button size="sm" variant="outline" onClick={onReset} disabled={saving}>
           Reset
         </Button>
-        {error ? <p className="text-xs text-destructive">{error}</p> : undefined}
+        {error ? <p className="text-destructive text-xs">{error}</p> : undefined}
       </CardFooter>
     );
   } else if (showMultiState) {
@@ -675,11 +675,11 @@ export function PropertiesInspector({
   }
 
   return (
-    <Card className="flex min-h-full flex-col border-border/60 bg-card/90 shadow-sm">
+    <Card className="border-border/60 bg-card/90 flex min-h-full flex-col shadow-sm">
       <CardHeader className="space-y-2 p-4">
         <div className="flex items-center justify-between gap-2">
           <CardTitle>Properties</CardTitle>
-          <Badge variant="secondary" className="text-[0.6rem] uppercase tracking-[0.36em]">
+          <Badge variant="secondary" className="text-[0.6rem] tracking-[0.36em] uppercase">
             {badgeLabel}
           </Badge>
         </div>
@@ -690,11 +690,11 @@ export function PropertiesInspector({
         <CardContent className="space-y-4 p-4">
           {showEmptyState && (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Select a widget to edit its data, display, or interactions.
               </p>
-              <div className="rounded-2xl border border-border/60 bg-muted p-4 text-xs text-muted-foreground">
-                <p className="font-semibold text-foreground">Page properties</p>
+              <div className="border-border/60 bg-muted text-muted-foreground rounded-2xl border p-4 text-xs">
+                <p className="text-foreground font-semibold">Page properties</p>
                 <p>Mainline FY25 · Executive overview</p>
                 <p>Last updated just now</p>
               </div>

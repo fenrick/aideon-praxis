@@ -71,7 +71,7 @@ export const KanbanBoard = ({ id, children, className }: KanbanBoardProperties) 
   return (
     <div
       className={cn(
-        'flex size-full min-h-40 flex-col divide-y overflow-hidden rounded-md border bg-secondary text-xs shadow-sm ring-2 transition-all',
+        'bg-secondary flex size-full min-h-40 flex-col divide-y overflow-hidden rounded-md border text-xs shadow-sm ring-2 transition-all',
         isOver ? 'ring-primary' : 'ring-transparent',
         className,
       )}
@@ -113,19 +113,19 @@ export const KanbanCard = <T extends KanbanItemProperties = KanbanItemProperties
             className,
           )}
         >
-          {children ?? <p className="m-0 font-medium text-sm">{name}</p>}
+          {children ?? <p className="m-0 text-sm font-medium">{name}</p>}
         </Card>
       </div>
       {activeCardId === id && (
         <t.In>
           <Card
             className={cn(
-              'cursor-grab gap-4 rounded-md p-3 shadow-sm ring-2 ring-primary',
+              'ring-primary cursor-grab gap-4 rounded-md p-3 shadow-sm ring-2',
               isDragging && 'cursor-grabbing',
               className,
             )}
           >
-            {children ?? <p className="m-0 font-medium text-sm">{name}</p>}
+            {children ?? <p className="m-0 text-sm font-medium">{name}</p>}
           </Card>
         </t.In>
       )}
@@ -165,7 +165,7 @@ export const KanbanCards = <T extends KanbanItemProperties = KanbanItemPropertie
 export type KanbanHeaderProps = HTMLAttributes<HTMLDivElement>;
 
 export const KanbanHeader = ({ className, ...properties }: KanbanHeaderProps) => (
-  <div className={cn('m-0 p-2 font-semibold text-sm', className)} {...properties} />
+  <div className={cn('m-0 p-2 text-sm font-semibold', className)} {...properties} />
 );
 
 export type KanbanProviderProps<

@@ -1248,20 +1248,20 @@ function WidgetLibraryDialog({
             <button
               key={entry.type}
               type="button"
-              className="flex w-full items-center justify-between rounded-lg border border-border/70 bg-card px-3 py-2 text-left hover:border-primary/50 hover:bg-muted/40"
+              className="border-border/70 bg-card hover:border-primary/50 hover:bg-muted/40 flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left"
               onClick={() => {
                 onCreate(entry.type);
               }}
             >
               <div>
                 <p className="text-sm font-semibold">{entry.label}</p>
-                <p className="text-xs text-muted-foreground">{entry.description}</p>
+                <p className="text-muted-foreground text-xs">{entry.description}</p>
               </div>
               <Badge variant="outline">{entry.defaultSize}</Badge>
             </button>
           ))}
           {registry.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No widget types registered.</p>
+            <p className="text-muted-foreground text-sm">No widget types registered.</p>
           ) : undefined}
         </div>
         <DialogFooter>

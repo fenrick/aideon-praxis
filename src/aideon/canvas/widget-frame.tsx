@@ -36,16 +36,16 @@ export function WidgetFrame({
 }: WidgetFrameProperties) {
   return (
     <div className={cn('flex h-full flex-col', className)}>
-      <div className="flex items-center justify-between border-b border-border/50 bg-muted/20 px-4 py-2 backdrop-blur-sm">
+      <div className="border-border/50 bg-muted/20 flex items-center justify-between border-b px-4 py-2 backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <GripHorizontal className="h-4 w-4 text-muted-foreground/50 cursor-grab active:cursor-grabbing" />
-          <span className="text-sm font-medium leading-none tracking-tight">{title}</span>
+          <GripHorizontal className="text-muted-foreground/50 h-4 w-4 cursor-grab active:cursor-grabbing" />
+          <span className="text-sm leading-none font-medium tracking-tight">{title}</span>
         </div>
         <div className="flex items-center gap-1">
           {actions}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="h-7 w-7 text-muted-foreground">
+              <Button variant="ghost" size="icon-sm" className="text-muted-foreground h-7 w-7">
                 <MoreHorizontal className="h-4 w-4" />
                 <span className="sr-only">Widget options</span>
               </Button>
@@ -61,7 +61,7 @@ export function WidgetFrame({
           </DropdownMenu>
         </div>
       </div>
-      <div className="flex-1 overflow-hidden bg-card/50 p-0">{children}</div>
+      <div className="bg-card/50 flex-1 overflow-hidden p-0">{children}</div>
     </div>
   );
 }

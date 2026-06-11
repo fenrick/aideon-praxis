@@ -132,7 +132,7 @@ export function SearchBar() {
         className="bg-background/80"
       />
       {overlayOpen ? (
-        <div className="search-results absolute left-0 top-full z-20 mt-2 max-h-64 w-full divide-y divide-border overflow-hidden rounded-2xl border border-border bg-muted/90 text-sm text-foreground shadow-lg">
+        <div className="search-results divide-border border-border bg-muted/90 text-foreground absolute top-full left-0 z-20 mt-2 max-h-64 w-full divide-y overflow-hidden rounded-2xl border text-sm shadow-lg">
           {results.map((result, index) => (
             <button
               key={result.id}
@@ -140,16 +140,16 @@ export function SearchBar() {
               onClick={() => {
                 selectResult(index);
               }}
-              className={`flex w-full flex-col gap-0.5 px-4 py-3 text-left transition hover:bg-background/70 ${
+              className={`hover:bg-background/70 flex w-full flex-col gap-0.5 px-4 py-3 text-left transition ${
                 index === highlightedIndex ? 'bg-accent/40' : ''
               }`}
             >
-              <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              <span className="text-muted-foreground text-xs tracking-[0.3em] uppercase">
                 {KIND_LABEL[result.kind]}
               </span>
               <span className="font-semibold">{result.title}</span>
               {result.subtitle ? (
-                <span className="text-xs text-muted-foreground">{result.subtitle}</span>
+                <span className="text-muted-foreground text-xs">{result.subtitle}</span>
               ) : undefined}
             </button>
           ))}

@@ -56,7 +56,7 @@ export function CommitTimelineCard() {
         {state.mergeConflicts && state.mergeConflicts.length > 0 && (
           <MergeConflicts conflicts={state.mergeConflicts} />
         )}
-        {state.error && <p className="text-xs text-destructive">{state.error}</p>}
+        {state.error && <p className="text-destructive text-xs">{state.error}</p>}
         <div className="flex justify-end gap-2">
           <Button
             variant="outline"
@@ -103,7 +103,7 @@ function BranchList({
   readonly onSelect: (branch: string) => void;
 }) {
   if (branches.length === 0) {
-    return <p className="text-xs text-muted-foreground">No timelines available.</p>;
+    return <p className="text-muted-foreground text-xs">No timelines available.</p>;
   }
   return (
     <ToggleGroup
@@ -146,10 +146,10 @@ function CommitList({
   readonly onSelectCommit: (commitId?: string) => void;
 }) {
   if (loading && commits.length === 0) {
-    return <p className="text-xs text-muted-foreground">Loading moments…</p>;
+    return <p className="text-muted-foreground text-xs">Loading moments…</p>;
   }
   if (commits.length === 0) {
-    return <p className="text-xs text-muted-foreground">No moments on this timeline.</p>;
+    return <p className="text-muted-foreground text-xs">No moments on this timeline.</p>;
   }
   return (
     <ScrollArea className="max-h-64 pr-2">
@@ -168,7 +168,7 @@ function CommitList({
             >
               <div className="flex w-full flex-col items-start gap-1">
                 <span className="text-sm font-medium">{commit.message}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   {commit.time ? new Date(commit.time).toLocaleString() : 'Unknown time'}
                 </span>
                 <Badge variant="outline" className="text-[11px]">

@@ -124,7 +124,7 @@ export function OverviewTabs({
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <TabsList className="flex flex-wrap gap-2 rounded-xl border border-border/70 bg-muted/40 p-1">
+          <TabsList className="border-border/70 bg-muted/40 flex flex-wrap gap-2 rounded-xl border p-1">
             <TabsTrigger value="canvas">Canvas</TabsTrigger>
             <TabsTrigger value="overview">{copy.overview}</TabsTrigger>
             <TabsTrigger value="timeline">{copy.timeline}</TabsTrigger>
@@ -132,10 +132,10 @@ export function OverviewTabs({
           </TabsList>
           {showCanvasActions ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="text-xs font-semibold uppercase tracking-wide">
+              <Badge variant="secondary" className="text-xs font-semibold tracking-wide uppercase">
                 Nodes {nodeCount}
               </Badge>
-              <Badge variant="secondary" className="text-xs font-semibold uppercase tracking-wide">
+              <Badge variant="secondary" className="text-xs font-semibold tracking-wide uppercase">
                 Edges {edgeCount}
               </Badge>
               <Button variant="outline" size="sm" onClick={togglePageBreaks}>

@@ -31,9 +31,9 @@ export function WidgetToolbar({
   return (
     <div className="mb-3 flex items-center justify-between">
       <div>
-        <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Widget</p>
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
+        <p className="text-muted-foreground text-xs tracking-[0.35em] uppercase">Widget</p>
+        <p className="text-foreground text-sm font-medium">{title}</p>
+        <p className="text-muted-foreground text-xs">{subtitle}</p>
       </div>
       <Button variant="secondary" size="sm" disabled={loading} onClick={onRefresh}>
         {loading ? (

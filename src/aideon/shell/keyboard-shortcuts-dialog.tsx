@@ -62,7 +62,7 @@ export function KeyboardShortcutsDialog({
           <DialogTitle>Keyboard shortcuts</DialogTitle>
           <DialogDescription>Common shortcuts in Aideon Desktop.</DialogDescription>
         </DialogHeader>
-        <div className="rounded-lg border border-border/70">
+        <div className="border-border/70 rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -74,7 +74,7 @@ export function KeyboardShortcutsDialog({
             <TableBody>
               {shortcuts.map((row) => (
                 <TableRow key={`${row.category}:${row.name}`}>
-                  <TableCell className="text-xs text-muted-foreground">{row.category}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{row.category}</TableCell>
                   <TableCell className="font-medium">{row.name}</TableCell>
                   <TableCell className="text-right">
                     <span className="inline-flex items-center gap-1">
