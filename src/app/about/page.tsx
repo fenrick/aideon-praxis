@@ -1,6 +1,6 @@
 'use client';
 
-import { AboutScreen } from '../../src/app/app-screens';
+import { AboutScreen } from '../app-screens';
 
 /**
  * About window route.

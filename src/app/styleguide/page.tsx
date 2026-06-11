@@ -1,6 +1,6 @@
 'use client';
 
-import { StyleguideScreen } from '../../src/app/app-screens';
+import { StyleguideScreen } from '../app-screens';
 
 /**
  * Styleguide window route.

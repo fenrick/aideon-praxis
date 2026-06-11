@@ -1,4 +1,4 @@
-import { SplashScreen } from '../../src/components/splash/splash-screen';
+import { SplashScreen } from 'components/splash/splash-screen';
 
 /**
  * Splash window route.
