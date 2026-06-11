@@ -15,7 +15,7 @@ import {
   useState,
 } from 'react';
 
-type RatingContextValue = {
+interface RatingContextValue {
   value: number;
   readOnly: boolean;
   hoverValue: number | null;
@@ -27,7 +27,7 @@ type RatingContextValue = {
   handleKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
   setHoverValue: (value: number | null) => void;
   setFocusedStar: (value: number | null) => void;
-};
+}
 
 const RatingContext = createContext<RatingContextValue | null>(null);
 
@@ -120,7 +120,7 @@ export const RatingButton = ({
   );
 };
 
-export type RatingProps = {
+export interface RatingProperties {
   defaultValue?: number;
   value?: number;
   onChange?: (
@@ -131,7 +131,7 @@ export type RatingProps = {
   readOnly?: boolean;
   className?: string;
   children?: ReactNode;
-};
+}
 
 export const Rating = ({
   value: controlledValue,
@@ -141,11 +141,11 @@ export const Rating = ({
   readOnly = false,
   className,
   children,
-  ...props
-}: RatingProps) => {
+  ...properties
+}: RatingProperties) => {
   const [hoverValue, setHoverValue] = useState<number | null>(null);
   const [focusedStar, setFocusedStar] = useState<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerReference = useRef<HTMLDivElement>(null);
   const [value, onValueChange] = useControllableState({
     defaultProp: defaultValue,
     prop: controlledValue,
@@ -169,25 +169,20 @@ export const Rating = ({
       }
 
       const total = Children.count(children);
-      let newValue = focusedStar !== null ? focusedStar : (value ?? 0);
+      let newValue = focusedStar === null ? (value ?? 0) : focusedStar;
 
       switch (event.key) {
-        case 'ArrowRight':
-          if (event.shiftKey || event.metaKey) {
-            newValue = total;
-          } else {
-            newValue = Math.min(total, newValue + 1);
-          }
+        case 'ArrowRight': {
+          newValue = event.shiftKey || event.metaKey ? total : Math.min(total, newValue + 1);
           break;
-        case 'ArrowLeft':
-          if (event.shiftKey || event.metaKey) {
-            newValue = 1;
-          } else {
-            newValue = Math.max(1, newValue - 1);
-          }
+        }
+        case 'ArrowLeft': {
+          newValue = event.shiftKey || event.metaKey ? 1 : Math.max(1, newValue - 1);
           break;
-        default:
+        }
+        default: {
           return;
+        }
       }
 
       event.preventDefault();
@@ -198,8 +193,8 @@ export const Rating = ({
   );
 
   useEffect(() => {
-    if (focusedStar !== null && containerRef.current) {
-      const buttons = containerRef.current.querySelectorAll('button');
+    if (focusedStar !== null && containerReference.current) {
+      const buttons = containerReference.current.querySelectorAll('button');
       buttons[focusedStar - 1]?.focus();
     }
   }, [focusedStar]);
@@ -220,10 +215,12 @@ export const Rating = ({
       <div
         aria-label="Rating"
         className={cn('inline-flex items-center gap-0.5', className)}
-        onMouseLeave={() => setHoverValue(null)}
-        ref={containerRef}
+        onMouseLeave={() => {
+          setHoverValue(null);
+        }}
+        ref={containerReference}
         role="radiogroup"
-        {...props}
+        {...properties}
       >
         {Children.map(children, (child, index) => {
           if (!child) {

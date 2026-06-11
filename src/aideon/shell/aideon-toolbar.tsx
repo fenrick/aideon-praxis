@@ -638,7 +638,7 @@ export function AideonToolbar({
   onShellCommand,
   className,
   ...properties
-}: AideonToolbarProperties) {
+}: Readonly<AideonToolbarProperties>) {
   const isMac = useIsMacPlatform();
   const shortcutLabelFor = useCallback(
     (letter: string) => (isMac ? `⌘${letter}` : `Ctrl+${letter}`),

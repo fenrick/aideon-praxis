@@ -58,9 +58,9 @@ fn default_capability_maps_enabled_plugins() {
 
 #[test]
 fn appcommands_permission_matches_ipc_manifest_contract() {
+    // CARGO_MANIFEST_DIR is <repo>/src-tauri, so the repo root is one level up.
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
-        .and_then(|path| path.parent())
         .expect("repo root");
 
     let ipc_path = repo.join("docs/contracts/ipc-manifest.json");

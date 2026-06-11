@@ -44,7 +44,10 @@ export default defineConfig([
     'dist/**',
     'build/**',
     'coverage/**',
+    // Vendored UI registry components (shadcn/reactflow); not strict-lint-policed.
     'src/design-system/components/**',
+    // Vendored kibo-ui registry components — same posture as design-system/components.
+    'src/components/kibo-ui/**',
     '**/.pnpm/**',
     '**/out/**',
     // E2E / WebDriver harness and root test infra are linted/maintained separately.
@@ -130,6 +133,11 @@ export default defineConfig([
       ...reactHooks.configs.recommended.rules,
       // Tighten the most important one
       'react-hooks/exhaustive-deps': 'error',
+      // React Compiler diagnostics: the codebase is not yet RC-optimised and these fire on
+      // legitimate data-loading effects and manual memoization. Keep rules-of-hooks and
+      // exhaustive-deps as errors; treat the compiler bailout diagnostics as off for now.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
     },
   },
 

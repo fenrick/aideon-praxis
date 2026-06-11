@@ -9,12 +9,12 @@ export const semanticStateKeys = [
 
 export type SemanticStateTone = (typeof semanticStateKeys)[number];
 
-type SemanticStateContract = {
+interface SemanticStateContract {
   badgeClassName: string;
   description: string;
   label: string;
   surfaceClassName: string;
-};
+}
 
 export const semanticStateContracts: Record<SemanticStateTone, SemanticStateContract> = {
   error: {
@@ -56,14 +56,27 @@ export const semanticStateContracts: Record<SemanticStateTone, SemanticStateCont
   },
 };
 
+/**
+ *
+ * @param value
+ */
 export function isSemanticStateTone(value: string): value is SemanticStateTone {
   return semanticStateKeys.includes(value as SemanticStateTone);
 }
 
+/**
+ *
+ * @param tone
+ */
 export function getSemanticStateContract(tone: SemanticStateTone) {
+  // eslint-disable-next-line security/detect-object-injection -- tone is narrowed to the SemanticStateTone literal union
   return semanticStateContracts[tone];
 }
 
+/**
+ *
+ * @param value
+ */
 export function resolveSemanticStateContract(value: string) {
   return isSemanticStateTone(value) ? semanticStateContracts[value] : undefined;
 }

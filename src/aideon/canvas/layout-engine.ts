@@ -63,5 +63,5 @@ export function calculateInitialLayout(
     }
   }
 
-  return Object.fromEntries(positions) as Record<string, { x: number; y: number }>;
+  return Object.fromEntries(positions);
 }

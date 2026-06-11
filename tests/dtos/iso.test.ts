@@ -8,6 +8,6 @@ describe('ensureIsoDateTime', () => {
   });
 
   test('throws for invalid input', () => {
-    expect(() => ensureIsoDateTime('not-a-date')).toThrowError(TypeError);
+    expect(() => ensureIsoDateTime('not-a-date')).toThrow(TypeError);
   });
 });

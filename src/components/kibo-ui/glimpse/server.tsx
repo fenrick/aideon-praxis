@@ -7,9 +7,9 @@ const OG_IMAGE_REGEX = /<meta[^>]*property="og:image"[^>]*content="([^"]+)"/;
 export const glimpse = async (url: string) => {
   const response = await fetch(url);
   const data = await response.text();
-  const titleMatch = data.match(TITLE_REGEX) || data.match(OG_TITLE_REGEX);
-  const descriptionMatch = data.match(DESCRIPTION_REGEX) || data.match(OG_DESCRIPTION_REGEX);
-  const imageMatch = data.match(OG_IMAGE_REGEX);
+  const titleMatch = TITLE_REGEX.exec(data) || OG_TITLE_REGEX.exec(data);
+  const descriptionMatch = DESCRIPTION_REGEX.exec(data) || OG_DESCRIPTION_REGEX.exec(data);
+  const imageMatch = OG_IMAGE_REGEX.exec(data);
 
   return {
     title: titleMatch?.at(1) ?? null,

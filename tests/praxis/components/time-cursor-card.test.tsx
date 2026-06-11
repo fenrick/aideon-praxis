@@ -121,7 +121,7 @@ describe('TimeCursorCard', () => {
     error: undefined,
     mergeConflicts: undefined,
     merging: false,
-  } as TemporalPanelState;
+  };
 
   const actions: TemporalPanelActions = {
     selectBranch: vi.fn(() => Promise.resolve()),

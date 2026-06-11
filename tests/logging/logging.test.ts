@@ -45,7 +45,7 @@ function parseStructuredLog(line?: string): StructuredLogPayload | undefined {
   }
   const parsed = JSON.parse(line.slice(start)) as unknown;
   if (typeof parsed === 'object' && parsed !== null) {
-    return parsed as StructuredLogPayload;
+    return parsed;
   }
   return undefined;
 }

@@ -210,8 +210,7 @@ describe('PraxisWorkspaceSurface interactions', () => {
     await waitFor(() => {
       expect(templateSpy).toHaveBeenCalled();
     });
-    const latestTemplates =
-      (templateSpy.mock.calls.at(-1)?.[0] as { id: string; name: string }[] | undefined) ?? [];
+    const latestTemplates = templateSpy.mock.calls.at(-1)?.[0] ?? [];
     expect(latestTemplates).toHaveLength(0);
   });
 

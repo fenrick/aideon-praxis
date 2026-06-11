@@ -180,8 +180,15 @@ mod telemetry_tests {
     use logtest::Logger;
     use serde_json::Value;
 
+    // `logtest` captures the global `log` facade. Serialise the telemetry tests that emit
+    // log records so they cannot pollute each other's captured output under parallel runs.
+    static TELEMETRY_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[tokio::test]
     async fn respond_with_request_wraps_success() {
+        let _telemetry_guard = TELEMETRY_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let request = IpcRequest {
             request_id: "req-ok".to_string(),
             payload: "payload".to_string(),
@@ -201,6 +208,9 @@ mod telemetry_tests {
 
     #[tokio::test]
     async fn respond_with_request_wraps_failure() {
+        let _telemetry_guard = TELEMETRY_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let request = IpcRequest {
             request_id: "req-err".to_string(),
             payload: (),
@@ -224,6 +234,9 @@ mod telemetry_tests {
 
     #[tokio::test]
     async fn record_command_propagates_successful_result() {
+        let _telemetry_guard = TELEMETRY_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let result =
             record_command::<_, i32>("record_success", "corr-id", async { Ok(32i32) }).await;
         assert_eq!(result.unwrap(), 32);
@@ -231,6 +244,9 @@ mod telemetry_tests {
 
     #[tokio::test]
     async fn record_command_propagates_error() {
+        let _telemetry_guard = TELEMETRY_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let err = record_command::<_, ()>("record_failure", "corr-id", async {
             Err::<(), HostError>(HostError::internal("boom"))
         })
@@ -242,6 +258,9 @@ mod telemetry_tests {
 
     #[test]
     fn telemetry_logging_records_milestones() {
+        let _telemetry_guard = TELEMETRY_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut logger = Logger::start();
         command_invoked("setup:init", "corr-id");
         command_completed("setup:init", "corr-id", Duration::from_millis(312));
@@ -262,13 +281,24 @@ mod telemetry_tests {
             "migration aborted",
         );
 
+        // logtest captures the global log facade; under parallel test runs other tests can
+        // interleave records. Drain everything this logger saw and keep only the events this
+        // test emitted (unique command/job names), preserving emission order.
         let mut payloads = Vec::new();
-        for _ in 0..6 {
-            let record = logger.pop().expect("expected log entry");
-            let payload: Value =
-                serde_json::from_str(record.args()).expect("structured log payload should parse");
-            payloads.push(payload);
+        while let Some(record) = logger.pop() {
+            let Ok(payload) = serde_json::from_str::<Value>(record.args()) else {
+                continue;
+            };
+            if payload["command"] == "setup:init" || payload["job"] == "backend_setup" {
+                payloads.push(payload);
+            }
         }
+        assert_eq!(
+            payloads.len(),
+            6,
+            "expected six telemetry milestones, captured {}",
+            payloads.len()
+        );
 
         assert_eq!(payloads[0]["event_name"], "command_invoked");
         assert_eq!(payloads[0]["component"], "core");

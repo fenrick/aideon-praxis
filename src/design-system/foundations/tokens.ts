@@ -44,7 +44,7 @@ export const elevationScale = {
   frame: 'var(--aideon-elevation-frame)',
 } as const;
 
-type DensityContract = {
+interface DensityContract {
   clusterGap: SpacingToken;
   contentPadding: SpacingToken;
   controlHeight: string;
@@ -56,7 +56,7 @@ type DensityContract = {
   sectionGap: SpacingToken;
   shellGap: SpacingToken;
   toolbarHeight: string;
-};
+}
 
 export const densityModes = {
   compact: {
@@ -135,26 +135,50 @@ export const densityCssVariableNames = {
   toolbarHeight: '--aideon-toolbar-height',
 } as const;
 
+/**
+ *
+ * @param value
+ */
 export function isSpacingToken(value: string): value is SpacingToken {
   return spacingTokenKeys.includes(value as SpacingToken);
 }
 
+/**
+ *
+ * @param token
+ */
 export function getSpacingValue(token: SpacingToken) {
   return spacingScale[token];
 }
 
+/**
+ *
+ * @param value
+ */
 export function isDensityMode(value: string): value is DensityMode {
   return value in densityModes;
 }
 
+/**
+ *
+ * @param mode
+ */
 export function getDensityModeContract(mode: DensityMode) {
   return densityModes[mode];
 }
 
+/**
+ *
+ * @param value
+ */
 export function resolveDensityMode(value: string) {
   return isDensityMode(value) ? densityModes[value] : undefined;
 }
 
+/**
+ *
+ * @param mode
+ */
 export function getDensityStyleVariables(mode: DensityMode) {
   const contract = densityModes[mode];
 

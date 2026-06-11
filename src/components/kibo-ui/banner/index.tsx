@@ -12,12 +12,12 @@ import {
   useContext,
 } from 'react';
 
-type BannerContextProps = {
+interface BannerContextProperties {
   show: boolean;
   setShow: (show: boolean) => void;
-};
+}
 
-export const BannerContext = createContext<BannerContextProps>({
+export const BannerContext = createContext<BannerContextProperties>({
   show: true,
   setShow: () => {},
 });
@@ -36,7 +36,7 @@ export const Banner = ({
   onClose,
   className,
   inset = false,
-  ...props
+  ...properties
 }: BannerProps) => {
   const [show, setShow] = useControllableState({
     defaultProp: defaultVisible,
@@ -56,7 +56,7 @@ export const Banner = ({
           inset && 'rounded-lg',
           className,
         )}
-        {...props}
+        {...properties}
       >
         {children}
       </div>
@@ -68,13 +68,13 @@ export type BannerIconProps = HTMLAttributes<HTMLDivElement> & {
   icon: LucideIcon;
 };
 
-export const BannerIcon = ({ icon: Icon, className, ...props }: BannerIconProps) => (
+export const BannerIcon = ({ icon: Icon, className, ...properties }: BannerIconProps) => (
   <div
     className={cn(
       'rounded-full border border-background/20 bg-background/10 p-1 shadow-sm',
       className,
     )}
-    {...props}
+    {...properties}
   >
     <Icon size={16} />
   </div>
@@ -82,8 +82,8 @@ export const BannerIcon = ({ icon: Icon, className, ...props }: BannerIconProps)
 
 export type BannerTitleProps = HTMLAttributes<HTMLParagraphElement>;
 
-export const BannerTitle = ({ className, ...props }: BannerTitleProps) => (
-  <p className={cn('flex-1 text-sm', className)} {...props} />
+export const BannerTitle = ({ className, ...properties }: BannerTitleProps) => (
+  <p className={cn('flex-1 text-sm', className)} {...properties} />
 );
 
 export type BannerActionProps = ComponentProps<typeof Button>;
@@ -92,7 +92,7 @@ export const BannerAction = ({
   variant = 'outline',
   size = 'sm',
   className,
-  ...props
+  ...properties
 }: BannerActionProps) => (
   <Button
     className={cn(
@@ -101,7 +101,7 @@ export const BannerAction = ({
     )}
     size={size}
     variant={variant}
-    {...props}
+    {...properties}
   />
 );
 
@@ -112,7 +112,7 @@ export const BannerClose = ({
   size = 'icon',
   onClick,
   className,
-  ...props
+  ...properties
 }: BannerCloseProps) => {
   const { setShow } = useContext(BannerContext);
 
@@ -130,7 +130,7 @@ export const BannerClose = ({
       onClick={handleClick}
       size={size}
       variant={variant}
-      {...props}
+      {...properties}
     >
       <XIcon size={18} />
     </Button>

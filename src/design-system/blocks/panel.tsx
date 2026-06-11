@@ -11,7 +11,7 @@ export type PanelProperties = Readonly<ComponentPropsWithoutRef<typeof Card>>;
  * @param root0 - Panel properties.
  * @returns Panel wrapper element.
  */
-export const Panel = forwardRef<HTMLDivElement, PanelProperties>(function Panel(
+export const Panel = forwardRef<HTMLDivElement, PanelProperties>(function PanelInner(
   { className, ...properties },
   reference,
 ) {
@@ -31,18 +31,17 @@ export type PanelHeaderProperties = Readonly<ComponentPropsWithoutRef<typeof Car
  * @param root0 - Header properties.
  * @returns Header element.
  */
-export const PanelHeader = forwardRef<HTMLDivElement, PanelHeaderProperties>(function PanelHeader(
-  { className, ...properties },
-  reference,
-) {
-  return (
-    <CardHeader
-      ref={reference}
-      className={cn('space-y-1.5 border-b border-border/60 pb-4', className)}
-      {...properties}
-    />
-  );
-});
+export const PanelHeader = forwardRef<HTMLDivElement, PanelHeaderProperties>(
+  function PanelHeaderInner({ className, ...properties }, reference) {
+    return (
+      <CardHeader
+        ref={reference}
+        className={cn('space-y-1.5 border-b border-border/60 pb-4', className)}
+        {...properties}
+      />
+    );
+  },
+);
 
 export type PanelTitleProperties = Readonly<ComponentPropsWithoutRef<typeof CardTitle>>;
 
@@ -51,7 +50,7 @@ export type PanelTitleProperties = Readonly<ComponentPropsWithoutRef<typeof Card
  * @param root0 - Title properties.
  * @returns Title element.
  */
-export const PanelTitle = forwardRef<HTMLDivElement, PanelTitleProperties>(function PanelTitle(
+export const PanelTitle = forwardRef<HTMLDivElement, PanelTitleProperties>(function PanelTitleInner(
   { className, ...properties },
   reference,
 ) {
@@ -72,7 +71,7 @@ export type PanelDescriptionProperties = Readonly<ComponentPropsWithoutRef<typeo
  * @returns Description element.
  */
 export const PanelDescription = forwardRef<HTMLDivElement, PanelDescriptionProperties>(
-  function PanelDescription({ className, ...properties }, reference) {
+  function PanelDescriptionInner({ className, ...properties }, reference) {
     return (
       <CardDescription
         ref={reference}
@@ -91,7 +90,7 @@ export type PanelContentProperties = Readonly<ComponentPropsWithoutRef<typeof Ca
  * @returns Content container.
  */
 export const PanelContent = forwardRef<HTMLDivElement, PanelContentProperties>(
-  function PanelContent({ className, ...properties }, reference) {
+  function PanelContentInner({ className, ...properties }, reference) {
     return (
       <CardContent
         ref={reference}
@@ -109,20 +108,19 @@ export type PanelFooterProperties = Readonly<ComponentPropsWithoutRef<typeof Car
  * @param root0 - Footer properties.
  * @returns Footer element.
  */
-export const PanelFooter = forwardRef<HTMLDivElement, PanelFooterProperties>(function PanelFooter(
-  { className, ...properties },
-  reference,
-) {
-  return (
-    <CardFooter ref={reference} className={cn('justify-end gap-2', className)} {...properties} />
-  );
-});
+export const PanelFooter = forwardRef<HTMLDivElement, PanelFooterProperties>(
+  function PanelFooterInner({ className, ...properties }, reference) {
+    return (
+      <CardFooter ref={reference} className={cn('justify-end gap-2', className)} {...properties} />
+    );
+  },
+);
 
-export interface PanelFieldProperties extends Readonly<ComponentPropsWithoutRef<'div'>> {
+export type PanelFieldProperties = Readonly<ComponentPropsWithoutRef<'div'>> & {
   readonly label: string;
   readonly helper?: ReactNode;
   readonly action?: ReactNode;
-}
+};
 
 /**
  * Labeled field section with optional helper and action slot.
@@ -156,9 +154,9 @@ export function PanelField({
   );
 }
 
-export interface PanelToolbarProperties extends Readonly<ComponentPropsWithoutRef<'div'>> {
+export type PanelToolbarProperties = Readonly<ComponentPropsWithoutRef<'div'>> & {
   readonly align?: 'start' | 'end' | 'between';
-}
+};
 
 /**
  * Toolbar-like row within a panel.

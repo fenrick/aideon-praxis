@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 /**
  * Root document layout for the desktop renderer.
  *
- * Fonts are self-hosted via @fontsource (Geist, Geist Mono, Newsreader) and wired through
+ * Fonts are self-hosted via `@fontsource` (Geist, Geist Mono, Newsreader) and wired through
  * CSS variables in `src/styles.css` — no runtime font CDN, which suits the offline-first
  * desktop runtime.
  * @param root0 - Layout props.

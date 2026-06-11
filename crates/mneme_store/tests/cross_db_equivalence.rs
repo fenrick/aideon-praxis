@@ -168,7 +168,7 @@ async fn snapshot_store(
             cursor: None,
         })
         .await?;
-    entities.sort_by(|a, b| a.entity_id.as_bytes().cmp(&b.entity_id.as_bytes()));
+    entities.sort_by_key(|item| item.entity_id.as_bytes().to_vec());
 
     let read = store
         .read_entity_at_time(ReadEntityAtTimeInput {
@@ -196,7 +196,7 @@ async fn snapshot_store(
             limit: 10,
         })
         .await?;
-    traverse.sort_by(|a, b| a.edge_id.as_bytes().cmp(&b.edge_id.as_bytes()));
+    traverse.sort_by_key(|item| item.edge_id.as_bytes().to_vec());
 
     let mut projection = store
         .get_projection_edges(GetProjectionEdgesInput {
@@ -209,7 +209,7 @@ async fn snapshot_store(
             limit: None,
         })
         .await?;
-    projection.sort_by(|a, b| a.edge_id.as_bytes().cmp(&b.edge_id.as_bytes()));
+    projection.sort_by_key(|item| item.edge_id.as_bytes().to_vec());
 
     let expected_edge_id = projection.first().map(|edge| edge.edge_id);
     assert_eq!(expected_edge_id, Some(edge_id));

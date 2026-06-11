@@ -10,7 +10,7 @@ export type ImageZoomProps = UncontrolledProps & {
   backdropClassName?: string;
 };
 
-export const ImageZoom = ({ className, backdropClassName, ...props }: ImageZoomProps) => (
+export const ImageZoom = ({ className, backdropClassName, ...properties }: ImageZoomProps) => (
   <div
     className={cn(
       'relative',
@@ -39,7 +39,7 @@ export const ImageZoom = ({ className, backdropClassName, ...props }: ImageZoomP
         'motion-reduce:[&_[data-rmiz-modal-img]]:transition-none motion-reduce:[&_[data-rmiz-modal-overlay]]:transition-none',
         backdropClassName,
       )}
-      {...props}
+      {...properties}
     />
   </div>
 );

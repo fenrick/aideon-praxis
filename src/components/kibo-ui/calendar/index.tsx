@@ -24,10 +24,10 @@ import {
   useState,
 } from 'react';
 
-export type CalendarState = {
+export interface CalendarState {
   month: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   year: number;
-};
+}
 
 const monthAtom = atom<CalendarState['month']>(new Date().getMonth() as CalendarState['month']);
 const yearAtom = atom<CalendarState['year']>(new Date().getFullYear());
@@ -35,31 +35,31 @@ const yearAtom = atom<CalendarState['year']>(new Date().getFullYear());
 export const useCalendarMonth = () => useAtom(monthAtom);
 export const useCalendarYear = () => useAtom(yearAtom);
 
-type CalendarContextProps = {
+interface CalendarContextProperties {
   locale: Intl.LocalesArgument;
   startDay: number;
-};
+}
 
-const CalendarContext = createContext<CalendarContextProps>({
+const CalendarContext = createContext<CalendarContextProperties>({
   locale: 'en-US',
   startDay: 0,
 });
 
-export type Status = {
+export interface Status {
   id: string;
   name: string;
   color: string;
-};
+}
 
-export type Feature = {
+export interface Feature {
   id: string;
   name: string;
   startAt: Date;
   endAt: Date;
   status: Status;
-};
+}
 
-type ComboboxProps = {
+interface ComboboxProperties {
   value: string;
   setValue: (value: string) => void;
   data: {
@@ -72,7 +72,7 @@ type ComboboxProps = {
     search: string;
   };
   className?: string;
-};
+}
 
 export const monthsForLocale = (
   localeName: Intl.LocalesArgument,
@@ -80,14 +80,14 @@ export const monthsForLocale = (
 ) => {
   const format = new Intl.DateTimeFormat(localeName, { month: monthFormat }).format;
 
-  return [...new Array(12).keys()].map((m) => format(new Date(Date.UTC(2021, m, 2))));
+  return [...Array.from({ length: 12 }).keys()].map((m) => format(new Date(Date.UTC(2021, m, 2))));
 };
 
 export const daysForLocale = (locale: Intl.LocalesArgument, startDay: number) => {
   const weekdays: string[] = [];
   const baseDate = new Date(2024, 0, startDay);
 
-  for (let i = 0; i < 7; i++) {
+  for (let index = 0; index < 7; index++) {
     weekdays.push(new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(baseDate));
     baseDate.setDate(baseDate.getDate() + 1);
   }
@@ -95,7 +95,7 @@ export const daysForLocale = (locale: Intl.LocalesArgument, startDay: number) =>
   return weekdays;
 };
 
-const Combobox = ({ value, setValue, data, labels, className }: ComboboxProps) => {
+const Combobox = ({ value, setValue, data, labels, className }: ComboboxProperties) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -149,20 +149,20 @@ const Combobox = ({ value, setValue, data, labels, className }: ComboboxProps) =
   );
 };
 
-type OutOfBoundsDayProps = {
+interface OutOfBoundsDayProperties {
   day: number;
-};
+}
 
-const OutOfBoundsDay = ({ day }: OutOfBoundsDayProps) => (
+const OutOfBoundsDay = ({ day }: OutOfBoundsDayProperties) => (
   <div className="relative h-full w-full bg-secondary p-1 text-muted-foreground text-xs">{day}</div>
 );
 
-export type CalendarBodyProps = {
+export interface CalendarBodyProperties {
   features: Feature[];
-  children: (props: { feature: Feature }) => ReactNode;
-};
+  children: (properties: { feature: Feature }) => ReactNode;
+}
 
-export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
+export const CalendarBody = ({ features, children }: CalendarBodyProperties) => {
   const [month] = useCalendarMonth();
   const [year] = useCalendarYear();
   const { startDay } = useContext(CalendarContext);
@@ -176,12 +176,15 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
   );
 
   // Memoize previous month calculations
-  const prevMonthData = useMemo(() => {
-    const prevMonth = month === 0 ? 11 : month - 1;
-    const prevMonthYear = month === 0 ? year - 1 : year;
-    const prevMonthDays = getDaysInMonth(new Date(prevMonthYear, prevMonth, 1));
-    const prevMonthDaysArray = Array.from({ length: prevMonthDays }, (_, i) => i + 1);
-    return { prevMonthDays, prevMonthDaysArray };
+  const previousMonthData = useMemo(() => {
+    const previousMonth = month === 0 ? 11 : month - 1;
+    const previousMonthYear = month === 0 ? year - 1 : year;
+    const previousMonthDays = getDaysInMonth(new Date(previousMonthYear, previousMonth, 1));
+    const previousMonthDaysArray = Array.from(
+      { length: previousMonthDays },
+      (_, index) => index + 1,
+    );
+    return { prevMonthDays: previousMonthDays, prevMonthDaysArray: previousMonthDaysArray };
   }, [month, year]);
 
   // Memoize next month calculations
@@ -189,13 +192,13 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
     const nextMonth = month === 11 ? 0 : month + 1;
     const nextMonthYear = month === 11 ? year + 1 : year;
     const nextMonthDays = getDaysInMonth(new Date(nextMonthYear, nextMonth, 1));
-    const nextMonthDaysArray = Array.from({ length: nextMonthDays }, (_, i) => i + 1);
+    const nextMonthDaysArray = Array.from({ length: nextMonthDays }, (_, index) => index + 1);
     return { nextMonthDaysArray };
   }, [month, year]);
 
   // Memoize features filtering by day to avoid recalculating on every render
   const featuresByDay = useMemo(() => {
-    const result: { [day: number]: Feature[] } = {};
+    const result: Record<number, Feature[]> = {};
     for (let day = 1; day <= daysInMonth; day++) {
       result[day] = features.filter((feature) => {
         return isSameDay(new Date(feature.endAt), new Date(year, month, day));
@@ -206,11 +209,12 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
 
   const days: ReactNode[] = [];
 
-  for (let i = 0; i < firstDay; i++) {
-    const day = prevMonthData.prevMonthDaysArray[prevMonthData.prevMonthDays - firstDay + i];
+  for (let index = 0; index < firstDay; index++) {
+    const day =
+      previousMonthData.prevMonthDaysArray[previousMonthData.prevMonthDays - firstDay + index];
 
     if (day) {
-      days.push(<OutOfBoundsDay day={day} key={`prev-${i}`} />);
+      days.push(<OutOfBoundsDay day={day} key={`prev-${index}`} />);
     }
   }
 
@@ -235,11 +239,11 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
 
   const remainingDays = 7 - ((firstDay + daysInMonth) % 7);
   if (remainingDays < 7) {
-    for (let i = 0; i < remainingDays; i++) {
-      const day = nextMonthData.nextMonthDaysArray[i];
+    for (let index = 0; index < remainingDays; index++) {
+      const day = nextMonthData.nextMonthDaysArray[index];
 
       if (day) {
-        days.push(<OutOfBoundsDay day={day} key={`next-${i}`} />);
+        days.push(<OutOfBoundsDay day={day} key={`next-${index}`} />);
       }
     }
   }
@@ -261,20 +265,20 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
   );
 };
 
-export type CalendarDatePickerProps = {
+export interface CalendarDatePickerProperties {
   className?: string;
   children: ReactNode;
-};
+}
 
-export const CalendarDatePicker = ({ className, children }: CalendarDatePickerProps) => (
+export const CalendarDatePicker = ({ className, children }: CalendarDatePickerProperties) => (
   <div className={cn('flex items-center gap-1', className)}>{children}</div>
 );
 
-export type CalendarMonthPickerProps = {
+export interface CalendarMonthPickerProperties {
   className?: string;
-};
+}
 
-export const CalendarMonthPicker = ({ className }: CalendarMonthPickerProps) => {
+export const CalendarMonthPicker = ({ className }: CalendarMonthPickerProperties) => {
   const [month, setMonth] = useCalendarMonth();
   const { locale } = useContext(CalendarContext);
 
@@ -295,44 +299,48 @@ export const CalendarMonthPicker = ({ className }: CalendarMonthPickerProps) => 
         empty: 'No month found',
         search: 'Search month',
       }}
-      setValue={(value) => setMonth(Number.parseInt(value, 10) as CalendarState['month'])}
+      setValue={(value) => {
+        setMonth(Number.parseInt(value, 10) as CalendarState['month']);
+      }}
       value={month.toString()}
     />
   );
 };
 
-export type CalendarYearPickerProps = {
+export interface CalendarYearPickerProperties {
   className?: string;
   start: number;
   end: number;
-};
+}
 
-export const CalendarYearPicker = ({ className, start, end }: CalendarYearPickerProps) => {
+export const CalendarYearPicker = ({ className, start, end }: CalendarYearPickerProperties) => {
   const [year, setYear] = useCalendarYear();
 
   return (
     <Combobox
       className={className}
-      data={Array.from({ length: end - start + 1 }, (_, i) => ({
-        value: (start + i).toString(),
-        label: (start + i).toString(),
+      data={Array.from({ length: end - start + 1 }, (_, index) => ({
+        value: (start + index).toString(),
+        label: (start + index).toString(),
       }))}
       labels={{
         button: 'Select year',
         empty: 'No year found',
         search: 'Search year',
       }}
-      setValue={(value) => setYear(Number.parseInt(value, 10))}
+      setValue={(value) => {
+        setYear(Number.parseInt(value, 10));
+      }}
       value={year.toString()}
     />
   );
 };
 
-export type CalendarDatePaginationProps = {
+export interface CalendarDatePaginationProperties {
   className?: string;
-};
+}
 
-export const CalendarDatePagination = ({ className }: CalendarDatePaginationProps) => {
+export const CalendarDatePagination = ({ className }: CalendarDatePaginationProperties) => {
   const [month, setMonth] = useCalendarMonth();
   const [year, setYear] = useCalendarYear();
 
@@ -366,19 +374,19 @@ export const CalendarDatePagination = ({ className }: CalendarDatePaginationProp
   );
 };
 
-export type CalendarDateProps = {
+export interface CalendarDateProperties {
   children: ReactNode;
-};
+}
 
-export const CalendarDate = ({ children }: CalendarDateProps) => (
+export const CalendarDate = ({ children }: CalendarDateProperties) => (
   <div className="flex items-center justify-between p-3">{children}</div>
 );
 
-export type CalendarHeaderProps = {
+export interface CalendarHeaderProperties {
   className?: string;
-};
+}
 
-export const CalendarHeader = ({ className }: CalendarHeaderProps) => {
+export const CalendarHeader = ({ className }: CalendarHeaderProperties) => {
   const { locale, startDay } = useContext(CalendarContext);
 
   // Memoize days data to avoid recalculating date formatting
@@ -397,12 +405,12 @@ export const CalendarHeader = ({ className }: CalendarHeaderProps) => {
   );
 };
 
-export type CalendarItemProps = {
+export interface CalendarItemProperties {
   feature: Feature;
   className?: string;
-};
+}
 
-export const CalendarItem = memo(({ feature, className }: CalendarItemProps) => (
+export const CalendarItem = memo(({ feature, className }: CalendarItemProperties) => (
   <div className={cn('flex items-center gap-2', className)}>
     <div
       className="h-2 w-2 shrink-0 rounded-full"
@@ -416,19 +424,19 @@ export const CalendarItem = memo(({ feature, className }: CalendarItemProps) => 
 
 CalendarItem.displayName = 'CalendarItem';
 
-export type CalendarProviderProps = {
+export interface CalendarProviderProperties {
   locale?: Intl.LocalesArgument;
   startDay?: number;
   children: ReactNode;
   className?: string;
-};
+}
 
 export const CalendarProvider = ({
   locale = 'en-US',
   startDay = 0,
   children,
   className,
-}: CalendarProviderProps) => (
+}: CalendarProviderProperties) => (
   <CalendarContext.Provider value={{ locale, startDay }}>
     <div className={cn('relative flex flex-col', className)}>{children}</div>
   </CalendarContext.Provider>

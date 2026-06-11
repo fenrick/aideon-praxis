@@ -15,10 +15,18 @@ export const iconBaseline = {
   strokeWidth: 1.75,
 } as const;
 
+/**
+ *
+ * @param value
+ */
 export function isDesignSystemIconSize(value: string): value is DesignSystemIconSize {
   return iconSizeKeys.includes(value as DesignSystemIconSize);
 }
 
+/**
+ *
+ * @param value
+ */
 export function resolveDesignSystemIconSize(value: string) {
   return isDesignSystemIconSize(value) ? value : undefined;
 }

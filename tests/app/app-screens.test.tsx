@@ -128,7 +128,7 @@ describe('app screens', () => {
 
     render(<AboutScreen />);
     expect(screen.getByText('Aideon')).toBeInTheDocument();
-    expect(screen.getByText('Desktop shell for Praxis workspace and tools.')).toBeInTheDocument();
+    expect(screen.getByText('Desktop shell for Praxis workspaces and tools.')).toBeInTheDocument();
   });
 
   it('renders settings and styleguide screens', () => {

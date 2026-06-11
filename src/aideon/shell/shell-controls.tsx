@@ -20,7 +20,7 @@ export interface AideonShellControlsProviderProperties extends PropsWithChildren
 export function AideonShellControlsProvider({
   value,
   children,
-}: AideonShellControlsProviderProperties) {
+}: Readonly<AideonShellControlsProviderProperties>) {
   return (
     <AideonShellControlsContext.Provider value={value}>
       {children}

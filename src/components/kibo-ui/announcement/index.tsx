@@ -10,7 +10,7 @@ export const Announcement = ({
   variant = 'outline',
   themed = false,
   className,
-  ...props
+  ...properties
 }: AnnouncementProps) => (
   <Badge
     className={cn(
@@ -20,25 +20,25 @@ export const Announcement = ({
       className,
     )}
     variant={variant}
-    {...props}
+    {...properties}
   />
 );
 
 export type AnnouncementTagProps = HTMLAttributes<HTMLDivElement>;
 
-export const AnnouncementTag = ({ className, ...props }: AnnouncementTagProps) => (
+export const AnnouncementTag = ({ className, ...properties }: AnnouncementTagProps) => (
   <div
     className={cn(
       '-ml-2.5 shrink-0 truncate rounded-full bg-foreground/5 px-2.5 py-1 text-xs',
       'group-[.announcement-themed]:bg-background/60',
       className,
     )}
-    {...props}
+    {...properties}
   />
 );
 
 export type AnnouncementTitleProps = HTMLAttributes<HTMLDivElement>;
 
-export const AnnouncementTitle = ({ className, ...props }: AnnouncementTitleProps) => (
-  <div className={cn('flex items-center gap-1 truncate py-1', className)} {...props} />
+export const AnnouncementTitle = ({ className, ...properties }: AnnouncementTitleProps) => (
+  <div className={cn('flex items-center gap-1 truncate py-1', className)} {...properties} />
 );

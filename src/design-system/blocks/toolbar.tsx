@@ -10,7 +10,7 @@ export type ToolbarProperties = Readonly<ComponentPropsWithoutRef<'div'>>;
  * @param root0 - Toolbar props.
  * @returns Styled toolbar wrapper.
  */
-export const Toolbar = forwardRef<HTMLDivElement, ToolbarProperties>(function Toolbar(
+export const Toolbar = forwardRef<HTMLDivElement, ToolbarProperties>(function ToolbarInner(
   { className, ...properties },
   reference,
 ) {
@@ -31,7 +31,7 @@ export type ToolbarSectionProperties = Readonly<ComponentPropsWithoutRef<'div'>>
 };
 
 export const ToolbarSection = forwardRef<HTMLDivElement, ToolbarSectionProperties>(
-  function ToolbarSection({ className, justify = 'start', ...properties }, reference) {
+  function ToolbarSectionInner({ className, justify = 'start', ...properties }, reference) {
     const justification = resolveJustification(justify);
     return (
       <div

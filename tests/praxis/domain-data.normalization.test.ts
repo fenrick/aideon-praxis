@@ -72,7 +72,7 @@ describe('domain-data normalization', () => {
   });
 
   it('rejects invalid payload shapes', async () => {
-    invokeMock.mockImplementationOnce(mockIpcOk({ unexpected: true } as unknown));
+    invokeMock.mockImplementationOnce(mockIpcOk({ unexpected: true }));
     await expect(listProjectsWithScenarios()).rejects.toThrow('Host returned no projects');
 
     invokeMock.mockImplementationOnce(mockIpcOk([{ id: '', name: '' }] as unknown));

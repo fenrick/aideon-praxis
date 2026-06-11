@@ -4115,7 +4115,7 @@ impl GraphReadApi for MnemeStore {
             }
         }
 
-        results.sort_by(|a, b| a.entity_id.as_bytes().cmp(&b.entity_id.as_bytes()));
+        results.sort_by_key(|item| item.entity_id.as_bytes().to_vec());
         if let Some(cursor) = input.cursor.as_deref() {
             let cursor_id = crate::decode_entity_cursor(cursor)?;
             results.retain(|item| item.entity_id.as_bytes() > cursor_id.as_bytes());
@@ -11008,7 +11008,7 @@ async fn list_entities_without_filters(
             });
         }
     }
-    results.sort_by(|a, b| a.entity_id.as_bytes().cmp(&b.entity_id.as_bytes()));
+    results.sort_by_key(|item| item.entity_id.as_bytes().to_vec());
     if results.len() > input.limit as usize {
         results.truncate(input.limit as usize);
     }
@@ -11706,7 +11706,7 @@ impl MnemeStore {
         }
 
         let mut fields: Vec<EffectiveField> = fields_by_id.into_values().collect();
-        fields.sort_by(|a, b| a.field_id.as_bytes().cmp(&b.field_id.as_bytes()));
+        fields.sort_by_key(|item| item.field_id.as_bytes().to_vec());
         Ok(EffectiveSchema {
             type_id,
             applies_to,

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { SidebarProvider } from 'design-system/components/ui/sidebar';
+import { TooltipProvider } from 'design-system/components/ui/tooltip';
 import { ProjectsSidebar } from 'praxis/components/template-screen/projects-sidebar';
 
 const scenarios = [
@@ -16,9 +17,11 @@ describe('ProjectsSidebar', () => {
 
   it('shows skeleton while loading', () => {
     const { container } = render(
-      <SidebarProvider>
-        <ProjectsSidebar scenarios={[]} loading error={undefined} onRetry={vi.fn()} />
-      </SidebarProvider>,
+      <TooltipProvider>
+        <SidebarProvider>
+          <ProjectsSidebar scenarios={[]} loading error={undefined} onRetry={vi.fn()} />
+        </SidebarProvider>
+      </TooltipProvider>,
     );
     expect(container.querySelectorAll('.h-5').length).toBeGreaterThan(0);
   });
@@ -26,16 +29,18 @@ describe('ProjectsSidebar', () => {
   it('renders scenarios and triggers selection', () => {
     const onSelect = vi.fn();
     render(
-      <SidebarProvider>
-        <ProjectsSidebar
-          projects={[{ id: 'p1', name: 'Proj', scenarios }]}
-          scenarios={scenarios}
-          loading={false}
-          error={undefined}
-          activeScenarioId="s2"
-          onSelectScenario={onSelect}
-        />
-      </SidebarProvider>,
+      <TooltipProvider>
+        <SidebarProvider>
+          <ProjectsSidebar
+            projects={[{ id: 'p1', name: 'Proj', scenarios }]}
+            scenarios={scenarios}
+            loading={false}
+            error={undefined}
+            activeScenarioId="s2"
+            onSelectScenario={onSelect}
+          />
+        </SidebarProvider>
+      </TooltipProvider>,
     );
 
     const featureButtons = screen
@@ -51,15 +56,17 @@ describe('ProjectsSidebar', () => {
   it('renders error with retry', () => {
     const onRetry = vi.fn();
     render(
-      <SidebarProvider>
-        <ProjectsSidebar
-          scenarios={scenarios}
-          projects={[]}
-          loading={false}
-          error="boom"
-          onRetry={onRetry}
-        />
-      </SidebarProvider>,
+      <TooltipProvider>
+        <SidebarProvider>
+          <ProjectsSidebar
+            scenarios={scenarios}
+            projects={[]}
+            loading={false}
+            error="boom"
+            onRetry={onRetry}
+          />
+        </SidebarProvider>
+      </TooltipProvider>,
     );
     fireEvent.click(screen.getByText('Retry'));
     expect(onRetry).toHaveBeenCalled();

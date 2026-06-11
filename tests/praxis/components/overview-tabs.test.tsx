@@ -24,7 +24,7 @@ const temporalState: TemporalPanelState = {
   error: undefined,
   mergeConflicts: undefined,
   merging: false,
-} as TemporalPanelState;
+};
 
 const temporalActions: TemporalPanelActions = {
   selectBranch: vi.fn(() => Promise.resolve()),

@@ -12,7 +12,7 @@ interface DebugOverlayProperties {
   readonly visible: boolean;
 }
 
-export const DebugOverlay = memo(function DebugOverlay({
+export const DebugOverlay = memo(function DebugOverlayComponent({
   scenarioName,
   templateName,
   selection,

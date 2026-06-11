@@ -10,37 +10,43 @@ import type { ComponentProps } from 'react';
 
 export type GlimpseProps = ComponentProps<typeof HoverCard>;
 
-export const Glimpse = (props: GlimpseProps) => {
-  return <HoverCard {...props} />;
+export const Glimpse = (properties: GlimpseProps) => {
+  return <HoverCard {...properties} />;
 };
 
 export type GlimpseContentProps = ComponentProps<typeof HoverCardContent>;
 
-export const GlimpseContent = (props: GlimpseContentProps) => <HoverCardContent {...props} />;
+export const GlimpseContent = (properties: GlimpseContentProps) => (
+  <HoverCardContent {...properties} />
+);
 
 export type GlimpseTriggerProps = ComponentProps<typeof HoverCardTrigger>;
 
-export const GlimpseTrigger = (props: GlimpseTriggerProps) => <HoverCardTrigger {...props} />;
+export const GlimpseTrigger = (properties: GlimpseTriggerProps) => (
+  <HoverCardTrigger {...properties} />
+);
 
 export type GlimpseTitleProps = ComponentProps<'p'>;
 
-export const GlimpseTitle = ({ className, ...props }: GlimpseTitleProps) => {
-  return <p className={cn('truncate font-semibold text-sm', className)} {...props} />;
+export const GlimpseTitle = ({ className, ...properties }: GlimpseTitleProps) => {
+  return <p className={cn('truncate font-semibold text-sm', className)} {...properties} />;
 };
 
 export type GlimpseDescriptionProps = ComponentProps<'p'>;
 
-export const GlimpseDescription = ({ className, ...props }: GlimpseDescriptionProps) => {
-  return <p className={cn('line-clamp-2 text-muted-foreground text-sm', className)} {...props} />;
+export const GlimpseDescription = ({ className, ...properties }: GlimpseDescriptionProps) => {
+  return (
+    <p className={cn('line-clamp-2 text-muted-foreground text-sm', className)} {...properties} />
+  );
 };
 
 export type GlimpseImageProps = ComponentProps<'img'>;
 
-export const GlimpseImage = ({ className, alt, ...props }: GlimpseImageProps) => (
+export const GlimpseImage = ({ className, alt, ...properties }: GlimpseImageProps) => (
   // biome-ignore lint/performance/noImgElement: "Kibo UI is framework agnostic"
   <img
     alt={alt ?? ''}
     className={cn('mb-4 aspect-[120/63] w-full rounded-md border object-cover', className)}
-    {...props}
+    {...properties}
   />
 );
