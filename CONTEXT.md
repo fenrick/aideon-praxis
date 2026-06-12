@@ -157,3 +157,21 @@ _Avoid_: confidence (that qualifies a result/signal; integrity qualifies the con
 **Result state**:
 The user-visible honesty status of an artefact result, signal, analysis, or other derived output — whether it is current, outdated, incomplete, rebuilding, or awaiting human review. The current states: **Fresh** (current against its inputs and viewpoint), **Stale** (was valid but inputs / viewpoint / definition / dependencies changed), **Partial** (intentionally incomplete — some inputs, scope, permissions, or dependencies unavailable), **Rebuilding** (being regenerated; not final), **Awaiting review** (includes generated/inferred or review-gated content needing human acceptance before it is treated as asserted). The canonical labels, display rules, and allowed combinations are defined in **Documentation Standard §9** — the single source of truth; this entry names the concept, not the state machine.
 _Avoid_: duplicating the §9 state machine here; "status" used loosely where _result state_ is meant; hiding Stale or Partial behind neutral wording; treating Awaiting review as an error state.
+
+## Roadmap and plateaus
+
+**Plateau**:
+A marked, labelled waypoint on the twin's timeline: a named **viewpoint** representing a relatively stable state of a defined **scope** over a limited period (the ArchiMate sense of a relatively stable architecture state). Normally defined by as-of valid time, asserted time, layer (or layer policy), scenario if applicable, scope, and label. The marker is **authored** (model/product layer); the state resolved at it is a derived **snapshot** — neither is canonical truth.
+_Avoid_: any stable interval found by analysis (that is _plateau detection_); equating a plateau with the snapshot resolved at it; treating a plateau as canonical truth.
+
+**Roadmap**:
+An ordered sequence of **plateaus** — the waypoints (now, intermediate states, target) a piece of the twin is planned to move through.
+_Avoid_: timeline (a roadmap is the ordered plateaus, not the time axis itself).
+
+**Transition**:
+The derived change between two adjacent **plateaus** in a roadmap, computed as a **diff** of the two plateau viewpoints (the ArchiMate **Gap**). The delta kind is derived per [ADR-0008](docs/06-adrs/ADR-0008-diff-compares-two-viewpoints.md) from the coordinates that differ. Derived on demand, never authored.
+_Avoid_: gap (acceptable as the ArchiMate alias, but transition is canonical); treating a transition as authored truth (it is derived from the adjacent plateau snapshots).
+
+**Plateau detection**:
+A **signal** or analysis that identifies candidate stable periods or potential plateaus from the twin. It may _suggest_ plateaus, but it does not define one — a plateau exists only when a user or accepted process authors its marker.
+_Avoid_: using "plateau" for the detected interval (the detected interval is a candidate; the plateau is the authored waypoint — see Plateau).
