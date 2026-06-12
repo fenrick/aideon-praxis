@@ -10,7 +10,7 @@ permissions:
 jobs:
   release:
     name: Build and Publish Tauri Bundles
-    uses: fenrick/aideon-praxis/.github/workflows/reusable-release.yml@main
+    uses: ./.github/workflows/reusable-release.yml
     with:
       publish: true
       os-matrix: '["ubuntu-latest","macos-latest","windows-latest"]'

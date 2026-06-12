@@ -54,7 +54,8 @@
     "node:format": "prettier -w .",
     "node:format:check": "prettier -c .",
     "node:e2e": "node tests/e2e/run.mjs",
-    "webdriver:test:headless": "xvfb-run -a wdio run tests/webdriver/wdio.conf.js"
+    "webdriver:test:headless": "xvfb-run -a wdio run tests/webdriver/wdio.conf.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -178,7 +179,9 @@
     "eslint-plugin-sonarjs": "^3.0.7",
     "eslint-plugin-testing-library": "^7.16.2",
     "eslint-plugin-unicorn": "^62.0.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.7",
     "prettier": "^3.8.4",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.7.4",
@@ -190,5 +193,9 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.61.0",
     "vitest": "^4.1.8"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs,json,md,mdx,css}": "prettier --write",
+    "*.rs": "rustfmt"
   }
 }
