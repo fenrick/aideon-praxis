@@ -6,14 +6,14 @@ Issues and PRDs for this repo live as GitHub issues in `aideon-ai/aideon-desktop
 
 The project carries structured fields that replace several labels. **Do not apply the replaced labels** — set the project field instead.
 
-| Axis | Project field | Replaces label |
-| ---- | ------------- | -------------- |
-| Lifecycle state | **Status** | `status/*` labels |
-| Work kind | **Kind** | `type/*` labels |
-| Engine module | **Module** | `module/*` labels |
-| Primary area | **Area** | primary `area/*` label |
-| Scheduling weight | **Priority** | `priority/*` labels |
-| Triage state | **Triage** | — (mirrors triage label; keep both in sync) |
+| Axis              | Project field | Replaces label                              |
+| ----------------- | ------------- | ------------------------------------------- |
+| Lifecycle state   | **Status**    | `status/*` labels                           |
+| Work kind         | **Kind**      | `type/*` labels                             |
+| Engine module     | **Module**    | `module/*` labels                           |
+| Primary area      | **Area**      | primary `area/*` label                      |
+| Scheduling weight | **Priority**  | `priority/*` labels                         |
+| Triage state      | **Triage**    | — (mirrors triage label; keep both in sync) |
 
 Labels still applied to issues (not replaced by project fields):
 
@@ -25,14 +25,14 @@ Labels still applied to issues (not replaced by project fields):
 
 **Status** (lifecycle — driven by project automations; update manually when needed):
 
-| Value | Meaning |
-| ----- | ------- |
-| Todo | In the queue, not started |
-| In Progress | Being actively worked |
-| In Review | PR open, awaiting review |
-| Blocked | Waiting on a dependency or reviewer action |
-| Deferred | Intentionally postponed |
-| Done | Closed / merged |
+| Value       | Meaning                                    |
+| ----------- | ------------------------------------------ |
+| Todo        | In the queue, not started                  |
+| In Progress | Being actively worked                      |
+| In Review   | PR open, awaiting review                   |
+| Blocked     | Waiting on a dependency or reviewer action |
+| Deferred    | Intentionally postponed                    |
+| Done        | Closed / merged                            |
 
 **Kind:** `feature` · `task` · `chore` · `docs` · `decision` · `bug`
 
@@ -46,16 +46,16 @@ Labels still applied to issues (not replaced by project fields):
 
 ## Project automations (do not manually override unless correcting an error)
 
-| Trigger | Status set to |
-| ------- | ------------- |
-| Item added to project | Todo |
-| PR opened / ready for review | In Review |
-| Review requests changes | Blocked |
-| Review approved | In Progress |
-| Issue or PR closed | Done |
-| PR merged | Done |
-| Item reopened | Todo |
-| Closed item not updated for 2 weeks | Archived |
+| Trigger                             | Status set to |
+| ----------------------------------- | ------------- |
+| Item added to project               | Todo          |
+| PR opened / ready for review        | In Review     |
+| Review requests changes             | Blocked       |
+| Review approved                     | In Progress   |
+| Issue or PR closed                  | Done          |
+| PR merged                           | Done          |
+| Item reopened                       | Todo          |
+| Closed item not updated for 2 weeks | Archived      |
 
 ## Conventions
 
@@ -115,7 +115,7 @@ Run `gh issue view <number> --comments`.
 
 ## Related documents
 
-| Document | What it covers |
-| -------- | -------------- |
-| [triage-labels.md](./triage-labels.md) | The five triage roles and the one-at-a-time state machine. |
-| [domain.md](./domain.md) | How to orient in the repo and use the project's vocabulary in issue text. |
+| Document                               | What it covers                                                            |
+| -------------------------------------- | ------------------------------------------------------------------------- |
+| [triage-labels.md](./triage-labels.md) | The five triage roles and the one-at-a-time state machine.                |
+| [domain.md](./domain.md)               | How to orient in the repo and use the project's vocabulary in issue text. |
