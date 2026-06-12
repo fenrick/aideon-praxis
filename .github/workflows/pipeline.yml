@@ -16,34 +16,50 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checks:
-    name: Checks (lint, typecheck, test)
+  node-checks:
+    name: Node checks (lint, typecheck, test)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - uses: pnpm/action-setup@v6
-
-      - name: Cache pnpm store
-        uses: actions/cache@v5
-        with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-
+          cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
 
-      # Frontend (OS-independent)
+      - name: ESLint cache
+        uses: actions/cache@v4
+        with:
+          path: .eslintcache
+          key: ${{ runner.os }}-eslint-${{ hashFiles('pnpm-lock.yaml', '.eslintrc*', 'eslint.config*') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-eslint-${{ hashFiles('pnpm-lock.yaml', '.eslintrc*', 'eslint.config*') }}-
+            ${{ runner.os }}-eslint-
+
+      - name: Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**/*.ts','src/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-
+
       - run: pnpm run node:format:check
       - run: pnpm run node:lint
       - run: pnpm run node:typecheck
       - run: pnpm run node:test
 
-      # Rust — Tauri needs GTK/WebKit to compile on Linux
+  rust-checks:
+    name: Rust checks (fmt, clippy, test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Linux GUI deps
         run: |
           sudo apt-get update
@@ -56,20 +72,24 @@ jobs:
           components: rustfmt, clippy
 
       - run: pnpm run host:format:check
+        shell: bash
       - run: pnpm run host:lint
+        shell: bash
       - run: pnpm run host:check
+        shell: bash
       - run: pnpm run host:test
+        shell: bash
 
   build:
     name: Tauri Build (${{ matrix.os }})
-    needs: checks
+    needs: [node-checks, rust-checks]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Linux GUI deps
         if: runner.os == 'Linux'
@@ -79,16 +99,17 @@ jobs:
             pkg-config libglib2.0-dev libgtk-3-dev libayatana-appindicator3-dev \
             librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
 
-      - uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - uses: pnpm/action-setup@v6
+          cache: 'pnpm'
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
       - name: Cache cargo & target
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -104,16 +125,17 @@ jobs:
 
   e2e:
     name: WebDriver E2E
-    needs: checks
+    needs: [node-checks, rust-checks]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - uses: pnpm/action-setup@v6
+          cache: 'pnpm'
 
       - name: Linux GUI deps + WebKit driver
         run: |
@@ -124,6 +146,12 @@ jobs:
             webkit2gtk-driver xvfb
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Cache tauri-driver install
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/tauri-driver
+          key: tauri-driver-${{ runner.os }}-${{ hashFiles('src-tauri/Cargo.lock') }}
 
       - name: Install tauri-driver
         run: cargo install tauri-driver --locked
