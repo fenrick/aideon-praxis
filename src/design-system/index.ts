@@ -1,5 +1,7 @@
 // Blocks
+export * from './blocks/artefact-frame';
 export * from './blocks/confidence-label';
+export * from './blocks/dashboard-grid';
 export * from './blocks/diff-marker';
 export * from './blocks/explanation-surface';
 export * from './blocks/inspector-panel';
@@ -18,6 +20,8 @@ export * from './blocks/stale-badge';
 export * from './blocks/status-badge';
 export * from './blocks/toolbar';
 export * from './blocks/warning-banner';
+export * from './blocks/widget-frame';
+export * from './blocks/filter-bar';
 
 // Shell
 export * from './desktop-shell';
@@ -25,6 +29,7 @@ export * from './desktop-shell';
 // UI primitives (shadcn/ui — ADR-0010 proxy boundary)
 // Icons are available separately via 'design-system/icons' to avoid name collisions.
 export * from './components/ui/accordion';
+export * from './components/ui/empty';
 export * from './components/ui/alert';
 export * from './components/ui/avatar';
 export * from './components/ui/badge';
