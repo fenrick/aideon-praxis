@@ -1,5 +1,11 @@
 // Blocks
 export * from './blocks/confidence-label';
+export * from './blocks/diff-marker';
+export * from './blocks/explanation-surface';
+export * from './blocks/inspector-panel';
+export * from './blocks/inspector-section';
+export * from './blocks/property-list';
+export * from './blocks/provenance-panel';
 export * from './blocks/empty-state';
 export * from './blocks/error-frame';
 export * from './blocks/modal';
