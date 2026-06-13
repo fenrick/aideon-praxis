@@ -1,8 +1,17 @@
 // Blocks
+export * from './blocks/confidence-label';
+export * from './blocks/empty-state';
+export * from './blocks/error-frame';
 export * from './blocks/modal';
 export * from './blocks/panel';
+export * from './blocks/partial-banner';
+export * from './blocks/provenance-badge';
+export * from './blocks/rebuilding-indicator';
 export * from './blocks/sidebar';
+export * from './blocks/stale-badge';
+export * from './blocks/status-badge';
 export * from './blocks/toolbar';
+export * from './blocks/warning-banner';
 
 // Shell
 export * from './desktop-shell';

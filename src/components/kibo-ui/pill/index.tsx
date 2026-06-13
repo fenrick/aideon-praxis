@@ -1,9 +1,8 @@
-import { Avatar, AvatarFallback, AvatarImage } from 'design-system/components/ui/avatar';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
-import { cn } from 'design-system/lib/utils';
-import { ChevronDownIcon, ChevronUpIcon, MinusIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
+
+import { Avatar, AvatarFallback, AvatarImage, Badge, Button } from 'design-system';
+import { ChevronDownIcon, ChevronUpIcon, MinusIcon } from 'design-system/icons';
+import { cn } from 'design-system/lib/utils';
 
 export type PillProps = ComponentProps<typeof Badge> & {
   themed?: boolean;
@@ -59,7 +58,7 @@ export const PillStatus = ({ children, className, ...properties }: PillStatusPro
 );
 
 export interface PillIndicatorProperties {
-  variant?: 'success' | 'error' | 'warning' | 'info';
+  variant?: 'error' | 'info' | 'success' | 'warning';
   pulse?: boolean;
 }
 
