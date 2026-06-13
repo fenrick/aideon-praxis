@@ -1,5 +1,6 @@
 // Blocks
 export * from './blocks/artefact-frame';
+export * from './blocks/command-palette';
 export * from './blocks/confidence-label';
 export * from './blocks/dashboard-grid';
 export * from './blocks/diff-marker';
