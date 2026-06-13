@@ -14,11 +14,19 @@ import { AideonShellControlsProvider } from './shell-controls';
 
 import type { ImperativePanelGroupHandle, ImperativePanelHandle } from 'react-resizable-panels';
 
+/**
+ * How the content slot fills the surface.
+ * - `scroll`: padded, scrollable region (default). Catalogues, reports, pages.
+ * - `full-bleed`: edge-to-edge, no padding, no scroll. Canvases, maps.
+ */
+type ContentLayout = 'scroll' | 'full-bleed';
+
 interface AideonDesktopShellProperties {
   readonly navigation: ReactNode;
   readonly content: ReactNode;
   readonly inspector: ReactNode;
   readonly toolbar?: ReactNode;
+  readonly contentLayout?: ContentLayout;
   readonly className?: string;
 }
 
@@ -101,6 +109,7 @@ function readInspectorCollapsed(storage: Storage) {
  * @param root0.content
  * @param root0.inspector
  * @param root0.toolbar
+ * @param root0.contentLayout
  * @param root0.className
  */
 export function AideonDesktopShell({
@@ -108,6 +117,7 @@ export function AideonDesktopShell({
   content,
   inspector,
   toolbar,
+  contentLayout = 'scroll',
   className,
 }: AideonDesktopShellProperties) {
   const inspectorPanelReference = useRef<ImperativePanelHandle>(null);
@@ -219,9 +229,15 @@ export function AideonDesktopShell({
                 className="min-w-[360px]"
                 data-testid="aideon-shell-panel-content"
               >
-                <ScrollArea className="h-full" data-testid="aideon-shell-content">
-                  <div className="min-h-full p-4 md:p-6">{content}</div>
-                </ScrollArea>
+                {contentLayout === 'full-bleed' ? (
+                  <div className="h-full overflow-hidden" data-testid="aideon-shell-content">
+                    {content}
+                  </div>
+                ) : (
+                  <ScrollArea className="h-full" data-testid="aideon-shell-content">
+                    <div className="min-h-full p-4 md:p-6">{content}</div>
+                  </ScrollArea>
+                )}
               </ResizablePanel>
 
               <ResizableHandle withHandle />

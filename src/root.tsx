@@ -1,28 +1,13 @@
-import type { ComponentType, ReactElement } from 'react';
 import { useCallback, useState } from 'react';
 
 import { AideonDesktopNavigation } from 'aideon/shell/aideon-desktop-navigation';
 import { AideonDesktopShell } from 'aideon/shell/aideon-desktop-shell';
 import { AideonToolbar } from 'aideon/shell/aideon-toolbar';
 import { isTauriRuntime } from 'lib/runtime';
-import { PraxisWorkspaceProvider } from './workspaces/praxis/workspace';
 import { getWorkspace, getWorkspaceOptions } from './workspaces/registry';
 import type { WorkspaceId } from './workspaces/types';
 
 const ACTIVE_WORKSPACE_STORAGE_KEY = 'aideon.active-workspace';
-
-interface WorkspaceProviderProperties {
-  readonly children: ReactElement;
-}
-
-/**
- *
- * @param root0
- * @param root0.children
- */
-function WorkspaceProviderPassthrough({ children }: WorkspaceProviderProperties): ReactElement {
-  return children;
-}
 
 /**
  *
@@ -74,6 +59,11 @@ function EmptyInspector() {
 
 /**
  * Application root that hosts the active workspace inside the desktop shell.
+ *
+ * The shell is module-agnostic: each workspace module owns its own context
+ * provider (`ws.Provider`) and declares how its content fills the surface
+ * (`ws.contentLayout`). The root only switches between modules and renders
+ * their slots into the shell — it holds no module-specific state.
  */
 export function AideonDesktopRoot() {
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<WorkspaceId>(
@@ -82,50 +72,49 @@ export function AideonDesktopRoot() {
   const ws = getWorkspace(activeWorkspaceId);
   const workspaceOptions = getWorkspaceOptions();
 
-  const handleWorkspaceSelect = useCallback((workspaceId: string) => {
-    const resolved = getWorkspace(workspaceId as WorkspaceId);
+  const handleWorkspaceSelect = useCallback((workspaceId: WorkspaceId) => {
+    const resolved = getWorkspace(workspaceId);
     setActiveWorkspaceId(resolved.id);
     persistWorkspaceId(resolved.id);
   }, []);
 
-  const WorkspaceProvider =
-    ws.id === 'praxis'
-      ? (PraxisWorkspaceProvider as ComponentType<WorkspaceProviderProperties>)
-      : WorkspaceProviderPassthrough;
-
-  const modeLabel = isTauriRuntime() ? 'Desktop' : undefined;
+  const WorkspaceProvider = ws.Provider;
   const WorkspaceNavigation = ws.Navigation;
   const WorkspaceToolbar = ws.Toolbar;
   const WorkspaceContent = ws.Content;
   const WorkspaceInspector = ws.Inspector ?? EmptyInspector;
 
-  return (
-    <WorkspaceProvider key={ws.id}>
-      <AideonDesktopShell
-        navigation={
-          <AideonDesktopNavigation
+  const modeLabel = isTauriRuntime() ? 'Desktop' : undefined;
+
+  const shell = (
+    <AideonDesktopShell
+      key={ws.id}
+      contentLayout={ws.contentLayout}
+      navigation={
+        <AideonDesktopNavigation
+          activeWorkspaceId={ws.id}
+          workspaceOptions={workspaceOptions}
+          onWorkspaceSelect={handleWorkspaceSelect}
+        >
+          <WorkspaceNavigation
             activeWorkspaceId={ws.id}
             workspaceOptions={workspaceOptions}
             onWorkspaceSelect={handleWorkspaceSelect}
-          >
-            <WorkspaceNavigation
-              activeWorkspaceId={ws.id}
-              workspaceOptions={workspaceOptions}
-              onWorkspaceSelect={handleWorkspaceSelect}
-            />
-          </AideonDesktopNavigation>
-        }
-        toolbar={
-          <AideonToolbar
-            title="Aideon"
-            subtitle={`${ws.label} workspace`}
-            modeLabel={modeLabel}
-            workspaceToolbar={WorkspaceToolbar ? <WorkspaceToolbar /> : undefined}
           />
-        }
-        content={<WorkspaceContent />}
-        inspector={ws.Inspector ? <WorkspaceInspector /> : <EmptyInspector />}
-      />
-    </WorkspaceProvider>
+        </AideonDesktopNavigation>
+      }
+      toolbar={
+        <AideonToolbar
+          title="Aideon"
+          subtitle={`${ws.label} workspace`}
+          modeLabel={modeLabel}
+          workspaceToolbar={WorkspaceToolbar ? <WorkspaceToolbar /> : undefined}
+        />
+      }
+      content={<WorkspaceContent />}
+      inspector={<WorkspaceInspector />}
+    />
   );
+
+  return WorkspaceProvider ? <WorkspaceProvider key={ws.id}>{shell}</WorkspaceProvider> : shell;
 }
