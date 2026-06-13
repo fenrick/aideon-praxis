@@ -7,28 +7,28 @@ const testsRoot = path.resolve(__dirname, 'tests');
 
 const praxisRoot = path.join(srcRoot, 'workspaces/praxis');
 
-export default defineConfig({
-  resolve: {
-    alias: [
-      { find: '@', replacement: srcRoot },
-      { find: 'aideon', replacement: path.join(srcRoot, 'aideon') },
-      { find: 'praxis', replacement: praxisRoot },
-      {
-        find: 'design-system/reactflow',
-        replacement: path.join(srcRoot, 'design-system/components'),
-      },
-      { find: 'design-system', replacement: path.join(srcRoot, 'design-system') },
-      { find: 'adapters', replacement: path.join(srcRoot, 'adapters') },
-      { find: 'dtos', replacement: path.join(srcRoot, 'dtos') },
-      { find: 'lib', replacement: path.join(srcRoot, 'lib') },
-    ],
+const alias = [
+  { find: '@', replacement: srcRoot },
+  { find: 'aideon', replacement: path.join(srcRoot, 'aideon') },
+  { find: 'praxis', replacement: path.join(srcRoot, 'workspaces/praxis') },
+  {
+    find: 'design-system/reactflow',
+    replacement: path.join(srcRoot, 'design-system/components'),
   },
+  { find: 'design-system', replacement: path.join(srcRoot, 'design-system') },
+  { find: 'adapters', replacement: path.join(srcRoot, 'adapters') },
+  { find: 'dtos', replacement: path.join(srcRoot, 'dtos') },
+  { find: 'lib', replacement: path.join(srcRoot, 'lib') },
+];
+
+export default defineConfig({
+  resolve: { alias },
   plugins: [react()],
   test: {
     environment: 'jsdom',
     setupFiles: [path.resolve(__dirname, 'tests/setup.ts')],
     include: ['src/**/*.{test,spec}.{ts,tsx,js,jsx}', 'tests/**/*.{test,spec}.{ts,tsx,js,jsx}'],
-    exclude: ['tests/webdriver/**'],
+    exclude: ['tests/webdriver/**', 'src/**/*.stories.*'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'lcov', 'html'],

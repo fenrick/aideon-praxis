@@ -187,6 +187,12 @@
       "skillPath": "skills/shadcn/SKILL.md",
       "computedHash": "ac9d0d69caac7de1d1e5647f3db3bcd2f13af355d6b3a78780fbf7fc80e8dca0"
     },
+    "stories": {
+      "source": "storybookjs/mcp",
+      "sourceType": "github",
+      "skillPath": "packages/claude-plugin/skills/stories/SKILL.md",
+      "computedHash": "58268163a7d1b5d21ec98c79463f0a945652567fe9b106cdd8bb1abd0fc6de26"
+    },
     "tailwind-design-system": {
       "source": "wshobson/agents",
       "sourceType": "github",

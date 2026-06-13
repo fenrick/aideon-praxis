@@ -1,11 +1,21 @@
 # Single Tauri app — no JS workspace. Settings only (read by pnpm).
 overrides:
   csstype: 3.2.1
-ignoredBuiltDependencies:
-  - esbuild
-  - msw
-  - sharp
-onlyBuiltDependencies:
-  - edgedriver
-  - geckodriver
-  - unrs-resolver
+allowBuilds:
+  edgedriver: true
+  geckodriver: true
+  unrs-resolver: true
+  esbuild: false
+  msw: false
+  sharp: false
+minimumReleaseAgeExclude:
+  - '@storybook/addon-a11y@0.0.0-pr-35110-sha-d663f060'
+  - '@storybook/addon-themes@0.0.0-pr-35110-sha-d663f060'
+  - '@storybook/addon-vitest@0.0.0-pr-35110-sha-d663f060'
+  - '@storybook/builder-vite@0.0.0-pr-35110-sha-d663f060'
+  - '@storybook/csf-plugin@0.0.0-pr-35110-sha-d663f060'
+  - '@storybook/nextjs-vite@0.0.0-pr-35110-sha-d663f060'
+  - '@storybook/react-dom-shim@0.0.0-pr-35110-sha-d663f060'
+  - '@storybook/react-vite@0.0.0-pr-35110-sha-d663f060'
+  - '@storybook/react@0.0.0-pr-35110-sha-d663f060'
+  - storybook@0.0.0-pr-35110-sha-d663f060

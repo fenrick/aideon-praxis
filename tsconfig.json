@@ -2,24 +2,48 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": "./src",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "aideon/*": ["aideon/*"],
-      "praxis": ["workspaces/praxis/index.ts"],
-      "praxis/*": ["workspaces/praxis/*"],
-      "design-system/*": ["design-system/*"],
-      "design-system/reactflow/*": ["design-system/components/*"],
-      "adapters/*": ["adapters/*"],
-      "dtos/*": ["dtos/*"],
-      "lib/*": ["lib/*"]
+      "@/*": [
+        "./*"
+      ],
+      "aideon/*": [
+        "aideon/*"
+      ],
+      "praxis": [
+        "workspaces/praxis/index.ts"
+      ],
+      "praxis/*": [
+        "workspaces/praxis/*"
+      ],
+      "design-system/*": [
+        "design-system/*"
+      ],
+      "design-system/reactflow/*": [
+        "design-system/components/*"
+      ],
+      "adapters/*": [
+        "adapters/*"
+      ],
+      "dtos/*": [
+        "dtos/*"
+      ],
+      "lib/*": [
+        "lib/*"
+      ]
     },
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "noEmit": true,
     "incremental": true,
@@ -27,6 +51,16 @@
     "isolatedModules": true,
     "jsx": "preserve"
   },
-  "include": ["next-env.d.ts", "src", "tests", ".next/types/**/*.ts"],
-  "exclude": ["src/design-system/components/**/*", "tests/webdriver/**", "tests/e2e/**"]
+  "include": [
+    "next-env.d.ts",
+    "src",
+    "tests",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "src/design-system/components/**/*",
+    "tests/webdriver/**",
+    "tests/e2e/**",
+    ".storybook/**"
+  ]
 }
