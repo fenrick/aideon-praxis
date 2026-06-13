@@ -6,7 +6,7 @@
 
 ## Context
 
-The desktop renderer needs a consistent, themeable, offline-capable UI foundation. The repo adopted shadcn/ui + Tailwind v4 with a token preset derived from `b4HQ2Ldkxe`, reconciled against the platform design system, and placed product code behind a design-system **proxy layer** (`src/design-system`). These choices are mandated in CLAUDE.md ("frameworks-first defaults"; "do not build your own UI kits"; "use design-system proxies for Sidebar, Resizable, Menubar/Toolbar") and specified in `DESIGN-SYSTEM.md`, but the _decision_ and its trade-offs were never recorded. This ADR records the decision (the analogue of [ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md) for the trust boundary); `DESIGN-SYSTEM.md` remains the spec.
+The desktop renderer needs a consistent, themeable, offline-capable UI foundation. The repo adopted shadcn/ui + Tailwind v4 with a token preset derived from `b4HQ2Ldkxe`, reconciled against the platform design system, and placed product code behind a design-system **proxy layer** (`src/design-system`). These choices are mandated in CLAUDE.md ("frameworks-first defaults"; "do not build your own UI kits"; "use design-system proxies for Sidebar, Resizable, Menubar/Toolbar") and specified in [docs/03-design/design-system/](../03-design/design-system/README.md), but the _decision_ and its trade-offs were never recorded. This ADR records the decision (the analogue of [ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md) for the trust boundary); the spec docs remain the authoritative reference.
 
 ## Governance Framing
 
@@ -30,7 +30,8 @@ The desktop renderer needs a consistent, themeable, offline-capable UI foundatio
 
 ## Consequences
 
-- Primitives can be re-themed or swapped at one seam without product-code churn; the proxy boundary is reviewable and lint-enforceable (raw-import violations are bugs — e.g. the `lucide` import flagged in #257).
+- Primitives can be re-themed or swapped at one seam without product-code churn.
+- The proxy boundary is enforced by ESLint `no-restricted-imports`: `lucide-react`, `@radix-ui/*`, `design-system/components/**`, and `design-system/blocks/**` are blocked in product code; violations are CI errors. The correct import paths are `'design-system'`, `'design-system/icons'`, and `'design-system/reactflow/*'`.
 - The component foundation is a deliberate lock-in; replacing shadcn/Tailwind would be a UI-wide migration.
-- The design-system _foundations_ are built; the _applied_ component layer (ArtefactFrame, inspector stack, CaveatArea, …) is tracked in #257.
-- Spec lives in `DESIGN-SYSTEM.md`; this ADR records the decision and boundary.
+- The design-system _token and primitive foundations_ are in place; the _applied component layer_ (ArtefactFrame, inspector stack, honest-state blocks) is tracked in #257.
+- The spec lives in [docs/03-design/design-system/](../03-design/design-system/README.md); this ADR records the decision and boundary.
