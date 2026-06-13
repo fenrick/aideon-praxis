@@ -6,19 +6,37 @@ The internal structure of `src/design-system`, its tokens, and its theming. This
 
 ## Scope
 
-The renderer-side design system centralises UI primitives and blocks for the React renderer: it wraps shadcn/ui and the XYFlow registry components behind the proxy boundary and exposes a small, opinionated set of blocks and tokens ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)). It lives inside `src/design-system`; import directly from that tree, no package aliases.
+The renderer-side design system centralises UI primitives and blocks for the React renderer: it wraps shadcn/ui and the XYFlow registry components behind the proxy boundary and exposes a small, opinionated set of blocks and tokens ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)). It lives inside `src/design-system` and is imported through fixed entry points — never through internal paths.
 
 ## Internal structure
 
-| Path                                   | Holds                                                                                                                                 |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/design-system/components/ui`      | Generated shadcn/ui and XYFlow primitives — treated as read-only                                                                      |
-| `src/design-system/ui`                 | Thin wrappers and convenience exports                                                                                                 |
-| `src/design-system/blocks`             | Higher-level blocks — panel, sidebar, toolbar, modal, inspector, artefact frames                                                      |
-| `src/design-system/components`         | XYFlow node/edge wrappers — the renderer side of **Topos** ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)) |
-| `src/design-system/styles/globals.css` | The generated CSS variables and Tailwind token mappings                                                                               |
+| Path                                    | Holds                                                                                                                                 |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/design-system/components/ui`       | Generated shadcn/ui primitives — treated as read-only, not linted, not type-checked                                                   |
+| `src/design-system/components/`         | XYFlow node/edge wrappers — the renderer side of **Topos** ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)) |
+| `src/design-system/blocks/`            | Aideon blocks — panel, sidebar, toolbar, modal                                                                                        |
+| `src/design-system/desktop-shell/`     | Shell layout — `Sidebar`, `SidebarInset`, `Resizable`, `Menubar`, `Toolbar`                                                           |
+| `src/design-system/foundations/`       | Token contracts, semantic states, density modes, motion, focus, icon baseline                                                         |
+| `src/design-system/icons.ts`           | Icon re-exports from lucide-react — the sole icon import surface for product code                                                     |
+| `src/design-system/index.ts`           | Barrel — all primitives and blocks; the primary import surface                                                                        |
+| `src/design-system/styles/globals.css` | Tailwind entry, CSS variable definitions, Tailwind token mappings                                                                     |
+| `src/design-system/theme/`             | Colour-theme provider and persistent theme logic                                                                                      |
 
 Generated components are not edited directly; all customisation happens in wrappers and blocks, so `components:refresh` stays safe. New UI prefers existing primitives (`Button`, `Badge`, `Select`, `ToggleGroup`, `ScrollArea`, the canvas wrappers) over a bespoke tree; a wrapper is added only when multiple features share the exact composition.
+
+## Import entry points
+
+Product code uses exactly three import paths — nothing else ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)):
+
+| Import path                        | What to import                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------ |
+| `'design-system'`                  | Everything — primitives, blocks, shell, tabs, form, card, badge, …     |
+| `'design-system/icons'`            | Icon components (kept separate to avoid name clash with `Command`)      |
+| `'design-system/reactflow/*'`      | Canvas-only wrappers: `node-search`, `praxis-node`, `timeline-edge`     |
+
+Sub-paths like `design-system/lib/utilities`, `design-system/theme/color-theme`, and `design-system/desktop-shell` are allowed for utilities and theme providers that sit outside the main barrel.
+
+**Enforced by ESLint** — importing from `lucide-react`, `@radix-ui/*`, `design-system/components/**`, or `design-system/blocks/**` directly is an error in all product code outside `src/design-system/`.
 
 ## Tokens
 

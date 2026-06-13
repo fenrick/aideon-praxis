@@ -6,10 +6,11 @@ This README is the contract; [DESIGN.md](./DESIGN.md) carries the internal struc
 
 ## What it provides
 
-- The proxied shadcn/Radix primitives — `Sidebar`, `SidebarInset`, `SidebarTrigger`, `Resizable`, `Menubar`/`Toolbar`, `Panel`, `ScrollArea`, `Card`, `Form`, the icon primitive — with APG patterns built in once ([accessibility.md](../accessibility.md)).
-- The Aideon-specific blocks: shell regions, inspector stack, artefact frames, and the honest-state treatments ([honest-state-treatments.md](../../03-design/design-system/honest-state-treatments.md)).
-- The XYFlow canvas wrappers — `CanvasContainer`, `CanvasToolbar`, `CanvasNode`, `CanvasEdge`, `CanvasMinimap` — the renderer side of **Topos** ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)).
-- The DTCG-sourced tokens and generated CSS variables, the single styling truth ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md), [tokens.md](../../03-design/design-system/tokens.md)).
+- The proxied shadcn/Radix primitives — `Sidebar`, `SidebarInset`, `SidebarTrigger`, `Resizable`, `Menubar`/`Toolbar`, `Panel`, `ScrollArea`, `Card`, `Form`, `Tabs`, `Select`, `Dialog`, `DropdownMenu`, and more — with APG patterns built in once ([accessibility.md](../accessibility.md)). All available from `import { X } from 'design-system'`.
+- Icons via `import { AlertTriangle, … } from 'design-system/icons'` — a curated barrel re-exporting from lucide-react, kept separate to avoid the `Command` name collision.
+- The Aideon-specific blocks: shell regions (`Toolbar`, `Panel`, `Modal`, `SidebarShell`) and the honest-state treatments ([honest-state-treatments.md](../../03-design/design-system/honest-state-treatments.md)).
+- XYFlow canvas wrappers via `import { X } from 'design-system/reactflow/node-search'` etc. — the renderer side of **Topos** ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)).
+- The DTCG-sourced token contracts (`src/design-system/foundations/`) and generated CSS variables, the single styling truth ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md), [tokens.md](../../03-design/design-system/tokens.md)).
 
 ## The boundary
 

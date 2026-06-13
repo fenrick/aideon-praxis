@@ -95,9 +95,13 @@ A single spacing scale drives padding, gap, and margin. Dense surfaces draw from
 
 These are reference tokens. Semantic spacing roles (`space.inset.dense`, `space.inset.comfortable`, `space.stack.*`, `space.inline.*`) bind density intent to a step, so a density mode is a rebinding, not a per-component change.
 
+> **Implementation note.** The TypeScript token contracts in `src/design-system/foundations/tokens.ts` use T-shirt-size semantic names (`2xs · xs · sm · md · lg · xl · 2xl · 3xl`) that correspond to the small-to-large steps of the spacing scale above. Components and density mode definitions consume these semantic keys; the numeric DTCG reference names above are the long-form spec.
+
 ## 5. Radius
 
 `radius.none (0) · radius.sm (2px) · radius.md (4px) · radius.lg (8px) · radius.xl (12px) · radius.full (9999px)`. Semantic roles: `radius.control` (inputs, buttons), `radius.surface` (cards, panels), `radius.pill` (badges).
+
+> **Implementation note.** `src/design-system/foundations/tokens.ts` exposes `radiusScale` with keys `sm · md · lg · xl · frame`, mapped to CSS variable references. The `frame` key covers canvas node borders; it corresponds to a large-radius semantic role.
 
 ## 6. Shadow and elevation
 
