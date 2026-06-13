@@ -8,18 +8,18 @@ import { fromWidgetSelection } from 'aideon/canvas/selection';
 import type { SelectionState, WidgetSelection } from 'aideon/canvas/types';
 import type { GraphViewModel } from 'praxis/praxis-api';
 
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
 import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from 'design-system/components/ui/card';
-import { Separator } from 'design-system/components/ui/separator';
-import { Skeleton } from 'design-system/components/ui/skeleton';
+  Separator,
+  Skeleton,
+} from 'design-system';
 
 import type {
   GraphLayoutContext,

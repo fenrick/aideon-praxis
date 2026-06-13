@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
-} from 'design-system/components/ui/sidebar';
+} from 'design-system';
 import type { ScenarioSummary } from 'praxis/praxis-api';
 
 const NAV_ITEMS = [

@@ -5,20 +5,18 @@ import { isTauri } from 'praxis/platform';
 import type { CanvasTemplate } from 'praxis/templates';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
-import { Button } from 'design-system/components/ui/button';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from 'design-system/components/ui/dropdown-menu';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from 'design-system/components/ui/select';
+} from 'design-system';
 import { Clock, Command, LayoutGrid, MoreHorizontal, RefreshCw } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
 

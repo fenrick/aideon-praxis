@@ -3,14 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AideonCanvasRuntime } from 'aideon/canvas/canvas-runtime';
 import { fromWidgetSelection } from 'aideon/canvas/selection';
 import type { SelectionState, WidgetSelection } from 'aideon/canvas/types';
-import { Button } from 'design-system/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from 'design-system/components/ui/card';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from 'design-system';
 import type { GraphViewModel } from 'praxis/praxis-api';
 import type {
   PraxisCanvasWidget,

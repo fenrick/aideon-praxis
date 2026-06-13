@@ -6,16 +6,14 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from 'design-system/components/ui/dialog';
-import { Kbd } from 'design-system/components/ui/kbd';
-import {
+  Kbd,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from 'design-system/components/ui/table';
+} from 'design-system';
 
 export interface ShortcutRow {
   readonly category: string;

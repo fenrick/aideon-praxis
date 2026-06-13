@@ -12,36 +12,30 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from 'design-system/components/ui/accordion';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from 'design-system/components/ui/card';
-import {
   Form,
   FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
-} from 'design-system/components/ui/form';
-import { Input } from 'design-system/components/ui/input';
-import { ScrollArea } from 'design-system/components/ui/scroll-area';
-import {
+  Input,
+  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from 'design-system/components/ui/select';
-import { Switch } from 'design-system/components/ui/switch';
-import { Textarea } from 'design-system/components/ui/textarea';
+  Switch,
+  Textarea,
+} from 'design-system';
 
 export type SelectionKind = 'widget' | 'node' | 'edge' | 'cell' | 'none';
 

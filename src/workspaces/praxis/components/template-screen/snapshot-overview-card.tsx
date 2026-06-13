@@ -1,13 +1,7 @@
 import { templateScreenCopy } from 'praxis/copy/template-screen';
 import type { TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from 'design-system/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'design-system';
 
 interface SnapshotOverviewCardProperties {
   readonly state: TemporalPanelState;

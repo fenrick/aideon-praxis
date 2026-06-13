@@ -2,14 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 
 import { AlertTriangle } from 'design-system/icons';
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from 'design-system/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'design-system';
 import { toErrorMessage } from 'praxis/lib/errors';
 import { cn } from 'praxis/lib/utilities';
 import {

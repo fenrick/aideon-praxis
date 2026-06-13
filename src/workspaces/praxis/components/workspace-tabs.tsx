@@ -8,15 +8,18 @@ import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-t
 import { useTemporalPanel } from 'praxis/time/use-temporal-panel';
 import type { PraxisCanvasWidget, SelectionState } from 'praxis/types';
 
-import { Button } from 'design-system/components/ui/button';
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from 'design-system/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from 'design-system/components/ui/tabs';
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from 'design-system';
 
 export type WorkspaceTabValue = 'overview' | 'timeline' | 'canvas' | 'activity';
 

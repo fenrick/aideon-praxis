@@ -1,4 +1,4 @@
-import { Button } from 'design-system/components/ui/button';
+import { Button } from 'design-system';
 import { Maximize, MousePointer2, ZoomIn, ZoomOut } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
 import { isBrowserRuntime } from 'lib/runtime';

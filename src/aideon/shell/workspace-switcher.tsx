@@ -2,15 +2,15 @@ import type { ReactElement } from 'react';
 
 import { CheckIcon, LayoutGridIcon } from 'design-system/icons';
 
-import { Button } from 'design-system/components/ui/button';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from 'design-system/components/ui/dropdown-menu';
+} from 'design-system';
 import { cn } from 'design-system/lib/utilities';
 
 export interface WorkspaceOption {

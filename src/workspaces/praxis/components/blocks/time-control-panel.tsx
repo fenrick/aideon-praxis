@@ -4,6 +4,7 @@ import type { Layer } from 'dtos';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
 import {
+  Button,
   Panel,
   PanelContent,
   PanelDescription,
@@ -11,16 +12,13 @@ import {
   PanelHeader,
   PanelTitle,
   PanelToolbar,
-} from 'design-system/blocks/panel';
-import { Button } from 'design-system/components/ui/button';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from 'design-system/components/ui/select';
-import { Slider } from 'design-system/components/ui/slider';
+  Slider,
+} from 'design-system';
 
 interface TimeControlPanelProperties {
   readonly title?: string;

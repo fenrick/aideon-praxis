@@ -14,9 +14,7 @@ import type {
 } from 'praxis/types';
 
 import type { CanvasRuntimeLayoutPersistence } from 'aideon/canvas/canvas-runtime';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from 'design-system/components/ui/tabs';
+import { Badge, Button, Tabs, TabsContent, TabsList, TabsTrigger } from 'design-system';
 import { cn } from 'design-system/lib/utilities';
 import { PraxisCanvasWorkspace } from 'praxis/components/canvas/praxis-canvas-workspace';
 import { SnapshotOverviewCard } from './snapshot-overview-card';

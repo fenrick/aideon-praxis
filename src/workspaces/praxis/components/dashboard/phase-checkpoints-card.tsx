@@ -1,12 +1,6 @@
 import { CheckCircle2 } from 'design-system/icons';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from 'design-system/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'design-system';
 
 const PHASES = [
   { title: 'Bootstrap shell', status: 'complete' },

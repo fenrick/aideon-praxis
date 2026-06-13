@@ -1,4 +1,4 @@
-import { Button } from 'design-system/components/ui/button';
+import { Button } from 'design-system';
 import type { TemporalCommitSummary } from 'praxis/praxis-api';
 
 interface CommitTimelineListProperties {

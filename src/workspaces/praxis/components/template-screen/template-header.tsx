@@ -1,22 +1,20 @@
 import { templateScreenCopy } from 'praxis/copy/template-screen';
 import type { CanvasTemplate } from 'praxis/templates';
 
-import { Button } from 'design-system/components/ui/button';
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from 'design-system/components/ui/card';
-import { Label } from 'design-system/components/ui/label';
-import {
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from 'design-system/components/ui/select';
+} from 'design-system';
 
 interface TemplateHeaderProperties {
   readonly scenarioName?: string;

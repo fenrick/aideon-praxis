@@ -8,7 +8,7 @@ import {
   CommandItem,
   CommandList,
   CommandShortcut,
-} from 'design-system/components/ui/command';
+} from 'design-system';
 
 export interface AideonCommandItem {
   readonly id: string;

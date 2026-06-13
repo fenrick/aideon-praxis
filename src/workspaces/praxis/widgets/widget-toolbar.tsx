@@ -1,6 +1,6 @@
 import { Loader2, RefreshCcw } from 'design-system/icons';
 
-import { Button } from 'design-system/components/ui/button';
+import { Button } from 'design-system';
 import type { ViewMetadata } from 'praxis/praxis-api';
 
 interface WidgetToolbarProperties {

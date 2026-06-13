@@ -503,6 +503,16 @@ export default defineConfig([
               message:
                 'Import Radix primitives through the design-system layer, not directly.',
             },
+            {
+              group: ['design-system/components/**'],
+              message:
+                "Import through the design-system root: import { X } from 'design-system'. Canvas components use 'design-system/reactflow/*'.",
+            },
+            {
+              group: ['design-system/blocks/**'],
+              message:
+                "Import through the design-system root: import { X } from 'design-system'.",
+            },
           ],
         },
       ],

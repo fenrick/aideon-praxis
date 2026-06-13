@@ -3,23 +3,21 @@ import { useMemo, type Ref } from 'react';
 import { templateScreenCopy } from 'praxis/copy/template-screen';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
-import { Button } from 'design-system/components/ui/button';
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from 'design-system/components/ui/card';
-import { Label } from 'design-system/components/ui/label';
-import {
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from 'design-system/components/ui/select';
-import { Slider } from 'design-system/components/ui/slider';
+  Slider,
+} from 'design-system';
 
 interface TimeCursorCardProperties {
   readonly state: TemporalPanelState;

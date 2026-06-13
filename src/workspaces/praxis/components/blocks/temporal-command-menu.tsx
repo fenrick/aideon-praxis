@@ -11,8 +11,9 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from 'design-system/components/ui/command';
-import { DialogDescription, DialogTitle } from 'design-system/components/ui/dialog';
+  DialogDescription,
+  DialogTitle,
+} from 'design-system';
 
 interface TemporalCommandMenuProperties {
   readonly open: boolean;

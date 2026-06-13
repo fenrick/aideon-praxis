@@ -1,21 +1,22 @@
 import { useMemo, useState } from 'react';
 
-import { Avatar, AvatarFallback } from 'design-system/components/ui/avatar';
-import { Badge } from 'design-system/components/ui/badge';
 import {
+  Avatar,
+  AvatarFallback,
+  Badge,
+  Button,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from 'design-system/components/ui/collapsible';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from 'design-system/components/ui/dropdown-menu';
-import { Skeleton } from 'design-system/components/ui/skeleton';
+  Separator,
+  Skeleton,
+} from 'design-system';
 import {
   Sidebar,
   SidebarContent,
@@ -33,8 +34,6 @@ import {
   useSidebar,
 } from 'design-system/desktop-shell';
 
-import { Button } from 'design-system/components/ui/button';
-import { Separator } from 'design-system/components/ui/separator';
 import {
   ChevronRight,
   File,

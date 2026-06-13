@@ -6,14 +6,7 @@ import { searchStore } from 'praxis/lib/search';
 import { getCatalogueView, type CatalogueRow, type TemporalCommitSummary } from 'praxis/praxis-api';
 import { useTemporalPanel } from 'praxis/time/use-temporal-panel';
 
-import { Button } from 'design-system/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from 'design-system/components/ui/card';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from 'design-system';
 import {
   TemporalCommandMenu,
   type CatalogueCommandEntry,

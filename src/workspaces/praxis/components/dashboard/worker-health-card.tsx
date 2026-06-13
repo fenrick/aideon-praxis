@@ -1,13 +1,15 @@
-import { Alert, AlertDescription, AlertTitle } from 'design-system/components/ui/alert';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from 'design-system/components/ui/card';
+} from 'design-system';
 import { HeartPulse, RefreshCw } from 'design-system/icons';
 import { useWorkerHealth } from 'praxis/health/use-worker-health';
 

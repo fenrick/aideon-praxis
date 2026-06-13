@@ -8,17 +8,23 @@ import {
   type ReactNode,
 } from 'react';
 
-import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from 'design-system';
-import { Toolbar, ToolbarSection, ToolbarSeparator } from 'design-system/blocks/toolbar';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
 import {
+  Badge,
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from 'design-system/components/ui/dropdown-menu';
-import { Kbd } from 'design-system/components/ui/kbd';
+  Kbd,
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarTrigger,
+  Toolbar,
+  ToolbarSection,
+  ToolbarSeparator,
+} from 'design-system';
 import {
   CommandIcon,
   LaptopIcon,

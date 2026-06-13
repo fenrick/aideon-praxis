@@ -1,8 +1,10 @@
 import { useState } from 'react';
 
-import { Button } from 'design-system/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from 'design-system/components/ui/popover';
 import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -10,7 +12,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from 'design-system/components/ui/sidebar';
+} from 'design-system';
 import {
   ArrowDown,
   ArrowUp,

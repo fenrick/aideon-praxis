@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { templateScreenCopy } from 'praxis/copy/template-screen';
 import { searchStore } from 'praxis/lib/search';
 
-import { Input } from 'design-system/components/ui/input';
-import { Label } from 'design-system/components/ui/label';
+import { Input, Label } from 'design-system';
 
 interface ScenarioSearchBarProperties {
   readonly onSearch?: (query: string) => void;

@@ -2,13 +2,7 @@ import type { ReactNode } from 'react';
 
 import type { WorkspaceNavigationProperties } from 'workspaces/types';
 
-import { Button } from 'design-system/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from 'design-system/components/ui/tooltip';
+import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from 'design-system';
 import { Brain, Database, LayoutGrid } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
 

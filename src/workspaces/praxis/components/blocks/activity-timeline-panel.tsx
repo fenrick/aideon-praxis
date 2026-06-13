@@ -1,14 +1,7 @@
 import { CommitTimelineList } from 'praxis/components/blocks/commit-timeline-list';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
-import { Button } from 'design-system/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from 'design-system/components/ui/card';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from 'design-system';
 
 interface ActivityTimelinePanelProperties {
   readonly title?: string;

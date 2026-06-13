@@ -1,6 +1,6 @@
 import type { WorkspaceModule, WorkspaceNavigationProperties } from 'workspaces/types';
 
-import { Card, CardContent, CardHeader, CardTitle } from 'design-system/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from 'design-system';
 
 /**
  *

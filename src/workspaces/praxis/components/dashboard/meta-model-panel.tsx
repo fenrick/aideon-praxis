@@ -7,16 +7,14 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from 'design-system/components/ui/accordion';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from 'design-system/components/ui/card';
+} from 'design-system';
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 type MetaModelSchema = Awaited<ReturnType<typeof fetchMetaModel>>;

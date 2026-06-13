@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ScrollArea } from 'design-system/components/ui/scroll-area';
+import { ScrollArea } from 'design-system';
 import {
   ResizableHandle,
   ResizablePanel,

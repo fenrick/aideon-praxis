@@ -3,18 +3,21 @@ import { useMemo } from 'react';
 import type { TemporalCommitSummary, TemporalMergeConflict } from 'praxis/praxis-api';
 import { useTemporalPanel } from 'praxis/time/use-temporal-panel';
 
-import { Alert, AlertDescription, AlertTitle } from 'design-system/components/ui/alert';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from 'design-system/components/ui/card';
-import { ScrollArea } from 'design-system/components/ui/scroll-area';
-import { ToggleGroup, ToggleGroupItem } from 'design-system/components/ui/toggle-group';
+  ScrollArea,
+  ToggleGroup,
+  ToggleGroupItem,
+} from 'design-system';
 
 /**
  *

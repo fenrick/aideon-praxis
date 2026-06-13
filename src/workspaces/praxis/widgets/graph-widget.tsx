@@ -27,11 +27,10 @@ import {
   type GraphViewModel,
 } from 'praxis/praxis-api';
 
-import { NodeSearchDialog } from 'design-system/components/node-search';
-import { PraxisNode } from 'design-system/components/praxis-node';
-import { TimelineEdge, type TimelineEdgeData } from 'design-system/components/timeline-edge';
-import { Button } from 'design-system/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from 'design-system/components/ui/toggle-group';
+import { Button, ToggleGroup, ToggleGroupItem } from 'design-system';
+import { NodeSearchDialog } from 'design-system/reactflow/node-search';
+import { PraxisNode } from 'design-system/reactflow/praxis-node';
+import { TimelineEdge, type TimelineEdgeData } from 'design-system/reactflow/timeline-edge';
 import type {
   GraphLayoutContext,
   PraxisGraphWidgetConfig as GraphWidgetConfig,

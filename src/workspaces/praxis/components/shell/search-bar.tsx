@@ -1,7 +1,7 @@
 import type { ChangeEvent, FocusEvent, KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Input } from 'design-system/components/ui/input';
+import { Input } from 'design-system';
 import { searchStore, useSearchStoreState } from 'praxis/lib/search';
 import type { SearchResult } from 'praxis/lib/search/types';
 

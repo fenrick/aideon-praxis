@@ -12,16 +12,16 @@ import {
 
 import type { CanvasRuntimeLayoutPersistence } from 'aideon/canvas/canvas-runtime';
 import { dedupeIds } from 'aideon/canvas/selection';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
 import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from 'design-system/components/ui/dialog';
+} from 'design-system';
 import { isDevelopmentBuild } from 'lib/runtime';
 import { PraxisWorkspaceToolbar as PraxisWorkspaceToolbarChrome } from 'praxis/components/chrome/praxis-workspace-toolbar';
 import { DebugOverlay } from 'praxis/components/debug-overlay';
