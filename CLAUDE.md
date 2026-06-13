@@ -350,3 +350,17 @@ The five canonical triage roles map 1:1 to existing repo labels (`needs-triage`,
 ### Domain docs
 
 Single-context: `CONTEXT.md` at the repo root (created lazily) + ADRs at `docs/06-adrs/`. See `docs/agents/domain.md`.
+
+### Storybook MCP
+
+The project runs a Storybook MCP server (`@storybook/addon-mcp`) at `http://localhost:6006/mcp` when Storybook is active (`pnpm run storybook`). Registered in `.mcp.json` as `aideon-storybook`.
+
+**When working on UI components**, use the MCP tools before any UI action:
+
+- **CRITICAL: Never hallucinate component properties!** Before using ANY prop on a design-system component, run `get-documentation` to verify the prop exists.
+- `list-all-documentation` — discover all components and their stories.
+- `get-documentation <component>` — see all props and usage examples.
+- `run-story-tests` — verify generated stories pass interaction tests.
+- `get-storybook-story-instructions` — get current story authoring conventions.
+
+Stories live alongside components in `src/design-system/blocks/*.stories.tsx`. Follow existing stories as the golden pattern: single concept per story, descriptive names, JSDoc on the meta `description` field.
