@@ -9,8 +9,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from 'design-system/components/ui/tooltip';
+import { Brain, Database, LayoutGrid } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
-import { Brain, Database, LayoutGrid } from 'lucide-react';
 
 export interface AideonDesktopNavigationProperties extends Readonly<WorkspaceNavigationProperties> {
   readonly children: ReactNode;

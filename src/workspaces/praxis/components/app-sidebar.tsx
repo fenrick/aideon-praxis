@@ -1,4 +1,4 @@
-import { Layers, LayoutPanelTop, Network, NotebookTabs, Settings2 } from 'lucide-react';
+import { Layers, LayoutPanelTop, Network, NotebookTabs, Settings2 } from 'design-system/icons';
 
 import {
   Sidebar,

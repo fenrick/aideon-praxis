@@ -5,8 +5,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from 'design-system/components/ui/dropdown-menu';
+import { GripHorizontal, MoreHorizontal } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
-import { GripHorizontal, MoreHorizontal } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 export interface WidgetFrameProperties {

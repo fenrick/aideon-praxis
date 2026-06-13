@@ -1,7 +1,7 @@
 import { Button } from 'design-system/components/ui/button';
+import { Maximize, MousePointer2, ZoomIn, ZoomOut } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
 import { isBrowserRuntime } from 'lib/runtime';
-import { Maximize, MousePointer2, ZoomIn, ZoomOut } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { DraggableWidgetWrapper } from './draggable-widget-wrapper';

@@ -481,6 +481,34 @@ export default defineConfig([
     },
   },
 
+  // ADR-0010: Design-system proxy boundary.
+  // Product code must import icons and Radix primitives through src/design-system only.
+  // src/design-system/** is the wrapper layer and may import the originals directly.
+  {
+    name: 'design-system/proxy-boundary',
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/design-system/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['lucide-react'],
+              message:
+                "Import icons through the design-system Icon primitive: import { Icon } from '@/design-system'",
+            },
+            {
+              group: ['@radix-ui/*'],
+              message:
+                'Import Radix primitives through the design-system layer, not directly.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Enforce Prettier formatting as ESLint errors (so `eslint` covers `prettier --check`).
   {
     name: 'prettier',

@@ -1,6 +1,6 @@
 import { Component, type ReactElement, type ReactNode } from 'react';
 
-import { AlertTriangleIcon } from 'lucide-react';
+import { AlertTriangleIcon } from 'design-system/icons';
 
 import { Alert, AlertDescription, AlertTitle } from 'design-system/components/ui/alert';
 import { Button } from 'design-system/components/ui/button';

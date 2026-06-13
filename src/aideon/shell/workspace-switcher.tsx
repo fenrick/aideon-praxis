@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 
-import { CheckIcon, LayoutGridIcon } from 'lucide-react';
+import { CheckIcon, LayoutGridIcon } from 'design-system/icons';
 
 import { Button } from 'design-system/components/ui/button';
 import {

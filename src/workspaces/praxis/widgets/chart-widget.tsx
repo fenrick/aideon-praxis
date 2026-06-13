@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { AlertTriangle, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowUpRight } from 'design-system/icons';
 
 import { toErrorMessage } from 'praxis/lib/errors';
 import { getChartView, type ChartPoint, type ChartViewModel } from 'praxis/praxis-api';

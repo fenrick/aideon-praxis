@@ -19,8 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from 'design-system/components/ui/select';
+import { Clock, Command, LayoutGrid, MoreHorizontal, RefreshCw } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
-import { Clock, Command, LayoutGrid, MoreHorizontal, RefreshCw } from 'lucide-react';
 
 import { TimeControlPanel } from '../blocks/time-control-panel';
 

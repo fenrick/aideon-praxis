@@ -8,7 +8,6 @@ import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-t
 import { useTemporalPanel } from 'praxis/time/use-temporal-panel';
 import type { PraxisCanvasWidget, SelectionState } from 'praxis/types';
 
-import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { Button } from 'design-system/components/ui/button';
 import {
   Card,
@@ -17,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from 'design-system/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'design-system/components/ui/tabs';
 
 export type WorkspaceTabValue = 'overview' | 'timeline' | 'canvas' | 'activity';
 
@@ -36,10 +36,10 @@ const tabOptions: { value: WorkspaceTabValue; label: string }[] = [
   { value: 'activity', label: 'Activity' },
 ];
 
-const TabRoot = TabsPrimitive.Root;
-const TabList = TabsPrimitive.List;
-const TabTrigger = TabsPrimitive.Trigger;
-const TabContent = TabsPrimitive.Content;
+const TabRoot = Tabs;
+const TabList = TabsList;
+const TabTrigger = TabsTrigger;
+const TabContent = TabsContent;
 
 /**
  *

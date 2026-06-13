@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'design-system/icons';
 
 import {
   Table,

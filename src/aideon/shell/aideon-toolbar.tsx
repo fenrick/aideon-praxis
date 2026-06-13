@@ -19,8 +19,6 @@ import {
   DropdownMenuTrigger,
 } from 'design-system/components/ui/dropdown-menu';
 import { Kbd } from 'design-system/components/ui/kbd';
-import { cn } from 'design-system/lib/utilities';
-import { isDevelopmentBuild, isTauriRuntime } from 'lib/runtime';
 import {
   CommandIcon,
   LaptopIcon,
@@ -28,7 +26,9 @@ import {
   PanelRightClose,
   PanelRightOpen,
   SunIcon,
-} from 'lucide-react';
+} from 'design-system/icons';
+import { cn } from 'design-system/lib/utilities';
+import { isDevelopmentBuild, isTauriRuntime } from 'lib/runtime';
 import { useTheme } from 'next-themes';
 import { useAideonShellControls } from './shell-controls';
 

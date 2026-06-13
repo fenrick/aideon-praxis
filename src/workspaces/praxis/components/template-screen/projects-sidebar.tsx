@@ -47,7 +47,7 @@ import {
   Settings2,
   Star,
   Users,
-} from 'lucide-react';
+} from 'design-system/icons';
 import type { ProjectSummary } from 'praxis/domain-data';
 import type { ScenarioSummary } from 'praxis/praxis-api';
 

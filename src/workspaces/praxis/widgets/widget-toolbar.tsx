@@ -1,4 +1,4 @@
-import { Loader2, RefreshCcw } from 'lucide-react';
+import { Loader2, RefreshCcw } from 'design-system/icons';
 
 import { Button } from 'design-system/components/ui/button';
 import type { ViewMetadata } from 'praxis/praxis-api';

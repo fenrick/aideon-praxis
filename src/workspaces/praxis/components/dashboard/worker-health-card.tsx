@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from 'design-system/components/ui/card';
-import { HeartPulse, RefreshCw } from 'lucide-react';
+import { HeartPulse, RefreshCw } from 'design-system/icons';
 import { useWorkerHealth } from 'praxis/health/use-worker-health';
 
 /**

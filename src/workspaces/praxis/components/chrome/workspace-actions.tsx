@@ -23,7 +23,7 @@ import {
   MoreHorizontal,
   Settings2,
   Trash2,
-} from 'lucide-react';
+} from 'design-system/icons';
 
 const ACTION_GROUPS = [
   [
