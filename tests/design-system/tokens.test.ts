@@ -1,20 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
-import { tokens, type TokenKeys } from 'design-system/tokens';
+import { designTokens } from 'design-system/foundations/tokens';
 
-describe('design-system tokens', () => {
+describe('design-system foundations/tokens', () => {
   it('exposes stable token groups', () => {
-    const keys: TokenKeys[] = ['space', 'radius', 'typography', 'elevations'];
-    expect(Object.keys(tokens)).toEqual(keys);
+    expect(designTokens).toHaveProperty('spacing');
+    expect(designTokens).toHaveProperty('radius');
+    expect(designTokens).toHaveProperty('typography');
+    expect(designTokens).toHaveProperty('elevation');
   });
 
-  it('keeps numeric primitives in sync', () => {
-    expect(tokens.space).toMatchObject({ xs: 4, lg: 16, '4xl': 48 });
-    expect(tokens.radius).toMatchObject({ xs: 6, pill: 999 });
+  it('spacing scale uses semantic names', () => {
+    expect(Object.keys(designTokens.spacing)).toEqual(
+      expect.arrayContaining(['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']),
+    );
   });
 
-  it('provides typography fallbacks and elevations', () => {
-    expect(tokens.typography.brand).toContain('Space Grotesk');
-    expect(tokens.elevations[300]).toContain('rgba(15, 23, 42');
+  it('radius scale uses semantic names', () => {
+    expect(Object.keys(designTokens.radius)).toEqual(
+      expect.arrayContaining(['sm', 'md', 'lg', 'xl']),
+    );
+  });
+
+  it('typography tokens are Tailwind class strings', () => {
+    expect(designTokens.typography.label).toContain('text-');
+    expect(designTokens.typography.editorialTitle).toContain('font-editorial');
   });
 });

@@ -6,18 +6,23 @@ vi.mock('praxis/time/use-temporal-panel', () => ({
   useTemporalPanel: vi.fn(),
 }));
 
-vi.mock('@radix-ui/react-tabs', () => {
+vi.mock('design-system/components/ui/tabs', () => {
   interface TabsContextValue {
     value?: string;
     onChange?: (value: string) => void;
   }
   const TabsContext = React.createContext<TabsContextValue>({});
 
-  const Root = ({
+  const Tabs = ({
     value,
     onValueChange,
     children,
-  }: React.PropsWithChildren<{ value?: string; onValueChange?: (value: string) => void }>) => {
+    ...properties
+  }: React.PropsWithChildren<{
+    value?: string;
+    onValueChange?: (value: string) => void;
+    className?: string;
+  }>) => {
     const [internal, setInternal] = React.useState<string | undefined>(value);
     React.useEffect(() => {
       setInternal(value);
@@ -34,10 +39,14 @@ vi.mock('@radix-ui/react-tabs', () => {
       [internal, onValueChange],
     );
 
-    return <TabsContext.Provider value={memoValue}>{children}</TabsContext.Provider>;
+    return (
+      <TabsContext.Provider value={memoValue}>
+        <div {...properties}>{children}</div>
+      </TabsContext.Provider>
+    );
   };
 
-  const List = ({
+  const TabsList = ({
     children,
     ...properties
   }: React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) => (
@@ -46,7 +55,7 @@ vi.mock('@radix-ui/react-tabs', () => {
     </div>
   );
 
-  const Trigger = ({
+  const TabsTrigger = ({
     value,
     children,
     ...properties
@@ -62,7 +71,7 @@ vi.mock('@radix-ui/react-tabs', () => {
     );
   };
 
-  const Content = ({
+  const TabsContent = ({
     value,
     children,
     ...properties
@@ -78,7 +87,7 @@ vi.mock('@radix-ui/react-tabs', () => {
     );
   };
 
-  return { Root, List, Trigger, Content };
+  return { Tabs, TabsList, TabsTrigger, TabsContent };
 });
 
 afterEach(() => {
