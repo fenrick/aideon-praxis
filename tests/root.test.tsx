@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { SidebarProvider } from 'design-system/desktop-shell';
+
 vi.mock('aideon/shell/aideon-desktop-shell', () => ({
   AideonDesktopShell: ({
     toolbar,
@@ -14,12 +16,12 @@ vi.mock('aideon/shell/aideon-desktop-shell', () => ({
     content: ReactNode;
     inspector: ReactNode;
   }) => (
-    <div>
+    <SidebarProvider>
       <div>{toolbar}</div>
       <div>{navigation}</div>
       <div>{content}</div>
       <div>{inspector}</div>
-    </div>
+    </SidebarProvider>
   ),
 }));
 

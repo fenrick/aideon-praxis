@@ -235,7 +235,7 @@ export function ProjectsSidebar({
   const scenarioCount = projectList.reduce((sum, project) => sum + project.scenarios.length, 0);
 
   return (
-    <Sidebar collapsible="none" className="bg-sidebar flex-1 overflow-hidden">
+    <Sidebar collapsible="none" className="bg-sidebar hidden flex-1 overflow-hidden md:flex">
       <SidebarHeader className="gap-3 border-b p-4">
         <div className="flex w-full items-center justify-between">
           <div className="text-foreground text-base font-medium">Scenarios</div>

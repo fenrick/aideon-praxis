@@ -1,8 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PropsWithChildren } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-const onLayoutCalls: number[][] = [];
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('design-system/components/ui/scroll-area', () => ({
   ScrollArea: ({ children, ...properties }: PropsWithChildren<Record<string, unknown>>) => (
@@ -13,22 +11,8 @@ vi.mock('design-system/components/ui/scroll-area', () => ({
 vi.mock('design-system/desktop-shell', () => ({
   SidebarProvider: ({ children }: PropsWithChildren) => <div>{children}</div>,
   Sidebar: ({ children }: PropsWithChildren) => <div>{children}</div>,
+  SidebarContent: ({ children }: PropsWithChildren) => <div>{children}</div>,
   SidebarInset: ({ children }: PropsWithChildren) => <div>{children}</div>,
-  ResizableHandle: () => <div />,
-  ResizablePanel: ({ children }: PropsWithChildren) => <div>{children}</div>,
-  ResizablePanelGroup: ({
-    children,
-    onLayout,
-  }: PropsWithChildren<{ onLayout?: (sizes: number[]) => void }>) => {
-    if (onLayout) {
-      const sizes = [18, 62, 20];
-      setTimeout(() => {
-        onLayoutCalls.push(sizes);
-        onLayout(sizes);
-      }, 0);
-    }
-    return <div>{children}</div>;
-  },
 }));
 
 vi.mock('design-system/lib/utilities', () => ({
@@ -39,7 +23,7 @@ import { AideonDesktopShell } from 'aideon/shell/aideon-desktop-shell';
 import { useAideonShellControls } from 'aideon/shell/shell-controls';
 
 /**
- * Patch `globalThis.localStorage` for local layout tests.
+ * Patch `globalThis.localStorage` for inspector-state persistence tests.
  * @param storage replacement storage implementation
  */
 function setLocalStorage(storage: Storage | undefined) {
@@ -50,15 +34,11 @@ function setLocalStorage(storage: Storage | undefined) {
 }
 
 describe('AideonDesktopShell storage', () => {
-  beforeEach(() => {
-    onLayoutCalls.length = 0;
-  });
-
   afterEach(() => {
     cleanup();
   });
 
-  it('renders without toolbar and ignores missing localStorage', () => {
+  it('renders slots without a toolbar and tolerates missing localStorage', () => {
     setLocalStorage(undefined);
 
     render(
@@ -75,15 +55,11 @@ describe('AideonDesktopShell storage', () => {
     expect(screen.queryByText('Toolbar')).not.toBeInTheDocument();
   });
 
-  it('reads stored layout when valid and tolerates invalid JSON', () => {
-    const getItem = vi
-      .fn()
-      .mockReturnValueOnce('not-json')
-      .mockReturnValueOnce(JSON.stringify([12, 70, 18]));
-    const setItem = vi.fn();
-    setLocalStorage({ getItem, setItem } as unknown as Storage);
+  it('reads the persisted inspector-collapsed flag on mount', () => {
+    const getItem = vi.fn().mockReturnValue('1');
+    setLocalStorage({ getItem, setItem: vi.fn() } as unknown as Storage);
 
-    const { unmount } = render(
+    render(
       <AideonDesktopShell
         navigation={<div>Nav</div>}
         content={<div>Content</div>}
@@ -91,17 +67,9 @@ describe('AideonDesktopShell storage', () => {
         toolbar={<div>Toolbar</div>}
       />,
     );
-    expect(screen.getByText('Toolbar')).toBeInTheDocument();
-    unmount();
 
-    render(
-      <AideonDesktopShell
-        navigation={<div>Nav</div>}
-        content={<div>Content</div>}
-        inspector={<div>Inspector</div>}
-      />,
-    );
-    expect(getItem).toHaveBeenCalledWith('aideon-shell-panels');
+    expect(getItem).toHaveBeenCalledWith('aideon-shell-inspector-collapsed');
+    expect(screen.getByText('Toolbar')).toBeInTheDocument();
   });
 
   it('persists inspector collapse state when toggled', () => {
@@ -110,7 +78,7 @@ describe('AideonDesktopShell storage', () => {
     setLocalStorage({ getItem, setItem } as unknown as Storage);
 
     /**
-     *
+     * Toolbar stand-in that toggles the inspector via shell controls.
      */
     function ToggleInspector() {
       const shell = useAideonShellControls();
@@ -139,10 +107,11 @@ describe('AideonDesktopShell storage', () => {
     expect(setItem).toHaveBeenCalledWith('aideon-shell-inspector-collapsed', '1');
   });
 
-  it('writes layout sizes when storage allows, and ignores write failures', async () => {
-    const getItem = vi.fn().mockReturnValue(JSON.stringify([20, 60, 20]));
-    const setItem = vi.fn();
-    setLocalStorage({ getItem, setItem } as unknown as Storage);
+  it('tolerates a throwing localStorage on read', () => {
+    const getItem = vi.fn(() => {
+      throw new Error('blocked');
+    });
+    setLocalStorage({ getItem, setItem: vi.fn() } as unknown as Storage);
 
     render(
       <AideonDesktopShell
@@ -152,48 +121,6 @@ describe('AideonDesktopShell storage', () => {
       />,
     );
 
-    expect(onLayoutCalls.length).toBe(0);
-    await screen.findByText('Content');
-    await new Promise((resolve) => {
-      setTimeout(resolve, 0);
-    });
-    expect(onLayoutCalls.length).toBeGreaterThan(0);
-    expect(setItem).toHaveBeenCalledWith('aideon-shell-panels', JSON.stringify([18, 62, 20]));
-
-    setItem.mockImplementationOnce(() => {
-      throw new Error('quota');
-    });
-
-    render(
-      <AideonDesktopShell
-        navigation={<div>Nav</div>}
-        content={<div>Content</div>}
-        inspector={<div>Inspector</div>}
-      />,
-    );
-
-    await new Promise((resolve) => {
-      setTimeout(resolve, 0);
-    });
-    expect(setItem).toHaveBeenCalled();
-  });
-
-  it('ignores stored layout when values are not numbers', () => {
-    const storage = {
-      getItem: vi.fn().mockReturnValue(JSON.stringify(['bad', 60, 20])),
-      setItem: vi.fn(),
-    };
-    setLocalStorage(storage as unknown as Storage);
-
-    render(
-      <AideonDesktopShell
-        navigation={<div>Nav</div>}
-        content={<div>Content</div>}
-        inspector={<div>Inspector</div>}
-        toolbar={<div>Toolbar</div>}
-      />,
-    );
-
-    expect(screen.getByText('Toolbar')).toBeInTheDocument();
+    expect(screen.getByText('Content')).toBeInTheDocument();
   });
 });
