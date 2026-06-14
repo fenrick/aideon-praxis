@@ -15,6 +15,9 @@ const meta = {
   component: CalendarProvider,
   tags: ['autodocs'],
   title: 'Kibo UI/Calendar',
+  args: {
+    children: null,
+  },
 } satisfies Meta<typeof CalendarProvider>;
 
 export default meta;
@@ -60,7 +63,7 @@ const exampleFeatures = [
 
 export const Default: Story = {
   render: () => (
-    <CalendarProvider className="h-[600px] border rounded-lg overflow-hidden">
+    <CalendarProvider className="h-[600px] overflow-hidden rounded-lg border">
       <CalendarDate>
         <CalendarDatePicker>
           <CalendarMonthPicker />
@@ -78,7 +81,7 @@ export const Default: Story = {
 
 export const Empty: Story = {
   render: () => (
-    <CalendarProvider className="h-[600px] border rounded-lg overflow-hidden">
+    <CalendarProvider className="h-[600px] overflow-hidden rounded-lg border">
       <CalendarDate>
         <CalendarDatePicker>
           <CalendarMonthPicker />
@@ -96,7 +99,7 @@ export const Empty: Story = {
 
 export const MondayStart: Story = {
   render: () => (
-    <CalendarProvider className="h-[600px] border rounded-lg overflow-hidden" startDay={1}>
+    <CalendarProvider className="h-[600px] overflow-hidden rounded-lg border" startDay={1}>
       <CalendarDate>
         <CalendarDatePicker>
           <CalendarMonthPicker />

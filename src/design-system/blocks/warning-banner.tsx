@@ -1,7 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 
-import { cn } from '../lib/utilities';
 import { getSemanticStateContract } from '../foundations/semantic-states';
+import { cn } from '../lib/utilities';
 
 export interface WarningBannerProperties {
   readonly message: string;
@@ -12,17 +12,20 @@ export interface WarningBannerProperties {
 /**
  * Advisory non-error state — surface is still usable but interpretation or next action changed.
  * Pairs colour with icon + text label (WCAG 1.4.1).
+ * @param root0
+ * @param root0.message
+ * @param root0.detail
+ * @param root0.className
  */
 export function WarningBanner({ message, detail, className }: WarningBannerProperties) {
   const contract = getSemanticStateContract('warning');
   return (
-    <div
+    <output
       className={cn(
         'flex items-start gap-2 rounded-md border px-3 py-2 text-sm',
         contract.surfaceClassName,
         className,
       )}
-      role="status"
     >
       <AlertTriangle aria-hidden className="text-status-warning mt-0.5 h-4 w-4 shrink-0" />
       <div className="flex flex-col gap-0.5">
@@ -30,6 +33,6 @@ export function WarningBanner({ message, detail, className }: WarningBannerPrope
         <span>{message}</span>
         {detail && <span className="text-muted-foreground text-xs">{detail}</span>}
       </div>
-    </div>
+    </output>
   );
 }

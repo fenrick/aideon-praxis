@@ -35,10 +35,12 @@ export const TransitionClasses = {
     <div className="flex flex-col gap-4">
       {(Object.entries(motionClassNames) as [string, string][]).map(([name, className]) => (
         <div className="flex flex-col gap-1" key={name}>
-          <span className="text-muted-foreground text-xs font-medium uppercase tracking-widest">{name}</span>
+          <span className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+            {name}
+          </span>
           <code className="bg-muted rounded px-2 py-1 text-xs break-all">{className}</code>
           <div
-            className={`bg-muted border-border/60 h-10 w-10 rounded-lg border hover:bg-primary hover:border-primary ${className}`}
+            className={`bg-muted border-border/60 hover:bg-primary hover:border-primary h-10 w-10 rounded-lg border ${className}`}
             title={`Hover to see ${name} transition`}
           />
         </div>

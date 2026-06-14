@@ -52,7 +52,7 @@ describe('ErrorFrame', () => {
 
   it('omits retry button when onRetry not provided', () => {
     render(<ErrorFrame message="Failure" />);
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });
 
@@ -137,15 +137,17 @@ describe('ConfidenceLabel', () => {
   it('renders all tiers without crashing', () => {
     const tiers = ['high', 'medium', 'low', 'indicative'] as const;
     for (const tier of tiers) {
-      const { unmount } = render(<ConfidenceLabel tier={tier} />);
-      unmount();
+      expect(() => {
+        const { unmount } = render(<ConfidenceLabel tier={tier} />);
+        unmount();
+      }).not.toThrow();
     }
   });
 
   it('exposes aria-label with fuller description for indicative tier', () => {
     render(<ConfidenceLabel tier="indicative" />);
-    const el = screen.getByText('Indicative');
-    expect(el).toHaveAttribute('aria-label', expect.stringContaining('directional'));
+    const element = screen.getByText('Indicative');
+    expect(element).toHaveAttribute('aria-label', expect.stringContaining('directional'));
   });
 });
 
@@ -161,9 +163,7 @@ describe('EmptyState', () => {
   });
 
   it('renders action slot', () => {
-    render(
-      <EmptyState action={<button type="button">Add item</button>} title="No results" />,
-    );
+    render(<EmptyState action={<button type="button">Add item</button>} title="No results" />);
     expect(screen.getByRole('button', { name: 'Add item' })).toBeInTheDocument();
   });
 });

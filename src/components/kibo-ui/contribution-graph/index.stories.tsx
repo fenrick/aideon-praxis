@@ -12,6 +12,10 @@ const meta = {
   component: ContributionGraph,
   tags: ['autodocs'],
   title: 'Kibo UI/ContributionGraph',
+  args: {
+    data: [],
+    children: null,
+  },
 } satisfies Meta<typeof ContributionGraph>;
 
 export default meta;
@@ -27,7 +31,7 @@ const generateActivities = (year: number) => {
     const level = rand < 0.5 ? 0 : rand < 0.7 ? 1 : rand < 0.85 ? 2 : rand < 0.95 ? 3 : 4;
     const count = level * Math.floor(Math.random() * 5 + 1);
     activities.push({
-      date: d.toISOString().split('T')[0],
+      date: d.toISOString().slice(0, 10),
       count,
       level,
     });

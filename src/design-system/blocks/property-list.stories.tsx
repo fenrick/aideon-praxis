@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta } from '@storybook/nextjs-vite';
 
 import { ConfidenceLabel } from './confidence-label';
 import { PropertyList } from './property-list';
@@ -10,8 +10,6 @@ const meta = {
 } satisfies Meta<typeof PropertyList>;
 
 export default meta;
-
-type Story = StoryObj<typeof meta>;
 
 export const Default = {
   render: () => (

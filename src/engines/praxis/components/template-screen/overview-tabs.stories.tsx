@@ -8,11 +8,15 @@ import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-t
 import { OverviewTabs } from './overview-tabs';
 
 const noopActions: TemporalPanelActions = {
-  selectBranch: async () => undefined,
-  selectCommit: () => undefined,
-  selectLayer: () => undefined,
-  refreshBranches: async () => undefined,
-  mergeIntoMain: async () => undefined,
+  selectBranch: () => Promise.resolve(),
+  selectCommit: () => {
+    return;
+  },
+  selectLayer: () => {
+    return;
+  },
+  refreshBranches: () => Promise.resolve(),
+  mergeIntoMain: () => Promise.resolve(),
 };
 
 const baseState: TemporalPanelState = {
@@ -68,8 +72,12 @@ export const CanvasTab: Story = {
     actions: noopActions,
     widgets: [],
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
-    onRequestMetaModelFocus: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onRequestMetaModelFocus: () => {
+      return;
+    },
     initialTab: 'canvas',
   },
 };
@@ -80,8 +88,12 @@ export const OverviewTab: Story = {
     actions: noopActions,
     widgets: [],
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
-    onRequestMetaModelFocus: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onRequestMetaModelFocus: () => {
+      return;
+    },
     initialTab: 'overview',
   },
 };
@@ -92,8 +104,12 @@ export const TimelineTab: Story = {
     actions: noopActions,
     widgets: [],
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
-    onRequestMetaModelFocus: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onRequestMetaModelFocus: () => {
+      return;
+    },
     initialTab: 'timeline',
   },
 };
@@ -104,8 +120,12 @@ export const ActivityTab: Story = {
     actions: noopActions,
     widgets: [],
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
-    onRequestMetaModelFocus: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onRequestMetaModelFocus: () => {
+      return;
+    },
     initialTab: 'activity',
   },
 };

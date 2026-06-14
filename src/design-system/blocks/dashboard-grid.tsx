@@ -11,6 +11,10 @@ export interface DashboardGridProperties {
 /**
  * Responsive grid container for WidgetFrame tiles.
  * Defaults to 2 columns; caller specifies layout through the `columns` prop.
+ * @param root0
+ * @param root0.children
+ * @param root0.columns
+ * @param root0.className
  */
 export function DashboardGrid({ children, columns = 2, className }: DashboardGridProperties) {
   return (

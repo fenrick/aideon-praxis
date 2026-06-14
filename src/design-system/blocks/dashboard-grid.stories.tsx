@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta } from '@storybook/nextjs-vite';
 
 import { DashboardGrid } from './dashboard-grid';
 import { WidgetFrame } from './widget-frame';
@@ -9,8 +9,6 @@ const meta = {
 } satisfies Meta<typeof DashboardGrid>;
 
 export default meta;
-
-type Story = StoryObj<typeof meta>;
 
 export const TwoColumns = {
   name: '2 columns',

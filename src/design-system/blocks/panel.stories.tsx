@@ -70,8 +70,12 @@ export const WithFooter: Story = {
           <p className="text-muted-foreground text-sm">This change will affect downstream nodes.</p>
         </PanelContent>
         <PanelFooter>
-          <button className="text-muted-foreground text-xs" type="button">Cancel</button>
-          <button className="text-xs font-medium" type="button">Confirm</button>
+          <button className="text-muted-foreground text-xs" type="button">
+            Cancel
+          </button>
+          <button className="text-xs font-medium" type="button">
+            Confirm
+          </button>
         </PanelFooter>
       </Panel>
     </div>
@@ -86,8 +90,12 @@ export const WithToolbar: Story = {
         <Panel key={align}>
           <PanelContent>
             <PanelToolbar align={align}>
-              <button className="text-xs" type="button">Action A</button>
-              <button className="text-xs" type="button">Action B</button>
+              <button className="text-xs" type="button">
+                Action A
+              </button>
+              <button className="text-xs" type="button">
+                Action B
+              </button>
             </PanelToolbar>
           </PanelContent>
         </Panel>

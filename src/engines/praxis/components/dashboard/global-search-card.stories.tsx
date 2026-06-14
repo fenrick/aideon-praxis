@@ -14,9 +14,15 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    onSelectNodes: () => undefined,
-    onFocusMetaModel: () => undefined,
-    onShowTimeline: () => undefined,
+    onSelectNodes: () => {
+      return;
+    },
+    onFocusMetaModel: () => {
+      return;
+    },
+    onShowTimeline: () => {
+      return;
+    },
   },
 };
 

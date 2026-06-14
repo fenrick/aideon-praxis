@@ -15,25 +15,31 @@ type Story = StoryObj<typeof meta>;
 export const Closed: Story = {
   args: {
     open: false,
-    onOpenChange: () => undefined,
+    onOpenChange: () => {
+      return;
+    },
     branches: [],
     commits: [],
     loading: false,
-    onSelectBranch: () => undefined,
-    onSelectCommit: () => undefined,
-    onRefreshBranches: () => undefined,
+    onSelectBranch: () => {
+      return;
+    },
+    onSelectCommit: () => {
+      return;
+    },
+    onRefreshBranches: () => {
+      return;
+    },
   },
 };
 
 export const Open: Story = {
   args: {
     open: true,
-    onOpenChange: () => undefined,
-    branches: [
-      { name: 'main' },
-      { name: 'scenario/target-2026' },
-      { name: 'scenario/alpha-test' },
-    ],
+    onOpenChange: () => {
+      return;
+    },
+    branches: [{ name: 'main' }, { name: 'scenario/target-2026' }, { name: 'scenario/alpha-test' }],
     activeBranch: 'main',
     commits: [
       {
@@ -56,9 +62,15 @@ export const Open: Story = {
       },
     ],
     loading: false,
-    onSelectBranch: () => undefined,
-    onSelectCommit: () => undefined,
-    onRefreshBranches: () => undefined,
+    onSelectBranch: () => {
+      return;
+    },
+    onSelectCommit: () => {
+      return;
+    },
+    onRefreshBranches: () => {
+      return;
+    },
     catalogueEntries: [
       { id: 'cap-001', label: 'Finance Capability', owner: 'CFO Office', state: 'Active' },
       { id: 'cap-002', label: 'HR Capability', owner: 'People Team', state: 'In progress' },
@@ -67,20 +79,32 @@ export const Open: Story = {
       { id: 'mm-001', label: 'Capability', category: 'Business', kind: 'type' },
       { id: 'mm-002', label: 'depends_on', category: 'Relationships', kind: 'relationship' },
     ],
-    onSelectCatalogueEntry: () => undefined,
-    onSelectMetaModelEntry: () => undefined,
+    onSelectCatalogueEntry: () => {
+      return;
+    },
+    onSelectMetaModelEntry: () => {
+      return;
+    },
   },
 };
 
 export const Loading: Story = {
   args: {
     open: true,
-    onOpenChange: () => undefined,
+    onOpenChange: () => {
+      return;
+    },
     branches: [],
     commits: [],
     loading: true,
-    onSelectBranch: () => undefined,
-    onSelectCommit: () => undefined,
-    onRefreshBranches: () => undefined,
+    onSelectBranch: () => {
+      return;
+    },
+    onSelectCommit: () => {
+      return;
+    },
+    onRefreshBranches: () => {
+      return;
+    },
   },
 };

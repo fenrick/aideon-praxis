@@ -1,5 +1,5 @@
-import { ArrowRightIcon, SparklesIcon } from 'lucide-react';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { ArrowRightIcon, SparklesIcon } from 'lucide-react';
 import { Announcement, AnnouncementTag, AnnouncementTitle } from './index';
 
 const meta = {

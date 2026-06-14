@@ -1,7 +1,7 @@
 import { RefreshCw } from 'lucide-react';
 
-import { cn } from '../lib/utilities';
 import { getSemanticStateContract } from '../foundations/semantic-states';
+import { cn } from '../lib/utilities';
 
 export interface RebuildingIndicatorProperties {
   readonly label?: string;
@@ -12,6 +12,9 @@ export interface RebuildingIndicatorProperties {
  * Indicates in-progress indexing or rebuild.
  * The spinning icon is a visual cue; the text label ensures colour-independence (WCAG 1.4.1).
  * Under reduced-motion the spin animation is suppressed via the motion token.
+ * @param root0
+ * @param root0.label
+ * @param root0.className
  */
 export function RebuildingIndicator({
   label = 'Rebuilding…',
@@ -19,7 +22,7 @@ export function RebuildingIndicator({
 }: RebuildingIndicatorProperties) {
   const contract = getSemanticStateContract('info');
   return (
-    <div
+    <output
       aria-label={label}
       aria-live="polite"
       className={cn(
@@ -27,13 +30,9 @@ export function RebuildingIndicator({
         contract.badgeClassName,
         className,
       )}
-      role="status"
     >
-      <RefreshCw
-        aria-hidden
-        className="h-3 w-3 shrink-0 motion-safe:animate-spin"
-      />
+      <RefreshCw aria-hidden className="h-3 w-3 shrink-0 motion-safe:animate-spin" />
       <span>{label}</span>
-    </div>
+    </output>
   );
 }

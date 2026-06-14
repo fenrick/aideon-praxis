@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useMemo } from 'react';
 
 import {
   CommandDialog,
@@ -33,6 +33,12 @@ export interface CommandPaletteProperties {
  * Domain-free command palette shell block.
  * Groups items by the optional `group` field; sorts alphabetically within groups.
  * The caller supplies all labels and actions — this block carries no domain semantics.
+ * @param root0
+ * @param root0.open
+ * @param root0.onOpenChange
+ * @param root0.items
+ * @param root0.placeholder
+ * @param root0.emptyMessage
  */
 export function CommandPalette({
   open,

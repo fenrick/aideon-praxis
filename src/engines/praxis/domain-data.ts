@@ -1,5 +1,5 @@
-import type { ScenarioSummary } from 'praxis/praxis-api';
 import type { LayoutPreset } from 'praxis/layouts';
+import type { ScenarioSummary } from 'praxis/praxis-api';
 import { invokeIpc } from '../../adapters/ipc';
 import { toErrorMessage } from './lib/errors';
 

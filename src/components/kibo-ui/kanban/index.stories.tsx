@@ -1,17 +1,16 @@
-import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import {
-  KanbanBoard,
-  KanbanCard,
-  KanbanCards,
-  KanbanHeader,
-  KanbanProvider,
-} from './index';
+import { useState } from 'react';
+import { KanbanBoard, KanbanCard, KanbanCards, KanbanHeader, KanbanProvider } from './index';
 
 const meta = {
   component: KanbanProvider,
   tags: ['autodocs'],
   title: 'Kibo UI/Kanban',
+  args: {
+    columns: [],
+    data: [],
+    children: () => null,
+  },
 } satisfies Meta<typeof KanbanProvider>;
 
 export default meta;
@@ -37,11 +36,7 @@ const KanbanDemo = () => {
 
   return (
     <div style={{ height: 500 }}>
-      <KanbanProvider
-        columns={initialColumns}
-        data={data}
-        onDataChange={setData}
-      >
+      <KanbanProvider columns={initialColumns} data={data} onDataChange={setData}>
         {(column) => (
           <KanbanBoard id={column.id} key={column.id}>
             <KanbanHeader>{column.name}</KanbanHeader>
@@ -96,7 +91,7 @@ const RichKanbanDemo = () => {
           <KanbanBoard id={column.id} key={column.id}>
             <KanbanHeader>
               <span>{column.name}</span>
-              <span className="text-muted-foreground text-xs font-normal ml-1">
+              <span className="text-muted-foreground ml-1 text-xs font-normal">
                 ({data.filter((d) => d.column === column.id).length})
               </span>
             </KanbanHeader>
@@ -105,8 +100,10 @@ const RichKanbanDemo = () => {
                 <KanbanCard column={item.column} id={item.id} key={item.id} name={item.name}>
                   <div className="flex flex-col gap-1">
                     <p className="text-sm font-medium">{item.name}</p>
-                    <span className={`text-xs ${priorityColors[item.priority] ?? ''}`}>
-                      {item.priority}
+                    <span
+                      className={`text-xs ${priorityColors[(item as { priority?: string }).priority ?? ''] ?? ''}`}
+                    >
+                      {(item as { priority?: string }).priority}
                     </span>
                   </div>
                 </KanbanCard>

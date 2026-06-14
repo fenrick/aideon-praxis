@@ -2,54 +2,26 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": "./src",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "aideon/*": [
-        "aideon/*"
-      ],
-      "platform/*": [
-        "platform/*"
-      ],
-      "engines/*": [
-        "engines/*"
-      ],
-      "praxis": [
-        "engines/praxis/index.ts"
-      ],
-      "praxis/*": [
-        "engines/praxis/*"
-      ],
-      "design-system/*": [
-        "design-system/*"
-      ],
-      "design-system/reactflow/*": [
-        "design-system/components/*"
-      ],
-      "adapters/*": [
-        "adapters/*"
-      ],
-      "dtos/*": [
-        "dtos/*"
-      ],
-      "lib/*": [
-        "lib/*"
-      ]
+      "@/*": ["./*"],
+      "aideon/*": ["aideon/*"],
+      "platform/*": ["platform/*"],
+      "engines/*": ["engines/*"],
+      "praxis": ["engines/praxis/index.ts"],
+      "praxis/*": ["engines/praxis/*"],
+      "design-system/*": ["design-system/*"],
+      "design-system/reactflow/*": ["design-system/components/*"],
+      "adapters/*": ["adapters/*"],
+      "dtos/*": ["dtos/*"],
+      "lib/*": ["lib/*"]
     },
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "noEmit": true,
     "incremental": true,
@@ -57,12 +29,7 @@
     "isolatedModules": true,
     "jsx": "preserve"
   },
-  "include": [
-    "next-env.d.ts",
-    "src",
-    "tests",
-    ".next/types/**/*.ts"
-  ],
+  "include": ["next-env.d.ts", "src", "tests", ".next/types/**/*.ts"],
   "exclude": [
     "src/design-system/components/**/*",
     "tests/webdriver/**",

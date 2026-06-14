@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  BUILT_IN_LAYOUTS,
-  captureLayoutFromWidgets,
-  instantiateLayout,
-} from 'praxis/layouts';
+import { BUILT_IN_LAYOUTS, captureLayoutFromWidgets, instantiateLayout } from 'praxis/layouts';
 
 describe('templates', () => {
   it('instantiates templates with default timestamps when asOf is omitted', () => {

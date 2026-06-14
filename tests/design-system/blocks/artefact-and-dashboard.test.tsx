@@ -94,9 +94,7 @@ describe('FilterBar', () => {
   });
 
   it('renders actions slot', () => {
-    render(
-      <FilterBar actionsSlot={<button type="button">Add filter</button>} />,
-    );
+    render(<FilterBar actionsSlot={<button type="button">Add filter</button>} />);
     expect(screen.getByRole('button', { name: 'Add filter' })).toBeInTheDocument();
   });
 });

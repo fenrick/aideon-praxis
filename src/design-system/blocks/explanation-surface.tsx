@@ -12,12 +12,12 @@ export interface ExplanationSurfaceProperties {
  * Explanation/rationale surface shown inside an inspector pane.
  * Renders as a subdued inset block — visually distinct from editable fields.
  * The caller supplies all domain meaning through heading and children.
+ * @param root0
+ * @param root0.heading
+ * @param root0.children
+ * @param root0.className
  */
-export function ExplanationSurface({
-  heading,
-  children,
-  className,
-}: ExplanationSurfaceProperties) {
+export function ExplanationSurface({ heading, children, className }: ExplanationSurfaceProperties) {
   return (
     <div
       className={cn(
@@ -26,7 +26,7 @@ export function ExplanationSurface({
       )}
     >
       {heading && (
-        <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-widest">
+        <p className="text-muted-foreground mb-1 text-xs font-medium tracking-widest uppercase">
           {heading}
         </p>
       )}

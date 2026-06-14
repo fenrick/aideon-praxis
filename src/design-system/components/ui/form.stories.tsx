@@ -27,7 +27,7 @@ function BasicForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(() => {})} className="w-72 space-y-4">
+      <form onSubmit={form.handleSubmit(() => { return; })} className="w-72 space-y-4">
         <FormField
           control={form.control}
           name="username"
@@ -59,7 +59,7 @@ function ValidatedForm() {
     defaultValues: { email: '' },
   });
 
-  const onSubmit = form.handleSubmit(() => {});
+  const onSubmit = form.handleSubmit(() => { return; });
 
   return (
     <Form {...form}>

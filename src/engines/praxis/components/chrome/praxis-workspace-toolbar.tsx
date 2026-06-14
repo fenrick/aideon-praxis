@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-import { isTauri } from 'praxis/platform';
 import type { LayoutPreset } from 'praxis/layouts';
+import { isTauri } from 'praxis/platform';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
 import {

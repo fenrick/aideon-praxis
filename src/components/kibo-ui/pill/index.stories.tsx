@@ -1,6 +1,5 @@
-import { TagIcon } from 'lucide-react';
-import { XIcon } from 'lucide-react';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { TagIcon, XIcon } from 'lucide-react';
 import {
   Pill,
   PillAvatar,

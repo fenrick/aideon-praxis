@@ -1,5 +1,5 @@
-import path from 'node:path';
 import type { StorybookConfig } from '@storybook/nextjs-vite';
+import path from 'node:path';
 
 const srcRoot = path.resolve(import.meta.dirname, '../src');
 

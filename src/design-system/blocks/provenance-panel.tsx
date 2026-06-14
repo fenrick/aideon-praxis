@@ -15,6 +15,11 @@ export interface ProvenancePanelProperties {
  * Inspector panel section showing content classification (Asserted/Inferred/Generated)
  * alongside optional source and explanatory detail.
  * Used wherever the origin of a value matters to the reader.
+ * @param root0
+ * @param root0.classification
+ * @param root0.source
+ * @param root0.detail
+ * @param root0.className
  */
 export function ProvenancePanel({
   classification,
@@ -24,17 +29,16 @@ export function ProvenancePanel({
 }: ProvenancePanelProperties) {
   return (
     <div
-      className={cn('border-border/60 bg-muted/10 flex flex-col gap-2 rounded-xl border p-3', className)}
+      className={cn(
+        'border-border/60 bg-muted/10 flex flex-col gap-2 rounded-xl border p-3',
+        className,
+      )}
     >
       <div className="flex items-center gap-2">
         <ProvenanceBadge classification={classification} />
-        {source && (
-          <span className="text-muted-foreground truncate text-xs">{source}</span>
-        )}
+        {source && <span className="text-muted-foreground truncate text-xs">{source}</span>}
       </div>
-      {detail && (
-        <div className="text-muted-foreground text-xs leading-relaxed">{detail}</div>
-      )}
+      {detail && <div className="text-muted-foreground text-xs leading-relaxed">{detail}</div>}
     </div>
   );
 }

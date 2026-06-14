@@ -1,6 +1,6 @@
-import { HeartIcon, StarIcon } from 'lucide-react';
-import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { HeartIcon } from 'lucide-react';
+import { useState } from 'react';
 import { Rating, RatingButton } from './index';
 
 const meta = {
@@ -94,7 +94,7 @@ const ControlledRating = () => {
         <RatingButton />
         <RatingButton />
       </Rating>
-      <p className="text-sm text-muted-foreground">Rating: {value} / 5</p>
+      <p className="text-muted-foreground text-sm">Rating: {value} / 5</p>
     </div>
   );
 };

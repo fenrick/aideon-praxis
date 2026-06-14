@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 
 import { GripHorizontal } from 'lucide-react';
 
-import { cn } from '../lib/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { cn } from '../lib/utilities';
 import type { ArtefactFrameState } from './artefact-frame';
 import { ArtefactFrame } from './artefact-frame';
 
@@ -23,6 +23,17 @@ export interface WidgetFrameProperties {
 /**
  * Dashboard widget frame with header (title, status, actions), drag handle,
  * and built-in loading/empty/error variants via ArtefactFrame.
+ * @param root0
+ * @param root0.title
+ * @param root0.state
+ * @param root0.statusSlot
+ * @param root0.actionsSlot
+ * @param root0.draggable
+ * @param root0.children
+ * @param root0.className
+ * @param root0.errorMessage
+ * @param root0.emptyTitle
+ * @param root0.onRetry
  */
 export function WidgetFrame({
   title,

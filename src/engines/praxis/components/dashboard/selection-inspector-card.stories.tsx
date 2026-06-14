@@ -18,7 +18,9 @@ export const NoSelection: Story = {
   args: {
     selection: EMPTY_SELECTION,
     widgets: [],
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };
 
@@ -44,7 +46,9 @@ export const NodeSelection: Story = {
         },
       },
     ],
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };
 
@@ -70,7 +74,9 @@ export const EdgeSelection: Story = {
         },
       },
     ],
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };
 
@@ -98,6 +104,8 @@ export const CellSelection: Story = {
         },
       },
     ],
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { listProjectsWithScenarios, listLayoutsFromHost } from 'praxis/domain-data';
+import { listLayoutsFromHost, listProjectsWithScenarios } from 'praxis/domain-data';
 
 import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 

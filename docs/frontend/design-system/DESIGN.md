@@ -10,10 +10,10 @@ The renderer-side design system centralises UI primitives and blocks for the Rea
 
 ## Internal structure
 
-| Path                                    | Holds                                                                                                                                 |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/design-system/components/ui`       | Generated shadcn/ui primitives — treated as read-only, not linted, not type-checked                                                   |
-| `src/design-system/components/`         | XYFlow node/edge wrappers — the renderer side of **Topos** ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)) |
+| Path                                   | Holds                                                                                                                                 |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/design-system/components/ui`      | Generated shadcn/ui primitives — treated as read-only, not linted, not type-checked                                                   |
+| `src/design-system/components/`        | XYFlow node/edge wrappers — the renderer side of **Topos** ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)) |
 | `src/design-system/blocks/`            | Aideon blocks — panel, sidebar, toolbar, modal                                                                                        |
 | `src/design-system/desktop-shell/`     | Shell layout — `Sidebar`, `SidebarInset`, `Resizable`, `Menubar`, `Toolbar`                                                           |
 | `src/design-system/foundations/`       | Token contracts, semantic states, density modes, motion, focus, icon baseline                                                         |
@@ -28,11 +28,11 @@ Generated components are not edited directly; all customisation happens in wrapp
 
 Product code uses exactly three import paths — nothing else ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)):
 
-| Import path                        | What to import                                                           |
-| ---------------------------------- | ------------------------------------------------------------------------ |
-| `'design-system'`                  | Everything — primitives, blocks, shell, tabs, form, card, badge, …     |
-| `'design-system/icons'`            | Icon components (kept separate to avoid name clash with `Command`)      |
-| `'design-system/reactflow/*'`      | Canvas-only wrappers: `node-search`, `praxis-node`, `timeline-edge`     |
+| Import path                   | What to import                                                      |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `'design-system'`             | Everything — primitives, blocks, shell, tabs, form, card, badge, …  |
+| `'design-system/icons'`       | Icon components (kept separate to avoid name clash with `Command`)  |
+| `'design-system/reactflow/*'` | Canvas-only wrappers: `node-search`, `praxis-node`, `timeline-edge` |
 
 Sub-paths like `design-system/lib/utilities`, `design-system/theme/color-theme`, and `design-system/desktop-shell` are allowed for utilities and theme providers that sit outside the main barrel.
 

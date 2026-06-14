@@ -1,9 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { cn } from '../lib/utilities';
 import type { SemanticStateTone } from '../foundations/semantic-states';
 import { getSemanticStateContract } from '../foundations/semantic-states';
+import { cn } from '../lib/utilities';
 
 export interface StatusBadgeProperties {
   readonly tone: SemanticStateTone;
@@ -16,6 +16,12 @@ export interface StatusBadgeProperties {
 /**
  * Generic status badge backed by the semantic-state contract.
  * Colour is always paired with an icon + label (WCAG 1.4.1).
+ * @param root0
+ * @param root0.tone
+ * @param root0.label
+ * @param root0.icon
+ * @param root0.className
+ * @param root0.children
  */
 export function StatusBadge({
   tone,

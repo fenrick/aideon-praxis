@@ -26,7 +26,7 @@ export const WithBadge: Story = {
   args: {
     title: 'Properties',
     badge: (
-      <Badge className="text-[0.6rem] uppercase tracking-widest" variant="secondary">
+      <Badge className="text-[0.6rem] tracking-widest uppercase" variant="secondary">
         Node
       </Badge>
     ),

@@ -8,28 +8,24 @@ interface DiffSpec {
   readonly barClassName: string;
 }
 
-const diffSpecs: Record<DiffOperation, DiffSpec> = {
-  added: {
-    barClassName: 'bg-status-success',
-    className: 'text-status-success',
-    label: 'Added',
-  },
-  changed: {
-    barClassName: 'bg-status-warning',
-    className: 'text-status-warning',
-    label: 'Changed',
-  },
-  removed: {
-    barClassName: 'bg-status-error',
-    className: 'text-status-error',
-    label: 'Removed',
-  },
-  unchanged: {
-    barClassName: 'bg-border',
-    className: 'text-muted-foreground',
-    label: 'Unchanged',
-  },
-};
+const diffSpecs = new Map<DiffOperation, DiffSpec>([
+  [
+    'added',
+    { barClassName: 'bg-status-success', className: 'text-status-success', label: 'Added' },
+  ],
+  [
+    'changed',
+    { barClassName: 'bg-status-warning', className: 'text-status-warning', label: 'Changed' },
+  ],
+  [
+    'removed',
+    { barClassName: 'bg-status-error', className: 'text-status-error', label: 'Removed' },
+  ],
+  [
+    'unchanged',
+    { barClassName: 'bg-border', className: 'text-muted-foreground', label: 'Unchanged' },
+  ],
+]);
 
 export interface DiffMarkerProperties {
   readonly operation: DiffOperation;
@@ -40,23 +36,23 @@ export interface DiffMarkerProperties {
 /**
  * Visual diff marker for inspector panes showing delta between two states.
  * The coloured bar is always accompanied by a text label (WCAG 1.4.1).
+ * @param root0
+ * @param root0.operation
+ * @param root0.showLabel
+ * @param root0.className
  */
-export function DiffMarker({
-  operation,
-  showLabel = true,
-  className,
-}: DiffMarkerProperties) {
-  const spec = diffSpecs[operation];
+export function DiffMarker({ operation, showLabel = true, className }: DiffMarkerProperties) {
+  const spec = diffSpecs.get(operation);
   return (
     <span
-      aria-label={spec.label}
-      className={cn('inline-flex items-center gap-1.5', spec.className, className)}
+      aria-label={spec?.label}
+      className={cn('inline-flex items-center gap-1.5', spec?.className, className)}
     >
       <span
         aria-hidden
-        className={cn('inline-block h-3.5 w-1 shrink-0 rounded-full', spec.barClassName)}
+        className={cn('inline-block h-3.5 w-1 shrink-0 rounded-full', spec?.barClassName)}
       />
-      {showLabel && <span className="text-xs font-medium">{spec.label}</span>}
+      {showLabel && <span className="text-xs font-medium">{spec?.label}</span>}
     </span>
   );
 }

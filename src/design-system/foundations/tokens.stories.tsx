@@ -23,11 +23,10 @@ export const Spacing = {
       {spacingTokenKeys.map((token) => (
         <div className="flex items-center gap-4" key={token}>
           <span className="text-muted-foreground w-8 text-xs">{token}</span>
-          <span className="text-muted-foreground w-16 font-mono text-xs">{spacingScale[token]}</span>
-          <div
-            className="bg-primary/40 h-4 rounded-sm"
-            style={{ width: spacingScale[token] }}
-          />
+          <span className="text-muted-foreground w-16 font-mono text-xs">
+            {spacingScale[token]}
+          </span>
+          <div className="bg-primary/40 h-4 rounded-sm" style={{ width: spacingScale[token] }} />
         </div>
       ))}
     </div>
@@ -40,7 +39,9 @@ export const Typography = {
     <div className="flex flex-col gap-4">
       {(Object.entries(typographyTokens) as [string, string][]).map(([name, className]) => (
         <div className="flex flex-col gap-0.5" key={name}>
-          <span className="text-muted-foreground text-[10px] uppercase tracking-widest">{name}</span>
+          <span className="text-muted-foreground text-[10px] tracking-widest uppercase">
+            {name}
+          </span>
           <p className={className}>The quick brown fox jumps over the lazy dog</p>
         </div>
       ))}
@@ -69,23 +70,21 @@ export const Density = {
   name: 'Density modes',
   render: () => (
     <div className="flex flex-col gap-6">
-      {(Object.entries(densityModes) as [string, (typeof densityModes)[keyof typeof densityModes]][]).map(
-        ([mode, contract]) => (
-          <div className="flex flex-col gap-2" key={mode}>
-            <h3 className="text-sm font-semibold">{contract.label}</h3>
-            <dl className="grid grid-cols-2 gap-x-8 gap-y-1 text-xs">
-              <dt className="text-muted-foreground">Navigation width</dt>
-              <dd className="font-mono">{contract.navigationWidth}</dd>
-              <dt className="text-muted-foreground">Inspector width</dt>
-              <dd className="font-mono">{contract.inspectorWidth}</dd>
-              <dt className="text-muted-foreground">Toolbar height</dt>
-              <dd className="font-mono">{contract.toolbarHeight}</dd>
-              <dt className="text-muted-foreground">Control height</dt>
-              <dd className="font-mono">{contract.controlHeight}</dd>
-            </dl>
-          </div>
-        ),
-      )}
+      {Object.entries(densityModes).map(([mode, contract]) => (
+        <div className="flex flex-col gap-2" key={mode}>
+          <h3 className="text-sm font-semibold">{contract.label}</h3>
+          <dl className="grid grid-cols-2 gap-x-8 gap-y-1 text-xs">
+            <dt className="text-muted-foreground">Navigation width</dt>
+            <dd className="font-mono">{contract.navigationWidth}</dd>
+            <dt className="text-muted-foreground">Inspector width</dt>
+            <dd className="font-mono">{contract.inspectorWidth}</dd>
+            <dt className="text-muted-foreground">Toolbar height</dt>
+            <dd className="font-mono">{contract.toolbarHeight}</dd>
+            <dt className="text-muted-foreground">Control height</dt>
+            <dd className="font-mono">{contract.controlHeight}</dd>
+          </dl>
+        </div>
+      ))}
     </div>
   ),
 };

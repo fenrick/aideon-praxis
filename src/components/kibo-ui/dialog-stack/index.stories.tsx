@@ -1,5 +1,5 @@
-import { userEvent, within } from 'storybook/test';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { userEvent } from 'storybook/test';
 import {
   DialogStack,
   DialogStackBody,
@@ -50,7 +50,7 @@ export const Default: Story = {
             </DialogStackDescription>
           </DialogStackHeader>
           <DialogStackFooter>
-            <DialogStackPrevious className="border rounded-md px-4 py-2 text-sm font-medium">
+            <DialogStackPrevious className="rounded-md border px-4 py-2 text-sm font-medium">
               Back
             </DialogStackPrevious>
             <DialogStackNext className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium">
@@ -66,7 +66,7 @@ export const Default: Story = {
             </DialogStackDescription>
           </DialogStackHeader>
           <DialogStackFooter>
-            <DialogStackPrevious className="border rounded-md px-4 py-2 text-sm font-medium">
+            <DialogStackPrevious className="rounded-md border px-4 py-2 text-sm font-medium">
               Back
             </DialogStackPrevious>
             <button className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium">
@@ -103,7 +103,7 @@ export const DefaultOpen: Story = {
             <DialogStackDescription>Your workspace is ready to use.</DialogStackDescription>
           </DialogStackHeader>
           <DialogStackFooter>
-            <DialogStackPrevious className="border rounded-md px-4 py-2 text-sm font-medium">
+            <DialogStackPrevious className="rounded-md border px-4 py-2 text-sm font-medium">
               Back
             </DialogStackPrevious>
           </DialogStackFooter>
@@ -135,7 +135,7 @@ export const Clickable: Story = {
             <DialogStackDescription>Click the card behind to go back.</DialogStackDescription>
           </DialogStackHeader>
           <DialogStackFooter>
-            <DialogStackPrevious className="border rounded-md px-4 py-2 text-sm font-medium">
+            <DialogStackPrevious className="rounded-md border px-4 py-2 text-sm font-medium">
               Back
             </DialogStackPrevious>
             <DialogStackNext className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium">
@@ -149,7 +149,7 @@ export const Clickable: Story = {
             <DialogStackDescription>Final step.</DialogStackDescription>
           </DialogStackHeader>
           <DialogStackFooter>
-            <DialogStackPrevious className="border rounded-md px-4 py-2 text-sm font-medium">
+            <DialogStackPrevious className="rounded-md border px-4 py-2 text-sm font-medium">
               Back
             </DialogStackPrevious>
           </DialogStackFooter>
@@ -182,7 +182,7 @@ export const OpenViaClick: Story = {
             <DialogStackDescription>You navigated to the second dialog.</DialogStackDescription>
           </DialogStackHeader>
           <DialogStackFooter>
-            <DialogStackPrevious className="border rounded-md px-4 py-2 text-sm font-medium">
+            <DialogStackPrevious className="rounded-md border px-4 py-2 text-sm font-medium">
               Back
             </DialogStackPrevious>
           </DialogStackFooter>

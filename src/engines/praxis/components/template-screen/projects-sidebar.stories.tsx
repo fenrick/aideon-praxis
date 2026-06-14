@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { SidebarProvider } from 'design-system/components/ui/sidebar';
-import { TooltipProvider } from 'design-system/components/ui/tooltip';
+import { SidebarProvider, TooltipProvider } from 'design-system';
 
 import { ProjectsSidebar } from './projects-sidebar';
 
@@ -8,7 +7,15 @@ const meta = {
   component: ProjectsSidebar,
   tags: ['autodocs'],
   title: 'Workspaces/Praxis/TemplateScreen/ProjectsSidebar',
-  decorators: [(Story) => <TooltipProvider><SidebarProvider><Story /></SidebarProvider></TooltipProvider>],
+  decorators: [
+    (Story) => (
+      <TooltipProvider>
+        <SidebarProvider>
+          <Story />
+        </SidebarProvider>
+      </TooltipProvider>
+    ),
+  ],
 } satisfies Meta<typeof ProjectsSidebar>;
 
 export default meta;
@@ -55,7 +62,9 @@ export const WithScenarios: Story = {
       },
     ],
     activeScenarioId: 'scenario-1',
-    onSelectScenario: () => undefined,
+    onSelectScenario: () => {
+      return;
+    },
   },
 };
 
@@ -64,7 +73,9 @@ export const WithError: Story = {
     scenarios: [],
     loading: false,
     error: 'Failed to load scenarios. Check your connection.',
-    onRetry: () => undefined,
+    onRetry: () => {
+      return;
+    },
   },
 };
 
@@ -87,6 +98,8 @@ export const ActiveScenario: Story = {
       },
     ],
     activeScenarioId: 'scenario-2',
-    onSelectScenario: () => undefined,
+    onSelectScenario: () => {
+      return;
+    },
   },
 };

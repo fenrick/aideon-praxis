@@ -18,8 +18,12 @@ export const NoSelection: Story = {
   args: {
     selection: EMPTY_SELECTION,
     selectionKind: 'none',
-    onSave: () => undefined,
-    onReset: () => undefined,
+    onSave: () => {
+      return;
+    },
+    onReset: () => {
+      return;
+    },
   },
 };
 
@@ -38,8 +42,10 @@ export const NodeSelected: Story = {
       type: 'Capability',
       description: 'Core financial planning capability',
     },
-    onSave: async () => undefined,
-    onReset: () => undefined,
+    onSave: () => Promise.resolve(),
+    onReset: () => {
+      return;
+    },
   },
 };
 
@@ -58,8 +64,10 @@ export const EdgeSelected: Story = {
       from: 'node-cap-001',
       to: 'node-svc-003',
     },
-    onSave: async () => undefined,
-    onReset: () => undefined,
+    onSave: () => Promise.resolve(),
+    onReset: () => {
+      return;
+    },
   },
 };
 
@@ -78,8 +86,10 @@ export const WidgetSelected: Story = {
       dataSource: 'praxis',
       layout: 'force',
     },
-    onSave: async () => undefined,
-    onReset: () => undefined,
+    onSave: () => Promise.resolve(),
+    onReset: () => {
+      return;
+    },
   },
 };
 
@@ -98,8 +108,10 @@ export const Saving: Story = {
       type: 'Capability',
     },
     saving: true,
-    onSave: async () => undefined,
-    onReset: () => undefined,
+    onSave: () => Promise.resolve(),
+    onReset: () => {
+      return;
+    },
   },
 };
 
@@ -117,7 +129,9 @@ export const WithError: Story = {
       name: 'Finance Capability',
     },
     error: 'Failed to save changes. Please try again.',
-    onSave: async () => undefined,
-    onReset: () => undefined,
+    onSave: () => Promise.resolve(),
+    onReset: () => {
+      return;
+    },
   },
 };

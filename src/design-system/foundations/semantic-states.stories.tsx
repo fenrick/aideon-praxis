@@ -19,7 +19,7 @@ export const AllStates = {
         return (
           <div className="flex items-start gap-4" key={tone}>
             <span
-              className={`border rounded-full px-2.5 py-0.5 text-xs font-medium ${contract.badgeClassName}`}
+              className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${contract.badgeClassName}`}
             >
               {contract.label}
             </span>
@@ -43,7 +43,7 @@ export const BadgeTokens = {
         const { badgeClassName, label } = semanticStateContracts[tone];
         return (
           <span
-            className={`border rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClassName}`}
+            className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${badgeClassName}`}
             key={tone}
           >
             {label}

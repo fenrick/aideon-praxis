@@ -3,8 +3,8 @@ import type { Preview } from '@storybook/nextjs-vite';
 import { ThemeProvider } from 'next-themes';
 import React from 'react';
 
-import '../src/styles.css';
 import { ColorThemeProvider } from '../src/design-system/theme/color-theme';
+import '../src/styles.css';
 
 function DesignSystemDecorator({ children }: { children: React.ReactNode }) {
   return (

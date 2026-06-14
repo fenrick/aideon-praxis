@@ -1,19 +1,18 @@
 import type { ReactNode } from 'react';
 
-import { cn } from '../lib/utilities';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '../components/ui/accordion';
+import { cn } from '../lib/utilities';
 
 export interface InspectorSectionProperties {
   readonly label: string;
   readonly value: string;
   readonly children: ReactNode;
   readonly className?: string;
-  readonly defaultOpen?: boolean;
 }
 
 export interface InspectorSectionGroupProperties {
@@ -25,6 +24,11 @@ export interface InspectorSectionGroupProperties {
 /**
  * Collapsible section within an inspector pane.
  * Must be used inside an InspectorSectionGroup.
+ * @param root0
+ * @param root0.label
+ * @param root0.value
+ * @param root0.children
+ * @param root0.className
  */
 export function InspectorSection({
   label,
@@ -33,12 +37,9 @@ export function InspectorSection({
   className,
 }: InspectorSectionProperties) {
   return (
-    <AccordionItem
-      className={cn('border-border/60 rounded-2xl border', className)}
-      value={value}
-    >
+    <AccordionItem className={cn('border-border/60 rounded-2xl border', className)} value={value}>
       <AccordionTrigger className="px-3 py-2 text-sm">{label}</AccordionTrigger>
-      <AccordionContent className="space-y-3 px-3 pb-3 pt-0">{children}</AccordionContent>
+      <AccordionContent className="space-y-3 px-3 pt-0 pb-3">{children}</AccordionContent>
     </AccordionItem>
   );
 }
@@ -46,6 +47,10 @@ export function InspectorSection({
 /**
  * Container for a group of InspectorSection components.
  * Wraps Accordion so sections share a single open-at-a-time state.
+ * @param root0
+ * @param root0.defaultValue
+ * @param root0.children
+ * @param root0.className
  */
 export function InspectorSectionGroup({
   defaultValue,

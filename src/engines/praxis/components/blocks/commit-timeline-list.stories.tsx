@@ -15,7 +15,9 @@ type Story = StoryObj<typeof meta>;
 export const Empty: Story = {
   args: {
     commits: [],
-    onSelect: () => undefined,
+    onSelect: () => {
+      return;
+    },
   },
 };
 
@@ -51,7 +53,9 @@ export const WithCommits: Story = {
       },
     ],
     activeCommitId: 'commit-002',
-    onSelect: () => undefined,
+    onSelect: () => {
+      return;
+    },
   },
 };
 
@@ -68,6 +72,8 @@ export const NoActiveCommit: Story = {
         tags: [],
       },
     ],
-    onSelect: () => undefined,
+    onSelect: () => {
+      return;
+    },
   },
 };

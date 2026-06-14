@@ -1,23 +1,29 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-import { ColorThemeProvider, useColorTheme, type ColorThemeId } from './color-theme';
+import { ColorThemeProvider, useColorTheme } from './color-theme';
 
 const meta = {
   component: ColorThemeProvider,
   tags: ['autodocs'],
+  args: {
+    children: <div />,
+  },
 } satisfies Meta<typeof ColorThemeProvider>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+/**
+ *
+ */
 function ThemeSwitcher() {
   const { colorTheme, setColorTheme, options } = useColorTheme();
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <div>
-        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-widest uppercase">
           Active theme
         </p>
         <p className="text-sm font-medium">{colorTheme}</p>
@@ -28,7 +34,9 @@ function ThemeSwitcher() {
           <button
             key={option.id}
             type="button"
-            onClick={() => setColorTheme(option.id as ColorThemeId)}
+            onClick={() => {
+              setColorTheme(option.id);
+            }}
             className={[
               'rounded-md border px-3 py-1.5 text-sm transition-colors',
               colorTheme === option.id
@@ -45,10 +53,10 @@ function ThemeSwitcher() {
         {options.map((option) => (
           <div key={option.id} className="rounded-md border p-3">
             <p className="text-sm font-medium">{option.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{option.description}</p>
+            <p className="text-muted-foreground mt-1 text-xs">{option.description}</p>
             {option.source ? (
-              <p className="mt-1 text-xs text-muted-foreground/60">Source: {option.source}</p>
-            ) : null}
+              <p className="text-muted-foreground/60 mt-1 text-xs">Source: {option.source}</p>
+            ) : undefined}
           </div>
         ))}
       </div>
@@ -65,6 +73,9 @@ export const Default: Story = {
   ),
 };
 
+/**
+ *
+ */
 function ThemeTokens() {
   const { colorTheme } = useColorTheme();
   const swatches = [
@@ -81,14 +92,14 @@ function ThemeTokens() {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <p className="text-xs text-muted-foreground">
+      <p className="text-muted-foreground text-xs">
         Active: <strong>{colorTheme}</strong>
       </p>
       <div className="flex flex-wrap gap-3">
         {swatches.map(({ label, className }) => (
           <div key={label} className="flex flex-col items-center gap-1">
             <div className={`h-10 w-10 rounded-md ${className}`} />
-            <span className="text-xs text-muted-foreground">{label}</span>
+            <span className="text-muted-foreground text-xs">{label}</span>
           </div>
         ))}
       </div>
@@ -96,6 +107,9 @@ function ThemeTokens() {
   );
 }
 
+/**
+ *
+ */
 function TokensDemo() {
   const { setColorTheme, options, colorTheme } = useColorTheme();
   return (
@@ -105,7 +119,9 @@ function TokensDemo() {
           <button
             key={option.id}
             type="button"
-            onClick={() => setColorTheme(option.id as ColorThemeId)}
+            onClick={() => {
+              setColorTheme(option.id);
+            }}
             className={[
               'rounded border px-2 py-1 text-xs transition-colors',
               colorTheme === option.id

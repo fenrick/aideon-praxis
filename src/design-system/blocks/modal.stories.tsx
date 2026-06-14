@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { fn, userEvent, expect, within } from 'storybook/test';
 import { useState } from 'react';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import {
   Modal,
@@ -27,8 +27,8 @@ export const Open: Story = {
     open: true,
     onOpenChange: fn(),
   },
-  render: (args) => (
-    <Modal {...args}>
+  render: (arguments_) => (
+    <Modal {...arguments_}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>Delete node</ModalTitle>
@@ -37,8 +37,13 @@ export const Open: Story = {
           </ModalDescription>
         </ModalHeader>
         <ModalFooter>
-          <button className="text-muted-foreground text-sm" type="button">Cancel</button>
-          <button className="bg-destructive text-destructive-foreground rounded-lg px-4 py-2 text-sm" type="button">
+          <button className="text-muted-foreground text-sm" type="button">
+            Cancel
+          </button>
+          <button
+            className="bg-destructive text-destructive-foreground rounded-lg px-4 py-2 text-sm"
+            type="button"
+          >
             Delete
           </button>
         </ModalFooter>
@@ -53,8 +58,8 @@ export const WithLongBody: Story = {
     open: true,
     onOpenChange: fn(),
   },
-  render: (args) => (
-    <Modal {...args}>
+  render: (arguments_) => (
+    <Modal {...arguments_}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>Export snapshot</ModalTitle>
@@ -70,8 +75,13 @@ export const WithLongBody: Story = {
           </p>
         </div>
         <ModalFooter>
-          <button className="text-muted-foreground text-sm" type="button">Cancel</button>
-          <button className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground" type="button">
+          <button className="text-muted-foreground text-sm" type="button">
+            Cancel
+          </button>
+          <button
+            className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm"
+            type="button"
+          >
             Export
           </button>
         </ModalFooter>
@@ -80,13 +90,18 @@ export const WithLongBody: Story = {
   ),
 };
 
+/**
+ *
+ */
 function ControlledModal() {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button
-        className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
-        onClick={() => setOpen(true)}
+        className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm"
+        onClick={() => {
+          setOpen(true);
+        }}
         type="button"
       >
         Open modal
@@ -98,13 +113,21 @@ function ControlledModal() {
             <ModalDescription>Are you sure you want to continue?</ModalDescription>
           </ModalHeader>
           <ModalFooter>
-            <button className="text-muted-foreground text-sm" onClick={() => setOpen(false)} type="button">
+            <button
+              className="text-muted-foreground text-sm"
+              onClick={() => {
+                setOpen(false);
+              }}
+              type="button"
+            >
               Cancel
             </button>
             <button
               aria-label="confirm-action"
-              className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
-              onClick={() => setOpen(false)}
+              className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm"
+              onClick={() => {
+                setOpen(false);
+              }}
               type="button"
             >
               Confirm

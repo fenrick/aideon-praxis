@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
-import { cn } from '../lib/utilities';
 import { Skeleton } from '../components/ui/skeleton';
+import { cn } from '../lib/utilities';
 import { EmptyState } from './empty-state';
 import { ErrorFrame } from './error-frame';
 
@@ -22,6 +22,15 @@ export interface ArtefactFrameProperties {
  * Base frame for all artefact forms (view, catalogue, matrix, map, report, page).
  * Provides loading/empty/error shells; ready state renders children.
  * Domain content is always caller-supplied through slots.
+ * @param root0
+ * @param root0.state
+ * @param root0.loadingRows
+ * @param root0.emptyTitle
+ * @param root0.emptyDescription
+ * @param root0.errorMessage
+ * @param root0.onRetry
+ * @param root0.children
+ * @param root0.className
  */
 export function ArtefactFrame({
   state = 'ready',
@@ -40,8 +49,8 @@ export function ArtefactFrame({
         aria-label="Loading"
         className={cn('flex flex-col gap-2 p-4', className)}
       >
-        {Array.from({ length: loadingRows }, (_, i) => (
-          <Skeleton className="h-8 w-full" key={i} />
+        {Array.from({ length: loadingRows }, (_, index) => (
+          <Skeleton className="h-8 w-full" key={index} />
         ))}
       </div>
     );

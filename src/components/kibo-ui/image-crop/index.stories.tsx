@@ -1,11 +1,15 @@
-import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { useState } from 'react';
 import { ImageCrop, ImageCropApply, ImageCropContent, ImageCropReset } from './index';
 
 const meta = {
   component: ImageCrop,
   tags: ['autodocs'],
   title: 'Kibo UI/ImageCrop',
+  args: {
+    file: new File([], 'placeholder.png', { type: 'image/png' }),
+    children: null,
+  },
 } satisfies Meta<typeof ImageCrop>;
 
 export default meta;
@@ -50,17 +54,17 @@ const ImageCropDemo = ({ aspect }: { aspect?: number }) => {
   const [cropped, setCropped] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col gap-4 max-w-sm">
+    <div className="flex max-w-sm flex-col gap-4">
       <ImageCrop aspect={aspect} file={file} onCrop={setCropped}>
         <ImageCropContent />
-        <div className="flex gap-2 justify-end">
+        <div className="flex justify-end gap-2">
           <ImageCropReset />
-          <ImageCropApply onCrop={setCropped} />
+          <ImageCropApply />
         </div>
       </ImageCrop>
       {cropped && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Cropped result:</p>
+          <p className="text-muted-foreground mb-1 text-xs">Cropped result:</p>
           <img alt="cropped" className="rounded border" src={cropped} />
         </div>
       )}

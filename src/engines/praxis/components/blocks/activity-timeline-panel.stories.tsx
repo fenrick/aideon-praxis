@@ -5,11 +5,15 @@ import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-t
 import { ActivityTimelinePanel } from './activity-timeline-panel';
 
 const noopActions: TemporalPanelActions = {
-  selectBranch: async () => undefined,
-  selectCommit: () => undefined,
-  selectLayer: () => undefined,
-  refreshBranches: async () => undefined,
-  mergeIntoMain: async () => undefined,
+  selectBranch: () => Promise.resolve(),
+  selectCommit: () => {
+    return;
+  },
+  selectLayer: () => {
+    return;
+  },
+  refreshBranches: () => Promise.resolve(),
+  mergeIntoMain: () => Promise.resolve(),
 };
 
 const baseState: TemporalPanelState = {

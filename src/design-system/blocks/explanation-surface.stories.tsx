@@ -33,5 +33,11 @@ export const LongContent: Story = {
     children:
       'Score computed from three independent sources: a network-scan connector, a CMDB import, and manual confirmation. All three agree on the value, raising confidence to the high tier. The most recent assertion was recorded 2024-11-15.',
   },
-  decorators: [(Story) => <div className="w-72"><Story /></div>],
+  decorators: [
+    (Story) => (
+      <div className="w-72">
+        <Story />
+      </div>
+    ),
+  ],
 };

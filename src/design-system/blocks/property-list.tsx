@@ -23,6 +23,11 @@ export interface PropertyRowProperties {
 
 /**
  * Renders a single key-value row for use in an inspector pane.
+ * @param root0
+ * @param root0.label
+ * @param root0.children
+ * @param root0.badge
+ * @param root0.className
  */
 export function PropertyRow({ label, children, badge, className }: PropertyRowProperties) {
   return (
@@ -37,6 +42,9 @@ export function PropertyRow({ label, children, badge, className }: PropertyRowPr
 /**
  * Renders a list of labelled key-value pairs in the inspector.
  * Each item's value may be any ReactNode — plain text, badges, or formatted output.
+ * @param root0
+ * @param root0.items
+ * @param root0.className
  */
 export function PropertyList({ items, className }: PropertyListProperties) {
   return (

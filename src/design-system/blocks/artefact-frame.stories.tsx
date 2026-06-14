@@ -37,6 +37,6 @@ export const Empty: Story = {
   },
 };
 
-export const Error: Story = {
+export const ErrorState: Story = {
   args: { state: 'error', errorMessage: 'Failed to load catalogue data.', onRetry: fn() },
 };

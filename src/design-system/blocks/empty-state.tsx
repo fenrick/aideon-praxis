@@ -15,6 +15,12 @@ export interface EmptyStateProperties {
 /**
  * Empty state shown when a surface has no content to display.
  * Domain meaning (title/description/action) is always supplied by the caller.
+ * @param root0
+ * @param root0.title
+ * @param root0.description
+ * @param root0.icon
+ * @param root0.action
+ * @param root0.className
  */
 export function EmptyState({
   title,
@@ -25,10 +31,7 @@ export function EmptyState({
 }: EmptyStateProperties) {
   return (
     <div
-      className={cn(
-        'flex flex-col items-center justify-center gap-3 py-12 text-center',
-        className,
-      )}
+      className={cn('flex flex-col items-center justify-center gap-3 py-12 text-center', className)}
     >
       <Icon aria-hidden className="text-muted-foreground h-10 w-10" />
       <div className="flex flex-col gap-1">

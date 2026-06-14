@@ -55,9 +55,15 @@ export const Default: Story = {
     widget: baseWidget,
     reloadVersion: 0,
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
-    onViewChange: () => undefined,
-    onError: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onViewChange: () => {
+      return;
+    },
+    onError: () => {
+      return;
+    },
   },
 };
 
@@ -72,9 +78,15 @@ export const WithGraphLayoutContext: Story = {
       scenario: 'main',
       layer: 'Plan',
     },
-    onSelectionChange: () => undefined,
-    onViewChange: () => undefined,
-    onError: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onViewChange: () => {
+      return;
+    },
+    onError: () => {
+      return;
+    },
   },
 };
 
@@ -88,8 +100,14 @@ export const WithNodeSelection: Story = {
       edgeIds: [],
       cellIds: [],
     },
-    onSelectionChange: () => undefined,
-    onViewChange: () => undefined,
-    onError: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onViewChange: () => {
+      return;
+    },
+    onError: () => {
+      return;
+    },
   },
 };

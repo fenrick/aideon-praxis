@@ -46,7 +46,11 @@ export const AllClassifications = {
   render: () => (
     <div className="flex w-72 flex-col gap-3">
       <ProvenancePanel classification="asserted" source="CMDB" />
-      <ProvenancePanel classification="inferred" source="Twin engine" detail="Derived from telemetry." />
+      <ProvenancePanel
+        classification="inferred"
+        source="Twin engine"
+        detail="Derived from telemetry."
+      />
       <ProvenancePanel classification="generated" source="Analytics worker" />
     </div>
   ),

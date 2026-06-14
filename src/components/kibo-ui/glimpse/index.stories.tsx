@@ -21,7 +21,7 @@ export const Default: Story = {
   render: () => (
     <Glimpse>
       <GlimpseTrigger asChild>
-        <a className="underline cursor-pointer" href="#">
+        <a className="cursor-pointer underline" href="#">
           Hover over this link
         </a>
       </GlimpseTrigger>
@@ -39,7 +39,7 @@ export const WithImage: Story = {
   render: () => (
     <Glimpse>
       <GlimpseTrigger asChild>
-        <a className="underline cursor-pointer" href="#">
+        <a className="cursor-pointer underline" href="#">
           Hover to preview
         </a>
       </GlimpseTrigger>
@@ -61,7 +61,7 @@ export const TitleOnly: Story = {
   render: () => (
     <Glimpse>
       <GlimpseTrigger asChild>
-        <span className="underline cursor-pointer">Documentation</span>
+        <span className="cursor-pointer underline">Documentation</span>
       </GlimpseTrigger>
       <GlimpseContent>
         <GlimpseTitle>Component Documentation</GlimpseTitle>

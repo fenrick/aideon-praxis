@@ -34,11 +34,17 @@ interface DialogStackContextType {
 
 const DialogStackContext = createContext<DialogStackContextType>({
   activeIndex: 0,
-  setActiveIndex: () => {},
+  setActiveIndex: () => {
+    return;
+  },
   totalDialogs: 0,
-  setTotalDialogs: () => {},
+  setTotalDialogs: () => {
+    return;
+  },
   isOpen: false,
-  setIsOpen: () => {},
+  setIsOpen: () => {
+    return;
+  },
   clickable: false,
 });
 
@@ -81,7 +87,9 @@ export const DialogStack = ({
         activeIndex,
         setActiveIndex,
         totalDialogs: 0,
-        setTotalDialogs: () => {},
+        setTotalDialogs: () => {
+          return;
+        },
         isOpen: isOpen ?? false,
         setIsOpen: (value) => {
           setIsOpen(Boolean(value));

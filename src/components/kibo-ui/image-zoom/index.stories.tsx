@@ -5,6 +5,9 @@ const meta = {
   component: ImageZoom,
   tags: ['autodocs'],
   title: 'Kibo UI/ImageZoom',
+  args: {
+    children: <img alt="" src="" />,
+  },
 } satisfies Meta<typeof ImageZoom>;
 
 export default meta;
@@ -48,11 +51,7 @@ export const MultipleImages: Story = {
       ].map((src, i) => (
         <div key={i} style={{ width: 150 }}>
           <ImageZoom>
-            <img
-              alt={`Image ${i + 1}`}
-              src={src}
-              style={{ width: '100%', borderRadius: 8 }}
-            />
+            <img alt={`Image ${i + 1}`} src={src} style={{ width: '100%', borderRadius: 8 }} />
           </ImageZoom>
         </div>
       ))}

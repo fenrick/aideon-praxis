@@ -21,7 +21,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Error: Story = { args: { tone: 'error', label: 'Error' } };
+export const ErrorState: Story = { args: { tone: 'error', label: 'Error' } };
 export const Warning: Story = { args: { tone: 'warning', label: 'Warning' } };
 export const Info: Story = { args: { tone: 'info', label: 'Info' } };
 export const Partial: Story = { args: { tone: 'partial', label: 'Partial' } };
@@ -48,7 +48,7 @@ export const CssCheck: Story = {
   args: { tone: 'error', label: 'Error' },
   play: async ({ canvas }) => {
     const label = canvas.getByText('Error');
-    const badge = label.parentElement!;
-    await expect(badge.classList.contains('rounded-full')).toBe(true);
+    const badge = label.parentElement;
+    await expect(badge?.classList.contains('rounded-full')).toBe(true);
   },
 };

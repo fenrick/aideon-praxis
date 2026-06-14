@@ -30,8 +30,12 @@ export const Empty: Story = {
   args: {
     widgets: [],
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
-    onAddWidget: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onAddWidget: () => {
+      return;
+    },
   },
 };
 
@@ -56,7 +60,9 @@ export const WithGraphWidget: Story = {
       },
     ],
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };
 
@@ -78,6 +84,8 @@ export const WithError: Story = {
     ],
     selection: EMPTY_SELECTION,
     errorMessage: 'Failed to load graph data. Check worker health.',
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };

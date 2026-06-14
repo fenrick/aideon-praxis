@@ -31,9 +31,15 @@ export const OverviewTab: Story = {
     widgets: [],
     selection: EMPTY_SELECTION,
     value: 'overview',
-    onSelectionChange: () => undefined,
-    onRequestMetaModelFocus: () => undefined,
-    onValueChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onRequestMetaModelFocus: () => {
+      return;
+    },
+    onValueChange: () => {
+      return;
+    },
   },
 };
 
@@ -42,9 +48,15 @@ export const CanvasTab: Story = {
     widgets: [],
     selection: EMPTY_SELECTION,
     value: 'canvas',
-    onSelectionChange: () => undefined,
-    onRequestMetaModelFocus: () => undefined,
-    onValueChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onRequestMetaModelFocus: () => {
+      return;
+    },
+    onValueChange: () => {
+      return;
+    },
   },
 };
 
@@ -53,9 +65,15 @@ export const TimelineTab: Story = {
     widgets: [],
     selection: EMPTY_SELECTION,
     value: 'timeline',
-    onSelectionChange: () => undefined,
-    onRequestMetaModelFocus: () => undefined,
-    onValueChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onRequestMetaModelFocus: () => {
+      return;
+    },
+    onValueChange: () => {
+      return;
+    },
   },
 };
 
@@ -64,8 +82,14 @@ export const ActivityTab: Story = {
     widgets: [],
     selection: EMPTY_SELECTION,
     value: 'activity',
-    onSelectionChange: () => undefined,
-    onRequestMetaModelFocus: () => undefined,
-    onValueChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
+    onRequestMetaModelFocus: () => {
+      return;
+    },
+    onValueChange: () => {
+      return;
+    },
   },
 };

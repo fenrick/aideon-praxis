@@ -16,7 +16,9 @@ export const Loading: Story = {
   args: {
     fallbackTitle: 'Twin overview graph',
     loading: true,
-    onRefresh: () => undefined,
+    onRefresh: () => {
+      return;
+    },
   },
 };
 
@@ -27,10 +29,14 @@ export const WithMetadata: Story = {
       name: 'Executive Overview',
       asOf: '2025-06-01T00:00:00Z',
       scenario: 'main',
+      fetchedAt: '2025-06-01T00:00:00Z',
+      source: 'host',
     },
     fallbackTitle: 'Twin overview graph',
     loading: false,
-    onRefresh: () => undefined,
+    onRefresh: () => {
+      return;
+    },
   },
 };
 
@@ -38,7 +44,9 @@ export const NoMetadata: Story = {
   args: {
     fallbackTitle: 'Capability catalogue',
     loading: false,
-    onRefresh: () => undefined,
+    onRefresh: () => {
+      return;
+    },
   },
 };
 
@@ -49,9 +57,13 @@ export const MetadataWithCommitHash: Story = {
       name: 'Capability Catalogue',
       asOf: 'abc123def456',
       scenario: 'main',
+      fetchedAt: '2025-06-01T00:00:00Z',
+      source: 'host',
     },
     fallbackTitle: 'Capability catalogue',
     loading: false,
-    onRefresh: () => undefined,
+    onRefresh: () => {
+      return;
+    },
   },
 };

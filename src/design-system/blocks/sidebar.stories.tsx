@@ -17,15 +17,23 @@ export const Default: Story = {
       <SidebarSection>
         <SidebarHeading>Navigation</SidebarHeading>
         <SidebarNav>
-          <a href="#" className="rounded px-2 py-1.5 hover:bg-muted">Dashboard</a>
-          <a href="#" className="rounded px-2 py-1.5 hover:bg-muted">Graph</a>
-          <a href="#" className="rounded px-2 py-1.5 hover:bg-muted">Timeline</a>
+          <a href="https://example.com" className="hover:bg-muted rounded px-2 py-1.5">
+            Dashboard
+          </a>
+          <a href="https://example.com" className="hover:bg-muted rounded px-2 py-1.5">
+            Graph
+          </a>
+          <a href="https://example.com" className="hover:bg-muted rounded px-2 py-1.5">
+            Timeline
+          </a>
         </SidebarNav>
       </SidebarSection>
       <SidebarSection>
         <SidebarHeading>Tools</SidebarHeading>
         <SidebarNav>
-          <a href="#" className="rounded px-2 py-1.5 hover:bg-muted">Settings</a>
+          <a href="https://example.com" className="hover:bg-muted rounded px-2 py-1.5">
+            Settings
+          </a>
         </SidebarNav>
       </SidebarSection>
     </SidebarShell>
@@ -42,8 +50,12 @@ export const Unpadded: Story = {
       <SidebarSection>
         <SidebarHeading>Items</SidebarHeading>
         <SidebarNav>
-          <a href="#" className="rounded px-2 py-1.5 hover:bg-muted">Item A</a>
-          <a href="#" className="rounded px-2 py-1.5 hover:bg-muted">Item B</a>
+          <a href="https://example.com" className="hover:bg-muted rounded px-2 py-1.5">
+            Item A
+          </a>
+          <a href="https://example.com" className="hover:bg-muted rounded px-2 py-1.5">
+            Item B
+          </a>
         </SidebarNav>
       </SidebarSection>
     </SidebarShell>

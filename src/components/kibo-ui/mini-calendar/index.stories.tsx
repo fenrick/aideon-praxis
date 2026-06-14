@@ -1,11 +1,6 @@
-import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import {
-  MiniCalendar,
-  MiniCalendarDay,
-  MiniCalendarDays,
-  MiniCalendarNavigation,
-} from './index';
+import { useState } from 'react';
+import { MiniCalendar, MiniCalendarDay, MiniCalendarDays, MiniCalendarNavigation } from './index';
 
 const meta = {
   component: MiniCalendar,
@@ -30,10 +25,7 @@ export const Default: Story = {
 
 export const WithSelectedDate: Story = {
   render: () => (
-    <MiniCalendar
-      defaultStartDate={new Date('2024-11-11')}
-      defaultValue={new Date('2024-11-13')}
-    >
+    <MiniCalendar defaultStartDate={new Date('2024-11-11')} defaultValue={new Date('2024-11-13')}>
       <MiniCalendarNavigation direction="prev" />
       <MiniCalendarDays>
         {(date) => <MiniCalendarDay date={date} key={date.toISOString()} />}
@@ -84,7 +76,7 @@ const ControlledMiniCalendar = () => {
         <MiniCalendarNavigation direction="next" />
       </MiniCalendar>
       {selected && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Selected: {selected.toLocaleDateString('en-US', { dateStyle: 'long' })}
         </p>
       )}

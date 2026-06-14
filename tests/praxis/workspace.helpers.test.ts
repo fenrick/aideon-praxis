@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { WidgetRegistryEntry } from 'praxis/widgets/registry';
 import { __test__ } from 'praxis/layout-helpers';
+import type { WidgetRegistryEntry } from 'praxis/widgets/registry';
 
 /**
  *

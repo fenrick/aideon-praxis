@@ -1,5 +1,5 @@
-import { InfoIcon, MegaphoneIcon } from 'lucide-react';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { InfoIcon, MegaphoneIcon } from 'lucide-react';
 import { Banner, BannerAction, BannerClose, BannerIcon, BannerTitle } from './index';
 
 const meta = {

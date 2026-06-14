@@ -20,10 +20,16 @@ export const Default: Story = {
     templateName: 'Executive overview',
     templateDescription: 'Graph + KPI + catalogue snapshot for leadership reviews.',
     templates: BUILT_IN_LAYOUTS,
-    activeTemplateId: BUILT_IN_LAYOUTS[0]!.id,
-    onTemplateChange: () => undefined,
-    onTemplateSave: () => undefined,
-    onCreateWidget: () => undefined,
+    activeTemplateId: BUILT_IN_LAYOUTS[0]?.id ?? '',
+    onTemplateChange: () => {
+      return;
+    },
+    onTemplateSave: () => {
+      return;
+    },
+    onCreateWidget: () => {
+      return;
+    },
   },
 };
 
@@ -39,9 +45,15 @@ export const NoTemplateSelected: Story = {
     scenarioName: 'Current State',
     templates: BUILT_IN_LAYOUTS,
     activeTemplateId: '',
-    onTemplateChange: () => undefined,
-    onTemplateSave: () => undefined,
-    onCreateWidget: () => undefined,
+    onTemplateChange: () => {
+      return;
+    },
+    onTemplateSave: () => {
+      return;
+    },
+    onCreateWidget: () => {
+      return;
+    },
   },
 };
 
@@ -49,9 +61,15 @@ export const NoScenario: Story = {
   args: {
     templateName: 'Explorer workspace',
     templates: BUILT_IN_LAYOUTS,
-    activeTemplateId: BUILT_IN_LAYOUTS[1]!.id,
-    onTemplateChange: () => undefined,
-    onTemplateSave: () => undefined,
-    onCreateWidget: () => undefined,
+    activeTemplateId: BUILT_IN_LAYOUTS[1]?.id ?? '',
+    onTemplateChange: () => {
+      return;
+    },
+    onTemplateSave: () => {
+      return;
+    },
+    onCreateWidget: () => {
+      return;
+    },
   },
 };

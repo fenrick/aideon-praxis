@@ -4,10 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { DiffMarker } from 'design-system/blocks/diff-marker';
 import { ExplanationSurface } from 'design-system/blocks/explanation-surface';
 import { InspectorPanel } from 'design-system/blocks/inspector-panel';
-import {
-  InspectorSection,
-  InspectorSectionGroup,
-} from 'design-system/blocks/inspector-section';
+import { InspectorSection, InspectorSectionGroup } from 'design-system/blocks/inspector-section';
 import { PropertyList, PropertyRow } from 'design-system/blocks/property-list';
 import { ProvenancePanel } from 'design-system/blocks/provenance-panel';
 
@@ -121,14 +118,16 @@ describe('DiffMarker', () => {
   it('renders all operations without crashing', () => {
     const ops = ['added', 'changed', 'removed', 'unchanged'] as const;
     for (const op of ops) {
-      const { unmount } = render(<DiffMarker operation={op} />);
-      unmount();
+      expect(() => {
+        const { unmount } = render(<DiffMarker operation={op} />);
+        unmount();
+      }).not.toThrow();
     }
   });
 
   it('hides label when showLabel=false, exposes via aria-label', () => {
     render(<DiffMarker operation="removed" showLabel={false} />);
-    expect(screen.queryByText('Removed')).toBeNull();
+    expect(screen.queryByText('Removed')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Removed')).toBeInTheDocument();
   });
 });

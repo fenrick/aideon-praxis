@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { fn, userEvent, expect, within } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { CommandPalette } from './command-palette';
 
@@ -54,14 +54,12 @@ export const SelectItem: Story = {
   name: 'Select item fires callback',
   args: {
     open: true,
-    items: [
-      { id: 'action', label: 'Run action', onSelect: fn() },
-    ],
+    items: [{ id: 'action', label: 'Run action', onSelect: fn() }],
   },
   play: async ({ args }) => {
     const body = within(document.body);
     const item = await body.findByText('Run action');
     await userEvent.click(item);
-    await expect(args.items[0].onSelect).toHaveBeenCalled();
+    await expect(args.items[0]?.onSelect).toHaveBeenCalled();
   },
 };

@@ -54,7 +54,7 @@ const formatDate = (date: Date) => {
   return { month, day };
 };
 
-export type MiniCalendarProps = HTMLAttributes<HTMLDivElement> & {
+export type MiniCalendarProps = Omit<HTMLAttributes<HTMLDivElement>, 'defaultValue'> & {
   value?: Date;
   defaultValue?: Date;
   onValueChange?: (date: Date | undefined) => void;

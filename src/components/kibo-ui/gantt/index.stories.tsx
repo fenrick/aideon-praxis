@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import {
-  GanttFeatureItem,
   GanttFeatureList,
   GanttFeatureListGroup,
   GanttFeatureRow,
@@ -18,6 +17,9 @@ const meta = {
   component: GanttProvider,
   tags: ['autodocs'],
   title: 'Kibo UI/Gantt',
+  args: {
+    children: null,
+  },
 } satisfies Meta<typeof GanttProvider>;
 
 export default meta;
@@ -157,9 +159,9 @@ export const WithCustomItems: Story = {
             <GanttFeatureListGroup>
               <GanttFeatureRow features={features}>
                 {(feature) => (
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
                     <div
-                      className="h-2 w-2 rounded-full shrink-0"
+                      className="h-2 w-2 shrink-0 rounded-full"
                       style={{ backgroundColor: feature.status.color }}
                     />
                     <span className="truncate text-xs font-medium">{feature.name}</span>

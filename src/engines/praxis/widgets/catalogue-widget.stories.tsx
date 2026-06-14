@@ -46,7 +46,9 @@ export const Default: Story = {
     widget: baseWidget,
     reloadVersion: 0,
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };
 
@@ -60,7 +62,9 @@ export const WithSelection: Story = {
       edgeIds: [],
       cellIds: [],
     },
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };
 
@@ -69,6 +73,8 @@ export const ReloadTriggered: Story = {
     widget: baseWidget,
     reloadVersion: 3,
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };

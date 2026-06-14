@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta } from '@storybook/nextjs-vite';
 
 import { ExplanationSurface } from './explanation-surface';
 import { InspectorSection, InspectorSectionGroup } from './inspector-section';
@@ -11,8 +11,6 @@ const meta = {
 } satisfies Meta<typeof InspectorSection>;
 
 export default meta;
-
-type Story = StoryObj<typeof meta>;
 
 export const WithSections = {
   name: 'With sections',

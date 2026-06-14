@@ -44,7 +44,9 @@ export const Default: Story = {
     widget: baseWidget,
     reloadVersion: 0,
     selection: EMPTY_SELECTION,
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };
 
@@ -58,6 +60,8 @@ export const WithCellSelection: Story = {
       edgeIds: [],
       cellIds: ['cap-001::svc-003'],
     },
-    onSelectionChange: () => undefined,
+    onSelectionChange: () => {
+      return;
+    },
   },
 };
