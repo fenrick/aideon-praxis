@@ -24,7 +24,6 @@ import { TimeControlPanel } from '../blocks/time-control-panel';
 import { ViewpointBar } from './viewpoint-bar';
 
 export interface PraxisWorkspaceToolbarProperties {
-  readonly scenarioName?: string;
   readonly templates: CanvasTemplate[];
   readonly activeTemplateId: string;
   readonly templateName?: string;
@@ -52,7 +51,6 @@ function dispatchCommandPaletteEvent() {
 /**
  * Compact page header for the Praxis workspace, with template selection and actions.
  * @param props - Workspace toolbar props.
- * @param props.scenarioName
  * @param props.templates
  * @param props.activeTemplateId
  * @param props.templateName
@@ -64,7 +62,6 @@ function dispatchCommandPaletteEvent() {
  * @param props.loading
  */
 export function PraxisWorkspaceToolbar({
-  scenarioName,
   templates,
   activeTemplateId,
   templateName,
@@ -79,9 +76,7 @@ export function PraxisWorkspaceToolbar({
   const [pagesDialogOpen, setPagesDialogOpen] = useState(false);
   const shouldUseNativeSelect = isTauri();
 
-  const headerEyebrow = scenarioName ?? temporalState.branch ?? 'No scenario selected';
   const headerTitle = templateName ?? 'Select a template';
-  const headerDescription = 'Graph + KPI + catalogue snapshot for leadership reviews';
   const activeTemplateExists = templates.some((template) => template.id === activeTemplateId);
   const templateSelectValue = activeTemplateExists ? activeTemplateId : '';
 
@@ -99,16 +94,12 @@ export function PraxisWorkspaceToolbar({
     <>
       <div className="border-border/60 bg-background/90 border-t px-3 pt-3 pb-3 md:px-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs font-semibold tracking-[0.24em] uppercase">
-              {headerEyebrow}
-            </p>
-            <h1 className="text-foreground text-xl leading-tight font-semibold">{headerTitle}</h1>
-            <p className="text-muted-foreground line-clamp-1 text-sm">{headerDescription}</p>
-          </div>
+          <h1 className="text-foreground truncate text-base leading-none font-semibold">
+            {headerTitle}
+          </h1>
           <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
             <ViewpointBar state={temporalState} actions={temporalActions} />
-            <div className="min-w-[200px]">
+            <div className="w-[180px]">
               {shouldUseNativeSelect ? (
                 <select
                   aria-label="Select template"
@@ -148,12 +139,7 @@ export function PraxisWorkspaceToolbar({
                   <SelectContent>
                     {templates.map((template) => (
                       <SelectItem key={template.id} value={template.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{template.name}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {template.description}
-                          </span>
-                        </div>
+                        {template.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

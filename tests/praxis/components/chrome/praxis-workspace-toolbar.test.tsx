@@ -66,7 +66,6 @@ describe('PraxisWorkspaceToolbar', () => {
 
     render(
       <PraxisWorkspaceToolbar
-        scenarioName="Mainline FY25"
         templateName="Executive overview"
         templates={templates}
         activeTemplateId="t1"
@@ -78,7 +77,6 @@ describe('PraxisWorkspaceToolbar', () => {
       />,
     );
 
-    expect(screen.getByText(/Mainline FY25/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Executive overview/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Add widget/i }));

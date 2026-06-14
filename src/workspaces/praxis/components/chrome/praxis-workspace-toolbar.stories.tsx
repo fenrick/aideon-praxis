@@ -1,17 +1,23 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 import { BUILT_IN_TEMPLATES } from 'praxis/templates';
+import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
 import { PraxisWorkspaceToolbar } from './praxis-workspace-toolbar';
 
-const noopActions: TemporalPanelActions = {
-  selectBranch: async () => undefined,
-  selectCommit: () => undefined,
-  selectLayer: () => undefined,
-  refreshBranches: async () => undefined,
-  mergeIntoMain: async () => undefined,
+const noop = () => {
+  return;
 };
+
+const noopActions: TemporalPanelActions = {
+  selectBranch: () => Promise.resolve(),
+  selectCommit: noop,
+  selectLayer: noop,
+  refreshBranches: () => Promise.resolve(),
+  mergeIntoMain: () => Promise.resolve(),
+};
+
+const firstTemplateId = BUILT_IN_TEMPLATES[0]?.id ?? '';
 
 const baseTemporalState: TemporalPanelState = {
   branches: [{ name: 'main' }, { name: 'scenario/target-2026' }],
@@ -35,13 +41,12 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    scenarioName: 'Current State',
     templates: BUILT_IN_TEMPLATES,
-    activeTemplateId: BUILT_IN_TEMPLATES[0]!.id,
+    activeTemplateId: firstTemplateId,
     templateName: 'Executive overview',
-    onTemplateChange: () => undefined,
-    onTemplateSave: () => undefined,
-    onCreateWidget: () => undefined,
+    onTemplateChange: noop,
+    onTemplateSave: noop,
+    onCreateWidget: noop,
     temporalState: baseTemporalState,
     temporalActions: noopActions,
   },
@@ -56,12 +61,11 @@ export const Loading: Story = {
 
 export const NoTemplates: Story = {
   args: {
-    scenarioName: 'Current State',
     templates: [],
     activeTemplateId: '',
-    onTemplateChange: () => undefined,
-    onTemplateSave: () => undefined,
-    onCreateWidget: () => undefined,
+    onTemplateChange: noop,
+    onTemplateSave: noop,
+    onCreateWidget: noop,
     temporalState: baseTemporalState,
     temporalActions: noopActions,
   },
@@ -70,10 +74,10 @@ export const NoTemplates: Story = {
 export const NoScenario: Story = {
   args: {
     templates: BUILT_IN_TEMPLATES,
-    activeTemplateId: BUILT_IN_TEMPLATES[0]!.id,
-    onTemplateChange: () => undefined,
-    onTemplateSave: () => undefined,
-    onCreateWidget: () => undefined,
+    activeTemplateId: firstTemplateId,
+    onTemplateChange: noop,
+    onTemplateSave: noop,
+    onCreateWidget: noop,
     temporalState: { ...baseTemporalState, branch: undefined },
     temporalActions: noopActions,
   },

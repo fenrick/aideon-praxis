@@ -77,7 +77,6 @@ export function PraxisWorkspaceNavigation(_: Readonly<WorkspaceNavigationPropert
  */
 export function PraxisWorkspaceToolbar() {
   const {
-    scenarioName,
     templateName,
     templatesState,
     activeTemplateId,
@@ -90,7 +89,6 @@ export function PraxisWorkspaceToolbar() {
 
   return (
     <PraxisWorkspaceToolbarChrome
-      scenarioName={scenarioName}
       templateName={templateName}
       templates={templatesState.data}
       activeTemplateId={activeTemplateId}
