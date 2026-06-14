@@ -58,7 +58,7 @@ function renderProjectScenarioMenuItems(parameters: {
         <SidebarMenuItem key={scenario.id}>
           <SidebarMenuButton
             size="sm"
-            className="data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground flex flex-col items-start gap-1 text-left"
+            className="data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground flex h-auto flex-col items-start gap-1 py-2 text-left whitespace-normal"
             onClick={() => {
               onSelectScenario?.(scenario.id);
             }}
