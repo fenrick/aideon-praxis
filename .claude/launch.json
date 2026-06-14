@@ -1,0 +1,10 @@
+{
+  "launches": [
+    {
+      "name": "Storybook",
+      "command": "pnpm exec storybook dev -p $PORT --ci",
+      "autoPort": true,
+      "cwd": "."
+    }
+  ]
+}

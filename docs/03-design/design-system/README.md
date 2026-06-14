@@ -44,7 +44,11 @@ The rule is a two-way test:
 **How it is enforced.** The boundary is the same proxy boundary [ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md) draws and is enforced three ways:
 
 1. **Architecturally** — the domain-free rule is owned by [ARCHITECTURE-BOUNDARY.md](../../01-architecture/ARCHITECTURE-BOUNDARY.md); the design system is a leaf with no dependency on feature modules.
-2. **By lint** — raw imports of `shadcn`, `radix`, `react-resizable-panels`, or the icon library from product surfaces are import-rule violations and treated as bugs ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)).
+2. **By lint** — the ESLint proxy-boundary rule (`no-restricted-imports`) blocks these patterns in all product code outside `src/design-system/` ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)):
+   - `lucide-react` → use `import { … } from 'design-system/icons'`
+   - `@radix-ui/*` → use the proxied shadcn component from `'design-system'`
+   - `design-system/components/**` → use `'design-system'` or `'design-system/reactflow/*'`
+   - `design-system/blocks/**` → use `'design-system'`
 3. **By review** — a block that names a domain type, hard-codes a status string, or branches on a layer/scenario is rejected at review and the domain part is lifted into a slot.
 
 A worked check: a `ProvenanceBadge` block is in-bounds because it takes a classification token (`asserted` / `inferred` / `generated`) and renders the agreed treatment; it does _not_ know what a `Capability` is. A component that renders "Capability tier" labels is a surface, not a block.

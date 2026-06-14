@@ -1,0 +1,2 @@
+# Block pushing dirty code: run the full CI gate locally before any push.
+pnpm run ci

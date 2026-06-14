@@ -330,3 +330,4 @@ target
 .env.example
 
 **/gen/
+storybook-static/

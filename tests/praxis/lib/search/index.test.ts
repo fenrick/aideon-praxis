@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { searchStore } from '@/workspaces/praxis/lib/search';
+import { searchStore } from 'praxis/lib/search';
 
 const resetStore = () => {
   searchStore.clear();

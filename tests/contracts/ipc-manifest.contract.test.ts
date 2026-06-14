@@ -2,9 +2,9 @@ import fs from 'node:fs/promises';
 
 import { SYSTEM_IPC_COMMANDS } from '@/adapters/system-ipc';
 import { TIMEGRAPH_IPC_COMMANDS } from '@/adapters/timegraph-ipc';
-import { MNEME_IPC_COMMANDS } from '@/workspaces/mneme/mneme-api';
-import { PRAXIS_DOMAIN_IPC_COMMANDS } from '@/workspaces/praxis/domain-data';
-import { PRAXIS_IPC_COMMANDS } from '@/workspaces/praxis/praxis-api';
+import { MNEME_IPC_COMMANDS } from '@/engines/mneme/mneme-api';
+import { PRAXIS_DOMAIN_IPC_COMMANDS } from 'praxis/domain-data';
+import { PRAXIS_IPC_COMMANDS } from 'praxis/praxis-api';
 import { describe, expect, it } from 'vitest';
 
 interface IpcManifest {

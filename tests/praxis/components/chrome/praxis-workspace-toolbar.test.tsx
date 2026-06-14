@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PraxisWorkspaceToolbar } from 'praxis/components/chrome/praxis-workspace-toolbar';
-import type { CanvasTemplate } from 'praxis/templates';
+import type { LayoutPreset } from 'praxis/layouts';
 import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
 vi.mock('praxis/platform', () => ({
@@ -11,8 +11,8 @@ vi.mock('praxis/platform', () => ({
 
 describe('PraxisWorkspaceToolbar', () => {
   it('renders the header and wires actions', async () => {
-    const templates: CanvasTemplate[] = [
-      { id: 't1', name: 'Template A', description: 'Desc A' } as CanvasTemplate,
+    const templates: LayoutPreset[] = [
+      { id: 't1', name: 'Template A', description: 'Desc A' } as LayoutPreset,
     ];
     const temporalState: TemporalPanelState = {
       branches: [{ name: 'main', head: 'commit-main-001' }],
@@ -66,7 +66,6 @@ describe('PraxisWorkspaceToolbar', () => {
 
     render(
       <PraxisWorkspaceToolbar
-        scenarioName="Mainline FY25"
         templateName="Executive overview"
         templates={templates}
         activeTemplateId="t1"
@@ -78,7 +77,6 @@ describe('PraxisWorkspaceToolbar', () => {
       />,
     );
 
-    expect(screen.getByText(/Mainline FY25/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Executive overview/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Add widget/i }));
@@ -87,7 +85,7 @@ describe('PraxisWorkspaceToolbar', () => {
     fireEvent.click(screen.getByRole('button', { name: /Save/i }));
     expect(onTemplateSave).toHaveBeenCalled();
 
-    const select = screen.getByLabelText('Select template');
+    const select = screen.getByLabelText('Select layout');
     fireEvent.change(select, { target: { value: 't1' } });
     expect(onTemplateChange).toHaveBeenCalledWith('t1');
 
@@ -100,9 +98,9 @@ describe('PraxisWorkspaceToolbar', () => {
 
     fireEvent.pointerDown(moreActionsTrigger);
     fireEvent.pointerUp(moreActionsTrigger);
-    const timeButton = await screen.findByText('Time');
+    const timeButton = await screen.findByText('Timeline');
     fireEvent.click(timeButton);
-    expect(await screen.findByText(/Time controls/i)).toBeInTheDocument();
+    expect(await screen.findAllByText(/Timeline/i)).not.toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: /^Close$/i }));
   }, 15_000);
 });

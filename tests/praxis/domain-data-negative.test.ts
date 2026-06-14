@@ -15,8 +15,8 @@ describe('domain-data negative paths', () => {
       ipcHandler: (command, arguments_) => invokeMock(command, arguments_),
     });
 
-    const { listTemplatesFromHost } = await import('praxis/domain-data');
-    await expect(listTemplatesFromHost()).rejects.toThrow('Host command');
+    const { listLayoutsFromHost } = await import('praxis/domain-data');
+    await expect(listLayoutsFromHost()).rejects.toThrow('Host command');
     expect(invokeMock).toHaveBeenCalled();
   });
 });

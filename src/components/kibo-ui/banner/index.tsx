@@ -19,7 +19,9 @@ interface BannerContextProperties {
 
 export const BannerContext = createContext<BannerContextProperties>({
   show: true,
-  setShow: () => {},
+  setShow: () => {
+    return;
+  },
 });
 
 export type BannerProps = HTMLAttributes<HTMLDivElement> & {

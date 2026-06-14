@@ -11,8 +11,10 @@
     "paths": {
       "@/*": ["./*"],
       "aideon/*": ["aideon/*"],
-      "praxis": ["workspaces/praxis/index.ts"],
-      "praxis/*": ["workspaces/praxis/*"],
+      "platform/*": ["platform/*"],
+      "engines/*": ["engines/*"],
+      "praxis": ["engines/praxis/index.ts"],
+      "praxis/*": ["engines/praxis/*"],
       "design-system/*": ["design-system/*"],
       "design-system/reactflow/*": ["design-system/components/*"],
       "adapters/*": ["adapters/*"],
@@ -28,5 +30,10 @@
     "jsx": "preserve"
   },
   "include": ["next-env.d.ts", "src", "tests", ".next/types/**/*.ts"],
-  "exclude": ["src/design-system/components/**/*", "tests/webdriver/**", "tests/e2e/**"]
+  "exclude": [
+    "src/design-system/components/**/*",
+    "tests/webdriver/**",
+    "tests/e2e/**",
+    ".storybook/**"
+  ]
 }

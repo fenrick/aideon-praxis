@@ -8,19 +8,23 @@ import {
   type ReactNode,
 } from 'react';
 
-import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from 'design-system';
-import { Toolbar, ToolbarSection, ToolbarSeparator } from 'design-system/blocks/toolbar';
-import { Badge } from 'design-system/components/ui/badge';
-import { Button } from 'design-system/components/ui/button';
 import {
+  Badge,
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from 'design-system/components/ui/dropdown-menu';
-import { Kbd } from 'design-system/components/ui/kbd';
-import { cn } from 'design-system/lib/utilities';
-import { isDevelopmentBuild, isTauriRuntime } from 'lib/runtime';
+  Kbd,
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarTrigger,
+  Toolbar,
+  ToolbarSection,
+  ToolbarSeparator,
+} from 'design-system';
 import {
   CommandIcon,
   LaptopIcon,
@@ -28,7 +32,9 @@ import {
   PanelRightClose,
   PanelRightOpen,
   SunIcon,
-} from 'lucide-react';
+} from 'design-system/icons';
+import { cn } from 'design-system/lib/utilities';
+import { isDevelopmentBuild, isTauriRuntime } from 'lib/runtime';
 import { useTheme } from 'next-themes';
 import { useAideonShellControls } from './shell-controls';
 

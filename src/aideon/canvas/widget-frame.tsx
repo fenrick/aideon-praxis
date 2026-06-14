@@ -1,12 +1,12 @@
-import { Button } from 'design-system/components/ui/button';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from 'design-system/components/ui/dropdown-menu';
+} from 'design-system';
+import { GripHorizontal, MoreHorizontal } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
-import { GripHorizontal, MoreHorizontal } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 export interface WidgetFrameProperties {

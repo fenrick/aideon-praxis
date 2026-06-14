@@ -69,7 +69,6 @@ export function isSemanticStateTone(value: string): value is SemanticStateTone {
  * @param tone
  */
 export function getSemanticStateContract(tone: SemanticStateTone) {
-  // eslint-disable-next-line security/detect-object-injection -- tone is narrowed to the SemanticStateTone literal union
   return semanticStateContracts[tone];
 }
 

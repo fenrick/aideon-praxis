@@ -1,17 +1,19 @@
 import { Component, type ReactElement, type ReactNode } from 'react';
 
-import { AlertTriangleIcon } from 'lucide-react';
+import { AlertTriangleIcon } from 'design-system/icons';
 
-import { Alert, AlertDescription, AlertTitle } from 'design-system/components/ui/alert';
-import { Button } from 'design-system/components/ui/button';
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from 'design-system/components/ui/card';
-import { ScrollArea } from 'design-system/components/ui/scroll-area';
+  ScrollArea,
+} from 'design-system';
 import { isDevelopmentBuild } from './lib/runtime';
 
 /**

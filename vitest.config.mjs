@@ -5,30 +5,32 @@ import { defineConfig } from 'vitest/config';
 const srcRoot = path.resolve(__dirname, 'src');
 const testsRoot = path.resolve(__dirname, 'tests');
 
-const praxisRoot = path.join(srcRoot, 'workspaces/praxis');
+const praxisRoot = path.join(srcRoot, 'engines/praxis');
+
+const alias = [
+  { find: '@', replacement: srcRoot },
+  { find: 'aideon', replacement: path.join(srcRoot, 'aideon') },
+  { find: 'platform', replacement: path.join(srcRoot, 'platform') },
+  { find: 'praxis', replacement: path.join(srcRoot, 'engines/praxis') },
+  {
+    find: 'design-system/reactflow',
+    replacement: path.join(srcRoot, 'design-system/components'),
+  },
+  { find: 'design-system', replacement: path.join(srcRoot, 'design-system') },
+  { find: 'adapters', replacement: path.join(srcRoot, 'adapters') },
+  { find: 'dtos', replacement: path.join(srcRoot, 'dtos') },
+  { find: 'lib', replacement: path.join(srcRoot, 'lib') },
+  { find: 'error-boundary', replacement: path.join(srcRoot, 'error-boundary') },
+];
 
 export default defineConfig({
-  resolve: {
-    alias: [
-      { find: '@', replacement: srcRoot },
-      { find: 'aideon', replacement: path.join(srcRoot, 'aideon') },
-      { find: 'praxis', replacement: praxisRoot },
-      {
-        find: 'design-system/reactflow',
-        replacement: path.join(srcRoot, 'design-system/components'),
-      },
-      { find: 'design-system', replacement: path.join(srcRoot, 'design-system') },
-      { find: 'adapters', replacement: path.join(srcRoot, 'adapters') },
-      { find: 'dtos', replacement: path.join(srcRoot, 'dtos') },
-      { find: 'lib', replacement: path.join(srcRoot, 'lib') },
-    ],
-  },
+  resolve: { alias },
   plugins: [react()],
   test: {
     environment: 'jsdom',
     setupFiles: [path.resolve(__dirname, 'tests/setup.ts')],
     include: ['src/**/*.{test,spec}.{ts,tsx,js,jsx}', 'tests/**/*.{test,spec}.{ts,tsx,js,jsx}'],
-    exclude: ['tests/webdriver/**'],
+    exclude: ['tests/webdriver/**', 'src/**/*.stories.*'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'lcov', 'html'],

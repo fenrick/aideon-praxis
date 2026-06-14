@@ -481,6 +481,54 @@ export default defineConfig([
     },
   },
 
+  // ADR-0010: Design-system proxy boundary.
+  // Product code must import icons and Radix primitives through src/design-system only.
+  // src/design-system/** is the wrapper layer and may import the originals directly.
+  {
+    name: 'design-system/proxy-boundary',
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/design-system/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['lucide-react'],
+              message:
+                "Import icons through the design-system Icon primitive: import { Icon } from '@/design-system'",
+            },
+            {
+              group: ['@radix-ui/*'],
+              message: 'Import Radix primitives through the design-system layer, not directly.',
+            },
+            {
+              group: ['design-system/components/**'],
+              message:
+                "Import through the design-system root: import { X } from 'design-system'. Canvas components use 'design-system/reactflow/*'.",
+            },
+            {
+              group: ['design-system/blocks/**'],
+              message: "Import through the design-system root: import { X } from 'design-system'.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Design-token definitions are exhaustive, typed maps keyed by string-literal
+  // unions. `security/detect-object-injection` is a false positive there:
+  // converting to runtime Maps would force optional return types across every
+  // token accessor's callers. Scope the rule off for these token files only.
+  {
+    name: 'design-system/foundations-token-maps',
+    files: ['src/design-system/foundations/**/*.{ts,tsx}'],
+    rules: {
+      'security/detect-object-injection': 'off',
+    },
+  },
+
   // Enforce Prettier formatting as ESLint errors (so `eslint` covers `prettier --check`).
   {
     name: 'prettier',

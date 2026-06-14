@@ -2,8 +2,7 @@
 
 import { ThemeProvider } from 'next-themes';
 
-import { Toaster } from 'design-system/components/ui/sonner';
-import { TooltipProvider } from 'design-system/components/ui/tooltip';
+import { Toaster, TooltipProvider } from 'design-system';
 import { ColorThemeProvider } from 'design-system/theme/color-theme';
 import { ErrorBoundary } from 'error-boundary';
 
