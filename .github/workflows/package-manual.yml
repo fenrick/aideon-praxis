@@ -19,8 +19,8 @@ permissions:
 
 jobs:
   package:
-    name: Package Tauri Bundles and Worker
-    uses: fenrick/aideon-praxis/.github/workflows/reusable-release.yml@main
+    name: Package Tauri Bundles
+    uses: ./.github/workflows/reusable-release.yml
     with:
       publish: ${{ inputs.publish }}
       os-matrix: ${{ inputs.os-matrix }}

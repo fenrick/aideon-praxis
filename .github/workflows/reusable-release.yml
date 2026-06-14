@@ -40,24 +40,25 @@ jobs:
             artifact-suffix: windows-x64
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@v4
 
       - name: Get pnpm store directory
         id: pnpm-store-app
+        shell: bash
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
       - name: Cache pnpm store
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-store-app.outputs.STORE_PATH }}
           key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
@@ -67,17 +68,8 @@ jobs:
       - name: Install JS dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: JS Format Check
-        run: pnpm run node:format:check
-
-      - name: JS Lint
-        run: pnpm run node:lint
-
-      - name: JS Typecheck
-        run: pnpm run node:typecheck
-
-      - name: JS Tests
-        run: pnpm run node:test
+      - name: JS checks
+        run: pnpm run node:ci
 
       - name: Validate platform mapping
         shell: bash
@@ -88,83 +80,46 @@ jobs:
           fi
 
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           targets: ${{ matrix.target }}
           components: rustfmt, clippy
+
+      - name: Cache cargo & target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-tauri-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.toml', 'pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-tauri-${{ matrix.target }}-
 
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
-          if ! sudo apt-get install -y libsoup-3.0-dev; then
-            sudo apt-get install -y libsoup2.4-dev
-          fi
-          if ! sudo apt-get install -y libwebkit2gtk-4.1-dev; then
-            sudo apt-get install -y libwebkit2gtk-4.0-dev
-          fi
+          sudo apt-get install -y \
+            pkg-config libglib2.0-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
 
       - name: Install Windows dependencies
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: |
-          choco install wixtoolset --no-progress --yes
+        run: choco install wixtoolset --no-progress --yes
 
       - name: Import Apple codesign certificates
         if: matrix.os == 'macos-latest' && inputs.publish && secrets.APPLE_CERTIFICATE != ''
-        uses: apple-actions/import-codesign-certs@v7
+        uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
-      - name: Build renderer assets
-        run: pnpm --filter @aideon/praxis-desktop build
-
       - name: Build Tauri bundles
-        run: pnpm tauri build --config crates/aideon_desktop/tauri.conf.json --manifest-path crates/aideon_desktop/Cargo.toml --target ${{ matrix.target }} --ci
+        run: pnpm tauri build --target ${{ matrix.target }} --ci
         env:
-          CARGO_TARGET_DIR: target
-          RUSTC_BOOTSTRAP: 0
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-
-      - name: Build worker libraries
-        run: cargo build --release --lib --manifest-path crates/aideon_desktop/Cargo.toml --target ${{ matrix.target }}
-        env:
-          CARGO_TARGET_DIR: target
-
-      - name: Stage worker artifacts
-        id: worker
-        shell: bash
-        env:
-          ARCHIVE_SUFFIX: ${{ matrix.artifact-suffix }}
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/worker/files
-          target_dir="target/${{ matrix.target }}/release"
-          deps_dir="${target_dir}/deps"
-          shopt -s nullglob
-          found=false
-          for file in "${target_dir}"/libpraxis_engine_lib.* "${target_dir}"/praxis_engine_lib.* "${target_dir}"/libaideon_praxis.* "${target_dir}"/aideon_praxis.*; do
-            if [[ -f "$file" ]]; then
-              cp "$file" artifacts/worker/files/
-              found=true
-            fi
-          done
-          if [[ -d "$deps_dir" ]]; then
-            for file in "${deps_dir}"/libaideon_* "${deps_dir}"/aideon_*; do
-              if [[ -f "$file" ]]; then
-                cp "$file" artifacts/worker/files/
-                found=true
-              fi
-            done
-          fi
-          if ! $found; then
-            echo "::error::No worker binaries were produced"
-            exit 1
-          fi
-          echo "Worker binaries collected in artifacts/worker/files"
 
       - name: Collect Tauri bundles
         id: bundles
@@ -172,17 +127,21 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/bundles
-          bundle_root="target/${{ matrix.target }}/release/bundle"
+          bundle_root="src-tauri/target/${{ matrix.target }}/release/bundle"
           if [[ ! -d "$bundle_root" ]]; then
             echo "::error::Bundle directory $bundle_root not found"
             exit 1
           fi
-          shopt -s nullglob
           found=false
           while IFS= read -r -d '' file; do
             cp "$file" artifacts/bundles/
             found=true
-          done < <(find "$bundle_root" -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.rpm' -o -name '*.dmg' -o -name '*.pkg' -o -name '*.app.tar.gz' -o -name '*.zip' -o -name '*.tar.gz' -o -name '*.msi' -o -name '*.exe' \) -print0)
+          done < <(find "$bundle_root" -type f \( \
+            -name '*.AppImage' -o -name '*.deb' -o -name '*.rpm' \
+            -o -name '*.dmg' -o -name '*.pkg' -o -name '*.app.tar.gz' \
+            -o -name '*.zip' -o -name '*.tar.gz' \
+            -o -name '*.msi' -o -name '*.exe' \
+          \) -print0)
           if ! $found; then
             echo "::error::No bundle artifacts found under $bundle_root"
             find "$bundle_root" -maxdepth 2 -type f
@@ -190,17 +149,10 @@ jobs:
           fi
 
       - name: Upload Tauri bundles
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: aideon-praxis-${{ matrix.artifact-suffix }}-bundles
+          name: aideon-desktop-${{ matrix.artifact-suffix }}-bundles
           path: artifacts/bundles/*
-          if-no-files-found: error
-
-      - name: Upload worker libraries
-        uses: actions/upload-artifact@v7
-        with:
-          name: aideon-worker-${{ matrix.artifact-suffix }}
-          path: artifacts/worker/files/*
           if-no-files-found: error
 
       - name: Publish bundles to GitHub Release
@@ -208,26 +160,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+        shell: bash
         run: |
           set -euo pipefail
           if [[ -z "$RELEASE_TAG" ]]; then
             echo "::error::Release tag is required to publish artifacts"
             exit 1
           fi
-          shopt -s nullglob
           bundle_files=(artifacts/bundles/*)
           if (( ${#bundle_files[@]} == 0 )); then
             echo "::error::No bundle artifacts found to publish"
             exit 1
           fi
           for file in "${bundle_files[@]}"; do
-            gh release upload "$RELEASE_TAG" "$file" --clobber
-          done
-          worker_files=(artifacts/worker/files/*)
-          if (( ${#worker_files[@]} == 0 )); then
-            echo "::error::No worker libraries found to publish"
-            exit 1
-          fi
-          for file in "${worker_files[@]}"; do
             gh release upload "$RELEASE_TAG" "$file" --clobber
           done
