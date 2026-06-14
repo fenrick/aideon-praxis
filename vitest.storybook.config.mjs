@@ -8,7 +8,8 @@ const srcRoot = path.resolve(import.meta.dirname, 'src');
 const alias = [
   { find: '@', replacement: srcRoot },
   { find: 'aideon', replacement: path.join(srcRoot, 'aideon') },
-  { find: 'praxis', replacement: path.join(srcRoot, 'workspaces/praxis') },
+  { find: 'platform', replacement: path.join(srcRoot, 'platform') },
+  { find: 'praxis', replacement: path.join(srcRoot, 'engines/praxis') },
   {
     find: 'design-system/reactflow',
     replacement: path.join(srcRoot, 'design-system/components'),

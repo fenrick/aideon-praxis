@@ -17,11 +17,17 @@
       "aideon/*": [
         "aideon/*"
       ],
+      "platform/*": [
+        "platform/*"
+      ],
+      "engines/*": [
+        "engines/*"
+      ],
       "praxis": [
-        "workspaces/praxis/index.ts"
+        "engines/praxis/index.ts"
       ],
       "praxis/*": [
-        "workspaces/praxis/*"
+        "engines/praxis/*"
       ],
       "design-system/*": [
         "design-system/*"

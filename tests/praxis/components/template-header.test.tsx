@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TemplateHeader } from 'praxis/components/template-screen/template-header';
-import type { CanvasTemplate } from 'praxis/templates';
+import type { LayoutPreset } from 'praxis/layouts';
 
 vi.mock('design-system/components/ui/select', () => {
   const Select = ({
@@ -26,7 +26,7 @@ vi.mock('design-system/components/ui/select', () => {
 });
 
 describe('TemplateHeader', () => {
-  const templates: CanvasTemplate[] = [
+  const templates: LayoutPreset[] = [
     {
       id: 't1',
       documentId: 'canvasdoc-t1',

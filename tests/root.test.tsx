@@ -2,8 +2,6 @@ import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { SidebarProvider } from 'design-system/desktop-shell';
-
 vi.mock('aideon/shell/aideon-desktop-shell', () => ({
   AideonDesktopShell: ({
     toolbar,
@@ -16,45 +14,39 @@ vi.mock('aideon/shell/aideon-desktop-shell', () => ({
     content: ReactNode;
     inspector: ReactNode;
   }) => (
-    <SidebarProvider>
+    <div>
       <div>{toolbar}</div>
       <div>{navigation}</div>
       <div>{content}</div>
       <div>{inspector}</div>
-    </SidebarProvider>
+    </div>
   ),
 }));
 
-vi.mock('@/workspaces/praxis/workspace', () => ({
-  PraxisWorkspaceProvider: ({ children }: { children: ReactNode }) => children,
+vi.mock('aideon/shell/aideon-toolbar', () => ({
+  AideonToolbar: ({ workspaceToolbar }: { workspaceToolbar: ReactNode }) => (
+    <div>App toolbar{workspaceToolbar}</div>
+  ),
 }));
 
-vi.mock('@/workspaces/registry', () => {
-  const workspace = {
-    id: 'praxis',
-    label: 'Praxis',
-    enabled: true,
-    Navigation: () => <div>Navigation</div>,
-    Toolbar: () => <div>Toolbar</div>,
-    Content: () => <div>Content</div>,
-    Inspector: () => <div>Inspector</div>,
-  };
-
-  return {
-    getWorkspaceOptions: () => [{ id: 'praxis', label: 'Praxis', disabled: false }],
-    getWorkspace: () => workspace,
-  };
-});
+vi.mock('platform', () => ({
+  LicensingProvider: ({ children }: { children: ReactNode }) => children,
+  HostPlatformProvider: ({ children }: { children: ReactNode }) => children,
+  PlatformNavigation: () => <div>Navigation</div>,
+  PlatformToolbar: () => <div>Layout toolbar</div>,
+  PlatformContent: () => <div>Content</div>,
+  PlatformInspector: () => <div>Inspector</div>,
+}));
 
 import { AideonDesktopRoot } from '@/root';
 
 describe('AideonDesktopRoot', () => {
-  it('renders the active workspace slots through the shell', () => {
+  it('renders the platform regions through the shell', () => {
     render(<AideonDesktopRoot />);
 
-    expect(screen.getByText('Toolbar')).toBeInTheDocument();
     expect(screen.getByText('Navigation')).toBeInTheDocument();
     expect(screen.getByText('Content')).toBeInTheDocument();
     expect(screen.getByText('Inspector')).toBeInTheDocument();
+    expect(screen.getByText('Layout toolbar')).toBeInTheDocument();
   });
 });

@@ -1,27 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-import { PraxisWorkspaceToolbar } from 'praxis/components/chrome/praxis-workspace-toolbar';
-import { ProjectsSidebar } from 'praxis/components/template-screen/projects-sidebar';
-import type { ScenarioSummary } from 'praxis/praxis-api';
-import { BUILT_IN_TEMPLATES } from 'praxis/templates';
-import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
-import type { WorkspaceNavigationProperties } from 'workspaces/types';
-
 import { Card, CardContent, CardHeader, CardTitle } from 'design-system';
+import { PraxisWorkspaceToolbar as PlatformToolbarChrome } from 'praxis/components/chrome/praxis-workspace-toolbar';
+import { ProjectsSidebar } from 'praxis/components/template-screen/projects-sidebar';
+import { BUILT_IN_LAYOUTS } from 'praxis/layouts';
+import type { ScenarioSummary } from 'praxis/praxis-api';
+import type { TemporalPanelActions, TemporalPanelState } from 'praxis/time/use-temporal-panel';
 
-import { AideonDesktopNavigation } from './aideon-desktop-navigation';
 import { AideonDesktopShell } from './aideon-desktop-shell';
 import { AideonToolbar } from './aideon-toolbar';
 
 const noop = () => {
   return;
 };
-
-const workspaceOptions: WorkspaceNavigationProperties['workspaceOptions'] = [
-  { id: 'praxis', label: 'Praxis', disabled: false },
-  { id: 'metis', label: 'Metis', disabled: true },
-  { id: 'mneme', label: 'Mneme', disabled: true },
-];
 
 const scenarios: ScenarioSummary[] = [
   {
@@ -75,7 +66,7 @@ const temporalActions: TemporalPanelActions = {
 };
 
 /**
- * Representative content surface standing in for an executed artefact result.
+ * Representative content surface standing in for executed artefact results.
  */
 function ContentSurface() {
   return (
@@ -131,7 +122,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The host workspace shell: navigation rail, toolbar (with the always-visible viewpoint bar), content surface, and inspector rail. Resize the viewport to see how the four regions reflow.',
+          'The host platform shell: navigation rail, toolbar (with the always-visible viewpoint bar), content surface, and inspector rail. One unified shell — engines contribute widgets; there is no per-module workspace chrome.',
       },
     },
   },
@@ -141,32 +132,25 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const PraxisWorkspace: Story = {
+export const HostPlatform: Story = {
   args: {
     contentLayout: 'scroll',
     navigation: (
-      <AideonDesktopNavigation
-        activeWorkspaceId="praxis"
-        workspaceOptions={workspaceOptions}
-        onWorkspaceSelect={noop}
-      >
-        <ProjectsSidebar
-          scenarios={scenarios}
-          loading={false}
-          activeScenarioId="s1"
-          onSelectScenario={noop}
-        />
-      </AideonDesktopNavigation>
+      <ProjectsSidebar
+        scenarios={scenarios}
+        loading={false}
+        activeScenarioId="s1"
+        onSelectScenario={noop}
+      />
     ),
     toolbar: (
       <AideonToolbar
         title="Aideon"
-        subtitle="Praxis workspace"
         modeLabel="Desktop"
         workspaceToolbar={
-          <PraxisWorkspaceToolbar
-            templates={BUILT_IN_TEMPLATES}
-            activeTemplateId={BUILT_IN_TEMPLATES[0]?.id ?? ''}
+          <PlatformToolbarChrome
+            templates={BUILT_IN_LAYOUTS}
+            activeTemplateId={BUILT_IN_LAYOUTS[0]?.id ?? ''}
             templateName="Executive overview"
             onTemplateChange={noop}
             onTemplateSave={noop}

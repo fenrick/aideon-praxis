@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { listProjectsWithScenarios, listTemplatesFromHost } from 'praxis/domain-data';
+import { listProjectsWithScenarios, listLayoutsFromHost } from 'praxis/domain-data';
 
 import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 
@@ -66,7 +66,7 @@ describe('domain-data normalization', () => {
       ]),
     );
 
-    const templates = await listTemplatesFromHost();
+    const templates = await listLayoutsFromHost();
     expect(templates).toHaveLength(1);
     expect(templates[0]?.name).toBe('Template');
   });
@@ -81,6 +81,6 @@ describe('domain-data normalization', () => {
     invokeMock.mockImplementationOnce(
       mockIpcOk([{ id: 't1', documentId: 'd1', name: 'Template' }] as unknown),
     );
-    await expect(listTemplatesFromHost()).rejects.toThrow('Template widgets missing');
+    await expect(listLayoutsFromHost()).rejects.toThrow('Template widgets missing');
   });
 });

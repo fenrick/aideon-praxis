@@ -70,7 +70,7 @@ import {
   upsertComputedRules,
   upsertMetamodelBatch,
   upsertValidationRules,
-} from '@/workspaces/mneme/mneme-api';
+} from '@/engines/mneme/mneme-api';
 
 const listenMock = vi.mocked(listen);
 const invokeMock =

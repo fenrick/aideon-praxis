@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   listProjectsWithScenarios,
-  listTemplatesFromHost,
-  saveTemplateToHost,
+  listLayoutsFromHost,
+  saveLayoutToHost,
 } from 'praxis/domain-data';
 
 import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
@@ -55,7 +55,7 @@ describe('domain-data adapters', () => {
         },
       ]),
     );
-    const templates = await listTemplatesFromHost();
+    const templates = await listLayoutsFromHost();
     expect(templates).toHaveLength(1);
     expect(templates[0]?.id).toBe('template-1');
   });
@@ -70,7 +70,7 @@ describe('domain-data adapters', () => {
         widgets: [],
       }),
     );
-    const saved = await saveTemplateToHost({
+    const saved = await saveLayoutToHost({
       id: 'template-1',
       documentId: 'canvasdoc-1',
       name: 'Template',

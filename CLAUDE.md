@@ -108,6 +108,7 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 - Copy the golden pattern from the time cursor + temporal panel stack: hooks expose `[state, actions]`, IPC via `praxis-api.ts`, shadcn cards for layout, alerts/skeletons for loading/error.
 - Use design-system components directly; avoid bespoke wrappers.
 - Ensure loading/error/empty states are covered by tests; mock IPC at the boundary.
+- **Visually inspect the rendered result before calling UI work done.** Screenshot the Storybook story (e.g. via the Playwright CLI against the running Storybook iframe) in both light and dark, at representative widths. Headless render/play tests assert "renders without error", not layout, spacing, clipping, or theme regressions — those are only caught by looking at pixels. This is a required step, not optional.
 
 **When adding engine/host functionality**
 

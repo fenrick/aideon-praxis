@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { listProjectsWithScenarios, listTemplatesFromHost } from 'praxis/domain-data';
+import { listProjectsWithScenarios, listLayoutsFromHost } from 'praxis/domain-data';
 
 import { buildOkResponse, clearTauriMocks, installTauriMocks } from '../tauri-mocks';
 
@@ -60,7 +60,7 @@ describe('domain-data branches', () => {
         },
       ]),
     );
-    const templates = await listTemplatesFromHost();
+    const templates = await listLayoutsFromHost();
     expect(templates).toHaveLength(1);
   });
 
@@ -72,7 +72,7 @@ describe('domain-data branches', () => {
     await expect(listProjectsWithScenarios()).rejects.toThrow('Host returned no projects');
 
     invokeMock.mockImplementationOnce(mockIpcOk([]));
-    await expect(listTemplatesFromHost()).rejects.toThrow('Host returned no templates');
+    await expect(listLayoutsFromHost()).rejects.toThrow('Host returned no templates');
 
     invokeMock.mockImplementationOnce(mockIpcOk([{ id: '', name: '' }]));
     await expect(listProjectsWithScenarios()).rejects.toThrow('Missing project id');
