@@ -21,6 +21,7 @@ import { Clock, Command, LayoutGrid, MoreHorizontal, RefreshCw } from 'design-sy
 import { cn } from 'design-system/lib/utilities';
 
 import { TimeControlPanel } from '../blocks/time-control-panel';
+import { ViewpointBar } from './viewpoint-bar';
 
 export interface PraxisWorkspaceToolbarProperties {
   readonly scenarioName?: string;
@@ -106,6 +107,7 @@ export function PraxisWorkspaceToolbar({
             <p className="text-muted-foreground line-clamp-1 text-sm">{headerDescription}</p>
           </div>
           <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+            <ViewpointBar state={temporalState} actions={temporalActions} />
             <div className="min-w-[200px]">
               {shouldUseNativeSelect ? (
                 <select
@@ -197,7 +199,7 @@ export function PraxisWorkspaceToolbar({
                   className="flex items-center gap-2"
                 >
                   <Clock className="size-4" />
-                  Time
+                  Timeline
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={handleCommandsMenuSelect}
@@ -216,8 +218,8 @@ export function PraxisWorkspaceToolbar({
         onClose={() => {
           setTimeDialogOpen(false);
         }}
-        title="Time controls"
-        description="Manage timelines, moments, and snapshots."
+        title="Timeline"
+        description="Advanced timeline: scrub moments, compare, and merge scenarios."
       >
         <TimeControlPanel state={temporalState} actions={temporalActions} />
       </PageOverlay>

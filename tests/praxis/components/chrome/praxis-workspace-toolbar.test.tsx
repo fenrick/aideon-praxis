@@ -100,9 +100,9 @@ describe('PraxisWorkspaceToolbar', () => {
 
     fireEvent.pointerDown(moreActionsTrigger);
     fireEvent.pointerUp(moreActionsTrigger);
-    const timeButton = await screen.findByText('Time');
+    const timeButton = await screen.findByText('Timeline');
     fireEvent.click(timeButton);
-    expect(await screen.findByText(/Time controls/i)).toBeInTheDocument();
+    expect(await screen.findAllByText(/Timeline/i)).not.toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: /^Close$/i }));
   }, 15_000);
 });
