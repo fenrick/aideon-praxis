@@ -93,8 +93,8 @@ export function PraxisWorkspaceToolbar({
   return (
     <>
       <div className="border-border/60 bg-background/90 border-t px-3 pt-3 pb-3 md:px-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <h1 className="text-foreground truncate text-base leading-none font-semibold">
+        <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
+          <h1 className="text-foreground shrink-0 text-base leading-none font-semibold">
             {headerTitle}
           </h1>
           <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
