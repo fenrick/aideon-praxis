@@ -30,6 +30,8 @@ A canonical document is:
 
 Rust may expose an `i64` internally; the canonical representation of full-range coordinates is the decimal **string**. This corrects the earlier `i64`-number convention noted in [hlc-encoding](./temporal-and-scenario/hlc-encoding.md) — M0 is where the convention becomes real.
 
+**No inline binary, ever.** A binary value is a typed content-addressed reference — `{ "blob": { "algorithm": "sha256", "digest": "<hex>", "length": <bytes>, "media_type": "…" } }` — never Base64 or inline bytes, regardless of size; the bytes live in `objects/sha256/` ([content-addressed-blobs](../05-modules/mneme/content-addressed-blobs.md), [ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)).
+
 ## Optional and default fields
 
 One operation has exactly one byte form, so there are no two equivalent encodings:

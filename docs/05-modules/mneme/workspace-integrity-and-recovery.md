@@ -183,17 +183,17 @@ Both bounds are forward-only: an older workspace is migrated up on open (a one-w
 
 ## Orphaned-blob garbage collection
 
-A blob object is referenced by hash from one or more property facts. An object becomes a candidate for reclamation only when **no live fact references it at any viewpoint retention still keeps** ([content-addressed-blobs](./content-addressed-blobs.md)). The model is mark-and-sweep, deferred and explicit, run off the write path:
+A blob object is referenced by a `BlobRef` digest in one or more operations. Reclamation is keyed to **retained canonical history, not the current resolved view**: because asserted-time history is preserved, a blob referenced only by an _older_ operation is still needed to replay a historical belief even when no current fact points at it. The M0-safe invariant is **if any retained canonical operation references the digest, retain the object** ([content-addressed-blobs](./content-addressed-blobs.md)). The model is mark-and-sweep, deferred and explicit, run off the write path:
 
-1. **Mark.** Scan live (non-superseded) facts across every layer and scenario within retention, collecting the set of referenced hashes.
-2. **Sweep.** An object under `objects/sha256/` whose hash is not in the referenced set, and which falls outside retention, is removable. GC runs as a `trigger_retention` / batch-tier job ([derived-runtime-and-projections](./derived-runtime-and-projections.md)), never as an inline side effect of a tombstone — tombstoning a fact does not remove its blob, because an older belief or another scenario may still reference it.
+1. **Mark.** Collect the digests referenced by every retained canonical operation.
+2. **Sweep.** Only an object referenced by **no** retained canonical operation is removable — a blob durably written before an op append that then failed, an abandoned import, or an explicitly staged object never committed. M0 offers temp-file cleanup, orphan detection, and a **dry-run orphan report**; deletion is conservative and never triggered merely because the current resolved view does not reference the object. GC runs as a `trigger_retention` / batch-tier job ([derived-runtime-and-projections](./derived-runtime-and-projections.md)), never inline on a tombstone.
 
 Two properties make GC safe against concurrent readers:
 
-- **It runs through the single writer.** Reclaiming an object is a write, so it serialises behind the single-writer queue ([storage-trait-and-engine](./storage-trait-and-engine.md)); it never races a concurrent write that might create a new reference, because there is no concurrent write.
-- **It is conservative.** When reference-liveness is uncertain, the object is retained. The trade-off is named: disk is cheaper than a dangling reference, so the failure mode is _keeping too long_, never _deleting too soon_. A reader holding a hash will always find its object, because GC never removes an object a live fact still references.
+- **It runs through the single writer.** Reclaiming an object is a write, so it serialises behind the single-writer queue ([storage-trait-and-engine](./storage-trait-and-engine.md)); it never races a write that might create a new reference, because there is no concurrent write.
+- **It is conservative.** When reference-liveness is uncertain, the object is retained — disk is cheaper than a dangling reference, so the failure mode is _keeping too long_, never _deleting too soon_.
 
-The exact retention policy and GC cadence are configuration ([SQLITE](./SQLITE.md), `limits` and `integrity`); the invariant is that GC only ever removes objects provably unreferenced within retention.
+**Historical reclamation** — collecting an object whose only references are in superseded history that is being retired — belongs with **governed op-log retention and compaction** and is deferred until that exists. Until then, retained-canonical-history reference is the only deletion gate.
 
 ---
 

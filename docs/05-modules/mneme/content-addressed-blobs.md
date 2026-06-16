@@ -6,7 +6,20 @@ How Mneme stores large binary values — by content hash, immutably, once — an
 
 ## Blobs are not inlined into facts
 
-A large binary value — an imported document, an attachment, a rendered preview's source — is not stored in a fact row. It is written to `objects/sha256/<hash>` in the workspace and referenced by its hash in the property fact ([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)). A `Value::Ref(Id)`, or a `Value::Str` carrying the hash, is the stable reference; the blob store itself is addressed by content and immutable.
+A large binary value — an imported document, an attachment, a rendered preview's source — is **never** stored in a fact row, and **never** inline (no Base64 in a canonical record, regardless of size). It is written to `objects/sha256/<hash>` and referenced by a distinct, typed **`BlobRef`** value carried in an ordinary property operation ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md), [canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)). The canonical value tag is:
+
+```json
+{
+  "blob": {
+    "algorithm": "sha256",
+    "digest": "12ab…",
+    "length": 482193,
+    "media_type": "application/pdf"
+  }
+}
+```
+
+`algorithm`, `digest`, and `length` are required (`algorithm` is explicit so identity is not derived from the `objects/sha256/` folder convention — the hash family is versioned); `media_type` (and an optional authored label) are descriptive. A `BlobRef` is **not** a `Value::Ref` (that is an entity/model reference) and **not** a bare `Value::Str` carrying a hash — both ambiguities are retired. Raw bytes never appear in the persistable `Value` enum: a `Value::Blob(Vec<u8>)` inline variant must not exist, so binary cannot accidentally cross the canonical boundary; raw bytes live only on the host-side ingestion path (a `BlobBytes` / file-or-stream input) and are converted to a `BlobRef` before canonical serialisation.
 
 This is content-addressable storage, the model behind Git's object store and IPFS _(Merkle, 1987; Git internals; IPFS)_: the address of an object **is** the hash of its bytes. The blob bytes under `objects/sha256/` are canonical material — they cannot be reconstructed from the op log, so they are part of the truth, not the derived runtime.
 
@@ -25,21 +38,21 @@ This is content-addressable storage, the model behind Git's object store and IPF
 
 ## Integrity checking and quarantine
 
-On read, a blob may be verified by re-hashing its bytes against its address. On workspace open, the host validates canonical roots; a blob whose bytes do not hash to its filename is **quarantined** rather than served — the corruption is surfaced, not silently returned ([failure-modes](./failure-modes.md), [canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)). Because the blob store is canonical, a corrupt blob is genuine data loss for that object; the integrity check ensures it is _detected_ loss, with an explicit `Failed` coverage state, never a silently wrong read.
+On read the host **re-hashes the bytes and verifies the byte length** against the `BlobRef` before serving; `media_type` is treated as _declared_ metadata, never trusted over the object itself (the digest and length identify the bytes, the rest is descriptive). A blob whose bytes do not hash to its address is **quarantined** rather than served — the corruption is surfaced, not silently returned ([failure-modes](./failure-modes.md), [canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)). Because the blob store is canonical, a corrupt or missing blob is genuine loss for that object: the affected result shows `Failed`/partial coverage and the referencing operation **remains valid canonical history** — it is never silently dropped, and read-write open may be restricted by the integrity policy.
 
-A blob is written via atomic temp-file-plus-rename through the single-writer queue ([storage-trait-and-engine](./storage-trait-and-engine.md)): the bytes are written to a temporary file, fsync'd, then renamed to their final hash-addressed path. A crash before the rename leaves a stray temporary file (collected later), never a partially-written object at a valid address.
+**The object is committed before the operation that references it.** The durable sequence (extending the [canonical write path](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)): stream the bytes to a temp file inside the object store, hashing as it streams; `fsync`; atomically `rename` to the final hash path; `fsync` the directory where the platform needs it; construct the `BlobRef`; **then** append-and-commit the canonical operation carrying it; then apply to SQLite. A committed operation therefore never points to bytes that were not already durably committed. Crash outcomes follow cleanly: a crash _before_ the rename leaves a stray temp file (cleaned, never a partial object at a valid address); _after_ the rename but before the op append leaves an **unreferenced valid object** — a safe orphan candidate, not corruption; _after_ the op append leaves both components present, so rebuild projects normally. If the final hash path already exists, the writer verifies length and hash and reuses it (identical bytes deduplicate by hash) or quarantines a mismatch.
 
 ---
 
 ## Garbage collection
 
-Because an object can be referenced by many facts, an object is removable only when **no live fact references it** at any viewpoint that retention policy still keeps. The model is mark-and-sweep, deferred and explicit:
+Reclamation is keyed to **retained canonical history, not to the current resolved view.** Because Aideon preserves asserted-time history, a blob referenced only by an _older_ operation is still required to replay a historical belief even when no current snapshot points to it — so "no live fact references it" is the **wrong** test. The M0-safe invariant is:
 
-- A blob is **referenced** if any non-superseded fact, in any layer or scenario within retention, carries its hash.
-- Garbage collection is a `trigger_retention` / batch-tier job ([derived-runtime-and-projections](./derived-runtime-and-projections.md)), never an inline side effect of a delete — tombstoning a fact does not immediately remove its blob, because an older belief or another scenario may still reference it.
-- GC is conservative by design: when reference-liveness is uncertain, the object is retained. The trade-off is named — disk is cheaper than a dangling reference, so the failure mode is _keeping too long_, never _deleting too soon_.
+> If any **retained canonical operation** references the digest, retain the object.
 
-The exact retention policy and GC cadence are configuration ([sqlite](./SQLITE.md), `limits` and `integrity`); the invariant is that GC only ever removes objects provably unreferenced within retention.
+What M0 reclaims is therefore limited to objects **never referenced by any canonical operation** — a blob durably written before an op append that then failed, an abandoned import, an explicitly staged object never committed. M0 implements temp-file cleanup, orphan detection, a **dry-run orphan report**, and conservative deletion of those never-referenced objects; it never deletes a blob merely because the current resolved view does not reference it. GC runs as a `trigger_retention` / batch-tier job ([derived-runtime-and-projections](./derived-runtime-and-projections.md)), off the write path, conservative by design (disk is cheaper than a dangling reference; the failure mode is _keeping too long_, never _deleting too soon_).
+
+**Historical reclamation** — collecting a blob whose only references are in superseded history you no longer wish to retain — belongs with **governed op-log retention and compaction** and is deferred until that exists ([export-import-replay](./export-import-replay.md), [ADR-0036](../../06-adrs/ADR-0036-right-to-erasure-vs-append-only.md) for the erasure path). Until then, retained-canonical-history reference is the only deletion gate.
 
 ---
 
@@ -74,6 +87,6 @@ _Normative:_
 | ------------------------------------------------------------------------------ | ------------------------------------------------------- |
 | [ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md)           | The content-addressed object-store decision.            |
 | [Canonical vs derived](../../01-architecture/boundary/canonical-vs-derived.md) | Why blob bytes are canonical, not derived.              |
-| [The op / fact / schema model](./op-fact-schema-model.md)                      | How a `Value::Blob` references the store by hash.       |
+| [The op / fact / schema model](./op-fact-schema-model.md)                      | How a `BlobRef` value references the store by hash.     |
 | [Failure modes and recovery](./failure-modes.md)                               | Quarantine on hash mismatch.                            |
 | [SQLite specification](./SQLITE.md)                                            | The `max_blob_bytes` limit and retention configuration. |

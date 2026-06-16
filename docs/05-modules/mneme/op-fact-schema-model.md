@@ -72,7 +72,7 @@ pub enum Value {
 }
 ```
 
-Each value type has its own typed fact table in the derived runtime (`aideon_prop_fact_str`, `aideon_prop_fact_i64`, …), so range scans and index maintenance stay efficient and type-correct. The full table family is specified in [sqlite](./SQLITE.md). `Value::Blob` is the exception: large binary values are not inlined into a fact row but written to the content-addressed store and referenced by hash ([content-addressed-blobs](./content-addressed-blobs.md)).
+Each value type has its own typed fact table in the derived runtime (`aideon_prop_fact_str`, `aideon_prop_fact_i64`, …), so range scans and index maintenance stay efficient and type-correct. The full table family is specified in [sqlite](./SQLITE.md). Binary content is the exception: it is **never inlined** — a canonical value carries a typed **`BlobRef`** (`{ algorithm, digest, length, media_type? }`) and the bytes live in the content-addressed store ([content-addressed-blobs](./content-addressed-blobs.md), [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). There is no inline `Value::Blob(Vec<u8>)` in the persistable value set; raw bytes exist only on the host ingestion path and are resolved to a `BlobRef` before canonical serialisation.
 
 ---
 
