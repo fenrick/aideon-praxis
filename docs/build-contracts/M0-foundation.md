@@ -62,6 +62,8 @@ Calling the files canonical has a direct consequence for how a write commits. SQ
 
 This makes projection application necessarily **idempotent and replayable** ([ADR-0018](../06-adrs/ADR-0018-idempotency-and-deduplication.md), [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md)): a rebuild re-applies the same operations and must reach the same projection. Do not build two unrelated persistence paths and reconcile them later — the append is the single source, the projection is a pure function of it.
 
+An **interactive** write is per-op (append + `fsync` + ack means that op is durable). A **bulk import** (`WriteOptions { bulk_mode }`) is an accepted job that may group `fsync`s behind durable barriers and defer derived work — but **acceptance is not durability**: the `AcceptedJob` acknowledges receipt, the durability acknowledgement is a committed-barrier or terminal-success event, only a `durablyCommitted` count survives a crash, and the visible projection frontier never leads the canonical durable frontier. Barriers are mandatory at segment seal, job end, committed-checkpoint events, and clean pause/cancellation; intra-segment cadence is implementation-tunable within `max_uncommitted_bytes`/`max_uncommitted_duration` bounds (no fixed per-`N`). A bulk import is checkpointed partial commitment, not atomic ([storage-trait-and-engine](../05-modules/mneme/storage-trait-and-engine.md), [event-model](../04-contracts/accepted-work-and-events/event-model.md)).
+
 ## Operation identity and idempotency
 
 Rebuild, replay, import, and torn-write recovery all rest on a single permanent identity for a canonical operation. Three distinct identities exist and must not be conflated:
