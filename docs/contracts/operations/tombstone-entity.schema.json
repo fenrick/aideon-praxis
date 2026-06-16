@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aideon.dev/contracts/operations/tombstone-entity.schema.json",
-  "title": "TombstoneEntity",
-  "description": "Soft-delete an entity or relationship by supersession (not erasure). Field names match the OpPayload::TombstoneEntity inline variant in crates/mneme_core/src/ops.rs. Op kind: TombstoneEntity (op_type 3).",
+  "title": "TombstoneEntity payload",
+  "description": "Typed payload for the tombstone-entity operation kind (registry code 3). Soft-delete an entity or relationship by supersession (not erasure). Fields are grounded in the OpPayload::TombstoneEntity inline variant in crates/mneme_core/src/ops.rs. Encoded per the canonical-JSON profile: all fields present, absent optionals as null, UUIDs lower-case hyphenated, HLC as a decimal string.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["partition", "actor", "asserted_at", "entity_id"],
+  "required": ["partition", "scenario_id", "actor", "asserted_at", "entity_id"],
   "properties": {
     "partition": { "$ref": "#/$defs/id" },
     "scenario_id": { "$ref": "#/$defs/idOrNull" },
@@ -19,12 +19,16 @@
   "$defs": {
     "id": {
       "type": "string",
-      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
     "idOrNull": {
       "type": ["string", "null"],
-      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
-    "hlc": { "type": "integer" }
+    "hlc": {
+      "type": "string",
+      "description": "Full-range HLC coordinate as a decimal string (canonical-JSON profile).",
+      "pattern": "^-?[0-9]+$"
+    }
   }
 }

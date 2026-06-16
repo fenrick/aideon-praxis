@@ -20,6 +20,10 @@ Asserted time — _when the system was told_ a fact — is a **Hybrid Logical Cl
 - `Hlc::now()` in `mneme_core::time` produces the next HLC, advancing the global `LAST_HLC` atomically.
 - `Hlc::physical_micros()` strips the counter to recover wall-clock microseconds.
 
+## In-memory `i64` vs the canonical-file encoding
+
+The runtime representation is unchanged: the HLC (and other full-range 64-bit coordinates) is an `i64`, and all ordering, monotonicity, and tie-break reasoning below operates on that integer. What changes at the storage boundary is only the _serialisation_: in **canonical files** the HLC is encoded as a **decimal string** (`"7267843693811712000"`), never a JSON number, per the [canonical-JSON profile](../canonical-json.md) ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). The packed value exceeds JavaScript's exact-integer range, so a JSON number would be unsafe under common tooling; a decimal string round-trips losslessly. This corrects the earlier `i64`-number convention and does not affect byte-comparability: the decimal strings are produced from the same monotonic `i64`, and comparison for resolution is still the single `i64` comparison after parse.
+
 ## Ordering and monotonicity
 
 `Hlc::now()` returns the maximum of (the previous HLC) and (the current physical microsecond), with the counter incremented on a tie. A later call therefore never returns a value that sorts before an earlier one, even if the wall clock has moved backwards. This is the property the resolver's "latest asserted time" tie-break depends on — it is a single `i64` comparison.

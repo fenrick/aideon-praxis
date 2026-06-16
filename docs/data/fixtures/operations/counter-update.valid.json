@@ -1,13 +1,21 @@
 {
-  "partition": "00000000-0000-4000-8000-000000000001",
-  "scenario_id": null,
-  "actor": "00000000-0000-4000-8000-0000000000a1",
-  "asserted_at": 7338950400000000000,
-  "entity_id": "11111111-0000-4000-8000-000000000003",
-  "field_id": "919c0d4e-2c2d-5269-974f-5db6e59a054b",
-  "delta": 1,
-  "valid_from": 1767225600000000,
-  "valid_to": null,
-  "layer": "Plan",
-  "write_options": null
+  "op_id": "33333333-0000-4000-8000-000000000017",
+  "actor_id": "00000000-0000-4000-8000-0000000000a1",
+  "asserted_at": "7338950400000000000",
+  "kind": "counter-update",
+  "format_version": 1,
+  "deps": [],
+  "payload": {
+    "partition": "00000000-0000-4000-8000-000000000001",
+    "scenario_id": null,
+    "actor": "00000000-0000-4000-8000-0000000000a1",
+    "asserted_at": "7338950400000000000",
+    "entity_id": "11111111-0000-4000-8000-000000000003",
+    "field_id": "919c0d4e-2c2d-5269-974f-5db6e59a054b",
+    "delta": "1",
+    "valid_from": "1767225600000000",
+    "valid_to": null,
+    "layer": "plan",
+    "write_options": null
+  }
 }

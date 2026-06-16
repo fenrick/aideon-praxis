@@ -1,8 +1,21 @@
 {
   "op_id": "33333333-0000-4000-8000-000000000001",
   "actor_id": "00000000-0000-4000-8000-0000000000a1",
-  "asserted_at": 7338950400000000000,
-  "op_type": 4,
-  "payload": "eyJTZXRQcm9wZXJ0eSI6eyJ2YWx1ZSI6eyJTdHIiOiJNaWdyYXRlIn19fQ==",
-  "deps": []
+  "asserted_at": "7338950400000000000",
+  "kind": "set-property-interval",
+  "format_version": 1,
+  "deps": [],
+  "payload": {
+    "partition": "00000000-0000-4000-8000-000000000001",
+    "scenario_id": null,
+    "actor": "00000000-0000-4000-8000-0000000000a1",
+    "asserted_at": "7338950400000000000",
+    "entity_id": "11111111-0000-4000-8000-000000000003",
+    "field_id": "cba320a9-7e3c-5597-b42f-284aad9a6406",
+    "value": { "str": "Migrate" },
+    "valid_from": "1767225600000000",
+    "valid_to": null,
+    "layer": "actual",
+    "write_options": null
+  }
 }

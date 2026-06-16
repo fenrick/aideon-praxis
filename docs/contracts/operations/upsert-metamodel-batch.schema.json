@@ -1,11 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aideon.dev/contracts/operations/upsert-metamodel-batch.schema.json",
-  "title": "MetamodelBatch",
-  "description": "A batch type/field/rule schema update stored as schema-as-data. Field names and types match crates/mneme_core/src/schema.rs::MetamodelBatch and its members. Op kind: UpsertMetamodelBatch (op_type 8). A published metamodel_version is immutable; a change appends a new batch with a higher version.",
+  "title": "UpsertMetamodelBatch payload",
+  "description": "Typed payload for the upsert-metamodel-batch operation kind (registry code 8). A batch type/field/rule schema update stored as schema-as-data. Fields are grounded in crates/mneme_core/src/schema.rs::MetamodelBatch and its members, rendered in canonical contract names. Encoded per the canonical-JSON profile: all fields present, absent optionals as null, empty collections as [], UUIDs lower-case hyphenated, enum and value tags as stable schema-owned lower names. A published metamodel_version is immutable; a change appends a new batch with a higher version.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["types", "fields", "type_fields", "edge_type_rules"],
+  "required": [
+    "types",
+    "fields",
+    "type_fields",
+    "edge_type_rules",
+    "metamodel_version",
+    "metamodel_source"
+  ],
   "properties": {
     "types": { "type": "array", "items": { "$ref": "#/$defs/typeDef" } },
     "fields": { "type": "array", "items": { "$ref": "#/$defs/fieldDef" } },
@@ -17,47 +24,48 @@
   "$defs": {
     "id": {
       "type": "string",
-      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
     "idOrNull": {
       "type": ["string", "null"],
-      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
     "entityKind": {
       "type": "string",
-      "enum": ["Node", "Edge"],
-      "description": "EntityKind enum, externally-tagged serde representation."
+      "enum": ["node", "edge"],
+      "description": "EntityKind value tag as a stable schema-owned lower name."
     },
     "valueType": {
       "type": "string",
-      "enum": ["Str", "I64", "F64", "Bool", "Time", "Ref", "Blob", "Json"],
-      "description": "ValueType enum."
+      "enum": ["str", "i64", "f64", "bool", "time", "ref", "blob", "json"],
+      "description": "ValueType value tag as a stable schema-owned lower name."
     },
     "mergePolicy": {
       "type": "string",
-      "enum": ["Lww", "Mv", "OrSet", "Counter", "Text"],
-      "description": "MergePolicy enum."
+      "enum": ["lww", "mv", "or-set", "counter", "text"],
+      "description": "MergePolicy value tag as a stable schema-owned lower name."
     },
     "value": {
       "type": "object",
+      "description": "Value tag: an object with exactly one stable schema-owned lower variant key. str|i64|f64|bool|time|ref|blob|json.",
       "additionalProperties": false,
       "minProperties": 1,
       "maxProperties": 1,
       "properties": {
-        "Str": { "type": "string" },
-        "I64": { "type": "integer" },
-        "F64": { "type": "number" },
-        "Bool": { "type": "boolean" },
-        "Time": { "type": "integer" },
-        "Ref": { "$ref": "#/$defs/id" },
-        "Blob": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 255 } },
-        "Json": {}
+        "str": { "type": "string" },
+        "i64": { "type": "string", "pattern": "^-?[0-9]+$" },
+        "f64": { "type": "number" },
+        "bool": { "type": "boolean" },
+        "time": { "type": "string", "pattern": "^-?[0-9]+$" },
+        "ref": { "$ref": "#/$defs/id" },
+        "blob": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 255 } },
+        "json": {}
       }
     },
     "typeDef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type_id", "applies_to", "label", "is_abstract"],
+      "required": ["type_id", "applies_to", "label", "is_abstract", "parent_type_id"],
       "properties": {
         "type_id": { "$ref": "#/$defs/id" },
         "applies_to": { "$ref": "#/$defs/entityKind" },
@@ -78,7 +86,8 @@
         "value_type",
         "cardinality_multi",
         "merge_policy",
-        "is_indexed"
+        "is_indexed",
+        "disallow_overlap"
       ],
       "properties": {
         "field_id": { "$ref": "#/$defs/id" },
@@ -87,13 +96,24 @@
         "cardinality_multi": { "type": "boolean" },
         "merge_policy": { "$ref": "#/$defs/mergePolicy" },
         "is_indexed": { "type": "boolean" },
-        "disallow_overlap": { "type": "boolean", "description": "serde default false." }
+        "disallow_overlap": {
+          "type": "boolean",
+          "description": "Materialised explicitly (Rust serde default false) per the canonical-JSON profile."
+        }
       }
     },
     "typeFieldDef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type_id", "field_id", "is_required", "override_default", "tighten_required"],
+      "required": [
+        "type_id",
+        "field_id",
+        "is_required",
+        "default_value",
+        "override_default",
+        "tighten_required",
+        "disallow_overlap"
+      ],
       "properties": {
         "type_id": { "$ref": "#/$defs/id" },
         "field_id": { "$ref": "#/$defs/id" },
@@ -107,7 +127,12 @@
     "edgeTypeRule": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["edge_type_id", "allowed_src_type_ids", "allowed_dst_type_ids"],
+      "required": [
+        "edge_type_id",
+        "allowed_src_type_ids",
+        "allowed_dst_type_ids",
+        "semantic_direction"
+      ],
       "properties": {
         "edge_type_id": { "$ref": "#/$defs/id" },
         "allowed_src_type_ids": { "type": "array", "items": { "$ref": "#/$defs/id" } },

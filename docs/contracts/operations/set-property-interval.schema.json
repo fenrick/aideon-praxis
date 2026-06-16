@@ -1,19 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aideon.dev/contracts/operations/set-property-interval.schema.json",
-  "title": "SetPropIntervalInput",
-  "description": "Set a typed property value over a valid-time interval on a slot. Field names and types match crates/mneme_core/src/ops.rs::SetPropIntervalInput (command mneme_store_set_property_interval). Op kind: SetProperty (op_type 4).",
+  "title": "SetPropertyInterval payload",
+  "description": "Typed payload for the set-property-interval operation kind (registry code 4). Set a typed property value over a valid-time interval on a slot. Fields are grounded in crates/mneme_core/src/ops.rs::SetPropIntervalInput, rendered in canonical contract names. Encoded per the canonical-JSON profile: all fields present, absent optionals as null, UUIDs lower-case hyphenated, HLC and valid times as decimal strings, layer and value tags as stable lower names.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "partition",
+    "scenario_id",
     "actor",
     "asserted_at",
     "entity_id",
     "field_id",
     "value",
     "valid_from",
-    "layer"
+    "valid_to",
+    "layer",
+    "write_options"
   ],
   "properties": {
     "partition": { "$ref": "#/$defs/id" },
@@ -28,7 +31,7 @@
     "value": { "$ref": "#/$defs/value" },
     "valid_from": {
       "$ref": "#/$defs/validTime",
-      "description": "Interval start, epoch microseconds UTC."
+      "description": "Interval start, epoch microseconds UTC as a decimal string."
     },
     "valid_to": {
       "$ref": "#/$defs/validTimeOrNull",
@@ -40,40 +43,60 @@
   "$defs": {
     "id": {
       "type": "string",
-      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
     "idOrNull": {
       "type": ["string", "null"],
-      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
-    "hlc": { "type": "integer" },
-    "validTime": { "type": "integer" },
-    "validTimeOrNull": { "type": ["integer", "null"] },
-    "layer": { "type": "string", "enum": ["Plan", "Actual"] },
+    "hlc": {
+      "type": "string",
+      "description": "Full-range HLC coordinate as a decimal string (canonical-JSON profile).",
+      "pattern": "^-?[0-9]+$"
+    },
+    "validTime": {
+      "type": "string",
+      "description": "ValidTime as epoch microseconds UTC, encoded as a decimal string.",
+      "pattern": "^-?[0-9]+$"
+    },
+    "validTimeOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^-?[0-9]+$"
+    },
+    "layer": {
+      "type": "string",
+      "enum": ["plan", "actual"],
+      "description": "Layer value tag as a stable schema-owned lower name."
+    },
     "value": {
       "type": "object",
-      "description": "Value enum, externally-tagged serde representation: exactly one variant key. Str|I64|F64|Bool|Time|Ref|Blob|Json.",
+      "description": "Value tag: an object with exactly one stable schema-owned lower variant key. str|i64|f64|bool|time|ref|blob|json.",
       "additionalProperties": false,
       "minProperties": 1,
       "maxProperties": 1,
       "properties": {
-        "Str": { "type": "string" },
-        "I64": { "type": "integer" },
-        "F64": { "type": "number" },
-        "Bool": { "type": "boolean" },
-        "Time": { "type": "integer", "description": "ValidTime as epoch microseconds UTC." },
-        "Ref": { "$ref": "#/$defs/id" },
-        "Blob": {
+        "str": { "type": "string" },
+        "i64": { "type": "string", "pattern": "^-?[0-9]+$" },
+        "f64": { "type": "number" },
+        "bool": { "type": "boolean" },
+        "time": {
+          "type": "string",
+          "pattern": "^-?[0-9]+$",
+          "description": "ValidTime as epoch microseconds UTC, decimal string."
+        },
+        "ref": { "$ref": "#/$defs/id" },
+        "blob": {
           "type": "array",
           "items": { "type": "integer", "minimum": 0, "maximum": 255 },
           "description": "Byte array; large blobs are content-addressed, not inlined."
         },
-        "Json": { "description": "Arbitrary JSON value." }
+        "json": { "description": "Arbitrary JSON value." }
       }
     },
     "writeOptions": {
       "type": ["object", "null"],
       "additionalProperties": false,
+      "required": ["bulk_mode"],
       "properties": { "bulk_mode": { "type": "boolean" } }
     }
   }

@@ -1,0 +1,44 @@
+# ADR-0038: Canonical Operation Record, Identity, and Commit Protocol
+
+- Status: Accepted
+- Date: 2026-06-16
+- Depends-On: ADR-0001, ADR-0002, ADR-0004
+- Relates-To: ADR-0003, ADR-0007, ADR-0018, ADR-0022, ADR-0027
+
+## Context
+
+The portable workspace is the canonical authority and the runtime database is derived ([ADR-0001](./ADR-0001-workspace-is-canonical-authority.md), [ADR-0002](./ADR-0002-portable-workspace-format.md)). But the code was built inside-out: operations persist today only to the SQLite runtime store (`aideon_ops`), which the architecture defines as _derived_. There is no live `model/ops/` segment writer, no canonical on-disk operation record, and `OpEnvelope.payload` is an opaque `Vec<u8>`. Meanwhile three things already depend on a canonical operation byte-form that is nowhere defined: ADR-0007 promises a byte-identical deterministic export, the workspace-integrity rules call a same-identity-different-bytes record _corruption_, and the M0 rebuild oracle hashes "canonical serialisation." M0 is the milestone that closes this gap, so the operation record, its identity, how it commits, and how it replays must be fixed as one seam rather than three independent choices ([M0 build contract](../build-contracts/M0-foundation.md)).
+
+## Governance Framing
+
+- **Decision type:** Invariant (operation identity, the commit point, replay behaviour) + stable seam (the canonical operation record and the kind registry).
+- **Known future pressure:** more operation kinds; payload migrations; sync introducing remote operations; larger logs raising replay/serialisation cost; non-Rust readers of the canonical files.
+- **What stays stable:** `(partition_id, op_id)` as permanent identity; canonical JSON record with a typed payload; canonical append as the commit point; projection applied after; replay preserves identity/time/provenance; the kind registry never reassigns a code or name.
+- **What is provisional:** the canonical-JSON profile _version_ (bumpable), the exact per-kind payload fields (additive within a format version), sealing thresholds.
+- **What is deferred:** cross-peer operation identity and convergence under sync ([ADR-0034](./ADR-0034-merge-correctness-and-convergence.md)); compression of segments/packages at the transport layer.
+- **Why hard to reverse:** the record byte-form, identity, and commit order are relied on by every write, the segment checksums, deterministic export, replay, and rebuild; changing them is a data migration of canonical history, not an edit.
+
+## Decision
+
+- **The canonical operation record is canonical JSON, one object per line (JSON Lines), UTF-8.** The exact byte rules — key ordering, scalar encodings, optional/empty handling, line framing — are the versioned **[canonical-JSON profile](../04-contracts/canonical-json.md)**; `serde_json::to_vec` is _not_ sufficient. Each record carries `format_version`.
+- **The payload is typed per operation kind, not opaque bytes.** `OpEnvelope.payload: Vec<u8>` becomes a typed `OpPayload` (one variant per kind), serialised as a structured canonical-JSON object matching [`docs/contracts/operations/<kind>.schema.json`](../contracts/operations/README.md). Opaque bytes may persist only as a _cache_ of the validated canonical encoding (`StoredCanonicalOp { parsed, canonical_bytes }`) or as SQLite projection columns — never as the contract.
+- **Identity is `(partition_id, op_id)`, permanent.** `op_id` is minted once on the authoring path and is immutable; every record, package, replay, and rebuild preserves it verbatim. The three identity layers are distinct: command `idempotencyKey` (run-ledger windowed, [ADR-0018](./ADR-0018-idempotency-and-deduplication.md)), canonical `(partition_id, op_id)` (permanent), and event `eventId` (consumer-windowed).
+- **The discriminator is a stable kebab `kind` name in the record** (`"kind": "set-property-interval"`); the `u16` code lives only in the registry and SQLite projection. Codes and names are never reassigned; removed kinds stay reserved. The record never stores both a code and a name (no contradictory state). Enum and value tags use stable schema-owned names, never Rust/serde debug names.
+- **Canonical append is the commit point; the SQLite projection is applied after.** Validate and serialise → append-and-`fsync` to the loose `model/ops/` segment (the commit) → apply to SQLite → on projection failure, rebuild from the log. A write that reached only SQLite **did not happen** and is never acknowledged. Projection application is therefore idempotent and replayable.
+- **Duplicate vs collision.** Same `(partition_id, op_id)` with byte-equal canonical content (after parse → validate → normalise → canonicalise) is a replay **no-op**; same identity with _different_ canonical content is **corruption/identity collision**, rejected — never silently keep the first. Invalid payload is rejected before comparison or append.
+- **Replay never mints.** The authoring path (`insert_op`) mints ids; the replay path (`ingest_ops`) preserves them. The create path is never used to rebuild or resume canonical history.
+- **The canonical record is reused across surfaces, not re-derived.** The live segment holds the canonical record bytes directly; the segment BLAKE3 checksum covers those exact op-line bytes (including each terminating LF, excluding the checksum line). A package export seals and copies segment files **byte-for-byte** into the deterministic archive ([ADR-0007](./ADR-0007-deterministic-package-export.md)) rather than re-serialising. Streaming export wraps the canonical operation object (`{"record_type":"op","op":{…}}`) — no `payload_base64`, no second representation.
+
+## Considered Options
+
+- **Deterministic binary codec (bincode/CBOR) — rejected.** Smaller and faster, but it forfeits the reason the canonical layer exists: portable, inspectable, diffable, tool-independent history. SQLite already provides the compact machine representation; canonical files are for humans, version control, and forensics. Compression can be applied at the transport layer without changing the logical format.
+- **Opaque `Vec<u8>` payload kept as the contract — rejected.** The writer could not check `op_type` matches payload, verification could not tell malformed from validly-unknown content, payload migration would have no governed boundary, canonicalisation would trust producer bytes, and diffability would be lost to Base64 — and the operation schemas would describe something other than the record.
+- **Both `op_type` integer and `kind` name in the record — rejected.** Creates an avoidable invalid state (which wins on disagreement?). The name is the portable contract; the integer is an internal compact discriminator.
+- **HLC as a JSON number — rejected.** The packed HLC exceeds JavaScript's exact-integer range; canonical files encode full-range 64-bit coordinates as **decimal strings** so common JSON tooling parses them safely ([canonical-JSON profile](../04-contracts/canonical-json.md), correcting the earlier `i64`-number convention in [hlc-encoding](../04-contracts/temporal-and-scenario/hlc-encoding.md)).
+
+## Consequences
+
+- M0 must restructure `OpEnvelope` (typed payload, `kind` name, `format_version`), implement the canonical-JSON profile, and write/read the live `model/ops/` segment. The [operation schemas](../contracts/operations/README.md) and [fixtures](../data/fixtures/operations/README.md) describe the real canonical record.
+- The rebuild-equivalence hash is **not** a hash of operation records. It uses the _same_ canonical-JSON profile but is applied to the resolved probe-result contract — semantic equivalence, not history bytes ([ADR-0027](./ADR-0027-projection-consistency-model.md)). Two surfaces, two shapes, one canonicaliser: segment/package checksums prove canonical-history integrity; the equivalence hash proves derived semantic correctness.
+- Streaming export's `payload_base64` representation is removed in favour of the canonical operation object ([export-import-replay](../05-modules/mneme/export-import-replay.md)).
+- A canonical-JSON profile bump is a `format_version` event, handled by the refuse-or-degrade rule ([ADR-0002](./ADR-0002-portable-workspace-format.md)); it is never a silent change.

@@ -1,12 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aideon.dev/contracts/operations/or-set-update.schema.json",
-  "title": "OrSetUpdateInput",
-  "description": "Add or remove an element of an OR-Set field over a valid-time interval (CRDT, convergent under merge). Field names and types match crates/mneme_core/src/ops.rs::OrSetUpdateInput. Op kind: OrSetUpdate (op_type 6).",
+  "title": "OrSetUpdate payload",
+  "description": "Typed payload for the or-set-update operation kind (registry code 6). Add or remove an element of an OR-Set field over a valid-time interval (CRDT, convergent under merge). Fields are grounded in crates/mneme_core/src/ops.rs::OrSetUpdateInput, rendered in canonical contract names. Encoded per the canonical-JSON profile: all fields present, absent optionals as null, UUIDs lower-case hyphenated, HLC and valid times as decimal strings, op/layer/value tags as stable lower names.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "partition",
+    "scenario_id",
     "actor",
     "asserted_at",
     "entity_id",
@@ -14,7 +15,9 @@
     "op",
     "element",
     "valid_from",
-    "layer"
+    "valid_to",
+    "layer",
+    "write_options"
   ],
   "properties": {
     "partition": { "$ref": "#/$defs/id" },
@@ -25,8 +28,8 @@
     "field_id": { "$ref": "#/$defs/id" },
     "op": {
       "type": "string",
-      "enum": ["Add", "Remove"],
-      "description": "SetOp enum, externally-tagged serde representation."
+      "enum": ["add", "remove"],
+      "description": "SetOp value tag as a stable schema-owned lower name."
     },
     "element": { "$ref": "#/$defs/value" },
     "valid_from": { "$ref": "#/$defs/validTime" },
@@ -37,35 +40,52 @@
   "$defs": {
     "id": {
       "type": "string",
-      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
     "idOrNull": {
       "type": ["string", "null"],
-      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
-    "hlc": { "type": "integer" },
-    "validTime": { "type": "integer" },
-    "validTimeOrNull": { "type": ["integer", "null"] },
-    "layer": { "type": "string", "enum": ["Plan", "Actual"] },
+    "hlc": {
+      "type": "string",
+      "description": "Full-range HLC coordinate as a decimal string (canonical-JSON profile).",
+      "pattern": "^-?[0-9]+$"
+    },
+    "validTime": {
+      "type": "string",
+      "description": "ValidTime as epoch microseconds UTC, encoded as a decimal string.",
+      "pattern": "^-?[0-9]+$"
+    },
+    "validTimeOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^-?[0-9]+$"
+    },
+    "layer": {
+      "type": "string",
+      "enum": ["plan", "actual"],
+      "description": "Layer value tag as a stable schema-owned lower name."
+    },
     "value": {
       "type": "object",
+      "description": "Value tag: an object with exactly one stable schema-owned lower variant key. str|i64|f64|bool|time|ref|blob|json.",
       "additionalProperties": false,
       "minProperties": 1,
       "maxProperties": 1,
       "properties": {
-        "Str": { "type": "string" },
-        "I64": { "type": "integer" },
-        "F64": { "type": "number" },
-        "Bool": { "type": "boolean" },
-        "Time": { "type": "integer" },
-        "Ref": { "$ref": "#/$defs/id" },
-        "Blob": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 255 } },
-        "Json": {}
+        "str": { "type": "string" },
+        "i64": { "type": "string", "pattern": "^-?[0-9]+$" },
+        "f64": { "type": "number" },
+        "bool": { "type": "boolean" },
+        "time": { "type": "string", "pattern": "^-?[0-9]+$" },
+        "ref": { "$ref": "#/$defs/id" },
+        "blob": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 255 } },
+        "json": {}
       }
     },
     "writeOptions": {
       "type": ["object", "null"],
       "additionalProperties": false,
+      "required": ["bulk_mode"],
       "properties": { "bulk_mode": { "type": "boolean" } }
     }
   }

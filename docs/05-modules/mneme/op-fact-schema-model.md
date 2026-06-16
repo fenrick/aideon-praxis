@@ -18,14 +18,16 @@ Every mutation is an `OpEnvelope`, stamped with an HLC asserted time and appende
 pub struct OpEnvelope {
     pub op_id:       OpId,      // stable identifier; tie-break key of last resort
     pub actor_id:    ActorId,   // who asserted it
-    pub asserted_at: Hlc,       // hybrid logical clock — packed portable i64
-    pub op_type:     u16,       // OpType discriminant
-    pub payload:     Vec<u8>,   // serialised OpPayload (msgpack/cbor)
+    pub asserted_at: Hlc,       // hybrid logical clock — full-range i64 in memory
+    pub kind:        OpKind,    // stable kebab discriminator (`create-node`, …)
+    pub payload:     OpPayload, // typed per kind (NOT opaque bytes)
     pub deps:        Vec<OpId>, // causal dependencies
 }
 ```
 
-The op log is **append-only and idempotent on ingest**: the same `(partition, op_id)` pair is a no-op on replay. This is what makes the log safe for export, import, and sync — replaying a package twice yields the same twin ([export-import-replay](./export-import-replay.md), [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
+The **canonical on-disk record** is canonical JSON, not this in-memory struct: a stable kebab `kind` name (the `u16` code lives only in the registry and the SQLite projection), a **typed payload object** per kind, `format_version`, and full-range coordinates (`asserted_at`, valid times) as **decimal strings** — fixed by [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md) and the [canonical-JSON profile](../../04-contracts/canonical-json.md). Opaque bytes survive only as a validated cache of the canonical encoding, never as the contract. The per-kind payload shapes are the [operation schemas](../../contracts/operations/README.md).
+
+The op log is **append-only and idempotent on ingest**: the same `(partition, op_id)` pair is a no-op on replay when the canonical content is byte-equal, and **corruption** when the same identity carries different content ([workspace-integrity-and-recovery](./workspace-integrity-and-recovery.md)). This is what makes the log safe for export, import, and sync — replaying a package twice yields the same twin ([export-import-replay](./export-import-replay.md), [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
 
 ### The operation surface
 

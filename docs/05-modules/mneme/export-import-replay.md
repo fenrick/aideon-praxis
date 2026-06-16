@@ -6,19 +6,25 @@ How a workspace's canonical truth leaves and re-enters Mneme: the op-log export 
 
 ## The op log is the export format
 
-Because the op log is canonical and the runtime is derived ([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)), exporting a workspace means exporting its operations — never its caches. Mneme ships streaming export and import APIs (`MnemeExportApi`, `MnemeImportApi`) producing NDJSON records:
+Because the op log is canonical and the runtime is derived ([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)), exporting a workspace means exporting its operations — never its caches. Mneme ships streaming export and import APIs (`MnemeExportApi`, `MnemeImportApi`) producing NDJSON records. The `op` record **embeds the canonical operation object verbatim** — there is no second representation and no `payload_base64`:
 
 ```text
 { "record_type": "header", "format_version": …, "partition_id": …, "exported_at_asserted": … }
-{ "record_type": "op", "op_id": …, "actor_id": …, "asserted_at": …, "op_type": …, "payload_base64": …, "deps": […] }
+{ "record_type": "op", "op": { …canonical operation object… } }
 { "record_type": "footer", "op_count": …, "checksum": … }   // BLAKE3 over all op records
 ```
 
-Derived artefacts are **never** exported; they are rebuilt after import by the processing worker ([derived-runtime-and-projections](./derived-runtime-and-projections.md)). The footer checksum is computed over the op records, so a truncated or tampered package is detected on import.
+The embedded `op` object is the same typed canonical record written to the `model/ops/` segment — envelope (`op_id`, `actor_id`, `asserted_at`, `kind`, `format_version`, `deps`) plus the typed `payload` object — encoded with the [canonical-JSON profile](../../04-contracts/canonical-json.md) ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). The payload is structured, not base64-wrapped opaque bytes.
+
+Derived artefacts are **never** exported; they are rebuilt after import by the processing worker ([derived-runtime-and-projections](./derived-runtime-and-projections.md)). The footer checksum is BLAKE3 over the op records, so a truncated or tampered package is detected on import.
 
 ### Determinism
 
 A deterministic export is one where the same workspace state produces a byte-identical package, regardless of when or where it is exported ([ADR-0007](../../06-adrs/ADR-0007-deterministic-package-export.md)). Determinism rests on the same property as rebuild correctness: operations are ordered by asserted time (a total order, since the HLC is byte-comparable — [bitemporal-and-hlc](./bitemporal-and-hlc.md)), and the runtime is a pure function of them. This is what lets two exports be compared for equality, and what makes a package safe to diff in version control.
+
+### Package export reuses the canonical segment bytes
+
+A **package** export does not re-serialise each operation. It **seals the loose `model/ops/` segment** (no further appends to the current segment) and **copies the canonical segment files byte-for-byte** into the deterministic archive ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). Because the live segment already holds the canonical record bytes and its BLAKE3 checksum covers those exact op-line bytes, the package inherits canonical-history integrity rather than re-deriving it. The archive itself is deterministic per [ADR-0007](../../06-adrs/ADR-0007-deterministic-package-export.md): sorted paths, normalised timestamps, stable permissions, and stripped incidental zip metadata, so the same sealed state yields a byte-identical package. (The streaming NDJSON form above is the line-oriented alternative for piping and diffing; both carry the same canonical operation objects.)
 
 ---
 
@@ -79,10 +85,12 @@ _Informative:_
 
 ## Related documents
 
-| Document                                                                   | What it covers                                    |
-| -------------------------------------------------------------------------- | ------------------------------------------------- |
-| [ADR-0007](../../06-adrs/ADR-0007-deterministic-package-export.md)         | Deterministic package export.                     |
-| [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)        | Idempotent ingest under retry.                    |
-| [The op / fact / schema model](./op-fact-schema-model.md)                  | The operation envelope the package serialises.    |
-| [Derived runtime and projections](./derived-runtime-and-projections.md)    | Why derived artefacts are rebuilt, not exported.  |
-| [ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md) | The accepted-job model a large import runs under. |
+| Document                                                                                      | What it covers                                                |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [ADR-0007](../../06-adrs/ADR-0007-deterministic-package-export.md)                            | Deterministic package export.                                 |
+| [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md) | The canonical operation record the package embeds and copies. |
+| [canonical-JSON profile](../../04-contracts/canonical-json.md)                                | The byte-exact serialisation of the embedded op object.       |
+| [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)                           | Idempotent ingest under retry.                                |
+| [The op / fact / schema model](./op-fact-schema-model.md)                                     | The operation envelope the package serialises.                |
+| [Derived runtime and projections](./derived-runtime-and-projections.md)                       | Why derived artefacts are rebuilt, not exported.              |
+| [ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)                    | The accepted-job model a large import runs under.             |

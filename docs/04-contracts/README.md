@@ -33,6 +33,8 @@ Each area is a folder of small, single-topic files behind an index. The index ca
 
 These five are not independent. A long-running command returns an [accepted-work](./accepted-work-and-events/README.md) envelope; its progress events are [typed events](./accepted-work-and-events/event-model.md) deduplicated by `eventId`; completing it emits a [projection invalidation](./projection-and-invalidation/invalidation-events.md); every command and event carries the [correlation context](./ipc/correlation-and-tracing.md) that joins them; and a failure on any of them is the same [RFC 9457 error envelope](./ipc/error-envelope.md). A time-aware read on any of these surfaces carries a [`Viewpoint`](./temporal-and-scenario/viewpoint-shape.md).
 
+Underneath every byte-stable surface — the canonical operation record, deterministic export, the identity/corruption comparison, and the rebuild-equivalence hash — sits one shared, versioned [**canonical JSON profile**](./canonical-json.md): sorted keys, pinned scalar encodings (UUIDs lower-case, full-range 64-bit coordinates as decimal strings), and explicit optional/empty handling, so the same logical value has exactly one byte form ([ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)).
+
 ---
 
 ## The contract families on the wire

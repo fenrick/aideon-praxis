@@ -1,12 +1,20 @@
 {
-  "partition": "00000000-0000-4000-8000-000000000001",
-  "scenario_id": null,
-  "actor": "00000000-0000-4000-8000-0000000000a1",
-  "asserted_at": 7338950400000000000,
-  "entity_id": "11111111-0000-4000-8000-000000000003",
-  "field_id": "cba320a9-7e3c-5597-b42f-284aad9a6406",
-  "valid_from": "2027-01-01T00:00:00Z",
-  "valid_to": null,
-  "layer": "Actual",
-  "write_options": null
+  "op_id": "33333333-0000-4000-8000-000000000005",
+  "actor_id": "00000000-0000-4000-8000-0000000000a1",
+  "asserted_at": "7338950400000000000",
+  "kind": "clear-property-interval",
+  "format_version": 1,
+  "deps": [],
+  "payload": {
+    "partition": "00000000-0000-4000-8000-000000000001",
+    "scenario_id": null,
+    "actor": "00000000-0000-4000-8000-0000000000a1",
+    "asserted_at": "7338950400000000000",
+    "entity_id": "11111111-0000-4000-8000-000000000003",
+    "field_id": "cba320a9-7e3c-5597-b42f-284aad9a6406",
+    "valid_from": "2027-01-01T00:00:00Z",
+    "valid_to": null,
+    "layer": "actual",
+    "write_options": null
+  }
 }

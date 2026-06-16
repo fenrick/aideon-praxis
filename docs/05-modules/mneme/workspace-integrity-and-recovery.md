@@ -91,6 +91,8 @@ Every canonical write follows one ordered sequence so that a crash at any point 
 
 A seal is the same sequence applied to a whole segment: append the trailing checksum, `fsync` the file, `rename` `current.ops.jsonl` → `NNNNNN.ops.jsonl`, `fsync` the directory, then open a fresh empty `current.ops.jsonl`. The rename is the single atomic instant at which the segment becomes sealed.
 
+**The canonical append is the commit point, and the SQLite projection is downstream of it.** SQLite and the JSONL op log cannot participate in one atomic transaction, so the order is fixed: append-and-`fsync` the operation to the loose segment _first_ (step 2 above is the commit), then apply it to the SQLite projection. A projection failure after a durable append is a recoverable derived-state failure — the operation is rebuilt from the op log, never lost — and projection application is therefore idempotent and replayable ([storage-trait-and-engine](./storage-trait-and-engine.md), [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)). A write that reached only SQLite and not the canonical segment **did not happen** and is never acknowledged. This is the on-disk expression of the canonical-over-derived rule ([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)): the file is truth, the database is a projection of it.
+
 ---
 
 ## The verify routine
@@ -178,7 +180,9 @@ A torn write is an interrupted commit — a crash between the first byte of a wr
 | **Mid blob temp-file write (before rename)**    | A stray temp file; no object at the target hash address.                      | The stray temp file is collected; no partial object ever appears at a valid address ([content-addressed-blobs](./content-addressed-blobs.md)).            |
 | **Mid-seal (before rename)**                    | The loose segment is intact; the sealed name does not yet exist.              | The loose segment is still authoritative; sealing re-runs. Rename is the atomic commit point of a seal.                                                   |
 
-The unifying rule: **a crash leaves the workspace at the last whole operation, never half-applied.** The loose segment's last complete record is the recovery point; everything after it is discarded as never-committed, and the derived runtime is rebuilt to match ([derived-runtime-and-projections](./derived-runtime-and-projections.md)). Idempotent ingest means a re-run of the interrupted work re-applies only the missing tail, never duplicating operations that already landed ([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md), [export-import-replay](./export-import-replay.md)).
+The unifying rule: **a crash leaves the workspace at the last whole operation, never half-applied.** The loose segment's last complete record is the recovery point; everything after it is discarded as never-committed, and the derived runtime is rebuilt to match ([derived-runtime-and-projections](./derived-runtime-and-projections.md)). Recovery re-ingests canonical operation envelopes through the replay path, which recognises an operation by its permanent `(partition_id, op_id)` — not by the run-ledger idempotency key, which the runtime wipe may have destroyed ([export-import-replay](./export-import-replay.md)). Replay re-applies only the missing tail, never duplicating operations that already landed.
+
+**Identity collision is not always a benign duplicate.** A re-supplied operation whose `(partition_id, op_id)` matches an existing record _with identical canonical content_ is a no-op. The same key arriving with _different_ content is **corruption**: the reader rejects it and names the workspace corrupt rather than silently keeping the first record. An `op_id` is minted once on the authoring path and is immutable thereafter; two different mutations can never share one.
 
 ---
 
@@ -194,7 +198,7 @@ A power loss interrupts a bulk import of the seed workspace while it is appendin
 
 4. **Rebuild the derived runtime.** The runtime database is behind (or internally inconsistent). The host deletes `.aideon/runtime/` and rebuilds from the validated operations as an [accepted job](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md). The rebuilt twin resolves every recovered slot — `Automation Orchestrator`'s `disposition = Migrate`, the first FY26 `PlanEvent` and its `plan_effect` — to the same facts the canonical log holds.
 
-5. **Re-run the import.** The import is re-run. Idempotent ingest makes the operations that already landed before the crash no-ops; only the missing tail — the second `PlanEvent` and its `plan_effect` — is applied ([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
+5. **Re-ingest the accepted import batch.** Recovery **re-ingests the same canonical operation envelopes** (the accepted batch, identified by its `import_batch_id`); it does _not_ re-author through the create path. Operations already present are recognised by `(partition_id, op_id)` and become no-ops; only the missing tail — the second `PlanEvent` and its `plan_effect`, carrying their original `op_id`, asserted time, and provenance — is applied ([export-import-replay](./export-import-replay.md), [Pylon import identity](../pylon/deterministic-reviewable-import.md)). Re-authoring the same source through `insert_op` would mint new `op_id`s and duplicate history — it is a new assertion, not replay.
 
 No user data is lost. The crash damaged only the unwritten tail and derived state; the canonical log is intact up to the last whole operation, the lock is reclaimed cleanly, and the rebuild plus re-run reproduces the twin the import intended.
 

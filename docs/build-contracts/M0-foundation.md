@@ -2,6 +2,8 @@
 
 The M0 milestone delivers the **foundation capability**: a portable workspace that opens, round-trips a session, and rebuilds losslessly. Its exit gate is that the canonical workspace format is closed enough to build against, every operation has a pinned shape and a validating fixture, and deleting the derived runtime then rebuilding it from canonical files yields a semantically equivalent twin — with typed IPC and capabilities enforced and no open ports ([ROADMAP](../00-index/ROADMAP.md), M0 row). This contract turns that gate into named files, ordered work, and exit tests an agent can complete without making an architectural choice.
 
+> **Implementation state (honest).** The canonical workspace persistence layer is **not yet implemented**. Operations currently persist only to the SQLite runtime store (`aideon_ops` in [`crates/mneme_store`](../../crates/mneme_store)), which the architecture defines as _derived_ ([ADR-0004](../06-adrs/ADR-0004-storage-engine-abstraction.md), [SQLITE](../05-modules/mneme/SQLITE.md)). M0 introduces the live `model/ops/` segment writer and reader, the workspace `manifest.json`, locking, the integrity and recovery rules, the content-addressed blob boundary, and the rebuild pipeline. Existing SQLite operation storage must be converted into a derived projection — or removed from the authoritative write path. Until this lands, the implementation does **not** satisfy [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md), [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md), or this contract. The code was built inside-out — the runtime engine first, before the outer canonical-storage boundary existed — and M0 is the milestone that closes that gap. This is an implementation correction, not an architectural change: the architecture was already settled.
+
 ## Outcome
 
 A workspace folder ([ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)) can be created, opened for writing under a single-writer lock, written to via the typed operation surface, closed, and reopened. Its derived runtime (`.aideon/runtime/`) can be deleted while closed and rebuilt from `model/ops/` + `model/schema/` on reopen, producing a twin that resolves identical facts and identical query results to the one before the wipe — proven by a deterministic equivalence hash ([ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md)). Every operation kind has a tier-2 JSON Schema and a validating fixture pair.
@@ -10,13 +12,52 @@ A workspace folder ([ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)
 
 - Workspace format v1: complete `manifest.json` field schema, identifier formats, segment ordering and sealing, the atomic-write/fsync sequence, integrity checksums and their coverage, truncation and sealed-segment-corruption behaviour, version maxima, and the `model/schema/` vs op-log authority rule.
 - Per-operation JSON Schemas (2020-12) for the shared envelope and every op kind, plus a validating valid/invalid fixture pair per kind over the seed identifiers.
+- The **canonical operation record**: the versioned [canonical-JSON profile](../04-contracts/canonical-json.md), the typed per-kind payload (replacing the opaque `Vec<u8>`), the kebab `kind` discriminator + code registry, full-range coordinates as decimal strings, and `format_version` ([ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)).
 - The rebuild-equivalence relation and its hash, and the single invariant test oracle.
+- The **canonical write path**: canonical-append-is-the-commit-point, with SQLite repositioned as a derived projection applied after the append (see below).
+- The **canonical blob contract** only: hash-addressed write and read under `objects/sha256/`, verified, with no authoritative blob bytes in SQLite. Enough to establish the boundary, not a full attachment feature.
 
 ## Out of scope
 
 - The metamodel compile/validate path and invalid-write rejection (M1; [op-fact-schema-model](../05-modules/mneme/op-fact-schema-model.md)).
 - Temporal resolution, viewpoints, and diff (M2; [temporal-and-scenario](../04-contracts/temporal-and-scenario/README.md)).
 - Artefact execution and the catalogue result shape (M3).
+- A user-facing attachment/blob experience (upload UX, previews, large-object streaming) — only the canonical blob _contract_ is in scope; the UX is later.
+
+## The canonical write path
+
+Calling the files canonical has a direct consequence for how a write commits. SQLite and the JSONL op log cannot share one atomic transaction, so the **canonical append is the commit point** and SQLite is downstream of it. Every write follows this order:
+
+1. Validate and serialise the canonical operation.
+2. **Durably append it to the loose `model/ops/` segment** (write + `fsync`, per [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)). This is the commit.
+3. Only after the append succeeds, **apply it to the SQLite projection**.
+4. Treat a projection failure as a recoverable _derived-state_ failure — rebuild from the op log; never lose the committed operation.
+5. **Never acknowledge a write that exists only in SQLite.** An operation that did not reach the canonical segment did not happen.
+
+This makes projection application necessarily **idempotent and replayable** ([ADR-0018](../06-adrs/ADR-0018-idempotency-and-deduplication.md), [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md)): a rebuild re-applies the same operations and must reach the same projection. Do not build two unrelated persistence paths and reconcile them later — the append is the single source, the projection is a pure function of it.
+
+## Operation identity and idempotency
+
+Rebuild, replay, import, and torn-write recovery all rest on a single permanent identity for a canonical operation. Three distinct identities exist and must not be conflated:
+
+| Layer                   | Identity                    | Purpose                                                                   | Lifetime                  |
+| ----------------------- | --------------------------- | ------------------------------------------------------------------------- | ------------------------- |
+| Command / accepted work | `idempotencyKey`            | Suppress repeated delivery of one caller intent; return its first outcome | Run-ledger retention      |
+| **Canonical operation** | **`(partition_id, op_id)`** | Identify one historical mutation during replay, import, projection apply  | **Permanent**             |
+| Event delivery          | `eventId`                   | Prevent a consumer processing the same emitted event twice                | Consumer retention policy |
+
+M0 pins these invariants:
+
+1. **`(partition_id, op_id)` is the permanent canonical operation key.** `op_id` is minted once for a new operation and is thereafter immutable; every canonical record, package, replay, and rebuild preserves it verbatim.
+2. **Replay preserves all identity, temporal, and provenance fields** — `op_id`, `asserted_at` (HLC), actor, and source provenance are carried, never regenerated.
+3. **Duplicate identity with identical canonical content is a no-op** (`ingest_ops` recognises it by `(partition_id, op_id)` and skips it — `store.rs`).
+4. **Duplicate identity with _different_ canonical content is corruption** — the reader rejects it and names the workspace corrupt; it never silently takes the first record.
+5. **The authoring path (`insert_op`) mints IDs; the replay path (`ingest_ops`) never does.** The create path must never be used to rebuild or resume canonical history — re-authoring the same semantic content is a new assertion, not replay.
+6. **ADR-0018 idempotency is not a rebuild mechanism.** Its dedup window is the run-ledger lifetime, which the runtime wipe destroys; recovery rides on `(partition_id, op_id)` carried in the canonical record, never on the caller key.
+7. **Import retry identity is scoped to an accepted import batch, not to a source file** (see [Pylon import identity](../05-modules/pylon/deterministic-reviewable-import.md)): a retry of the same accepted batch preserves `import_batch_id` and produces the same `(partition_id, op_id)` set; a newly accepted import gets a new batch identity even when its source digest matches an earlier one.
+
+The recovery narrative therefore reads: **recovery re-ingests the same canonical operation envelopes; it does not recreate operations through the authoring path. Existing operations are recognised by `(partition_id, op_id)` and become no-ops; missing operations are applied with their original identity, asserted time, and provenance.**
+
 - The expected-output golden hash value for the rebuild test (filled in once the resolve/catalogue oracles land, Increments 3–4).
 - Drift-checking the new operation schemas in CI (follow-up; the existing `*-manifest.json` checks under `tests/` are untouched).
 - The two scenario-lifecycle op kinds (`CreateScenario`, `DeleteScenario`).
@@ -25,8 +66,8 @@ A workspace folder ([ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)
 
 In precedence order ([contract precedence](./README.md#contract-precedence)):
 
-1. **ADRs** — [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md) (workspace is canonical), [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md) (portable format), [ADR-0003](../06-adrs/ADR-0003-content-addressed-object-store.md) (content-addressed blobs), [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md) (projection consistency + rebuild equivalence), [ADR-0016](../06-adrs/ADR-0016-error-envelope-rfc9457.md) (error envelope), [ADR-0018](../06-adrs/ADR-0018-idempotency-and-deduplication.md) (idempotent ingest).
-2. **Schemas** — [`docs/contracts/operations/`](../contracts/operations/README.md) (envelope + per-op-kind), and the command surface in [`ipc-manifest.json`](../contracts/ipc-manifest.json).
+1. **ADRs** — [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md) (workspace is canonical), [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md) (portable format), [ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md) (canonical operation record, identity, commit protocol), [ADR-0003](../06-adrs/ADR-0003-content-addressed-object-store.md) (content-addressed blobs), [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md) (projection consistency + rebuild equivalence), [ADR-0016](../06-adrs/ADR-0016-error-envelope-rfc9457.md) (error envelope), [ADR-0018](../06-adrs/ADR-0018-idempotency-and-deduplication.md) (idempotent ingest).
+2. **Schemas** — the [canonical-JSON profile](../04-contracts/canonical-json.md), [`docs/contracts/operations/`](../contracts/operations/README.md) (envelope + per-op-kind), and the command surface in [`ipc-manifest.json`](../contracts/ipc-manifest.json).
 3. **Contract docs** — [op-fact-schema-model](../05-modules/mneme/op-fact-schema-model.md), [identifier-generation-and-provenance](../05-modules/mneme/identifier-generation-and-provenance.md), [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md), [export-import-replay](../05-modules/mneme/export-import-replay.md).
 4. **Fixtures** — [`docs/data/fixtures/operations/`](../data/fixtures/operations/README.md), [`docs/data/fixtures/rebuild/`](../data/fixtures/rebuild/README.md), seeded from [`core-v1.json`](../data/meta/core-v1.json) and [`baseline.yaml`](../data/base/baseline.yaml).
 
@@ -82,7 +123,7 @@ Each assertion maps to its oracle fixture:
 
 Design-intent items not yet pinned in code, to resolve before or during build:
 
-- **`manifest.json` is design-intent.** No `manifest.json` writer/reader exists in `crates/mneme_store` yet; the field schema is specified from [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md), not read back from code. The exact `feature_flags` keys are unspecified.
+- **The canonical persistence layer is unbuilt** (see the Implementation-state note at the top). The `manifest.json` field schema, segment writer, locking, and blob boundary are specified from [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md), not read back from code; the exact `feature_flags` keys are unspecified.
 - **Sealing thresholds are provisional configuration**, not invariants; the 8 MiB / 24 h defaults are placeholders.
 - **The rebuild equivalence golden hash value is not yet computable** — it needs the resolve (M2) and catalogue (M3) oracles. The relation, inputs, and assertion are fixed now; the value lands later.
 - **Scenario-lifecycle op kinds** (`CreateScenario`/`DeleteScenario`) are inline `OpPayload` variants without dedicated input structs and are not schema'd in this increment.
