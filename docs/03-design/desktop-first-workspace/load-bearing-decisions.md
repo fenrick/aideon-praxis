@@ -4,7 +4,7 @@ The ADRs that hold the desktop-first thesis up, each in one line. These are the 
 
 ## The decisions
 
-- **[ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md) — Workspace is the canonical authority.** Operations and temporal facts are canonical; projections are derived from them.
+- **[ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md) — Workspace is the canonical authority.** Operations and schema-as-data are canonical; facts and projections are derived from them.
 - **[ADR-0002](../../06-adrs/ADR-0002-portable-workspace-format.md) — Portable workspace format.** The canonical record is a folder of operation segments, schema-as-data, and blobs that a filesystem can copy and move.
 - **[ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md) — Content-addressed object store.** Binaries are immutable blobs referenced by content hash, deduplicated by that hash.
 - **[ADR-0004](../../06-adrs/ADR-0004-storage-engine-abstraction.md) — Storage engine abstraction.** The runtime storage engine is replaceable behind a trait, with a single-writer queue per workspace.

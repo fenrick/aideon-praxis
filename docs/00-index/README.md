@@ -4,7 +4,7 @@ Aideon Desktop is a **desktop-first, local-first, time-first digital twin** of a
 
 This is the documentation map. New here? Read in this order: the glossary, then the design spine, then the layer you need.
 
-> **The one idea everything rests on.** The canonical project is a **portable workspace folder** — append-only operations (`model/ops/`), schema-as-data (`model/schema/`), and immutable content-addressed blobs (`objects/sha256/`). The runtime database under `.aideon/runtime/` is a **derived, rebuildable cache**: delete it and rebuild it from the canonical files with no data loss. Operations and temporal facts are canonical; effective graphs, indexes, and projections are derived. See [`03-design/desktop-first-workspace/`](../03-design/desktop-first-workspace/README.md) and [`ADR-0001`](../06-adrs/ADR-0001-workspace-is-canonical-authority.md).
+> **The one idea everything rests on.** The canonical project is a **portable workspace folder** — append-only operations (`model/ops/`), schema-as-data (`model/schema/`), and immutable content-addressed blobs (`objects/sha256/`). The runtime database under `.aideon/runtime/` is a **derived, rebuildable cache**: delete it and rebuild it from the canonical files with no data loss. Operations and schema-as-data are canonical; temporal facts, effective graphs, indexes, and projections are derived (a fact is resolved from operations on read). See [`03-design/desktop-first-workspace/`](../03-design/desktop-first-workspace/README.md) and [`ADR-0001`](../06-adrs/ADR-0001-workspace-is-canonical-authority.md).
 
 ---
 

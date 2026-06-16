@@ -144,7 +144,7 @@ The Tauri stack already ships with helpers that are safe to use in these environ
 
 ### Definition of Done (DoD)
 
-For any item labeled `status/in-progress`, ensure the issue body contains this section:
+For any item whose **Status** project field is `In Progress`, ensure the issue body contains this section:
 
 - CI: lint, typecheck, unit tests updated
 - Docs: user & dev docs updated (README/CHANGELOG)
@@ -300,7 +300,7 @@ The current worker jobs and time APIs are defined by engine contracts and module
 
 ## Issues and PR workflow
 
-- Use milestone (M0–M6), labels (`type/*`, `area/*`, `module/*`, `priority/*`).
+- Use the milestone (M0–M6) and the project fields (Kind, Area, Module, Priority, Status); apply `area/*` and triage labels. See `docs/agents/issue-tracker.md`.
 - Conventional Commits in PR title and commits (e.g., `feat(time): add plateau diff endpoint`).
 - Link to updated design docs when changing boundaries, protocols, or the meta-model.
 
@@ -342,7 +342,7 @@ NOTES
 
 ### Issue tracker
 
-Issues are tracked in GitHub Issues (`aideon-ai/aideon-desktop`) via the `gh` CLI; issue forms live in `.github/ISSUE_TEMPLATE/` and the repo carries a `type/area/module/priority/status` label taxonomy. See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues (`aideon-ai/aideon-desktop`) via the `gh` CLI and the **GitHub Project** (the tracking source of truth). Issue forms live in `.github/ISSUE_TEMPLATE/`. The contextual axes — Kind, Area, Module, Priority, Status — are **project fields**, not labels; the labels still applied are the triage labels and `area/*`. See `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`.
 
 ### Triage labels
 
