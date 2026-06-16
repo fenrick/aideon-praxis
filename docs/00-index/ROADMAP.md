@@ -38,6 +38,8 @@ The order is fixed by the acyclic engine dependency graph ([module-dependency-ma
 
 The full ordering within a milestone follows each module's dependency edges; a planned module's README states the boundary it will occupy and the ADR that introduces it ([module-map](../03-design/module-map.md), planned modules).
 
+Each MVP milestone has an executable **build contract** under [`build-contracts/`](../build-contracts/README.md) — [M0](../build-contracts/M0-foundation.md), [M1](../build-contracts/M1-meaning.md), [M2](../build-contracts/M2-time.md), [M3](../build-contracts/M3-artefacts.md) — pinning its exact schemas, fixtures, and exit tests, joined by the [golden journey](../build-contracts/golden-journey.md).
+
 ---
 
 ## How a milestone is judged complete

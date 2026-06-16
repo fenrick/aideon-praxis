@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aideon.dev/contracts/operations/create-edge.schema.json",
+  "title": "CreateEdgeInput",
+  "description": "Create a new edge (relationship) entity with an existence interval. Field names and types match crates/mneme_core/src/ops.rs::CreateEdgeInput. Op kind: CreateEdge (op_type 2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "partition",
+    "actor",
+    "asserted_at",
+    "edge_id",
+    "src_id",
+    "dst_id",
+    "exists_valid_from",
+    "layer"
+  ],
+  "properties": {
+    "partition": { "$ref": "#/$defs/id" },
+    "scenario_id": { "$ref": "#/$defs/idOrNull" },
+    "actor": { "$ref": "#/$defs/id" },
+    "asserted_at": { "$ref": "#/$defs/hlc" },
+    "edge_id": {
+      "$ref": "#/$defs/id",
+      "description": "Per-instance edge identifier, minted once at creation."
+    },
+    "type_id": {
+      "$ref": "#/$defs/idOrNull",
+      "description": "Metamodel relationship symbol UUID, e.g. realises."
+    },
+    "src_id": { "$ref": "#/$defs/id", "description": "Source entity instance id." },
+    "dst_id": { "$ref": "#/$defs/id", "description": "Destination entity instance id." },
+    "exists_valid_from": {
+      "$ref": "#/$defs/validTime",
+      "description": "Existence interval start, epoch microseconds UTC."
+    },
+    "exists_valid_to": {
+      "$ref": "#/$defs/validTimeOrNull",
+      "description": "Existence interval end (half-open); null for open-ended."
+    },
+    "layer": { "$ref": "#/$defs/layer" },
+    "weight": { "type": ["number", "null"] },
+    "acl_group_id": { "type": ["string", "null"] },
+    "owner_actor_id": { "$ref": "#/$defs/idOrNull" },
+    "visibility": { "type": ["integer", "null"], "minimum": 0, "maximum": 255 },
+    "write_options": { "$ref": "#/$defs/writeOptions" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "idOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "hlc": { "type": "integer" },
+    "validTime": { "type": "integer", "description": "ValidTime as epoch microseconds UTC (i64)." },
+    "validTimeOrNull": { "type": ["integer", "null"] },
+    "layer": {
+      "type": "string",
+      "enum": ["Plan", "Actual"],
+      "description": "Layer enum, externally-tagged serde representation."
+    },
+    "writeOptions": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": { "bulk_mode": { "type": "boolean" } }
+    }
+  }
+}

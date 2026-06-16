@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aideon.dev/contracts/operations/tombstone-entity.schema.json",
+  "title": "TombstoneEntity",
+  "description": "Soft-delete an entity or relationship by supersession (not erasure). Field names match the OpPayload::TombstoneEntity inline variant in crates/mneme_core/src/ops.rs. Op kind: TombstoneEntity (op_type 3).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["partition", "actor", "asserted_at", "entity_id"],
+  "properties": {
+    "partition": { "$ref": "#/$defs/id" },
+    "scenario_id": { "$ref": "#/$defs/idOrNull" },
+    "actor": { "$ref": "#/$defs/id" },
+    "asserted_at": { "$ref": "#/$defs/hlc" },
+    "entity_id": {
+      "$ref": "#/$defs/id",
+      "description": "Node or edge instance to tombstone. The suppressed fact remains resolvable at a belief before the tombstone."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "idOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "hlc": { "type": "integer" }
+  }
+}

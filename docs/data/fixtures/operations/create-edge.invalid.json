@@ -1,0 +1,18 @@
+{
+  "partition": "00000000-0000-4000-8000-000000000001",
+  "scenario_id": null,
+  "actor": "00000000-0000-4000-8000-0000000000a1",
+  "asserted_at": 7338950400000000000,
+  "edge_id": "22222222-0000-4000-8000-000000000006",
+  "type_id": "ea3b966e-7c80-537a-9965-65943211827d",
+  "src_id": "11111111-0000-4000-8000-000000000003",
+  "dst_id": "11111111-0000-4000-8000-000000000007",
+  "exists_valid_from": 1767225600000000,
+  "exists_valid_to": null,
+  "layer": "Forecast",
+  "weight": null,
+  "acl_group_id": null,
+  "owner_actor_id": null,
+  "visibility": null,
+  "write_options": null
+}

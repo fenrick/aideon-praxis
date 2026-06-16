@@ -31,9 +31,17 @@ docs/data/
   base/
     baseline.yaml           # the seed dataset (the graph)
     CHANGELOG.md            # SemVer history of the dataset
+  fixtures/                 # test-oracle pack — expected outputs the build is checked against
+    operations/             # valid/invalid operation fixtures (vs docs/contracts/operations schemas)
+    metamodel/              # expected compiled effective schemas + validation error codes
+    temporal/               # resolution vectors: input ops + viewpoint -> resolved output
+    artefacts/              # expected catalogue request/result oracles
+    rebuild/                # the canonical-vs-derived rebuild-equivalence oracle
 ```
 
-This folder holds **seed data only**. The IPC, event, and shell-command **manifests are not seed data** — they live in [`docs/contracts/`](../contracts/) (authoritative and drift-checked by `tests/contracts/*`), per the [contract precedence](../build-contracts/README.md#contract-precedence). Do not add manifest copies here.
+The seed (`meta/`, `base/`) is what a fresh workspace **starts from**; the **fixtures** (`fixtures/`) are the expected **outputs** a build is checked against, indexed per subfolder and referenced by the [build contracts](../build-contracts/README.md).
+
+This folder holds **seed data and fixtures only**. The IPC, event, and shell-command **manifests are not seed data** — they live in [`docs/contracts/`](../contracts/) (authoritative and drift-checked by `tests/contracts/*`), per the [contract precedence](../build-contracts/README.md#contract-precedence). Do not add manifest copies here.
 
 Two concerns, two files. `meta/core-v1.json` declares _what can exist_ — the [entity](../../CONTEXT.md) and [relationship](../../CONTEXT.md) types, their slots, and validation. `base/baseline.yaml` declares _what does exist_ in a fresh workspace — concrete entities and relationships expressed as graph nodes and edges with time and scenario context. The metamodel is the language; the dataset is one sentence written in it.
 

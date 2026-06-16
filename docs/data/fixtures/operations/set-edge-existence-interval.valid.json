@@ -1,0 +1,12 @@
+{
+  "partition": "00000000-0000-4000-8000-000000000001",
+  "scenario_id": null,
+  "actor": "00000000-0000-4000-8000-0000000000a1",
+  "asserted_at": 7338950400000000000,
+  "edge_id": "22222222-0000-4000-8000-000000000006",
+  "valid_from": 1767225600000000,
+  "valid_to": 1798761600000000,
+  "layer": "Actual",
+  "is_tombstone": false,
+  "write_options": null
+}

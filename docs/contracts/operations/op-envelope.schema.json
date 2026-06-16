@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aideon.dev/contracts/operations/op-envelope.schema.json",
+  "title": "OpEnvelope",
+  "description": "The canonical append-only operation record written to the op log. Field names and types match crates/mneme_core/src/ops.rs::OpEnvelope. The envelope is the durable on-disk primitive; the typed payload lives in the base64/binary `payload` field whose decoded shape is one of the per-op-kind input schemas in this directory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["op_id", "actor_id", "asserted_at", "op_type", "payload", "deps"],
+  "properties": {
+    "op_id": {
+      "$ref": "#/$defs/id",
+      "description": "Stable identity of this one append; idempotency key (partition, op_id) and resolution tie-break of last resort."
+    },
+    "actor_id": {
+      "$ref": "#/$defs/id",
+      "description": "Who or what asserted the operation; drives content classification."
+    },
+    "asserted_at": {
+      "$ref": "#/$defs/hlc",
+      "description": "Hybrid logical clock packed as a portable i64 (upper bits physical micros, lower 12 bits counter)."
+    },
+    "op_type": {
+      "$ref": "#/$defs/opType",
+      "description": "OpType discriminant. 1=CreateNode 2=CreateEdge 3=TombstoneEntity 4=SetProperty 5=ClearProperty 6=OrSetUpdate 7=CounterUpdate 8=UpsertMetamodelBatch 9=CreateScenario 10=DeleteScenario 11=SetEdgeExistenceInterval."
+    },
+    "payload": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "description": "Serialised OpPayload (msgpack/cbor on disk; base64 in the NDJSON export `payload_base64`). Its decoded shape is the matching per-op-kind input schema."
+    },
+    "deps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/id" },
+      "description": "Causal dependencies, by op_id. An operation whose predecessor is absent is reported on import, not applied blind."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "description": "An Id serialised as a canonical UUID string (lower-case, hyphenated). Mneme::Id is a 16-byte value rendered via UUID; ULID input is also accepted on parse but serialised as UUID.",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "hlc": {
+      "type": "integer",
+      "description": "Hlc serialised as a signed 64-bit integer (i64)."
+    },
+    "opType": {
+      "type": "integer",
+      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }
+  }
+}

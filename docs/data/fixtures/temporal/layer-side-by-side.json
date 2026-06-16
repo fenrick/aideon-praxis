@@ -1,0 +1,60 @@
+{
+  "case": "layer-side-by-side",
+  "description": "The side_by_side policy resolves each layer independently and returns both, never collapsing them. Required for variance comparison (plan vs actual). Same facts as layer-actual-over-plan.",
+  "corner_case": "side-by-side layer policy",
+  "input": {
+    "entity": "n:application:automation-orchestrator",
+    "slot": "disposition",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-0500",
+        "op_type": "SetProperty",
+        "value": "Invest",
+        "layer": "plan",
+        "scenario": null,
+        "valid_from": "2026-07-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      },
+      {
+        "op_id": "op-0501",
+        "op_type": "SetProperty",
+        "value": "Migrate",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7254636134400000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-09-01T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": { "policy": "side_by_side" },
+    "scenario": null
+  },
+  "expected": {
+    "present": true,
+    "by_layer": {
+      "actual": {
+        "present": true,
+        "value": "Migrate",
+        "effective_interval": { "valid_from": "2026-01-01T00:00:00Z", "valid_to": null },
+        "winning_op_id": "op-0501"
+      },
+      "plan": {
+        "present": true,
+        "value": "Invest",
+        "effective_interval": { "valid_from": "2026-07-01T00:00:00Z", "valid_to": null },
+        "winning_op_id": "op-0500"
+      }
+    },
+    "content_classification": "Asserted",
+    "result_state": "Fresh",
+    "deciding_rule": "layer policy: side_by_side keeps layers distinct",
+    "superseded": []
+  }
+}

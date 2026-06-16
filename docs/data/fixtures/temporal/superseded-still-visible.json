@@ -1,0 +1,64 @@
+{
+  "case": "superseded-still-visible",
+  "description": "A superseded fact is absent from the effective value but is returned by an explained read (mneme_store_explain_resolution). This vector pins the explainability contract: the winner, the deciding rule, and the losing candidates with why each lost.",
+  "corner_case": "superseded fact still visible (explainability)",
+  "input": {
+    "entity": "n:application:insight-hub",
+    "slot": "disposition",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-1100",
+        "op_type": "SetProperty",
+        "value": "Invest",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2025-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      },
+      {
+        "op_id": "op-1101",
+        "op_type": "SetProperty",
+        "value": "Tolerate",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2025-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7266366259200000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-06-11T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": null,
+    "explain": true
+  },
+  "expected": {
+    "present": true,
+    "value": "Tolerate",
+    "effective_interval": { "valid_from": "2025-01-01T00:00:00Z", "valid_to": null },
+    "content_classification": "Asserted",
+    "result_state": "Fresh",
+    "deciding_rule": "latest asserted time",
+    "winning_op_id": "op-1101",
+    "explanation": {
+      "winner": { "op_id": "op-1101", "value": "Tolerate", "selected_by": "latest asserted time" },
+      "candidates_considered": [
+        {
+          "op_id": "op-1100",
+          "value": "Invest",
+          "eliminated_at_rule": "latest asserted time",
+          "reason": "HLC 7241859072000000000 < 7266366259200000000"
+        },
+        { "op_id": "op-1101", "value": "Tolerate", "outcome": "winner" }
+      ],
+      "layer_policy": "actual (single layer)",
+      "classification": "Inferred"
+    },
+    "note": "Resolution explanations are Inferred content: derived, traceable, recomputed when inputs change. The superseded op-1100 (Invest) is never dropped from history."
+  }
+}

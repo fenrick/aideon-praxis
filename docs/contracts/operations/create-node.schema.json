@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aideon.dev/contracts/operations/create-node.schema.json",
+  "title": "CreateNodeInput",
+  "description": "Create a new node entity. Facts (property intervals) are added by separate operations. Field names and types match crates/mneme_core/src/ops.rs::CreateNodeInput. Op kind: CreateNode (op_type 1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["partition", "actor", "asserted_at", "node_id"],
+  "properties": {
+    "partition": { "$ref": "#/$defs/id" },
+    "scenario_id": { "$ref": "#/$defs/idOrNull" },
+    "actor": { "$ref": "#/$defs/id" },
+    "asserted_at": { "$ref": "#/$defs/hlc" },
+    "node_id": {
+      "$ref": "#/$defs/id",
+      "description": "Per-instance entity identifier, minted once at creation."
+    },
+    "type_id": {
+      "$ref": "#/$defs/idOrNull",
+      "description": "Metamodel symbol UUID (UUIDv5) of the entity type, e.g. Application."
+    },
+    "acl_group_id": { "type": ["string", "null"] },
+    "owner_actor_id": { "$ref": "#/$defs/idOrNull" },
+    "visibility": { "type": ["integer", "null"], "minimum": 0, "maximum": 255 },
+    "write_options": { "$ref": "#/$defs/writeOptions" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "idOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "hlc": { "type": "integer" },
+    "writeOptions": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": { "bulk_mode": { "type": "boolean" } }
+    }
+  }
+}

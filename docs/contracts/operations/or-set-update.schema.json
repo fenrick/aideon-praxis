@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aideon.dev/contracts/operations/or-set-update.schema.json",
+  "title": "OrSetUpdateInput",
+  "description": "Add or remove an element of an OR-Set field over a valid-time interval (CRDT, convergent under merge). Field names and types match crates/mneme_core/src/ops.rs::OrSetUpdateInput. Op kind: OrSetUpdate (op_type 6).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "partition",
+    "actor",
+    "asserted_at",
+    "entity_id",
+    "field_id",
+    "op",
+    "element",
+    "valid_from",
+    "layer"
+  ],
+  "properties": {
+    "partition": { "$ref": "#/$defs/id" },
+    "scenario_id": { "$ref": "#/$defs/idOrNull" },
+    "actor": { "$ref": "#/$defs/id" },
+    "asserted_at": { "$ref": "#/$defs/hlc" },
+    "entity_id": { "$ref": "#/$defs/id" },
+    "field_id": { "$ref": "#/$defs/id" },
+    "op": {
+      "type": "string",
+      "enum": ["Add", "Remove"],
+      "description": "SetOp enum, externally-tagged serde representation."
+    },
+    "element": { "$ref": "#/$defs/value" },
+    "valid_from": { "$ref": "#/$defs/validTime" },
+    "valid_to": { "$ref": "#/$defs/validTimeOrNull" },
+    "layer": { "$ref": "#/$defs/layer" },
+    "write_options": { "$ref": "#/$defs/writeOptions" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "idOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "hlc": { "type": "integer" },
+    "validTime": { "type": "integer" },
+    "validTimeOrNull": { "type": ["integer", "null"] },
+    "layer": { "type": "string", "enum": ["Plan", "Actual"] },
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 1,
+      "properties": {
+        "Str": { "type": "string" },
+        "I64": { "type": "integer" },
+        "F64": { "type": "number" },
+        "Bool": { "type": "boolean" },
+        "Time": { "type": "integer" },
+        "Ref": { "$ref": "#/$defs/id" },
+        "Blob": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 255 } },
+        "Json": {}
+      }
+    },
+    "writeOptions": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": { "bulk_mode": { "type": "boolean" } }
+    }
+  }
+}

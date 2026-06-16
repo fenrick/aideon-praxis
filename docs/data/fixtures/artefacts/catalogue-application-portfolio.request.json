@@ -1,0 +1,23 @@
+{
+  "command": "praxis_artefact_execute_catalogue",
+  "artefactId": "application-portfolio-health",
+  "form": "catalogue",
+  "family": "application-portfolio",
+  "viewpoint": {
+    "validAsOf": "2026-06-11",
+    "assertedAsOf": "latest",
+    "layer": "actual",
+    "scenario": "base",
+    "scope": "type=Application"
+  },
+  "columns": [
+    { "key": "name", "label": "Name", "slot": "name" },
+    { "key": "vendor", "label": "Vendor", "slot": "vendor" },
+    { "key": "disposition", "label": "Disposition", "slot": "disposition" },
+    { "key": "lifecycle", "label": "Lifecycle", "slot": "lifecycle" },
+    { "key": "health", "label": "Health", "derived": true }
+  ],
+  "filter": null,
+  "sort": [{ "key": "name", "direction": "asc" }],
+  "page": { "offset": 0, "pageSize": 2 }
+}

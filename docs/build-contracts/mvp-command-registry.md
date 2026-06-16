@@ -1,0 +1,104 @@
+# MVP command registry
+
+The subset of the IPC and event surface the [golden journey](./golden-journey.md) (M0–M3) actually uses, derived from the authoritative manifests in [`docs/contracts/`](../contracts/ipc-manifest.json). The full surface is 84 commands and 7 events; the MVP needs a fraction of that. This file names the MVP commands, says which module owns each, references the request/success shape and error codes (it does not re-invent them — the shapes are governed by the generated schema and the [IPC contracts](../04-contracts/ipc/command-surface.md)), and states for each whether it runs synchronously or returns an [`AcceptedJob`](../04-contracts/accepted-work-and-events/accepted-job-shape.md). It then defines the **threshold** that decides sync versus accepted-work, lists the MVP events, and records the workspace-event manifest gap as a tracked follow-up.
+
+The manifests are tier 2 of the [contract precedence](./README.md#contract-precedence) and the single source of truth for their surface; this registry is a reading of them for the MVP, not a second copy. Where a request/response DTO is not yet pinned in the generated schema, it is marked design-intent ([generated-schema-discipline](../04-contracts/ipc/generated-schema-discipline.md)).
+
+---
+
+## The sync-versus-accepted-work threshold
+
+Every IPC command returns either a synchronous typed result or an [`AcceptedJob`](../04-contracts/accepted-work-and-events/accepted-job-shape.md). The threshold is not "slow versus fast" guessed per command; it is a structural rule:
+
+> **A command returns an `AcceptedJob` if and only if its work is one of the durable [`WorkQueueClass`](../04-contracts/accepted-work-and-events/accepted-job-shape.md) kinds** — `Rebuild`, `Import`, `Export`, `BlobIngestion`, `AnalyticsRefresh`, `Reindex`, `ConnectorIngest`, `Retention`, `Compaction`, `SyncApply`. These are operations that (a) are recorded in the [run ledger](../04-contracts/accepted-work-and-events/run-ledger.md), (b) emit progress as [typed events](../04-contracts/accepted-work-and-events/event-model.md) rather than blocking, and (c) survive a restart with idempotent replay. **Every other command runs synchronously** and returns a typed `IpcResponse<T>` in the [standard envelope](../04-contracts/ipc/envelope.md).
+
+The corollaries that make this unambiguous:
+
+- A **read** is always synchronous — no read is a `WorkQueueClass`. `state-at`, `diff`, `read_entity_at_time`, `get_*`, `list_*`, `praxis_metamodel_get`, and **`praxis_artefact_execute_catalogue`** all return their result directly. Artefact execution is a read-only projection ([ADR-0033](../06-adrs/ADR-0033-artefact-execution-model.md)); it is bounded (the catalogue caps at 200 rows and a time budget), so it returns synchronously and reports `partialBounded` if a bound was hit, rather than becoming a job.
+- A **small, single-op write** is synchronous — appending one operation (`create_node`, `create_edge`, `set_property_interval`, `apply_operations`) is not a queue class; it returns the typed result, and if the write queue is saturated it returns `BACKPRESSURE` (`transient`/`retry`) so the renderer shows a **queued** state rather than pretending the write landed ([backpressure](../04-contracts/accepted-work-and-events/backpressure.md)).
+- A **`trigger_*` command** is the canonical accepted-work case — `mneme_store_trigger_rebuild_effective_schema`, `_refresh_analytics_projections`, `_refresh_integrity`, `_compaction`, `_retention` map directly onto `Rebuild`/`AnalyticsRefresh`/`Compaction`/`Retention` and return an `AcceptedJob`.
+- **Import/export streams** (`*_ops_stream`, `*_snapshot_stream`) are `Import`/`Export` work and are accepted-work; they are out of the MVP path (M4) and listed here only for completeness of the threshold rule.
+
+So the MVP golden journey is almost entirely synchronous: the **only** accepted-work command on the path is the rebuild in step 10 (`mneme_store_trigger_rebuild_effective_schema` and the analytics/integrity refresh triggers that participate in the runtime rebuild).
+
+---
+
+## MVP commands
+
+Ordered by golden-journey step. **Module** is read off the command prefix ([command-surface](../04-contracts/ipc/command-surface.md)). **Mode** is `sync` or `AcceptedJob` per the threshold above. **Request / success** references the governing contract; the DTO shapes are owned by the generated schema ([generated-schema-discipline](../04-contracts/ipc/generated-schema-discipline.md)) and are design-intent where not yet pinned. **Errors** are stable codes from the [error envelope](../04-contracts/ipc/error-envelope.md) and [accepted-work error codes](../04-contracts/accepted-work-and-events/error-codes.md). All commands require the `appcommands` capability ([capabilities-and-csp](../05-modules/host/capabilities-and-csp.md)); the column notes the **idempotency** posture (mutating commands carry an `idempotencyKey`, [idempotency](../04-contracts/ipc/idempotency.md)).
+
+| Step | Command                                               | Module | Mode            | Request / success shape                                                                                                                               | Error codes                                                              | Idempotency  |
+| ---- | ----------------------------------------------------- | ------ | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------ |
+| 1    | _(host workspace lifecycle — not a renderer command)_ | Host   | n/a             | [workspace-lifecycle](../05-modules/host/workspace-lifecycle.md); resolves storage root, acquires single-writer lock, validates schema                | `WORKSPACE_NOT_FOUND`, `WORKSPACE_LOCKED`, `SCHEMA_TOO_NEW`              | n/a          |
+| 1    | `system_setup_state`                                  | Host   | sync            | Read once on mount to avoid a missed-event race ([shell](../frontend/shell.md))                                                                       | `INTERNAL_ERROR`                                                         | read         |
+| 1    | `system_setup_complete`                               | Host   | sync            | Renderer signals setup done                                                                                                                           | `INTERNAL_ERROR`                                                         | mutating key |
+| 1    | `workspace_projects_list`                             | Host   | sync            | List of openable projects                                                                                                                             | `INTERNAL_ERROR`                                                         | read         |
+| 2    | `mneme_store_upsert_metamodel_batch`                  | Mneme  | sync            | Praxis publishes the compiled `MetamodelBatch` ([op-fact-schema-model](../05-modules/mneme/op-fact-schema-model.md))                                  | `INVALID_INPUT`, `WORKSPACE_LOCKED`                                      | mutating key |
+| 2    | `mneme_store_compile_effective_schema`                | Mneme  | sync            | Compile the effective schema from stored metamodel                                                                                                    | `INVALID_INPUT`                                                          | mutating key |
+| 2    | `praxis_metamodel_get`                                | Praxis | sync            | Read back the effective metamodel                                                                                                                     | `INVALID_INPUT`                                                          | read         |
+| 2    | `mneme_store_get_effective_schema`                    | Mneme  | sync            | Read back the compiled effective schema per type                                                                                                      | `INVALID_INPUT`                                                          | read         |
+| 3    | `mneme_store_create_node`                             | Mneme  | sync            | Create one entity (validated before append)                                                                                                           | `INVALID_INPUT` (`ValidationFailed`), `WORKSPACE_LOCKED`, `BACKPRESSURE` | mutating key |
+| 3    | `mneme_store_create_edge`                             | Mneme  | sync            | Create one relationship (validated before append)                                                                                                     | `INVALID_INPUT` (`ValidationFailed`), `WORKSPACE_LOCKED`, `BACKPRESSURE` | mutating key |
+| 3    | `praxis_task_apply_operations`                        | Praxis | sync            | A Change Event validated against the metamodel, compiled to operations ([tasks-and-change-events](../05-modules/praxis/tasks-and-change-events.md))   | `INVALID_INPUT` (`ValidationFailed`), `BACKPRESSURE`                     | mutating key |
+| 4    | `mneme_store_set_property_interval`                   | Mneme  | sync            | Assert a slot value on a layer with a valid-time interval and asserted-time (HLC)                                                                     | `INVALID_INPUT`, `TEMPORAL_INTERVAL_INVALID`, `BACKPRESSURE`             | mutating key |
+| 5    | `chrona_temporal_state_at`                            | Chrona | sync            | Resolve effective state at a viewpoint ([resolution-rules](../04-contracts/temporal-and-scenario/resolution-rules.md))                                | `TEMPORAL_CONTEXT_INVALID`, `INVALID_TIME`, `SCENARIO_CONTEXT_INVALID`   | read         |
+| 5    | `mneme_store_read_entity_at_time`                     | Mneme  | sync            | Resolve one entity at a viewpoint                                                                                                                     | `TEMPORAL_CONTEXT_INVALID`, `INVALID_TIME`                               | read         |
+| 5    | `mneme_store_explain_resolution`                      | Mneme  | sync            | Inspect a superseded fact ([conflicts-during-resolution](../04-contracts/temporal-and-scenario/conflicts-during-resolution.md))                       | `TEMPORAL_CONTEXT_INVALID`                                               | read         |
+| 6    | `chrona_temporal_diff`                                | Chrona | sync            | Delta between two viewpoints ([diff](../04-contracts/temporal-and-scenario/diff.md), [ADR-0008](../06-adrs/ADR-0008-diff-compares-two-viewpoints.md)) | `COMPARISON_CONTEXT_INVALID`, `TEMPORAL_CONTEXT_INVALID`                 | read         |
+| 7    | `praxis_artefact_execute_catalogue`                   | Praxis | sync            | Execute the catalogue at a viewpoint with scope/sort/page; returns the [catalogue result](../04-contracts/artefact-results/catalogue-result.md)       | `INVALID_INPUT`, `TEMPORAL_CONTEXT_INVALID`, `SCENARIO_CONTEXT_INVALID`  | read         |
+| 8    | _(host workspace lifecycle — close/reopen)_           | Host   | n/a             | Drains in-flight jobs, flushes engine state; reopen repeats step 1                                                                                    | `WORKSPACE_LOCKED`, `SCHEMA_TOO_NEW`                                     | n/a          |
+| 10   | `mneme_store_trigger_rebuild_effective_schema`        | Mneme  | **AcceptedJob** | Rebuild the effective schema (`WorkQueueClass: Rebuild`)                                                                                              | `BACKPRESSURE`, `IDEMPOTENCY_CONFLICT`                                   | mutating key |
+| 10   | `mneme_store_trigger_refresh_analytics_projections`   | Mneme  | **AcceptedJob** | Refresh analytics projections (`WorkQueueClass: AnalyticsRefresh`)                                                                                    | `BACKPRESSURE`, `IDEMPOTENCY_CONFLICT`                                   | mutating key |
+| 10   | `mneme_store_trigger_refresh_integrity`               | Mneme  | **AcceptedJob** | Refresh integrity projection (`WorkQueueClass: AnalyticsRefresh`)                                                                                     | `BACKPRESSURE`, `IDEMPOTENCY_CONFLICT`                                   | mutating key |
+
+Supporting commands the MVP shell uses outside the numbered path (all `sync`, all `appcommands`): `praxis_scenario_list` (scenario picker), `praxis_canvas_get_scene` / `praxis_canvas_get_layout` (content surface), `system_worker_health` / `system_metrics_snapshot` (status footer), `system_logging_context` (correlation), `system_window_open` (multi-window). `workspace_templates_list` / `workspace_templates_save` back the workspace-family chooser.
+
+---
+
+## MVP events
+
+The renderer subscribes to events rather than polling. The MVP path uses the setup handshake events and the change-event stream; accepted-work progress (step 10's rebuild) arrives on the run-progress channel ([event-model](../04-contracts/accepted-work-and-events/event-model.md)). The seven manifest events ([`event-manifest.json`](../contracts/event-manifest.json)):
+
+| Event                      | Payload keys                                                                           | Used in the MVP for                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `setup_progress`           | `phase`                                                                                | Splash → shell handshake (step 1)                                                                                    |
+| `setup_backend_ready`      | _(none)_                                                                               | Backend-ready signal (step 1)                                                                                        |
+| `setup_frontend_ready_ack` | _(none)_                                                                               | Frontend-ready acknowledgement (step 1)                                                                              |
+| `setup_failed`             | `code`, `message`                                                                      | Setup failure with explicit recovery ([error-loading-empty](../frontend/error-loading-empty.md))                     |
+| `setup_seed_summary`       | `datasetVersion`, `metamodelVersion`                                                   | Confirm the seed loaded (steps 2–3)                                                                                  |
+| `mneme_change_event`       | `partition`, `sequence`, `op_id`, `asserted_at`, `entity_id`, `change_kind`, `payload` | Invalidate viewpoint-keyed caches after a write (steps 3–4)                                                          |
+| `shell_command`            | `command`, `payload`                                                                   | Native-menu/shortcut commands into the renderer ([shell-command-manifest](../contracts/shell-command-manifest.json)) |
+
+`mneme_change_event` is the cache-invalidation signal: a write on the path emits it, and the renderer drops the affected viewpoint-keyed server-state and refetches ([data-fetching](../frontend/data-fetching.md), [state-architecture](../frontend/state-architecture.md)). Accepted-work progress for step 10's rebuild is a `RunEvent` on the run-progress channel, deduplicated by `eventId` and ordered by `occurredAt` ([event-model](../04-contracts/accepted-work-and-events/event-model.md)) — it is the typed-event model, not one of the seven manifest events.
+
+---
+
+## Tracked follow-up — the workspace-event manifest gap
+
+The host workspace lifecycle ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md)) and the event-bus docs reference three events that are **absent from [`event-manifest.json`](../contracts/event-manifest.json)**:
+
+- `workspace_opened` — emitted on step 1 (create/open) per [workspace-lifecycle](../05-modules/host/workspace-lifecycle.md) and [golden-journey](./golden-journey.md) step 1.
+- `workspace_closed` — emitted on step 8 (close) per the same.
+- `job.updated` — referenced by the event-bus/lifecycle docs as the accepted-work progress signal.
+
+This registry **records the gap; it does not resolve it.** The manifest is the single source of truth for the event surface ([contract precedence](./README.md#contract-precedence)) and is generated from Rust (`cargo run -p aideon_xtask -- ipc-manifest`); these events are either not yet defined as Rust event structs or are intentionally modelled differently:
+
+- `job.updated` is plausibly **superseded** by the typed `RunEvent` model on the run-progress channel ([event-model](../04-contracts/accepted-work-and-events/event-model.md)), which is richer (per-step, deduplicated, ordered). If so, the lifecycle/event-bus prose should drop `job.updated` in favour of `RunEvent`, and the disagreement is a documentation defect to fix, not a manifest addition.
+- `workspace_opened` / `workspace_closed` have no `RunEvent` equivalent and would need defining as Rust event structs and regenerating the manifest if the renderer is to react to them as events (rather than inferring lifecycle from a synchronous open/close call returning).
+
+**Action (do not perform here):** open a tracked item to reconcile the workspace-lifecycle/event-bus prose with `event-manifest.json` — either add the two workspace events to the generated manifest, or amend the prose to match the manifest and the `RunEvent` model. Until then, the MVP treats workspace open/close as **host lifecycle that the renderer learns about synchronously** (the open/close call returns), not as manifest events, and uses `RunEvent` for job progress. This matches what the manifest actually guarantees today and keeps the registry honest ([ADR-0037](../06-adrs/ADR-0037-contract-precedence-and-source-of-truth.md): the generated contract is authoritative for the surface).
+
+---
+
+## Related documents
+
+| Document                                                                                    | What it covers                                                                    |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [golden-journey.md](./golden-journey.md)                                                    | The M0–M3 path whose commands this registry subsets.                              |
+| [M3-artefacts.md](./M3-artefacts.md)                                                        | The milestone this registry supports.                                             |
+| [ipc-manifest.json](../contracts/ipc-manifest.json)                                         | The authoritative 84-command surface.                                             |
+| [event-manifest.json](../contracts/event-manifest.json)                                     | The authoritative 7-event surface (and the gap noted above).                      |
+| [accepted-work-and-events/](../04-contracts/accepted-work-and-events/accepted-job-shape.md) | The `AcceptedJob`, `WorkQueueClass`, and `RunEvent` model the threshold rests on. |
+| [ipc/command-surface.md](../04-contracts/ipc/command-surface.md)                            | The naming rule that assigns each command to a module.                            |
+| [ipc/error-envelope.md](../04-contracts/ipc/error-envelope.md)                              | The stable error codes and categories the table references.                       |
+| [capabilities-and-csp](../05-modules/host/capabilities-and-csp.md)                          | The `appcommands` capability every command requires.                              |

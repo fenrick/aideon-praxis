@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aideon.dev/contracts/operations/upsert-metamodel-batch.schema.json",
+  "title": "MetamodelBatch",
+  "description": "A batch type/field/rule schema update stored as schema-as-data. Field names and types match crates/mneme_core/src/schema.rs::MetamodelBatch and its members. Op kind: UpsertMetamodelBatch (op_type 8). A published metamodel_version is immutable; a change appends a new batch with a higher version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["types", "fields", "type_fields", "edge_type_rules"],
+  "properties": {
+    "types": { "type": "array", "items": { "$ref": "#/$defs/typeDef" } },
+    "fields": { "type": "array", "items": { "$ref": "#/$defs/fieldDef" } },
+    "type_fields": { "type": "array", "items": { "$ref": "#/$defs/typeFieldDef" } },
+    "edge_type_rules": { "type": "array", "items": { "$ref": "#/$defs/edgeTypeRule" } },
+    "metamodel_version": { "type": ["string", "null"] },
+    "metamodel_source": { "type": ["string", "null"] }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "idOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "entityKind": {
+      "type": "string",
+      "enum": ["Node", "Edge"],
+      "description": "EntityKind enum, externally-tagged serde representation."
+    },
+    "valueType": {
+      "type": "string",
+      "enum": ["Str", "I64", "F64", "Bool", "Time", "Ref", "Blob", "Json"],
+      "description": "ValueType enum."
+    },
+    "mergePolicy": {
+      "type": "string",
+      "enum": ["Lww", "Mv", "OrSet", "Counter", "Text"],
+      "description": "MergePolicy enum."
+    },
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 1,
+      "properties": {
+        "Str": { "type": "string" },
+        "I64": { "type": "integer" },
+        "F64": { "type": "number" },
+        "Bool": { "type": "boolean" },
+        "Time": { "type": "integer" },
+        "Ref": { "$ref": "#/$defs/id" },
+        "Blob": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 255 } },
+        "Json": {}
+      }
+    },
+    "typeDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type_id", "applies_to", "label", "is_abstract"],
+      "properties": {
+        "type_id": { "$ref": "#/$defs/id" },
+        "applies_to": { "$ref": "#/$defs/entityKind" },
+        "label": { "type": "string" },
+        "is_abstract": { "type": "boolean" },
+        "parent_type_id": {
+          "$ref": "#/$defs/idOrNull",
+          "description": "Single-inheritance parent; cycles rejected before accept."
+        }
+      }
+    },
+    "fieldDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field_id",
+        "label",
+        "value_type",
+        "cardinality_multi",
+        "merge_policy",
+        "is_indexed"
+      ],
+      "properties": {
+        "field_id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "value_type": { "$ref": "#/$defs/valueType" },
+        "cardinality_multi": { "type": "boolean" },
+        "merge_policy": { "$ref": "#/$defs/mergePolicy" },
+        "is_indexed": { "type": "boolean" },
+        "disallow_overlap": { "type": "boolean", "description": "serde default false." }
+      }
+    },
+    "typeFieldDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type_id", "field_id", "is_required", "override_default", "tighten_required"],
+      "properties": {
+        "type_id": { "$ref": "#/$defs/id" },
+        "field_id": { "$ref": "#/$defs/id" },
+        "is_required": { "type": "boolean" },
+        "default_value": { "oneOf": [{ "$ref": "#/$defs/value" }, { "type": "null" }] },
+        "override_default": { "type": "boolean" },
+        "tighten_required": { "type": "boolean" },
+        "disallow_overlap": { "type": ["boolean", "null"] }
+      }
+    },
+    "edgeTypeRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edge_type_id", "allowed_src_type_ids", "allowed_dst_type_ids"],
+      "properties": {
+        "edge_type_id": { "$ref": "#/$defs/id" },
+        "allowed_src_type_ids": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "allowed_dst_type_ids": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "semantic_direction": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

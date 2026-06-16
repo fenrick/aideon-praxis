@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aideon.dev/contracts/operations/counter-update.schema.json",
+  "title": "CounterUpdateInput",
+  "description": "Apply a signed delta to a counter field over a valid-time interval (CRDT, convergent under merge). Field names and types match crates/mneme_core/src/ops.rs::CounterUpdateInput. Op kind: CounterUpdate (op_type 7).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "partition",
+    "actor",
+    "asserted_at",
+    "entity_id",
+    "field_id",
+    "delta",
+    "valid_from",
+    "layer"
+  ],
+  "properties": {
+    "partition": { "$ref": "#/$defs/id" },
+    "scenario_id": { "$ref": "#/$defs/idOrNull" },
+    "actor": { "$ref": "#/$defs/id" },
+    "asserted_at": { "$ref": "#/$defs/hlc" },
+    "entity_id": { "$ref": "#/$defs/id" },
+    "field_id": { "$ref": "#/$defs/id" },
+    "delta": { "type": "integer", "description": "Signed i64 increment applied to the counter." },
+    "valid_from": { "$ref": "#/$defs/validTime" },
+    "valid_to": { "$ref": "#/$defs/validTimeOrNull" },
+    "layer": { "$ref": "#/$defs/layer" },
+    "write_options": { "$ref": "#/$defs/writeOptions" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "idOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "hlc": { "type": "integer" },
+    "validTime": { "type": "integer" },
+    "validTimeOrNull": { "type": ["integer", "null"] },
+    "layer": { "type": "string", "enum": ["Plan", "Actual"] },
+    "writeOptions": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": { "bulk_mode": { "type": "boolean" } }
+    }
+  }
+}

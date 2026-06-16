@@ -1,0 +1,8 @@
+{
+  "op_id": "33333333-0000-4000-8000-000000000001",
+  "actor_id": "00000000-0000-4000-8000-0000000000a1",
+  "asserted_at": 7338950400000000000,
+  "op_type": 99,
+  "payload": "eyJTZXRQcm9wZXJ0eSI6eyJ2YWx1ZSI6eyJTdHIiOiJNaWdyYXRlIn19fQ==",
+  "deps": []
+}

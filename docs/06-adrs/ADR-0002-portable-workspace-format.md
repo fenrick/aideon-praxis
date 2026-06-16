@@ -66,9 +66,13 @@ Everything under `model/` and `objects/` is canonical. Everything under `.aideon
 Rules:
 
 - **Append-only, auditable, replayable.** New facts are new ops; nothing is mutated in place.
-- **Schema lives in the op stream** (`schema.upsert`) and in `model/schema/`, never buried in code enums.
+- **Schema lives in the op stream** (`schema.upsert`) and in `model/schema/`, never buried in code enums. **The op stream is authoritative; `model/schema/` is a derived, reconstructible cache** of the compiled effective schema at the latest belief. On disagreement, `model/schema/` is recompiled from the op log — a hand-edited cache is never trusted over the operations that define the schema's history ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md), schema-authority rule).
 - **Canonical writes use temp-file-plus-rename**; op segments are sealed before export.
 - `manifest.json` carries `workspace_format_version` and `schema_version`; readers are forward-tolerant where sensible and reject formats newer than they understand with a clear error.
+
+### `manifest.json` fields (format v1)
+
+The root descriptor. Required: `workspace_format_version` (integer), `schema_version` (integer), `workspace_id` (UUID string, minted once and never regenerated), `created_at` (RFC 3339 UTC). Optional with defaults: `created_by_device` (device-id string), `hash_algorithm` (default `"sha256"`), `segment_seal_max_bytes` (default `8388608`), `segment_seal_max_age_secs` (default `86400`), `feature_flags` (object, default `{}`). Unknown top-level keys are ignored, not rejected, so a newer minor format stays readable. The complete field table, the workspace/device identifier formats, and the maximum supported versions (`MAX_WORKSPACE_FORMAT_VERSION = 1`, `MAX_SCHEMA_VERSION = 1` at the v1 baseline) are specified in [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md). `workspace_id` is canonical and travels with the workspace; `device_id` is host-local derived state and is never copied, zipped, or synced.
 
 ### Durability rules
 
@@ -85,7 +89,7 @@ The portability rules above leave four durability concerns implicit. They are fi
 
 - **Integrity checks on canonical files.** Canonical files are integrity-checkable without a side database:
   - **Blobs are self-checksumming** — the `objects/sha256/<hash>` path _is_ the checksum; re-hashing the bytes detects corruption with no separate digest to keep in sync ([ADR-0003](./ADR-0003-content-addressed-object-store.md)).
-  - **A sealed op segment carries a trailing checksum** over its records, so a sealed segment can be verified whole on open; the loose segment is validated by record framing up to the last complete record.
+  - **A sealed op segment carries a trailing checksum** (BLAKE3 over the segment's complete records, in file order, excluding the checksum line itself) so a sealed segment can be verified whole on open; the loose segment carries no trailing checksum and is validated by record framing up to the last complete record. A sealed segment that fails its checksum is detected loss — the workspace refuses a read-write open and the operations are recovered from a redundant copy (export package, sync peer) or reported with their exact extent, never silently skipped ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)).
   - **An export package carries a footer checksum** (BLAKE3 over the op records) so a transferred package is verified before ingest ([export-import-replay](../05-modules/mneme/export-import-replay.md)). The hash family is versioned by directory (`objects/sha256/`) so a second algorithm can coexist later ([ADR-0003](./ADR-0003-content-addressed-object-store.md)).
 
 ## Consequences
