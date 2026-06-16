@@ -58,7 +58,6 @@ Continuum emits the shared accepted-work statuses for all automated work: `accep
 | Path                          | Contents                                                              |
 | ----------------------------- | --------------------------------------------------------------------- |
 | `crates/continuum/src/lib.rs` | The `SnapshotStore` trait and the `FileSnapshotStore` implementation. |
-| `crates/continuum/DESIGN.md`  | Scope, allowed dependencies, anti-goals, public surface.              |
 | `crates/continuum/tests/`     | Integration tests.                                                    |
 
 The crate is a library: no Tauri bindings, no direct database coupling beyond Mneme traits. The scheduler is Tokio-driven; bespoke thread pools and external scheduling services are out of scope.

@@ -15,12 +15,12 @@ Before making changes, agents should read:
 - [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md) (layers, adapters, time-first boundaries)
 - [`docs/02-standards/CODING-STANDARDS.md`](docs/02-standards/CODING-STANDARDS.md) (coding rules and boundaries)
 - [`docs/02-standards/TESTING-STRATEGY.md`](docs/02-standards/TESTING-STRATEGY.md) (testing expectations)
-- The `README.md` and `DESIGN.md` for the module they are working in
+- The module's design folder under [`docs/05-modules/<module>/`](docs/05-modules/) for the module they are working in
 
 ## Documentation index
 
 - **Start here**: [`docs/00-index/README.md`](docs/00-index/README.md).
-- **Canonical**: the numbered tree under `docs/` (`00-index` … `06-adrs`) plus module-level `README.md` + `DESIGN.md` in each crate. Key docs: [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md), [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md), [`docs/02-standards/CODING-STANDARDS.md`](docs/02-standards/CODING-STANDARDS.md), [`docs/02-standards/TESTING-STRATEGY.md`](docs/02-standards/TESTING-STRATEGY.md), [`docs/03-design/DESIGN-SYSTEM.md`](docs/03-design/DESIGN-SYSTEM.md), [`docs/03-design/UX-DESIGN.md`](docs/03-design/UX-DESIGN.md).
+- **Canonical**: the numbered tree under `docs/` (`00-index` … `06-adrs`); per-module design lives under `docs/05-modules/<module>/`. **All documentation lives under `docs/` — never in `crates/`, `src/`, or `src-tauri/`** (DOCUMENTATION-STANDARD §6; repo-root files like `README.md`/`CONTRIBUTING.md` excepted). Key docs: [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md), [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md), [`docs/02-standards/CODING-STANDARDS.md`](docs/02-standards/CODING-STANDARDS.md), [`docs/02-standards/TESTING-STRATEGY.md`](docs/02-standards/TESTING-STRATEGY.md), [`docs/03-design/DESIGN-SYSTEM.md`](docs/03-design/DESIGN-SYSTEM.md), [`docs/03-design/UX-DESIGN.md`](docs/03-design/UX-DESIGN.md).
 - **Contracts**: [`docs/04-contracts/`](docs/04-contracts/) — the typed IPC surface and the temporal, projection, and accepted-work contracts.
 - **Governance**: durable decisions follow [`docs/02-standards/DESIGN-GOVERNANCE.md`](docs/02-standards/DESIGN-GOVERNANCE.md) and are written as ADRs using [`docs/02-standards/ADR-FORMAT.md`](docs/02-standards/ADR-FORMAT.md).
 - Legacy Svelte renderer (`app/PraxisDesktop/`) has been removed; ignore any remaining references to it.
@@ -56,7 +56,7 @@ Do not build your own UI kits, form/state helpers, logging wrappers, or async ex
 
 ## Repository boundaries (monorepo)
 
-High-level module boundaries are documented in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and in each module’s `README.md`/`DESIGN.md` (see the “Aideon Suite modules” table in `README.md`). Never cross those boundaries with imports or side-effects (e.g., no renderer ↔ DB access, no engines importing Tauri).
+High-level module boundaries are documented in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and in each module’s folder under `docs/05-modules/<module>/` (see the “Aideon Suite modules” table in `README.md`). Never cross those boundaries with imports or side-effects (e.g., no renderer ↔ DB access, no engines importing Tauri).
 
 ## Evergreen environment & legacy handling
 
@@ -64,7 +64,7 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 
 - **1. Code on `main`** is always authoritative.
 - **2. Suite-level docs:** `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`, `docs/02-standards/CODING-STANDARDS.md`, `docs/02-standards/TESTING-STRATEGY.md`.
-- **3. Module docs:** `<module>/README.md`, `<module>/DESIGN.md`.
+- **3. Module docs:** `docs/05-modules/<module>/`.
 - **4. Supporting docs in `docs/`** (not listed above).
 - **Anything else** is informational only and does not override the above.
 
@@ -73,15 +73,15 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 - Prefer updating to current patterns over preserving legacy. When you touch code, refactor it toward the current architecture and coding standards.
 - Clean as you go: when modifying a file, remove or clearly mark obsolete TODOs, comments, and dead code in the area you touch, if safe and reasonable.
 - Do not add new features on top of obviously legacy seams (e.g., pre-refactor patterns, deprecated UIs). Only maintain or migrate these; do not extend them.
-- After changing behaviour or design, update the relevant module `README.md` and `DESIGN.md`. Remove or archive outdated doc sections rather than adding conflicting ones.
-- Minimise new `.md` files: only create new module `README.md`/`DESIGN.md` docs. Prefer updating existing docs.
+- After changing behaviour or design, update the relevant module folder under `docs/05-modules/<module>/`. Remove or archive outdated doc sections rather than adding conflicting ones.
+- All documentation lives under `docs/` — never alongside code in `crates/`, `src/`, or `src-tauri/`. Minimise new `.md` files: prefer extending an existing single-topic file in the right `docs/` folder; add a new file only when a topic has no home (DOCUMENTATION-STANDARD §4, §6).
 
 ## Checklists
 
 **Before you start a task**
 
 - Skim the docs listed at the top for your area.
-- Identify the target module (`src/canvas`, host crate, engine crate, etc.) and open its `README.md`/`DESIGN.md`.
+- Identify the target module (`src/canvas`, host crate, engine crate, etc.) and open its design folder under `docs/05-modules/<module>/`.
 - If you touch legacy code, plan to migrate toward the current stack where safe.
 - Locate existing adapters/APIs to reuse; do not add new IPC/HTTP surfaces without need.
 
@@ -89,7 +89,7 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 
 - Run relevant tests/lints: `pnpm run node:test` (or scoped), `pnpm run node:typecheck`, `pnpm run host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicable.
 - Check coverage impact (goal ≥80% on new code) and note any gaps.
-- Update docs you touched (module `README`/`DESIGN`) and this file if behaviours changed.
+- Update docs you touched (the module folder under `docs/05-modules/<module>/`) and this file if behaviours changed.
 - Re-verify boundaries and security: no renderer HTTP, no new ports, renderer uses typed IPC only.
 
 **Coverage guardrails (run before proposing changes)**
@@ -112,7 +112,7 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 
 **When adding engine/host functionality**
 
-- Follow the patterns in `crates/praxis/DESIGN.md` and `src-tauri/DESIGN.md` (errors via `PraxisError`/`HostError`, logging with `log`/`tracing`, datastore via Mneme helpers).
+- Follow the patterns in [`docs/05-modules/praxis/`](docs/05-modules/praxis/) and [`docs/05-modules/host/`](docs/05-modules/host/) (errors via `PraxisError`/`HostError`, logging with `log`/`tracing`, datastore via Mneme helpers).
 - Use `src-tauri/src/temporal.rs` and `crates/praxis/tests/merge_flow.rs` as golden paths for command wiring and engine flows.
 
 ## Task menu for agents (allowed)
@@ -121,7 +121,7 @@ This repository is an evergreen, fast-evolving codebase. Code, docs, and pattern
 - Implementing time‑slicing UI (AS‑OF slider), Plan Event handling, plateau/diff exports.
 - Analytics in the Rust worker crates (Chrona/Metis) with tests and metrics.
 - Connectors via Continuum scheduler (e.g., CMDB), CSV wizard features, PII redaction, encryption‑at‑rest.
-- Docs: module `README.md`/`DESIGN.md`, global README, `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`, ROADMAP, C4 diagrams-as-code.
+- Docs: the module folder under `docs/05-modules/<module>/`, global README, `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`, ROADMAP, C4 diagrams-as-code.
 
 ## Examples (golden patterns)
 
@@ -191,17 +191,17 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 ## Per-module guidance (where to look)
 
 - **Aideon Desktop (`src/`)**
-  - Read: `DESIGN.md`, canvas/docs under `docs/*` (canvas, adapters, dtos, design system).
+  - Read: [`docs/frontend/`](docs/frontend/) (renderer architecture) and the canvas/adapters/dtos/design-system docs under `docs/`.
   - Contains the React canvas, design-system proxies, adapters, and DTOs in one package.
   - Tests: JS/TS tests via `pnpm run node:test` (Vitest).
 
 - **Aideon Host (`src-tauri`)**
-  - Read: `src-tauri/README.md`, `src-tauri/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`.
+  - Read: [`docs/05-modules/host/`](docs/05-modules/host/), `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`.
   - Constraints: no renderer HTTP; no open ports in desktop mode; typed commands only.
   - Tests: Rust tests via `cargo test -p aideon_desktop`; workspace checks via `pnpm run host:lint && pnpm run host:check`.
 
 - **Engines (`crates/praxis`, `crates/chrona`, `crates/metis`, `crates/continuum`, `crates/mneme`)**
-  - Read: each crate’s `README.md`, `DESIGN.md` (where present), `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`.
+  - Read: each module’s folder under `docs/05-modules/<module>/`, `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`.
   - Constraints: no Tauri or UI dependencies; obey time-first commit model and adapter boundaries.
   - Tests: crate-level `cargo test -p <crate>` plus workspace Rust checks.
 
@@ -209,7 +209,7 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 
 ### TypeScript / React (Praxis Canvas, src/adapters)
 
-– Node 24, React 19. Strict TS config; ESLint + Prettier. All new surface/canvas work targets the React + React Flow + shadcn/ui stack described in `docs/03-design/UX-DESIGN.md`, `docs/03-design/DESIGN-SYSTEM.md`, and `docs/praxis-canvas/DESIGN.md`.
+– Node 24, React 19. Strict TS config; ESLint + Prettier. All new surface/canvas work targets the React + React Flow + shadcn/ui stack described in `docs/03-design/UX-DESIGN.md`, `docs/03-design/DESIGN-SYSTEM.md`, and `docs/03-design/design-system/canvas-and-graph.md`.
 
 - Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict plugin access. The host exposes typed commands only, and React components call the host through a dedicated `praxisApi` wrapper rather than ad-hoc IPC.
 - For app shell layout, always use the design-system proxies for Sidebar, Resizable, Menubar, and Toolbar instead of importing raw shadcn or react-resizable-panels primitives.
@@ -235,7 +235,7 @@ For coding standards (quality gates, coverage targets, tooling, and CI rules), s
 
 - Markdown, markdownlint clean (no heading jumps; 2‑space nested bullets).
 - Diagrams‑as‑code preferred (Structurizr DSL, Mermaid, PlantUML) stored under `docs/01-architecture/c4/`.
-- When updating docs, prefer editing existing suite/module docs; avoid creating new `.md` files unless they are a new module `README.md`/`DESIGN.md`.
+- All docs live under `docs/` (per-module under `docs/05-modules/<module>/`); never alongside code in `crates/`, `src/`, or `src-tauri/`. When updating docs, prefer extending the existing single-topic file in the right `docs/` folder; add a new file only when a topic has no home (DOCUMENTATION-STANDARD §4, §6).
 
 ## Contracts snapshot (reference only)
 

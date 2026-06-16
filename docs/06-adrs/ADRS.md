@@ -44,3 +44,7 @@ These ADRs establish a single cross-runtime authority: **the portable workspace 
 | [0030](./ADR-0030-governance-themis.md)                                     | Governance — Themis                                               | Proposed | Stable seam + deferred    |
 | [0031](./ADR-0031-risk-controls-compliance-aegis.md)                        | Risk, controls, and compliance — Aegis                            | Proposed | Stable seam + provisional |
 | [0032](./ADR-0032-automated-discovery-reality-sync-skopos.md)               | Automated discovery and reality-sync — Skopos                     | Proposed | Stable seam + deferred    |
+| [0033](./ADR-0033-artefact-execution-model.md)                              | Artefact execution model                                          | Proposed | Stable seam + invariant   |
+| [0034](./ADR-0034-merge-correctness-and-convergence.md)                     | Merge correctness and convergence                                 | Proposed | Invariant + deferred      |
+| [0035](./ADR-0035-schema-migration-and-evolution.md)                        | Schema migration and evolution — forward-only                     | Proposed | Invariant + stable seam   |
+| [0036](./ADR-0036-right-to-erasure-vs-append-only.md)                       | Right to erasure vs append-only storage                           | Proposed | Invariant + deferred      |

@@ -44,6 +44,18 @@ The `AIDEON_TEST_DATA_DIR` environment variable overrides the root in test and C
 
 ---
 
+## Artefact execution under the capability model
+
+An executing [artefact](../../03-design/artefacts/README.md) needs no capability of its own, because it never crosses the seam in either direction as code. The renderer invokes a narrow named command — `praxis_artefact_execute_graph`, `_catalogue`, `_matrix`, and the like ([IPC command surface](./ipc-command-surface.md)) — which is allowed in `appcommands.toml` like any other command, default-deny. The command routes to Praxis behind its trait; Praxis reads the twin and returns a result that is **data, not instructions** ([artefact execution boundary](../../01-architecture/boundary/artefact-execution-boundary.md), [ADR-0033](../../06-adrs/ADR-0033-artefact-execution-model.md)).
+
+Three properties of the capability model bound what an artefact reaches, with no per-artefact policy:
+
+- **The engine has no host capabilities.** Praxis resolves no filesystem path and opens no socket; path resolution stays in the host (the filesystem boundary, above), so an artefact cannot name a file or a network target.
+- **The result carries no capability.** Because the result is data the renderer interprets, it cannot invoke a plugin, a shell, or another command — the renderer holds only product capabilities, and a result is not one.
+- **Blobs are referenced, not inlined.** An artefact result names a blob by `sha256`; the bytes are fetched, if needed, through a separate capability-gated command, so a result never smuggles file contents across the seam.
+
+The sandbox is therefore the absence of capability, enforced by construction rather than by configuration. The boundary's threat analysis is owned by the [security standard](../../02-standards/security/threat-model.md); the process-side statement of what an artefact may and may not reach is in [process and trust boundary](./process-and-trust-boundary.md).
+
 ## The trade-off named
 
 Default-deny capabilities and a strict CSP close a door: adding renderer functionality is never free — a new capability is a new command in `appcommands.toml` and a new entry in the threat model. The architecture accepts that friction because every command that exists is a command that was deliberately allowed, which is exactly the property a release verified against OWASP ASVS 5.0 needs ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)).
@@ -58,4 +70,5 @@ Default-deny capabilities and a strict CSP close a door: adding renderer functio
 | [IPC command surface](./ipc-command-surface.md)                          | The commands the `appcommands` bundle allows.        |
 | [ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md) | The trust boundary and product-vs-host capabilities. |
 | [ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)           | The STRIDE categories these controls cover.          |
+| [ADR-0033](../../06-adrs/ADR-0033-artefact-execution-model.md)           | The read-only artefact-execution model.              |
 | [SECURITY.md](../../02-standards/SECURITY.md)                            | CSP, capability policy, and the ASVS mapping.        |

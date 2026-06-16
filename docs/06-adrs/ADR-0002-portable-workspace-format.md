@@ -70,6 +70,24 @@ Rules:
 - **Canonical writes use temp-file-plus-rename**; op segments are sealed before export.
 - `manifest.json` carries `workspace_format_version` and `schema_version`; readers are forward-tolerant where sensible and reject formats newer than they understand with a clear error.
 
+### Durability rules
+
+The portability rules above leave four durability concerns implicit. They are fixed here because they govern what users copy, zip, and sync, and a reader on an older build must behave predictably against a newer-format workspace.
+
+- **Single-writer concurrent access.** A workspace is opened for writing by **at most one process at a time**. The opening process takes an exclusive **workspace lock** — an advisory lock file at `.aideon/runtime/locks/workspace.lock` carrying the holder's process and device identity — before the single-writer actor starts ([storage-trait-and-engine](../05-modules/mneme/storage-trait-and-engine.md)). A second process that finds a live lock must refuse to open for writing rather than start a second writer; it may open **read-only** against the canonical files. The lock lives under `.aideon/runtime/` because it is host-local state, never copied, zipped, or synced. A stale lock left by a crashed process is reclaimable: the lock records the holder identity so a new opener can detect that the holder is gone and take over. This makes the single-writer constraint of [ADR-0004](./ADR-0004-storage-engine-abstraction.md) a property of the **workspace on disk**, not only of the in-process queue.
+
+- **Op-segment sealing.** Operations are appended to the loose segment `current.ops.jsonl`. A segment is **sealed** — closed, fsync'd, and renamed to a monotonic numbered name (`000001.ops.jsonl`) — when it reaches a size or age threshold, or on an explicit checkpoint or export. A sealed segment is **immutable**: it is never appended to or rewritten, only superseded by the next loose segment. Only the trailing loose segment can ever be incomplete after a crash; every sealed segment is whole, which is what lets a reader trust all-but-the-tail without re-validating the whole log on every open. The exact sealing thresholds are provisional configuration; that a sealed segment is immutable and only the loose tail is mutable is the invariant.
+
+- **Format forward-compatibility.** `manifest.json` carries `workspace_format_version` as an integer. The rule a reader follows on open is **refuse-or-degrade**, never silently misinterpret:
+  - **Equal version** — open normally.
+  - **Older workspace, newer reader** — open and, where a one-way migration is needed, perform it (forward-only; [ADR-0017](./ADR-0017-contract-and-dto-versioning.md)).
+  - **Newer workspace, older reader** — if the format major version exceeds what the build understands, refuse the open with a clear `WORKSPACE_FORMAT_TOO_NEW` diagnostic ([ADR-0016](./ADR-0016-error-envelope-rfc9457.md)), mirroring the `SCHEMA_TOO_NEW` rule for schema versions ([failure-modes](../05-modules/mneme/failure-modes.md)). A reader degrades — opens read-only and ignores fields it does not recognise — only when the newer format declares itself backward-compatible at that major version. A reader never partially interprets a structure it does not fully understand and then writes to it.
+
+- **Integrity checks on canonical files.** Canonical files are integrity-checkable without a side database:
+  - **Blobs are self-checksumming** — the `objects/sha256/<hash>` path _is_ the checksum; re-hashing the bytes detects corruption with no separate digest to keep in sync ([ADR-0003](./ADR-0003-content-addressed-object-store.md)).
+  - **A sealed op segment carries a trailing checksum** over its records, so a sealed segment can be verified whole on open; the loose segment is validated by record framing up to the last complete record.
+  - **An export package carries a footer checksum** (BLAKE3 over the op records) so a transferred package is verified before ingest ([export-import-replay](../05-modules/mneme/export-import-replay.md)). The hash family is versioned by directory (`objects/sha256/`) so a second algorithm can coexist later ([ADR-0003](./ADR-0003-content-addressed-object-store.md)).
+
 ## Consequences
 
 - A workspace opens locally with no server and no pre-existing runtime cache.
@@ -78,3 +96,4 @@ Rules:
 - The HLC in each op gives stable causal ordering for offline edits and later merge ([ADR-0005](./ADR-0005-sync-and-conflict-model.md)).
 - The op envelope schema is published under [`../04-contracts/CONTRACTS-AND-SCHEMAS.md`](../04-contracts/CONTRACTS-AND-SCHEMAS.md).
 - Segment-sealing policy (size/age/explicit) is documented in [`../05-modules/mneme/RUNTIME-AND-ENGINE.md`](../05-modules/mneme/RUNTIME-AND-ENGINE.md).
+- The mechanisms behind the durability rules — locking under concurrent open, append safety on the loose segment, the verify routine, orphaned-blob garbage collection, and recovery from a torn write — are documented operationally in [`../05-modules/mneme/workspace-integrity-and-recovery.md`](../05-modules/mneme/workspace-integrity-and-recovery.md); the failure _taxonomy_ those mechanisms serve is [`../05-modules/mneme/failure-modes.md`](../05-modules/mneme/failure-modes.md).

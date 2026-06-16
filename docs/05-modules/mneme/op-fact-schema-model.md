@@ -92,6 +92,49 @@ Single inheritance is tracked by `parent_type_id`; cycle detection runs in appli
 
 The seed metamodel that worked examples across this corpus draw on is [`core-v1.json`](../../data/meta/core-v1.json): entity types `ValueStreamStage`, `Capability`, `BusinessProcess`, `Application`, `DataEntity`, `TechnologyComponent`, `PlanEvent`; relationship types `serves`, `realises`, `accesses`, `hosts`, `plan_effect`.
 
+### A published schema package version is immutable
+
+A metamodel package version is published once and never edited in place. A change is a **new version**, not a mutation of the old one. This mirrors the fact rule above — facts are append-only and superseded, never overwritten — and applies it to schema-as-data: the `MetamodelBatch` Mneme persists for a given `metamodel_version` is fixed, and a later change appends a new `UpsertMetamodelBatch` operation carrying a higher version rather than rewriting the stored one.
+
+The immutability is what makes a past [viewpoint](../../../CONTEXT.md) resolvable against the schema that stood at that time. Because schema changes are themselves operations on the op log, "show the model as the schema stood last quarter" is answerable: the schema's own history is preserved like any other fact, and `aideon_metamodel_versions` records each applied version against the `op_id` that introduced it ([sqlite](./SQLITE.md)).
+
+Two consequences follow, both governed by Praxis's [extension and versioning](../../03-design/metamodel/extension-and-versioning.md) rules under Semantic Versioning ([ADR-0017](../../06-adrs/ADRS.md)):
+
+- **The UUID of a published symbol does not change.** Type, relationship, and attribute UUIDs are **UUIDv5** values minted from the project namespace plus the symbol's stable name path ([packages and registry](../../03-design/metamodel/packages-and-registry.md)). Renaming a symbol changes its name input and therefore its UUID — a breaking change modelled as remove-plus-add in a new major version, never an in-place edit.
+- **A `version` string is consumed, not reissued.** Overlay packages must align on the base `version`; a workspace cannot carry two batches that both claim one version with different content, because the first one published is the one that is kept ([packages and registry](../../03-design/metamodel/packages-and-registry.md)).
+
+The trade-off this closes is the convenience of a quick edit to a live schema: there is no such edit. In exchange, the schema is replayable, portable, and diff-able across versions — the same property the op log buys for instance data. Mneme stores and version-stamps the batch; it does not author or evolve it ([metamodel ownership](../praxis/metamodel-ownership.md)).
+
+---
+
+## From Change Event to operations
+
+A [fact](../../../CONTEXT.md) never originates in Mneme. The canonical authoring object is a Praxis [Change Event](../../../CONTEXT.md), which captures intent and context — owner, rationale, source, approval state, grouping, dependencies, lifecycle — and, when applied, **compiles into one or more operations** that Mneme appends ([tasks and Change Events](../praxis/tasks-and-change-events.md)). A [Plan Event](../../../CONTEXT.md) is the subtype that authors a non-actual layer. The chain is one-directional: `task → Change Event → operation(s) → op log`.
+
+The compilation step is where domain intent becomes storage mutation. One Change Event — "apply the FY26 channel cutover" — fans out into the concrete `CreateEdge`, `SetProperty`, or `TombstoneEntity` operations that realise it, each stamped with the same `actor_id` and a contiguous run of HLCs from the single writer. Praxis validates the **whole** operation set against the compiled effective schema before any append; a violation anywhere rejects the set ([tasks and Change Events](../praxis/tasks-and-change-events.md)). Mneme sees the operations only after they validate.
+
+### The op batch is atomic
+
+The operations a Change Event compiles to are appended as one atomic batch sharing a `tx_id` ([sqlite](./SQLITE.md), `aideon_ops.tx_id`): **either every operation in the batch lands or none does.** There is no state in which half a Change Event is on the op log. Atomicity rests on the single-writer commit being an explicit state machine ([storage-trait-and-engine](./storage-trait-and-engine.md)) — a crash mid-commit leaves the workspace at the last fully-committed batch, never half-applied — and on validation having run over the whole set first, so an endpoint created earlier in the batch is visible to a relationship created later in it.
+
+This is also why the op log stays idempotent under replay: re-importing the package re-presents the same `(partition, op_id)` pairs, every one a no-op, so a Change Event that already landed is never doubled ([export-import-replay](./export-import-replay.md), [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)). The trade-off this closes is incremental streaming of a very large batch: a Change Event is committed as a unit, which bounds how large one should be. Bulk ingestion that genuinely needs to stream is an import job, not a Change Event ([accepted work and events](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)).
+
+---
+
+## The obsolete-fact lifecycle — superseded, not deleted
+
+A fact is never edited and almost never erased. When a claim ceases to hold, one of two things happens, and both are append-only ([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)):
+
+| Transition          | What is appended                                                                                                            | What the resolver does                                                                                                                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Superseded**      | A later operation derives a newer fact for the same slot (a `SetProperty` with a larger HLC, or a narrower valid interval). | The newer fact wins at the current belief by the precedence chain; the older fact stays on the op log and remains the winner under a belief-pinned read ([bitemporal-and-hlc](./bitemporal-and-hlc.md)). |
+| **Tombstoned**      | A `TombstoneEntity` operation, or a tombstone property/edge fact, with a later asserted time.                               | The tombstone enters the same pipeline and suppresses the earlier fact within its layer — supersession, not erasure. The suppressed fact is still resolvable at a belief before the tombstone.           |
+| **Closed interval** | A `SetProperty` (or `SetEdgeExistenceInterval`) that gives the prior open-ended claim a finite `valid_to`.                  | The claim's effective interval ends at `valid_to`; reads after that instant find no candidate and return an empty result. **Absence is not an error.**                                                   |
+
+The unifying rule is **supersession, not deletion**: an obsolete fact is outranked, never removed. The earlier `disposition = Invest` fact below is not deleted when a correction asserts `Eliminate`; it is outranked by a larger HLC, and a read pinned to the earlier belief still returns it ([bitemporal-and-hlc](./bitemporal-and-hlc.md), resolution precedence chain).
+
+This is exactly what makes the lifecycle safe under **replay**. Because no fact is ever destructively removed, replaying the op log reproduces every belief the twin has ever held — including the superseded ones — so a rebuilt runtime resolves the same answer at every viewpoint, current or belief-pinned ([failure-modes](./failure-modes.md), recovery is rebuild). A model that deleted obsolete facts would lose the asserted-time axis and could no longer answer "what did we believe last quarter?"; the cost it pays is that the op log only grows — pruning is a deliberate retention decision, never an inline side effect of a change ([content-addressed-blobs](./content-addressed-blobs.md), garbage collection).
+
 ---
 
 ## Worked example — asserting a disposition
@@ -120,10 +163,13 @@ _Informative:_
 
 ## Related documents
 
-| Document                                                                             | What it covers                                                |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| [Bitemporal model and the HLC](./bitemporal-and-hlc.md)                              | The two time axes and the resolution precedence chain.        |
-| [Scenarios and layers](./scenarios-and-layers.md)                                    | How `scenario_id` and layer participate in a fact's identity. |
-| [SQLite specification](./SQLITE.md)                                                  | The typed fact tables these values land in.                   |
-| [Temporal and scenario context](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | The authoritative resolution contract.                        |
-| [METAMODEL-PACKAGES](../../03-design/METAMODEL-PACKAGES.md)                          | How Praxis publishes schema-as-data to Mneme.                 |
+| Document                                                                             | What it covers                                                                          |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| [Bitemporal model and the HLC](./bitemporal-and-hlc.md)                              | The two time axes and the resolution precedence chain.                                  |
+| [Scenarios and layers](./scenarios-and-layers.md)                                    | How `scenario_id` and layer participate in a fact's identity.                           |
+| [SQLite specification](./SQLITE.md)                                                  | The typed fact tables these values land in.                                             |
+| [Identifier generation and provenance](./identifier-generation-and-provenance.md)    | How op, entity, edge, and symbol IDs are minted, and the provenance every fact carries. |
+| [Tasks and Change Events](../praxis/tasks-and-change-events.md)                      | The authoring object a Change Event compiles from.                                      |
+| [Temporal and scenario context](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) | The authoritative resolution contract.                                                  |
+| [Extension and versioning](../../03-design/metamodel/extension-and-versioning.md)    | The SemVer rules behind schema-package immutability.                                    |
+| [METAMODEL-PACKAGES](../../03-design/METAMODEL-PACKAGES.md)                          | How Praxis publishes schema-as-data to Mneme.                                           |

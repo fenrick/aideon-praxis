@@ -29,14 +29,15 @@ the pixels         →  DESIGN-SYSTEM.md, frontend/
 
 The five files that carry the cross-cutting design narrative. Read these first.
 
-| Document                                       | What it covers                                                                     |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [DESIGN.md](./DESIGN.md)                       | Short overview and entry point into this layer.                                    |
-| [design-axioms.md](./design-axioms.md)         | The ten non-negotiable invariants every surface and module upholds.                |
-| [the-shell.md](./the-shell.md)                 | The one shared shell and its four stable regions.                                  |
-| [module-map.md](./module-map.md)               | The module pantheon — implemented and planned — and how the renderer reaches them. |
-| [trust-and-honesty.md](./trust-and-honesty.md) | The honest-state obligations the product carries to its users.                     |
-| [vocabulary.md](./vocabulary.md)               | Pointer to the canonical glossary and the most consequential distinctions.         |
+| Document                                               | What it covers                                                                                                    |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| [DESIGN.md](./DESIGN.md)                               | Short overview and entry point into this layer.                                                                   |
+| [design-axioms.md](./design-axioms.md)                 | The ten non-negotiable invariants every surface and module upholds.                                               |
+| [the-shell.md](./the-shell.md)                         | The one shared shell and its four stable regions.                                                                 |
+| [module-map.md](./module-map.md)                       | The module pantheon — implemented and planned — and how the renderer reaches them.                                |
+| [module-delivery-order.md](./module-delivery-order.md) | Why modules ship in the order the [roadmap](../00-index/ROADMAP.md) states — the dependency-driven critical path. |
+| [trust-and-honesty.md](./trust-and-honesty.md)         | The honest-state obligations the product carries to its users.                                                    |
+| [vocabulary.md](./vocabulary.md)                       | Pointer to the canonical glossary and the most consequential distinctions.                                        |
 
 ## Product design areas
 
