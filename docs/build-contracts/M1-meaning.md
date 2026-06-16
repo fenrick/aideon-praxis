@@ -23,6 +23,7 @@ When M1 is complete, on the seed metamodel and seed dataset:
 - `validate_node` and `validate_edge` over the full effective schema: type-known, required-present, kind-checked, length-checked, enum case-insensitive match, endpoint membership, `allowSelf` / `allowDuplicate`.
 - Entity and relationship authoring via `mneme_store_create_node` / `mneme_store_create_edge` (or a Change Event via `praxis_task_apply_operations`), each validated before append ([tasks-and-change-events](../05-modules/praxis/tasks-and-change-events.md)).
 - The typed `ValidationFailed` error surfaced in the RFC 9457 envelope ([ADR-0016](../06-adrs/ADR-0016-error-envelope-rfc9457.md)).
+- Slot **cardinality and the single-writer merge-policy declarations** the MVP needs — expected to be `single_value` / `multi_value` rather than a misleading global "last-writer-wins" label (the resolver is bitemporal and viewpoint-based, M2). CRDT policies (`or-set`/`counter`/`text`) and their convergence are **not** declared here — they are M6 ([ADR-0034](../06-adrs/ADR-0034-merge-correctness-and-convergence.md)).
 
 ## Out of scope
 

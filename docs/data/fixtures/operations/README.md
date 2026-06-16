@@ -28,8 +28,6 @@ Instance, partition, actor, and op identifiers are illustrative fixed UUIDs (e.g
 | `set-property-interval.invalid.json`       | `set-property-interval.schema.json` (payload)       | `payload.value` carries two variant keys (`str` and `i64`); the `Value` tag is exactly one.                     |
 | `clear-property-interval.invalid.json`     | `clear-property-interval.schema.json` (payload)     | `payload.valid_from` is an ISO-8601 string, not a decimal-string `ValidTime`.                                   |
 | `set-edge-existence-interval.invalid.json` | `set-edge-existence-interval.schema.json` (payload) | `payload.is_tombstone` is omitted; it is a required (non-`Option`) field.                                       |
-| `or-set-update.invalid.json`               | `or-set-update.schema.json` (payload)               | `payload.op` is `"toggle"`, not a `SetOp` value tag (`add` \| `remove`).                                        |
-| `counter-update.invalid.json`              | `counter-update.schema.json` (payload)              | `payload.delta` is the JSON number `1.5`, not the required decimal-string i64.                                  |
 | `upsert-metamodel-batch.invalid.json`      | `upsert-metamodel-batch.schema.json` (payload)      | `payload.fields[0].value_type` is `"enum"`, not a `ValueType` value tag.                                        |
 | `actor-declare.invalid.json`               | `actor-declare.schema.json` (payload)               | `payload.actor_kind` is `"robot"`, not an `actor_kind` value (`person`\|`import`\|`ai`\|`connector`\|`system`). |
 

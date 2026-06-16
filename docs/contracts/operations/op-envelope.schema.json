@@ -70,14 +70,11 @@
         "tombstone-entity",
         "set-property-interval",
         "clear-property-interval",
-        "or-set-update",
-        "counter-update",
         "upsert-metamodel-batch",
-        "create-scenario",
-        "delete-scenario",
         "set-edge-existence-interval",
         "actor-declare"
-      ]
+      ],
+      "description": "The M0-valid operation kinds. Deferred kinds keep reserved registry codes but are NOT accepted at M0: or-set-update (6) and counter-update (7) are CRDT convergence ops deferred to M6 (ADR-0034); create-scenario (9) and delete-scenario (10) are scenario-lifecycle ops deferred with the temporal/scenario work. An operation of a deferred kind requires a future feature (manifest.required_features); an M0 reader refuses read-write rather than accepting it."
     },
     "origin": {
       "type": "object",

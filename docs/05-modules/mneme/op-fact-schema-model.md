@@ -38,9 +38,11 @@ The op log is **append-only and idempotent on ingest**: the same `(partition, op
 | `SetEdgeExistenceInterval`          | Modify a relationship's existence without changing its endpoints.  |
 | `TombstoneEntity`                   | Soft-delete an entity or relationship — supersession, not erasure. |
 | `SetProperty` / `ClearProperty`     | A time-valid typed property interval on a slot.                    |
-| `OrSetUpdate` / `CounterUpdate`     | CRDT set and counter mutations, for convergent merge under sync.   |
+| `OrSetUpdate` / `CounterUpdate`     | CRDT set and counter mutations — **deferred to M6**, see below.    |
 | `UpsertMetamodelBatch`              | A batch type/field/rule schema update (schema-as-data).            |
 | `CreateScenario` / `DeleteScenario` | Scenario overlay lifecycle.                                        |
+
+**Merge policies and CRDT operations are not M0.** The milestone split is deliberate: **M0** persists and replays the supported operation/value envelope; **M1** defines slot cardinality and the supported policy declarations; **M2** resolves competing temporal facts ([temporal-and-scenario](../../04-contracts/temporal-and-scenario/resolution-rules.md)); **M6** merges independently authored histories and implements CRDT convergence ([ADR-0034](../../06-adrs/ADR-0034-merge-correctness-and-convergence.md)). So M0 neither applies nor advertises the `lww` / `mv` / `or-set` / `counter` / `text` policies, and the **`OrSetUpdate` and `CounterUpdate` operation kinds are removed from the M0 schemas** (their registry codes 6/7 stay reserved; an operation carrying one requires a future feature, so an M0 reader refuses read-write rather than misapplying it — `manifest.required_features`, [workspace-integrity-and-recovery](./workspace-integrity-and-recovery.md)). Treating a `+1` counter or an OR-set remove as an ordinary single-writer mutation now would fix the _wrong_ semantics — convergence needs the dedup, commutativity, reset, and grow-only-vs-PN rules that ADR-0034/Koinon must settle before the operation enters canonical history. When policy does land, the M1 vocabulary is expected to be `single_value` / `multi_value` (with M2 resolution deciding which candidate facts are effective) rather than a misleading global "last-writer-wins" label, because the resolver is bitemporal and viewpoint-based, not last-op-globally.
 
 The vocabulary uses the graph projection terms **node** and **edge** at the storage layer deliberately: an operation is a graph-projection mutation. In domain prose the same things are **entities** and **relationships** ([`CONTEXT.md`](../../../CONTEXT.md)).
 
@@ -63,16 +65,19 @@ The two are fully decoupled: a fact may be asserted now with a valid-from in the
 
 ## Value types
 
-Facts carry strongly-typed values, not opaque blobs:
+Facts carry strongly-typed values from a **controlled value algebra** — never an arbitrary document:
 
 ```rust
 pub enum Value {
-    Str(String), I64(i64), F64(f64), Bool(bool),
-    Time(ValidTime), Ref(Id), Blob(Vec<u8>), Json(JsonValue),
+    Str(String), I64(i64), F64(FiniteF64), Bool(bool),
+    Time(ValidTime), Ref(EntityRef), BlobRef(BlobRef),
 }
 ```
 
-Each value type has its own typed fact table in the derived runtime (`aideon_prop_fact_str`, `aideon_prop_fact_i64`, …), so range scans and index maintenance stay efficient and type-correct. The full table family is specified in [sqlite](./SQLITE.md). Binary content is the exception: it is **never inlined** — a canonical value carries a typed **`BlobRef`** (`{ algorithm, digest, length, media_type? }`) and the bytes live in the content-addressed store ([content-addressed-blobs](./content-addressed-blobs.md), [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). There is no inline `Value::Blob(Vec<u8>)` in the persistable value set; raw bytes exist only on the host ingestion path and are resolved to a `BlobRef` before canonical serialisation.
+Each value type has its own typed fact table in the derived runtime (`aideon_prop_fact_str`, `aideon_prop_fact_i64`, …), so range scans and index maintenance stay efficient and type-correct. The full table family is specified in [sqlite](./SQLITE.md). Two values are deliberately **excluded** from the canonical fact algebra:
+
+- **No inline binary.** Binary content is a typed **`BlobRef`** (`{ algorithm, digest, length, media_type? }`); the bytes live in the content-addressed store and there is no inline `Value::Blob(Vec<u8>)` ([content-addressed-blobs](./content-addressed-blobs.md), [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). Raw bytes exist only on the host ingestion path and resolve to a `BlobRef` before serialisation.
+- **No `Json` twin-fact value.** An arbitrary nested/opaque document is **not** a canonical twin-fact value — it escapes the metamodel's typed slots and the typed, indexable fact tables, and contradicts the SQLite rule that structured fact data never lives in a JSON column ([sqlite](./SQLITE.md)). A genuinely opaque document is stored as a content-addressed object (usually `media_type: application/json`) and referenced by a `BlobRef`. JSON objects appear only in **explicitly named metadata contracts** (rule parameters, import diagnostics, run-ledger details, owner-defined extension metadata) — never as a model slot value — and even there are encoded with the [canonical-JSON profile](../../04-contracts/canonical-json.md); "opaque" means Mneme does not interpret the internal business fields, not that the bytes may be non-deterministic. The `Json` discriminator code is reserved internally and never reassigned, but it is not a valid canonical value and an authored `Json` fact value is rejected.
 
 ---
 
