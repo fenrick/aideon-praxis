@@ -12,7 +12,8 @@ The mechanisms that keep a canonical workspace durable: the workspace lock and w
 | --------------------------- | --------------------- | -------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `workspace_format_version`  | integer               | yes      | —          | On-disk layout version. A reader compares it to the max it supports (below) and follows the refuse-or-degrade rule ([ADR-0002](../../06-adrs/ADR-0002-portable-workspace-format.md)). |
 | `schema_version`            | integer               | yes      | —          | The metamodel/schema-as-data version compiled into `model/schema/`. Mirrors `SCHEMA_TOO_NEW` handling.                                                                                |
-| `workspace_id`              | string (UUID)         | yes      | —          | Stable identity of this workspace, minted once at creation; survives copy/zip/sync and pins the partition.                                                                            |
+| `workspace_id`              | string (UUID)         | yes      | —          | Stable identity of the portable container, minted once at creation; survives copy/zip/sync.                                                                                           |
+| `partition_id`              | string (UUID)         | yes      | —          | The workspace's sole permitted data-isolation namespace (the twin), minted once at creation as a **separate** UUID from `workspace_id`. Authoritatively declared here — see below.    |
 | `created_at`                | string (RFC 3339 UTC) | yes      | —          | Wall-clock creation instant, informational.                                                                                                                                           |
 | `created_by_actor_id`       | string (UUID)         | no       | —          | The logical [actor](./identifier-generation-and-provenance.md) that created the workspace; informational provenance, never a device identifier.                                       |
 | `hash_algorithm`            | string                | no       | `"sha256"` | The content-address family in use under `objects/`; matches the `objects/sha256/` directory ([ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md)).                   |
@@ -34,6 +35,25 @@ Rules a reader follows:
 | `device_id`    | UUID string, host-local; stored under `.aideon/runtime/`, never in canonical files | Per-install identity; used **only** in the lock file and local diagnostics, never synced and never part of provenance. |
 
 The `device_id` is **derived runtime state**, not canonical: it identifies the machine holding the writer lock and appears only in local diagnostics. It **never** seeds provenance and never enters a canonical record — the canonical "who" is the logical [`actor_id`](./identifier-generation-and-provenance.md), and the [HLC](../../04-contracts/temporal-and-scenario/hlc-encoding.md) carries no device or node component ([ADR-0022](../../06-adrs/ADR-0022-hlc-clock-model.md)). `device_id` must never be copied, zipped, or synced. Only `workspace_id` (and the optional `created_by_actor_id`) is canonical and travels in `manifest.json`.
+
+## Partition scope and authority
+
+A **partition** is the canonical data-isolation namespace for the twin a workspace contains. The three identifiers are distinct, even though `workspace_id → partition_id` is one-to-one at M0:
+
+- `workspace_id` identifies the portable folder/container;
+- `partition_id` identifies the model namespace (the twin) inside it — the leading key column on every runtime table, so one twin's rows never resolve against another's;
+- `scenario_id` selects an _overlay_ within that namespace; it does **not** create another partition — entities, types, and operations share the same partition namespace across scenarios.
+
+**The manifest is authoritative for the partition; the op log is authoritative for its history.** This is a bootstrap boundary, and the op log cannot be the sole source: a freshly created workspace has no operations; the writer must know the valid partition before it can validate or append the first op; an operation cannot authorise its own partition merely by carrying an unfamiliar `partition_id`; and rebuild must create the partition registry _before_ replay starts. The precise rule:
+
+- `manifest.json.partition_id` is the **canonical declaration** of the workspace's sole permitted partition (a singular id — not a list; multiple partitions per workspace are a deferred product + format decision, [CONTEXT](../../../CONTEXT.md)).
+- Every canonical operation must carry **that exact** `partition_id`. An operation whose `partition_id` differs is rejected as foreign/corrupt/unsupported (depending on how it arrived) — distinct partition ids found in records **never** expand the workspace's partition set.
+- `aideon_partitions` is a **derived projection**, initialised from the manifest and verified during replay — not a second source of truth.
+- Canonical identities are partition-scoped: `(partition_id, op_id)`, `(partition_id, actor_id)`, `(partition_id, entity_id)`, `(partition_id, edge_id)`, `(partition_id, type_id)`. Random UUIDs are globally collision-resistant, but semantic ownership sits inside the partition — which matters when histories are imported or merged later.
+
+**Creation sequence.** Mint a random `workspace_id`; mint a **separate** random `partition_id` (the two are never derived from each other, so the distinction is enforceable, not merely conceptual); write and durably commit `manifest.json`; create the canonical folder structure; append any bootstrap operations (e.g. actor declarations) under that partition; build the derived runtime and its `aideon_partitions` row.
+
+**Copy and fork.** A filesystem copy preserves both ids — it is another physical copy of the same logical workspace and partition; ordinary copy must never silently regenerate either id. Creating an independent fork is an explicit later operation that mints a new `workspace_id` and decides whether partition and operation identities are retained or remapped. At M0 an operation set carrying another `partition_id` is not imported; cross-partition mapping and adoption belong to Pylon/Koinon.
 
 ## The `model/schema/` vs `schema.upsert` authority rule
 
