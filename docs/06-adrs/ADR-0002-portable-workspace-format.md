@@ -47,21 +47,7 @@ my-project.aideon/
 
 Everything under `model/` and `objects/` is canonical. Everything under `.aideon/runtime/` is derived: it may be deleted and rebuilt from the canonical files with no data loss.
 
-**Operation envelope** (canonical record; JSONL initially):
-
-```json
-{
-  "opId": "op_01J2X0V5M7T3D9M...",
-  "workspaceId": "ws_...",
-  "hlc": "<hybrid logical clock>",
-  "parents": ["op_..."],
-  "kind": "entity.upsert | edge.upsert | fact.upsert | fact.tombstone | blob.attach | schema.upsert | conflict.recorded",
-  "actor": { "userId": "...", "deviceId": "..." },
-  "context": { "scenarioId": null, "validFrom": null, "validTo": null },
-  "body": {},
-  "bodySha256": "..."
-}
-```
+**Operation envelope** (canonical record; JSON Lines). The exact record shape — `op_id`, `actor_id`, `asserted_at`, the stable kebab `kind`, `format_version`, `deps`, the on-operation `origin`, and the typed `payload` — and its byte-exact serialisation are fixed by **[ADR-0038](./ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)** and the [canonical-JSON profile](../04-contracts/canonical-json.md); this ADR does not maintain a second example. The asserting identity is the logical **`actor_id`** alone — never a device identity; `device_id` is host-local and never enters a canonical record ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)).
 
 Rules:
 
@@ -72,7 +58,7 @@ Rules:
 
 ### `manifest.json` fields (format v1)
 
-The root descriptor. Required: `workspace_format_version` (integer), `schema_version` (integer), `workspace_id` (UUID string, minted once and never regenerated), `created_at` (RFC 3339 UTC). Optional with defaults: `created_by_device` (device-id string), `hash_algorithm` (default `"sha256"`), `segment_seal_max_bytes` (default `8388608`), `segment_seal_max_age_secs` (default `86400`), `feature_flags` (object, default `{}`). Unknown top-level keys are ignored, not rejected, so a newer minor format stays readable. The complete field table, the workspace/device identifier formats, and the maximum supported versions (`MAX_WORKSPACE_FORMAT_VERSION = 1`, `MAX_SCHEMA_VERSION = 1` at the v1 baseline) are specified in [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md). `workspace_id` is canonical and travels with the workspace; `device_id` is host-local derived state and is never copied, zipped, or synced.
+The root descriptor. Required: `workspace_format_version` (integer), `schema_version` (integer), `workspace_id` (UUID string, minted once and never regenerated), `created_at` (RFC 3339 UTC). Optional with defaults: `created_by_actor_id` (the logical [actor](../05-modules/mneme/identifier-generation-and-provenance.md) that created the workspace; never a device identifier), `hash_algorithm` (default `"sha256"`), `segment_seal_max_bytes` (default `8388608`), `segment_seal_max_age_secs` (default `86400`), `feature_flags` (object, default `{}`). Unknown top-level keys are ignored, not rejected, so a newer minor format stays readable. The complete field table, the workspace/actor identifier formats, and the maximum supported versions (`MAX_WORKSPACE_FORMAT_VERSION = 1`, `MAX_SCHEMA_VERSION = 1` at the v1 baseline) are specified in [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md). `workspace_id` is canonical and travels with the workspace; `device_id` is host-local derived state, never recorded in the manifest or any canonical file.
 
 ### Durability rules
 

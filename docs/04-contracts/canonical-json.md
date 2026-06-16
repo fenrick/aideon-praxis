@@ -53,6 +53,7 @@ A canonical `model/ops/` record (one line), with all the rules above applied:
   "format_version": 1,
   "kind": "set-property-interval",
   "op_id": "33333333-0000-4000-8000-000000000004",
+  "origin": { "kind": "manual" },
   "payload": {
     "actor": "00000000-0000-4000-8000-0000000000a1",
     "asserted_at": "7338950400000000000",
@@ -69,7 +70,7 @@ A canonical `model/ops/` record (one line), with all the rules above applied:
 }
 ```
 
-(Shown on one line as it is stored; pretty-printed elsewhere only for reading.) The `kind` is the portable discriminator; the payload is the typed object per [`docs/contracts/operations/<kind>.schema.json`](../contracts/operations/README.md) — note `field_id` is the attribute's stable **UUID**, not its human-readable string id, and the value tag (`str`) and `layer` (`actual`) are stable schema-owned names. `asserted_at` and `valid_from`/`valid_to` are decimal strings; absent optionals (`scenario_id`, `valid_to`, `write_options`) are explicit `null`.
+(Shown on one line as it is stored; pretty-printed elsewhere only for reading.) The `kind` is the portable discriminator; `origin` records _through which process_ the operation arose (here `manual`; an import carries `{ "kind": "import", "import_batch_id": …, "source_digest": … }`); the asserting identity is the envelope `actor_id` — a logical actor, never a device. The payload is the typed object per [`docs/contracts/operations/<kind>.schema.json`](../contracts/operations/README.md) — note `field_id` is the attribute's stable **UUID**, not its human-readable string id, and the value tag (`str`) and `layer` (`actual`) are stable schema-owned names. `asserted_at` and `valid_from`/`valid_to` are decimal strings; absent optionals (`scenario_id`, `valid_to`, `write_options`) are explicit `null`.
 
 ## The "identical content" comparison
 

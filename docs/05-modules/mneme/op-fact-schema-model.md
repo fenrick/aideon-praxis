@@ -17,9 +17,10 @@ Every mutation is an `OpEnvelope`, stamped with an HLC asserted time and appende
 ```rust
 pub struct OpEnvelope {
     pub op_id:       OpId,      // stable identifier; tie-break key of last resort
-    pub actor_id:    ActorId,   // who asserted it
+    pub actor_id:    ActorId,   // who asserted it — a logical actor, never a device
     pub asserted_at: Hlc,       // hybrid logical clock — full-range i64 in memory
     pub kind:        OpKind,    // stable kebab discriminator (`create-node`, …)
+    pub origin:      Origin,    // through which process it arose (manual/import/connector/generated)
     pub payload:     OpPayload, // typed per kind (NOT opaque bytes)
     pub deps:        Vec<OpId>, // causal dependencies
 }

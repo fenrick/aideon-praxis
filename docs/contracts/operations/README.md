@@ -10,33 +10,35 @@ A `model/ops/` record is one canonical-JSON object: a shared **envelope** wrappi
 
 The envelope fields, all present in every record:
 
-| Field            | Type                               | Notes                                                                                                                                |
-| ---------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `op_id`          | UUID string                        | Permanent identity with `partition_id`; minted once on the authoring path, preserved verbatim on replay.                             |
-| `actor_id`       | UUID string                        | Who or what asserted the operation.                                                                                                  |
-| `asserted_at`    | decimal **string**                 | Full-range HLC coordinate as a decimal string, never a JSON number ([canonical-JSON profile](../../04-contracts/canonical-json.md)). |
-| `kind`           | stable kebab-case string           | The portable discriminator (e.g. `set-property-interval`). The `u16` code never appears in the record.                               |
-| `format_version` | integer                            | Canonical-JSON profile / record version; a bump is a refuse-or-degrade event, never silent.                                          |
-| `deps`           | array of UUID strings (`[]` empty) | Causal dependencies by `op_id`.                                                                                                      |
-| `payload`        | typed object                       | Conforms to the matching `<kind>.schema.json` below.                                                                                 |
+| Field            | Type                               | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `op_id`          | UUID string                        | Permanent identity with `partition_id`; minted once on the authoring path, preserved verbatim on replay.                                                                                                                                                                                                                                                                                                                                                      |
+| `actor_id`       | UUID string                        | _Who_ asserted the operation — a logical `actor_id`, **never a device** (device identity never appears in canonical material). Provenance per [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md).                                                                                                                                                                                                                  |
+| `asserted_at`    | decimal **string**                 | _When_ it entered canonical history: a full-range HLC coordinate as a decimal string, never a JSON number ([canonical-JSON profile](../../04-contracts/canonical-json.md)).                                                                                                                                                                                                                                                                                   |
+| `kind`           | stable kebab-case string           | The portable discriminator (e.g. `set-property-interval`). The `u16` code never appears in the record.                                                                                                                                                                                                                                                                                                                                                        |
+| `format_version` | integer                            | Canonical-JSON profile / record version; a bump is a refuse-or-degrade event, never silent.                                                                                                                                                                                                                                                                                                                                                                   |
+| `origin`         | object                             | _Through which process_ the operation arose (provenance, distinct from `actor_id`): `{ "kind": "manual" }`, or an `import`/`connector`/`generated`/`system` origin with kind-specific fields. Required `kind`; see `op-envelope.schema.json` `$defs/origin`. One actor produces operations through many runs, so origin lives on the operation, not in mutable actor metadata. Both `actor_id` (who) and `origin` (through what) are provenance per ADR-0038. |
+| `deps`           | array of UUID strings (`[]` empty) | Causal dependencies by `op_id`.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `payload`        | typed object                       | Conforms to the matching `<kind>.schema.json` below.                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ### The discriminator and the kind registry
 
 The record stores **only** the stable kebab-case `kind` name — never an integer `op_type`, and never both (a record carrying both would be a contradictory state). The `u16` code is an internal compact discriminator that lives **only** in the kind registry and the SQLite projection; it never reaches the canonical bytes. Codes and names are never reassigned, and removed kinds stay reserved.
 
-| Code | Kind                          | Schema / status                                                                      |
-| ---- | ----------------------------- | ------------------------------------------------------------------------------------ |
-| 1    | `create-node`                 | [create-node.schema.json](./create-node.schema.json)                                 |
-| 2    | `create-edge`                 | [create-edge.schema.json](./create-edge.schema.json)                                 |
-| 3    | `tombstone-entity`            | [tombstone-entity.schema.json](./tombstone-entity.schema.json)                       |
-| 4    | `set-property-interval`       | [set-property-interval.schema.json](./set-property-interval.schema.json)             |
-| 5    | `clear-property-interval`     | [clear-property-interval.schema.json](./clear-property-interval.schema.json)         |
-| 6    | `or-set-update`               | [or-set-update.schema.json](./or-set-update.schema.json)                             |
-| 7    | `counter-update`              | [counter-update.schema.json](./counter-update.schema.json)                           |
-| 8    | `upsert-metamodel-batch`      | [upsert-metamodel-batch.schema.json](./upsert-metamodel-batch.schema.json)           |
-| 9    | `create-scenario`             | _Design intent — inline `OpPayload` variant, not yet schema'd (see below)._          |
-| 10   | `delete-scenario`             | _Design intent — inline `OpPayload` variant, not yet schema'd (see below)._          |
-| 11   | `set-edge-existence-interval` | [set-edge-existence-interval.schema.json](./set-edge-existence-interval.schema.json) |
+| Code | Kind                          | Schema / status                                                                                                                |
+| ---- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1    | `create-node`                 | [create-node.schema.json](./create-node.schema.json)                                                                           |
+| 2    | `create-edge`                 | [create-edge.schema.json](./create-edge.schema.json)                                                                           |
+| 3    | `tombstone-entity`            | [tombstone-entity.schema.json](./tombstone-entity.schema.json)                                                                 |
+| 4    | `set-property-interval`       | [set-property-interval.schema.json](./set-property-interval.schema.json)                                                       |
+| 5    | `clear-property-interval`     | [clear-property-interval.schema.json](./clear-property-interval.schema.json)                                                   |
+| 6    | `or-set-update`               | [or-set-update.schema.json](./or-set-update.schema.json)                                                                       |
+| 7    | `counter-update`              | [counter-update.schema.json](./counter-update.schema.json)                                                                     |
+| 8    | `upsert-metamodel-batch`      | [upsert-metamodel-batch.schema.json](./upsert-metamodel-batch.schema.json)                                                     |
+| 9    | `create-scenario`             | _Design intent — inline `OpPayload` variant, not yet schema'd (see below)._                                                    |
+| 10   | `delete-scenario`             | _Design intent — inline `OpPayload` variant, not yet schema'd (see below)._                                                    |
+| 11   | `set-edge-existence-interval` | [set-edge-existence-interval.schema.json](./set-edge-existence-interval.schema.json)                                           |
+| 12   | `actor-declare`               | [actor-declare.schema.json](./actor-declare.schema.json) — _design intent; reserved, not yet an `OpType` variant (see below)._ |
 
 Codes mirror the `OpType` discriminant in [`crates/mneme_core/src/ops.rs`](../../../crates/mneme_core/src/ops.rs); the kebab `kind` names are the portable contract.
 
@@ -55,19 +57,22 @@ These are the canonical contract names, not the Rust/serde debug names — the w
 
 The envelope schema is [op-envelope.schema.json](./op-envelope.schema.json); the per-kind payload schemas pin the typed `payload` object a record of that `kind` carries.
 
-| Payload schema                                                                       | Kind (code)                        | What it pins                                                     |
-| ------------------------------------------------------------------------------------ | ---------------------------------- | ---------------------------------------------------------------- |
-| [create-node.schema.json](./create-node.schema.json)                                 | `create-node` (1)                  | A new node entity instance.                                      |
-| [create-edge.schema.json](./create-edge.schema.json)                                 | `create-edge` (2)                  | A new edge with an existence interval and endpoints.             |
-| [tombstone-entity.schema.json](./tombstone-entity.schema.json)                       | `tombstone-entity` (3)             | A soft-delete by supersession.                                   |
-| [set-property-interval.schema.json](./set-property-interval.schema.json)             | `set-property-interval` (4)        | A typed property value over a valid-time interval.               |
-| [clear-property-interval.schema.json](./clear-property-interval.schema.json)         | `clear-property-interval` (5)      | Closing a property claim over a valid-time interval.             |
-| [or-set-update.schema.json](./or-set-update.schema.json)                             | `or-set-update` (6)                | A CRDT OR-Set add/remove.                                        |
-| [counter-update.schema.json](./counter-update.schema.json)                           | `counter-update` (7)               | A CRDT counter delta.                                            |
-| [upsert-metamodel-batch.schema.json](./upsert-metamodel-batch.schema.json)           | `upsert-metamodel-batch` (8)       | A schema-as-data batch (types, fields, type-fields, edge rules). |
-| [set-edge-existence-interval.schema.json](./set-edge-existence-interval.schema.json) | `set-edge-existence-interval` (11) | An edge existence-interval change, optionally a tombstone.       |
+| Payload schema                                                                       | Kind (code)                        | What it pins                                                                               |
+| ------------------------------------------------------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| [create-node.schema.json](./create-node.schema.json)                                 | `create-node` (1)                  | A new node entity instance.                                                                |
+| [create-edge.schema.json](./create-edge.schema.json)                                 | `create-edge` (2)                  | A new edge with an existence interval and endpoints.                                       |
+| [tombstone-entity.schema.json](./tombstone-entity.schema.json)                       | `tombstone-entity` (3)             | A soft-delete by supersession.                                                             |
+| [set-property-interval.schema.json](./set-property-interval.schema.json)             | `set-property-interval` (4)        | A typed property value over a valid-time interval.                                         |
+| [clear-property-interval.schema.json](./clear-property-interval.schema.json)         | `clear-property-interval` (5)      | Closing a property claim over a valid-time interval.                                       |
+| [or-set-update.schema.json](./or-set-update.schema.json)                             | `or-set-update` (6)                | A CRDT OR-Set add/remove.                                                                  |
+| [counter-update.schema.json](./counter-update.schema.json)                           | `counter-update` (7)               | A CRDT counter delta.                                                                      |
+| [upsert-metamodel-batch.schema.json](./upsert-metamodel-batch.schema.json)           | `upsert-metamodel-batch` (8)       | A schema-as-data batch (types, fields, type-fields, edge rules).                           |
+| [set-edge-existence-interval.schema.json](./set-edge-existence-interval.schema.json) | `set-edge-existence-interval` (11) | An edge existence-interval change, optionally a tombstone.                                 |
+| [actor-declare.schema.json](./actor-declare.schema.json)                             | `actor-declare` (12)               | A canonical actor-registry declaration: `declared_actor_id`, `actor_kind`, `display_name`. |
 
 The two scenario-lifecycle kinds — `create-scenario` (9) and `delete-scenario` (10) — are **design intent**: inline `OpPayload` variants in [`ops.rs`](../../../crates/mneme_core/src/ops.rs) without a dedicated `*Input` struct, deferred to a later increment and not schema'd here. Their registry codes 9 and 10 are reserved and never reassigned.
+
+`actor-declare` (12) is also **design intent**: it is schema'd here ([actor-declare.schema.json](./actor-declare.schema.json)) ahead of the code, but it is **not yet an `OpType` variant** in [`ops.rs`](../../../crates/mneme_core/src/ops.rs) (which carries codes 1–11). Code 12 is reserved for it and never reassigned. An actor is introduced by an `actor-declare` operation; later operations reference its `declared_actor_id` as their `actor_id`, and the runtime `aideon_actors` table is a projection rebuilt from these declarations ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)).
 
 ## Fixtures
 

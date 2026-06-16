@@ -14,7 +14,7 @@ The mechanisms that keep a canonical workspace durable: the workspace lock and w
 | `schema_version`            | integer               | yes      | —          | The metamodel/schema-as-data version compiled into `model/schema/`. Mirrors `SCHEMA_TOO_NEW` handling.                                                                                |
 | `workspace_id`              | string (UUID)         | yes      | —          | Stable identity of this workspace, minted once at creation; survives copy/zip/sync and pins the partition.                                                                            |
 | `created_at`                | string (RFC 3339 UTC) | yes      | —          | Wall-clock creation instant, informational.                                                                                                                                           |
-| `created_by_device`         | string (device id)    | no       | —          | The device identity that created the workspace; informational provenance, not authority.                                                                                              |
+| `created_by_actor_id`       | string (UUID)         | no       | —          | The logical [actor](./identifier-generation-and-provenance.md) that created the workspace; informational provenance, never a device identifier.                                       |
 | `hash_algorithm`            | string                | no       | `"sha256"` | The content-address family in use under `objects/`; matches the `objects/sha256/` directory ([ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md)).                   |
 | `segment_seal_max_bytes`    | integer               | no       | `8388608`  | Provisional sealing threshold by size (8 MiB). Configuration, not invariant.                                                                                                          |
 | `segment_seal_max_age_secs` | integer               | no       | `86400`    | Provisional sealing threshold by age (24 h). Configuration, not invariant.                                                                                                            |
@@ -28,12 +28,12 @@ Rules a reader follows:
 
 ### Workspace and device identifier formats
 
-| Identifier     | Format                                                                             | Stability                                                                      |
-| -------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `workspace_id` | UUID string (canonical lower-case, hyphenated)                                     | Minted once at creation; constant for the life of the workspace.               |
-| `device_id`    | UUID string, host-local; stored under `.aideon/runtime/`, never in canonical files | Per-install identity; used in the lock file and HLC actor context, not synced. |
+| Identifier     | Format                                                                             | Stability                                                                                                              |
+| -------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `workspace_id` | UUID string (canonical lower-case, hyphenated)                                     | Minted once at creation; constant for the life of the workspace.                                                       |
+| `device_id`    | UUID string, host-local; stored under `.aideon/runtime/`, never in canonical files | Per-install identity; used **only** in the lock file and local diagnostics, never synced and never part of provenance. |
 
-The `device_id` is **derived runtime state**, not canonical: it identifies the machine holding the writer lock and seeds actor provenance, and it must never be copied with the workspace. Only `workspace_id` is canonical and travels in `manifest.json`.
+The `device_id` is **derived runtime state**, not canonical: it identifies the machine holding the writer lock and appears only in local diagnostics. It **never** seeds provenance and never enters a canonical record — the canonical "who" is the logical [`actor_id`](./identifier-generation-and-provenance.md), and the [HLC](../../04-contracts/temporal-and-scenario/hlc-encoding.md) carries no device or node component ([ADR-0022](../../06-adrs/ADR-0022-hlc-clock-model.md)). `device_id` must never be copied, zipped, or synced. Only `workspace_id` (and the optional `created_by_actor_id`) is canonical and travels in `manifest.json`.
 
 ## The `model/schema/` vs `schema.upsert` authority rule
 

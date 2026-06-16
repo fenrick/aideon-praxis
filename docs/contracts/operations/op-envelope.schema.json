@@ -5,7 +5,16 @@
   "description": "The canonical append-only operation record written to a model/ops/ segment (one canonical-JSON object per line). The discriminator is the stable kebab-case `kind` name; the typed `payload` object conforms to the matching per-kind schema in this directory. Encoded per the canonical-JSON profile (docs/04-contracts/canonical-json.md): keys sorted by UTF-8 byte order, all fields present, absent optionals as null, HLC/full-range coordinates as decimal strings. The u16 op code lives only in the registry and SQLite projection, never in the record (ADR-0038).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["op_id", "actor_id", "asserted_at", "kind", "format_version", "deps", "payload"],
+  "required": [
+    "op_id",
+    "actor_id",
+    "asserted_at",
+    "kind",
+    "format_version",
+    "origin",
+    "deps",
+    "payload"
+  ],
   "properties": {
     "op_id": {
       "$ref": "#/$defs/id",
@@ -27,6 +36,10 @@
       "type": "integer",
       "minimum": 1,
       "description": "Canonical-JSON profile / record format version. A bump is a refuse-or-degrade event, never a silent change (ADR-0002, ADR-0038)."
+    },
+    "origin": {
+      "$ref": "#/$defs/origin",
+      "description": "Through which process or source the operation arose (provenance, distinct from the asserting `actor_id`). One actor produces operations through many runs, so origin lives on the operation, not only in mutable actor metadata. Actor answers who; origin answers through what; asserted_at answers when (ADR-0038)."
     },
     "deps": {
       "type": "array",
@@ -62,8 +75,42 @@
         "upsert-metamodel-batch",
         "create-scenario",
         "delete-scenario",
-        "set-edge-existence-interval"
+        "set-edge-existence-interval",
+        "actor-declare"
       ]
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "description": "Provenance: through which process or source the operation arose. `kind` is always present; the remaining fields are optional and kind-specific (a `manual` origin carries only `kind`; an `import` origin adds `import_batch_id`, `source_digest`, `mapping_config_digest`, and/or `source_item_key`; a `connector` origin adds `connector_run_id`). The per-kind required combinations are enforced by the writer; this schema lists the full known field set and forbids unknown fields (ADR-0038).",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["manual", "import", "connector", "generated", "system"],
+          "description": "Which kind of process produced the operation: a human action (`manual`), an import batch (`import`), a connector run (`connector`), an automated/AI generation (`generated`), or the system itself (`system`)."
+        },
+        "import_batch_id": {
+          "$ref": "#/$defs/id",
+          "description": "Import-origin: the batch this operation belongs to."
+        },
+        "source_digest": {
+          "type": "string",
+          "description": "Import-origin: digest of the source artefact the operation was derived from."
+        },
+        "mapping_config_digest": {
+          "type": "string",
+          "description": "Import-origin: digest of the mapping configuration applied during import."
+        },
+        "source_item_key": {
+          "type": "string",
+          "description": "Import-origin: the key of the source item within the batch this operation maps from."
+        },
+        "connector_run_id": {
+          "$ref": "#/$defs/id",
+          "description": "Connector-origin: the connector run that produced the operation."
+        }
+      }
     }
   }
 }

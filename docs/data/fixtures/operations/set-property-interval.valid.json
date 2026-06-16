@@ -4,6 +4,7 @@
   "asserted_at": "7338950400000000000",
   "kind": "set-property-interval",
   "format_version": 1,
+  "origin": { "kind": "manual" },
   "deps": [],
   "payload": {
     "partition": "00000000-0000-4000-8000-000000000001",

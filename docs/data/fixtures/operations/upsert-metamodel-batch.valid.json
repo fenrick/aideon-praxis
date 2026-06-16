@@ -4,6 +4,7 @@
   "asserted_at": "7338950400000000000",
   "kind": "upsert-metamodel-batch",
   "format_version": 1,
+  "origin": { "kind": "manual" },
   "deps": [],
   "payload": {
     "types": [
