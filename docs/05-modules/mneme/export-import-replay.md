@@ -33,7 +33,9 @@ A **package** export does not re-serialise each operation. It **seals the loose 
 Import re-ingests operations into a workspace. Two properties make it safe:
 
 - **Idempotent.** The op log is idempotent on ingest — the same `(partition, op_id)` is a no-op on replay ([op-fact-schema-model](./op-fact-schema-model.md)). Importing the same package twice yields the same twin; a partial import that is retried completes without duplicating the operations that already landed ([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
-- **Order-robust.** Operations carry causal dependencies (`deps`) and an asserted time, so import does not require the records to arrive in a particular order — it resolves dependencies and applies operations in a valid order, then derives facts. Asserted time, not arrival order, fixes the resolution outcome.
+- **Order-robust (for cross-source op sets).** Operations carry causal dependencies (`deps`) and an asserted time, so a foreign op set need not arrive in a particular order — the outcome is fixed by `(asserted_at, op_id)` and the resolution rules, not by arrival order. The two cases differ, and **neither is part of M0's local rebuild path** (M0 segments carry empty `deps` and replay in physical segment order — [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)):
+  - **Complete package or batch import.** Validate that every referenced dependency exists in the workspace or the package; reject dependency cycles; topologically order the causally-constrained operations with `(asserted_at, op_id)` as the stable tie-break among ready ones; **reject the package** if a required predecessor is absent (a complete set that omits a dependency is incomplete or corrupt).
+  - **Streaming Koinon sync.** An operation whose predecessor has not yet arrived is **staged as causally pending**, not rejected — the protocol awaits or requests the missing predecessor and applies the operation when its dependencies are available, surfacing a failure only if they never arrive ([ADR-0034](../../06-adrs/ADR-0034-merge-correctness-and-convergence.md)). Whether pending operations are appended immediately or held in a verified staging area is fixed by the Koinon protocol, not here.
 
 After import, derived artefacts are rebuilt as an [accepted job](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md), so a large import does not block the renderer and its progress is visible.
 
@@ -58,7 +60,7 @@ A consultant exports the seed workspace after the FY26 planning session and rest
 
 1. **Export.** `MnemeExportApi` streams a header, one `op` record per operation — including the `baseline-graph` operations (the twelve entities, ten relationships) and the `baseline-plan` operations (the two `PlanEvent`s and their `plan_effect` relationships) — and a footer with the BLAKE3 checksum over those records. No runtime tables are exported.
 2. **Transfer.** The NDJSON package and the `objects/sha256/` directory travel together; the package is byte-identical to one exported from the same state on the original machine ([ADR-0007](../../06-adrs/ADR-0007-deterministic-package-export.md)).
-3. **Import.** The colleague imports; the footer checksum verifies the package is intact, operations are applied in dependency order, and facts are derived. The runtime is rebuilt as an accepted job.
+3. **Import.** The colleague imports; the footer checksum verifies the package is intact, the operations are validated and processed in causal dependency order (a complete package with an absent predecessor is rejected as incomplete), and facts are derived. The runtime is rebuilt as an accepted job.
 4. **Equivalence.** Resolving `Automation Orchestrator`'s `disposition` at any viewpoint on the colleague's machine yields the same fact as on the original — the import reproduced the twin, not merely copied a cache.
 5. A re-import of the same package is a no-op: every `op_id` already exists.
 
@@ -68,7 +70,7 @@ A consultant exports the seed workspace after the FY26 planning session and rest
 
 - **Full replay** on import is `O(N)` in operations; **snapshot-plus-tail** is `O(snapshot load + tail)`.
 - A **truncated package** is caught by the footer checksum; import refuses the package rather than ingesting a partial log.
-- A **missing dependency** (a referenced `dep_op_id` absent from the package) is reported; import does not silently apply an operation whose causal predecessor is missing.
+- A **missing dependency** in a _complete package_ (a referenced `dep_op_id` absent from the package and the workspace) **rejects** the package — it is incomplete or corrupt; import never silently applies an operation whose causal predecessor is missing. In _streaming sync_ the same operation is instead staged as causally pending until its predecessor arrives ([ADR-0034](../../06-adrs/ADR-0034-merge-correctness-and-convergence.md)) — out-of-order delivery is not a permanent rejection.
 - A **format-version mismatch** newer than the importer understands is rejected with a clear diagnostic, never partially interpreted.
 
 ---

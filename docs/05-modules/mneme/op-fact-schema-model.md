@@ -22,7 +22,7 @@ pub struct OpEnvelope {
     pub kind:        OpKind,    // stable kebab discriminator (`create-node`, …)
     pub origin:      Origin,    // through which process it arose (manual/import/connector/generated)
     pub payload:     OpPayload, // typed per kind (NOT opaque bytes)
-    pub deps:        Vec<OpId>, // causal dependencies
+    pub deps:        Vec<OpId>, // causal predecessors — empty for M0-authored ops; reserved for cross-source exchange
 }
 ```
 
