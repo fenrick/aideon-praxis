@@ -19,9 +19,6 @@
     "exists_valid_to": null,
     "layer": "actual",
     "weight": null,
-    "acl_group_id": null,
-    "owner_actor_id": null,
-    "visibility": null,
     "write_options": null
   }
 }

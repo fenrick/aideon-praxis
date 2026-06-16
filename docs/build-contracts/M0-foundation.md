@@ -24,6 +24,7 @@ A workspace folder ([ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)
 - Temporal resolution, viewpoints, and diff (M2; [temporal-and-scenario](../04-contracts/temporal-and-scenario/README.md)).
 - Artefact execution and the catalogue result shape (M3).
 - A user-facing attachment/blob experience (upload UX, previews, large-object streaming) — only the canonical blob _contract_ is in scope; the UX is later.
+- **Record-level access control / RBAC.** M0 is one principal with full authority; `owner_actor_id` / `acl_group_id` / `visibility` are **omitted** from the canonical `create-node`/`create-edge` payloads and public authoring inputs (not carried as reserved nulls). Policy is owned by Themis (M6, [ADR-0030](../06-adrs/ADR-0030-governance-themis.md)) and arrives as explicit versioned policy operations; a workspace whose `manifest.required_features` demands access-policy support is refused read-write at M0. (Ownership ≠ provenance: `actor_id` records who asserted; an owner is a future governance assignment, not the historical author.)
 
 ## The canonical write path
 

@@ -19,11 +19,13 @@ The mechanisms that keep a canonical workspace durable: the workspace lock and w
 | `hash_algorithm`            | string                | no       | `"sha256"` | The content-address family in use under `objects/`; matches the `objects/sha256/` directory ([ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md)).                   |
 | `segment_seal_max_bytes`    | integer               | no       | `8388608`  | Provisional sealing threshold by size (8 MiB). Configuration, not invariant.                                                                                                          |
 | `segment_seal_max_age_secs` | integer               | no       | `86400`    | Provisional sealing threshold by age (24 h). Configuration, not invariant.                                                                                                            |
-| `feature_flags`             | object                | no       | `{}`       | Forward-compatible capability bits; an older reader ignores flags it does not recognise.                                                                                              |
+| `feature_flags`             | object                | no       | `{}`       | Forward-compatible capability bits an older reader may safely **ignore** if unrecognised.                                                                                             |
+| `required_features`         | array of string       | no       | `[]`       | Features the reader **must** support to open read-write (e.g. a future `themis-access-policy-v1`). An unrecognised entry forces refuse-or-degrade — see below.                        |
 
 Rules a reader follows:
 
 - **Unknown top-level keys are ignored, not rejected**, so a newer minor format stays readable by an older build — the forward-tolerance ADR-0002 requires. A reader never _writes_ a structure it does not fully understand.
+- **`required_features` is the must-support gate** — distinct from the ignorable `feature_flags`. A workspace that lists a feature the build does not implement (for example a Themis access-policy version, or causal-dependency handling) is **refused read-write** with a clear "requires unsupported feature" diagnostic; forensic read-only inspection of raw canonical material is permitted, but the reader must not build a model that _appears_ to honour semantics it cannot enforce. This is the single seam by which later milestones (governance, sync) prevent an M0-era build from silently misinterpreting their workspaces.
 - **`workspace_id` is never regenerated.** Re-deriving it on copy would break partition identity and idempotent re-import; it is minted once and carried verbatim.
 - **The manifest is written first and updated through the same temp-file-plus-rename discipline** as every other canonical file (below), so a torn manifest write never half-replaces the descriptor.
 

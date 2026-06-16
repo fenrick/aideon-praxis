@@ -13,9 +13,6 @@
     "asserted_at": "7338950400000000000",
     "node_id": "n:application:automation-orchestrator",
     "type_id": "ab0aefe4-902f-5f99-8ce3-eae00286ebe0",
-    "acl_group_id": null,
-    "owner_actor_id": null,
-    "visibility": null,
     "write_options": null
   }
 }
