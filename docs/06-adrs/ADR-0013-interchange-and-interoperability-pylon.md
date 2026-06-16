@@ -1,6 +1,6 @@
 # ADR-0013: Interchange and Interoperability — Pylon
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0001, ADR-0011
 - Relates-To: ADR-0007, ADR-0015

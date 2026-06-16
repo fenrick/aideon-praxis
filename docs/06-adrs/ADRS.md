@@ -16,17 +16,17 @@ These ADRs establish a single cross-runtime authority: **the portable workspace 
 | [0002](./ADR-0002-portable-workspace-format.md)                             | Portable workspace folder format                                  | Accepted | Invariant + stable seam   |
 | [0003](./ADR-0003-content-addressed-object-store.md)                        | Content-addressed object store for binaries                       | Accepted | Invariant + stable seam   |
 | [0004](./ADR-0004-storage-engine-abstraction.md)                            | Storage-engine abstraction + single-writer queue                  | Accepted | Stable seam + provisional |
-| [0005](./ADR-0005-sync-and-conflict-model.md)                               | Sync and conflict model                                           | Proposed | Stable seam + deferred    |
+| [0005](./ADR-0005-sync-and-conflict-model.md)                               | Sync and conflict model                                           | Accepted | Stable seam + deferred    |
 | [0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md)                    | Tauri trust boundary and typed IPC                                | Accepted | Invariant + stable seam   |
-| [0007](./ADR-0007-deterministic-package-export.md)                          | Deterministic `.aideonpkg` export/import                          | Proposed | Stable seam               |
+| [0007](./ADR-0007-deterministic-package-export.md)                          | Deterministic `.aideonpkg` export/import                          | Accepted | Stable seam               |
 | [0008](./ADR-0008-diff-compares-two-viewpoints.md)                          | Diffs compare two viewpoints; delta kind derived                  | Accepted | Stable seam               |
 | [0009](./ADR-0009-temporal-model-valid-interval-layer-policy-viewpoint.md)  | Temporal model: valid-interval, layer-as-policy, viewpoint        | Accepted | Invariant + stable seam   |
 | [0010](./ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md) | Design system: shadcn/Tailwind foundation behind a proxy boundary | Accepted | Lock-in + invariant       |
 | [0011](./ADR-0011-module-taxonomy-and-boundaries.md)                        | Module taxonomy, boundaries, and the relationship vocabulary      | Accepted | Invariant + stable seam   |
-| [0012](./ADR-0012-search-and-discovery-lexis.md)                            | Search and discovery — Lexis                                      | Proposed | Invariant + stable seam   |
-| [0013](./ADR-0013-interchange-and-interoperability-pylon.md)                | Interchange and interoperability — Pylon                          | Proposed | Stable seam + invariant   |
-| [0014](./ADR-0014-ai-assistance-and-generated-provenance-sophia.md)         | AI assistance and generated provenance — Sophia                   | Proposed | Invariant + stable seam   |
-| [0015](./ADR-0015-reporting-and-publishing-kerux.md)                        | Reporting and publishing — Kerux                                  | Proposed | Invariant + stable seam   |
+| [0012](./ADR-0012-search-and-discovery-lexis.md)                            | Search and discovery — Lexis                                      | Accepted | Invariant + stable seam   |
+| [0013](./ADR-0013-interchange-and-interoperability-pylon.md)                | Interchange and interoperability — Pylon                          | Accepted | Stable seam + invariant   |
+| [0014](./ADR-0014-ai-assistance-and-generated-provenance-sophia.md)         | AI assistance and generated provenance — Sophia                   | Accepted | Invariant + stable seam   |
+| [0015](./ADR-0015-reporting-and-publishing-kerux.md)                        | Reporting and publishing — Kerux                                  | Accepted | Invariant + stable seam   |
 | [0016](./ADR-0016-error-envelope-rfc9457.md)                                | IPC error envelope — RFC 9457 Problem Details                     | Accepted | Stable seam + invariant   |
 | [0017](./ADR-0017-contract-and-dto-versioning.md)                           | Contract and DTO versioning — SemVer 2.0.0                        | Accepted | Stable seam + invariant   |
 | [0018](./ADR-0018-idempotency-and-deduplication.md)                         | Idempotency and deduplication                                     | Accepted | Invariant + stable seam   |
@@ -39,12 +39,13 @@ These ADRs establish a single cross-runtime authority: **the portable workspace 
 | [0025](./ADR-0025-design-token-architecture.md)                             | Design token architecture — W3C DTCG, tiered tokens               | Accepted | Stable seam + invariant   |
 | [0026](./ADR-0026-frontend-state-architecture.md)                           | Frontend state architecture                                       | Accepted | Stable seam + invariant   |
 | [0027](./ADR-0027-projection-consistency-model.md)                          | Projection consistency model                                      | Accepted | Stable seam + invariant   |
-| [0028](./ADR-0028-investment-and-portfolio-planning-kairos.md)              | Investment and portfolio planning — Kairos                        | Proposed | Stable seam + deferred    |
-| [0029](./ADR-0029-collaboration-and-sync-koinon.md)                         | Collaboration and sync — Koinon                                   | Proposed | Stable seam + deferred    |
-| [0030](./ADR-0030-governance-themis.md)                                     | Governance — Themis                                               | Proposed | Stable seam + deferred    |
-| [0031](./ADR-0031-risk-controls-compliance-aegis.md)                        | Risk, controls, and compliance — Aegis                            | Proposed | Stable seam + provisional |
-| [0032](./ADR-0032-automated-discovery-reality-sync-skopos.md)               | Automated discovery and reality-sync — Skopos                     | Proposed | Stable seam + deferred    |
-| [0033](./ADR-0033-artefact-execution-model.md)                              | Artefact execution model                                          | Proposed | Stable seam + invariant   |
-| [0034](./ADR-0034-merge-correctness-and-convergence.md)                     | Merge correctness and convergence                                 | Proposed | Invariant + deferred      |
-| [0035](./ADR-0035-schema-migration-and-evolution.md)                        | Schema migration and evolution — forward-only                     | Proposed | Invariant + stable seam   |
-| [0036](./ADR-0036-right-to-erasure-vs-append-only.md)                       | Right to erasure vs append-only storage                           | Proposed | Invariant + deferred      |
+| [0028](./ADR-0028-investment-and-portfolio-planning-kairos.md)              | Investment and portfolio planning — Kairos                        | Accepted | Stable seam + deferred    |
+| [0029](./ADR-0029-collaboration-and-sync-koinon.md)                         | Collaboration and sync — Koinon                                   | Accepted | Stable seam + deferred    |
+| [0030](./ADR-0030-governance-themis.md)                                     | Governance — Themis                                               | Accepted | Stable seam + deferred    |
+| [0031](./ADR-0031-risk-controls-compliance-aegis.md)                        | Risk, controls, and compliance — Aegis                            | Accepted | Stable seam + provisional |
+| [0032](./ADR-0032-automated-discovery-reality-sync-skopos.md)               | Automated discovery and reality-sync — Skopos                     | Accepted | Stable seam + deferred    |
+| [0033](./ADR-0033-artefact-execution-model.md)                              | Artefact execution model                                          | Accepted | Stable seam + invariant   |
+| [0034](./ADR-0034-merge-correctness-and-convergence.md)                     | Merge correctness and convergence                                 | Accepted | Invariant + deferred      |
+| [0035](./ADR-0035-schema-migration-and-evolution.md)                        | Schema migration and evolution — forward-only                     | Accepted | Invariant + stable seam   |
+| [0036](./ADR-0036-right-to-erasure-vs-append-only.md)                       | Right to erasure vs append-only storage                           | Accepted | Invariant + deferred      |
+| [0037](./ADR-0037-contract-precedence-and-source-of-truth.md)               | Contract precedence and source of truth                           | Accepted | Invariant + stable seam   |

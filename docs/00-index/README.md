@@ -76,6 +76,7 @@ Modules carry conceptual names from Greek and Latin roots; the name evokes the r
 - **The IPC boundary** → [`04-contracts/ipc/`](../04-contracts/ipc/README.md), [`05-modules/host/`](../05-modules/host/README.md).
 - **Look and behaviour** → [`03-design/design-system/`](../03-design/design-system/README.md), [`03-design/hig/`](../03-design/hig/README.md), [`frontend/`](../frontend/README.md).
 - **What to build first** → [`ROADMAP.md`](./ROADMAP.md) (the MVP, the milestone exit criteria, and the build sequence) and [`03-design/module-delivery-order.md`](../03-design/module-delivery-order.md) (the dependency rationale).
+- **Building it as executable contracts** → [`build-contracts/`](../build-contracts/README.md) — the golden journey, the contract precedence, and the agent-ready issue template that turn the design into work an agent can complete.
 - **Making a durable decision** → [`02-standards/DESIGN-GOVERNANCE.md`](../02-standards/DESIGN-GOVERNANCE.md), then write an ADR per [`02-standards/ADR-FORMAT.md`](../02-standards/ADR-FORMAT.md).
 
 ---

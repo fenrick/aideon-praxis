@@ -1,6 +1,6 @@
 # ADR-0033: Artefact Execution Model
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-16
 - Depends-On: ADR-0009, ADR-0027
 - Relates-To: ADR-0006, ADR-0020, ADR-0021, ADR-0014

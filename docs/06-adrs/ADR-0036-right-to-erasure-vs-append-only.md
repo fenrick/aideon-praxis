@@ -1,6 +1,6 @@
 # ADR-0036: Right to Erasure vs the Append-Only Op Log
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-16
 - Depends-On: ADR-0001 (workspace is canonical authority), ADR-0003 (content-addressed object store)
 - Relates-To: ADR-0030 (governance — Themis), ADR-0018 (idempotency and deduplication), ADR-0007 (deterministic package export)

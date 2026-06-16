@@ -1,6 +1,6 @@
 # ADR-0035: Schema Migration and Evolution
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-16
 - Depends-On: ADR-0017, ADR-0001
 - Relates-To: ADR-0009, ADR-0018, ADR-0027

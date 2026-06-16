@@ -1,6 +1,6 @@
 # ADR-0030: Governance — Themis
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0006 (Tauri trust boundary), ADR-0011 (module taxonomy)
 - Relates-To: ADR-0023 (threat model), ADR-0019 (observability and audit), ADR-0005 (sync), ADR-0001 (workspace is canonical authority)

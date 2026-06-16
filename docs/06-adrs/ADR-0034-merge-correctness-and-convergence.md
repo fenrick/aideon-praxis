@@ -1,6 +1,6 @@
 # ADR-0034: Merge Correctness and Convergence
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-16
 - Depends-On: ADR-0005 (sync and conflict model), ADR-0029 (Koinon), ADR-0001 (workspace is canonical authority), ADR-0002 (portable workspace format)
 - Relates-To: ADR-0009 (temporal model), ADR-0018 (idempotency), ADR-0022 (HLC clock), ADR-0027 (projection consistency)

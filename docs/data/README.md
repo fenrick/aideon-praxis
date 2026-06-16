@@ -33,6 +33,8 @@ docs/data/
     CHANGELOG.md            # SemVer history of the dataset
 ```
 
+This folder holds **seed data only**. The IPC, event, and shell-command **manifests are not seed data** — they live in [`docs/contracts/`](../contracts/) (authoritative and drift-checked by `tests/contracts/*`), per the [contract precedence](../build-contracts/README.md#contract-precedence). Do not add manifest copies here.
+
 Two concerns, two files. `meta/core-v1.json` declares _what can exist_ — the [entity](../../CONTEXT.md) and [relationship](../../CONTEXT.md) types, their slots, and validation. `base/baseline.yaml` declares _what does exist_ in a fresh workspace — concrete entities and relationships expressed as graph nodes and edges with time and scenario context. The metamodel is the language; the dataset is one sentence written in it.
 
 ---
