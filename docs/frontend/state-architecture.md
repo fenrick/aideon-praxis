@@ -44,9 +44,9 @@ Ephemeral interaction — a hover, a drag mid-flight, a transient highlight — 
 
 Layout and theme choices persist locally across reloads but are not workspace canonical material: they are not written to the op log and not synced as twin content ([ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md)). The active theme is the semantic-token rebinding of [ADR-0025](../06-adrs/ADR-0025-design-token-architecture.md), held as persistent UI state. The persistence mechanism itself is provisional ([ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md) open question).
 
-## State ownership in a surface
+## State ownership in the platform
 
-Each module owns a single state provider consumed by its four slots ([shell.md](./shell.md)); state is owned once, not duplicated. The golden pattern is a hook returning `[state, actions]`, with async side effects inside the hook and UI-ready state derived from DTOs ([praxis-workspace](./praxis-workspace/README.md), [chrona-time](./chrona-time/README.md)):
+The platform owns a single state provider (`HostPlatformProvider`, consumed via `useHostPlatform()`) shared across the shell's four regions ([shell.md](./shell.md)); state is owned once, not duplicated per engine. The golden pattern is a hook returning `[state, actions]`, with async side effects inside the hook and UI-ready state derived from DTOs ([praxis-workspace](./praxis-workspace/README.md), [chrona-time](./chrona-time/README.md)):
 
 - Co-locate state in hooks (e.g. `useTemporalPanel`, `useChrona`); avoid global singletons.
 - Derive UI-ready state from DTOs in the hook; keep IPC mapping in the adapter layer, not the component.
