@@ -19,6 +19,25 @@ The product serves several audiences — experts authoring the model, contributo
 | **Import and mapping**          | Where external material meets the controlled language of the product. Every step is reviewable, reversible, and explicit about uncertainty — quiet ingestion is how weak source material gets promoted into false certainty. |
 | **Administration and controls** | Access, templates, integration controls, automation rules, and audit. Plain and explicit; the scope — personal, workspace, or organisation — is always unmistakable.                                                         |
 
+## Surface vs widget, and composability
+
+A **surface** is a platform-owned, **navigable work destination** — one of the eight above. A **widget** is a content component rendered _within_ a surface. Navigation moves between surfaces (the [navigation rail](../the-shell.md) lists them as primary destinations); composition happens with widgets _inside_ a surface. The content region renders the **active surface instance** — its composition and layout — never one undifferentiated workspace-wide widget canvas. Scenarios, saved structures, artefacts, and review items are **secondary destinations** reached _within_ a surface, not top-level entries.
+
+**Composability is per-surface — widgets are a primitive, not a promise that every surface is an editable dashboard:**
+
+| Surface                     | Composition posture                                            |
+| --------------------------- | -------------------------------------------------------------- |
+| Modelling studio            | Extensively composable.                                        |
+| Scenario studio             | Bounded — comparison, timeline, explanation.                   |
+| Workspace home              | Platform-composed resume/queue surface; not an open dashboard. |
+| Artefact family library     | Fixed discovery and launch surface.                            |
+| Review and contribution     | Guided, constrained workflow.                                  |
+| Executive briefing          | Controlled presentation composition.                           |
+| Import and mapping          | Staged workflow.                                               |
+| Administration and controls | Structured settings and policy forms.                          |
+
+Each surface owns a **viewpoint policy** rather than a hard default: moving between surfaces preserves the active viewpoint; only an explicitly-opened saved destination (a saved artefact or structure carrying a recorded viewpoint, or a selected scenario) changes it, and visibly ([hig/shell-and-navigation.md](../hig/shell-and-navigation.md)). The renderer realisation of the surface (the surface definition fields, `PlatformContent`) is in [../../frontend/shell.md](../../frontend/shell.md). **Engines are never a surface or a navigation destination** — they contribute capabilities and widgets that compose inside platform-owned surfaces.
+
 ## Worked example
 
 A consultant authoring the FY26 plan works in the **modelling studio**, editing `Insight Hub` and authoring the **FY26 Insight Modernization** Plan Event. They move to the **scenario studio** to compare that scenario's plan layer against the base case's actual layer for `Insight Hub`. A capability owner confirming the `realises → Customer Insight` relationship works in **review and contribution**, in plain language, without seeing the whole model. A portfolio lead reads the result in an **executive briefing** surface. Each used a different surface for its role; all shared the same shell, selection model, and honest-state cues.
