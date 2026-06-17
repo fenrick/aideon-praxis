@@ -70,7 +70,7 @@
     },
     "value": {
       "type": "object",
-      "description": "Value tag: an object with exactly one stable schema-owned lower variant key. str|i64|f64|bool|time|ref|blob|json.",
+      "description": "Value tag: an object with exactly one stable schema-owned lower variant key. str|i64|f64|bool|time|ref|blob. `json` is NOT a valid twin-fact value (ADR-0038); opaque documents are BlobRefs with media_type application/json.",
       "additionalProperties": false,
       "minProperties": 1,
       "maxProperties": 1,
@@ -85,12 +85,19 @@
           "description": "ValidTime as epoch microseconds UTC, decimal string."
         },
         "ref": { "$ref": "#/$defs/id" },
-        "blob": {
-          "type": "array",
-          "items": { "type": "integer", "minimum": 0, "maximum": 255 },
-          "description": "Byte array; large blobs are content-addressed, not inlined."
-        },
-        "json": { "description": "Arbitrary JSON value." }
+        "blob": { "$ref": "#/$defs/blobRef" }
+      }
+    },
+    "blobRef": {
+      "type": "object",
+      "description": "Typed content-addressed reference; the bytes live in objects/sha256/, never inlined (no byte array, no Base64). media_type is descriptive and present as null when absent (one canonical byte form).",
+      "additionalProperties": false,
+      "required": ["algorithm", "digest", "length", "media_type"],
+      "properties": {
+        "algorithm": { "type": "string", "const": "sha256" },
+        "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "length": { "type": "integer", "minimum": 0 },
+        "media_type": { "type": ["string", "null"] }
       }
     },
     "writeOptions": {

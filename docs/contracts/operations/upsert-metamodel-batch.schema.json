@@ -37,8 +37,8 @@
     },
     "valueType": {
       "type": "string",
-      "enum": ["str", "i64", "f64", "bool", "time", "ref", "blob", "json"],
-      "description": "ValueType value tag as a stable schema-owned lower name."
+      "enum": ["str", "i64", "f64", "bool", "time", "ref", "blob"],
+      "description": "ValueType value tag as a stable schema-owned lower name. `json` is not a declarable field type (ADR-0038); an opaque document is a `blob` BlobRef."
     },
     "mergePolicy": {
       "type": "string",
@@ -47,7 +47,7 @@
     },
     "value": {
       "type": "object",
-      "description": "Value tag: an object with exactly one stable schema-owned lower variant key. str|i64|f64|bool|time|ref|blob|json.",
+      "description": "Value tag: an object with exactly one stable schema-owned lower variant key. str|i64|f64|bool|time|ref|blob. `json` is NOT a valid value (ADR-0038); opaque documents are BlobRefs.",
       "additionalProperties": false,
       "minProperties": 1,
       "maxProperties": 1,
@@ -58,8 +58,19 @@
         "bool": { "type": "boolean" },
         "time": { "type": "string", "pattern": "^-?[0-9]+$" },
         "ref": { "$ref": "#/$defs/id" },
-        "blob": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 255 } },
-        "json": {}
+        "blob": { "$ref": "#/$defs/blobRef" }
+      }
+    },
+    "blobRef": {
+      "type": "object",
+      "description": "Typed content-addressed reference; bytes live in objects/sha256/, never inlined. media_type present as null when absent.",
+      "additionalProperties": false,
+      "required": ["algorithm", "digest", "length", "media_type"],
+      "properties": {
+        "algorithm": { "type": "string", "const": "sha256" },
+        "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "length": { "type": "integer", "minimum": 0 },
+        "media_type": { "type": ["string", "null"] }
       }
     },
     "typeDef": {
