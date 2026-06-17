@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aideon.dev/contracts/operations/create-edge.schema.json",
   "title": "CreateEdge payload",
-  "description": "Typed payload for the create-edge operation kind (registry code 2). Create a new edge (relationship) entity with an existence interval. Fields are grounded in crates/mneme_core/src/ops.rs::CreateEdgeInput, rendered in canonical contract names. Record-level access control (owner/acl/visibility) is intentionally omitted at M0: one principal with full authority, no record-level RBAC; policy is owned by Themis (M6) and arrives as explicit versioned policy operations (ADR-0030). Encoded per the canonical-JSON profile: all fields present, absent optionals as null, UUIDs lower-case hyphenated, HLC and valid times as decimal strings, layer as a kebab/lower value tag.",
+  "description": "Typed payload for the create-edge operation kind (registry code 2). Create a new edge (relationship) entity with an existence interval. The payload shape here is the canonical contract for this op kind; the implementation is built to it. Record-level access control (owner/acl/visibility) is intentionally omitted at M0: one principal with full authority, no record-level RBAC; policy is owned by Themis (M6) and arrives as explicit versioned policy operations (ADR-0030). Encoded per the canonical-JSON profile: all fields present, absent optionals as null, UUIDs lower-case hyphenated, HLC and valid times as decimal strings, layer as a kebab/lower value tag.",
   "type": "object",
   "additionalProperties": false,
   "required": [

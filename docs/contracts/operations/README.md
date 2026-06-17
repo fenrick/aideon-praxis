@@ -2,7 +2,7 @@
 
 The machine-readable shape of every Mneme operation kind: the shared append-only `OpEnvelope` and one JSON Schema per op kind for the **typed payload object** it carries. These are **tier-2 contracts** in the [contract precedence](../../build-contracts/README.md#contract-precedence) — versioned, machine-readable shapes that are the single source of truth for an operation's structure. The _meaning_ of these shapes is owned by the Mneme module docs ([op-fact-schema-model](../../05-modules/mneme/op-fact-schema-model.md)); the _shape_ is owned here. The byte-exact serialisation of a record is fixed by the [canonical-JSON profile](../../04-contracts/canonical-json.md) and the record/identity/commit decision by [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md).
 
-Every schema is JSON Schema 2020-12 with an `$id`, and every field name and type is grounded in the Rust DTOs in [`crates/mneme_core/src/`](../../../crates/mneme_core/src) (`ops.rs`, `schema.rs`, `value.rs`, `ids.rs`, `time.rs`) so the schema and the code cannot drift in meaning without a visible change to one of them.
+Every schema is JSON Schema 2020-12 with an `$id`. These schemas are the **canonical contract** for the operation surface ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)); the Rust types in [`crates/mneme_core/src/`](../../../crates/mneme_core/src) are built to conform to them, and a drift-check keeps the two in step (a shape change is a versioned event, [generated-schema-discipline](../../04-contracts/ipc/generated-schema-discipline.md)) — the schema leads, the code follows.
 
 ## The canonical operation record
 
