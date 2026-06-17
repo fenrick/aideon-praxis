@@ -35,7 +35,7 @@ Compare only the stable logical projections M0 owns, exposed through a **test-on
 FoundationProjectionSnapshot {
   workspace_id,
   partitions: [
-    { partition_id, applied_ops: [ { op_id, canonical_digest } ], replay_head }
+    { partition_id, applied_ops: [ { op_id, canonical_record_digest } ], replay_head }
   ],
   schema_documents: [ { path, canonical_digest } ],   // raw documents, NOT a compiled effective schema (that is M1)
   actors:           [ { actor_id, declaration_digest } ],
