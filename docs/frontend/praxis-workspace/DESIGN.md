@@ -23,11 +23,11 @@ Each widget is a `WidgetContribution` — `{ engineId, type, label, description,
 
 The platform's `HostPlatformProvider` / `useHostPlatform()` owns state once for the whole shell; the engine's widgets consume it rather than owning their own provider, so state is not duplicated ([state-architecture.md](../state-architecture.md)). The golden pattern is a hook returning `[state, actions]` with async side effects inside the hook (e.g. `useTemporalPanel`); UI-ready state is derived from DTOs and global singletons are avoided.
 
-| State                                            | Kind               | Notes                                                           |
-| ------------------------------------------------ | ------------------ | --------------------------------------------------------------- |
-| Graph slices, artefact results                   | Server-state       | Viewpoint-keyed cache ([data-fetching.md](../data-fetching.md)) |
-| Selection, time cursor, filters, active template | UI-state           | Local, in the provider                                          |
-| Canvas layout snapshots                          | Persisted via host | Keyed by viewpoint + `documentId` (below)                       |
+| State                                            | Kind               | Notes                                                                                                |
+| ------------------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------- |
+| Graph slices, artefact results                   | Server-state       | Viewpoint-keyed cache ([data-fetching.md](../data-fetching.md))                                      |
+| Selection, time cursor, filters, active template | UI-state           | Local, in the provider                                                                               |
+| Canvas layout snapshots                          | Persisted via host | Keyed by `surface_id + surface_instance/destination + layout_preset` — **not** the viewpoint (below) |
 
 ## Data fetching keys
 
@@ -58,9 +58,9 @@ The canvas renders the **effective graph** — the node-and-edge projection of a
 
 The canvas blocks consume layout from Topos; they do not invent positions for a structured layout. Auto-layout is **user-triggered**: the default layout uses ELK-compatible routines but must not override existing coordinates unless explicitly requested. A free-form arrangement the user drags is held as their authored arrangement; an automatic layout is a Topos computation ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)).
 
-### Layout persistence keyed by viewpoint
+### Layout persistence is not keyed by the viewpoint
 
-Canvas geometry persists per viewpoint (as-of valid time, layer, optional scenario) through host IPC; the renderer respects saved positions and re-runs layout only on demand. The persistence key is the viewpoint plus a stable `documentId` carried by the canvas template — distinct from the template `id`. The renderer **must not** infer document identity from the active template id, and a layer switch updates any persistence key that includes layer ([chrona-time](../chrona-time/README.md)). Templates are persisted by the host (`workspace_templates_list` / `workspace_templates_save`) and rehydrated by the renderer; the host seeds default templates on first run so the workspace always has initial artefacts to render.
+Canvas geometry persists through host IPC, but the persistence key is **`surface_id + surface_instance/destination + layout_preset`**, **not** the viewpoint ([shell.md](../shell.md), composition; [state-architecture.md](../state-architecture.md)). Changing valid time, layer, or scenario changes the **data** the canvas shows, never the arrangement — a scenario switch must not silently rearrange the studio. A **saved structure** may carry both a saved layout and an optional recorded viewpoint as **distinct fields**; opening it can visibly apply both. The renderer respects saved positions and re-runs layout only on demand. Templates/structures are persisted by the host (`workspace_templates_list` / `workspace_templates_save`) and rehydrated by the renderer; the host seeds default templates on first run so the workspace always has initial artefacts to render.
 
 ### Canvas honest state and accessibility
 
@@ -73,6 +73,8 @@ A single node/edge selection surfaces editable fields built from the effective s
 ## Loading, error, empty
 
 Widgets receive `loading`, `error`, and optional `empty` hints from their hook and render the shared treatments ([error-loading-empty.md](../error-loading-empty.md)): skeletons for loading, an informative empty state, a human-readable error mapped from the envelope with a copy-diagnostics affordance. A loading pane never blanks the whole content surface.
+
+**The modelling studio never opens on bare chrome.** Two empty cases are distinct: a surface with **no widget composition** (only reachable after a user deliberately removes every optional widget — and even then the surface offers a structured Add widget action) versus a surface whose **default composition exists but the twin has no data** (the normal new-workspace case). In the normal case the studio opens on its default composition (the graph widget + local controls) and the **graph widget renders the first-run empty state inside that composition** — never a blank grid. The copy explains what belongs and how to begin, e.g. _"No model content yet — add the first entity, open an existing structure, or choose an artefact to guide the work,"_ showing only the actions currently available: **Add entity** when M1 authoring is enabled, **Open structure** when one exists, **Browse artefacts** once the library is enabled, **Import data** once Pylon exists. Future actions are never shown as disabled promises ([hig/foundations.md](../../03-design/hig/foundations.md), [error-loading-empty.md](../error-loading-empty.md)).
 
 ## Testing
 

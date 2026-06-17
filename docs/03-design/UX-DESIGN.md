@@ -80,10 +80,13 @@ For the M0–M3 build, the UX is pinned to executable contracts:
 The shell model, the per-surface behaviour, and the MVP state machines are settled and mutually consistent. What is **not yet decided** is a cluster of concrete IA arrangements — deliberately deferred, not contradictory, but a designer/implementer would otherwise invent them. These are the candidates for a follow-up decision pass:
 
 - **Navigation model — _resolved_.** The rail is organised by **user-goal surfaces, never engines**; the eight workspace-family surfaces are the primary destinations, with scenarios/artefacts/saved-structures/review as secondary destinations within them (the **Workspace structure** section); widgets compose _within_ a surface (extensively only in the modelling studio); surface changes preserve the active viewpoint unless an opened saved destination carries another. Pinned in [hig/shell-and-navigation.md](./hig/shell-and-navigation.md), [the-shell.md](./the-shell.md), [ux/workspace-family.md](./ux/workspace-family.md), [../frontend/shell.md](../frontend/shell.md).
-- **Surface/widget launch & discovery mechanics** — the surface/widget _model_ is resolved (above); still open is the concrete UX of the widget-library dialog, the add-widget affordance, and the empty-surface state.
-- **Search-results presentation** — the rules exist ([hig/shell-and-navigation.md](./hig/shell-and-navigation.md)); the result-card format does not.
-- **Settings IA** — personal / workspace / org scopes are named as "visibly separate"; the concrete arrangement is open.
-- **Canvas keyboard / accessibility** — flagged design intent, pending an APG-grid-style design ([../frontend/praxis-workspace/DESIGN.md](../frontend/praxis-workspace/DESIGN.md)).
+- **Composition & launch mechanics — _resolved_.** Add widget is one canonical action (toolbar + on-canvas `+` + command-palette shortcut) opening the widget-library dialog filtered by `allowed ∩ build-enabled ∩ licensed ∩ workspace-supported`; user composition happens only in an explicit **draft-based compose mode** (Done/Cancel/Reset); a `composition_policy` of `fixed`/`bounded`/`free` gates which surfaces expose it; surfaces open on a default composition (widgets render guided empty states when the twin is empty — never bare chrome); secondary destinations open as surface instances in the shell; **layout is not keyed by the viewpoint**. Pinned in [../frontend/shell.md](../frontend/shell.md), [ux/workspace-family.md](./ux/workspace-family.md), [../frontend/state-architecture.md](../frontend/state-architecture.md), [../frontend/praxis-workspace/DESIGN.md](../frontend/praxis-workspace/DESIGN.md).
+
+The remaining items are **deliberately paused** — UX-Q1 and UX-Q2 settle the shell's load-bearing interaction model; these are lower-stakes and partly post-MVP:
+
+- **Search-results presentation** — belongs primarily to [Lexis](../05-modules/lexis/README.md) (planned); resolve when its result contract and MVP timing are clearer. The rules exist ([hig/shell-and-navigation.md](./hig/shell-and-navigation.md)); the result-card format does not.
+- **Settings IA** — personal / workspace / org scopes are named "visibly separate"; the concrete arrangement is open (Administration surface, M6).
+- **Canvas keyboard / accessibility** — design intent, pending an APG-grid-style design ([../frontend/praxis-workspace/DESIGN.md](../frontend/praxis-workspace/DESIGN.md)).
 - **Multi-engine orchestration** — cross-engine selection/inspector when more than Praxis is licensed; M4+ design intent.
 
 ## Related documents

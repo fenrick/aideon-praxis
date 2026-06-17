@@ -32,7 +32,7 @@ Every server-state cache key includes the full [`Viewpoint`](../../CONTEXT.md) �
 
 - Changing the viewpoint is not a refetch of the same key — it is a **different key**.
 - A read cached at one viewpoint is **never** served for another, mirroring the host's projection-identity rule.
-- Layout persistence and any geometry keyed by time include the viewpoint coordinates in their key, so a saved canvas arrangement under one scenario is distinct from another ([praxis-workspace](./praxis-workspace/README.md)).
+- This applies to **server-state** (data read at a viewpoint). **Surface layout is persistent UI state and is _not_ keyed by the viewpoint** — changing valid time, layer, or scenario changes the data shown, never the arrangement. The layout key is `workspace_id + local user/profile + surface_id + surface_instance/destination_id + layout_preset_id` ([shell.md](./shell.md), composition). A **saved structure** may bundle a saved layout _and_ an optional recorded viewpoint as **distinct fields**; opening it can visibly apply both, but changing the live viewpoint afterwards never silently forks a new layout ([praxis-workspace](./praxis-workspace/README.md)).
 
 A worked example: a graph surface cached at `{ asOf: 2026-06-10, layer: actual, scenario: null }` is a distinct cache entry from the same surface at `{ scenario: scn_plan_q3 }`. Switching scenario refetches rather than reusing; a host `stale` status flips the surface to a staleness badge and triggers a refetch.
 
