@@ -2,7 +2,7 @@
 
 The behaviour-level interaction contract for Aideon Desktop. This folder fixes how the product behaves — how selection drives the inspector, how a user moves from a result to its explanation to a valid action, how time and scenario controls work, how long-running work and write backpressure are shown, and how the product keeps partial, stale, and generated content honest. It is the behavioural counterpart to the visual contract in [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md): the pixels, tokens, and component anatomy live there; the rules of behaviour live here.
 
-This folder is a contract, not a tour. Each file answers one question. Where a concept is fixed elsewhere — the four shell regions in [the-shell.md](../the-shell.md), the honest-state vocabulary in the [Documentation Standard §9](../../02-standards/DOCUMENTATION-STANDARD.md), the artefact frame in [artefacts/](../artefacts/README.md) — this folder restates the conclusion and links the definition rather than forking it.
+This folder is the behaviour layer of the [UX overview/map](../UX-DESIGN.md) — start there for the whole picture (the shell, the surface family, and where every UX concern is specified). This folder is a contract, not a tour. Each file answers one question. Where a concept is fixed elsewhere — the four shell regions in [the-shell.md](../the-shell.md), the honest-state vocabulary in the [Documentation Standard §9](../../02-standards/DOCUMENTATION-STANDARD.md), the artefact frame in [artefacts/](../artefacts/README.md) — this folder restates the conclusion and links the definition rather than forking it.
 
 ---
 
