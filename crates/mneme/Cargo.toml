@@ -1,9 +1,0 @@
-[package]
-name = "aideon_mneme"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-
-[dependencies]
-aideon_mneme_core = { path = "../mneme_core" }
-aideon_mneme_store = { path = "../mneme_store" }
