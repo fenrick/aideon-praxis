@@ -258,6 +258,57 @@ Two properties make GC safe against concurrent readers:
 
 ---
 
+## Open-time rebuild decision and the replay frontier
+
+On every open the host must decide, deterministically, whether the derived runtime can be used as-is, needs only its tail replayed, or must be rebuilt whole. The decision turns on a **derived replay frontier** persisted in the runtime.
+
+### The replay frontier (`ReplayHead`)
+
+`ReplayHead` records, per partition, the canonical position replayed into the runtime so far. It uses a **stable logical segment coordinate**, not a physical filename, so it survives the loose segment being sealed and renamed:
+
+```text
+ReplayHead {
+  partition_id,
+  segment_seqno,          // logical sequence; the loose segment is the next seqno after the highest sealed
+  byte_offset,            // next unread op-record byte within that logical segment
+  applied_record_count,
+  last_record_digest      // canonical_record_digest of the op immediately before the cursor; null on an empty log
+}
+```
+
+- `segment_seqno` is the segment's **logical** sequence whether it is currently `current.ops.jsonl` or already sealed: when `current.ops.jsonl` becomes `000123.ops.jsonl` its logical sequence stays `123`, so the cursor does **not** move merely because the file was renamed.
+- `byte_offset` is the next unread operation-record byte; in a sealed segment the operation-data region ends immediately before the checksum record.
+- A bare `last_op_id` is insufficient — it identifies an operation but not its canonical position or content; `last_record_digest` pins both.
+
+`ReplayHead` is **derived** runtime state (lost on a wipe, which correctly forces a full rebuild) and is **never trusted merely because it is stored** — it is validated on every open (below).
+
+### The replay head advances transactionally
+
+The load-bearing rule: **applying a canonical replay batch to the required foundation projections and advancing `ReplayHead` happen in the same SQLite transaction.** After a crash the runtime is therefore in exactly one of two states — both the projection changes and the cursor advance committed, or neither did. The cursor never advances before its projection changes commit, giving the authority ordering: _canonical bytes durable → projection transaction applies operations → replay head advances in the same transaction_. The frontier represents the frontier of M0's **required synchronous** foundation projections only; optional/deferred projection families (analytics, integrity) carry their own freshness state, so one cursor never implies every future projection is fresh.
+
+### The four-case open decision
+
+After acquiring the writer lock and recovering the canonical tail (truncation/corruption rules above), compute the canonical-tail cursor, **validate the runtime**, and choose:
+
+| Case                         | Condition                                                                                                                                                                                                                                                                    | Action                                                                                                                                                                                                                                            |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A — absent / unusable**    | `.aideon/runtime/` absent; SQLite integrity failure; unsupported runtime schema; workspace/partition identity mismatch; incomplete runtime migration; invalid replay-state row; unmigratable projection-version mismatch.                                                    | Discard/quarantine the runtime; **full replay** from logical segment `1`, offset `0`; rebuild all M0 foundation projections; restore the HLC watermark; publish readiness only on completion.                                                     |
+| **B — current (fast path)**  | _All of:_ runtime structural checks pass; runtime belongs to the manifest `(workspace_id, partition_id)`; required projection versions match; `ReplayHead` is a valid canonical prefix boundary; **`ReplayHead == CanonicalTail`**; no interrupted rebuild/migration marker. | **No replay**; restore/verify the HLC watermark; expose ready. This is "reopen does not rebuild unnecessarily" — equality alone is **not** sufficient; the structural and version checks must also pass.                                          |
+| **C — behind**               | `ReplayHead` is a valid **strict prefix** of `CanonicalTail` (e.g. a crash after canonical append but before the projection commit).                                                                                                                                         | **Incremental replay** of only `(ReplayHead, CanonicalTail]`, each batch idempotent, advancing the cursor transactionally; restore the HLC watermark from the **complete** canonical maximum; ready when the required projections reach the tail. |
+| **D — ahead / inconsistent** | Cursor beyond the tail; referenced segment absent; offset not a record boundary; `last_record_digest` mismatch; a skipped segment; runtime claims operations absent from canonical history; identity differs.                                                                | Do **not** repair backwards — discard the runtime and **full rebuild**. The commit protocol makes this impossible in normal operation, so its presence signals corruption, unsupported manual modification, or a defect.                          |
+
+### Cursor validation
+
+Before trusting `ReplayHead` for the fast path or as an incremental-replay start, the host: verifies sealed-segment checksums; validates the loose segment's framing through the cursor boundary; verifies `byte_offset` falls immediately after a complete LF-terminated operation record (never inside the checksum line or a partial tail); verifies `last_record_digest`; and verifies `applied_record_count` against the traversed prefix where required. Loose-segment validation from its start is bounded by the seal threshold; sealed segments are bounded by their checksum and the segment inventory.
+
+### HLC watermark on open
+
+Before write-enable, restore `restored_last_hlc = max(asserted_at)` over **all** valid canonical operations in the partition — **the complete canonical set, not only an incrementally-replayed tail** — then initialise the workspace clock and persist its derived watermark ([ADR-0022](../../06-adrs/ADR-0022-hlc-clock-model.md)). The behavioural assertion holds in every case: `newly_minted.asserted_at > max(canonical_history.asserted_at)`.
+
+The host-side lifecycle states, the readiness event, and the synchronous-vs-accepted-work threshold for open are specified in [workspace-lifecycle](../host/workspace-lifecycle.md).
+
+---
+
 ## Recovery from a torn or partial write
 
 A torn write is an interrupted commit — a crash between the first byte of a write and the durable, fsync'd completion of the commit. Because the op log is canonical and the commit path is an explicit state machine ([storage-trait-and-engine](./storage-trait-and-engine.md)), recovery is mechanical, not heuristic.
