@@ -53,6 +53,14 @@ FoundationProjectionSnapshot {
 
 The lifecycle is part of M0 even though it is not in the hash: a missing runtime is detected on open; rebuild runs as **accepted work**, not a blocking unbounded IPC call ([accepted-work-and-events](../../../04-contracts/accepted-work-and-events/README.md)); the workspace is not exposed as ready before the required foundation projections complete; progress and completion events are emitted; a rebuild failure leaves the canonical files untouched; and a second reopen uses the rebuilt runtime without an unnecessary re-rebuild.
 
+**HLC watermark restoration is one of those required projections.** Before the workspace is write-enabled, the writer restores the partition-scoped watermark to `max(asserted_at)` across all unique valid canonical operations in the partition (actor, schema, and fact ops alike), and seeds the in-memory clock from it ([ADR-0022](../../../06-adrs/ADR-0022-hlc-clock-model.md)). The mutable watermark is **not** a `foundation_rebuild_hash` input — it is deterministic from the applied-op set the snapshot already covers, and a wipe must discard any advancement minted for an op that failed before canonical append. Correctness is asserted **behaviourally**: immediately after reopening, a freshly minted op satisfies
+
+```text
+fresh_op.asserted_at > max(replayed_ops.asserted_at)
+```
+
+even when the local wall clock is behind the canonical maximum, the maximum HLC has counter `4095`, or an imported `asserted_at` is future-dated. The oracle's cases cover: normal rebuild then a strictly-later op; wall clock behind the canonical max; max HLC at counter `4095`; a future-dated imported assertion; an empty workspace (unset watermark, first op at `pack(physical_now, 0)`); duplicate replay records; an op that minted an HLC then failed before append (the advancement is discarded); two open workspaces with independent clocks; and checked overflow at the maximum representable `i64` (explicit clock-exhaustion error, never a wrap).
+
 ## The M0 hash
 
 ```text
