@@ -83,26 +83,34 @@ Each value type has its own typed fact table in the derived runtime (`aideon_pro
 
 ## Schema-as-data
 
-Mneme stores the [metamodel](../../../CONTEXT.md) as partition-scoped _data_, not as hard-coded enums. [Praxis](../praxis/README.md) authors the metamodel and submits a `MetamodelBatch`; Mneme persists and compiles it. This is what lets a workspace carry its own modelling language portably.
+Mneme stores the [metamodel](../../../CONTEXT.md) as partition-scoped _data_, not as hard-coded enums. [Praxis](../praxis/README.md) authors the metamodel and submits an `AuthoredMetamodelBatch`, which Mneme records as the canonical `UpsertMetamodelBatch` operation. **The operation carries authored, unflattened definitions and means exactly that in every milestone — it is never redefined as compiled output.** Mneme _persists_ it as canonical history at every milestone; the flattened `EffectiveSchema` is a **derived** projection compiled at **M1** (M0 has no compiler). This is what lets a workspace carry its own modelling language portably.
 
 ```rust
-pub struct MetamodelBatch {
+// The canonical operation payload — authored, unflattened definitions.
+pub struct AuthoredMetamodelBatch {
     pub types:             Vec<TypeDef>,
     pub fields:            Vec<FieldDef>,      // value_type, cardinality, merge_policy, is_indexed
     pub type_fields:       Vec<TypeFieldDef>,  // per-type field attachments + defaults
     pub edge_type_rules:   Vec<EdgeTypeRule>,  // endpoint constraints + semantic direction
+    pub policies:          Vec<PolicyDef>,     // policies active in this format version
     pub metamodel_version: Option<String>,
     pub metamodel_source:  Option<String>,
 }
 ```
 
-Single inheritance is tracked by `parent_type_id`; cycle detection runs in application code before a batch is accepted. The flattened **effective schema** — the resolved inheritance chain with merged defaults and tightened constraints — is compiled to `EffectiveSchema` and cached per type. The effective schema is derived: it is never authored directly and is rebuilt from the metamodel ([`CONTEXT.md`](../../../CONTEXT.md), [METAMODEL-PACKAGES](../../03-design/METAMODEL-PACKAGES.md)).
+The batch holds **only** authored source: it does **not** carry inherited fields copied into child types, resolved defaults, flattened endpoint rules, compiled validation programs, or per-type effective schemas — those are derived M1 outputs.
+
+**M0 vs M1 split.** At M0 Mneme performs **structural** validation of the operation and payload only — canonical-JSON and envelope shape; required fields and field types; UUID, identifier and version-string syntax; supported M0 value and operation kinds; package/batch identity; canonical serialisation; and same package/version identity with conflicting bytes — and **deterministically materialises the authored documents** to `model/schema/authored/` ([workspace-integrity-and-recovery](./workspace-integrity-and-recovery.md)). M0 does **not** validate inheritance cycles, undeclared parents, dangling type/field references, relationship-endpoint compatibility, cardinality semantics, merge-policy applicability, enum narrowing against existing data, or effective-schema compilation — all **M1**. A structurally well-formed but semantically invalid metamodel can therefore enter canonical history at M0; that is acceptable because M0 proves durable recording and replay, not meaning.
+
+**When an M1 open finds the latest authored metamodel fails compilation:** ordinary entity/relationship authoring is blocked and the workspace surfaces a schema-invalid/recovery state; the invalid authored operation stays canonical and inspectable; a restricted schema-repair path may append a corrected, later metamodel version; and **no effective schema is published from the invalid batch**. So a bad batch admitted at M0 is never left unrepairable except by hand-editing the op log, which the architecture must never require.
+
+Single inheritance is tracked by `parent_type_id`. **At M1** the compiler detects cycles and rejects the batch before any effective schema is published. The flattened **effective schema** — the resolved inheritance chain with merged defaults and tightened constraints — is compiled to `EffectiveSchema` and cached per type **(M1)**. The effective schema is derived: it is never authored directly and is rebuilt from the metamodel ([`CONTEXT.md`](../../../CONTEXT.md), [METAMODEL-PACKAGES](../../03-design/METAMODEL-PACKAGES.md)).
 
 The seed metamodel that worked examples across this corpus draw on is [`core-v1.json`](../../data/meta/core-v1.json): entity types `ValueStreamStage`, `Capability`, `BusinessProcess`, `Application`, `DataEntity`, `TechnologyComponent`, `PlanEvent`; relationship types `serves`, `realises`, `accesses`, `hosts`, `plan_effect`.
 
 ### A published schema package version is immutable
 
-A metamodel package version is published once and never edited in place. A change is a **new version**, not a mutation of the old one. This mirrors the fact rule above — facts are append-only and superseded, never overwritten — and applies it to schema-as-data: the `MetamodelBatch` Mneme persists for a given `metamodel_version` is fixed, and a later change appends a new `UpsertMetamodelBatch` operation carrying a higher version rather than rewriting the stored one.
+A metamodel package version is published once and never edited in place. A change is a **new version**, not a mutation of the old one. This mirrors the fact rule above — facts are append-only and superseded, never overwritten — and applies it to schema-as-data: the `AuthoredMetamodelBatch` Mneme persists (as the `UpsertMetamodelBatch` operation) for a given `metamodel_version` is fixed, and a later change appends a new `UpsertMetamodelBatch` operation carrying a higher version rather than rewriting the stored one.
 
 The immutability is what makes a past [viewpoint](../../../CONTEXT.md) resolvable against the schema that stood at that time. Because schema changes are themselves operations on the op log, "show the model as the schema stood last quarter" is answerable: the schema's own history is preserved like any other fact, and `aideon_metamodel_versions` records each applied version against the `op_id` that introduced it ([sqlite](./SQLITE.md)).
 

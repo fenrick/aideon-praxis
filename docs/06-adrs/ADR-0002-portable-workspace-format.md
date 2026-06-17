@@ -25,14 +25,16 @@ A workspace is a folder (conventionally `*.aideon/`) with this shape:
 
 ```text
 my-project.aideon/
-  manifest.json              # workspace_format_version, schema_version, ids, feature flags
+  manifest.json              # workspace_format_version, metamodel_package_version, ids, feature flags
 
   model/                     # CANONICAL
     ops/                     # append-only operation segments
       000001.ops.jsonl       # sealed segment
       current.ops.jsonl      # loose (open) segment
-    schema/                  # schema-as-data
-      types.json  fields.json  edge_rules.json  policies.json
+    schema/                  # schema-as-data (DERIVED projection of UpsertMetamodelBatch ops)
+      authored/              # authored, unflattened source documents (M0+)
+      effective/             # compiler-produced flattened schema (M1+; never overwrites authored/)
+      index.json
 
   objects/                   # CANONICAL — content-addressed blobs (see ADR-0003)
     sha256/ab/cd/abcdef...
@@ -52,13 +54,13 @@ Everything under `model/` and `objects/` is canonical. Everything under `.aideon
 Rules:
 
 - **Append-only, auditable, replayable.** New facts are new ops; nothing is mutated in place.
-- **Schema lives in the op stream** (`schema.upsert`) and in `model/schema/`, never buried in code enums. **The op stream is authoritative; `model/schema/` is a derived, reconstructible cache** of the compiled effective schema at the latest belief. On disagreement, `model/schema/` is recompiled from the op log — a hand-edited cache is never trusted over the operations that define the schema's history ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md), schema-authority rule).
+- **Schema lives in the op stream** (`schema.upsert` / `UpsertMetamodelBatch`, carrying **authored, unflattened** definitions) and is projected to `model/schema/`, never buried in code enums. **The op stream is authoritative; `model/schema/` is derived and reconstructible** — `authored/` (the authored source documents, present from M0) and, from M1, `effective/` (the compiler's flattened effective schema), never overwriting `authored/`. On disagreement the authored cache is **rebuilt** from the op log (and the effective cache **recompiled**, M1); a hand-edited cache is never trusted over the operations that define the schema's history ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md), authority rule).
 - **Canonical writes use temp-file-plus-rename**; op segments are sealed before export.
-- `manifest.json` carries `workspace_format_version` and `schema_version`; readers are forward-tolerant where sensible and reject formats newer than they understand with a clear error.
+- `manifest.json` carries `workspace_format_version` and `metamodel_package_version`; readers are forward-tolerant where sensible and reject formats newer than they understand with a clear error.
 
 ### `manifest.json` fields (format v1)
 
-The root descriptor. Required: `workspace_format_version` (integer), `schema_version` (integer), `workspace_id` (UUID string, minted once and never regenerated), `partition_id` (UUID string, a **separate** mint from `workspace_id` — the sole permitted data-isolation namespace for the twin; the manifest is **authoritative** for it, the op log for its history; every operation must carry exactly this partition and `aideon_partitions` is a derived projection initialised from it — see [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)), `created_at` (RFC 3339 UTC). Optional with defaults: `created_by_actor_id` (the logical [actor](../05-modules/mneme/identifier-generation-and-provenance.md) that created the workspace; never a device identifier), `hash_algorithm` (default `"sha256"`), `segment_seal_max_bytes` (default `8388608`), `segment_seal_max_age_secs` (default `86400`), `feature_flags` (object, default `{}`, safely ignorable), `required_features` (array, default `[]` — features the reader **must** support to open read-write; an unrecognised entry refuses read-write, the gate by which later milestones such as Themis access policy prevent an older build silently misinterpreting their workspaces). Unknown top-level keys are ignored, not rejected, so a newer minor format stays readable. The complete field table, the workspace/actor identifier formats, and the maximum supported versions (`MAX_WORKSPACE_FORMAT_VERSION = 1`, `MAX_SCHEMA_VERSION = 1` at the v1 baseline) are specified in [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md). `workspace_id` is canonical and travels with the workspace; `device_id` is host-local derived state, never recorded in the manifest or any canonical file.
+The root descriptor. Required: `workspace_format_version` (integer), `metamodel_package_version` (integer — the **authored** schema-as-data package version in force, not a compiled-schema version; M0 has no compiler), `workspace_id` (UUID string, minted once and never regenerated), `partition_id` (UUID string, a **separate** mint from `workspace_id` — the sole permitted data-isolation namespace for the twin; the manifest is **authoritative** for it, the op log for its history; every operation must carry exactly this partition and `aideon_partitions` is a derived projection initialised from it — see [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)), `created_at` (RFC 3339 UTC). Optional with defaults: `created_by_actor_id` (the logical [actor](../05-modules/mneme/identifier-generation-and-provenance.md) that created the workspace; never a device identifier), `hash_algorithm` (default `"sha256"`), `segment_seal_max_bytes` (default `8388608`), `segment_seal_max_age_secs` (default `86400`), `feature_flags` (object, default `{}`, safely ignorable), `required_features` (array, default `[]` — features the reader **must** support to open read-write; an unrecognised entry refuses read-write, the gate by which later milestones such as Themis access policy prevent an older build silently misinterpreting their workspaces). Unknown top-level keys are ignored, not rejected, so a newer minor format stays readable. The complete field table, the workspace/actor identifier formats, and the maximum supported versions (`MAX_WORKSPACE_FORMAT_VERSION = 1`, `MAX_METAMODEL_PACKAGE_VERSION = 1` at the v1 baseline) are specified in [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md). `workspace_id` is canonical and travels with the workspace; `device_id` is host-local derived state, never recorded in the manifest or any canonical file.
 
 ### Durability rules
 

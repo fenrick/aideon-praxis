@@ -15,7 +15,7 @@ The foundation hash proves the rebuild pipeline runs and is deterministic; the s
 
 ### 1. Canonical material survives untouched
 
-Before and after deleting `.aideon/runtime/`: the `manifest.json` canonical digest is unchanged; the ordered operation-segment set is unchanged and each sealed segment's checksum still validates; the canonical schema-document set (`model/schema/`) is unchanged by digest; every content-addressed object still matches its hash. This proves the wipe touched only derived state — not rebuild correctness by itself.
+Before and after deleting `.aideon/runtime/`: the `manifest.json` canonical digest is unchanged; the ordered operation-segment set is unchanged and each sealed segment's checksum still validates; the authored schema-document set (`model/schema/authored/`) is unchanged by digest; every content-addressed object still matches its hash. This proves the wipe touched only derived state — not rebuild correctness by itself.
 
 ### 2. Every canonical operation is replayed exactly once
 
@@ -37,11 +37,17 @@ FoundationProjectionSnapshot {
   partitions: [
     { partition_id, applied_ops: [ { op_id, canonical_record_digest } ], replay_head }
   ],
-  schema_documents: [ { path, canonical_digest } ],   // raw documents, NOT a compiled effective schema (that is M1)
+  schema_documents: [ { package_id, version, relative_path, canonical_digest } ],  // raw AUTHORED docs under model/schema/authored/, NOT a compiled effective schema (M1)
   actors:           [ { actor_id, declaration_digest } ],
   objects:          [ { sha256, byte_length } ]
 }
 ```
+
+**Digests in the snapshot** (all `blake3-256`, lower-case hex, per [Aideon Canonical JSON v1](../../../04-contracts/canonical-json.md)):
+
+- `applied_ops[].canonical_record_digest` — over `canonical_record_bytes` (the canonical JSON value **plus** its one trailing LF), the same bytes the segment checksum covers.
+- `schema_documents[].canonical_digest` — over `canonical_json_bytes(document)` (a whole-file authored JSON document, **no** trailing LF). M0 includes only authored documents; effective-schema digests, compiler output, and validation-result hashes enter **M1**'s oracle, never M0's.
+- `actors[].declaration_digest` — the `canonical_record_digest` of the actor's `actor-declare` operation.
 
 ### 4. Rebuild behaviour is operationally correct
 
