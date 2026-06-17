@@ -100,18 +100,17 @@ The renderer subscribes to events rather than polling. The MVP path uses the set
 
 ## Tracked follow-up — the workspace-event manifest gap
 
-The host workspace lifecycle ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md)) and the event-bus docs reference three events that are **absent from [`event-manifest.json`](../contracts/event-manifest.json)**:
+The host workspace lifecycle ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md)) and the event-bus docs reference events that are **not yet in [`event-manifest.json`](../contracts/event-manifest.json)**:
 
-- `workspace_opened` — emitted on step 1 (create/open) per [workspace-lifecycle](../05-modules/host/workspace-lifecycle.md) and [golden-journey](./golden-journey.md) step 1.
-- `workspace_closed` — emitted on step 8 (close) per the same.
+- `workspace.lifecycle.changed` — the **single typed lifecycle event** (`{ workspace_id, state, job_id?, error_code?, canonical_tail, replay_head?, mode }`) announcing transitions (`opening`/`validating`/`replaying`/`rebuilding`/`ready_read_write`/`ready_read_only`/`recovery_read_only`/`failed`/`closed`). It **supersedes** the prose-only `workspace_opened`/`workspace_closed`, decided in the M0 spec grill ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md) §Lifecycle state).
 - `job.updated` — referenced by the event-bus/lifecycle docs as the accepted-work progress signal.
 
-This registry **records the gap; it does not resolve it.** The manifest is the single source of truth for the event surface ([contract precedence](./README.md#contract-precedence)) and is generated from Rust (`cargo run -p aideon_xtask -- ipc-manifest`); these events are either not yet defined as Rust event structs or are intentionally modelled differently:
+The manifest is the single source of truth for the event surface ([contract precedence](./README.md#contract-precedence)) and is generated from Rust (`cargo run -p aideon_xtask -- ipc-manifest`); the **shape** is now decided, and **generating it into the manifest is the remaining build follow-up**:
 
-- `job.updated` is plausibly **superseded** by the typed `RunEvent` model on the run-progress channel ([event-model](../04-contracts/accepted-work-and-events/event-model.md)), which is richer (per-step, deduplicated, ordered). If so, the lifecycle/event-bus prose should drop `job.updated` in favour of `RunEvent`, and the disagreement is a documentation defect to fix, not a manifest addition.
-- `workspace_opened` / `workspace_closed` have no `RunEvent` equivalent and would need defining as Rust event structs and regenerating the manifest if the renderer is to react to them as events (rather than inferring lifecycle from a synchronous open/close call returning).
+- `job.updated` is **superseded** by the typed `RunEvent` model on the run-progress channel ([event-model](../04-contracts/accepted-work-and-events/event-model.md)), which is richer (per-step, deduplicated, ordered); the lifecycle/event-bus prose drops `job.updated` in favour of `RunEvent`.
+- `workspace.lifecycle.changed` is defined as **one** typed Rust event struct and generated into the manifest; readiness and write-enable are driven by its terminal `ready_read_write` state, with retained host state retrievable via `workspace.status` so a renderer that missed the event reconciles without polling.
 
-**Action (do not perform here):** open a tracked item to reconcile the workspace-lifecycle/event-bus prose with `event-manifest.json` — either add the two workspace events to the generated manifest, or amend the prose to match the manifest and the `RunEvent` model. Until then, the MVP treats workspace open/close as **host lifecycle that the renderer learns about synchronously** (the open/close call returns), not as manifest events, and uses `RunEvent` for job progress. This matches what the manifest actually guarantees today and keeps the registry honest ([ADR-0037](../06-adrs/ADR-0037-contract-precedence-and-source-of-truth.md): the generated contract is authoritative for the surface).
+**Follow-up (do not perform here):** define the `workspace.lifecycle.changed` Rust event struct and regenerate `event-manifest.json`. Until that lands, the renderer learns readiness from the synchronous open/close return plus `workspace.status`, and uses `RunEvent` for job progress — honest about what the manifest guarantees today ([ADR-0037](../06-adrs/ADR-0037-contract-precedence-and-source-of-truth.md): the generated contract is authoritative for the surface).
 
 ---
 

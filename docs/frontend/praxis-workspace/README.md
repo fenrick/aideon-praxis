@@ -19,7 +19,7 @@ This README is the contract; [DESIGN.md](./DESIGN.md) carries the component, sta
 
 ## State ownership
 
-The platform owns the single shared state provider, `HostPlatformProvider` / `useHostPlatform()` ([state-architecture.md](../state-architecture.md)); the engine's widgets consume it rather than owning their own provider. Server-state (graph slices, artefact results) is a viewpoint-keyed cache ([data-fetching.md](../data-fetching.md)); selection, time cursor, filters, and active template flow through the platform state; canvas layout snapshots are persisted through host commands keyed by viewpoint.
+The platform owns the single shared state provider, `HostPlatformProvider` / `useHostPlatform()` ([state-architecture.md](../state-architecture.md)); the engine's widgets consume it rather than owning their own provider. Server-state (graph slices, artefact results) is a viewpoint-keyed cache ([data-fetching.md](../data-fetching.md)); selection, time cursor, filters, and active template flow through the platform state; canvas layout snapshots are persisted through host commands keyed by `surface_id + surface_instance/destination + layout_preset` — **not** the viewpoint (a scenario/time switch changes the data, never the arrangement; see [DESIGN.md](./DESIGN.md)).
 
 ## Boundaries
 

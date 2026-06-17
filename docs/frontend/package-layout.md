@@ -42,7 +42,7 @@ An engine package does **not** own: the shell or its regions (the platform owns 
 
 - **The engine registry** (`engines.ts`, `ENGINES`) and the **widget catalogue** (`widget-catalog.ts`, `useWidgetCatalog`) that flattens the licensed engines' widgets and routes rendering.
 - **Licensing** (`licensing.tsx`, `useLicensing`) — the gate that decides which engines appear.
-- **The host-platform state provider** (`host-platform-provider.tsx`, `useHostPlatform`) — projects, scenarios, layout presets, selection, temporal cursor, canvas layout, inspector patch, owned once for the whole shell ([state-architecture.md](./state-architecture.md)).
+- **The host-platform state provider** (`host-platform-provider.tsx`, `useHostPlatform`) — the active surface, Workspace structure (scenarios, saved structures, artefacts, review work), layout presets, selection, temporal cursor, surface composition/layout, inspector patch, owned once for the whole shell ([state-architecture.md](./state-architecture.md)).
 - **The four region components** the shell renders: `PlatformNavigation`, `PlatformToolbar`, `PlatformContent`, `PlatformInspector` (`platform-navigation.tsx`, `platform-surfaces.tsx`).
 
 ## The seed packages

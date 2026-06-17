@@ -10,13 +10,13 @@ Praxis Adapters defines the TypeScript interfaces for the renderer/host boundary
 
 ## The interfaces
 
-| Interface             | Responsibility                                                                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GraphAdapter`        | Read the effective graph at a viewpoint — time-sliced node/edge slices, bounded ([data-fetching.md](../data-fetching.md)).                        |
-| `MutableGraphAdapter` | The mutating extension: apply operations as commands, with an idempotency key and optimistic UI.                                                  |
-| `MetaModelProvider`   | Surface the metamodel/effective schema so the inspector builds edit forms dynamically rather than hard-coding fields.                             |
-| `StorageAdapter`      | Persist and load snapshot/layout geometry through host-managed commands, keyed by viewpoint ([praxis-workspace](../praxis-workspace/DESIGN.md)).  |
-| `WorkerClient`        | Dispatch analytics and temporal jobs and observe their lifecycle ([ACCEPTED-WORK-AND-EVENTS.md](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)). |
+| Interface             | Responsibility                                                                                                                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GraphAdapter`        | Read the effective graph at a viewpoint — time-sliced node/edge slices, bounded ([data-fetching.md](../data-fetching.md)).                                                                                                           |
+| `MutableGraphAdapter` | The mutating extension: apply operations as commands, with an idempotency key and optimistic UI.                                                                                                                                     |
+| `MetaModelProvider`   | Surface the metamodel/effective schema so the inspector builds edit forms dynamically rather than hard-coding fields.                                                                                                                |
+| `StorageAdapter`      | Persist and load snapshot/layout geometry through host-managed commands. Layout is keyed by `surface_id + surface_instance/destination + layout_preset` — **not** the viewpoint ([praxis-workspace](../praxis-workspace/DESIGN.md)). |
+| `WorkerClient`        | Dispatch analytics and temporal jobs and observe their lifecycle ([ACCEPTED-WORK-AND-EVENTS.md](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md)).                                                                                    |
 
 Each method takes a `Viewpoint` where the read or write is viewpoint-scoped ([state-architecture.md](../state-architecture.md)); the viewpoint is a typed value, not an ambient global.
 

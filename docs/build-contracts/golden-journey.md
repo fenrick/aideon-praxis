@@ -16,7 +16,7 @@ All steps run against the seed metamodel [`core-v1.json`](../data/meta/core-v1.j
 
 - **Mechanism:** host workspace lifecycle, not a renderer command — the host resolves a storage root inside the trust boundary, acquires the single-writer lock, and validates the schema version ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md)).
 - **Canonical files:** a new workspace folder — `manifest.json`, empty `model/ops/`, seed `model/schema/`, empty `objects/sha256/` ([ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md), [canonical-vs-derived](../01-architecture/boundary/canonical-vs-derived.md)).
-- **Events:** `workspace_opened` _(gap: not in [event-manifest.json](../contracts/event-manifest.json) yet — registry follow-up, Increment 4)_.
+- **Events:** `workspace.lifecycle.changed` → `ready_read_write` (the single typed lifecycle event, superseding `workspace_opened`; [workspace-lifecycle](../05-modules/host/workspace-lifecycle.md)) _(gap: not generated into [event-manifest.json](../contracts/event-manifest.json) yet — build follow-up)_.
 - **Errors:** `WORKSPACE_NOT_FOUND`, `WORKSPACE_LOCKED`, `SCHEMA_TOO_NEW` in the standard envelope ([ADR-0016](../06-adrs/ADR-0016-error-envelope-rfc9457.md)); none leaks a raw path.
 - **Oracle:** the freshly created folder matches the format fixture _(oracle: planned — workspace format v1, Increment 2)_.
 
@@ -57,7 +57,7 @@ All steps run against the seed metamodel [`core-v1.json`](../data/meta/core-v1.j
 
 ### 8. Close and reopen the workspace
 
-- **Mechanism:** host lifecycle — close drains in-flight jobs and flushes engine state (`workspace_closed`); reopen repeats step 1's validate path.
+- **Mechanism:** host lifecycle — close drains in-flight jobs and flushes engine state (`workspace.lifecycle.changed` → `closed`); reopen repeats step 1's validate path (and the open-time rebuild decision via the replay frontier, [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)).
 - **Oracle:** after reopen, step 5 resolves the same values and step 7 returns the same catalogue result (continuity across a session boundary).
 
 ### 9. Delete `.aideon/runtime/`
