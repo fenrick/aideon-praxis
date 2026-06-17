@@ -31,6 +31,8 @@ Workspace close
 
 Opening resolves the storage root inside the boundary, acquires a lock (so two processes cannot write the same workspace), validates the schema version, and runs a migration job if the on-disk version is behind — migration **blocks** workspace use until it completes, because operating against a half-migrated schema would corrupt meaning. Closing cancels subscriptions, drains in-flight jobs, flushes engine state, and emits the close event ([event bus](./event-bus.md)). Engine wiring rides on the same hooks ([engine wiring](./engine-wiring.md)).
 
+The host **owns** these semantics and all OS access, but a UI-initiated lifecycle action still crosses the boundary as a **typed IPC command** — the renderer never touches the filesystem directly. The lifecycle command surface (create, open, close, reopen-read-only, request local-copy recovery, workspace status, request rebuild) is therefore part of the IPC contract, granted only to the workspace-bearing window ([capabilities-and-csp](./capabilities-and-csp.md), [mvp-command-registry](../../build-contracts/mvp-command-registry.md)); "the host owns lifecycle" means it owns the _semantics_, not that lifecycle is invisible to the renderer.
+
 ---
 
 ## Recovery mode

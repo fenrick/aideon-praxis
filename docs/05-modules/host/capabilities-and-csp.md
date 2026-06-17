@@ -22,6 +22,24 @@ Every IPC command **must** appear in `appcommands.toml`; a command absent from t
 
 The renderer gets **product** capabilities — narrow named commands — not **host** capabilities; there is no raw recursive filesystem access, shell execution, or plugin power unless a narrow case justifies it ([ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)). Per-window scoping is the primary control against a window claiming a capability it lacks (the STRIDE _Spoofing_ and _Elevation of privilege_ categories — [ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)).
 
+### Per-window command scoping
+
+Mutating and accepted-work commands are granted **only to the workspace-bearing window** (`main`); read surfaces are granted by least-privilege per window, not blanket-granted, because even reads can expose workspace paths, actor details, model content, or diagnostics. A child window opened from `main` does **not** inherit `main`'s grants — it receives its own explicit capability label.
+
+| Window                | Permitted command surface                                                          |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| `main` (workspace)    | Workspace reads, supported writes, accepted jobs, rebuild controls                 |
+| `splash`              | Minimal readiness / start-up status only                                           |
+| `about`               | Static application/version information                                             |
+| `status`              | Job-status reads and event subscription only — not job start/cancel unless granted |
+| `styleguide`          | No host model commands                                                             |
+| recovery (if present) | Explicit recovery commands only (and the high-privilege import/`ingest_ops` path)  |
+
+Two M0 consequences of this model:
+
+- **Deferred-feature commands are omitted from every M0 bundle.** `create_scenario`/`delete_scenario` (scenarios → M2) and `or_set_update`/`counter_update` (CRDT → M6) are not in any window's `appcommands` set, so an attempt is a capability denial **before** the Rust handler — distinct from `UNSUPPORTED_FEATURE`, which is for an authorised command a workspace/engine version cannot satisfy ([mvp-command-registry](../../build-contracts/mvp-command-registry.md)).
+- **`ingest_ops` is not an ordinary authoring grant.** Because it admits already-minted canonical envelopes verbatim (identity, asserted time, provenance), it sits behind a separate high-privilege capability for an internal/recovery/import path only — never `main`'s general authoring components ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). Ordinary authoring constructs intents the host validates into _new_ operations.
+
 ---
 
 ## Content security policy
