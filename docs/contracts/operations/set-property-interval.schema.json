@@ -96,7 +96,11 @@
       "properties": {
         "algorithm": { "type": "string", "const": "sha256" },
         "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-        "length": { "type": "integer", "minimum": 0 },
+        "length": {
+          "type": "string",
+          "pattern": "^[0-9]+$",
+          "description": "Byte length as a constrained decimal string (full-range u64, per the canonical-JSON profile)."
+        },
         "media_type": { "type": ["string", "null"] }
       }
     },

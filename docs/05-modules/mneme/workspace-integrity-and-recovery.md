@@ -28,6 +28,7 @@ Rules a reader follows:
 - **`required_features` is the must-support gate** — distinct from the ignorable `feature_flags`. A workspace that lists a feature the build does not implement (for example a Themis access-policy version, or causal-dependency handling) is **refused read-write** with a clear "requires unsupported feature" diagnostic; forensic read-only inspection of raw canonical material is permitted, but the reader must not build a model that _appears_ to honour semantics it cannot enforce. This is the single seam by which later milestones (governance, sync) prevent an M0-era build from silently misinterpreting their workspaces.
 - **`workspace_id` is never regenerated.** Re-deriving it on copy would break partition identity and idempotent re-import; it is minted once and carried verbatim.
 - **The manifest is written first and updated through the same temp-file-plus-rename discipline** as every other canonical file (below), so a torn manifest write never half-replaces the descriptor.
+- **`manifest.json` is a whole-file canonical document** — `canonical_json_document` under [Aideon Canonical JSON v1](../../04-contracts/canonical-json.md): sorted keys, no insignificant whitespace, **no trailing newline, no BOM**. The same whole-file rule governs `model/schema/authored/**/*.json` and the schema `index.json`, so every digest that participates in the foundation-rebuild oracle is reproducible. (Op and segment-checksum records, by contrast, are JSONL — canonical value **plus one** trailing LF.)
 
 ### Workspace and device identifier formats
 
@@ -118,12 +119,13 @@ Operations are appended to the loose segment `current.ops.jsonl`. Sealing turns 
 - **A sealed segment is immutable.** It is never appended to or rewritten — only superseded by the next loose segment. This is what lets an open trust every sealed segment without re-validating the whole log: only the trailing loose segment can be incomplete after a crash.
 - **Append safety.** Each operation is written as one complete record (JSONL initially) and the loose segment is fsync'd as part of the commit state machine ([storage-trait-and-engine](./storage-trait-and-engine.md)). A crash mid-append can leave a partial trailing record, but never a partial _sealed_ segment and never a corrupted earlier record. Record framing lets the reader find the boundary of the last complete record.
 
-The same temp-file-plus-rename discipline applies to blobs: bytes are written to a temporary file, fsync'd, then renamed to the final `objects/sha256/<hash>` path, so a crash before the rename leaves a stray temp file (collected later), never a partial object at a valid address ([content-addressed-blobs](./content-addressed-blobs.md)).
+The same temp-file-plus-rename discipline applies to blobs, but the temporary file lives in **host-local staging** — `.aideon/runtime/staging/blobs/<random>.part` — **never** under `objects/sha256/`, so that root holds only valid hash-addressed objects. Bytes stream into the `.part` file (hashing as they go), are fsync'd, then atomically renamed to the final `objects/sha256/<aa>/<bb>/<digest>` path (staging and object store must share a filesystem, or ingestion fails rather than copy-and-delete). A crash before the rename leaves a stray `.part` file in staging (collected later; never exported, synced, or referenced), never a partial object at a valid address ([content-addressed-blobs](./content-addressed-blobs.md)).
 
 ### Segment ordering and sealing thresholds
 
 - **Ordering within a segment is append order**, which is HLC-monotonic _for a single writer_: each appended record carries an `asserted_at` HLC strictly greater than the previous record's, because the single writer mints a contiguous run of HLCs ([bitemporal-and-hlc](./bitemporal-and-hlc.md)). A reader therefore never has to sort a segment; it reads top-to-bottom. This append-order-equals-HLC-order property is an **M0 single-writer convenience, not a permanent format invariant**: once sync arrives ([ADR-0034](../../06-adrs/ADR-0034-merge-correctness-and-convergence.md)) a peer may append an _older_ remote operation after newer local ones — its `asserted_at` is retained verbatim and sealed history is **never** rewritten to preserve physical sort order. Canonical order is always physical append order; the deterministic _semantic_ order is `(asserted_at, op_id)`, applied by the resolver, not by re-sorting the log. M0-authored operations carry empty `deps`, so M0 rebuild needs no topological sort ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)).
-- **Ordering across segments is the monotonic file name.** Sealed segments are named `000001.ops.jsonl`, `000002.ops.jsonl`, … in zero-padded ascending order; the loose segment is always `current.ops.jsonl`. The replay order is: every sealed segment in ascending numeric order, then the loose segment. No segment's records interleave with another's.
+- **Ordering across segments is the monotonic file name.** Sealed segments are named with a **fixed six-digit** zero-padded sequence: `000001.ops.jsonl`, `000002.ops.jsonl`, …; the loose segment is always `current.ops.jsonl` (exact case). Numbering begins at `000001`; `000000.ops.jsonl` is reserved and invalid; the next sealed number is the prior maximum plus one; a gap in the sequence is invalid unless a later recovery format explicitly records it; a filename of another width or case is invalid under format v1. The replay order is: every sealed segment in ascending numeric order, then the loose segment. No segment's records interleave with another's.
+- **The six-digit range is a format-v1 limit, not a compaction trigger.** Reaching `999999.ops.jsonl` prevents further sealing under workspace format v1. Continuing requires a later workspace-format version with a larger sequence namespace, **or** an explicitly governed compaction mechanism where retention policy permits it (canonical compaction may be prohibited by retention requirements and is itself deferred). Silent rollover or filename-width expansion is **forbidden**. (The seal thresholds make per-segment size variable — age-triggered and explicit-checkpoint seals may be far smaller than the 8 MiB size threshold — so the range is not a fixed byte capacity.)
 - **Sealing fires** when the loose segment first satisfies any of: it reaches `segment_seal_max_bytes` (default 8 MiB), its oldest record is older than `segment_seal_max_age_secs` (default 24 h), or an explicit checkpoint or export is requested. These thresholds are provisional configuration recorded in `manifest.json`; the invariant is that a sealed segment is immutable and only the loose tail can be incomplete.
 
 ### The atomic-write / fsync sequence
@@ -158,13 +160,37 @@ The hash family is versioned by directory (`objects/sha256/`), so a second algor
 
 ### Checksum algorithm and coverage, precisely
 
-| Surface               | Algorithm | What the digest covers                                                                                                                                               | Where stored                               |
-| --------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| **Blob object**       | SHA-256   | The object's raw bytes, in full. The hex digest _is_ the path under `objects/sha256/<aa>/<bb>/<full-hash>`, so the address is the checksum.                          | The path itself; no separate digest store. |
-| **Sealed op segment** | BLAKE3    | The concatenation of every complete JSONL record in the segment, in file order, including the line terminator of each record but excluding the checksum line itself. | A trailing checksum line appended on seal. |
-| **Export package**    | BLAKE3    | All `op` records in the package (not the header or footer), in order ([export-import-replay](./export-import-replay.md)).                                            | The package footer record.                 |
+| Surface               | Algorithm    | What the digest covers                                                                                                                                                                                                                                                          | Where stored                                    |
+| --------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Surface               | Algorithm    | What the digest covers                                                                                                                                                                                                                                                          | Where stored                                    |
+| --------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------   |
+| **Blob object**       | SHA-256      | The object's raw bytes, in full. The full **64-character lower-case hex** digest _is_ the path under `objects/sha256/<aa>/<bb>/<digest>` (`<aa>` = digest chars 1–2, `<bb>` = chars 3–4, then the full 64-char digest). Upper-case, shortened, or unsharded paths are invalid.  | The path itself; no separate digest store.      |
+| **Sealed op segment** | BLAKE3-256   | The concatenation of every complete JSONL record in the segment, in file order, including each record's line terminator, but excluding the checksum record itself.                                                                                                              | A trailing **segment-checksum record** on seal. |
+| **Export package**    | BLAKE3-256   | All `op` records in the package (not the header or footer), in order ([export-import-replay](./export-import-replay.md)).                                                                                                                                                       | The package footer record.                      |
 
-The trailing checksum on a sealed segment is written as the final line, after the last op record, so the covered region is unambiguous: everything above the checksum line. Re-checksumming on open recomputes BLAKE3 over those bytes and compares; the loose segment carries no trailing checksum (it is still growing) and is validated by record framing instead.
+#### The sealed-segment checksum record
+
+The final line of a sealed segment is a canonical-JSON record (`canonical_jsonl_record` — canonical value + one LF) with a reserved discriminator, so it can never be mistaken for an operation:
+
+```json
+{
+  "algorithm": "blake3-256",
+  "bytes": 84291,
+  "digest": "0123…(64 lower-case hex)…cdef",
+  "record_type": "segment-checksum",
+  "records": 417
+}
+```
+
+(Shown in canonical UTF-8 key order.) The fields, pinned for format v1:
+
+- `record_type` — exactly `"segment-checksum"`;
+- `algorithm` — exactly `"blake3-256"`;
+- `digest` — exactly 64 lower-case hex characters;
+- `records` — the number of operation records covered (a bounded JSON **integer**, not a decimal string — segment limits keep it small);
+- `bytes` — the exact byte length of the covered region, **equal to the byte offset at which the checksum record begins**, giving the verifier an independent framing check alongside the digest (also a bounded integer).
+
+The covered region is every complete op record above it, each including its terminating LF; the checksum record and its own LF are excluded. The record occurs **exactly once**, is the **final** complete line, has **no bytes after its LF**, is **not** an operation (excluded from operation count, replay, and HLC calculations), and is **invalid in `current.ops.jsonl`** (the loose segment is still growing, carries no checksum, and is validated by record framing instead). Re-checksumming on open recomputes BLAKE3-256 over the covered bytes and compares.
 
 ### Truncated final JSONL record
 
@@ -197,6 +223,23 @@ A build declares the highest versions it understands, and the open path enforces
 
 Both bounds are forward-only: an older workspace is migrated up on open (a one-way migration), never down ([ADR-0017](../../06-adrs/ADR-0017-contract-and-dto-versioning.md)).
 
+### Format-v1 constants (consolidated)
+
+| Surface                 | Fixed rule                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Operation record        | Canonical JSON + one LF (`canonical_jsonl_record`)                                                            |
+| Segment-checksum record | Canonical JSON + one LF; `record_type: "segment-checksum"`, `algorithm: "blake3-256"`                         |
+| Whole JSON document     | Canonical JSON, **no** trailing LF, no BOM (`manifest.json`, `model/schema/authored/**/*.json`, `index.json`) |
+| Segment digest          | BLAKE3-256, 64 lower-case hex                                                                                 |
+| Blob digest             | SHA-256, 64 lower-case hex                                                                                    |
+| Blob path               | `objects/sha256/<aa>/<bb>/<digest>` (`<aa>`=chars 1–2, `<bb>`=chars 3–4, full 64)                             |
+| Sealed segment          | Six-digit sequence, starting `000001`; loose is `current.ops.jsonl`                                           |
+| Blob staging            | `.aideon/runtime/staging/blobs/<random>.part` (32 hex chars; never under `objects/`)                          |
+| `BlobRef.length`        | Decimal string (full-range `u64`)                                                                             |
+| Missing `media_type`    | Present as `"media_type": null`                                                                               |
+
+The byte forms (`canonical_json_bytes` / `canonical_jsonl_record` / `canonical_json_document`) are defined in [Aideon Canonical JSON v1](../../04-contracts/canonical-json.md).
+
 ---
 
 ## Orphaned-blob garbage collection
@@ -219,12 +262,12 @@ Two properties make GC safe against concurrent readers:
 
 A torn write is an interrupted commit — a crash between the first byte of a write and the durable, fsync'd completion of the commit. Because the op log is canonical and the commit path is an explicit state machine ([storage-trait-and-engine](./storage-trait-and-engine.md)), recovery is mechanical, not heuristic.
 
-| Interruption point                              | What is on disk afterwards                                                    | Recovery on next open                                                                                                                                     |
-| ----------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Mid-append to the loose segment**             | A partial trailing record in `current.ops.jsonl`; all earlier records whole.  | Read the loose segment up to the last complete record; report the truncated tail. The partial record is not yet an operation, so no fact derives from it. |
-| **After append, before derived-runtime commit** | The operation is durable in the loose segment; the derived runtime is behind. | The runtime is derived: rebuild it from the op log; the operation is replayed and its facts re-derive.                                                    |
-| **Mid blob temp-file write (before rename)**    | A stray temp file; no object at the target hash address.                      | The stray temp file is collected; no partial object ever appears at a valid address ([content-addressed-blobs](./content-addressed-blobs.md)).            |
-| **Mid-seal (before rename)**                    | The loose segment is intact; the sealed name does not yet exist.              | The loose segment is still authoritative; sealing re-runs. Rename is the atomic commit point of a seal.                                                   |
+| Interruption point                              | What is on disk afterwards                                                                      | Recovery on next open                                                                                                                                     |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mid-append to the loose segment**             | A partial trailing record in `current.ops.jsonl`; all earlier records whole.                    | Read the loose segment up to the last complete record; report the truncated tail. The partial record is not yet an operation, so no fact derives from it. |
+| **After append, before derived-runtime commit** | The operation is durable in the loose segment; the derived runtime is behind.                   | The runtime is derived: rebuild it from the op log; the operation is replayed and its facts re-derive.                                                    |
+| **Mid blob temp-file write (before rename)**    | A stray `.part` file in `.aideon/runtime/staging/blobs/`; no object at the target hash address. | The stray staging file is collected; no partial object ever appears at a valid address ([content-addressed-blobs](./content-addressed-blobs.md)).         |
+| **Mid-seal (before rename)**                    | The loose segment is intact; the sealed name does not yet exist.                                | The loose segment is still authoritative; sealing re-runs. Rename is the atomic commit point of a seal.                                                   |
 
 The unifying rule: **a crash leaves the workspace at the last whole operation, never half-applied.** The loose segment's last complete record is the recovery point; everything after it is discarded as never-committed, and the derived runtime is rebuilt to match ([derived-runtime-and-projections](./derived-runtime-and-projections.md)). Recovery re-ingests canonical operation envelopes through the replay path, which recognises an operation by its permanent `(partition_id, op_id)` — not by the run-ledger idempotency key, which the runtime wipe may have destroyed ([export-import-replay](./export-import-replay.md)). Replay re-applies only the missing tail, never duplicating operations that already landed.
 

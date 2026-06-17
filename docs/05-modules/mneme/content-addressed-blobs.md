@@ -12,14 +12,14 @@ A large binary value — an imported document, an attachment, a rendered preview
 {
   "blob": {
     "algorithm": "sha256",
-    "digest": "12ab…",
-    "length": 482193,
+    "digest": "12ab34cd…(full 64 lower-case hex)…",
+    "length": "482193",
     "media_type": "application/pdf"
   }
 }
 ```
 
-`algorithm`, `digest`, and `length` are required (`algorithm` is explicit so identity is not derived from the `objects/sha256/` folder convention — the hash family is versioned); `media_type` (and an optional authored label) are descriptive. A `BlobRef` is **not** a `Value::Ref` (that is an entity/model reference) and **not** a bare `Value::Str` carrying a hash — both ambiguities are retired. Raw bytes never appear in the persistable `Value` enum: a `Value::Blob(Vec<u8>)` inline variant must not exist, so binary cannot accidentally cross the canonical boundary; raw bytes live only on the host-side ingestion path (a `BlobBytes` / file-or-stream input) and are converted to a `BlobRef` before canonical serialisation.
+`algorithm`, `digest`, `length`, and `media_type` are all **present** in the canonical form — `media_type` is **required-but-nullable** (`"media_type": null` when absent), so a blob value has one canonical byte form rather than two omission-equivalent encodings. `algorithm` is explicit (so identity is not derived from the `objects/sha256/` folder convention — the hash family is versioned); `digest` is the full 64-character lower-case hex SHA-256; **`length` is a full-range `u64` and is therefore a decimal string** (`"482193"`), like every other full-range coordinate in the [canonical-JSON profile](../../04-contracts/canonical-json.md). `media_type` (and an optional authored label) are descriptive, never trusted over the object's own bytes. A `BlobRef` is **not** a `Value::Ref` (that is an entity/model reference) and **not** a bare `Value::Str` carrying a hash — both ambiguities are retired. Raw bytes never appear in the persistable `Value` enum: a `Value::Blob(Vec<u8>)` inline variant must not exist, so binary cannot accidentally cross the canonical boundary; raw bytes live only on the host-side ingestion path (a `BlobBytes` / file-or-stream input) and are converted to a `BlobRef` before canonical serialisation.
 
 This is content-addressable storage, the model behind Git's object store and IPFS _(Merkle, 1987; Git internals; IPFS)_: the address of an object **is** the hash of its bytes. The blob bytes under `objects/sha256/` are canonical material — they cannot be reconstructed from the op log, so they are part of the truth, not the derived runtime.
 
@@ -40,7 +40,17 @@ This is content-addressable storage, the model behind Git's object store and IPF
 
 On read the host **re-hashes the bytes and verifies the byte length** against the `BlobRef` before serving; `media_type` is treated as _declared_ metadata, never trusted over the object itself (the digest and length identify the bytes, the rest is descriptive). A blob whose bytes do not hash to its address is **quarantined** rather than served — the corruption is surfaced, not silently returned ([failure-modes](./failure-modes.md), [canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)). Because the blob store is canonical, a corrupt or missing blob is genuine loss for that object: the affected result shows `Failed`/partial coverage and the referencing operation **remains valid canonical history** — it is never silently dropped, and read-write open may be restricted by the integrity policy.
 
-**The object is committed before the operation that references it.** The durable sequence (extending the [canonical write path](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)): stream the bytes to a temp file inside the object store, hashing as it streams; `fsync`; atomically `rename` to the final hash path; `fsync` the directory where the platform needs it; construct the `BlobRef`; **then** append-and-commit the canonical operation carrying it; then apply to SQLite. A committed operation therefore never points to bytes that were not already durably committed. Crash outcomes follow cleanly: a crash _before_ the rename leaves a stray temp file (cleaned, never a partial object at a valid address); _after_ the rename but before the op append leaves an **unreferenced valid object** — a safe orphan candidate, not corruption; _after_ the op append leaves both components present, so rebuild projects normally. If the final hash path already exists, the writer verifies length and hash and reuses it (identical bytes deduplicate by hash) or quarantines a mismatch.
+**The object is committed before the operation that references it.** Temporary bytes are **never** written under `objects/sha256/` — that root holds only valid, immutable, hash-addressed objects and their shard directories, so package export, sync, GC, and integrity scans can assume every file below it has a hash-derived address. Staging is **host-local derived state** at `.aideon/runtime/staging/blobs/<random>.part` (a `.part` file named from 128 random bits as 32 lower-case hex chars — random because the digest is not known until the stream completes). The durable sequence (extending the [canonical write path](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)):
+
+1. create the staging file with **exclusive-create** semantics (guards against collision and symlink substitution);
+2. stream the bytes in, computing SHA-256 and length as it streams;
+3. `fsync` the staging file;
+4. create the final `objects/sha256/<aa>/<bb>/` shard directories if absent;
+5. **atomically `rename`** the staging file to the final hash path — staging and object store **must be on the same filesystem**; if an atomic rename cannot be guaranteed, blob ingestion **fails** rather than falling back to copy-and-delete;
+6. `fsync` the destination shard directory (and the staging directory after the name is removed, where the platform needs it);
+7. construct the `BlobRef`; **then** append-and-commit the canonical operation carrying it; then apply to SQLite.
+
+A committed operation therefore never points to bytes that were not already durably committed. Crash outcomes follow cleanly: a crash _before_ the rename leaves a stray `.part` file under `.aideon/runtime/staging/blobs/` (deleted on recovery, never exported, synced, or referenced from an operation — and never a partial object at a valid address); _after_ the rename but before the op append leaves an **unreferenced valid object** — a safe orphan candidate, not corruption; _after_ the op append leaves both components present, so rebuild projects normally. If the final hash path already exists, the writer verifies length and hash and reuses it (identical bytes deduplicate by hash) or quarantines a mismatch.
 
 ---
 

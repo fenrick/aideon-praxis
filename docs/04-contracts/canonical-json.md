@@ -40,7 +40,7 @@ A canonical document is:
 
 Rust may expose an `i64` internally; the canonical representation of full-range coordinates is the decimal **string**. This corrects the earlier `i64`-number convention noted in [hlc-encoding](./temporal-and-scenario/hlc-encoding.md) — M0 is where the convention becomes real. RFC 8785 itself recommends representing values that exceed reliable IEEE-754 integer precision as strings, so this divergence is consistent with the standard's own guidance even though it is not part of JCS's number rules.
 
-**No inline binary, ever.** A binary value is a typed content-addressed reference — `{ "blob": { "algorithm": "sha256", "digest": "<hex>", "length": <bytes>, "media_type": "…" } }` — never Base64 or inline bytes, regardless of size; the bytes live in `objects/sha256/` ([content-addressed-blobs](../05-modules/mneme/content-addressed-blobs.md), [ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)).
+**No inline binary, ever.** A binary value is a typed content-addressed reference — `{ "blob": { "algorithm": "sha256", "digest": "<64-hex>", "length": "<decimal-string>", "media_type": null } }` — never Base64 or inline bytes, regardless of size; the bytes live in `objects/sha256/` ([content-addressed-blobs](../05-modules/mneme/content-addressed-blobs.md), [ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). `length` is a full-range `u64`, so it is a **decimal string** like every other full-range coordinate; `media_type` is required-but-nullable (present as `null` when absent) so the value has one canonical byte form.
 
 ## Optional and default fields
 
@@ -86,15 +86,20 @@ A canonical `model/ops/` record (one line), with all the rules above applied:
 
 ## Byte forms and the record digest
 
-Two byte forms are defined on top of the profile, so every downstream surface refers to the same bytes:
+Three byte forms are defined on top of the profile, so every downstream surface refers to the same bytes:
 
 ```text
 canonical_json_bytes(value)
     = the canonical UTF-8 JSON encoding of `value` under this profile, with NO trailing newline and NO BOM
 
-canonical_record_bytes(operation)
-    = canonical_json_bytes(operation) || 0x0A          # exactly one trailing LF
+canonical_jsonl_record(value)                          # an op record or a segment-checksum record
+    = canonical_json_bytes(value) || 0x0A              # exactly one trailing LF
+
+canonical_json_document(value)                         # a whole-file JSON document
+    = canonical_json_bytes(value)                      # NO trailing newline, NO BOM
 ```
+
+`canonical_record_bytes(operation)` is `canonical_jsonl_record(operation)`. The whole-file form governs **`manifest.json`, `model/schema/authored/**/\*.json`, and the schema `index.json`** — and any JSON document whose digest participates in the foundation-rebuild oracle (M1 effective-schema output should also use the profile for reproducibility, though it is not M0 canonical authority). An empty `current.ops.jsonl` is a **zero-byte file**; a non-empty one ends at the LF of its last complete record.
 
 The per-operation digest is then:
 
