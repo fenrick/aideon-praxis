@@ -10,15 +10,14 @@ The event model is part of the accepted-work contract ([ACCEPTED-WORK-AND-EVENTS
 
 The host emits Tauri events to the renderer without the renderer polling. Renderer adapters subscribe in one place.
 
-| Event                                   | Payload              |
-| --------------------------------------- | -------------------- |
-| `setup.backend_ready`                   | —                    |
-| `workspace_opened`                      | workspace id         |
-| `workspace_closed`                      | workspace id         |
-| `mneme_change_event` (per subscription) | `ChangeEvent`        |
-| `job.updated`                           | job metadata         |
-| `job.completed`                         | job result reference |
-| `integrity.warning`                     | rule + entities      |
+| Event                                   | Payload                                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup.backend_ready`                   | —                                                                                                                                     |
+| `workspace.lifecycle.changed`           | `{ workspace_id, state, job_id?, error_code?, canonical_tail, replay_head?, mode }` ([workspace-lifecycle](./workspace-lifecycle.md)) |
+| `mneme_change_event` (per subscription) | `ChangeEvent`                                                                                                                         |
+| `job.updated`                           | job metadata                                                                                                                          |
+| `job.completed`                         | job result reference                                                                                                                  |
+| `integrity.warning`                     | rule + entities                                                                                                                       |
 
 Events carry the `correlation_id` of the workflow that produced them, so an event joins to the host span and log lines of the command that triggered it ([observability](./observability.md), [ADR-0019](../../06-adrs/ADR-0019-observability-and-trace-context.md)). Engine work and the events it emits carry the same `correlation_id` as the command that started it.
 

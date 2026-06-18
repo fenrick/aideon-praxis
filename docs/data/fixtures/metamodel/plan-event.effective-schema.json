@@ -1,0 +1,44 @@
+{
+  "type_id": "PlanEvent",
+  "label": "Plan Event",
+  "category": "Planning",
+  "uuid": "c8079bb8-078e-5ba9-b93e-3e2312d99798",
+  "extends": null,
+  "inheritance_chain": ["PlanEvent"],
+  "slots": [
+    {
+      "key": "name",
+      "kind": "string",
+      "required": true,
+      "max_length": 256,
+      "uuid": "9a2d4453-4e33-5cfe-ab75-646072e0ce2f",
+      "source": "self"
+    },
+    {
+      "key": "effective_at",
+      "kind": "datetime",
+      "required": true,
+      "format": "rfc3339",
+      "uuid": "384b84b8-ffa4-5db6-82d5-c2db905ff649",
+      "source": "self"
+    },
+    {
+      "key": "confidence",
+      "kind": "number",
+      "required": false,
+      "uuid": "919c0d4e-2c2d-5269-974f-5db6e59a054b",
+      "source": "self"
+    },
+    {
+      "key": "source.priority",
+      "kind": "enum",
+      "required": false,
+      "enum": ["P0", "P1", "P2"],
+      "case_sensitive": false,
+      "uuid": "df3ae5a5-6962-5016-8b0d-d276a7e8d162",
+      "source": "self"
+    }
+  ],
+  "effect_types": ["create", "update", "delete", "link", "unlink"],
+  "notes": "PlanEvent carries two required slots (name string, effective_at datetime/RFC3339), an optional number (confidence), and a dotted-name enum slot (source.priority). The dot in 'source.priority' is treated as a flat slot key, consistent with core-v1.json which lists it as a single attribute name; whether it denotes a nested object is design-intent (see M2-time.md open questions). effect_types is a type-level descriptor on PlanEvent, not a slot; it enumerates the Plan Event effect operations and mirrors the plan_effect relationship's op enum."
+}

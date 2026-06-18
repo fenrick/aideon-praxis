@@ -16,6 +16,17 @@ Skopos polls or subscribes to live sources — cloud platforms, CMDBs, monitorin
 
 Each write is a **reconciliation Change Event** compiling to canonical operations ([ADR-0009](../../06-adrs/ADR-0009-temporal-model-valid-interval-layer-policy-viewpoint.md)), carrying its **source as corroboration** ([ADR-0032](../../06-adrs/ADR-0032-automated-discovery-reality-sync-skopos.md)). Skopos **never writes the `plan` layer** and never invents canonical truth — it attests observed reality on the `actual` layer only ([ADR-0032](../../06-adrs/ADR-0032-automated-discovery-reality-sync-skopos.md)).
 
+## External identity maps to twin identity, so a re-poll dedupes
+
+Reconciliation begins by deciding **which twin entity an observation is about**. A live source carries its own identifier — a cloud resource ARN, a CMDB CI number, a host name — and Skopos maps that external identifier onto a twin entity identity rather than minting a fresh entity each poll ([ADR-0032](../../06-adrs/ADR-0032-automated-discovery-reality-sync-skopos.md)). This is what makes the _unchanged → nothing written_ outcome above possible: a poll only writes nothing if it can recognise that today's observation is about the same entity as yesterday's.
+
+The mechanism mirrors [Pylon's](../pylon/deterministic-reviewable-import.md):
+
+- **A recorded external-id correspondence.** Once an observation has resolved to a twin entity, Skopos records the correspondence (external `id` → twin entity identity) as Asserted content with the source as lineage, so the next poll resolves through it directly.
+- **A declared match key on first sight.** Where no correspondence exists, the reconciliation policy names the **match key** — what counts as the same resource ([ADR-0032](../../06-adrs/ADR-0032-automated-discovery-reality-sync-skopos.md)). A clean match resolves to the existing entity; no match mints a new one, using the same **UUIDv5 over namespace plus stable name path** minting rule as the rest of the twin ([op / fact / schema model](../../05-modules/mneme/op-fact-schema-model.md)), so the same resource always resolves to the same identifier and a re-poll is stable rather than duplicating.
+
+The match keys, what counts as the same resource across re-identification, and retirement semantics are **where the design effort sits and are provisional** ([ADR-0032](../../06-adrs/ADR-0032-automated-discovery-reality-sync-skopos.md)) — but the invariant is fixed: a re-poll of an unchanged source dedupes to the same entity and writes nothing, exactly as a Pylon re-import produces an empty diff.
+
 ## Reconciliation respects human-Asserted truth
 
 The hard case is when a Skopos observation **contradicts a human-Asserted fact**. Skopos does not silently overwrite it. The divergence is either surfaced as `Awaiting review` ([Documentation Standard §9](../../02-standards/DOCUMENTATION-STANDARD.md)) or recorded under a documented **precedence policy**, so machine attestation never erases a deliberate human claim without trace ([ADR-0032](../../06-adrs/ADR-0032-automated-discovery-reality-sync-skopos.md)). This is the same respect-for-human-truth discipline that runs through the product: a human Asserted claim is controlled truth, not silently overwritten by automation ([`CONTEXT.md`](../../../CONTEXT.md): Asserted content).
@@ -48,9 +59,11 @@ Recorded in the [standards register](../../02-standards/STANDARDS-REGISTER.md).
 
 ## Related documents
 
-| Document                                                                      | What it covers                                         |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [Skopos README](./README.md)                                                  | The module index and invariants.                       |
-| [Entropy feeder for Kairos](./entropy-feeder-for-kairos.md)                   | What a fresh `actual` layer makes detectable.          |
-| [Skopos vs Pylon](./vs-pylon.md)                                              | Why this is automated and Pylon is manual.             |
-| [ADR-0032](../../06-adrs/ADR-0032-automated-discovery-reality-sync-skopos.md) | The decision that fixes the reconciliation invariants. |
+| Document                                                                              | What it covers                                                                |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [Skopos README](./README.md)                                                          | The module index and invariants.                                              |
+| [Entropy feeder for Kairos](./entropy-feeder-for-kairos.md)                           | What a fresh `actual` layer makes detectable.                                 |
+| [Skopos vs Pylon](./vs-pylon.md)                                                      | Why this is automated and Pylon is manual.                                    |
+| [Pylon deterministic, reviewable import](../pylon/deterministic-reviewable-import.md) | The same external-id mapping and reconciliation precedence for manual import. |
+| [Op / fact / schema model](../../05-modules/mneme/op-fact-schema-model.md)            | UUIDv5 identifier minting and supersession-by-asserted-time.                  |
+| [ADR-0032](../../06-adrs/ADR-0032-automated-discovery-reality-sync-skopos.md)         | The decision that fixes the reconciliation invariants.                        |

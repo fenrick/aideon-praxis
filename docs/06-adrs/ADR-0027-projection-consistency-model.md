@@ -32,6 +32,29 @@ The canonical authority is the op log ([ADR-0001](./ADR-0001-workspace-is-canoni
 
 - **A projection is correct only for its context dimensions.** A projection built at one viewpoint or scenario is not served for another ([PROJECTION-AND-INVALIDATION.md](../04-contracts/PROJECTION-AND-INVALIDATION.md), `PROJECTION_CONTEXT_MISMATCH`); the renderer keys its cache by the same viewpoint coordinates ([ADR-0026](./ADR-0026-frontend-state-architecture.md)). Consistency is per-context, not global.
 
+- **Rebuild equivalence is semantic, not byte-identical.** Deleting the derived runtime and rebuilding it from the canonical op log must produce a runtime that answers every query identically — but it need not reproduce the previous runtime byte for byte. Row insertion order, physical page layout, B-tree shape, transient cache contents, and any other implementation detail of the derived store are allowed to differ. What must be identical is the _resolved meaning_: the same facts resolve at every viewpoint, and every artefact/query returns the same result. This _semantic_ relation is gated at **M2/M3**, when its probes exist; **M0** is gated by the distinct structural `foundation_rebuild_hash` (below). Together they are the golden-journey final assertion ([golden-journey](../build-contracts/golden-journey.md), steps 9–10).
+
+## Rebuild equivalence — the equivalence relation and its hash
+
+Two runtimes built from the same canonical state — for instance, the runtime before a `.aideon/runtime/` wipe and the one rebuilt after — are **equivalent** iff, for every viewpoint in a fixed probe set, they resolve identical effective facts and return identical results from a fixed set of queries/artefacts. Equivalence is decided by a **deterministic equivalence hash**, not by comparing database files:
+
+- **Inputs to the hash.** A _probe set_ of viewpoints (each a fully-qualified `{as_of valid time, asserted-time belief, layer policy, scenario}` tuple) and a fixed ordered list of queries/artefacts to run at each. The probes **arrive incrementally** — they do not exist at M0:
+
+  | Milestone | Added probe                                                       |
+  | --------- | ----------------------------------------------------------------- |
+  | M0        | None — the structural `foundation_rebuild_hash` gates M0 (below). |
+  | M1        | Optional metamodel compilation and validation-result fixtures.    |
+  | M2        | Resolved facts and diffs at fixed viewpoints.                     |
+  | M3        | Catalogue and other artefact-result fixtures.                     |
+
+- **Canonical serialisation.** For each probe, the resolved result is reduced to a canonical form using the **shared [canonical-JSON profile](../04-contracts/canonical-json.md)** ([ADR-0038](./ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)): sorted keys, identifiers as canonical UUID strings, full-range coordinates (HLC, valid-time) as decimal strings, contract-defined array order, and _no_ derived-only fields that carry implementation detail (row ids, cache freshness timestamps, physical ordering hints). The equivalence hash and the operation record share the canonicaliser but are **different shapes** — the operation record is canonical history; the probe result is resolved meaning. Result-state/coverage badges are included because they are part of the resolved meaning; transient `ProjectionFreshnessStatus` of an in-flight rebuild is excluded.
+- **The hash.** `equivalence_hash = BLAKE3( concat over probes in fixed order of ( canonical_serialisation(probe_result) ) )`. BLAKE3 matches the family already used for sealed-segment and export-package checksums ([ADR-0002](./ADR-0002-portable-workspace-format.md), [export-import-replay](../05-modules/mneme/export-import-replay.md)).
+- **The assertion.** `equivalence_hash(twin_before_wipe) == equivalence_hash(twin_after_rebuild)`. Equality proves semantic equivalence; inequality is a rebuild-correctness defect, surfaced with the first differing probe. The same hash also checks snapshot-plus-tail against full replay ([export-import-replay](../05-modules/mneme/export-import-replay.md)) and incremental refresh against full rebuild — one relation, three uses.
+
+- **M0 has a distinct structural gate — `foundation_rebuild_hash`.** Because the semantic probe set is empty at M0, M0 is gated by a separate hash over a stable logical `FoundationProjectionSnapshot` (the applied-operation set by `(partition_id, op_id, canonical_digest)`, the canonical schema-document digests — _not_ a compiled effective schema, which is M1 — the actor registry, the object index, and replay checkpoints), canonicalised with the same profile. It proves deterministic reconstruction of the foundation's logical derived state; it does **not** prove temporal/artefact meaning. It is **not** a dump of SQLite tables — the derived store's physical shape may change freely. M0 must not pull a temporary resolver forward to fabricate a semantic probe.
+
+The test oracles — the M0 `foundation_rebuild_hash` and the later semantic `equivalence_hash` — are specified at [`docs/data/fixtures/rebuild/README.md`](../data/fixtures/rebuild/README.md).
+
 ## Considered Options
 
 - **Strong (synchronous) consistency for all readers (rejected):** would block reads on every refresh and serialise the whole app behind projection maintenance; causal-for-writer plus eventual-with-staleness gives correctness where it is needed without the global stall.

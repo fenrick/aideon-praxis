@@ -97,6 +97,23 @@ interface ProgressPayload {
 
 `phase` values are stable per [`WorkQueueClass`](./accepted-job-shape.md) family and must not change between runs without a contract version bump ([versioning-and-compatibility.md](../ipc/versioning-and-compatibility.md)).
 
+### Acceptance is not durability
+
+The initial `AcceptedJob` response acknowledges **receipt only** — a bulk command is accepted before any operation is durable. The durability acknowledgement is a **committed-barrier event** or the **terminal successful completion** event, never `accepted` and never a mere `progress` snapshot ([storage-trait-and-engine](../../05-modules/mneme/storage-trait-and-engine.md), [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). A bulk import's progress therefore must **not** expose a single ambiguous `processed_count`; it distinguishes the stages, and **only `durably_committed` survives a host crash by contract**:
+
+```typescript
+interface BulkImportProgress {
+  received: number; // accepted into the batch
+  validated: number; // passed canonical + schema validation
+  appended: number; // written to the loose segment (not yet necessarily fsync'd)
+  durablyCommitted: number; // past a durable barrier — the only crash-surviving count
+  projected: number; // applied to required synchronous projections (≤ durablyCommitted)
+  rejected: number; // failed validation, with reasons in the outcome
+}
+```
+
+The renderer may show `appended` work as _in progress_, but must not describe it as **saved/committed** until it is `durablyCommitted`. `JobCompleted` for a bulk import means every accepted canonical operation is durably committed, the final segment state is valid, required synchronous projections have incorporated the committed operations, and the batch outcome (including the rejection report) is itself durable — nothing the outcome claims remains only in memory or page cache. Deferred derived work (integrity rebuild, schema-dependent artefacts) may still be outstanding **provided it is explicitly surfaced as `stale`/`rebuilding`** ([DOCUMENTATION-STANDARD §9](../../02-standards/DOCUMENTATION-STANDARD.md)); completion is not held open for it, and the workspace is not reported fully fresh while it runs. A bulk import is **checkpointed partial commitment, not atomic** ([run-and-step-lifecycle](./run-and-step-lifecycle.md), `partial`): a failure preserves the operations committed before the last barrier, so a failed bulk job never implies "nothing was imported".
+
 ## Worked example: rebuild job progress events
 
 The accepted rebuild `run_abc` from [accepted-job-shape.md](./accepted-job-shape.md) emits:

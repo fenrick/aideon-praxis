@@ -1,6 +1,6 @@
 # ADR-0029: Collaboration and Sync — Koinon
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0005 (sync and conflict model), ADR-0011 (module taxonomy), ADR-0001 (workspace is canonical authority)
 - Relates-To: ADR-0002 (workspace format), ADR-0022 (HLC clock), ADR-0006 (host trust boundary)

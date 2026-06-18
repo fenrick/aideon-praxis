@@ -22,7 +22,7 @@ This design makes deduplication, sync, and conflict handling for binaries tracta
 ## Decision
 
 - Binary artefacts are stored once as **immutable blobs addressed by content hash** under `objects/sha256/<aa>/<bb>/<full-hash>`.
-- The fact model stores **references** to blobs (hash, MIME type, size, and any domain links), never the blob bytes. A `blob.attach` op records the reference.
+- The fact model stores a typed **`BlobRef`** reference (`{ algorithm, digest, length, media_type? }`), never the blob bytes, and never inline (no Base64 in a canonical record). There is **no `blob.attach` operation**: an ordinary property operation carries the `BlobRef`, and the object is durably written before that operation is appended ([ADR-0038](./ADR-0038-canonical-operation-record-identity-and-commit-protocol.md), [content-addressed-blobs](../05-modules/mneme/content-addressed-blobs.md)).
 - **Replacing a file creates a new blob** with a new hash; the old blob remains reachable for history, rollback, and reconciliation.
 - **Attaching the same bytes twice deduplicates** by hash.
 - Blobs are written via temp-file-plus-rename and verified against their hash on read.

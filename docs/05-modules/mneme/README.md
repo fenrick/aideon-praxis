@@ -20,6 +20,9 @@ Mneme is named for memory: it remembers everything that was ever asserted, and f
 10. [Failure modes and recovery](./failure-modes.md) — what breaks, how it is detected, and how it recovers.
 11. [Performance budget](./performance-budget.md) — the design-intent targets and the bounds that justify them.
 12. [Boundaries](./boundaries.md) — what Mneme owns and, more importantly, what it does not.
+13. [Identifier generation and provenance](./identifier-generation-and-provenance.md) — the four identifier namespaces and the provenance every fact and operation carries.
+14. [Schema migration patterns](./schema-migration-patterns.md) — the forward-only migration op-types, re-validation on replay, and multi-package coordination.
+15. [Workspace integrity and recovery](./workspace-integrity-and-recovery.md) — locking, segment sealing, checksums, blob GC, and torn-write recovery.
 
 ---
 

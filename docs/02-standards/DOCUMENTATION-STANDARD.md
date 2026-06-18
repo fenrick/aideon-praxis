@@ -105,6 +105,8 @@ The top-level layout follows established practice and is kept stable so cross-li
 
 Within a layer, decompose into small single-topic files (above). The numbered top-level folders do not change without an ADR, because their paths are public cross-link targets across the corpus.
 
+**All documentation lives under `docs/`.** Design, architecture, contract, and module documentation belongs in the tree above and nowhere else — never in `crates/`, `src/`, or `src-tauri/`. A module's design record is its `05-modules/<module>/` folder, not a `README.md` or `DESIGN.md` beside its code. The only Markdown that lives outside `docs/` is the small set of repository-root files that tooling and hosting conventions require at the root: `README.md`, `CONTEXT.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE-OF-CONDUCT.md`, and the agent guide (`CLAUDE.md`/`AGENTS.md`). This keeps one discoverable doc tree, lets the corpus generator ([`tools/docs-corpus.mjs`](../../tools/docs-corpus.mjs)) source only root entry points plus `docs/`, and removes the drift that two homes for the same design invites.
+
 Recommended skeletons by document kind:
 
 **Module README** (`05-modules/<module>/README.md`)
@@ -276,7 +278,7 @@ Planned modules are documented as design intent and labelled _planned_ until a c
 
 **Folded concerns.** Some concerns are real but do not yet earn a module; they are documented as capabilities _within_ an existing module, each with the explicit trigger that would split it out later: **Oikos** (run-cost / FinOps — ongoing opex/TCO, in [Metis](../05-modules/metis/README.md) + Kairos), **Krisis** (validation, rules, and data-quality — in [Praxis](../05-modules/praxis/README.md) integrity scoring), **Topos** (cartography and auto-layout/ELK — in the renderer + Praxis), **Logos** (narrative and decision rationale — in [Kerux](#10-module-and-crate-naming) + [Mneme](../05-modules/mneme/README.md)). ADR-0011 records each split-out trigger.
 
-Frontend feature packages mirror the modules they face (`src/workspaces/<module>`), per [frontend/DESIGN.md](../frontend/DESIGN.md).
+Frontend feature packages mirror the modules they face (`src/engines/<module>`), per [frontend/DESIGN.md](../frontend/DESIGN.md).
 
 ---
 
