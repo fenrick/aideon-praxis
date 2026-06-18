@@ -1,0 +1,58 @@
+{
+  "case": "op-id-tiebreak-conflict",
+  "description": "Two facts equally specific and identically asserted (same HLC) are split only by rule 4: the lexicographically larger op_id wins. This is the honest definition of a conflict; the slot is flagged conflict-resolved and carries result-state Awaiting review. The loser remains inspectable.",
+  "corner_case": "op-id tie-break (genuine conflict)",
+  "input": {
+    "entity": "n:application:automation-orchestrator",
+    "slot": "disposition",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-a1f3",
+        "op_type": "SetProperty",
+        "value": "Eliminate",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7293546086400000000
+      },
+      {
+        "op_id": "op-b207",
+        "op_type": "SetProperty",
+        "value": "Tolerate",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7293546086400000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-09-01T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": null
+  },
+  "expected": {
+    "present": true,
+    "value": "Tolerate",
+    "effective_interval": { "valid_from": "2026-01-01T00:00:00Z", "valid_to": null },
+    "content_classification": "Asserted",
+    "result_state": "Awaiting review",
+    "conflict_resolved": true,
+    "deciding_rule": "op-id tie-break",
+    "winning_op_id": "op-b207",
+    "superseded": [
+      {
+        "op_id": "op-a1f3",
+        "value": "Eliminate",
+        "eliminated_at_rule": "op-id tie-break",
+        "reason": "op-b207 is lexicographically larger than op-a1f3; equal specificity and identical HLC"
+      }
+    ],
+    "note": "Content classification stays Asserted even when won by tie-break; the result-state axis (Awaiting review) is independent. The model never synthesises a merged value."
+  }
+}

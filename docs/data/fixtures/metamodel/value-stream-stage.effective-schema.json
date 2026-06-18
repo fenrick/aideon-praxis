@@ -1,0 +1,46 @@
+{
+  "type_id": "ValueStreamStage",
+  "label": "Value Stream Stage",
+  "category": "Business",
+  "uuid": "e653141e-dc30-5be5-882b-31ead5f1b0d2",
+  "extends": "Stage",
+  "extends_resolved": false,
+  "inheritance_chain": ["ValueStreamStage"],
+  "slots": [
+    {
+      "key": "name",
+      "kind": "string",
+      "required": true,
+      "max_length": 256,
+      "uuid": "c13cf5bd-ec27-5085-8eb8-2849bb7ccde6",
+      "source": "self"
+    },
+    {
+      "key": "purpose",
+      "kind": "string",
+      "required": false,
+      "max_length": 256,
+      "uuid": "c1b3a129-ca0e-50dd-8985-72a93220a993",
+      "source": "self"
+    },
+    {
+      "key": "owner",
+      "kind": "string",
+      "required": false,
+      "max_length": 256,
+      "uuid": "6def842e-fbfc-5e1a-b6a1-f3e17f32a86e",
+      "source": "self"
+    }
+  ],
+  "gap": {
+    "kind": "unresolved_supertype",
+    "missing_type": "Stage",
+    "effect": "core-v1.json declares ValueStreamStage extends Stage but does not declare a Stage type. The extends reference is unresolved: it contributes no inherited slot, so the effective schema is exactly ValueStreamStage's three own slots. This fixture records the gap honestly rather than inventing a Stage definition.",
+    "reconciliation": "Either declare Stage as an abstract base type (additive/minor) or drop the extends clause (editorial). Owned by the metamodel design; not resolved by this fixture.",
+    "sources": [
+      "docs/data/README.md (Known reconciliation — the Stage gap)",
+      "docs/03-design/metamodel/slots-and-effective-schema.md (Honest-state note)"
+    ]
+  },
+  "notes": "extends_resolved is false because no Stage effective schema exists to flatten. If a Stage type is later added with slots, those slots would be flattened in (source: inherited) ahead of these, with same-named child slots winning."
+}

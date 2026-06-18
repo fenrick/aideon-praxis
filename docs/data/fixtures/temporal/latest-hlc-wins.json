@@ -1,0 +1,56 @@
+{
+  "case": "latest-hlc-wins",
+  "description": "Two facts with identical valid intervals are split by rule 3: the larger HLC (most-recently asserted) wins. A later correction supersedes an earlier value at the latest belief.",
+  "corner_case": "latest-HLC",
+  "input": {
+    "entity": "n:application:insight-hub",
+    "slot": "disposition",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-0300",
+        "op_type": "SetProperty",
+        "value": "Invest",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2025-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      },
+      {
+        "op_id": "op-0301",
+        "op_type": "SetProperty",
+        "value": "Tolerate",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2025-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7266366259200000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-06-11T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": null
+  },
+  "expected": {
+    "present": true,
+    "value": "Tolerate",
+    "effective_interval": { "valid_from": "2025-01-01T00:00:00Z", "valid_to": null },
+    "content_classification": "Asserted",
+    "result_state": "Fresh",
+    "deciding_rule": "latest asserted time",
+    "winning_op_id": "op-0301",
+    "superseded": [
+      {
+        "op_id": "op-0300",
+        "value": "Invest",
+        "eliminated_at_rule": "latest asserted time",
+        "reason": "HLC 7241859072000000000 is smaller than op-0301's 7266366259200000000"
+      }
+    ]
+  }
+}

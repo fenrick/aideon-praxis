@@ -1,0 +1,39 @@
+{
+  "case": "layer-plan-only",
+  "description": "A single-layer read of the plan layer resolves only plan facts; the actual fact is invisible. The slot exists only on plan here.",
+  "corner_case": "plan-only layer policy",
+  "input": {
+    "entity": "n:capability:journey-orchestration",
+    "slot": "lifecycle",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-0600",
+        "op_type": "SetProperty",
+        "value": "Target",
+        "layer": "plan",
+        "scenario": null,
+        "valid_from": "2026-05-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-06-01T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "plan",
+    "scenario": null
+  },
+  "expected": {
+    "present": true,
+    "value": "Target",
+    "effective_interval": { "valid_from": "2026-05-01T00:00:00Z", "valid_to": null },
+    "content_classification": "Asserted",
+    "result_state": "Fresh",
+    "deciding_rule": "containment (single plan layer)",
+    "winning_op_id": "op-0600",
+    "superseded": []
+  }
+}

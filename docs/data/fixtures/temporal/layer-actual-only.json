@@ -1,0 +1,40 @@
+{
+  "case": "layer-actual-only",
+  "description": "A single-layer read of the actual layer returns an honest absence when the only fact for the slot is on the plan layer. Layer is part of a fact's identity; a single-layer read does not fall through to another layer.",
+  "corner_case": "actual-only layer policy (absence)",
+  "input": {
+    "entity": "n:capability:journey-orchestration",
+    "slot": "lifecycle",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-0600",
+        "op_type": "SetProperty",
+        "value": "Target",
+        "layer": "plan",
+        "scenario": null,
+        "valid_from": "2026-05-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-06-01T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": null
+  },
+  "expected": {
+    "present": false,
+    "value": null,
+    "effective_interval": null,
+    "content_classification": null,
+    "result_state": "Fresh",
+    "deciding_rule": "containment (no candidate in actual layer)",
+    "winning_op_id": null,
+    "superseded": [],
+    "note": "The plan fact op-0600 is not a candidate: a single-layer actual read filters to layer = actual before the chain runs."
+  }
+}

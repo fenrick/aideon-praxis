@@ -30,7 +30,7 @@ After merging, Praxis compiles the document twice: into in-memory descriptors it
 | UUID lookup maps            | String-key → stable UUID for types, relationships, and attributes                                            |
 | `MetamodelBatch`            | The persistence form: type defs, field defs, type-field bindings, edge-type rules, version, source           |
 
-Praxis publishes the batch; Mneme stores it and answers effective-schema queries. Neither side inverts this flow ([DESIGN.md](../DESIGN.md), axiom 4). The persisted batch is a _derived_ projection of the canonical JSON: delete Mneme's store and Praxis recompiles and republishes from source.
+The `MetamodelBatch` (the persistence form in the table above) is the **`AuthoredMetamodelBatch`** carried by the canonical `UpsertMetamodelBatch` operation — the **unflattened authored** definitions; the flattened type/relationship descriptor maps are the **`EffectiveSchema`**, a derived projection compiled at **M1** ([op-fact-schema-model](../../05-modules/mneme/op-fact-schema-model.md)). Praxis publishes the batch; Mneme records it as canonical history and answers effective-schema queries against the derived compilation. Neither side inverts this flow ([DESIGN.md](../DESIGN.md), axiom 4). **The operation is canonical, not derived** — `model/schema/authored/` and the M1 `model/schema/effective/` are both derived projections of the op log, rebuilt from it after a runtime wipe ([workspace-integrity-and-recovery](../../05-modules/mneme/workspace-integrity-and-recovery.md)).
 
 ---
 

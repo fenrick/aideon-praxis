@@ -1,0 +1,39 @@
+{
+  "case": "absence-no-candidate",
+  "description": "When no fact's valid interval contains the requested instant, the slot resolves to an honest absence. Absence is not an error.",
+  "corner_case": "open/half-open intervals (no containment)",
+  "input": {
+    "entity": "n:capability:customer-insight",
+    "slot": "tier",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-0010",
+        "op_type": "SetProperty",
+        "value": "Strategic",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-06-01T00:00:00Z",
+        "valid_to": "2026-09-01T00:00:00Z",
+        "asserted_hlc": 7241859072000000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-01-15T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": null
+  },
+  "expected": {
+    "present": false,
+    "value": null,
+    "effective_interval": null,
+    "content_classification": null,
+    "result_state": "Fresh",
+    "deciding_rule": "containment (no candidate)",
+    "winning_op_id": null,
+    "superseded": []
+  }
+}

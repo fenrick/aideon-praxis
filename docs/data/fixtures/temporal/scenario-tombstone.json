@@ -1,0 +1,58 @@
+{
+  "case": "scenario-tombstone",
+  "description": "A scenario-scoped tombstone hides a baseline fact only within the scenario. The scenario read resolves absent; the baseline read still sees the fact. Scenarios are additive overlays and never mutate canonical facts.",
+  "corner_case": "scenario tombstone",
+  "input": {
+    "entity": "n:application:automation-orchestrator",
+    "slot": "disposition",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-0720",
+        "op_type": "SetProperty",
+        "value": "Migrate",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      },
+      {
+        "op_id": "op-0721",
+        "op_type": "ClearProperty",
+        "tombstone": true,
+        "layer": "actual",
+        "scenario": "scn_decommission",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7254636134400000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-06-11T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": { "scenario_id": "scn_decommission", "mode": "overlay" }
+  },
+  "expected": {
+    "present": false,
+    "value": null,
+    "effective_interval": null,
+    "content_classification": null,
+    "result_state": "Fresh",
+    "deciding_rule": "scenario overlay tombstone suppresses baseline for this slot",
+    "winning_op_id": "op-0721",
+    "baseline_value": "Migrate",
+    "superseded": [
+      {
+        "op_id": "op-0720",
+        "value": "Migrate",
+        "eliminated_at_rule": "scenario tombstone",
+        "reason": "scenario-scoped tombstone overlays and suppresses the baseline fact within scn_decommission only"
+      }
+    ],
+    "note": "Reading the same viewpoint with scenario omitted resolves the baseline value Migrate; the tombstone is scoped to the scenario and never touches canonical facts."
+  }
+}

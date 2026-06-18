@@ -31,23 +31,25 @@ The line between `ready-for-agent` and `ready-for-human`: an issue is `ready-for
 
 ## Triage state is orthogonal to the contextual taxonomy
 
-These triage-state labels are distinct from the `type/*`, `area/*`, `module/*`, `priority/*`, and `status/*` taxonomy in [issue-tracker.md](./issue-tracker.md). Apply **both**: the one triage label here, plus the contextual labels there.
+These triage-state labels are distinct from the contextual axes — work kind, area, module, priority, and lifecycle state. Those axes are now **GitHub Project fields** (Kind, Area, Module, Priority, Status), not labels; the project is the tracking source of truth and the `type/*`, `module/*`, `priority/*`, and `status/*` labels they replaced are **not applied** ([issue-tracker.md](./issue-tracker.md)). The triage label here stays a label (agents and humans filter by it), and `area/*` stays a label too — apply all relevant areas, with the primary one mirrored in the Area field.
 
-A well-labelled issue therefore carries one triage label, one `type/*`, one or more `area/*`, optionally a `module/*` and `priority/*`, and a lifecycle `status/*`. Worked example for an analytics bug an agent can take:
+A well-tracked issue therefore carries one triage label, its `area/*` label(s), and the contextual axes set as project fields. Worked example for an analytics bug an agent can take — set the triage and area labels, then the project fields:
 
 ```sh
 gh issue edit 412 \
   --remove-label "needs-triage" \
-  --add-label "ready-for-agent,type/bug,area/analytics,module/metis,priority/P2,status/todo"
+  --add-label "ready-for-agent,area/analytics"
+# then set the project fields: Kind=bug, Module=metis, Priority=P2, Status=Todo
+# (see issue-tracker.md for the gh project field-set commands)
 ```
 
-Note that `status/*` (the lifecycle: todo → in-progress → done) is a separate axis again from triage state — an issue can be `ready-for-agent` and `status/todo` simultaneously, then `status/in-progress` once work starts, without its triage label changing.
+Note that lifecycle state (the **Status** project field: Todo → In Progress → Done) is a separate axis again from triage state — an issue can be `ready-for-agent` with Status `Todo` simultaneously, then `In Progress` once work starts, without its triage label changing.
 
 Edit the right-hand column above if the tracker's vocabulary ever changes.
 
 ## Related documents
 
-| Document                               | What it covers                                               |
-| -------------------------------------- | ------------------------------------------------------------ |
-| [issue-tracker.md](./issue-tracker.md) | The `gh` conventions and the full contextual label taxonomy. |
-| [domain.md](./domain.md)               | How to orient in the repo before triaging or implementing.   |
+| Document                               | What it covers                                                                  |
+| -------------------------------------- | ------------------------------------------------------------------------------- |
+| [issue-tracker.md](./issue-tracker.md) | The `gh` conventions and the project fields that replace the contextual labels. |
+| [domain.md](./domain.md)               | How to orient in the repo before triaging or implementing.                      |

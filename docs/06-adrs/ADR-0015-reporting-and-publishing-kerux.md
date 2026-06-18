@@ -1,6 +1,6 @@
 # ADR-0015: Reporting and Publishing — Kerux
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0001, ADR-0011
 - Relates-To: ADR-0008, ADR-0009, ADR-0013

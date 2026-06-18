@@ -4,31 +4,30 @@ The component, state, canvas, and interaction contracts of the primary modelling
 
 ---
 
-## Components
+## Widgets contributed
 
-The workspace exposes four slot components the shell renders ([shell.md](../shell.md)), plus a chrome-free surface for embedding:
+Praxis is an `EngineDefinition` (`src/engines/praxis/engine.tsx`); it contributes widget types that the platform's content surface renders, and a `renderWidget(widget, context)` dispatcher the platform's widget catalogue routes to ([shell.md](../shell.md)). It owns no shell regions — navigation, toolbar, content, and inspector belong to the platform. The engine also exposes the toolbar content the platform's `PlatformToolbar` renders (`PraxisWorkspaceToolbar`, layout-preset and temporal controls) and a chrome-free surface for embedding:
 
-| Component                   | Slot         | Owns                                                        |
-| --------------------------- | ------------ | ----------------------------------------------------------- |
-| `PraxisWorkspaceNavigation` | `navigation` | The projects/scenarios tree                                 |
-| `PraxisWorkspaceToolbar`    | `toolbar`    | The workspace toolbar beside the shared viewpoint controls  |
-| `PraxisWorkspaceContent`    | `content`    | The active artefact widget (canvas, catalogue, matrix, map) |
-| `PraxisWorkspaceInspector`  | `inspector`  | Selection-driven details and edit forms                     |
-| `PraxisWorkspaceSurface`    | —            | A chrome-free surface for tests and previews                |
+| Item                     | Kind            | Owns                                                     |
+| ------------------------ | --------------- | -------------------------------------------------------- |
+| `graph`                  | Widget          | The active graph canvas (the **Topos** canvas, below)    |
+| `catalogue`              | Widget          | The catalogue widget over the twin                       |
+| `matrix`                 | Widget          | The matrix widget (cell selection, below)                |
+| `chart`                  | Widget          | The chart widget over artefact results                   |
+| `PraxisWorkspaceToolbar` | Toolbar content | Layout-preset and temporal controls the platform renders |
+| `PraxisCanvasSurface`    | —               | A chrome-free surface for tests and previews             |
 
-Navigation follows the shadcn sidebar pattern as its base layout — an inset sidebar with a header, a nested rail, a workspace switcher, favourites, a collapsible scenario tree, and a right-side action popover — composed from the design-system `Sidebar` proxy, not bespoke layout ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)).
-
-Content widgets prefer design-system blocks and primitives — cards, badges, buttons, the canvas blocks — over bespoke wrappers; the golden vertical (time cursor + artefact widgets) is the template for a new surface ([blocks.md](../../03-design/design-system/blocks.md)).
+Each widget is a `WidgetContribution` — `{ engineId, type, label, description, icon, defaultSize, createWidget }` ([shell.md](../shell.md)). Widgets prefer design-system blocks and primitives — cards, badges, buttons, the canvas blocks — over bespoke wrappers; the golden vertical (time cursor + artefact widgets) is the template for a new widget ([blocks.md](../../03-design/design-system/blocks.md)).
 
 ## State ownership
 
-`PraxisWorkspaceProvider` owns state once; the four slots consume it so state is not duplicated ([state-architecture.md](../state-architecture.md)). The golden pattern is a hook returning `[state, actions]` with async side effects inside the hook (e.g. `useTemporalPanel`); UI-ready state is derived from DTOs and global singletons are avoided.
+The platform's `HostPlatformProvider` / `useHostPlatform()` owns state once for the whole shell; the engine's widgets consume it rather than owning their own provider, so state is not duplicated ([state-architecture.md](../state-architecture.md)). The golden pattern is a hook returning `[state, actions]` with async side effects inside the hook (e.g. `useTemporalPanel`); UI-ready state is derived from DTOs and global singletons are avoided.
 
-| State                                            | Kind               | Notes                                                           |
-| ------------------------------------------------ | ------------------ | --------------------------------------------------------------- |
-| Graph slices, artefact results                   | Server-state       | Viewpoint-keyed cache ([data-fetching.md](../data-fetching.md)) |
-| Selection, time cursor, filters, active template | UI-state           | Local, in the provider                                          |
-| Canvas layout snapshots                          | Persisted via host | Keyed by viewpoint + `documentId` (below)                       |
+| State                                            | Kind               | Notes                                                                                                |
+| ------------------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------- |
+| Graph slices, artefact results                   | Server-state       | Viewpoint-keyed cache ([data-fetching.md](../data-fetching.md))                                      |
+| Selection, time cursor, filters, active template | UI-state           | Local, in the provider                                                                               |
+| Canvas layout snapshots                          | Persisted via host | Keyed by `surface_id + surface_instance/destination + layout_preset` — **not** the viewpoint (below) |
 
 ## Data fetching keys
 
@@ -44,7 +43,7 @@ Identifiers are real seed ids — a scenario read keys on its scenario id (e.g. 
 
 ## The selection contract
 
-`PraxisWorkspaceSurface` accepts an optional `onSelectionChange` callback and emits the current `SelectionState` whenever it changes, so the shell or a test harness can observe selection. Selection is the global driver of the inspector ([ux/selection-model.md](../../03-design/ux/selection-model.md)):
+`PraxisCanvasSurface` accepts an optional `onSelectionChange` callback and emits the current `SelectionState` whenever it changes, so the platform or a test harness can observe selection. Selection is the global driver of the platform inspector ([ux/selection-model.md](../../03-design/ux/selection-model.md)):
 
 - A single node/edge selection surfaces editable fields in the inspector and dispatches scoped operations (below).
 - A multi-select is bulk-only.
@@ -59,9 +58,9 @@ The canvas renders the **effective graph** — the node-and-edge projection of a
 
 The canvas blocks consume layout from Topos; they do not invent positions for a structured layout. Auto-layout is **user-triggered**: the default layout uses ELK-compatible routines but must not override existing coordinates unless explicitly requested. A free-form arrangement the user drags is held as their authored arrangement; an automatic layout is a Topos computation ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)).
 
-### Layout persistence keyed by viewpoint
+### Layout persistence is not keyed by the viewpoint
 
-Canvas geometry persists per viewpoint (as-of valid time, layer, optional scenario) through host IPC; the renderer respects saved positions and re-runs layout only on demand. The persistence key is the viewpoint plus a stable `documentId` carried by the canvas template — distinct from the template `id`. The renderer **must not** infer document identity from the active template id, and a layer switch updates any persistence key that includes layer ([chrona-time](../chrona-time/README.md)). Templates are persisted by the host (`workspace_templates_list` / `workspace_templates_save`) and rehydrated by the renderer; the host seeds default templates on first run so the workspace always has initial artefacts to render.
+Canvas geometry persists through host IPC, but the persistence key is **`surface_id + surface_instance/destination + layout_preset`**, **not** the viewpoint ([shell.md](../shell.md), composition; [state-architecture.md](../state-architecture.md)). Changing valid time, layer, or scenario changes the **data** the canvas shows, never the arrangement — a scenario switch must not silently rearrange the studio. A **saved structure** may carry both a saved layout and an optional recorded viewpoint as **distinct fields**; opening it can visibly apply both. The renderer respects saved positions and re-runs layout only on demand. Templates/structures are persisted by the host (`workspace_templates_list` / `workspace_templates_save`) and rehydrated by the renderer; the host seeds default templates on first run so the workspace always has initial artefacts to render.
 
 ### Canvas honest state and accessibility
 
@@ -73,11 +72,13 @@ A single node/edge selection surfaces editable fields built from the effective s
 
 ## Loading, error, empty
 
-Components receive `loading`, `error`, and optional `empty` hints from their hook and render the shared treatments ([error-loading-empty.md](../error-loading-empty.md)): skeletons for loading, an informative empty state, a human-readable error mapped from the envelope with a copy-diagnostics affordance. A loading pane never blanks the whole workspace.
+Widgets receive `loading`, `error`, and optional `empty` hints from their hook and render the shared treatments ([error-loading-empty.md](../error-loading-empty.md)): skeletons for loading, an informative empty state, a human-readable error mapped from the envelope with a copy-diagnostics affordance. A loading pane never blanks the whole content surface.
+
+**The modelling studio never opens on bare chrome.** Two empty cases are distinct: a surface with **no widget composition** (only reachable after a user deliberately removes every optional widget — and even then the surface offers a structured Add widget action) versus a surface whose **default composition exists but the twin has no data** (the normal new-workspace case). In the normal case the studio opens on its default composition (the graph widget + local controls) and the **graph widget renders the first-run empty state inside that composition** — never a blank grid. The copy explains what belongs and how to begin, e.g. _"No model content yet — add the first entity, open an existing structure, or choose an artefact to guide the work,"_ showing only the actions currently available: **Add entity** when M1 authoring is enabled, **Open structure** when one exists, **Browse artefacts** once the library is enabled, **Import data** once Pylon exists. Future actions are never shown as disabled promises ([hig/foundations.md](../../03-design/hig/foundations.md), [error-loading-empty.md](../error-loading-empty.md)).
 
 ## Testing
 
-Mirror the golden vertical ([testing.md](../testing.md)): hook tests for the selection and time state machines (including viewpoint-change refetch), component tests for rendering and interaction across loading/error/empty/partial states, IPC mocked at the adapter with a stub graph (e.g. `DevelopmentMemoryGraph`, [praxis-adapters](../praxis-adapters/README.md)). The chrome-free `PraxisWorkspaceSurface` is the unit under component test.
+Mirror the golden vertical ([testing.md](../testing.md)): hook tests for the selection and time state machines (including viewpoint-change refetch), component tests for rendering and interaction across loading/error/empty/partial states, IPC mocked at the adapter with a stub graph (e.g. `DevelopmentMemoryGraph`, [praxis-adapters](../praxis-adapters/README.md)). The chrome-free `PraxisCanvasSurface` is the unit under component test.
 
 ## Security invariants
 

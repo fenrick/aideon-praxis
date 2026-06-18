@@ -6,7 +6,6 @@ edition = "2024"
 [dependencies]
 aideon_continuum = { path = "../crates/continuum" }
 aideon_praxis = { path = "../crates/praxis" }
-aideon_mneme = { path = "../crates/mneme" }
 anyhow = "1.0.102"
 clap = { version = "4.6.1", features = ["derive"] }
 serde = { version = "1.0.228", features = ["derive"] }
