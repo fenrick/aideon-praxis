@@ -1,0 +1,51 @@
+{
+  "case": "pinned-belief-replay",
+  "description": "The same inputs as latest-hlc-wins, but the viewpoint pins as_of_asserted_at below the correction's HLC. The later fact is excluded from the candidate set BEFORE the chain runs, replaying the earlier belief.",
+  "corner_case": "latest-HLC (pinned belief)",
+  "input": {
+    "entity": "n:application:insight-hub",
+    "slot": "disposition",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-0300",
+        "op_type": "SetProperty",
+        "value": "Invest",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2025-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      },
+      {
+        "op_id": "op-0301",
+        "op_type": "SetProperty",
+        "value": "Tolerate",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2025-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7266366259200000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-06-11T00:00:00Z" },
+    "as_of_asserted_at": 7254636134400000000,
+    "layer": "actual",
+    "scenario": null
+  },
+  "expected": {
+    "present": true,
+    "value": "Invest",
+    "effective_interval": { "valid_from": "2025-01-01T00:00:00Z", "valid_to": null },
+    "content_classification": "Asserted",
+    "result_state": "Fresh",
+    "deciding_rule": "latest asserted time (within pinned-belief candidate set)",
+    "winning_op_id": "op-0300",
+    "asserted_bound_excluded": ["op-0301"],
+    "superseded": [],
+    "note": "op-0301's HLC 7266366259200000000 exceeds the pinned as_of_asserted_at 7254636134400000000, so it is not a candidate. Only op-0300 remains; the bound changes the candidate set, never the precedence among survivors."
+  }
+}

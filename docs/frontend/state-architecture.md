@@ -32,7 +32,7 @@ Every server-state cache key includes the full [`Viewpoint`](../../CONTEXT.md) �
 
 - Changing the viewpoint is not a refetch of the same key — it is a **different key**.
 - A read cached at one viewpoint is **never** served for another, mirroring the host's projection-identity rule.
-- Layout persistence and any geometry keyed by time include the viewpoint coordinates in their key, so a saved canvas arrangement under one scenario is distinct from another ([praxis-workspace](./praxis-workspace/README.md)).
+- This applies to **server-state** (data read at a viewpoint). **Surface layout is persistent UI state and is _not_ keyed by the viewpoint** — changing valid time, layer, or scenario changes the data shown, never the arrangement. The layout key is `workspace_id + local user/profile + surface_id + surface_instance/destination_id + layout_preset_id` ([shell.md](./shell.md), composition). A **saved structure** may bundle a saved layout _and_ an optional recorded viewpoint as **distinct fields**; opening it can visibly apply both, but changing the live viewpoint afterwards never silently forks a new layout ([praxis-workspace](./praxis-workspace/README.md)).
 
 A worked example: a graph surface cached at `{ asOf: 2026-06-10, layer: actual, scenario: null }` is a distinct cache entry from the same surface at `{ scenario: scn_plan_q3 }`. Switching scenario refetches rather than reusing; a host `stale` status flips the surface to a staleness badge and triggers a refetch.
 
@@ -44,9 +44,9 @@ Ephemeral interaction — a hover, a drag mid-flight, a transient highlight — 
 
 Layout and theme choices persist locally across reloads but are not workspace canonical material: they are not written to the op log and not synced as twin content ([ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md)). The active theme is the semantic-token rebinding of [ADR-0025](../06-adrs/ADR-0025-design-token-architecture.md), held as persistent UI state. The persistence mechanism itself is provisional ([ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md) open question).
 
-## State ownership in a surface
+## State ownership in the platform
 
-Each module owns a single state provider consumed by its four slots ([shell.md](./shell.md)); state is owned once, not duplicated. The golden pattern is a hook returning `[state, actions]`, with async side effects inside the hook and UI-ready state derived from DTOs ([praxis-workspace](./praxis-workspace/README.md), [chrona-time](./chrona-time/README.md)):
+The platform owns a single state provider (`HostPlatformProvider`, consumed via `useHostPlatform()`) shared across the shell's four regions ([shell.md](./shell.md)); state is owned once, not duplicated per engine. The golden pattern is a hook returning `[state, actions]`, with async side effects inside the hook and UI-ready state derived from DTOs ([praxis-workspace](./praxis-workspace/README.md), [chrona-time](./chrona-time/README.md)):
 
 - Co-locate state in hooks (e.g. `useTemporalPanel`, `useChrona`); avoid global singletons.
 - Derive UI-ready state from DTOs in the hook; keep IPC mapping in the adapter layer, not the component.

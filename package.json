@@ -39,6 +39,7 @@
     "host:ci": "pnpm run host:format:check && pnpm run host:lint && pnpm run host:check && pnpm run host:test",
     "ci": "pnpm run node:ci && pnpm run host:ci",
     "design:guard": "node tools/design-system-guard.mjs",
+    "docs:corpus": "node tools/docs-corpus.mjs",
     "preflight": "node tools/preflight.mjs",
     "components:refresh": "pnpm dlx shadcn@latest add --all --overwrite --yes && pnpm dlx shadcn@latest add @reactflow/node-search @reactflow/base-node @reactflow/node-tooltip @reactflow/animated-svg-edge @reactflow/node-status-indicator @reactflow/node-appendix @reactflow/placeholder-node @reactflow/labeled-group-node @reactflow/base-handle @reactflow/labeled-handle @reactflow/button-handle @reactflow/button-edge @reactflow/data-edge @reactflow/zoom-slider @reactflow/zoom-select @reactflow/devtools --overwrite --yes",
     "node:e2e": "node tests/e2e/run.mjs",
@@ -198,6 +199,6 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs,json,md,mdx,css}": "prettier --write",
-    "*.rs": "rustfmt"
+    "*.rs": "rustfmt --edition 2024"
   }
 }

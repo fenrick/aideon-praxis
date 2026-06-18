@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aideon.dev/contracts/operations/actor-declare.schema.json",
+  "title": "ActorDeclare payload",
+  "description": "Typed payload for the actor-declare operation kind (registry code 12, reserved). Introduces a logical actor into the canonical actor registry; later operations reference `declared_actor_id` as their `actor_id`. The runtime aideon_actors table is a projection rebuilt from these declarations, so deleting .aideon/runtime/ and rebuilding restores enough to interpret every operation's provenance (ADR-0038). DESIGN-INTENT: this kind is not yet an OpType variant in crates/mneme_core/src/ops.rs (the code has 1-11); code 12 is reserved for it. The asserting identity is a logical actor, never a device — no device_id appears here. Encoded per the canonical-JSON profile: all fields present, UUIDs lower-case hyphenated.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["declared_actor_id", "actor_kind", "display_name"],
+  "properties": {
+    "declared_actor_id": {
+      "$ref": "#/$defs/id",
+      "description": "The opaque, stable, device-independent UUID of the logical actor being declared. Scoped to the workspace as (workspace_id, actor_id); never reused, never derived from a name, email, or machine."
+    },
+    "actor_kind": {
+      "type": "string",
+      "enum": ["person", "import", "ai", "connector", "system"],
+      "description": "What kind of logical actor this is: a human (`person`), an import job (`import`), an AI process (`ai`), a connector run (`connector`), or the system (`system`)."
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Human-readable label for the actor. Never used to infer actor equivalence; identity is the declared_actor_id alone."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    }
+  }
+}

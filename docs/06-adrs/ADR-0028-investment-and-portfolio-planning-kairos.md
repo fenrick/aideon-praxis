@@ -1,6 +1,6 @@
 # ADR-0028: Investment and Portfolio Planning (Kairos)
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0011 (module taxonomy), ADR-0009 (temporal model), ADR-0008 (diff compares two viewpoints)
 - Relates-To: ADR-0020 (integrity scoring), ADR-0021 (confidence scale), ADR-0012 (Lexis), ADR-0027 (projection consistency)

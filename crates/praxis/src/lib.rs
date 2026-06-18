@@ -38,7 +38,6 @@ pub mod continuum {
     pub use aideon_continuum::*;
 }
 
-/// Re-export Mneme (persistence + DTOs).
-pub mod mneme {
-    pub use aideon_mneme::*;
-}
+// The Mneme persistence crate was the inside-out prototype and has been removed
+// (rebuilt to the M0 spec under #292); the `praxis::mneme` re-export is gone with
+// it. Storage types return via the new MnemeStore trait when M0 lands.

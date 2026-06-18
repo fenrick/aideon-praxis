@@ -1,0 +1,54 @@
+{
+  "case": "unlink-hidden",
+  "description": "An unlink — a later SetEdgeExistenceInterval that closes the edge's open-ended existence with a finite valid_to — makes the edge absent after the unlink instant. Before that instant the edge is still visible.",
+  "corner_case": "unlink",
+  "input": {
+    "edge": "e:insight-realises-insight",
+    "edge_type": "realises",
+    "from": "n:application:insight-hub",
+    "to": "n:capability:customer-insight",
+    "operations": [
+      {
+        "op_id": "op-0910",
+        "op_type": "CreateEdge",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      },
+      {
+        "op_id": "op-0911",
+        "op_type": "SetEdgeExistenceInterval",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": "2026-05-01T00:00:00Z",
+        "asserted_hlc": 7266366259200000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-06-11T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": null
+  },
+  "expected": {
+    "present": false,
+    "edge_visible": false,
+    "effective_interval": null,
+    "content_classification": null,
+    "result_state": "Fresh",
+    "deciding_rule": "latest asserted time then containment (closed existence interval excludes the instant)",
+    "winning_op_id": "op-0911",
+    "superseded": [
+      {
+        "op_id": "op-0910",
+        "eliminated_at_rule": "latest asserted time",
+        "reason": "the open-ended existence was superseded by op-0911's closed interval [2026-01-01, 2026-05-01), which excludes 2026-06-11"
+      }
+    ],
+    "note": "A read at an instant before 2026-05-01 (e.g. 2026-03-01) would find the edge visible under op-0911's interval; a read pinned to a belief before op-0911 would resolve op-0910's open-ended edge."
+  }
+}

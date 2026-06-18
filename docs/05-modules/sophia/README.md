@@ -13,6 +13,9 @@ This README is the index and the cross-cutting narrative; each focused topic liv
 1. [Guardrails and provenance](./guardrails-and-provenance.md) — Generated content, acceptance as a new Asserted operation, the host capability, and the offline posture.
 2. [Grounding and retrieval](./grounding-and-retrieval.md) — RAG over Lexis retrieval rather than free generation.
 3. [Model cards](./model-cards.md) — per-output disclosure for every generated suggestion.
+4. [Data access and scope](./data-access-and-scope.md) — what Sophia may read, the egress boundary, embedding storage, and data residency.
+5. [Model management](./model-management.md) — which models are permitted, local-vs-hosted selection, and the offline posture.
+6. [Approval and audit](./approval-and-audit.md) — what may be suggested vs done autonomously, the approval workflow, and the prompt/response/tool-call audit trail.
 
 ---
 

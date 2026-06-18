@@ -10,7 +10,7 @@ The renderer is a presentation layer. It owns no canonical data, talks to the ho
 
 1. [The renderer in one picture](#1-the-renderer-in-one-picture)
 2. [The files in this folder](#2-the-files-in-this-folder)
-3. [The feature packages](#3-the-feature-packages)
+3. [The engine packages](#3-the-engine-packages)
 4. [The invariants](#4-the-invariants)
 5. [References & standards](#5-references--standards)
 6. [Related documents](#6-related-documents)
@@ -19,15 +19,16 @@ The renderer is a presentation layer. It owns no canonical data, talks to the ho
 
 ## 1. The renderer in one picture
 
-The renderer is one shell that frames every workspace, a set of feature packages mirroring the modules they face, a design system behind a proxy boundary, and a thin typed-IPC seam to the host. Nothing durable lives in the renderer; everything it shows is a cache of host truth read at a [viewpoint](../../CONTEXT.md), and everything it changes is a command.
+The renderer is one platform-owned shell, a set of engine packages that contribute widgets to it, a design system behind a proxy boundary, and a thin typed-IPC seam to the host. Engines are gated by licensing — an unlicensed engine contributes nothing. Nothing durable lives in the renderer; everything it shows is a cache of host truth read at a [viewpoint](../../CONTEXT.md), and everything it changes is a command.
 
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  Aideon Desktop shell (one shell, four regions)            │
 │  ┌──────────────┬───────────────────────────┬───────────┐ │
-│  │ navigation   │ content (active workspace) │ inspector │ │
+│  │ navigation   │ content (engine widgets)   │ inspector │ │
 │  └──────────────┴───────────────────────────┴───────────┘ │
-│  workspaces/<module>  ←  feature packages mirror modules    │
+│  src/platform   ←  shell composition, licensing, catalogue  │
+│  src/engines/<module>  ←  engines contribute widgets        │
 │        │                                                    │
 │  src/design-system  ←  proxy boundary (shadcn/Radix/XYFlow) │
 │        │                                                    │
@@ -43,8 +44,8 @@ The four files that carry the cross-cutting narrative are the shell, the state a
 
 | File                                                   | What it covers                                                                                                                                                         |
 | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [shell.md](./shell.md)                                 | The one shell, its four regions, the `WorkspaceModule` contract, and the static-export constraints.                                                                    |
-| [package-layout.md](./package-layout.md)               | The feature packages that mirror modules at `src/workspaces/<module>`, and the design-system/adapters/DTOs leaf packages.                                              |
+| [shell.md](./shell.md)                                 | The one platform-owned shell, its four regions, how engines contribute widgets, and the static-export constraints.                                                     |
+| [package-layout.md](./package-layout.md)               | The platform (`src/platform/`) and the engine packages at `src/engines/<module>`, and the design-system/adapters/DTOs leaf packages.                                   |
 | [state-architecture.md](./state-architecture.md)       | The three-way state separation and the viewpoint as a first-class state coordinate ([ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md)).                   |
 | [data-fetching.md](./data-fetching.md)                 | Server-state caching, the viewpoint-keyed cache key, invalidation from host events, and optimistic mutation.                                                           |
 | [error-loading-empty.md](./error-loading-empty.md)     | The loading / error / empty / honest-state contract every surface renders, mapped to the §9 vocabulary.                                                                |
@@ -52,19 +53,19 @@ The four files that carry the cross-cutting narrative are the shell, the state a
 | [testing.md](./testing.md)                             | The testing architecture — Vitest, React Testing Library, Playwright, IPC mocking, and visual regression.                                                              |
 | [ipc-adapters-and-dtos.md](./ipc-adapters-and-dtos.md) | The typed-IPC seam: adapters, DTOs, branded types, zod validation, error mapping, and versioning ([ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md)).     |
 
-## 3. The feature packages
+## 3. The engine packages
 
-Feature packages mirror the modules they face, one folder per module under `src/workspaces/<module>` ([DOCUMENTATION-STANDARD.md §10](../02-standards/DOCUMENTATION-STANDARD.md)). A package owns its surface, its state, its data-fetching keys, and its tests; it composes the design system and reaches the host only through the adapters.
+Engine packages mirror the modules they face, one folder per module under `src/engines/<module>` ([DOCUMENTATION-STANDARD.md §10](../02-standards/DOCUMENTATION-STANDARD.md)); the platform (`src/platform/`) composes the shell and renders their licensed widgets. A package owns its `EngineDefinition`, its widgets, its state hooks, its data-fetching keys, and its tests; it composes the design system and reaches the host only through the adapters.
 
-**Built surfaces** — each has a folder here with concrete contracts:
+**Engine surfaces** — Praxis is the engine registered today; the others are documented as design intent (their widgets land when the engine package registers in `ENGINES`):
 
-| Package                                                  | Faces                                          | What it provides                                                                                           |
-| -------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [praxis-workspace](./praxis-workspace/README.md)         | [Praxis](../05-modules/praxis/README.md)       | The primary modelling surface: graph canvas (**Topos**), catalogue, matrix, map, the time-first inspector. |
-| [chrona-time](./chrona-time/README.md)                   | [Chrona](../05-modules/chrona/README.md)       | The viewpoint controls: as-of time, layer, scenario, diff, and merge UX, shared across workspaces.         |
-| [metis-workspace](./metis-workspace/README.md)           | [Metis](../05-modules/metis/README.md)         | The analytics surface: bounded, explainable runs, results, and evidence.                                   |
-| [mneme-workspace](./mneme-workspace/README.md)           | [Mneme](../05-modules/mneme/README.md)         | The operator surface: storage health, jobs, integrity, schema, maintenance.                                |
-| [continuum-automation](./continuum-automation/README.md) | [Continuum](../05-modules/continuum/README.md) | The automation surface: schedules, connectors, runs, and provenance.                                       |
+| Package                                                  | Faces                                          | What it provides                                                                                             |
+| -------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [praxis-workspace](./praxis-workspace/README.md)         | [Praxis](../05-modules/praxis/README.md)       | The primary modelling widgets: graph canvas (**Topos**), catalogue, matrix, chart, the time-first inspector. |
+| [chrona-time](./chrona-time/README.md)                   | [Chrona](../05-modules/chrona/README.md)       | The viewpoint controls: as-of time, layer, scenario, diff, and merge UX, owned by the platform toolbar.      |
+| [metis-workspace](./metis-workspace/README.md)           | [Metis](../05-modules/metis/README.md)         | The analytics widgets: bounded, explainable runs, results, and evidence.                                     |
+| [mneme-workspace](./mneme-workspace/README.md)           | [Mneme](../05-modules/mneme/README.md)         | The operator widgets: storage health, jobs, integrity, schema, maintenance.                                  |
+| [continuum-automation](./continuum-automation/README.md) | [Continuum](../05-modules/continuum/README.md) | The automation widgets: schedules, connectors, runs, and provenance.                                         |
 
 **Shared leaf packages:**
 
@@ -74,7 +75,7 @@ Feature packages mirror the modules they face, one folder per module under `src/
 | [praxis-adapters](./praxis-adapters/README.md) | The typed IPC adapter interfaces (`GraphAdapter`, `MutableGraphAdapter`, `MetaModelProvider`).                                  |
 | [praxis-dtos](./praxis-dtos/README.md)         | The DTO shapes crossing the boundary, with branded types and zod validation.                                                    |
 
-**Planned surfaces** — design intent only, one short README each, mirroring `src/workspaces/<module>`:
+**Planned surfaces** — design intent only, one short README each, landing at `src/engines/<module>`:
 
 [kairos-investment](./kairos-investment/README.md) · [koinon-collaboration](./koinon-collaboration/README.md) · [themis-governance](./themis-governance/README.md) · [aegis-risk](./aegis-risk/README.md) · [skopos-discovery](./skopos-discovery/README.md) · [lexis-search](./lexis-search/README.md) · [pylon-interchange](./pylon-interchange/README.md) · [kerux-reporting](./kerux-reporting/README.md) · [sophia-assist](./sophia-assist/README.md)
 

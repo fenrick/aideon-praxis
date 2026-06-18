@@ -1,0 +1,72 @@
+{
+  "case": "multi-valued-slot",
+  "description": "A multi-valued slot returns the full resolved set of contained, non-superseded values rather than a single winner. DESIGN-INTENT: no seed attribute declares multi-valued cardinality, so the input declares the slot multi-valued explicitly to show the resolution shape.",
+  "corner_case": "single- vs multi-valued slot",
+  "design_intent": true,
+  "input": {
+    "entity": "n:data-entity:customer-profile",
+    "slot": "tags",
+    "kind": "string",
+    "cardinality": "multi",
+    "cardinality_note": "core-v1.json declares no 'tags' slot and no multi-valued cardinality; this slot is a design-intent illustration of multi-valued resolution. FieldDef carries cardinality (op-fact-schema-model) but the seed does not populate it.",
+    "operations": [
+      {
+        "op_id": "op-0800",
+        "op_type": "OrSetUpdate",
+        "value": "pii",
+        "member_op": "add",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      },
+      {
+        "op_id": "op-0801",
+        "op_type": "OrSetUpdate",
+        "value": "regulated",
+        "member_op": "add",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7254636134400000000
+      },
+      {
+        "op_id": "op-0802",
+        "op_type": "OrSetUpdate",
+        "value": "draft",
+        "member_op": "add",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": "2026-03-01T00:00:00Z",
+        "asserted_hlc": 7254636134400000001
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-06-11T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": null
+  },
+  "expected": {
+    "present": true,
+    "values": ["pii", "regulated"],
+    "effective_interval": { "valid_from": "2026-01-01T00:00:00Z", "valid_to": null },
+    "content_classification": "Asserted",
+    "result_state": "Fresh",
+    "deciding_rule": "multi-valued: union of contained, non-superseded members",
+    "winning_op_ids": ["op-0800", "op-0801"],
+    "superseded": [
+      {
+        "op_id": "op-0802",
+        "value": "draft",
+        "eliminated_at_rule": "containment",
+        "reason": "member valid interval [2026-01-01, 2026-03-01) does not contain 2026-06-11"
+      }
+    ],
+    "note": "A single-valued slot would apply the precedence chain to pick one winner; a multi-valued slot returns every member whose interval contains the instant and is not superseded."
+  }
+}

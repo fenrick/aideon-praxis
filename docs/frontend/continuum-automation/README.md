@@ -1,6 +1,6 @@
 # Continuum Automation
 
-The automation surface, facing [Continuum](../../05-modules/continuum/README.md): schedules, connector runs, ingest history, and provenance. It renders inside the one shell ([shell.md](../shell.md)) and keeps automation visible, attributable, and cancellable without weakening the offline-first posture. It may be a dedicated workspace module or a toolbox panel; either way it uses the standard shell slots.
+The automation surface, facing [Continuum](../../05-modules/continuum/README.md): schedules, connector runs, ingest history, and provenance. It renders inside the one shell ([shell.md](../shell.md)) and keeps automation visible, attributable, and cancellable without weakening the offline-first posture. When the Continuum engine is licensed it contributes its automation widgets to the shared shell like any other engine ([shell.md](../shell.md)).
 
 This README is the contract; [DESIGN.md](./DESIGN.md) carries the screen, run-model, and provenance detail.
 

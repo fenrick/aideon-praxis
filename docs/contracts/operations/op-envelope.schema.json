@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aideon.dev/contracts/operations/op-envelope.schema.json",
+  "title": "OpEnvelope",
+  "description": "The canonical append-only operation record written to a model/ops/ segment (one canonical-JSON object per line). The discriminator is the stable kebab-case `kind` name; the typed `payload` object conforms to the matching per-kind schema in this directory. Encoded per the canonical-JSON profile (docs/04-contracts/canonical-json.md): keys sorted by UTF-8 byte order, all fields present, absent optionals as null, HLC/full-range coordinates as decimal strings. The u16 op code lives only in the registry and SQLite projection, never in the record (ADR-0038).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "op_id",
+    "actor_id",
+    "asserted_at",
+    "kind",
+    "format_version",
+    "origin",
+    "deps",
+    "payload"
+  ],
+  "properties": {
+    "op_id": {
+      "$ref": "#/$defs/id",
+      "description": "Permanent identity of this one append; minted once on the authoring path and preserved verbatim across replay, package, and rebuild. With partition_id it forms the (partition_id, op_id) identity."
+    },
+    "actor_id": {
+      "$ref": "#/$defs/id",
+      "description": "Who or what asserted the operation; drives content classification."
+    },
+    "asserted_at": {
+      "$ref": "#/$defs/hlc",
+      "description": "Hybrid logical clock (full-range packed i64) encoded as a decimal string per the canonical-JSON profile, never a JSON number."
+    },
+    "kind": {
+      "$ref": "#/$defs/kind",
+      "description": "Stable kebab-case operation discriminator. The portable contract name; the u16 code is registry-only and never appears in the record."
+    },
+    "format_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Canonical-JSON profile / record format version. A bump is a refuse-or-degrade event, never a silent change (ADR-0002, ADR-0038)."
+    },
+    "origin": {
+      "$ref": "#/$defs/origin",
+      "description": "Through which process or source the operation arose (provenance, distinct from the asserting `actor_id`). One actor produces operations through many runs, so origin lives on the operation, not only in mutable actor metadata. Actor answers who; origin answers through what; asserted_at answers when (ADR-0038)."
+    },
+    "deps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/id" },
+      "description": "Causal dependencies, by op_id ([] when none). An operation whose predecessor is absent is reported on import, not applied blind."
+    },
+    "payload": {
+      "type": "object",
+      "description": "Typed payload object for this kind, conforming to the matching docs/contracts/operations/<kind>.schema.json. Not opaque bytes and not base64 — opaque bytes may persist only as a validated cache of these canonical bytes, never as the contract."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "description": "An Id serialised as a canonical UUID string (lower-case, hyphenated). ULID input is accepted on parse but normalised to lower-case UUID before append.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "hlc": {
+      "type": "string",
+      "description": "Full-range 64-bit coordinate as a decimal string (canonical-JSON profile). The in-memory representation remains i64.",
+      "pattern": "^-?[0-9]+$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "create-node",
+        "create-edge",
+        "tombstone-entity",
+        "set-property-interval",
+        "clear-property-interval",
+        "upsert-metamodel-batch",
+        "set-edge-existence-interval",
+        "actor-declare"
+      ],
+      "description": "The M0-valid operation kinds. Deferred kinds keep reserved registry codes but are NOT accepted at M0: or-set-update (6) and counter-update (7) are CRDT convergence ops deferred to M6 (ADR-0034); create-scenario (9) and delete-scenario (10) are scenario-lifecycle ops deferred with the temporal/scenario work. An operation of a deferred kind requires a future feature (manifest.required_features); an M0 reader refuses read-write rather than accepting it."
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "description": "Provenance: through which process or source the operation arose. `kind` is always present; the remaining fields are optional and kind-specific (a `manual` origin carries only `kind`; an `import` origin adds `import_batch_id`, `source_digest`, `mapping_config_digest`, and/or `source_item_key`; a `connector` origin adds `connector_run_id`). The per-kind required combinations are enforced by the writer; this schema lists the full known field set and forbids unknown fields (ADR-0038).",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["manual", "import", "connector", "generated", "system"],
+          "description": "Which kind of process produced the operation: a human action (`manual`), an import batch (`import`), a connector run (`connector`), an automated/AI generation (`generated`), or the system itself (`system`)."
+        },
+        "import_batch_id": {
+          "$ref": "#/$defs/id",
+          "description": "Import-origin: the batch this operation belongs to."
+        },
+        "source_digest": {
+          "type": "string",
+          "description": "Import-origin: digest of the source artefact the operation was derived from."
+        },
+        "mapping_config_digest": {
+          "type": "string",
+          "description": "Import-origin: digest of the mapping configuration applied during import."
+        },
+        "source_item_key": {
+          "type": "string",
+          "description": "Import-origin: the key of the source item within the batch this operation maps from."
+        },
+        "connector_run_id": {
+          "$ref": "#/$defs/id",
+          "description": "Connector-origin: the connector run that produced the operation."
+        }
+      }
+    }
+  }
+}

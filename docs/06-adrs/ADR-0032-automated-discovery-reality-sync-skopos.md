@@ -1,6 +1,6 @@
 # ADR-0032: Automated Discovery and Reality-Sync — Skopos
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0011 (module taxonomy)
 - Relates-To: ADR-0013 (interchange — Pylon), ADR-0028 (investment and portfolio planning — Kairos), ADR-0009 (temporal model)

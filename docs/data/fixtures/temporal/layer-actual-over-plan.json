@@ -1,0 +1,53 @@
+{
+  "case": "layer-actual-over-plan",
+  "description": "The actual_over_plan policy resolves each layer independently by the within-layer chain, then overlays the higher-priority (actual) result where it exists. Cross-layer combination is governed by policy, not the chain.",
+  "corner_case": "actual-over-plan layer policy",
+  "input": {
+    "entity": "n:application:automation-orchestrator",
+    "slot": "disposition",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-0500",
+        "op_type": "SetProperty",
+        "value": "Invest",
+        "layer": "plan",
+        "scenario": null,
+        "valid_from": "2026-07-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      },
+      {
+        "op_id": "op-0501",
+        "op_type": "SetProperty",
+        "value": "Migrate",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7254636134400000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-09-01T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": { "policy": "actual_over_plan" },
+    "scenario": null
+  },
+  "expected": {
+    "present": true,
+    "value": "Migrate",
+    "effective_interval": { "valid_from": "2026-01-01T00:00:00Z", "valid_to": null },
+    "content_classification": "Asserted",
+    "result_state": "Fresh",
+    "deciding_rule": "layer policy: actual overrides plan where it exists",
+    "per_layer_winners": {
+      "actual": { "op_id": "op-0501", "value": "Migrate" },
+      "plan": { "op_id": "op-0500", "value": "Invest" }
+    },
+    "winning_op_id": "op-0501",
+    "superseded": []
+  }
+}

@@ -19,48 +19,15 @@ This workspace does not implement analytics logic. It renders results produced b
 - Long-running analytics are **jobs**: observable, cancellable, and recoverable.
 - The renderer never executes algorithms locally; it renders results and evidence only.
 
-## Shell slots (required)
+## Widgets contributed
 
-Metis integrates into the desktop shell via the standard slots.
+This is **design intent**: Metis is not yet registered in the platform's `ENGINES` ([package-layout.md](../package-layout.md)). When the Metis engine is licensed it contributes widgets to the one shared shell; the platform owns navigation, toolbar, content, and inspector, and Metis ships no chrome of its own ([shell.md](../shell.md)). The widgets it intends to contribute:
 
-### Navigation
+- **Analysis configuration** — a form widget for a bounded run (scope, parameters, limits), surfacing boundedness constraints (e.g. “limited to 500 results”).
+- **Result** — table/graph cards rendering a run's output, with loading skeletons, empty states (no results yet), and human-readable error states with retry. Large results are virtualized and/or paged; no unbounded rendering.
+- **Evidence** — the read-only “why?” view for a selected result, navigable back to underlying twin ids.
 
-- Saved analyses (recent/favorites).
-- Runs history grouped by workspace + time context.
-- Quick links: Centrality, Impact, Shortest path, TCO, Diagnostics.
-
-Navigation details:
-
-- Saved analyses are immutable definitions (stored requests with stable ids).
-- Runs history entries are immutable results (tied to a `job_id` and timestamps).
-- Filters:
-  - by scenario/branch,
-  - by layer,
-  - by analysis kind,
-  - by status (running/completed/failed).
-
-### Toolbar
-
-- Time context summary (valid time, layer, scenario) consistent with Praxis.
-- Primary action: “Run analysis” (disabled when invalid).
-- Secondary actions: “Save”, “Duplicate”, “Export”, “View job tray”.
-
-Toolbar details:
-
-- “Run analysis” must surface boundedness constraints (e.g., “limited to 500 results”).
-- “Export” is capability-gated and PII-redacted by default.
-- “Save” stores the request definition; it does not store results unless explicitly requested.
-
-### Content surface
-
-- Analysis configuration panel (form) and result panel (table/graph cards).
-- Results must render with:
-  - loading skeletons,
-  - empty states (no results yet),
-  - error states (human-readable + retry).
-- Large results are virtualized and/or paged; no unbounded rendering.
-
-Content screens (minimum)
+Intended analysis kinds the widgets cover (minimum):
 
 1. Centrality
    - Inputs: algorithm, scope, limits.
@@ -78,31 +45,18 @@ Content screens (minimum)
    - Inputs: scope, ruleset selection.
    - Outputs: issues list with severity and “go to” links.
 
-Result rendering contract:
+Result rendering contract — a result widget always shows:
 
-- Always show:
-  - input summary (time context + parameters),
-  - bounds summary (limits applied, truncation flags),
-  - “why” entrypoint (evidence panel).
+- input summary (time context + parameters),
+- bounds summary (limits applied, truncation flags),
+- “why” entrypoint (evidence panel).
 
-### Inspector
+How the shared shell hosts these widgets:
 
-- Selection-driven details for result items:
-  - node/edge info (by id),
-  - metric breakdown,
-  - contributing paths/evidence.
-- Inspector actions are task/job driven (no renderer-side mutation).
-
-Inspector details:
-
-- Primary inspector modes:
-  - Result: metric/evidence for a selected row/path node.
-  - Run: run metadata, bounds applied, warnings, job links.
-- “Copy evidence” produces a safe, redacted summary by default.
-
-### Footer / status
-
-- Job tray entrypoint and last-run status (success/failure).
+- **Navigation** (platform-owned) surfaces saved analyses (immutable definitions with stable ids) and runs history (immutable results tied to a `job_id` and timestamps), filterable by scenario/branch, layer, analysis kind, and status (running/completed/failed).
+- **Toolbar** (platform-owned) carries the shared viewpoint controls (valid time, layer, scenario) plus the run actions Metis registers — “Run analysis” (disabled when invalid; capability-gated export is PII-redacted by default; “Save” stores the request definition, not results, unless explicitly requested).
+- **Inspector** (platform-owned) shows selection-driven details for a result item (node/edge info by id, metric breakdown, contributing paths/evidence) and run metadata (bounds applied, warnings, job links). Inspector actions are task/job driven, with no renderer-side mutation; “Copy evidence” produces a safe, redacted summary by default.
+- **Footer / status** (platform-owned) carries the job tray entrypoint and last-run status.
 
 ## Interaction contracts
 
@@ -149,7 +103,7 @@ Renderer/host contract (target end state):
 
 - Renderer uses typed IPC only; no renderer HTTP.
 - Metis workspace DTOs live in `src/dtos/metis.ts` and are re-exported from `src/dtos/index.ts`.
-- The workspace calls the host exclusively via an adapter surface under `src/workspaces/metis/` (no ad-hoc invokes).
+- The workspace calls the host exclusively via an adapter surface under `src/engines/metis/` (no ad-hoc invokes).
 - Event consumption:
   - `job_updated` / `job_completed` for analytics runs and job tray updates,
   - `analytics_updated` for invalidation and refresh hints.

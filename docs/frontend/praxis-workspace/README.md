@@ -1,14 +1,16 @@
 # Praxis Workspace
 
-The renderer's primary modelling surface, facing [Praxis](../../05-modules/praxis/README.md). This is the workspace where a user reads and authors the time-first twin: a graph canvas, a catalogue, a matrix, a map, and a selection-driven inspector, all framed by the one shell ([shell.md](../shell.md)) and read at an explicit viewpoint.
+The renderer's primary modelling engine, facing [Praxis](../../05-modules/praxis/README.md). This is where a user reads and authors the time-first twin: a graph canvas, a catalogue, a matrix, and a chart, all framed by the one shell ([shell.md](../shell.md)) and read at an explicit viewpoint. Praxis is the only engine registered in the platform today (`PRAXIS_ENGINE`, `src/engines/praxis/engine.tsx`); it contributes widgets that the platform renders into the shared content surface, and it owns no shell chrome of its own.
 
 This README is the contract; [DESIGN.md](./DESIGN.md) carries the component, state, and interaction detail.
 
 ## What it provides
 
-- The four shell slots — `PraxisWorkspaceNavigation`, `PraxisWorkspaceToolbar`, `PraxisWorkspaceContent`, `PraxisWorkspaceInspector` — plus a chrome-free `PraxisWorkspaceSurface` for tests and previews.
-- Artefact widgets over the twin: graph canvas (the **Topos** canvas, [DESIGN.md](./DESIGN.md)), catalogue, matrix, map, and timeline.
-- The selection contract that drives the inspector and the shared viewpoint controls ([chrona-time](../chrona-time/README.md)).
+- An `EngineDefinition` (`src/engines/praxis/engine.tsx`) contributing the widgets the platform renders into the shared content surface: **graph** (the **Topos** canvas, [DESIGN.md](./DESIGN.md)), **catalogue**, **matrix**, and **chart**.
+- A `renderWidget(widget, context)` dispatcher the platform's widget catalogue routes to ([shell.md](../shell.md)).
+- The toolbar content the platform's `PlatformToolbar` renders — layout-preset and temporal controls (`PraxisWorkspaceToolbar`) — beside the shared viewpoint controls ([chrona-time](../chrona-time/README.md)).
+- The selection contract that drives the platform inspector.
+- A chrome-free `PraxisCanvasSurface` for tests and previews.
 - Time-first canvas behaviour: layout geometry persisted per viewpoint and re-run only on demand.
 
 ## Faces
@@ -17,7 +19,7 @@ This README is the contract; [DESIGN.md](./DESIGN.md) carries the component, sta
 
 ## State ownership
 
-`PraxisWorkspaceProvider` owns the module's state once; the four slots consume it ([state-architecture.md](../state-architecture.md)). Server-state (graph slices, artefact results) is a viewpoint-keyed cache ([data-fetching.md](../data-fetching.md)); selection, time cursor, filters, and active template are UI-state; canvas layout snapshots are persisted through host commands keyed by viewpoint.
+The platform owns the single shared state provider, `HostPlatformProvider` / `useHostPlatform()` ([state-architecture.md](../state-architecture.md)); the engine's widgets consume it rather than owning their own provider. Server-state (graph slices, artefact results) is a viewpoint-keyed cache ([data-fetching.md](../data-fetching.md)); selection, time cursor, filters, and active template flow through the platform state; canvas layout snapshots are persisted through host commands keyed by `surface_id + surface_instance/destination + layout_preset` — **not** the viewpoint (a scenario/time switch changes the data, never the arrangement; see [DESIGN.md](./DESIGN.md)).
 
 ## Boundaries
 
@@ -38,5 +40,5 @@ This README is the contract; [DESIGN.md](./DESIGN.md) carries the component, sta
 | [DESIGN.md](./DESIGN.md)                                                 | The component, state, canvas, and interaction contracts. |
 | [Praxis](../../05-modules/praxis/README.md)                              | The module this surface faces.                           |
 | [chrona-time](../chrona-time/README.md)                                  | The shared viewpoint controls this surface adopts.       |
-| [shell.md](../shell.md)                                                  | The shell contract the four slots fill.                  |
+| [shell.md](../shell.md)                                                  | The platform shell and how engines contribute widgets.   |
 | [canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md) | The Topos canvas blocks and styling conformance.         |

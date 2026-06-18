@@ -1,6 +1,6 @@
 # Kerux Reporting — design intent (PLANNED)
 
-> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/workspaces/kerux` when the [Kerux](../../05-modules/kerux/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
+> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/engines/kerux` when the [Kerux](../../05-modules/kerux/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 The reporting and publishing surface, facing [Kerux](../../05-modules/kerux/README.md) (introduced by ADR-0015). It renders inside the one shell ([shell.md](../shell.md)) and presents deterministic briefings, roadmaps, and packaged outputs with redaction by default and the executing viewpoint preserved.
 

@@ -6,7 +6,7 @@ How content-addressed storage protects workspace integrity, and what is rejected
 
 Binary artefacts — PDFs, images, exports, imported sources — are stored once as immutable blobs addressed by their content hash under `objects/sha256/<aa>/<bb>/<full-hash>` ([ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md)). The address _is_ the integrity check: an object's name is the hash of its content, so content and address cannot disagree without detection.
 
-- The fact model stores **references** to blobs (hash, MIME type, size, domain links), never the blob bytes. A `blob.attach` operation records the reference.
+- The fact model stores a typed **`BlobRef`** reference (`{ algorithm, digest, length, media_type? }`), never the blob bytes and never inline. An ordinary property operation carries the `BlobRef`; there is no `blob.attach` operation ([ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md), [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)).
 - Blobs are **immutable**: replacing a file writes a new blob with a new hash and keeps the old one reachable for history and rollback. A blob is never overwritten at an existing address ([CODING-STANDARDS.md §11](../CODING-STANDARDS.md#11-immutability-and-the-append-only-op-model)).
 - Identical bytes **deduplicate** by hash — attaching the same content twice does not duplicate storage.
 
@@ -31,7 +31,7 @@ The algorithm name lives in the path (`sha256`), versioned by directory, so a se
 
 ## Worked example
 
-A workspace attaches a source PDF: the host hashes the bytes, writes them to a temp file, fsyncs, renames to `objects/sha256/ab/cd/abcd…`, and records a `blob.attach` op referencing `abcd…`. Later, a byte in that file is flipped on disk. On the next read the host re-hashes and gets `ffee…` ≠ `abcd…`; it rejects the object, returns an `internal` error joinable to the trace ([ADR-0019](../../06-adrs/ADR-0019-observability-and-trace-context.md)), and does not surface corrupted bytes to the renderer. Reattaching the original bytes deduplicates back to `abcd…`.
+A workspace attaches a source PDF: the host hashes the bytes, writes them to a temp file, fsyncs, renames to `objects/sha256/ab/cd/abcd…`, and **then** appends an ordinary property operation whose value is a `BlobRef` to `abcd…` (the object is durably committed before the referencing operation). Later, a byte in that file is flipped on disk. On the next read the host re-hashes and gets `ffee…` ≠ `abcd…`; it rejects the object, returns an `internal` error joinable to the trace ([ADR-0019](../../06-adrs/ADR-0019-observability-and-trace-context.md)), and does not surface corrupted bytes to the renderer. Reattaching the original bytes deduplicates back to `abcd…`.
 
 ## References & standards
 

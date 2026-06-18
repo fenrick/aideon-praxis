@@ -8,19 +8,23 @@ The product's principal trust boundary is the Tauri seam: the WebView renderer i
 
 ## Contents
 
-| #   | File                                                                   | Question it answers                                                                                       |
-| --- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 1   | [trust-boundary.md](./trust-boundary.md)                               | What is trusted, what is not, and where the line sits?                                                    |
-| 2   | [threat-model.md](./threat-model.md)                                   | What are the assets, who are the adversaries, and how does STRIDE map to the boundary?                    |
-| 3   | [controls-asvs.md](./controls-asvs.md)                                 | Which OWASP ASVS 5.0 controls verify each security concern?                                               |
-| 4   | [capability-scoping.md](./capability-scoping.md)                       | How are Tauri capabilities scoped, and how do Themis (policy) and the Host (enforcement) divide the work? |
-| 5   | [blobs-and-integrity.md](./blobs-and-integrity.md)                     | How is content-addressed storage verified, and what is rejected?                                          |
-| 6   | [secrets-and-keys.md](./secrets-and-keys.md)                           | Where do secrets live, how are keys derived, and how are they rotated?                                    |
-| 7   | [pii-and-export-redaction.md](./pii-and-export-redaction.md)           | What is PII here, and how is it redacted deny-by-default on export?                                       |
-| 8   | [supply-chain.md](./supply-chain.md)                                   | How is the build and dependency chain attested (SLSA, SBOM)?                                              |
-| 9   | [code-signing-and-distribution.md](./code-signing-and-distribution.md) | How are release binaries signed and distributed per platform?                                             |
-| 10  | [audit-and-logging.md](./audit-and-logging.md)                         | What is auditable, and how does logging avoid leaking secrets or PII?                                     |
-| 11  | [vulnerability-reporting.md](./vulnerability-reporting.md)             | How is a vulnerability reported and handled?                                                              |
+| #   | File                                                                           | Question it answers                                                                                         |
+| --- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| 1   | [trust-boundary.md](./trust-boundary.md)                                       | What is trusted, what is not, and where the line sits?                                                      |
+| 2   | [threat-model.md](./threat-model.md)                                           | What are the assets, who are the adversaries, and how does STRIDE map to the boundary?                      |
+| 3   | [controls-asvs.md](./controls-asvs.md)                                         | Which OWASP ASVS 5.0 controls verify each security concern?                                                 |
+| 4   | [capability-scoping.md](./capability-scoping.md)                               | How are Tauri capabilities scoped, and how do Themis (policy) and the Host (enforcement) divide the work?   |
+| 5   | [blobs-and-integrity.md](./blobs-and-integrity.md)                             | How is content-addressed storage verified, and what is rejected?                                            |
+| 6   | [secrets-and-keys.md](./secrets-and-keys.md)                                   | Where do secrets live, how are keys derived, and how are they rotated?                                      |
+| 7   | [pii-and-export-redaction.md](./pii-and-export-redaction.md)                   | What is PII here, and how is it redacted deny-by-default on export?                                         |
+| 8   | [supply-chain.md](./supply-chain.md)                                           | How is the build and dependency chain attested (SLSA, SBOM)?                                                |
+| 9   | [code-signing-and-distribution.md](./code-signing-and-distribution.md)         | How are release binaries signed and distributed per platform?                                               |
+| 10  | [audit-and-logging.md](./audit-and-logging.md)                                 | What is auditable, and how does logging avoid leaking secrets or PII?                                       |
+| 11  | [vulnerability-reporting.md](./vulnerability-reporting.md)                     | How is a vulnerability reported and handled?                                                                |
+| 12  | [renderer-compromise-scenarios.md](./renderer-compromise-scenarios.md)         | If an attacker runs code in the renderer, what can and cannot they reach, and what bounds the blast radius? |
+| 13  | [encryption-at-rest.md](./encryption-at-rest.md)                               | What is encrypted on disk, how are keys managed, and what is not protected?                                 |
+| 14  | [plugin-and-third-party-sandboxing.md](./plugin-and-third-party-sandboxing.md) | How are third-party plugins and connectors sandboxed, and what may they never reach?                        |
+| 15  | [security-invariant-tests.md](./security-invariant-tests.md)                   | Which security invariants must every release hold, each as a testable assertion?                            |
 
 ---
 

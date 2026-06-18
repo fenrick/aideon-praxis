@@ -8,7 +8,7 @@ The ten invariants the whole product upholds. These are non-negotiable: every mo
 
 The canonical source of truth is the **portable workspace folder** — not a database file and not a local service. Everything under `model/` (operation segments, schema-as-data) and `objects/` (content-addressed blobs) is canonical; everything under `.aideon/runtime/` (indexes, projections, search and vector sidecars, checkpoints) is derived and disposable. Delete the runtime and the workspace still opens; rebuild it and you recover the same effective graph. Fixed by [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md); shape in [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md). See [desktop-first-workspace/](./desktop-first-workspace/README.md).
 
-## 2. Operations and facts are canonical; everything else is derived
+## 2. Operations and schema are canonical; everything else is derived
 
 The append-only **operation** log is the durable record. **Facts** are derived temporal claims; effective graphs, tuple indexes, adjacency, search and vector sidecars, projection caches, and analytics outputs are all rebuildable from canonical files alone. When a derived output disagrees with the op log, the op log wins (Fowler/Young, Event Sourcing & CQRS). See [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md).
 

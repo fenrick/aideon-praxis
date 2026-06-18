@@ -1,6 +1,6 @@
 # ADR-0005: Sync and Conflict Model
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-10
 - Depends-On: ADR-0001, ADR-0002, ADR-0003
 
