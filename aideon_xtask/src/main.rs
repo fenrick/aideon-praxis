@@ -3,7 +3,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use aideon_mneme::{create_datastore, datastore_path};
 use aideon_praxis::temporal::{ChangeSet, CommitSummary};
 use aideon_praxis::{
     BaselineDataset, GraphSnapshot, MemoryStore, MetaModelRegistry, PersistedCommit, PraxisEngine,
@@ -805,8 +804,9 @@ async fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
             .with_context(|| format!("failed to clean {}", args.datastore.display()))?;
     }
 
-    let db_path =
-        create_datastore(&args.datastore, None).map_err(|err| anyhow!(err.to_string()))?;
+    fs::create_dir_all(&args.datastore)
+        .with_context(|| format!("failed to create {}", args.datastore.display()))?;
+    let db_path = args.datastore.join("praxis.sqlite");
     let storage = SqliteDb::open(&db_path)
         .await
         .map_err(|err| anyhow!(err.to_string()))?;
@@ -863,8 +863,7 @@ async fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
 }
 
 async fn check_health(args: HealthArgs) -> Result<()> {
-    let db_path = datastore_path(&args.datastore)
-        .with_context(|| format!("resolve datastore under {}", args.datastore.display()))?;
+    let db_path = args.datastore.join("praxis.sqlite");
     let storage = SqliteDb::open(&db_path)
         .await
         .map_err(|err| anyhow!(err.to_string()))?;

@@ -2,13 +2,11 @@
 use super::*;
 use crate::worker::WorkerState;
 use aideon_chrona::TemporalEngine;
-use aideon_praxis::mneme::open_store;
 use serde_json::json;
 use std::fs;
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Manager;
-use tempfile::tempdir;
 use tokio::sync::Mutex;
 
 static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -19,10 +17,8 @@ fn env_lock() -> &'static Mutex<()> {
 
 #[tokio::test]
 async fn list_projects_returns_default_payload() {
-    let dir = tempdir().expect("tempdir");
-    let mneme = open_store(dir.path()).await.expect("open store");
     let engine = TemporalEngine::new().await.expect("engine");
-    let state = WorkerState::new(engine, mneme);
+    let state = WorkerState::new(engine);
     let app = tauri::test::mock_app();
     app.manage(state);
     let state = app.state::<WorkerState>();
@@ -35,10 +31,8 @@ async fn list_projects_returns_default_payload() {
 
 #[tokio::test]
 async fn projects_list_wraps_request_id() {
-    let dir = tempdir().expect("tempdir");
-    let mneme = open_store(dir.path()).await.expect("open store");
     let engine = TemporalEngine::new().await.expect("engine");
-    let state = WorkerState::new(engine, mneme);
+    let state = WorkerState::new(engine);
     let app = tauri::test::mock_app();
     app.manage(state);
     let state = app.state::<WorkerState>();

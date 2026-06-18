@@ -199,6 +199,6 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs,json,md,mdx,css}": "prettier --write",
-    "*.rs": "rustfmt"
+    "*.rs": "rustfmt --edition 2024"
   }
 }
