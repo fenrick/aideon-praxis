@@ -1,0 +1,52 @@
+{
+  "op_id": "33333333-0000-4000-8000-000000000008",
+  "actor_id": "00000000-0000-4000-8000-0000000000a1",
+  "asserted_at": "7338950400000000000",
+  "kind": "upsert-metamodel-batch",
+  "format_version": 1,
+  "origin": { "kind": "manual" },
+  "deps": [],
+  "payload": {
+    "types": [
+      {
+        "type_id": "ab0aefe4-902f-5f99-8ce3-eae00286ebe0",
+        "applies_to": "node",
+        "label": "Application",
+        "is_abstract": false,
+        "parent_type_id": null
+      }
+    ],
+    "fields": [
+      {
+        "field_id": "cba320a9-7e3c-5597-b42f-284aad9a6406",
+        "label": "disposition",
+        "value_type": "str",
+        "cardinality_multi": false,
+        "merge_policy": "lww",
+        "is_indexed": true,
+        "disallow_overlap": false
+      }
+    ],
+    "type_fields": [
+      {
+        "type_id": "ab0aefe4-902f-5f99-8ce3-eae00286ebe0",
+        "field_id": "cba320a9-7e3c-5597-b42f-284aad9a6406",
+        "is_required": false,
+        "default_value": { "str": "Tolerate" },
+        "override_default": false,
+        "tighten_required": false,
+        "disallow_overlap": null
+      }
+    ],
+    "edge_type_rules": [
+      {
+        "edge_type_id": "ea3b966e-7c80-537a-9965-65943211827d",
+        "allowed_src_type_ids": ["ab0aefe4-902f-5f99-8ce3-eae00286ebe0"],
+        "allowed_dst_type_ids": ["ec929adf-eb79-51b8-a757-38d0452885ae"],
+        "semantic_direction": "source_to_target"
+      }
+    ],
+    "metamodel_version": "1.0.0",
+    "metamodel_source": "core-v1.json"
+  }
+}

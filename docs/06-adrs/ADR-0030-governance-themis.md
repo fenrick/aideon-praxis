@@ -1,6 +1,6 @@
 # ADR-0030: Governance — Themis
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0006 (Tauri trust boundary), ADR-0011 (module taxonomy)
 - Relates-To: ADR-0023 (threat model), ADR-0019 (observability and audit), ADR-0005 (sync), ADR-0001 (workspace is canonical authority)
@@ -27,6 +27,8 @@ Introduce **Themis** (Greek _Themis_, divine order and lawful judgement) as a pl
 1. **Themis decides policy; the Host enforces the boundary.** Themis answers "may this principal perform this action on this content under this policy?" The Host continues to enforce the Tauri capability boundary — the renderer gets product capabilities, not host capabilities ([ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md)) — and consults Themis for the policy decision before a governed command proceeds. The two are distinct: capability scoping is the mechanism, Themis policy is the decision. This separation aligns access control with OWASP ASVS 5.0 (OWASP, _Application Security Verification Standard 5.0_, V8 Authorization): decisions are enforced server-side (here, in Rust), deny-by-default, and never trusted from the renderer.
 
 2. **RBAC, deny-by-default.** Authority is granted by role, evaluated against the action and the content's classification and sensitivity, and denied unless explicitly permitted — consistent with the deny-by-default posture the threat model adopts for untrusted input ([ADR-0023](./ADR-0023-threat-model-stride-asvs.md)). Role metadata in a cleartext local workspace remains _policy, not enforcement_ ([ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md)); enforcement is real only where a trust boundary backs it, which hosted mode supplies.
+
+   **Policy is modelled as explicit, versioned policy operations — not as access-control fields on creation records.** M0 deliberately omits `owner_actor_id`/`acl_group_id`/`visibility` from `create-node`/`create-edge` rather than carry reserved nulls ([ADR-0038](./ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)), because none of "ownership attaches per entity", "ACLs are group-based", or "visibility is a scalar" is settled. Themis introduces policy additively — as policy entities/relationships, classifications, grants, and explicit `policy.*` operations — gated by `manifest.required_features` so an older build refuses read-write rather than misreading an unenforced restriction. An _owner_ is a governance assignment, distinct from the historical author already recorded by an operation's `actor_id`; conflating the two would make a creator automatically control content, which is not generally valid.
 
 3. **Approvals are first-class and underpin the Steward mode.** A governed change may require approval before it lands; Themis models the approval workflow (who must approve, in what order, with what queue) that the Steward participation mode presents as structured review rather than open editing ([ARTEFACTS-AND-FAMILIES.md](../03-design/ARTEFACTS-AND-FAMILIES.md)). A pending change is `Awaiting review` ([DOCUMENTATION-STANDARD.md §9](../02-standards/DOCUMENTATION-STANDARD.md)); acceptance writes the operation through the normal canonical path, attributed to the approver.
 

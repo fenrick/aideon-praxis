@@ -1,6 +1,6 @@
 # ADR-0014: AI Assistance and Generated Provenance — Sophia
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0001, ADR-0006, ADR-0011
 - Relates-To: ADR-0012, ADR-0021

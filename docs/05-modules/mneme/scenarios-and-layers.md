@@ -2,6 +2,8 @@
 
 How Mneme stores the two orthogonal "which world / what kind of claim" coordinates — [scenario](../../../CONTEXT.md) and [layer](../../../CONTEXT.md) — and how it composes a scenario overlay on read. This is the storage-layer view; the product-level interpretation (how a scenario is presented, compared, and promoted) belongs to [Chrona](../chrona/README.md). Where this file and the [temporal and scenario contract](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) could drift, the contract governs.
 
+> **M0 scope.** `scenario_id` is an explicit nullable operation coordinate, but at **M0 its only valid value is `null` (the base case)**: scenario authoring (the deferred `create-scenario`/`delete-scenario` ops), overlay composition, and precedence resolution are **Chrona/M2**. An M0 build refuses read-write on a workspace whose operations carry a non-null `scenario_id` or whose `manifest.required_features` demands scenario support, rather than storing an overlay it cannot resolve ([M0 build contract](../../build-contracts/M0-foundation.md)).
+
 ---
 
 ## Layer is a coordinate, not a precedence

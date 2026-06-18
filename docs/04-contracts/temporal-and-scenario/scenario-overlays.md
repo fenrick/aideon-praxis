@@ -1,6 +1,6 @@
 # Scenario overlays
 
-A scenario is an additive overlay on canonical temporal facts — an alternate world, orthogonal to layer. Canonical truth is the op log; scenario views are derived. This file is the composition contract and the scenario operations.
+A scenario is an additive overlay on the base-case temporal facts — an alternate world, orthogonal to layer. Canonical truth is the op log; both base-case facts and scenario views are derived from it. This file is the composition contract and the scenario operations.
 
 ---
 

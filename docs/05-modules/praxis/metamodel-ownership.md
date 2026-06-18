@@ -8,14 +8,14 @@ The full metamodel design — entity types, relationship types, slots, inheritan
 
 ## Praxis owns meaning; Mneme owns storage
 
-The [metamodel](../../../CONTEXT.md) is the authored, portable definition of what can exist in the twin. Praxis authors and compiles it; [Mneme](../mneme/README.md) stores the compiled form and answers effective-schema queries. The flow is one-directional ([DESIGN.md](../../03-design/DESIGN.md), axiom 4): Praxis publishes a `MetamodelBatch`, Mneme persists it, and neither side inverts the relationship. The persisted batch is a _derived_ projection — delete Mneme's store and Praxis recompiles and republishes from the source document ([packages and registry](../../03-design/metamodel/packages-and-registry.md)).
+The [metamodel](../../../CONTEXT.md) is the authored, portable definition of what can exist in the twin. Praxis authors it and (at **M1**) compiles the effective schema; [Mneme](../mneme/README.md) records the authored definitions as canonical history and answers effective-schema queries against the derived compilation. The flow is one-directional ([DESIGN.md](../../03-design/DESIGN.md), axiom 4): Praxis publishes an `AuthoredMetamodelBatch` (carrying unflattened definitions), Mneme records it as the canonical `UpsertMetamodelBatch` operation, and neither side inverts the relationship. **The operation is canonical, not derived** — the authored-source documents in `model/schema/authored/` and the compiled `model/schema/effective/` (M1) are both _derived_ projections of the op log, rebuilt from it after a runtime wipe ([workspace-integrity-and-recovery](../mneme/workspace-integrity-and-recovery.md)).
 
-| Praxis owns                                         | Mneme owns                                                  |
-| --------------------------------------------------- | ----------------------------------------------------------- |
-| The authored metamodel document and its packages    | The persisted `MetamodelBatch` and the effective schema     |
-| Which types and relationships exist and their rules | How facts about instances are stored, indexed, and resolved |
-| Validation of every write against the metamodel     | Append of the resulting operations to the op log            |
-| The domain↔storage registry's _meaning_             | The storage identifiers the registry maps to                |
+| Praxis owns                                         | Mneme owns                                                                                                        |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| The authored metamodel document and its packages    | The canonical `UpsertMetamodelBatch` history, the authored-document cache, and the compiled effective schema (M1) |
+| Which types and relationships exist and their rules | How facts about instances are stored, indexed, and resolved                                                       |
+| Validation of every write against the metamodel     | Append of the resulting operations to the op log                                                                  |
+| The domain↔storage registry's _meaning_             | The storage identifiers the registry maps to                                                                      |
 
 The metamodel must compile deterministically: inheritance resolution walks each type's `extends` chain, detects cycles as hard integrity violations, and flattens parent slots into each child's [effective schema](../../../CONTEXT.md) ([slots and effective schema](../../03-design/metamodel/slots-and-effective-schema.md)).
 
@@ -50,11 +50,11 @@ Praxis owns the rules this instance must obey: that `tier` is a known enum value
 
 ## Related documents
 
-| Document                                                                                  | What it covers                                                       |
-| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| [The metamodel](../../03-design/metamodel/README.md)                                      | The full metamodel design — the canonical record.                    |
-| [Packages and the registry](../../03-design/metamodel/packages-and-registry.md)           | How packages compile to a `MetamodelBatch` and how UUIDs are minted. |
-| [Edge catalogue](./edge-catalogue/README.md)                                              | The relationship vocabulary Praxis owns.                             |
-| [Slots and the effective schema](../../03-design/metamodel/slots-and-effective-schema.md) | How inheritance flattens into the compiled schema.                   |
-| [Mneme module](../mneme/README.md)                                                        | The storage engine that persists the compiled metamodel.             |
-| [`core-v1.json`](../../data/meta/core-v1.json)                                            | The implemented seed metamodel.                                      |
+| Document                                                                                  | What it covers                                                                                         |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [The metamodel](../../03-design/metamodel/README.md)                                      | The full metamodel design — the canonical record.                                                      |
+| [Packages and the registry](../../03-design/metamodel/packages-and-registry.md)           | How packages produce an `AuthoredMetamodelBatch` and how UUIDs are minted.                             |
+| [Edge catalogue](./edge-catalogue/README.md)                                              | The relationship vocabulary Praxis owns.                                                               |
+| [Slots and the effective schema](../../03-design/metamodel/slots-and-effective-schema.md) | How inheritance flattens into the compiled schema.                                                     |
+| [Mneme module](../mneme/README.md)                                                        | The storage engine that persists the authored metamodel and caches the compiled effective schema (M1). |
+| [`core-v1.json`](../../data/meta/core-v1.json)                                            | The implemented seed metamodel.                                                                        |

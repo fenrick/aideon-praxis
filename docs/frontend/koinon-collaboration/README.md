@@ -1,6 +1,6 @@
 # Koinon Collaboration — design intent (PLANNED)
 
-> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/workspaces/koinon` when the [Koinon](../../05-modules/koinon/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
+> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/engines/koinon` when the [Koinon](../../05-modules/koinon/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 The collaboration surface, facing [Koinon](../../05-modules/koinon/README.md) (introduced by ADR-0029, owning the sync-and-conflict model of [ADR-0005](../../06-adrs/ADR-0005-sync-and-conflict-model.md)). It renders inside the one shell ([shell.md](../shell.md)) and presents presence, the shared workspace, and the merge/conflict experience.
 

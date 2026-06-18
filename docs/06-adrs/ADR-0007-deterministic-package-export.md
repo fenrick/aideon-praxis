@@ -1,6 +1,6 @@
 # ADR-0007: Deterministic `.aideonpkg` Export and Import
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-10
 - Depends-On: ADR-0002, ADR-0003
 

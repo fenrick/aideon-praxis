@@ -35,7 +35,7 @@ A reader new to the system should take the documents in this order:
 3. [`boundary/layers-and-responsibilities.md`](./boundary/layers-and-responsibilities.md) — renderer, IPC, host, engines, canonical, derived: who owns what, with allowed/forbidden tables.
 4. [`boundary/dependency-rules.md`](./boundary/dependency-rules.md) and [`module-dependency-map.md`](./module-dependency-map.md) — the acyclic dependency graph and how it is enforced.
 5. [`boundary/time-first-rule.md`](./boundary/time-first-rule.md) — why every read and write carries a time context.
-6. [`quality-attributes.md`](./quality-attributes.md) — the quality scenarios the architecture is designed to meet.
+6. [`quality-attributes.md`](./quality-attributes.md) — the quality scenarios the architecture is designed to meet, and [`performance-and-scale.md`](./performance-and-scale.md) — the size limits, benchmark points, rebuild SLOs, op-log compaction, and cascade determinism.
 7. The remaining boundary files — [security](./boundary/security-constraints.md), [artefact execution](./boundary/artefact-execution-boundary.md), [versioning](./boundary/versioning-and-evolution.md) — and the [C4 model](./c4/README.md).
 
 ## 3. The boundary folder

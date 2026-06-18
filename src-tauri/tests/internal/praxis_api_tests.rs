@@ -3,9 +3,7 @@ use super::*;
 use crate::ipc::EmptyPayload;
 use crate::worker::WorkerState;
 use aideon_chrona::TemporalEngine;
-use aideon_praxis::mneme::open_store;
 use tauri::Manager;
-use tempfile::tempdir;
 use time::OffsetDateTime;
 
 fn ipc_request<T>(payload: T) -> IpcRequest<T> {
@@ -290,10 +288,8 @@ async fn artefact_wrappers_return_ipc_envelopes() {
 
 #[tokio::test]
 async fn praxis_ipc_commands_execute_over_bridge() {
-    let dir = tempdir().expect("tempdir");
-    let mneme = open_store(dir.path()).await.expect("open store");
     let engine = TemporalEngine::new().await.expect("engine");
-    let state = WorkerState::new(engine, mneme);
+    let state = WorkerState::new(engine);
 
     let app = tauri::test::mock_app();
     app.manage(state);

@@ -1,0 +1,14 @@
+{
+  "op_id": "33333333-0000-4000-8000-000000000020",
+  "actor_id": "00000000-0000-4000-8000-0000000000a0",
+  "asserted_at": "7338950400000000000",
+  "kind": "actor-declare",
+  "format_version": 1,
+  "origin": { "kind": "system" },
+  "deps": [],
+  "payload": {
+    "declared_actor_id": "00000000-0000-4000-8000-0000000000a1",
+    "actor_kind": "person",
+    "display_name": "Local user"
+  }
+}
