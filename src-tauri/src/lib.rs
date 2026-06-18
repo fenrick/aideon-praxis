@@ -8,7 +8,6 @@ mod ipc;
 mod logging;
 mod menu;
 mod metrics;
-mod mneme;
 mod praxis_api;
 mod scene;
 mod session_marker;
@@ -20,9 +19,9 @@ mod windows;
 mod worker;
 mod workspace;
 
-pub use aideon_praxis::mneme::WorkerHealth;
 pub use aideon_praxis::praxis::temporal::{DiffArgs, DiffSummary, StateAtArgs, StateAtResult};
 pub use ipc::{HostError, IpcRequest, IpcResponse};
+pub use worker::WorkerHealth;
 
 pub fn run() {
     app::run();

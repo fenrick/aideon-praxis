@@ -34,12 +34,7 @@ This UX is job-driven and capability-gated. The renderer never performs network 
 
 ## Surface placement (shell)
 
-Continuum automation may be represented as:
-
-- a dedicated workspace module (“Automation”), or
-- a toolbox panel embedded into an existing workspace.
-
-Regardless of placement, it must use the standard shell slots.
+This is **design intent**: Continuum is not yet registered in the platform's `ENGINES` ([package-layout.md](../package-layout.md)). When the Continuum engine is licensed it contributes automation widgets to the one shared shell; the platform owns navigation, toolbar, content, and inspector, and Continuum ships no chrome of its own ([shell.md](../shell.md)). There is no separate “Automation” workspace to switch into — its widgets join the shared content surface like any other licensed engine's.
 
 ## Vocabulary and identifiers
 
@@ -49,46 +44,20 @@ Regardless of placement, it must use the standard shell slots.
 - `dedupe_key`: stable idempotency key used to avoid duplicating ingest on retry/replay.
 - `provenance`: `{ source_system, connector_version, run_id, asserted_time_policy }`.
 
-## Shell slots (required)
+## Widgets contributed
 
-### Navigation
-
-- Schedules list (grouped by enabled/paused).
-- Connectors list (by type/source).
-- Run history (recent runs; filter by schedule/connector).
-- Failures (failed runs and retry queue).
-
-Navigation details:
-
-- Default grouping:
-  - Schedules: enabled, paused, failing (last run failed), disabled (requires capability).
-  - Connectors: healthy, needs-auth, failing, disabled.
-- Run history is filterable by:
-  - schedule,
-  - connector,
-  - status,
-  - time window.
-
-### Toolbar
-
-- “Run now” (contextual: schedule/connector).
-- “Create schedule”, “Add connector”.
-- “Pause all” / “Resume all” (when enabled).
-- Status summary chip (running runs count, last failure).
-
-Toolbar details:
-
-- “Run now” is capability-gated; if blocked, show a clear reason (“requires automation_run”).
-- “Pause all / Resume all” must be reversible and must not drop queued runs without confirmation.
-- Status chip is clickable and opens the run list filtered to active/failing runs.
-
-### Content surface
-
-Three primary screens:
+The widgets Continuum intends to contribute to the shared content surface (design intent — see [Surface placement](#surface-placement-shell)):
 
 1. **Schedule detail**: configuration + next runs + history.
 2. **Connector detail**: configuration + auth status + schema mapping summary.
 3. **Run detail**: progress timeline + outputs summary + provenance + logs/errors.
+
+How the shared shell hosts these widgets:
+
+- **Navigation** (platform-owned) surfaces the schedules list (grouped: enabled, paused, failing, disabled), the connectors list (healthy, needs-auth, failing, disabled), run history (filterable by schedule, connector, status, time window), and failures (failed runs and the retry queue).
+- **Toolbar** (platform-owned) carries the actions Continuum registers — “Run now” (contextual; capability-gated, with a clear reason such as “requires automation_run” when blocked), “Create schedule”, “Add connector”, reversible “Pause all”/“Resume all” (no queued runs dropped without confirmation), and a status summary chip (running count, last failure) that opens the run list filtered to active/failing runs.
+- **Inspector** (platform-owned) shows selection-driven details for a schedule, run, or connector, with capability-gated actions (pause/resume, retry failed run, open diagnostics, export audit pack).
+- **Footer / status** (platform-owned) carries the job tray entrypoint and an automation health badge.
 
 Schedule detail (required sections)
 
@@ -147,19 +116,6 @@ Run detail (required sections)
   - human-readable summary,
   - retry guidance,
   - link to Status window and copy diagnostics.
-
-### Inspector
-
-- Selection-driven details (schedule/run/connector).
-- Actions:
-  - pause/resume,
-  - retry failed run,
-  - open diagnostics,
-  - export audit pack (capability-gated).
-
-### Footer / status
-
-- Job tray entrypoint and automation health badge.
 
 ## Interaction contracts
 
@@ -230,7 +186,7 @@ Minimum test fixtures:
 
 - Renderer uses typed IPC only; no renderer HTTP.
 - Continuum automation DTOs live in `src/dtos/continuum.ts` and are re-exported from `src/dtos/index.ts`.
-- The automation surface calls the host exclusively via an adapter surface under `src/workspaces/continuum/` (or an equivalent workspace module).
+- The automation surface calls the host exclusively via an adapter surface under `src/engines/continuum/`.
 - Host-side automation runs as jobs and emits:
   - `job_updated` / `job_completed` (progress and completion),
   - `sync_updated` when connector sync status changes.

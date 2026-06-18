@@ -24,7 +24,7 @@ The append-only operation log is the durable truth. Schema is portable data. Pro
 
 **The canonical Aideon project is a portable workspace** containing append-only operation segments, schema-as-data, and immutable content-addressed blobs (format defined in [ADR-0002](./ADR-0002-portable-workspace-format.md) and [ADR-0003](./ADR-0003-content-addressed-object-store.md)).
 
-- **Operations and temporal facts are canonical.** Effective graphs, indexes, search and vector sidecars, and any runtime database are **derived** and rebuildable from the workspace.
+- **Operations and schema-as-data are canonical.** Temporal facts, effective graphs, indexes, search and vector sidecars, and any runtime database are **derived** and rebuildable from the workspace — a fact is resolved from operations on read; the operation is the durable primitive.
 - **No database file is the source of truth, and no local HTTP service is the seam.** The runtime database is a cache; deleting it loses no user data.
 - **Hosted PostgreSQL, if used, is an optional adapter** that materialises the same workspace semantics behind the persistence interface — never the definition of truth.
 
@@ -32,7 +32,7 @@ This is the cross-runtime authority. Any deployment posture is downstream of it.
 
 ## Consequences
 
-- The temporal-truth, scenario, and projection invariants — facts as canonical, projections as derived — are the direct expression of this posture.
+- The temporal-truth, scenario, and projection invariants — operations as canonical, facts and projections as derived — are the direct expression of this posture.
 - Mneme's embedded store is the canonical runtime store; any hosted-mode storage is an adapter behind the persistence interface.
 - The renderer can never hold durable truth; it is disposable ([ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md)).
 - Every module, contract, and IPC surface is designed with this posture as the fixed point. See [`../01-architecture/ARCHITECTURE-BOUNDARY.md`](../01-architecture/ARCHITECTURE-BOUNDARY.md) and [`../05-modules/mneme/README.md`](../05-modules/mneme/README.md).

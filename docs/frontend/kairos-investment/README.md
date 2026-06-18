@@ -1,6 +1,6 @@
 # Kairos Investment — design intent (PLANNED)
 
-> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/workspaces/kairos` when the [Kairos](../../05-modules/kairos/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
+> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/engines/kairos` when the [Kairos](../../05-modules/kairos/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 The investment and portfolio-planning surface, facing [Kairos](../../05-modules/kairos/README.md) (introduced by ADR-0028). It renders inside the one shell ([shell.md](../shell.md)) and presents the planning of portfolio, programme, and project work driven by the two forces of change — entropy and action — planned backward from a target date.
 

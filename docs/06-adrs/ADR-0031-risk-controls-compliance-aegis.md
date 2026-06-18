@@ -1,6 +1,6 @@
 # ADR-0031: Risk, Controls, and Compliance — Aegis
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0011 (module taxonomy)
 - Relates-To: ADR-0020 (integrity scoring), ADR-0028 (investment and portfolio planning — Kairos)

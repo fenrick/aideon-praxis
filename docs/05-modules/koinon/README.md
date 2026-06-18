@@ -13,6 +13,9 @@ This README is the index and the cross-cutting narrative; each focused topic liv
 1. [Sync and conflict](./sync-and-conflict.md) — the operations-only exchange, convergence, and first-class conflicts.
 2. [Presence and the shared workspace](./presence-and-shared-workspace.md) — ephemeral session signals, derived not canonical.
 3. [Merge UX](./merge-ux.md) — how a steward resolves a recorded conflict.
+4. [Sync protocol](./sync-protocol.md) — the inventory handshake, segment/blob transfer by hash, and idempotent order-robust ingestion.
+5. [Transport variants](./transport-variants.md) — the shared-filesystem, cloud-relay, and peer-to-peer transports the one protocol runs over.
+6. [Offline and reconnection](./offline-and-reconnection.md) — offline editing as the normal mode and reconciliation on reconnect.
 
 ---
 

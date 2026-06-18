@@ -1,6 +1,6 @@
 # Aegis Risk — design intent (PLANNED)
 
-> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/workspaces/aegis` when the [Aegis](../../05-modules/aegis/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
+> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/engines/aegis` when the [Aegis](../../05-modules/aegis/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 The risk, controls, and compliance surface, facing [Aegis](../../05-modules/aegis/README.md) (introduced by ADR-0031). It renders inside the one shell ([shell.md](../shell.md)) and presents a risk register and a control library mapped onto the twin, with regulatory obligations over capabilities and data.
 

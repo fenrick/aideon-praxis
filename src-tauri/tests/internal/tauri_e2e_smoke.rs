@@ -5,19 +5,15 @@ use {
     crate::windows::{OpenWindowPayload, create_windows, system_window_open},
     crate::worker::WorkerState,
     aideon_chrona::TemporalEngine,
-    aideon_praxis::mneme::open_store,
     aideon_praxis::praxis::temporal::StateAtArgs,
     tauri::Manager,
-    tempfile::tempdir,
 };
 
 #[tokio::test]
 #[cfg(not(target_os = "windows"))]
 async fn tauri_routes_and_ipc_smoke() {
-    let dir = tempdir().expect("tempdir");
-    let mneme = open_store(dir.path()).await.expect("open store");
     let engine = TemporalEngine::new().await.expect("engine");
-    let state = WorkerState::new(engine, mneme);
+    let state = WorkerState::new(engine);
 
     let app = tauri::test::mock_app();
     app.manage(state);

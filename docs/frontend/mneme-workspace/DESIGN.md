@@ -32,26 +32,9 @@ This workspace is not a general modelling surface; it exists to make the system 
 - Users can see running/completed/failed jobs and inspect failure summaries.
 - Users can trigger safe, bounded maintenance operations via explicit actions (when enabled).
 
-## Shell slots (required)
+## Widgets contributed
 
-### Navigation
-
-- Health overview
-- Jobs (running/completed/failed)
-- Integrity (head summaries + findings)
-- Schema (manifest + effective schema)
-- Maintenance (safe operations)
-
-### Toolbar
-
-- Refresh (explicit)
-- Copy diagnostics
-- Open Status window
-- Export audit pack (capability-gated)
-
-### Content surface
-
-Screens (minimum):
+This is **design intent**: Mneme is not yet registered in the platform's `ENGINES` — the seed ships a Mneme engine API scaffold backing contract tests, not a widget-contributing engine ([package-layout.md](../package-layout.md)). When the Mneme engine is licensed it contributes operator widgets to the one shared shell; the platform owns navigation, toolbar, content, and inspector, and Mneme ships no chrome of its own ([shell.md](../shell.md)). The widgets it intends to contribute (minimum):
 
 1. Health
    - engine health summary
@@ -72,24 +55,19 @@ Screens (minimum):
    - safe operations (rebuild schema, refresh integrity, refresh projections, retention, compaction)
    - each operation shows bounds, expected impact, and requires explicit confirmation
 
-### Inspector
+How the shared shell hosts these widgets:
 
-- Selection-driven details for:
-  - a job,
-  - an integrity finding,
-  - a schema type/field/rule.
-- Inspector actions are capability-gated and must explain the impact before execution.
-
-### Footer / status
-
-- Job tray entrypoint and a compact health indicator.
+- **Navigation** (platform-owned) surfaces the operator areas: health overview, jobs, integrity, schema, maintenance.
+- **Toolbar** (platform-owned) carries the actions Mneme registers — explicit refresh, copy diagnostics, open Status window, export audit pack (capability-gated).
+- **Inspector** (platform-owned) shows selection-driven details for a job, an integrity finding, or a schema type/field/rule; inspector actions are capability-gated and must explain the impact before execution.
+- **Footer / status** (platform-owned) carries the job tray entrypoint and a compact health indicator.
 
 ## Data model and APIs
 
 Target contract shape:
 
 - DTOs: `src/dtos/mneme.ts` (canonical renderer-side contract surface).
-- Renderer calls the host only through a workspace adapter surface under `src/workspaces/mneme/`.
+- Renderer calls the host only through a workspace adapter surface under `src/engines/mneme/`.
 - Host exposes storage and maintenance commands and emits job/integrity events; the renderer renders DTOs only.
 
 ## Interaction contracts
