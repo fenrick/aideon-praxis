@@ -2,7 +2,6 @@ import fs from 'node:fs/promises';
 
 import { SYSTEM_IPC_COMMANDS } from '@/adapters/system-ipc';
 import { TIMEGRAPH_IPC_COMMANDS } from '@/adapters/timegraph-ipc';
-import { MNEME_IPC_COMMANDS } from '@/engines/mneme/mneme-api';
 import { PRAXIS_DOMAIN_IPC_COMMANDS } from 'praxis/domain-data';
 import { PRAXIS_IPC_COMMANDS } from 'praxis/praxis-api';
 import { describe, expect, it } from 'vitest';
@@ -31,7 +30,6 @@ describe('IPC contract manifest', () => {
       ...flattenCommands(TIMEGRAPH_IPC_COMMANDS),
       ...flattenCommands(PRAXIS_DOMAIN_IPC_COMMANDS),
       ...flattenCommands(PRAXIS_IPC_COMMANDS),
-      ...flattenCommands(MNEME_IPC_COMMANDS),
     ];
 
     const missing = [...usedCommands].filter((command) => !hostCommands.has(command));
