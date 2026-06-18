@@ -4,8 +4,8 @@
   "version": "0.2.0",
   "identifier": "com.aideon.praxis",
   "build": {
-    "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "pnpm build",
+    "beforeDevCommand": "pnpm node:dev",
+    "beforeBuildCommand": "pnpm node:build",
     "devUrl": "http://127.0.0.1:1420",
     "frontendDist": "../out"
   },
