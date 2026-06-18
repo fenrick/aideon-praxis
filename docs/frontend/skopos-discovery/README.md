@@ -1,6 +1,6 @@
 # Skopos Discovery — design intent (PLANNED)
 
-> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/workspaces/skopos` when the [Skopos](../../05-modules/skopos/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
+> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/engines/skopos` when the [Skopos](../../05-modules/skopos/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 The automated-discovery and reality-sync surface, facing [Skopos](../../05-modules/skopos/README.md) (introduced by ADR-0032). It renders inside the one shell ([shell.md](../shell.md)) and presents continuous ingestion from cloud platforms, CMDBs, and monitoring that keeps the `actual` layer fresh — the entropy feeder for Kairos. Distinct from manual/file interchange ([pylon-interchange](../pylon-interchange/README.md)).
 

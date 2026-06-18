@@ -1,13 +1,11 @@
 #![cfg(not(target_os = "windows"))]
 use super::*;
 use aideon_chrona::TemporalEngine;
-use aideon_praxis::mneme::open_store;
 use aideon_praxis::praxis::temporal::{
     ChangeSet, CommitRef, EdgeVersion, NodeVersion, StateAtArgs, TopologyDeltaArgs,
 };
 use serde_json::json;
 use tauri::Manager;
-use tempfile::tempdir;
 
 fn ipc_request<T>(payload: T) -> IpcRequest<T> {
     use std::sync::atomic::{AtomicU32, Ordering};
@@ -183,10 +181,8 @@ async fn commit_with_edge(engine: &TemporalEngine, message: &str, parent: &str) 
 
 #[tokio::test]
 async fn temporal_wrapped_commands_cover_ipc_surface() {
-    let dir = tempdir().expect("tempdir");
-    let mneme = open_store(dir.path()).await.expect("open store");
     let engine = TemporalEngine::new().await.expect("engine");
-    let state = WorkerState::new(engine, mneme);
+    let state = WorkerState::new(engine);
     let app = tauri::test::mock_app();
     app.manage(state);
     let state = app.state::<WorkerState>();

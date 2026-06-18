@@ -1,7 +1,6 @@
 //! Host-level health commands exposed to the renderer.
 
-use crate::worker::WorkerState;
-use aideon_praxis::mneme::WorkerHealth;
+use crate::worker::{WorkerHealth, WorkerState};
 #[cfg(test)]
 use log::{debug, info};
 use tauri::State;

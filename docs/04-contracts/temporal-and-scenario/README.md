@@ -8,17 +8,18 @@ The governing decisions are [ADR-0009](../../06-adrs/ADR-0009-temporal-model-val
 
 ## Contents
 
-| #   | File                                           | Question it answers                                                         |
-| --- | ---------------------------------------------- | --------------------------------------------------------------------------- |
-| 1   | [viewpoint-shape.md](./viewpoint-shape.md)     | What is the `Viewpoint` struct, field by field?                             |
-| 2   | [hlc-encoding.md](./hlc-encoding.md)           | How is asserted time packed, ordered, and made robust to skew?              |
-| 3   | [layer-and-policy.md](./layer-and-policy.md)   | What is a layer, and how do layers combine on read?                         |
-| 4   | [resolution-rules.md](./resolution-rules.md)   | How does the resolver pick a winner among competing facts?                  |
-| 5   | [scenario-overlays.md](./scenario-overlays.md) | How does a scenario compose on the baseline, and what operations act on it? |
-| 6   | [diff.md](./diff.md)                           | How is a comparison expressed, and how is its delta kind derived?           |
-| 7   | [explainability.md](./explainability.md)       | How does a read explain which rule selected each value?                     |
-| 8   | [error-codes.md](./error-codes.md)             | What temporal/scenario error codes exist and what triggers them?            |
-| 9   | [defaults.md](./defaults.md)                   | What does an omitted as-of valid time resolve to?                           |
+| #   | File                                                               | Question it answers                                                                                     |
+| --- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| 1   | [viewpoint-shape.md](./viewpoint-shape.md)                         | What is the `Viewpoint` struct, field by field?                                                         |
+| 2   | [hlc-encoding.md](./hlc-encoding.md)                               | How is asserted time packed, ordered, and made robust to skew?                                          |
+| 3   | [layer-and-policy.md](./layer-and-policy.md)                       | What is a layer, and how do layers combine on read?                                                     |
+| 4   | [resolution-rules.md](./resolution-rules.md)                       | How does the resolver pick a winner among competing facts?                                              |
+| 5   | [scenario-overlays.md](./scenario-overlays.md)                     | How does a scenario compose on the baseline, and what operations act on it?                             |
+| 6   | [diff.md](./diff.md)                                               | How is a comparison expressed, and how is its delta kind derived?                                       |
+| 7   | [explainability.md](./explainability.md)                           | How does a read explain which rule selected each value?                                                 |
+| 8   | [error-codes.md](./error-codes.md)                                 | What temporal/scenario error codes exist and what triggers them?                                        |
+| 9   | [defaults.md](./defaults.md)                                       | What does an omitted as-of valid time resolve to?                                                       |
+| 10  | [conflicts-during-resolution.md](./conflicts-during-resolution.md) | What is the effective state when facts genuinely conflict, and how does a superseded fact stay visible? |
 
 ---
 

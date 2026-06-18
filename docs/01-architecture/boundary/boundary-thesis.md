@@ -12,7 +12,7 @@ Documentation is authoritative. Where code and these documents disagree, the cod
 
 ## The five propositions
 
-1. **The portable workspace folder is canonical authority.** Operations, temporal facts, schema-as-data, and content-addressed blobs live in the [workspace](../../../CONTEXT.md) folder. Every other structure — every index, projection, search sidecar, and the runtime database — is derived and rebuildable from those files alone. This is fixed by **[ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md)** (Portable workspace is the canonical authority).
+1. **The portable workspace folder is canonical authority.** Operations, schema-as-data, and content-addressed blobs live in the [workspace](../../../CONTEXT.md) folder. Temporal facts, and every other structure — every index, projection, search sidecar, and the runtime database — are derived and rebuildable from those files alone (a fact is resolved from operations on read). This is fixed by **[ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md)** (Portable workspace is the canonical authority).
 
 2. **The renderer is disposable UI.** It is safe to restart, replace, or refactor without losing model correctness. It holds no durable truth and reconstructs nothing canonical on its own.
 

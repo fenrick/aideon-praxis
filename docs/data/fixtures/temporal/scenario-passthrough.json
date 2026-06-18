@@ -1,0 +1,40 @@
+{
+  "case": "scenario-passthrough",
+  "description": "A slot with no scenario-scoped fact passes through unchanged from the baseline under a scenario read. Only slots the scenario actually overlays are replaced.",
+  "corner_case": "base-case vs scenario overlay (pass-through)",
+  "input": {
+    "entity": "n:application:insight-hub",
+    "slot": "disposition",
+    "kind": "enum",
+    "cardinality": "single",
+    "operations": [
+      {
+        "op_id": "op-0710",
+        "op_type": "SetProperty",
+        "value": "Invest",
+        "layer": "actual",
+        "scenario": null,
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "asserted_hlc": 7241859072000000000
+      }
+    ]
+  },
+  "viewpoint": {
+    "as_of_valid_time": { "instant": "2026-06-11T00:00:00Z" },
+    "as_of_asserted_at": null,
+    "layer": "actual",
+    "scenario": { "scenario_id": "scn_plan_q3", "mode": "overlay" }
+  },
+  "expected": {
+    "present": true,
+    "value": "Invest",
+    "effective_interval": { "valid_from": "2026-01-01T00:00:00Z", "valid_to": null },
+    "content_classification": "Asserted",
+    "result_state": "Fresh",
+    "deciding_rule": "baseline pass-through (no scenario fact for this slot)",
+    "winning_op_id": "op-0710",
+    "superseded": [],
+    "note": "scn_plan_q3 overlays automation-orchestrator.disposition (see scenario-overlay-replaces) but not insight-hub.disposition, so this slot is unchanged from baseline."
+  }
+}

@@ -1,6 +1,6 @@
 # Pylon Interchange — design intent (PLANNED)
 
-> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/workspaces/pylon` when the [Pylon](../../05-modules/pylon/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
+> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/engines/pylon` when the [Pylon](../../05-modules/pylon/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 The interchange surface, facing [Pylon](../../05-modules/pylon/README.md) (introduced by ADR-0013). It renders inside the one shell ([shell.md](../shell.md)) and presents file-based, manual import and export — ArchiMate Open Exchange, CSV/Excel, EA-tool connectors — as trust-sensitive review workflows. Distinct from automated discovery ([skopos-discovery](../skopos-discovery/README.md)).
 

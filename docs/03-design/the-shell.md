@@ -19,7 +19,7 @@ _The four regions of the shared shell. Their roles are fixed; their proportions 
 
 ## Navigation rail
 
-The stable left edge — a map of workspaces, artefact families, saved structures, pinned and recent destinations, and scenario entry points. It reads as product structure, not as a feed or a launcher. Status badges appear only when they clarify a destination; counts stay secondary to labels. It is quiet, dense, and steady, and active state is always obvious.
+The stable left edge — a map of **goal-oriented work surfaces** (the primary destinations), the **Workspace structure** beneath them (scenarios, saved structures, artefacts, review work), and pinned and recent destinations. It is organised by **user goal, never by engine** — licensed engines contribute capabilities and widgets but are not a navigation axis ([hig/shell-and-navigation.md](./hig/shell-and-navigation.md)). It reads as product structure, not as a feed or a launcher. A **surface** is the navigation unit; a **widget** is composed _within_ a surface ([ux/workspace-family.md](./ux/workspace-family.md)). Status badges appear only when they clarify a destination; counts stay secondary to labels. It is quiet, dense, and steady, and active state is always obvious.
 
 ## Toolbar
 

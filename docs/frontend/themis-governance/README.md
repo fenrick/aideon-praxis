@@ -1,6 +1,6 @@
 # Themis Governance — design intent (PLANNED)
 
-> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/workspaces/themis` when the [Themis](../../05-modules/themis/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
+> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/engines/themis` when the [Themis](../../05-modules/themis/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 The governance surface, facing [Themis](../../05-modules/themis/README.md) (introduced by ADR-0030). It renders inside the one shell ([shell.md](../shell.md)) and presents identity, RBAC, approval workflows, retention, audit, and capability policy. On the desktop default (single user) the policy is trivial; this surface comes into its own in hosted mode and the Steward participation mode.
 

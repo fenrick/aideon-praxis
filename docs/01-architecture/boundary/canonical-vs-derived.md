@@ -12,18 +12,18 @@ When the question is "where does this belong, canonical or derived?", apply one 
 
 Canonical material is the input from which everything else is computed; derived material is everything that computation produces. There is no third category. A structure that is neither rebuildable nor part of the canonical set is a design error to be resolved before it ships.
 
-| Category                       | Examples                                                       | Status                  |
-| ------------------------------ | -------------------------------------------------------------- | ----------------------- |
-| Operations written by the user | `model/ops/*` append-only segments                             | **Canonical**           |
-| Temporal facts                 | every asserted fact with valid-time interval and asserted time | **Canonical**           |
-| Schema declarations            | `model/schema/` files (schema-as-data)                         | **Canonical**           |
-| Blob bytes                     | `objects/sha256/<hash>`                                        | **Canonical**           |
-| Effective graph views          | adjacency, reachability projections                            | **Derived**             |
-| Tuple indexes                  | entity and relationship lookup tables                          | **Derived**             |
-| Search and vector sidecars     | full-text and embedding indexes                                | **Derived**             |
-| Runtime database               | the SQLite DB under `.aideon/runtime/`                         | **Derived**             |
-| UI state                       | selection, layout, in-flight edits                             | **Derived / ephemeral** |
-| Blob previews and thumbnails   | rendered preview files                                         | **Derived**             |
+| Category                       | Examples                                              | Status                  |
+| ------------------------------ | ----------------------------------------------------- | ----------------------- |
+| Operations written by the user | `model/ops/*` append-only segments                    | **Canonical**           |
+| Schema declarations            | `model/schema/` files (schema-as-data)                | **Canonical**           |
+| Blob bytes                     | `objects/sha256/<hash>`                               | **Canonical**           |
+| Temporal facts                 | every asserted fact, resolved from operations on read | **Derived**             |
+| Effective graph views          | adjacency, reachability projections                   | **Derived**             |
+| Tuple indexes                  | entity and relationship lookup tables                 | **Derived**             |
+| Search and vector sidecars     | full-text and embedding indexes                       | **Derived**             |
+| Runtime database               | the SQLite DB under `.aideon/runtime/`                | **Derived**             |
+| UI state                       | selection, layout, in-flight edits                    | **Derived / ephemeral** |
+| Blob previews and thumbnails   | rendered preview files                                | **Derived**             |
 
 A **fact** is derived (it is resolved from operations on read), but the **operation** that records it is canonical — the op log is the durable primitive, facts are the resolution inputs computed from it, per [`CONTEXT.md`](../../../CONTEXT.md).
 

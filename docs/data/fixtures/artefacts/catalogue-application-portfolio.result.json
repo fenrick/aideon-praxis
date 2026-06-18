@@ -1,0 +1,49 @@
+{
+  "artefactId": "application-portfolio-health",
+  "form": "catalogue",
+  "viewpoint": {
+    "validAsOf": "2026-06-11",
+    "assertedAsOf": "latest",
+    "layer": "actual",
+    "scenario": "base",
+    "scope": "type=Application"
+  },
+  "resultState": ["fresh"],
+  "coverage": null,
+  "integrity": { "score": 0.82, "gateThreshold": 0.6, "bounded": false },
+  "body": {
+    "columns": [
+      { "key": "name", "label": "Name", "slot": "name" },
+      { "key": "vendor", "label": "Vendor", "slot": "vendor" },
+      { "key": "disposition", "label": "Disposition", "slot": "disposition" },
+      { "key": "lifecycle", "label": "Lifecycle", "slot": "lifecycle" },
+      { "key": "health", "label": "Health", "derived": true }
+    ],
+    "rows": [
+      {
+        "id": "n:application:automation-orchestrator",
+        "type": "Application",
+        "cells": {
+          "name": { "value": "Automation Orchestrator", "classification": "asserted" },
+          "vendor": { "value": "Praxis Cloud", "classification": "asserted" },
+          "disposition": { "value": "Migrate", "classification": "asserted" },
+          "lifecycle": { "value": "Plan", "classification": "asserted" },
+          "health": { "value": "At risk", "classification": "inferred" }
+        }
+      },
+      {
+        "id": "n:application:insight-hub",
+        "type": "Application",
+        "cells": {
+          "name": { "value": "Insight Hub", "classification": "asserted" },
+          "vendor": { "value": "Praxis Cloud", "classification": "asserted" },
+          "disposition": { "value": "Invest", "classification": "asserted" },
+          "lifecycle": { "value": "Run", "classification": "asserted" },
+          "health": { "value": "Healthy", "classification": "inferred" }
+        }
+      }
+    ],
+    "sort": [{ "key": "name", "direction": "asc" }],
+    "page": { "offset": 0, "pageSize": 2, "total": 3, "hasMore": true }
+  }
+}
