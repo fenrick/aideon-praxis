@@ -1,0 +1,58 @@
+name: Release Please
+
+# PR-based release flow (ADR-0039-adjacent):
+#   push to main  ->  release-please maintains a `chore(release): X.Y.Z` PR
+#                     (CHANGELOG + version bumps in package.json, Cargo.toml,
+#                      src-tauri/tauri.conf.json, src/version.ts)
+#   merge that PR ->  release-please tags vX.Y.Z + creates the GitHub Release
+#                     (which triggers release.yml to build & attach bundles)
+#
+# A GitHub App token is used (not GITHUB_TOKEN) so the release PR runs the
+# normal pipeline checks and the cut release triggers downstream workflows.
+# Required repo/org secrets: RELEASE_APP_ID, RELEASE_APP_PRIVATE_KEY.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Maintain release PR / cut release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Enable auto-merge on the release PR
+        if: ${{ steps.release.outputs.pr }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          number="$(echo '${{ steps.release.outputs.pr }}' | jq -r '.number // empty')"
+          if [ -n "$number" ]; then
+            gh pr merge "$number" --auto --squash \
+              || echo "::notice::auto-merge unavailable (enable 'Allow auto-merge' + branch protection); release PR #$number awaits manual merge"
+          fi

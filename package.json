@@ -45,7 +45,6 @@
     "node:e2e": "node tests/e2e/run.mjs",
     "webdriver:test": "wdio run tests/webdriver/wdio.conf.js",
     "webdriver:test:headless": "xvfb-run -a wdio run tests/webdriver/wdio.conf.js",
-    "release": "semantic-release",
     "commitlint": "commitlint --from=origin/main --to=HEAD",
     "test:stories": "vitest run --config vitest.storybook.config.mjs",
     "prepare": "husky"
