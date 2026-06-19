@@ -1,0 +1,67 @@
+name: Release Please
+
+# PR-based release flow (ADR-0039-adjacent):
+#   push to main  ->  release-please maintains a `chore(release): X.Y.Z` PR
+#                     (CHANGELOG + version bumps in package.json, Cargo.toml,
+#                      src-tauri/tauri.conf.json, src/version.ts)
+#   merge that PR ->  release-please tags vX.Y.Z + creates the GitHub Release
+#                     (which triggers release.yml to build & attach bundles)
+#
+# This event-driven flow needs a non-GITHUB_TOKEN identity: a GITHUB_TOKEN-
+# initiated PR/merge/release does not trigger downstream workflows, so the
+# release PR would not run checks and its merge would not cut the release. A
+# repo-scoped GitHub App is the preferred credential; a fine-grained PAT is a
+# supported fallback. (This is a property of the GitHub event model, not a
+# release-please requirement.)
+#
+# Required config: a GitHub App installed only on this repo with Contents,
+# Pull requests, and Issues = write — its client id in vars.RELEASE_APP_CLIENT_ID
+# and its private key in secrets.RELEASE_APP_PRIVATE_KEY. The App must NOT be on
+# the branch-ruleset bypass list: the release PR passes checks like any other.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# All writes are performed with the App token; the job's GITHUB_TOKEN needs nothing.
+permissions: {}
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Maintain release PR / cut release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
+      - name: Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Enable auto-merge on the release PR
+        if: ${{ steps.release.outputs.pr }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          number="$(echo '${{ steps.release.outputs.pr }}' | jq -r '.number // empty')"
+          if [ -n "$number" ]; then
+            gh pr merge "$number" --auto --squash \
+              || echo "::notice::auto-merge unavailable (enable 'Allow auto-merge' + branch protection); release PR #$number awaits manual merge"
+          fi
