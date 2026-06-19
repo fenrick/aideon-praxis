@@ -83,21 +83,14 @@ jobs:
             exit 1
           fi
 
+      # Cargo caching is handled by setup-rust-toolchain's built-in rust-cache
+      # (keyed on Cargo.lock + rustc, per-target). The previous manual cache of
+      # src-tauri/target cached the wrong dir (workspace builds go to /target).
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           targets: ${{ matrix.target }}
           components: rustfmt, clippy
-
-      - name: Cache cargo & target
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            src-tauri/target
-          key: ${{ runner.os }}-tauri-${{ matrix.target }}-${{ hashFiles('src-tauri/Cargo.toml', 'pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-tauri-${{ matrix.target }}-
 
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
