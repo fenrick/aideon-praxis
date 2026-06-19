@@ -24,6 +24,10 @@ jobs:
   package_app:
     name: Package App (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    env:
+      # `secrets` cannot be referenced in an `if:` expression, so surface the
+      # presence of the signing cert as a job env and gate the import step on it.
+      APPLE_CERT_PRESENT: ${{ secrets.APPLE_CERTIFICATE != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -102,7 +106,7 @@ jobs:
         run: choco install wixtoolset --no-progress --yes
 
       - name: Import Apple codesign certificates
-        if: matrix.os == 'macos-latest' && inputs.publish && secrets.APPLE_CERTIFICATE != ''
+        if: matrix.os == 'macos-latest' && inputs.publish && env.APPLE_CERT_PRESENT == 'true'
         uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}

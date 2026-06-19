@@ -55,6 +55,9 @@ export default defineConfig([
     'tests/e2e/**',
     'tests/setup.ts',
     'tests/tauri-mocks.ts',
+    // Tool-managed: release-please owns the version line (trailing
+    // `x-release-please-version` annotation, which line-comment rules reject).
+    'src/version.ts',
   ]),
 
   // Core JS recommendations (base for "clean code" checks)
