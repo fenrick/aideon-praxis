@@ -144,8 +144,8 @@ Use labels (`type/*`, `area/*`, `module/*`, `priority/*`) and assign the **miles
 ## Releases
 
 - Conventional Commits in PR title and commits (e.g., `feat(time): add plateau diff endpoint`).
-- semantic-release manages versioning and CHANGELOG on merges to `main`.
-- Package installers are built and uploaded on GitHub Releases; worker dists attached.
+- **release-please** runs on merges to `main` and maintains a `chore(release): X.Y.Z` **release PR** (CHANGELOG + version bumps across `package.json`, `Cargo.toml`, `src-tauri/tauri.conf.json`, `src/version.ts`). That PR goes through the normal checks like any other change; **merging it** tags `vX.Y.Z` and cuts the GitHub Release. Releases are never committed directly to `main`.
+- Package installers are built and uploaded on the GitHub Release (`release.yml`) once it is published.
 
 ## License and CLA
 
