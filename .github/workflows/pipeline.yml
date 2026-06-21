@@ -21,11 +21,11 @@ jobs:
     name: Node checks (lint, typecheck, test)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -61,7 +61,7 @@ jobs:
     name: Rust checks (fmt, clippy, test)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Linux GUI deps
         run: |
@@ -82,13 +82,17 @@ jobs:
   build:
     name: Tauri Build (${{ matrix.os }})
     needs: [node-checks, rust-checks]
+    # Full 3-OS bundle is the slowest gate. Run it on pushes to main (and the
+    # release flow), not on every PR — PRs still compile Rust (rust-checks) and
+    # build+run the app on Linux (e2e). Cross-platform breaks surface on merge.
+    if: github.event_name == 'push'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Linux GUI deps
         if: runner.os == 'Linux'
@@ -100,7 +104,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -121,11 +125,11 @@ jobs:
     needs: [node-checks, rust-checks]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
