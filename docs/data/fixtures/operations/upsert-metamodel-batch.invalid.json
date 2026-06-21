@@ -22,9 +22,7 @@
         "label": "disposition",
         "value_type": "enum",
         "cardinality_multi": false,
-        "merge_policy": "lww",
-        "is_indexed": true,
-        "disallow_overlap": false
+        "is_indexed": true
       }
     ],
     "type_fields": [],

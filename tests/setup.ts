@@ -1,5 +1,18 @@
 import '@testing-library/jest-dom/vitest';
+import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach } from 'vitest';
+
+// The config runs with `globals: false`, so Testing Library never registers its
+// automatic `afterEach(cleanup)`. Without it, React trees stay mounted past the
+// end of each test and React 19's concurrent scheduler keeps pending work that
+// flushes *after* jsdom teardown — surfacing as unhandled
+// `ReferenceError: window is not defined` from `performWorkUntilDeadline`
+// (intermittent locally, reliably fatal on CI). Unmounting after every test
+// cancels that scheduled work at the source; the window stub below stays as a
+// belt-and-braces safety net for any stragglers.
+afterEach(() => {
+  cleanup();
+});
 
 // Vitest occasionally runs pending React scheduler callbacks after the jsdom
 // environment has been torn down (seen on macOS runners), which leaves

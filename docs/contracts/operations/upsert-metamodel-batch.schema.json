@@ -40,11 +40,6 @@
       "enum": ["str", "i64", "f64", "bool", "time", "ref", "blob"],
       "description": "ValueType value tag as a stable schema-owned lower name. `json` is not a declarable field type (ADR-0038); an opaque document is a `blob` BlobRef."
     },
-    "mergePolicy": {
-      "type": "string",
-      "enum": ["lww", "mv", "or-set", "counter", "text"],
-      "description": "MergePolicy value tag as a stable schema-owned lower name."
-    },
     "value": {
       "type": "object",
       "description": "Value tag: an object with exactly one stable schema-owned lower variant key. str|i64|f64|bool|time|ref|blob. `json` is NOT a valid value (ADR-0038); opaque documents are BlobRefs.",
@@ -95,26 +90,13 @@
     "fieldDef": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "field_id",
-        "label",
-        "value_type",
-        "cardinality_multi",
-        "merge_policy",
-        "is_indexed",
-        "disallow_overlap"
-      ],
+      "required": ["field_id", "label", "value_type", "cardinality_multi", "is_indexed"],
       "properties": {
         "field_id": { "$ref": "#/$defs/id" },
         "label": { "type": "string" },
         "value_type": { "$ref": "#/$defs/valueType" },
         "cardinality_multi": { "type": "boolean" },
-        "merge_policy": { "$ref": "#/$defs/mergePolicy" },
-        "is_indexed": { "type": "boolean" },
-        "disallow_overlap": {
-          "type": "boolean",
-          "description": "Materialised explicitly (Rust serde default false) per the canonical-JSON profile."
-        }
+        "is_indexed": { "type": "boolean" }
       }
     },
     "typeFieldDef": {
@@ -126,8 +108,7 @@
         "is_required",
         "default_value",
         "override_default",
-        "tighten_required",
-        "disallow_overlap"
+        "tighten_required"
       ],
       "properties": {
         "type_id": { "$ref": "#/$defs/id" },
@@ -135,8 +116,7 @@
         "is_required": { "type": "boolean" },
         "default_value": { "oneOf": [{ "$ref": "#/$defs/value" }, { "type": "null" }] },
         "override_default": { "type": "boolean" },
-        "tighten_required": { "type": "boolean" },
-        "disallow_overlap": { "type": ["boolean", "null"] }
+        "tighten_required": { "type": "boolean" }
       }
     },
     "edgeTypeRule": {

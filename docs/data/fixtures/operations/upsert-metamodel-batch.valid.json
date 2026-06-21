@@ -22,9 +22,7 @@
         "label": "disposition",
         "value_type": "str",
         "cardinality_multi": false,
-        "merge_policy": "lww",
-        "is_indexed": true,
-        "disallow_overlap": false
+        "is_indexed": true
       }
     ],
     "type_fields": [
@@ -34,8 +32,7 @@
         "is_required": false,
         "default_value": { "str": "Tolerate" },
         "override_default": false,
-        "tighten_required": false,
-        "disallow_overlap": null
+        "tighten_required": false
       }
     ],
     "edge_type_rules": [

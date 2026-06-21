@@ -2,6 +2,9 @@
 resolver = "2"
 members = [
   "src-tauri",
+  "crates/mneme_core",
+  "crates/mneme_store",
+  "crates/engine",
   "crates/praxis",
   "crates/chrona",
   "crates/metis",
