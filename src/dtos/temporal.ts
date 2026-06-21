@@ -1,8 +1,8 @@
 import type { IsoDateTime } from './iso';
 import type { Layer } from './mneme';
 
-export type ScenarioKey = string | undefined;
-export type ConfidencePercent = number | undefined;
+export type ScenarioKey = string;
+export type ConfidencePercent = number;
 
 export interface GraphSnapshotMetrics {
   nodeCount: number;

@@ -280,7 +280,7 @@ function MetaModelEntryCard({
 function AttributesList({
   attributes,
 }: {
-  readonly attributes?: MetaModelSchema['types'][number]['attributes'];
+  readonly attributes?: NonNullable<MetaModelSchema['types'][number]['attributes']>;
 }) {
   if (!attributes || attributes.length === 0) {
     return <p className="text-muted-foreground pt-2 text-xs">No attributes defined.</p>;

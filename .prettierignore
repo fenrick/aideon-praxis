@@ -15,3 +15,9 @@ src/design-system/components/**
 docs/contracts/ipc-manifest.json
 docs/contracts/event-manifest.json
 docs/contracts/shell-command-manifest.json
+
+# Rewritten by release-please on every release PR in its own style (e.g. it
+# expands `"capabilities": ["default"]` to a multi-line array prettier rejects).
+# The tool owns these files' shape; format-checking them just breaks releases.
+CHANGELOG.md
+src-tauri/tauri.conf.json
