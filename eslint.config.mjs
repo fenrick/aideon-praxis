@@ -106,6 +106,14 @@ export default defineConfig([
 
   // Sonar-style code quality and complexity
   sonarjs.configs.recommended,
+  {
+    rules: {
+      // `redundant-type-aliases` (new in sonarjs 4) rejects `type ScenarioKey = string`,
+      // but our DTO aliases (ScenarioKey, ConfidencePercent, …) are deliberate domain
+      // types — semantic names, not structural shortcuts. `no-redundant-optional` stays on.
+      'sonarjs/redundant-type-aliases': 'off',
+    },
+  },
 
   // Security hotspot checks (not taint analysis, but still valuable)
   security.configs.recommended,
