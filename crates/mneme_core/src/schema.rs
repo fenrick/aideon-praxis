@@ -73,8 +73,6 @@ pub struct FieldDef {
     pub cardinality_multi: bool,
     /// Whether the field is indexed in the derived runtime.
     pub is_indexed: bool,
-    /// Whether overlapping valid-time intervals are disallowed.
-    pub disallow_overlap: bool,
 }
 
 /// A per-type field attachment with defaults (authored source).
@@ -93,8 +91,6 @@ pub struct TypeFieldDef {
     pub override_default: bool,
     /// Whether this attachment tightens the inherited required flag.
     pub tighten_required: bool,
-    /// Per-attachment overlap override.
-    pub disallow_overlap: Option<bool>,
 }
 
 /// An edge-type endpoint rule (authored source).

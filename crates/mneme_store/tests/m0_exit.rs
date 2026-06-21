@@ -72,7 +72,6 @@ fn author_seed(ws: &mut Workspace) {
                 value_type: ValueType::Str,
                 cardinality_multi: false,
                 is_indexed: true,
-                disallow_overlap: false,
             }],
             type_fields: vec![],
             edge_type_rules: vec![],

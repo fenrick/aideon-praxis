@@ -92,7 +92,6 @@ pub struct AuthoredMetamodelBatch {
     pub fields:            Vec<FieldDef>,      // value_type, cardinality, is_indexed
     pub type_fields:       Vec<TypeFieldDef>,  // per-type field attachments + defaults
     pub edge_type_rules:   Vec<EdgeTypeRule>,  // endpoint constraints + semantic direction
-    pub policies:          Vec<PolicyDef>,     // policies active in this format version
     pub metamodel_version: Option<String>,
     pub metamodel_source:  Option<String>,
 }

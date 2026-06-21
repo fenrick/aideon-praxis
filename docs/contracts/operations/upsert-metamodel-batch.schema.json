@@ -90,24 +90,13 @@
     "fieldDef": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "field_id",
-        "label",
-        "value_type",
-        "cardinality_multi",
-        "is_indexed",
-        "disallow_overlap"
-      ],
+      "required": ["field_id", "label", "value_type", "cardinality_multi", "is_indexed"],
       "properties": {
         "field_id": { "$ref": "#/$defs/id" },
         "label": { "type": "string" },
         "value_type": { "$ref": "#/$defs/valueType" },
         "cardinality_multi": { "type": "boolean" },
-        "is_indexed": { "type": "boolean" },
-        "disallow_overlap": {
-          "type": "boolean",
-          "description": "Materialised explicitly (Rust serde default false) per the canonical-JSON profile."
-        }
+        "is_indexed": { "type": "boolean" }
       }
     },
     "typeFieldDef": {
@@ -119,8 +108,7 @@
         "is_required",
         "default_value",
         "override_default",
-        "tighten_required",
-        "disallow_overlap"
+        "tighten_required"
       ],
       "properties": {
         "type_id": { "$ref": "#/$defs/id" },
@@ -128,8 +116,7 @@
         "is_required": { "type": "boolean" },
         "default_value": { "oneOf": [{ "$ref": "#/$defs/value" }, { "type": "null" }] },
         "override_default": { "type": "boolean" },
-        "tighten_required": { "type": "boolean" },
-        "disallow_overlap": { "type": ["boolean", "null"] }
+        "tighten_required": { "type": "boolean" }
       }
     },
     "edgeTypeRule": {
