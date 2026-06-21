@@ -11,9 +11,7 @@ use mneme_core::ops::{
     ActorDeclare, ActorKind, ClearPropertyInterval, CreateEdge, CreateNode, Layer, OpPayload,
     Origin, SetEdgeExistenceInterval, SetPropertyInterval, TombstoneEntity,
 };
-use mneme_core::schema::{
-    AuthoredMetamodelBatch, EntityKind, FieldDef, MergePolicy, TypeDef, ValueType,
-};
+use mneme_core::schema::{AuthoredMetamodelBatch, EntityKind, FieldDef, TypeDef, ValueType};
 use mneme_core::value::Value;
 use mneme_core::{Hlc, Id, ValidTime};
 
@@ -73,7 +71,6 @@ fn author_seed(ws: &mut Workspace) {
                 label: "disposition".into(),
                 value_type: ValueType::Str,
                 cardinality_multi: false,
-                merge_policy: MergePolicy::Lww,
                 is_indexed: true,
                 disallow_overlap: false,
             }],

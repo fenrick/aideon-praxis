@@ -43,23 +43,6 @@ pub enum ValueType {
     Blob,
 }
 
-/// Declared merge policy. Declarable at M1; M0 records but does not apply them
-/// (the CRDT policies are M6).
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum MergePolicy {
-    /// Last-writer-wins.
-    Lww,
-    /// Multi-value.
-    Mv,
-    /// Observed-remove set (CRDT, M6).
-    OrSet,
-    /// Counter (CRDT, M6).
-    Counter,
-    /// Collaborative text (M6).
-    Text,
-}
-
 /// A metamodel type definition (authored source).
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -88,8 +71,6 @@ pub struct FieldDef {
     pub value_type: ValueType,
     /// Whether the field admits multiple concurrent values.
     pub cardinality_multi: bool,
-    /// The declared merge policy.
-    pub merge_policy: MergePolicy,
     /// Whether the field is indexed in the derived runtime.
     pub is_indexed: bool,
     /// Whether overlapping valid-time intervals are disallowed.
@@ -151,14 +132,6 @@ pub struct AuthoredMetamodelBatch {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn merge_policy_or_set_is_kebab() {
-        assert_eq!(
-            serde_json::to_string(&MergePolicy::OrSet).unwrap(),
-            "\"or-set\""
-        );
-    }
 
     #[test]
     fn value_type_enum_rejected() {

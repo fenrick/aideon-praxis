@@ -22,7 +22,6 @@
         "label": "disposition",
         "value_type": "str",
         "cardinality_multi": false,
-        "merge_policy": "lww",
         "is_indexed": true,
         "disallow_overlap": false
       }
