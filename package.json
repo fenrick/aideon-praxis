@@ -175,7 +175,7 @@
     "eslint-plugin-regexp": "^2.10.0",
     "eslint-plugin-security": "^4.0.1",
     "eslint-plugin-security-node": "^1.1.4",
-    "eslint-plugin-sonarjs": "^3.0.7",
+    "eslint-plugin-sonarjs": "^4.1.0",
     "eslint-plugin-testing-library": "^7.16.2",
     "eslint-plugin-unicorn": "^62.0.0",
     "husky": "^9.1.7",
