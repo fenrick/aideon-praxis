@@ -36,18 +36,20 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .eslintcache
-          key: ${{ runner.os }}-eslint-${{ hashFiles('pnpm-lock.yaml', '.eslintrc*', 'eslint.config*') }}-${{ github.sha }}
+          # Keyed on lockfile + eslint config only (no commit SHA): a stable key
+          # reused across runs, instead of a fresh 0-byte entry every commit.
+          key: ${{ runner.os }}-eslint-${{ hashFiles('pnpm-lock.yaml', '.eslintrc*', 'eslint.config*') }}
           restore-keys: |
-            ${{ runner.os }}-eslint-${{ hashFiles('pnpm-lock.yaml', '.eslintrc*', 'eslint.config*') }}-
             ${{ runner.os }}-eslint-
 
       - name: Next.js build cache
         uses: actions/cache@v4
         with:
           path: .next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**/*.ts','src/**/*.tsx') }}
+          # Keyed on the lockfile (not a per-edit source hash) so it isn't a new
+          # entry on every source change; restore-keys still gives partial reuse.
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
             ${{ runner.os }}-nextjs-
 
       - run: pnpm run node:format:check
@@ -73,9 +75,9 @@ jobs:
           components: rustfmt, clippy
 
       - run: cargo fmt --all -- --check
-      - run: cargo clippy --all-targets -- -D warnings
-      - run: cargo check --all-targets --all-features
-      - run: cargo test --all --quiet
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo check --locked --all-targets --all-features
+      - run: cargo test --locked --all --quiet
 
   build:
     name: Tauri Build (${{ matrix.os }})
@@ -103,17 +105,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
+      # Cargo caching is handled by setup-rust-toolchain's built-in rust-cache
+      # (keyed on Cargo.lock + rustc, caches the workspace target at repo root).
+      # The previous manual cache pointed at src-tauri/target — the wrong dir,
+      # since src-tauri is a workspace member and builds go to the root /target.
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - name: Cache cargo & target
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            src-tauri/target
-          key: ${{ runner.os }}-tauri-${{ hashFiles('src-tauri/Cargo.toml', 'pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-tauri-
 
       - run: pnpm install --frozen-lockfile
 
