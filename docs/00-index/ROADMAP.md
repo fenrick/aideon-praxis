@@ -38,7 +38,9 @@ The order is fixed by the acyclic engine dependency graph ([module-dependency-ma
 
 The full ordering within a milestone follows each module's dependency edges; a planned module's README states the boundary it will occupy and the ADR that introduces it ([module-map](../03-design/module-map.md), planned modules).
 
-Each MVP milestone has an executable **build contract** under [`build-contracts/`](../build-contracts/README.md) — [M0](../build-contracts/M0-foundation.md), [M1](../build-contracts/M1-meaning.md), [M2](../build-contracts/M2-time.md), [M3](../build-contracts/M3-artefacts.md) — pinning its exact schemas, fixtures, and exit tests, joined by the [golden journey](../build-contracts/golden-journey.md).
+Each MVP milestone has an executable **build contract** under [`build-contracts/`](../build-contracts/README.md) — [M0](../build-contracts/M0-foundation.md), [M1](../build-contracts/M1-meaning.md), [M2](../build-contracts/M2-time.md), [M3](../build-contracts/M3-artefacts.md) — pinning its exact schemas, fixtures, and exit tests, joined by the [golden journey](../build-contracts/golden-journey.md). Open conflicts, contradictions, and coverage gaps across the milestones are tracked in the [defect register](../build-contracts/defect-register.md).
+
+> **Accepted-work two-tier split (defect D1).** Continuum (M4) owns the full accepted-work orchestration, but a **minimal accepted-work core** (host-local job runner + readiness/`RunEvent` events + backpressure) is owned by **M0**, because M0's workspace rebuild must run as accepted work. M4 supersedes the core without changing the `AcceptedJob`/`RunEvent` contract. Continuum's row below is the orchestration tier, not the M0 core.
 
 ---
 
