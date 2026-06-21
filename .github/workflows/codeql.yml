@@ -27,7 +27,7 @@ jobs:
 
       - name: Setup pnpm
         if: matrix.language == 'javascript-typescript'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node
         if: matrix.language == 'javascript-typescript'
