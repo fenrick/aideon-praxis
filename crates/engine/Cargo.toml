@@ -1,0 +1,17 @@
+[package]
+name = "aideon_engine"
+version.workspace = true
+edition = "2024"
+authors = ["Aideon Engine Contributors"]
+license = "MIT"
+
+[lib]
+name = "aideon_engine"
+
+[dependencies]
+aideon_mneme_core = { path = "../mneme_core" }
+aideon_mneme_store = { path = "../mneme_store" }
+serde = { version = "1.0.228", features = ["derive"] }
+
+[dev-dependencies]
+tempfile = "3.27"
