@@ -1,8 +1,10 @@
 # ADR-0039: Typed IPC Bindings by Codegen, Retiring the Hand-Maintained Manifest Layer
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-18
+- Accepted: 2026-06-22 (ratified via the milestone challenge-review, defect [D7](../build-contracts/defect-register.md))
 - Depends-On: ADR-0006
+- Amends: ADR-0037 — the `docs/contracts/{ipc,event,shell-command}-manifest.json` files become generated artefacts, not a hand-maintained tier of the precedence order
 - Relates-To: ADR-0016, ADR-0017, ADR-0037
 
 ## Context

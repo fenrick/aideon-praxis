@@ -4,6 +4,7 @@
 - Date: 2026-06-16
 - Depends-On: ADR-0011, ADR-0017
 - Relates-To: ADR-0006, ADR-0016, ADR-0027
+- Amended-By: ADR-0039 (2026-06-22) — the IPC/event/shell-command manifests under `docs/contracts/` are **generated** from the Rust command surface, not hand-maintained; the precedence order still holds, but the manifest tier is a codegen artefact verified by drift checks rather than an independently authored source.
 
 ## Context
 
