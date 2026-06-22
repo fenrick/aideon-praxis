@@ -312,6 +312,12 @@ The current worker jobs and time APIs are defined by engine contracts and module
 - Proceed with defaults if:
   - The task is a local refactor or additive feature within a package and follows this guide.
 
+### Agent stop rule (unsettled or contradicted design)
+
+- **Stop on an unsettled design decision.** If an agent encounters an unsettled design decision during implementation, it must stop. It must not invent a local answer, encode an assumption in code, or continue behind a TODO. It must return the issue to human review with the specific design question named, the affected files or contracts listed, and the reason the existing authoritative sources do not answer it.
+- **Stop on a design contradiction.** If the agent finds that implementation reality contradicts the ratified design (for example, a chosen tool cannot deliver what a contract assumes), classify the item as a **design contradiction** and stop. Do not treat it as a local implementation detail to be quietly worked around.
+- An issue is agent-ready because the authoritative sources are named, the acceptance tests are clear, and no unresolved design decision remains hidden — **not** because someone applied the `ready-for-agent` label. See [`docs/build-contracts/agent-issue-template.md`](docs/build-contracts/agent-issue-template.md) and the `agent_task` issue form.
+
 ## Example response template (use this shape)
 
 - Add `Temporal.TopologyDelta` trait to `crates/metis` with empty stub.

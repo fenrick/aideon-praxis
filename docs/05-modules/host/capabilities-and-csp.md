@@ -26,6 +26,8 @@ The renderer gets **product** capabilities — narrow named commands — not **h
 
 Mutating and accepted-work commands are granted **only to the workspace-bearing window** (`main`); read surfaces are granted by least-privilege per window, not blanket-granted, because even reads can expose workspace paths, actor details, model content, or diagnostics. A child window opened from `main` does **not** inherit `main`'s grants — it receives its own explicit capability label.
 
+**Event delivery follows the same scoping as commands.** Run, step, job, lifecycle, readiness, and accepted-work events are **window-scoped by default** (emitted to the owning workspace window, not broadcast); a window that cannot invoke a command must not automatically receive operational metadata about its jobs. The `status` window's "event subscription" entry below is an **explicit, capability-granted exception**, not the default. Broadcast is reserved for app-wide signals (setup/health). See [host event-bus](./event-bus.md).
+
 | Window                | Permitted command surface                                                          |
 | --------------------- | ---------------------------------------------------------------------------------- |
 | `main` (workspace)    | Workspace reads, supported writes, accepted jobs, rebuild controls                 |

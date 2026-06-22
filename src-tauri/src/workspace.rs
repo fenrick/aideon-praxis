@@ -3,7 +3,7 @@
 //! M0 only requires that the host exposes stable, typed IPC surfaces and that the
 //! renderer can discover basic navigation scaffolding without hardcoding backend paths.
 
-use aideon_praxis::continuum::{FileSnapshotStore, SnapshotStore};
+use aideon_continuum::{FileSnapshotStore, SnapshotStore};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tauri::State;

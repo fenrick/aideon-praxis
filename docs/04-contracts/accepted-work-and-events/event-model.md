@@ -1,6 +1,6 @@
 # Typed event model
 
-All run progress arrives via typed Tauri events on the `run:progress` channel, not by polling. The renderer subscribes once and filters by `runId`. Events are ordered and deduplicated by `eventId` ([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
+All run progress arrives via typed Tauri events on the `run:progress` channel, not by polling. Run/job events are **window-scoped by default** — emitted to the owning workspace window, not broadcast ([host event-bus](../../05-modules/host/event-bus.md)). The renderer subscribes once and filters by `runId` **within its own window's scoped event stream**; a window does not receive another window's job progress by default. Events are ordered and deduplicated by `eventId` ([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
 
 ---
 

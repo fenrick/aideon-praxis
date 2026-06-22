@@ -22,6 +22,7 @@ async fn main() -> Result<()> {
         Command::IpcManifest(args) => export_ipc_manifest(args).await,
         Command::EventManifest(args) => export_event_manifest(args).await,
         Command::ShellCommandManifest(args) => export_shell_command_manifest(args).await,
+        Command::CheckCrateBoundaries => check_crate_boundaries(),
     }
 }
 
@@ -50,6 +51,8 @@ enum Command {
     EventManifest(EventManifestArgs),
     /// Generate a manifest of host shell command ids (for contract tests).
     ShellCommandManifest(ShellCommandManifestArgs),
+    /// Check Rust crate dependency direction (engines never import Tauri/host; no Praxis↔Metis edge).
+    CheckCrateBoundaries,
 }
 
 #[derive(Parser)]
@@ -1061,4 +1064,121 @@ struct LegacyBranch {
     name: String,
     #[serde(default)]
     head: Option<String>,
+}
+
+// ---- check-crate-boundaries: architecture fitness function (ADR-0011, ADR-0040; D9/D21) ----
+
+#[derive(Deserialize)]
+struct CargoMetadata {
+    packages: Vec<CargoPackage>,
+}
+
+#[derive(Deserialize)]
+struct CargoPackage {
+    name: String,
+    manifest_path: String,
+    dependencies: Vec<CargoDependency>,
+}
+
+#[derive(Deserialize)]
+struct CargoDependency {
+    name: String,
+}
+
+/// Enforce the allowed crate-dependency direction so architectural drift is a
+/// failing check, not a reviewer-memory item: engine crates (`crates/*`) never
+/// depend on Tauri or the host crate, and there is no Praxis↔Metis
+/// implementation edge. Exits non-zero on violation so CI can gate it.
+/// See ADR-0011 (module taxonomy) and defect-register D9/D21.
+fn check_crate_boundaries() -> Result<()> {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    let output = std::process::Command::new(cargo)
+        .args(["metadata", "--no-deps", "--format-version", "1"])
+        .output()
+        .context("running `cargo metadata`")?;
+    if !output.status.success() {
+        return Err(anyhow!(
+            "`cargo metadata` failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+    let metadata: CargoMetadata =
+        serde_json::from_slice(&output.stdout).context("parsing cargo metadata JSON")?;
+
+    let pkg_at = |needle: &str| {
+        metadata
+            .packages
+            .iter()
+            .find(|p| p.manifest_path.replace('\\', "/").contains(needle))
+            .map(|p| p.name.clone())
+    };
+    let host_pkg = pkg_at("/src-tauri/"); // composition root
+    let harness_pkg = pkg_at("/crates/engine/"); // `aideon_engine` — composes engines, exempt
+
+    let mut violations: Vec<String> = Vec::new();
+    let mut checked = 0_usize;
+
+    for pkg in &metadata.packages {
+        // Domain engines live under crates/*; the host and xtask are exempt, and
+        // the `aideon_engine` harness is allowed to depend on every engine.
+        if !pkg.manifest_path.replace('\\', "/").contains("/crates/") {
+            continue;
+        }
+        if harness_pkg.as_deref() == Some(pkg.name.as_str()) {
+            continue;
+        }
+        checked += 1;
+        let pkg_lower = pkg.name.to_lowercase();
+
+        // Flat-forbidden lateral engine→engine edges (MODULE-DEPENDENCY-MAP.md).
+        // The "contracts allowed / internals forbidden" edges (metis→praxis,
+        // chrona→praxis, continuum→*) are NOT crate-level enforceable until a
+        // neutral contracts crate exists (D21), so they are intentionally
+        // omitted here rather than risk false positives.
+        let forbidden_lateral: &[&str] = if pkg_lower.contains("praxis") {
+            &["metis", "chrona", "continuum"]
+        } else if pkg_lower.contains("metis") {
+            &["chrona", "continuum"]
+        } else if pkg_lower.contains("chrona") {
+            &["metis", "continuum"]
+        } else {
+            &[]
+        };
+
+        for dep in &pkg.dependencies {
+            let dep_name = dep.name.as_str();
+            if dep_name == "tauri"
+                || dep_name == "tauri-build"
+                || host_pkg.as_deref() == Some(dep_name)
+                || harness_pkg.as_deref() == Some(dep_name)
+            {
+                violations.push(format!(
+                    "engine `{}` depends on `{dep_name}` — engines must never import Tauri, the host, or the composition harness",
+                    pkg.name
+                ));
+            }
+            let dep_lower = dep_name.to_lowercase();
+            if forbidden_lateral.iter().any(|t| dep_lower.contains(t)) {
+                violations.push(format!(
+                    "forbidden lateral edge: `{}` depends on `{dep_name}` — no lateral engine dependency; composition routes through the host (MODULE-DEPENDENCY-MAP.md)",
+                    pkg.name
+                ));
+            }
+        }
+    }
+
+    if violations.is_empty() {
+        println!(
+            "crate boundaries OK: {checked} engine crate(s) checked, dependency direction holds"
+        );
+        Ok(())
+    } else {
+        for v in &violations {
+            eprintln!("crate-boundary violation: {v}");
+        }
+        Err(anyhow!(
+            "{} crate-dependency-direction violation(s)",
+            violations.len()
+        ))
+    }
 }

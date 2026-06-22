@@ -37,6 +37,40 @@ const typedTsConfigs = [
   files: ['**/*.{ts,tsx}'],
 }));
 
+// ADR-0010 design-system proxy-boundary import bans: product code imports
+// icons/Radix primitives/blocks through the design-system root, not the originals.
+const DESIGN_SYSTEM_PROXY_PATTERNS = [
+  {
+    group: ['lucide-react'],
+    message:
+      "Import icons through the design-system Icon primitive: import { Icon } from '@/design-system'",
+  },
+  {
+    group: ['@radix-ui/*'],
+    message: 'Import Radix primitives through the design-system layer, not directly.',
+  },
+  {
+    group: ['design-system/components/**'],
+    message:
+      "Import through the design-system root: import { X } from 'design-system'. Canvas components use 'design-system/reactflow/*'.",
+  },
+  {
+    group: ['design-system/blocks/**'],
+    message: "Import through the design-system root: import { X } from 'design-system'.",
+  },
+];
+
+// ADR-0026 / ADR-0040 renderer↔host boundary: UI code reaches the host only
+// through the typed adapter seam (src/adapters/**) or the generated IPC client —
+// never raw Tauri invoke/APIs. Keeps the renderer disposable UI with no host coupling.
+const TAURI_BOUNDARY_PATTERNS = [
+  {
+    group: ['@tauri-apps/api', '@tauri-apps/api/*', '@tauri-apps/plugin-*'],
+    message:
+      'Renderer UI must reach the host through src/adapters/** (the typed IPC seam), never raw Tauri invoke/APIs directly (ADR-0026, ADR-0040).',
+  },
+];
+
 export default defineConfig([
   // Global ignores
   globalIgnores([
@@ -492,39 +526,41 @@ export default defineConfig([
     },
   },
 
-  // ADR-0010: Design-system proxy boundary.
-  // Product code must import icons and Radix primitives through src/design-system only.
-  // src/design-system/** is the wrapper layer and may import the originals directly.
+  // Architecture fitness functions (ADR-0010 + ADR-0026/ADR-0040), expressed as
+  // three mutually-exclusive regions so each file matches exactly one
+  // `no-restricted-imports` config (ESLint flat config does not merge the rule
+  // across blocks — last match wins — so overlapping scopes would clobber).
+  //
+  //   • Main UI (src/** minus design-system + adapters): design-system proxy ban
+  //     AND raw-Tauri ban. UI imports primitives through the DS root and reaches
+  //     the host only through the adapter seam.
+  //   • design-system/**: raw-Tauri ban only (the DS wrapper may import the
+  //     primitives it proxies, but must not call the host).
+  //   • adapters/**: design-system proxy ban only (the adapter seam is the one
+  //     place allowed to import raw Tauri APIs).
   {
-    name: 'design-system/proxy-boundary',
+    name: 'boundary/main-ui',
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/design-system/**'],
+    ignores: ['src/design-system/**', 'src/adapters/**'],
     rules: {
       'no-restricted-imports': [
         'error',
-        {
-          patterns: [
-            {
-              group: ['lucide-react'],
-              message:
-                "Import icons through the design-system Icon primitive: import { Icon } from '@/design-system'",
-            },
-            {
-              group: ['@radix-ui/*'],
-              message: 'Import Radix primitives through the design-system layer, not directly.',
-            },
-            {
-              group: ['design-system/components/**'],
-              message:
-                "Import through the design-system root: import { X } from 'design-system'. Canvas components use 'design-system/reactflow/*'.",
-            },
-            {
-              group: ['design-system/blocks/**'],
-              message: "Import through the design-system root: import { X } from 'design-system'.",
-            },
-          ],
-        },
+        { patterns: [...DESIGN_SYSTEM_PROXY_PATTERNS, ...TAURI_BOUNDARY_PATTERNS] },
       ],
+    },
+  },
+  {
+    name: 'boundary/design-system',
+    files: ['src/design-system/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [...TAURI_BOUNDARY_PATTERNS] }],
+    },
+  },
+  {
+    name: 'boundary/adapters',
+    files: ['src/adapters/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [...DESIGN_SYSTEM_PROXY_PATTERNS] }],
     },
   },
 
