@@ -196,6 +196,11 @@ Each assertion maps to its oracle fixture:
 The exit tests above all map to **crate/fixture oracles** — they prove the engine, not the assembled host. M0 also gates the **boundary** in two tiers ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)); crate oracles alone do **not** satisfy M0 exit.
 
 - **Tier 1 — hard, merge-blocking, OS-portable real-host boundary test** (macOS + Windows + Linux). Drives the actual Tauri command registrations / handlers — never jsdom, mocked IPC, or renderer-only adapters. Asserts: `workspace.create`/`open`/`close`/`rebuild` + readiness event **registered**; registration ↔ generated TS bindings ↔ capability manifest **parity**; per-window/context **capability denial**; RFC-9457 envelope with **no Rust-internal leakage**; `correlation_id` propagation; long-running rebuild returns an **`AcceptedJob`, not a blocking response**; `BACKPRESSURE` code+shape; unknown/malformed/denied commands fail predictably. **Proof-carrying readiness:** open → read hash via host status → delete `.aideon/runtime/` → `workspace_rebuild` → assert `AcceptedJob` (non-blocking) → read-write withheld until `ready_read_write` → assert the event's carried `foundation_rebuild_hash` **equals the pre-wipe hash**. (`crates/mneme_store/tests/m0_exit.rs` stays the engine-isolation oracle; it does **not** satisfy this gate. [#319])
+  - **Tier-1 proof mechanism — split by what each assertion can prove** (each assertion runs at the lowest layer that can actually prove it; weaker is theatre, heavier is waste):
+    - **Direct handler / `mock_app` path** (the existing `src-tauri/tests/internal/` harness) for: handler logic; success + error envelope shape for **known** commands; accepted-job response shape; proof-carrying readiness round-trip; `foundation_rebuild_hash` equivalence through the host-facing rebuild path. The assertion is host command _behaviour_, not routing.
+    - **Real IPC dispatch path** (`tauri::test::get_ipc_response` against the built app) for: **unknown** command, **malformed** command, dispatch-level error conversion, and routing failures — a handler test cannot prove what happens when no handler exists.
+    - **Set parity (after #303 codegen)** for: registered Rust commands/events ↔ generated TypeScript bindings ↔ capability-manifest entries. Set equality is cheaper and more exact than dispatching every command.
+    - **Per-window capability denial — placement decided by a spike** ([#329]): does the Tauri **test** runtime exercise the same per-window ACL/capability path as the real app? If **yes**, Tier-1 includes dispatch-based deny tests against window labels; if **no**, Tier-1 keeps **static** capability-manifest parity (extending `security_posture.rs`) and **Tier-2** owns runtime per-window denial in the real WebView. Do not assume — verify once and record the answer.
 - **Tier 2 — supplementary in-window UI smoke**, asymmetric by toolchain reality (`tauri-driver` has no macOS support). **Windows WebView2 + Linux WebKitGTK:** launch the real app; assert the shell composes the required regions (not just a title + one node); ≥1 interaction per implemented surface crossing the real adapter/host seam. **macOS:** build DMG/ZIP; launch; capture screenshot artefacts; assert shell render + stable test IDs; **log loudly** that interactive WebDriver is unavailable — **never silently `exit 0`**. macOS interactive automation is **out of scope for M0** unless the toolchain changes. [#317]
 
 Golden-journey steps 8–10 reuse the Tier-1 proof-carrying-readiness assertion — one determinism proof, not a second implementation.
@@ -220,3 +225,11 @@ Design-intent items not yet pinned in code, to resolve before or during build:
 | [operation fixtures](../data/fixtures/operations/README.md)                                 | The validating examples.                       |
 | [rebuild oracle](../data/fixtures/rebuild/README.md)                                        | The rebuild-equivalence invariant test.        |
 | [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md) | The closed on-disk format.                     |
+
+[#290]: https://github.com/aideon-ai/aideon-desktop/issues/290
+[#303]: https://github.com/aideon-ai/aideon-desktop/issues/303
+[#316]: https://github.com/aideon-ai/aideon-desktop/issues/316
+[#317]: https://github.com/aideon-ai/aideon-desktop/issues/317
+[#318]: https://github.com/aideon-ai/aideon-desktop/issues/318
+[#319]: https://github.com/aideon-ai/aideon-desktop/issues/319
+[#329]: https://github.com/aideon-ai/aideon-desktop/issues/329
