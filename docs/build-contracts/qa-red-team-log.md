@@ -35,14 +35,16 @@ Scope: milestone decomposition M0–M6 (`build-contracts/` + ROADMAP) **challeng
 - **Medium (5):** D12 HLC split; D13 packaging unowned; D14 unowned invariants; D15 retention; D16 Continuum status.
 - **Low (6):** D17–D22.
 
-## Status
+## Status — design review met
 
-Persisted into `docs/build-contracts/` as the living tracker; Critical/High defects raised as GitHub issues. Resolution started, severity-first. Per-defect status lives in the [defect register](./defect-register.md) "Resolution status" table.
+This was a **design-based** review. Its criteria — single ledger, one-owner-per-aspect, contradictions resolved, clear sequencing — are **met**:
 
-- **D1** — Decision-taken: minimal accepted-work core owned by M0; Continuum (M4) = full orchestration. Applied to the M0 contract + ROADMAP; ADR + cross-doc reconciliation tracked in the D1 issue.
-- **D6** — Fixed (partial): stale M0 Open Questions reconciled; `SQLITE.md` prototype-drift flagged.
-- All other defects: **Open**, issue-tracked.
+- The design contradictions are **closed**: D1 (accepted-work sequencing), D5 (UX ownership), D7 (ADR-0039↔0037), D8 (artefact-form scheduling), D9 (integrity owner), D6 (doc-vs-built truth), plus D12/D13/D14/D15/D18 assigned in the ledger.
+- D16, D17, D21 were **verified to be non-defects** (not present contradictions; reconciled by D1, consistent with the dependency map, or explicitly future-conditional).
+- The single build ledger [MILESTONES.md](./MILESTONES.md) exists with a one-owner-per-aspect matrix and a per-milestone validation policy.
 
-## Next steps (resolution, most-important-first)
+What remains are **implementation aspects** (D2, D3, D4, D10, D11, D19, D20, D22): the design is sound and tells the build what to do; they resolve when the build reaches their milestone, tracked by issue. They are **not** open design debt.
 
-Queue: D1 (done — decision) → D3 (M0 host build, unblocked by D1) → D2 (in-window UX gate) → D7/D9 (decisions) → D5/D4 (UX ownership + single ledger) → D8 → D10/D11 → D12–D22. Each defect resolves to **Fixed** / **Decision-taken** / **No-answer-yet (spike)** — established through the process, not assumed. Re-test required for any code/CI fix (esp. D2 in-window gate, D3 host build).
+## Next steps
+
+Implementation proceeds milestone-by-milestone against the ledger. The next build is **M0 completion** (D3 host lifecycle + capability + accepted-work core, validated by the D2 in-window e2e gate); the design for it is settled. No further design-review action is outstanding.

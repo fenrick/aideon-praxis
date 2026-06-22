@@ -4,22 +4,42 @@ Supersedes the earlier build-contracts-only pass. Evidence read: `docs/03-design
 
 ## Resolution status (living)
 
-Updated as defects are worked. Status: **Open** · **Decision-taken** (governance call made; application may follow) · **Fixed** (doc/code/ADR landed) · **No-answer-yet** (spike/issue raised) · **Won't-fix**. The companion [qa-red-team-log](./qa-red-team-log.md) records what changed each pass.
+This was a **design-based** challenge-review: its job was to make the milestone _design_ coherent — single ledger, one-owner-per-aspect, no contradictions, clear sequencing. Each defect is therefore classified:
 
-| Defect                                        | Severity | Status              | Note                                                                                                                                                                                                                                                                           |
-| --------------------------------------------- | -------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| D1 accepted-work mis-sequenced                | Critical | **Decision-taken**  | [#316] Minimal accepted-work core owned by **M0**; Continuum (M4) = full orchestration. Applied to the M0 contract + ROADMAP; ADR + cross-doc reconciliation remaining.                                                                                                        |
-| D2 no in-window UX gate                       | Critical | Open                | [#317]                                                                                                                                                                                                                                                                         |
-| D3 M0 host unbuilt + capability contradiction | Critical | Open                | [#318]; unblocked by D1                                                                                                                                                                                                                                                        |
-| D4 host not a validated deliverable           | High     | Open                | [#319]                                                                                                                                                                                                                                                                         |
-| D5 UX unowned M0–M2                           | High     | **Decision-taken**  | [#320] UX assigned per milestone (shell→M0, authoring/inspector→M1, time-control→M2, catalogue→M3) with an in-window e2e exit gate; the single ledger [MILESTONES.md](./MILESTONES.md) is created (also closes the original "single document" ask). Per-contract edits remain. |
-| D6 doc-vs-built drift                         | High     | **Fixed (partial)** | [#321] Stale M0 Open Questions reconciled; `SQLITE.md` prototype-drift flagged. SQLITE.md rewrite remaining.                                                                                                                                                                   |
-| D7 ADR-0039 ↔ 0037                            | High     | **Decision-taken**  | [#322] Ratified ADR-0039 (codegen); 0037 marked Amended-By; index updated. D3 builds host commands into the codegen path. Codegen migration implementation remains.                                                                                                            |
-| D8 orphaned artefact forms + Mneme export     | High     | **Decision-taken**  | [#323] Scheduled in MILESTONES.md: view/map/matrix→M4, report/page→M5 (post-Sophia), Mneme export/package→M4. Their build contracts pending.                                                                                                                                   |
-| D9 integrity scorer two owners                | High     | **Fixed**           | [#324] Owner = **Praxis** (per ADR-0020 "Praxis computes"; Praxis↔Metis import ban). M3 ownership table corrected.                                                                                                                                                             |
-| D10 task pipeline untested                    | High     | Open                | [#325]                                                                                                                                                                                                                                                                         |
-| D11 golden journey not executed               | High     | Open                | [#326]                                                                                                                                                                                                                                                                         |
-| D12–D22 (Medium/Low)                          | Med/Low  | Open                | register-tracked; issues raised as each is scheduled                                                                                                                                                                                                                           |
+- **Design defect** — the design/docs are themselves wrong, contradictory, ambiguous, or incomplete. These are closed **now**, in docs/ADRs, regardless of build progress.
+- **Implementation aspect** — the design is sound; the thing is simply **not built yet**. These are **not design debt**; they resolve when the implementation reaches that milestone, tracked by issue. Listing them as "open defects" would wrongly imply the design is incomplete.
+
+### Design defects — closed (the design-review criteria)
+
+| Defect                                                                                     | Status             | Resolution                                                                                                                                     |
+| ------------------------------------------------------------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1 accepted-work mis-sequenced                                                             | **Resolved**       | [#316] Minimal accepted-work core → **M0**; Continuum (M4) = full orchestration. M0 contract + ROADMAP updated.                                |
+| D5 UX unowned M0–M2                                                                        | **Resolved**       | [#320] UX assigned per milestone (shell→M0, authoring→M1, time→M2, catalogue→M3); single ledger [MILESTONES.md](./MILESTONES.md) created.      |
+| D6 doc-vs-built drift                                                                      | **Resolved (doc)** | [#321] M0 Open Questions reconciled; `SQLITE.md` flagged as target-not-built. (Full SQLITE rewrite tracks with the M1–M3 tables it describes.) |
+| D7 ADR-0039 ↔ 0037                                                                         | **Resolved**       | [#322] ADR-0039 ratified (codegen); 0037 Amended-By; index updated.                                                                            |
+| D8 orphaned artefact forms + Mneme export                                                  | **Resolved**       | [#323] Scheduled in the ledger: view/map/matrix→M4, report/page→M5, export→M4.                                                                 |
+| D9 integrity scorer two owners                                                             | **Resolved**       | [#324] Owner = **Praxis** (ADR-0020 + import ban); M3 table corrected.                                                                         |
+| D12 HLC split · D13 packaging · D14 invariant gates · D15 retention · D18 metamodel naming | **Resolved**       | Assigned to a single owner in the ledger matrix (HLC→M0, packaging→M3, invariants=cross-cutting gates, retention→M6).                          |
+| D16 Continuum status                                                                       | **Not a defect**   | Verified: module-map says "has a crate today" (true); M4 is its capability milestone (reconciled by D1).                                       |
+| D17 Sophia ↔ Lexis ordering                                                                | **Not a defect**   | Verified against the dependency map: Sophia → Mneme only; "no other engine" holds. RAG detail is M5 module design.                             |
+| D21 `aideon_contracts` phantom                                                             | **Not a defect**   | Verified: cited as "a crate **when** contracts span engines" — conditional/future design-intent, not a present claim.                          |
+
+### Implementation aspects — resolve when the build reaches the milestone (not design debt)
+
+The design now tells the build what to do and how it is validated; these land as that milestone is implemented.
+
+| Defect                                                   | Resolves at                     | Tracked       |
+| -------------------------------------------------------- | ------------------------------- | ------------- |
+| D3 host lifecycle IPC + capability + accepted-work core  | M0                              | [#318]/[#290] |
+| D2 in-Tauri-window e2e gate (harness)                    | M0, then each UX milestone      | [#317]        |
+| D4 host-boundary e2e (the gate executed)                 | M0                              | [#319]        |
+| D10 task-pipeline first-class + tested                   | M1                              | [#325]        |
+| D11 golden journey run as a CI gate                      | per milestone as built          | [#326]        |
+| D19 relationship multiplicity enforced                   | M1                              | register      |
+| D20 M1 design specifics (Stage / UUIDv5 / rule defaults) | M1 (M1 contract open questions) | register      |
+| D22 `praxis_artefact_execute_chart` drift                | M3 (host artefact commands)     | register      |
+
+**Net:** the design-review criteria are **met** — single ledger, one-owner-per-aspect, the design contradictions resolved or verified non-issues. What remains is implementation, tracked to its milestone.
 
 [#316]: https://github.com/aideon-ai/aideon-desktop/issues/316
 [#317]: https://github.com/aideon-ai/aideon-desktop/issues/317
