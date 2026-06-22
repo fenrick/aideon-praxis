@@ -8,19 +8,20 @@ The rule this folder enforces: an issue is `ready-for-agent` only when an agent 
 
 ## Contents
 
-| Document                                               | What it is                                                                                               |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| [golden-journey.md](./golden-journey.md)               | The one end-to-end path through M0–M3, step by step, with commands, fixtures, and oracles.               |
-| [agent-issue-template.md](./agent-issue-template.md)   | The contract every `ready-for-agent` issue meets, and the canonical command block.                       |
-| [M0-foundation.md](./M0-foundation.md)                 | M0 build contract — portable workspace, operations, lossless rebuild.                                    |
-| [M1-meaning.md](./M1-meaning.md)                       | M1 build contract — authoring validated against the metamodel.                                           |
-| [M2-time.md](./M2-time.md)                             | M2 build contract — state-at and diff across valid/asserted time, layers, scenarios.                     |
-| [M3-artefacts.md](./M3-artefacts.md)                   | M3 build contract — the first catalogue artefact and bounded analytics (end of MVP).                     |
-| [mvp-command-registry.md](./mvp-command-registry.md)   | The MVP IPC/event surface derived from `docs/contracts/`, with the sync/accepted-work line.              |
-| [mvp-ui-state-machines.md](./mvp-ui-state-machines.md) | Per-surface MVP UI state tables, accessibility, persistence, and the settled library choices.            |
-| [defect-register.md](./defect-register.md)             | Living register of cross-milestone conflicts, contradictions, and coverage gaps, with resolution status. |
-| [qa-red-team-log.md](./qa-red-team-log.md)             | The challenge-review red-team log — what was checked, what changed each pass.                            |
-| [counter-case-notes.md](./counter-case-notes.md)       | Steelman counter-cases for the milestone decomposition, and their rebuttals.                             |
+| Document                                               | What it is                                                                                                            |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| [golden-journey.md](./golden-journey.md)               | The one end-to-end path through M0–M3, step by step, with commands, fixtures, and oracles.                            |
+| [agent-issue-template.md](./agent-issue-template.md)   | The contract every `ready-for-agent` issue meets, and the canonical command block.                                    |
+| [M0-foundation.md](./M0-foundation.md)                 | M0 build contract — portable workspace, operations, lossless rebuild.                                                 |
+| [M1-meaning.md](./M1-meaning.md)                       | M1 build contract — authoring validated against the metamodel.                                                        |
+| [M2-time.md](./M2-time.md)                             | M2 build contract — state-at and diff across valid/asserted time, layers, scenarios.                                  |
+| [M3-artefacts.md](./M3-artefacts.md)                   | M3 build contract — the first catalogue artefact and bounded analytics (end of MVP).                                  |
+| [mvp-command-registry.md](./mvp-command-registry.md)   | The MVP IPC/event surface derived from `docs/contracts/`, with the sync/accepted-work line.                           |
+| [mvp-ui-state-machines.md](./mvp-ui-state-machines.md) | Per-surface MVP UI state tables, accessibility, persistence, and the settled library choices.                         |
+| [MILESTONES.md](./MILESTONES.md)                       | The single build ledger — per-milestone requirements, the one-owner-per-aspect matrix, validation policy, and status. |
+| [defect-register.md](./defect-register.md)             | Living register of cross-milestone conflicts, contradictions, and coverage gaps, with resolution status.              |
+| [qa-red-team-log.md](./qa-red-team-log.md)             | The challenge-review red-team log — what was checked, what changed each pass.                                         |
+| [counter-case-notes.md](./counter-case-notes.md)       | Steelman counter-cases for the milestone decomposition, and their rebuttals.                                          |
 
 The machine-readable artefacts these contracts pin live alongside the design tree: operation JSON Schemas in [`docs/contracts/operations/`](../contracts/operations/README.md), and the test-oracle fixture pack (operations, metamodel, temporal, artefacts, rebuild) under [`docs/data/fixtures/`](../data/fixtures/operations/README.md).
 
