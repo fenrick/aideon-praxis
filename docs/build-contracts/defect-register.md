@@ -75,18 +75,21 @@ The design now tells the build what to do and how it is validated; these land as
 - FACT (R1). The only in-window test (`tests/webdriver/specs/launch.spec.js`) waits for one `[data-testid="aideon-shell-content"]` node to exist and opens aux windows — it never asserts the four shell regions compose, a surface renders, or any interaction. Headless Linux WebKit; macOS skipped (C1). All `mvp-ui-state-machines` exit tests pass in jsdom; `docs/frontend/testing.md` mandates mocked IPC "so tests never reach a real host."
 - Why it matters: there is **no contracted requirement that the assembled shell renders as a coherent set in the running app.** CI-green is fully consistent with the broken shell you observed. This is the central defect.
 - Action: make in-window e2e (real composition + ≥1 interaction per surface, on shipped webview targets) the UX exit gate per milestone; mock-layer tests explicitly do not satisfy it.
+- **Resolution ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)):** the _uniform_ "in-window on all shipped targets" form is **category 3** — `tauri-driver` has no macOS support, so it is contradicted by the toolchain, not merely unbuilt. Replaced by a **two-tier gate**: Tier 1 = portable real-host boundary test (hard merge gate, all three targets); Tier 2 = WebDriver interaction on Win/Linux, macOS launch-smoke + screenshot (never a silent skip). macOS interactive automation is out of scope for M0. ([#317], [#319])
 
 ### D3 — M0 is not finished: the host layer is unbuilt and partly contradicted
 
 - FACT (R1). `src-tauri/src/app.rs:112-142` registers **no** `workspace_*` lifecycle command (only projects/templates) — the lifecycle IPC the M0 contract and `workspace-lifecycle.md` mandate is unbuilt (#290). No `jobs.rs`, no `AcceptedJob`/`RunEvent`/`BACKPRESSURE`/`workspace.lifecycle.changed` symbol → rebuild-as-accepted-work + readiness events unbuilt. The shipped `src-tauri/capabilities/default.json` is a **single** capability granting the whole `appcommands` bundle to all six windows (splash can invoke `praxis_task_apply_operations`), directly contradicting `capabilities-and-csp.md` per-window scoping. `appcommands.toml` allows `system_factory_reset`, not registered in `generate_handler!`.
 - Why it matters: M0's headline ("a workspace opens and round-trips") is provable only at the crate level, bypassing the trust boundary M0 also requires; the canonical engine is unreachable from the UI. M0 is in progress, not done.
 - Action: M0 stays **in progress**; remaining = lifecycle IPC + capability enforcement (#290), accepted-work core + readiness events, per-window capability split, bundle↔handler drift fix.
+- **Sharpening ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)):** readiness must be **proof-carrying** — `ready_read_write` carries the `foundation_rebuild_hash` it became ready against, so a stub cannot fake readiness. The crate `m0_exit` determinism oracle proves the engine in isolation and does **not** satisfy the M0 host gate; the Tier-1 boundary test asserts the hash round-trips through the host surface ([#316], [#319]).
 
 ## High
 
 ### D4 — "Host assembled and tested" is never a contracted, validated deliverable
 
 - FACT (R1). Every M0–M3 exit test maps to a Mneme-crate or engine-command oracle. No milestone asserts the IPC envelope round-trips in-app, the error envelope redacts Rust internals, registration↔bundle parity holds, per-window scoping denies, splash gating works, or `correlation_id` propagates. This is how #290 slipped to "M0 done" while the headline boundary capability stayed unbuilt.
+- **Resolution ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)):** the **Tier-1 portable real-host boundary test** becomes a named M0 exit deliverable ([#319]) and the hard merge gate — it asserts exactly this list (registration/bindings/capability parity, per-window deny, RFC-9457 redaction, `correlation_id`, `AcceptedJob` non-blocking, `BACKPRESSURE`, proof-carrying readiness round-trip). The MILESTONES "Validated by" cells for the rebuild, accepted-work, typed-IPC, and lifecycle rows re-point from crate oracles to this test.
 
 ### D5 — UX/shell + design system owned by no M0–M2 build plan; validated only by mocks
 
