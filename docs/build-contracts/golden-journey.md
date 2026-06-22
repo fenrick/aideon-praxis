@@ -82,6 +82,21 @@ All steps run against the seed metamodel [`core-v1.json`](../data/meta/core-v1.j
 
 A build is **golden-journey-complete** when every step runs against the seed data, every command resolves in the IPC manifest, and every oracle fixture exists and matches. Until then, each _(oracle: planned)_ marker is a tracked build-contract item, not a silent gap.
 
+### Executable extension schedule (the journey is a growing gate, not a big-bang at M3)
+
+The journey runs **as an executable CI gate from M0 onward** — each milestone wires **its own slice** into the same running journey rather than waiting for M3. Each milestone's in-window exit-gate issue _is_ the wiring of its slice; the umbrella tracker is [#326].
+
+| Milestone | Adds to the executable journey                                                                 | Wired by                    |
+| --------- | ---------------------------------------------------------------------------------------------- | --------------------------- |
+| **M0**    | Steps 1, 8, 9, 10 — create/open, close/reopen, wipe `.aideon/runtime/`, rebuild + equivalence. | host-boundary gate #319     |
+| **M1**    | Steps 2, 3 — create an entity + relationship; an invalid write is refused, never an op.        | authoring in-window #348    |
+| **M2**    | Steps 4, 5, 6 — plan/actual claims at different valid times; resolve two viewpoints; diff.     | time-control in-window #352 |
+| **M3**    | Step 7 — a catalogue artefact executes and renders deterministically.                          | (M3 catalogue gate)         |
+
+The slice a milestone adds is part of **that milestone's exit gate** — a milestone is not "done" until its golden-journey steps run green in the assembled app. No slice waits for a later milestone to become executable.
+
+[#326]: https://github.com/aideon-ai/aideon-desktop/issues/326
+
 ---
 
 ## Related documents
