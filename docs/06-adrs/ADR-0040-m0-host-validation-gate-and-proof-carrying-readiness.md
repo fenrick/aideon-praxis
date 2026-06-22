@@ -50,9 +50,36 @@ Net: CI-green is fully consistent with a host boundary that does not exist and a
 
 ### 2. Readiness is proof-carrying
 
-The `workspace.lifecycle.changed` / `ready_read_write` event **carries the `foundation_rebuild_hash`** it became ready against — it is a proof token, not a bare flag. The Tier-1 boundary test asserts the round-trip: open → read the hash via a host status command → delete `.aideon/runtime/` → `workspace_rebuild` → assert an `AcceptedJob` is returned (non-blocking) → assert read-write is **withheld** until the readiness event → on `ready_read_write`, assert its carried hash **equals the pre-wipe hash**. A stub cannot emit the event without running the projection that produces the hash.
+The readiness event **carries the `foundation_rebuild_hash`** for the rebuilt foundation state, plus enough context to bind it to the workspace and the job that produced it — it is an **integrity claim with evidence attached**, not a status message. Minimum event shape:
 
-`crates/mneme_store/tests/m0_exit.rs` remains the engine-isolation determinism oracle, but it **does not** satisfy the M0 host gate. The MILESTONES ledger rows for rebuild and the accepted-work core point at the Tier-1 host boundary test.
+```ts
+type WorkspaceReadinessEvent = {
+  type: 'workspace.ready_read_write';
+  workspace_id: string;
+  job_id: string;
+  readiness: 'read_write';
+  foundation_rebuild_hash: string;
+  runtime_generation: string;
+  correlation_id: string;
+};
+```
+
+**The host carries and publishes the proof; it must not invent it.** The hash is computed by the **same engine path** `crates/mneme_store/tests/m0_exit.rs` already tests — there is no second hash algorithm in the host. Faking the event therefore requires either running the real rebuild or deliberately falsifying the engine proof path, which the crate oracle catches.
+
+The Tier-1 boundary test asserts the full chain through the host surface:
+
+1. Open the workspace through the host surface.
+2. Read the current `foundation_rebuild_hash` through `workspace.status`.
+3. Delete `.aideon/runtime/`.
+4. Call `workspace.rebuild`.
+5. Assert the command returns an `AcceptedJob`, **not** completion.
+6. Assert read-write readiness is **withheld** while rebuild is incomplete.
+7. Wait for `workspace.ready_read_write`.
+8. Assert the event includes `job_id`, `correlation_id`, and `foundation_rebuild_hash`.
+9. Assert the event hash **equals the pre-wipe hash**.
+10. Assert `workspace.status` after readiness reports the **same** hash.
+
+`crates/mneme_store/tests/m0_exit.rs` remains **necessary but insufficient** — its role is engine isolation ("Mneme can deterministically rebuild foundation state"). The host boundary test proves the **product claim** ("the app rebuilds as accepted work and only declares read-write readiness once equivalent foundation state exists"). The golden journey reuses this same proof as the user-facing acceptance path. The MILESTONES ledger rows for rebuild and the accepted-work core point at the Tier-1 host boundary test.
 
 ### 3. The golden journey reuses, not re-implements
 
