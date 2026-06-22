@@ -28,16 +28,9 @@ pub mod praxis {
     pub use crate::*;
 }
 
-/// Re-export the Metis analytics crate.
-pub mod metis {
-    pub use aideon_metis::*;
-}
-
-/// Re-export the Continuum orchestration crate.
-pub mod continuum {
-    pub use aideon_continuum::*;
-}
-
-// The Mneme persistence crate was the inside-out prototype and has been removed
-// (rebuilt to the M0 spec under #292); the `praxis::mneme` re-export is gone with
-// it. Storage types return via the new MnemeStore trait when M0 lands.
+// No lateral engine re-exports. Praxis must not depend on Metis or Continuum
+// (MODULE-DEPENDENCY-MAP.md: "No lateral engine dependency; composition routes
+// through the host"; enforced by `aideon_xtask check-crate-boundaries`).
+// Consumers import `aideon_metis` / `aideon_continuum` directly. The Mneme
+// persistence crate (inside-out prototype) was removed under #292; storage
+// types return via the MnemeStore trait when M0 lands.

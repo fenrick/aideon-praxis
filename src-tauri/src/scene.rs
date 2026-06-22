@@ -1,7 +1,7 @@
 //! Host IPC commands for scene/canvas data.
 
 use aideon_chrona::scene::generate_demo_scene;
-use aideon_praxis::continuum::{FileSnapshotStore, SnapshotStore};
+use aideon_continuum::{FileSnapshotStore, SnapshotStore};
 use aideon_praxis::praxis::canvas::{CanvasLayoutGetRequest, CanvasLayoutSaveRequest, CanvasShape};
 use aideon_praxis::praxis::graph_layout::{GraphLayoutGetRequest, GraphLayoutSaveRequest};
 use log::info;

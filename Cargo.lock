@@ -59,6 +59,7 @@ name = "aideon_desktop"
 version = "0.2.0"
 dependencies = [
  "aideon_chrona",
+ "aideon_continuum",
  "aideon_praxis",
  "dirs",
  "log",
@@ -127,8 +128,6 @@ dependencies = [
 name = "aideon_praxis"
 version = "0.2.0"
 dependencies = [
- "aideon_continuum",
- "aideon_metis",
  "async-recursion",
  "async-trait",
  "blake3",
