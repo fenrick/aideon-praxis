@@ -125,12 +125,17 @@ What the journey proves at M1: meaning is authored against the metamodel, and in
 
 ---
 
-## Open questions
+## Seed-shape decisions (M1/M2 grill pack)
 
-- **The `Stage` supertype gap.** `core-v1.json` declares `ValueStreamStage extends Stage` but does not declare `Stage`. M1 compiles `ValueStreamStage` on its own attributes; whether the fix is to add `Stage` as an abstract base type (additive/minor) or to drop the `extends` (editorial) is owned by the metamodel design and is **not settled** here ([data/README, the `Stage` gap](../data/README.md), [slots-and-effective-schema, honest-state note](../03-design/metamodel/slots-and-effective-schema.md)). The fixture records the gap rather than resolving it.
-- **UUIDv5 minting.** The committed UUIDs are stated to be UUIDv5 over a fixed namespace plus name path, but `core-v1.json` does not record the namespace UUID. Re-minting cannot be verified from the seed alone; the values are read, not recomputed. The namespace is design-intent until the compiler fixes it ([packages-and-registry](../03-design/metamodel/packages-and-registry.md)).
-- **Default structural rules.** The seed declares `allowSelf` only for `serves` and `allowDuplicate` only for `accesses`. The compiler default for the unstated cases on `realises`, `hosts`, and `plan_effect` is design-intent ([validation-rules](../03-design/metamodel/validation-rules.md)); the fixtures do not assert it.
-- **Cardinality of attribute slots.** The seed declares no per-attribute cardinality; whether an attribute slot is single- or multi-valued is the resolver's concern (M2). M1 treats every seed attribute slot as single-valued by default and flags multi-valued behaviour as design-intent.
+Resolved into the **M1 seed-shape finalisation** ([#343]) — one tight pre-implementation change to `core-v1.json` + fixtures, executed **before** the compiler is built. M0 impact throughout is **re-digest only** (authored-schema digest + affected fixtures); no operation-schema, storage, or semantic change.
+
+- **`Stage` supertype gap — resolved: remove the dangling `extends`.** Drop `ValueStreamStage extends Stage`; do **not** add `Stage` (one subtype, no lifted slots = placeholder). Rule: no abstract type in the seed unless it contributes inherited slots/rules or has ≥2 concrete subtypes. The compiler **rejects** any unresolved `extends` target (hard error, not silent tolerance). The effective-schema fixture is rebaselined to drop the recorded gap.
+- **UUIDv5 minting — resolved: re-mint under a recorded namespace.** The original namespace is **unrecoverable** (no minting tool in-repo; no match across standard namespaces; the only `new_v5` is an unrelated `package_id`), so the committed UUIDs are read-not-reproducible — a contradiction with ADR-0038's "a symbol UUID is reproducible from source, never invented". Fix: record `package.symbol_uuid { algorithm, namespace, name_path_version }` in `core-v1.json`, re-mint every type/relationship/attribute UUID, and add a compiler test that recomputes each committed UUID from the namespace + name path (mismatch = package error). **Dotted names** (`source.priority`) are hashed as one **opaque** string, never a path.
+- **Slot identity / dotted names — resolved (no M0 change).** Operations key slots by `field_id` (a UUID), never by string name; `source.priority` is a metamodel field **name** that mints to a `field_id`. Cardinality and dotted-name interpretation are therefore **M1 metamodel concerns** — the M0 operation schema and fixtures need **no** change.
+- **Default structural rules — decided (one sub-point pending in [#343]).** Make `allowSelf`/`allowDuplicate` explicit on every relationship; compiler fallback `false` but the seed never relies on absence. _Pending:_ whether the already-declared relationship `multiplicity` is enforced at M1 (validation) or advisory (defect D19).
+- **Attribute-slot cardinality — decided (one sub-point pending in [#343]).** Cardinality lives on the `FieldDef`/effective schema (not the resolver alone); default single-valued; multi-valued is explicit with a named composition rule. M2 consumes it. _Pending:_ confirm multi-valued = N facts on one `field_id` composed under the rule (no collection value type — ADR-0038).
+
+[#343]: https://github.com/aideon-ai/aideon-desktop/issues/343
 
 ---
 
