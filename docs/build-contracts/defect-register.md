@@ -28,16 +28,16 @@ This was a **design-based** challenge-review: its job was to make the milestone 
 
 The design now tells the build what to do and how it is validated; these land as that milestone is implemented.
 
-| Defect                                                   | Resolves at                     | Tracked       |
-| -------------------------------------------------------- | ------------------------------- | ------------- |
-| D3 host lifecycle IPC + capability + accepted-work core  | M0                              | [#318]/[#290] |
-| D2 in-Tauri-window e2e gate (harness)                    | M0, then each UX milestone      | [#317]        |
-| D4 host-boundary e2e (the gate executed)                 | M0                              | [#319]        |
-| D10 task-pipeline first-class + tested                   | M1                              | [#325]        |
-| D11 golden journey run as a CI gate                      | per milestone as built          | [#326]        |
-| D19 relationship multiplicity enforced                   | M1                              | register      |
-| D20 M1 design specifics (Stage / UUIDv5 / rule defaults) | M1 (M1 contract open questions) | register      |
-| D22 `praxis_artefact_execute_chart` drift                | M3 (host artefact commands)     | register      |
+| Defect                                                   | Resolves at                         | Tracked       |
+| -------------------------------------------------------- | ----------------------------------- | ------------- |
+| D3 host lifecycle IPC + capability + accepted-work core  | M0                                  | [#318]/[#290] |
+| D2 in-Tauri-window e2e gate (harness)                    | M0, then each UX milestone          | [#317]        |
+| D4 host-boundary e2e (the gate executed)                 | M0                                  | [#319]        |
+| D10 task-pipeline first-class + tested                   | M1                                  | [#325]        |
+| D11 golden journey run as a CI gate                      | per milestone as built              | [#326]        |
+| D19 relationship multiplicity enforced                   | M1                                  | register      |
+| D20 M1 design specifics (Stage / UUIDv5 / rule defaults) | M1 ([#343] seed-shape finalisation) | [#343]        |
+| D22 `praxis_artefact_execute_chart` drift                | M3 (host artefact commands)         | register      |
 
 **Net:** the design-review criteria are **met** — single ledger, one-owner-per-aspect, the design contradictions resolved or verified non-issues. What remains is implementation, tracked to its milestone.
 
@@ -145,8 +145,11 @@ The design now tells the build what to do and how it is validated; these land as
 
 - **D17** — Sophia↔Lexis: `delivery-order.md` says the M5 trio "depend on no other engine," but Sophia's `grounding-and-retrieval.md` makes generation ride on Lexis RAG → M5-internal ordering constraint unstated. (FACT, R1)
 - **D18** — Metamodel split M0 (authored/structural) / M1 (effective/semantic) is acceptable but must be named as two aspects, not one smeared across two milestones. (INFERENCE)
-- **D19** — Relationship `multiplicity` declared in the seed but never enforced in `validation-rules.md` and asserted by no milestone — dead metadata or unbuilt obligation. (FACT, R1)
-- **D20** — M1 Open Questions (Stage supertype gap, UUIDv5 namespace absent, structural-rule defaults for 3/5 relationships, attribute cardinality) are real gaps M2/M3 inherit; honestly disclosed but unowned. (FACT, R1)
+- **D19** — Relationship `multiplicity` declared in the seed but never enforced. **Resolved** (M1/M2 grill pack): multiplicity is **enforced at M1**, at the validation boundary (it is metamodel validation, not temporal resolution). The seed declares it explicitly on every relationship ([#343]); the generic count-against-bounds check makes the axis real (current `many-many` values pass trivially; the first non-trivial bound needs no new code). Enforcement lands with the M1 semantic-validation-boundary item, not the seed change. (FACT, R1)
+- **D20** — M1 Open Questions (Stage supertype gap, UUIDv5 namespace absent, structural-rule defaults for 3/5 relationships, attribute cardinality) are real gaps M2/M3 inherit. **Resolved** via the M1/M2 grill pack into [#343] (M1 seed-shape finalisation): Stage → remove dangling `extends`; UUIDv5 → re-mint under a recorded namespace (original unrecoverable); relationship defaults → explicit on all; cardinality → on `FieldDef`. Two sub-points (multiplicity enforcement timing, multi-valued representation) remain open in [#343]. Slot/dotted-name confirmed as **no M0 op-schema change** (ops key by `field_id` UUID). (FACT, R1)
+
+[#343]: https://github.com/aideon-ai/aideon-desktop/issues/343
+
 - **D21** — `aideon_contracts` neutral crate cited as the acyclic-invariant enforcement mechanism appears in no crate inventory and no milestone. (FACT, R1)
 - **D22** — `src-tauri` registers `praxis_artefact_execute_chart`; `chart` is not one of the six sanctioned artefact forms — code↔design drift. (FACT, R1)
 

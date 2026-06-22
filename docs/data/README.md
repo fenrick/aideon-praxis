@@ -138,9 +138,9 @@ Record every bump in [base/CHANGELOG.md](./base/CHANGELOG.md) with its date and 
 `core-v1.json` declares `ValueStreamStage` with `"extends": "Stage"`, but **no `Stage` type is defined** in the seed metamodel. This is a real, code-backed gap: the seed names a supertype it does not declare. It is recorded here honestly rather than papered over.
 
 - **Current truth:** `ValueStreamStage` validates and resolves on its own declared attributes (`name`, `purpose`, `owner`); the dangling `extends: Stage` contributes nothing today because there is no `Stage` effective schema to inherit from.
-- **Intended direction (design intent):** either a `Stage` base type is added to the metamodel as the abstract supertype the inheritance expects, or the `extends` is removed. The reconciliation is owned by the metamodel design — see the inheritance treatment in [slots and the effective schema](../03-design/metamodel/slots-and-effective-schema.md) and the evolution rules in [extension and versioning](../03-design/metamodel/extension-and-versioning.md). Adding `Stage` is an additive (minor) change; removing the `extends` is editorial.
+- **Decided ([#343](https://github.com/aideon-ai/aideon-desktop/issues/343)): remove the dangling `extends`.** `Stage` is **not** added — an abstract supertype with one subtype and no lifted slots is a placeholder, not a model (no abstract type in the seed unless it contributes inherited slots/rules or has ≥2 concrete subtypes). `ValueStreamStage` keeps its own attributes; the M1 compiler rejects any unresolved `extends` target. This README, `core-v1.json`, and the effective-schema fixture are rebaselined when #343 lands.
 
-Until that lands, no document describes `Stage` as an existing type. See [schema-governance.md](./schema-governance.md) for the inheritance semantics that frame the fix.
+Until #343 lands, the seed still carries the dangling `extends` and no document describes `Stage` as an existing type. See [schema-governance.md](./schema-governance.md) for the inheritance semantics that frame the fix.
 
 ---
 

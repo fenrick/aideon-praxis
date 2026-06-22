@@ -35,6 +35,9 @@ When M2 is complete, on facts authored against the seed metamodel:
 - **Analytics** — centrality and impact are M3 (Metis).
 - **CRDT convergence under multi-user sync** — `OrSetUpdate` / `CounterUpdate` merge is M6. M2 is single-writer.
 - **The exact HLC skew-tolerance bound** — bounded and surfaced as `clock_invalid` beyond tolerance, but the numeric bound is design-intent ([ADR-0022](../06-adrs/ADR-0022-hlc-clock-model.md)). The vectors use explicit HLC values and never depend on a skew threshold.
+- **The full Allen-relation algebra and interval-valued range reads** — M2 implements only the interval relations the vector suite requires (containment + `during`/specificity), not the 13-relation algebra, broad interval-query APIs, or range-diff. These are additive later, gated on a range-read vector (see the scope note below).
+
+**M2 interval-semantics scope (prose ÷ vector reconciliation).** M2's executable scope is point `state-at` and diff over point-resolved Viewpoints. The point resolver returns the winning value **and its `effective_interval`**. The vector suite requires half-open containment and interval-specificity handling — including the case where one candidate interval is `during` another — but **not** the full Allen relation algebra or interval-valued range reads. Range reads are **additive later**: composed from point-resolution spans at winner-change boundaries, without changing the core point-resolver contract. Building them now (because the prose says "point and range reads") would repeat the speculation pattern — the right sequence is: write a range-read vector → define expected spans and boundary behaviour → implement to it → then widen M2 scope. Until then M2 stays vector-driven.
 
 ---
 
