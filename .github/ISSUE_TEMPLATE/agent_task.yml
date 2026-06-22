@@ -1,0 +1,58 @@
+name: Agent task
+description: A unit of work an agent can complete from the issue alone (see docs/build-contracts/agent-issue-template.md)
+labels: ['needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for `ready-for-agent` candidate work. An issue is agent-ready only when an agent can complete it **from the issue alone** — every field below filled, authoritative sources named, acceptance mapped to tests, and **no unresolved design question**. If a decision, credential, or judgement call is needed, it is `ready-for-human`, not `ready-for-agent`. "Implement according to the design docs" is not an agent task. Full contract: [`docs/build-contracts/agent-issue-template.md`](../../docs/build-contracts/agent-issue-template.md).
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: The observable behaviour when this is done — what is true afterward that is not true now.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Authoritative sources (in precedence order)
+      description: 'Per ADR-0037: accepted ADRs → machine-readable schemas/manifests → contract docs → tested fixtures → code. Name each with its path.'
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope — files / crates / modules that may change
+      description: The exact paths in scope. Anything outside is out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance scenarios mapped to named tests
+      description: Given/When/Then with concrete seed values. Each scenario names the test file and fixture identifier that proves it.
+    validations:
+      required: true
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: Behaviour the agent must NOT add.
+    validations:
+      required: true
+  - type: textarea
+    id: design-questions
+    attributes:
+      label: Design questions resolved
+      description: List any design questions checked against the authoritative sources. If none are open, say so explicitly — a sentence, not a checkbox.
+      placeholder: 'No unresolved design questions known after checking the authoritative sources.'
+    validations:
+      required: true
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Agent-readiness acknowledgement
+      options:
+        - label: Any unresolved design question makes this issue `ready-for-human`, not `ready-for-agent` — and an agent that encounters one mid-task must stop and return it for human review with the question named.
+          required: true
