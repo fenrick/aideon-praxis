@@ -23,6 +23,14 @@ Events carry the `correlation_id` of the workflow that produced them, so an even
 
 ---
 
+## Event scoping (window-targeted by default)
+
+> Host events are **window-scoped by default**. Run, step, job, workspace-lifecycle, readiness, and accepted-work events are emitted to the **owning workspace window** using `emit_to` (or the equivalent window-targeted mechanism) — not broadcast. **Broadcast is reserved for genuinely app-wide signals**, such as setup completion (`setup.backend_ready`) or global host-health changes. A window may subscribe once and filter by `run_id` **within its own scoped event stream**, but it must not receive another window's workspace job progress by default.
+
+This preserves the same trust shape as the command side: if a window cannot invoke a command, it must not automatically receive operational metadata about that command's jobs. Per-window scoping is the primary control against spoofing and elevation of privilege ([capabilities-and-csp](./capabilities-and-csp.md), [ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)); although M0 progress events are mostly activity metadata, later events will carry workspace ids, paths, actor references, diagnostics, and error codes — starting scoped avoids a later security clean-up. Any cross-window monitor (e.g. the `status` window's "event subscription" grant) is an **explicit, capability-granted exception**, never the default broadcast.
+
+---
+
 ## The missed-event rule
 
 > The renderer **must** tolerate missed events. Fallback polling is permitted only as a safety net, not the primary update mechanism.
