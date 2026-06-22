@@ -2,6 +2,8 @@
 
 The schema of Mneme's default derived-runtime engine: the table families, indexes, WAL configuration, migrations, and the foreign-key, uniqueness, and JSON-column constraints that hold it together. SQLite is the **current default** derived-runtime cache behind Mneme's storage trait — not the datastore. The workspace folder is the datastore ([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)); this database is a rebuildable cache of it.
 
+> **Honest-state — this describes the MVP/end-state schema, not the built M0 projection (defect D6).** As of [#314](https://github.com/aideon-ai/aideon-desktop/pull/314) the built derived runtime (`crates/mneme_store`) is **rusqlite** with raw `CREATE TABLE` and only the **eight M0 foundation tables** (applied-ops, actors, partitions, schema-docs, objects, replay-head, hlc-state, meta). The SeaORM migrations, the `payload BLOB`/`op_type` columns, and the `*_json` fact tables described below are **not built** — and the typed per-kind payload (M0) and the "no `json` twin-fact value" rule supersede them. The fact/projection/analytics table families below land at M1–M3. Treat this file as the target schema; the per-table milestone ownership is tracked in the [defect register](../../build-contracts/defect-register.md) (D6).
+>
 > **Filename note.** This file is referenced as `SQLITE.md` (uppercase) because the repository host's filesystem is case-insensitive: a lowercase `sqlite.md` would collide with this name. Incoming cross-links point here, and this file carries the full content.
 
 ---

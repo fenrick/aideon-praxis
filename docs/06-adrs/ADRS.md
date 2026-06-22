@@ -50,4 +50,4 @@ These ADRs establish a single cross-runtime authority: **the portable workspace 
 | [0036](./ADR-0036-right-to-erasure-vs-append-only.md)                         | Right to erasure vs append-only storage                                    | Accepted | Invariant + deferred      |
 | [0037](./ADR-0037-contract-precedence-and-source-of-truth.md)                 | Contract precedence and source of truth                                    | Accepted | Invariant + stable seam   |
 | [0038](./ADR-0038-canonical-operation-record-identity-and-commit-protocol.md) | Canonical operation record, identity, and commit protocol                  | Accepted | Invariant + stable seam   |
-| [0039](./ADR-0039-typed-ipc-codegen-over-hand-maintained-manifests.md)        | Typed IPC bindings by codegen, retiring the hand-maintained manifest layer | Proposed | Stable seam               |
+| [0039](./ADR-0039-typed-ipc-codegen-over-hand-maintained-manifests.md)        | Typed IPC bindings by codegen, retiring the hand-maintained manifest layer | Accepted | Stable seam               |
