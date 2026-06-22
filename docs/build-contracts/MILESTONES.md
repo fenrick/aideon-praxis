@@ -56,8 +56,8 @@ Each row is owned by exactly one milestone. "Validated by" states the **real** g
 [contract](./M0-foundation.md) · capability gate: a portable workspace opens, round-trips, and rebuilds losslessly; typed IPC + capabilities enforced; no open ports.
 
 - **Owns:** canonical storage/JSON/HLC/blobs/rebuild · workspace lifecycle + lock · minimal accepted-work core [D1] · typed IPC + capability + codegen manifest [D7] · shell + lifecycle UX [D5] · observability baseline · authored metamodel.
-- **Done (✅):** the three engine crates (`mneme_core`, `mneme_store`, `engine`) with real, non-mock oracle tests (#314).
-- **Outstanding (☐/◐):** host `workspace_*` lifecycle IPC + capability enforcement (#290/#318) · accepted-work core (#316) · codegen migration (#322) · shell renders as a set + lifecycle UX proven **in the Tauri window** (#317/#320) · host-boundary e2e (#319).
+- **Done (✅):** the three engine crates (`mneme_core`, `mneme_store`, `engine`) with real, non-mock oracle tests (#314); operation fixtures↔schemas validation (`operation-fixtures.contract.test.ts`); the architecture fitness functions (ESLint renderer boundary + `xtask` crate-dep direction).
+- **Outstanding — sequenced codegen-first (☐/◐):** typed IPC codegen (#303, ADR-0039) **first** → host `workspace_*` lifecycle IPC + per-window capability (#290/#318) → minimal accepted-work core + proof-carrying readiness (#316) → host-boundary Tier-1 e2e as the exit gate (#319, ADR-0040). In parallel: shell renders as a set + lifecycle UX proven **in the Tauri window** (#317/#320).
 - **Exit gate:** crate oracles **plus** the golden-journey lifecycle steps (1, 8, 9, 10) executed in the real window. Not met yet.
 
 ### M1 — Meaning · ☐

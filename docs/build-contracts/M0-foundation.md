@@ -160,9 +160,11 @@ In precedence order ([contract precedence](./README.md#contract-precedence)):
 Dependency-ordered:
 
 1. **Workspace format v1 closure** — manifest schema, identifiers, sealing/ordering, atomic-write sequence, checksums, recovery rules, version maxima, schema-authority rule. Everything else assumes a settled on-disk format.
-2. **Operation schemas + fixtures** — envelope first, then per-op-kind schemas, then the valid/invalid fixture pairs (validated against the schemas).
+2. **Operation schemas + fixtures** — envelope first, then per-op-kind schemas, then the valid/invalid fixture pairs (validated against the schemas, `tests/contracts/operation-fixtures.contract.test.ts`).
 3. **Rebuild-equivalence relation + oracle** — the hash definition and the single invariant test, which depends on both the format and the op shapes being fixed.
-4. **Host lifecycle + IPC enforcement** — open/lock/close/reopen and the rebuild-on-missing-runtime path, exercising the format and the equivalence oracle.
+4. **Typed IPC codegen first** ([ADR-0039](../06-adrs/ADR-0039-typed-ipc-codegen-over-hand-maintained-manifests.md), [#303]) — **before** any new host command. The Rust command/event DTOs become the source; generated TS bindings are the renderer's surface; the hand-maintained `*_IPC_COMMANDS` arrays + manifests are retired or made derived; CI fails on generated drift. **Bounded:** migrate enough existing commands to prove the seam, not every future command — do not redesign IPC semantics. The M0 host layer is the largest new command surface the project adds at once; building it on the seam ADR-0039 retires would double the integration and is forbidden by the evergreen rule. This step also makes [ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md) Tier-1's registration↔generated-binding parity assertion valid.
+5. **Host lifecycle + IPC enforcement on the generated seam** ([#290]/[#318]) — open/lock/close/reopen and the rebuild-on-missing-runtime path, exercising the format and the equivalence oracle, with per-window capability scoping.
+6. **Minimal accepted-work core on the generated seam** ([#316]) — rebuild runs as an `AcceptedJob`; readiness/status/`RunEvent`/`BACKPRESSURE` travel the same generated contract path; readiness is proof-carrying ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)).
 
 ## Golden-journey segment
 
