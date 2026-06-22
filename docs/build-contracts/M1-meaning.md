@@ -31,7 +31,7 @@ When M1 is complete, on the seed metamodel and seed dataset:
 - **Artefact execution and analytics** — the catalogue, centrality, and impact are M3.
 - **Schema evolution at runtime** — overlay packages and version bumps are specified ([extension-and-versioning](../03-design/metamodel/extension-and-versioning.md)) but exercising a migration end to end is later work; M1 compiles the single seed version.
 - **UUID minting** — the UUIDv5 values are committed in `core-v1.json`; M1 reads them and **verifies** them against the recorded namespace + name-path (it does not mint at runtime). The namespace and name-path are pinned and the symbols re-minted in [#343] (the original namespace was unrecoverable); a recompute mismatch is a package error ([packages-and-registry](../03-design/metamodel/packages-and-registry.md)).
-- **Resolving the `Stage` supertype gap** — the seed names a supertype it does not declare; M1 compiles around it honestly (see the effective-schema fixture README) rather than inventing a `Stage` type.
+- **Inventing missing supertypes** — M1 never fabricates an undeclared type. The seed's one dangling `extends: Stage` is removed in [#343] (not by adding `Stage`); thereafter the compiler treats any unresolved `extends` target as a hard package error, never a compile-around.
 
 ---
 
