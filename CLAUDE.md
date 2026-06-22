@@ -1,373 +1,89 @@
-# AGENTS.md
+# CLAUDE.md
 
-Guide for AI coding assistants (e.g., Claude, GPT/Codex) contributing to the **Aideon Suite** repository. The current implementation focus is the **Praxis** desktop module. This is an **evergreen build**: upgrade to current patterns over preserving legacy seams.
+Entry point for AI coding assistants in the **Aideon Suite** repo (current focus: the **Praxis** desktop module). This file is a **router**: it states the invariants you must not break and points to the canonical docs for everything else. The docs are authoritative; code is updated to match them.
 
-## Purpose
+> **Scope:** This applies to the `aideon-desktop` codebase. Do not optimise for downstream consumers, SDKs, or hypothetical adopters unless a task says so.
 
-Describe how AI agents should work in this repo: what to read first, how to keep changes small and safe, and which boundaries and workflows must always be respected. Default to refactoring legacy code toward the modern stack instead of extending old seams.
+## Read these first
 
-Before making changes, agents should read:
+- [`docs/00-index/README.md`](docs/00-index/README.md) — documentation map and reading order.
+- [`CONTEXT.md`](CONTEXT.md) — the canonical domain glossary (twin, workspace, viewpoint, fact, layer, scenario). Use these terms exactly.
+- [`docs/agents/domain.md`](docs/agents/domain.md) — how to orient before changing anything.
+- [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md) and [`docs/03-design/desktop-first-workspace/`](docs/03-design/desktop-first-workspace/README.md) — the product design spine and the canonical-authority thesis.
+- [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md) — layers, adapters, time-first boundaries (decomposed under [`boundary/`](docs/01-architecture/boundary/README.md)).
+- [`docs/02-standards/CODING-STANDARDS.md`](docs/02-standards/CODING-STANDARDS.md) and [`docs/02-standards/TESTING-STRATEGY.md`](docs/02-standards/TESTING-STRATEGY.md) — coding rules and testing expectations.
+- [`docs/06-adrs/ADRS.md`](docs/06-adrs/ADRS.md) — the decisions that fix the invariants. Read the ADRs that touch your area before changing it.
+- The module's folder under [`docs/05-modules/<module>/`](docs/05-modules/) for the module you are working in.
 
-- [`docs/00-index/README.md`](docs/00-index/README.md) (docs entry point)
-- Root `README.md` (suite overview and modules)
-- [`docs/03-design/DESKTOP-FIRST-WORKSPACE.md`](docs/03-design/DESKTOP-FIRST-WORKSPACE.md) and [`docs/06-adrs/ADRS.md`](docs/06-adrs/ADRS.md) (the canonical-authority thesis)
-- [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md) (suite-level design and principles)
-- [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md) (layers, adapters, time-first boundaries)
-- [`docs/02-standards/CODING-STANDARDS.md`](docs/02-standards/CODING-STANDARDS.md) (coding rules and boundaries)
-- [`docs/02-standards/TESTING-STRATEGY.md`](docs/02-standards/TESTING-STRATEGY.md) (testing expectations)
-- The module's design folder under [`docs/05-modules/<module>/`](docs/05-modules/) for the module they are working in
+## Core invariants (do not break)
 
-## Documentation index
+Brief statements; follow the link for the full rule.
 
-- **Start here**: [`docs/00-index/README.md`](docs/00-index/README.md).
-- **Canonical**: the numbered tree under `docs/` (`00-index` … `06-adrs`); per-module design lives under `docs/05-modules/<module>/`. **All documentation lives under `docs/` — never in `crates/`, `src/`, or `src-tauri/`** (DOCUMENTATION-STANDARD §6; repo-root files like `README.md`/`CONTRIBUTING.md` excepted). Key docs: [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md), [`docs/01-architecture/ARCHITECTURE-BOUNDARY.md`](docs/01-architecture/ARCHITECTURE-BOUNDARY.md), [`docs/02-standards/CODING-STANDARDS.md`](docs/02-standards/CODING-STANDARDS.md), [`docs/02-standards/TESTING-STRATEGY.md`](docs/02-standards/TESTING-STRATEGY.md), [`docs/03-design/DESIGN-SYSTEM.md`](docs/03-design/DESIGN-SYSTEM.md), [`docs/03-design/UX-DESIGN.md`](docs/03-design/UX-DESIGN.md).
-- **Contracts**: [`docs/04-contracts/`](docs/04-contracts/) — the typed IPC surface and the temporal, projection, and accepted-work contracts.
-- **Governance**: durable decisions follow [`docs/02-standards/DESIGN-GOVERNANCE.md`](docs/02-standards/DESIGN-GOVERNANCE.md) and are written as ADRs using [`docs/02-standards/ADR-FORMAT.md`](docs/02-standards/ADR-FORMAT.md).
-- Legacy Svelte renderer (`app/PraxisDesktop/`) has been removed; ignore any remaining references to it.
+- **Time-first digital twin** — time context (valid + asserted time), scenarios, plan/actual layers, and Plan Events are authoritative. See [`boundary/time-first-rule.md`](docs/01-architecture/boundary/time-first-rule.md).
+- **Workspace-canonical / derived-runtime** — the canonical project is a portable workspace folder (append-only `model/ops/`, schema-as-data, content-addressed blobs); `.aideon/runtime/` is a rebuildable cache. See [`ADR-0001`](docs/06-adrs/ADR-0001-workspace-is-canonical-authority.md) and [`boundary/canonical-vs-derived.md`](docs/01-architecture/boundary/canonical-vs-derived.md).
+- **Local-first, cloud-ready** — desktop works offline; server mode is a config switch, not a fork.
+- **Strict boundaries** — renderer calls host via Tauri invoke (typed adapters); desktop runs engines in-process; host calls engines via Rust traits. No sockets; no renderer HTTP; no DB-specific logic in the renderer. See [`boundary/layers-and-responsibilities.md`](docs/01-architecture/boundary/layers-and-responsibilities.md).
+- **Adapters, not entanglement** — Graph, Storage, Worker are interface-driven; backends swap without UI change. See [`boundary/dependency-rules.md`](docs/01-architecture/boundary/dependency-rules.md).
+- **Evergreen** — refactor toward the current stack; do not extend legacy seams. Precedence on conflict: (1) code on `main`; (2) suite docs (DESIGN, ARCHITECTURE-BOUNDARY, CODING-STANDARDS, TESTING-STRATEGY); (3) module docs under `docs/05-modules/`; (4) other `docs/`. Clean as you go; update the touched module doc.
 
-> **Scope:** These instructions apply to the `aideon-desktop` codebase (Aideon Suite). Do not spend time optimising for downstream consumers, SDKs, or hypothetical adopters outside this repository unless explicitly directed in a task.
+## Security by default
 
-## Who this is for
+- No renderer HTTP; renderer ↔ host via typed IPC only.
+- Desktop mode: no open TCP ports; localhost APIs are host-bound and read-only.
+- PII: deny-by-default on exports/APIs; redaction checked in tests where applicable.
+- Do not call external LLMs or telemetry endpoints; if necessary, stub behind the host with an explicit allowlist.
+- Full rules: [`boundary/security-constraints.md`](docs/01-architecture/boundary/security-constraints.md), CODING-STANDARDS §14–15.
 
-- AI pair‑programmers generating or refactoring code, tests, and docs.
-- Tools that open pull requests or propose patches.
-
-## Core principles (do not break)
-
-- **Time-first digital twin:** time context (valid time + asserted time), scenarios, plan/actual layers, and Plan Events are authoritative.
-- **Local‑first, cloud‑ready:** Desktop works offline; server mode is a config switch, not a fork.
-- **Strict boundaries:** Renderer calls Host via Tauri invoke (typed adapters). Desktop mode runs engines in-process. Host calls engines via Rust traits. No sockets. No DB‑specific logic in the renderer.
-- This repository’s documentation defines the target architecture; code is updated to match it.
-- **Security by default:** No renderer HTTP; no open TCP ports in desktop mode; PII redaction on exports; least privilege.
-- **Adapters, not entanglement:** Graph, Storage, Worker are interface‑driven. Backends swap without UI change.
-- **Evergreen:** Treat older patterns as candidates for upgrade; current suite and module design docs take precedence over legacy notes. Favour refactoring toward the current stack instead of extending legacy seams.
-
-## UX Shell (Aideon Desktop)
-
-- When building or modifying application-level layout, target the Aideon Desktop shell instead of giving individual workspaces their own chrome.
-- Use design-system proxies for Sidebar, Resizable, and Menubar/Toolbar primitives; do not implement custom layout primitives.
-
-## Frameworks-first defaults (use these before inventing your own)
-
-- **TS/React:** React 19, shadcn/ui + Tailwind, React Flow/XYFlow for canvases, React Hook Form for forms, Testing Library + Vitest for tests, pnpm 10, Node 24. Reach for TanStack Table when you need tables; avoid bespoke component primitives.
-- **Rust:** tokio for async, serde for serialization, thiserror for typed errors, tracing + `log` facade for logging, dirs/directories for platform paths, anyhow for internal glue only, serde_json/bincode as defaults before adding new formats. Prefer established crates over custom helpers.
-
-Do not build your own UI kits, form/state helpers, logging wrappers, or async executors unless an design docs require it.
-
-## Repository boundaries (monorepo)
-
-High-level module boundaries are documented in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md` and in each module’s folder under `docs/05-modules/<module>/` (see the “Aideon Suite modules” table in `README.md`). Never cross those boundaries with imports or side-effects (e.g., no renderer ↔ DB access, no engines importing Tauri).
-
-## Evergreen environment & legacy handling
-
-This repository is an evergreen, fast-evolving codebase. Code, docs, and patterns are continuously improved and may change frequently. When resolving conflicts or ambiguity, use the following order of precedence:
-
-- **1. Code on `main`** is always authoritative.
-- **2. Suite-level docs:** `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`, `docs/02-standards/CODING-STANDARDS.md`, `docs/02-standards/TESTING-STRATEGY.md`.
-- **3. Module docs:** `docs/05-modules/<module>/`.
-- **4. Supporting docs in `docs/`** (not listed above).
-- **Anything else** is informational only and does not override the above.
-
-**Behaviour rules:**
-
-- Prefer updating to current patterns over preserving legacy. When you touch code, refactor it toward the current architecture and coding standards.
-- Clean as you go: when modifying a file, remove or clearly mark obsolete TODOs, comments, and dead code in the area you touch, if safe and reasonable.
-- Do not add new features on top of obviously legacy seams (e.g., pre-refactor patterns, deprecated UIs). Only maintain or migrate these; do not extend them.
-- After changing behaviour or design, update the relevant module folder under `docs/05-modules/<module>/`. Remove or archive outdated doc sections rather than adding conflicting ones.
-- All documentation lives under `docs/` — never alongside code in `crates/`, `src/`, or `src-tauri/`. Minimise new `.md` files: prefer extending an existing single-topic file in the right `docs/` folder; add a new file only when a topic has no home (DOCUMENTATION-STANDARD §4, §6).
-
-## Checklists
-
-**Before you start a task**
-
-- Skim the docs listed at the top for your area.
-- Identify the target module (`src/canvas`, host crate, engine crate, etc.) and open its design folder under `docs/05-modules/<module>/`.
-- If you touch legacy code, plan to migrate toward the current stack where safe.
-- Locate existing adapters/APIs to reuse; do not add new IPC/HTTP surfaces without need.
-
-**Before you submit changes**
-
-- Run relevant tests/lints: `pnpm run node:test` (or scoped), `pnpm run node:typecheck`, `pnpm run host:lint && pnpm run host:check`, `cargo test --all --all-targets` as applicable.
-- Check coverage impact (goal ≥80% on new code) and note any gaps.
-- Update docs you touched (the module folder under `docs/05-modules/<module>/`) and this file if behaviours changed.
-- Re-verify boundaries and security: no renderer HTTP, no new ports, renderer uses typed IPC only.
-
-**Coverage guardrails (run before proposing changes)**
-
-- Always run: `pnpm run node:test:coverage` and `pnpm run host:coverage` (requires `cargo-llvm-cov`).
-- If coverage drops below thresholds, add tests or refactor until it passes (TS/React ≥80% lines/branches/functions/statements; Rust engine ≥90%, host ≥80%).
-
-**When touching a boundary (Rust ↔ host ↔ renderer)**
-
-- Update/validate DTO types on both sides (TS in `src/dtos`, Rust in `crates/mneme`).
-- Update `docs/04-contracts/CONTRACTS-AND-SCHEMAS.md` when schemas or IPC error shapes change.
-- Ensure error structures are documented and consistent across layers before merging.
-
-**When adding or changing UI components (Praxis Canvas)**
-
-- Copy the golden pattern from the time cursor + temporal panel stack: hooks expose `[state, actions]`, IPC via `praxis-api.ts`, shadcn cards for layout, alerts/skeletons for loading/error.
-- Use design-system components directly; avoid bespoke wrappers.
-- Ensure loading/error/empty states are covered by tests; mock IPC at the boundary.
-- **Visually inspect the rendered result before calling UI work done.** Screenshot the Storybook story (e.g. via the Playwright CLI against the running Storybook iframe) in both light and dark, at representative widths. Headless render/play tests assert "renders without error", not layout, spacing, clipping, or theme regressions — those are only caught by looking at pixels. This is a required step, not optional.
-
-**When adding engine/host functionality**
-
-- Follow the patterns in [`docs/05-modules/praxis/`](docs/05-modules/praxis/) and [`docs/05-modules/host/`](docs/05-modules/host/) (errors via `PraxisError`/`HostError`, logging with `log`/`tracing`, datastore via Mneme helpers).
-- Use `src-tauri/src/temporal.rs` and `crates/praxis/tests/merge_flow.rs` as golden paths for command wiring and engine flows.
-
-## Task menu for agents (allowed)
-
-- Scaffolding modules, views, adapters, or worker jobs inside the correct package.
-- Implementing time‑slicing UI (AS‑OF slider), Plan Event handling, plateau/diff exports.
-- Analytics in the Rust worker crates (Chrona/Metis) with tests and metrics.
-- Connectors via Continuum scheduler (e.g., CMDB), CSV wizard features, PII redaction, encryption‑at‑rest.
-- Docs: the module folder under `docs/05-modules/<module>/`, global README, `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`, ROADMAP, C4 diagrams-as-code.
-
-## Examples (golden patterns)
-
-- Desktop shell composition: `src/design-system/src/desktop-shell/DesktopShell.tsx` and `src/root.tsx`.
-- Workspace navigation: `src/DesktopTree.tsx` (scenarios → workspaces).
-- Selection plumbing: `src/canvas/app.tsx` (emits `SelectionState`) + `src/DesktopPropertiesPanel.tsx`.
-- Chrome-free canvas surface: `src/canvas/app.tsx` exported as `PraxisCanvasSurface`.
-
-## Issues, PRs & tracking
-
-### Tracking
-
-- Issues and pull requests are tracked on GitHub. Reference the issue a change belongs to in the PR, and follow the Definition of Done below.
-
-### Environment
-
-Remember that this is a desktop application: everything runs inside packaged binaries on Windows/macOS/Linux, so you must resolve settings and state paths via the platform conventions (AppData, Application Support, XDG directories) or Tauri-provided helpers. Do not assume arbitrary files can be created next to the binary; rely on the APIs that expose the correct directories for config/state instead of hardcoding repo-relative paths once delivered.
-
-The Tauri stack already ships with helpers that are safe to use in these environments: the `tauri-plugin-fs` plugin (file system helpers), `tauri-plugin-dialog` (choose files/directories, prompts), `tauri-plugin-window-state` (persist size/position), etc. Reach for these plugins instead of rolling your own file handling when wiring renderer/host logic so you benefit from the packaged, multiplatform behavior they expose.
-
-### Definition of Done (DoD)
-
-For any item whose **Status** project field is `In Progress`, ensure the issue body contains this section:
-
-- CI: lint, typecheck, unit tests updated
-- Docs: user & dev docs updated (README/CHANGELOG)
-- Security: renderer IPC boundaries respected; no new ports
-- Performance: SLO notes or benches if applicable
-- UX: matches GitHub‑inspired style (light/dark)
-- Packaging: macOS build verified (DMG/ZIP)
-- Tracking: PRs linked; Project Status updated; local mirror refreshed
-
-When finishing work, follow the DoD and workflow expectations in `CONTRIBUTING.md` (including labels, milestones, and PR linkage).
-
-## Output contract (must follow in every proposal/PR)
-
-Provide your response in the following sections, in this order. Keep explanations concise.
-
-### PLAN
-
-- Bulleted list of files to create/modify, with one‑line reasons.
-
-### TESTS
-
-- What tests you add/modify, how to run them, and expected assertions.
-
-### RUN
-
-- Commands to build/test/lint locally (TS + Rust). Include any data generation steps.
-
-### CHECKS
-
-- Security: confirm no renderer HTTP, no new network ports, PII redaction respected.
-- Boundaries: confirm no backend logic in renderer; worker uses RPC only.
-- Performance: note expected impact; reference SLOs if relevant.
-
-### NOTES
-
-- Trade‑offs, alternatives rejected, follow‑ups (issues to file).
-
-If you need input, first emit a **short PLAN with questions**; otherwise proceed with sensible defaults consistent with this guide.
-
-## Coding standards
-
-For coding standards (quality gates, coverage targets, tooling, and CI rules), see `docs/02-standards/CODING-STANDARDS.md`. For testing expectations, see `docs/02-standards/TESTING-STRATEGY.md`.
-
-## Per-module guidance (where to look)
-
-- **Aideon Desktop (`src/`)**
-  - Read: [`docs/frontend/`](docs/frontend/) (renderer architecture) and the canvas/adapters/dtos/design-system docs under `docs/`.
-  - Contains the React canvas, design-system proxies, adapters, and DTOs in one package.
-  - Tests: JS/TS tests via `pnpm run node:test` (Vitest).
-
-- **Aideon Host (`src-tauri`)**
-  - Read: [`docs/05-modules/host/`](docs/05-modules/host/), `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`.
-  - Constraints: no renderer HTTP; no open ports in desktop mode; typed commands only.
-  - Tests: Rust tests via `cargo test -p aideon_desktop`; workspace checks via `pnpm run host:lint && pnpm run host:check`.
-
-- **Engines (`crates/praxis`, `crates/chrona`, `crates/metis`, `crates/continuum`, `crates/mneme`)**
-  - Read: each module’s folder under `docs/05-modules/<module>/`, `docs/03-design/DESIGN.md`, `docs/01-architecture/ARCHITECTURE-BOUNDARY.md`.
-  - Constraints: no Tauri or UI dependencies; obey time-first commit model and adapter boundaries.
-  - Tests: crate-level `cargo test -p <crate>` plus workspace Rust checks.
-
-## Technology & testing expectations
-
-### TypeScript / React (Praxis Canvas, src/adapters)
-
-– Node 24, React 19. Strict TS config; ESLint + Prettier. All new surface/canvas work targets the React + React Flow + shadcn/ui stack described in `docs/03-design/UX-DESIGN.md`, `docs/03-design/DESIGN-SYSTEM.md`, and `docs/03-design/design-system/canvas-and-graph.md`.
-
-- Tauri renderer: no Node integration; `contextIsolation: true`; strict CSP; capabilities restrict plugin access. The host exposes typed commands only, and React components call the host through a dedicated `praxisApi` wrapper rather than ad-hoc IPC.
-- For app shell layout, always use the design-system proxies for Sidebar, Resizable, Menubar, and Toolbar instead of importing raw shadcn or react-resizable-panels primitives.
-- Never embed backend‑specific queries in renderer; call adapters or host APIs. React Flow widgets must treat the twin as the source of truth.
-
-### Lint/Format discipline and code quality
-
-- Do not disable lint rules in code (no inline `eslint-disable`, `ts-ignore`, etc.) in new React/ TypeScript modules.
-- Refactor code to satisfy linters and static analysis rather than suppressing warnings.
-- Use check-only hooks locally; CI enforces the same rules.
-- Coverage targets (Node/TS and Rust): Lines ≥ 80%, Branches ≥ 80%, Functions ≥ 80% on new code; overall should trend upward.
-- Keep code paths single and explicit. Desktop mode runs engines in-process. Host calls engines via Rust traits. No sockets.
-  - It is acceptable to expose test-only helpers (e.g., `__test__`) to raise branch coverage when they don’t affect runtime. For React widgets, add Vitest + Testing Library smoke tests alongside the new runtime as soon as it exists.
-
-### Rust worker crates (crates/chrona, crates/metis, crates/praxis, crates/continuum)
-
-– Rust 2024 edition, `cargo fmt` + `cargo clippy --all-targets --all-features` clean.
-
-- Keep execution logic behind traits so adapters can swap local vs remote implementations.
-- Prefer streaming-friendly payloads (Arrow/bytes) over large JSON blobs when adding new APIs.
-
-### Docs
-
-- Markdown, markdownlint clean (no heading jumps; 2‑space nested bullets).
-- Diagrams‑as‑code preferred (Structurizr DSL, Mermaid, PlantUML) stored under `docs/01-architecture/c4/`.
-- All docs live under `docs/` (per-module under `docs/05-modules/<module>/`); never alongside code in `crates/`, `src/`, or `src-tauri/`. When updating docs, prefer extending the existing single-topic file in the right `docs/` folder; add a new file only when a topic has no home (DOCUMENTATION-STANDARD §4, §6).
-
-## Contracts snapshot (reference only)
-
-The current worker jobs and time APIs are defined by engine contracts and module design docs:
-
-- Worker job types and payloads: see Metis and temporal engine design docs.
-- Time APIs and PlanEvent schema: see Praxis engine design docs.
-
-- `Analytics.Centrality { algorithm: degree|betweenness, scope }`
-- `Analytics.Impact { seedRefs[], filters{} }`
-- `Temporal.StateAt { asOf, scenario?, layer? }`
-- `Temporal.Diff { from: plateauId|date, to: plateauId|date, scope? }`
-- `Temporal.TopologyDelta { from, to }`
-- `Finance.TCO { scope, asOf, scenario?, policies? }`
-
-### Time APIs (desktop read‑only; server read/write)
-
-- `GET /graph?as_of=YYYY‑MM‑DD&scenario=&confidence=`
-- `GET /diff?from=...&to=...`
-- `GET /topology_delta?from=...&to=...`
-- `GET /tco?scope=...&as_of=...&scenario=...`
-
-### Minimal PlanEvent schema (do not change without updating design docs)
-
-- `id, name, effective_at, confidence, source{ work_package?, priority? }, effects[]`
-- `effects[]` items: `{ op: create|update|delete|link|unlink, target_ref, payload }`
-
-## Security & privacy rules
-
-- No renderer HTTP; renderer ↔ host via IPC only.
-- Desktop mode: no open TCP ports; localhost APIs are host‑bound and read‑only.
-- PII: deny‑by‑default on exports/APIs; redaction checked in tests where applicable.
-- Do not call external LLMs or telemetry endpoints; if necessary, stub behind host with explicit allowlist.
-
-## Performance & SLO gates
-
-- Performance SLOs for temporal APIs and analytics are defined in the module design docs for the engine crates. When you change code that could affect performance, call out expected impact in **CHECKS** and add a quick benchmark or test as appropriate.
-
-## Testing guidance
-
-- TS: unit tests for adapters. Renderer calls Host via Tauri invoke (typed adapters). UI state; avoid DOM‑heavy tests unless needed.
-- Rust: unit tests/integration tests for host and domain crates (chrona/metis/praxis); deterministic seeds for graph generators.
-- Golden datasets: provide small synthetic graphs for 5k/50k nodes to assert performance envelopes.
-- Add tests for PII redaction and role filtering where functions touch exports.
-
-## CI expectations
-
-- Lint + tests pass for TS and Rust on macOS/Windows/Linux.
-- For large algorithms, mark perf tests as optional but runnable locally; capture metrics in logs.
-- Coverage gates: verify Node/TS via `pnpm run node:test:coverage` and Rust via `cargo test --all --all-targets` with coverage tooling when touching engine logic.
-
-### Commit Hygiene
-
-- Ensure that code will pass the GitHub CI checks with:
-  - `pnpm run ci` (TS/React + Rust lint, typecheck, tests, format).
-- Pre‑commit hook: this repo uses Husky to run the above automatically; keep the hook fast and deterministic.
-
-## Versioning & migrations
-
-- Schema is forward‑only. Provide migration scripts and bump `schemaVersion`.
-- Snapshots are immutable; scenarios branch and merge; no history rewrites.
-
-## Issues and PR workflow
-
-- Use the milestone (M0–M6) and the project fields (Kind, Area, Module, Priority, Status); apply `area/*` and triage labels. See `docs/agents/issue-tracker.md`.
-- Conventional Commits in PR title and commits (e.g., `feat(time): add plateau diff endpoint`).
-- Link to updated design docs when changing boundaries, protocols, or the meta-model.
-
-## When to ask vs. when to proceed
-
-- Ask (emit a short PLAN + questions) if:
-  - Requirements conflict with guardrails; the change touches security, RPC, or meta‑model.
-  - A dependency is ambiguous or unavailable.
-- Proceed with defaults if:
-  - The task is a local refactor or additive feature within a package and follows this guide.
-
-### Agent stop rule (unsettled or contradicted design)
+## Agent stop rule (unsettled or contradicted design)
 
 - **Stop on an unsettled design decision.** If an agent encounters an unsettled design decision during implementation, it must stop. It must not invent a local answer, encode an assumption in code, or continue behind a TODO. It must return the issue to human review with the specific design question named, the affected files or contracts listed, and the reason the existing authoritative sources do not answer it.
 - **Stop on a design contradiction.** If the agent finds that implementation reality contradicts the ratified design (for example, a chosen tool cannot deliver what a contract assumes), classify the item as a **design contradiction** and stop. Do not treat it as a local implementation detail to be quietly worked around.
 - An issue is agent-ready because the authoritative sources are named, the acceptance tests are clear, and no unresolved design decision remains hidden — **not** because someone applied the `ready-for-agent` label. See [`docs/build-contracts/agent-issue-template.md`](docs/build-contracts/agent-issue-template.md) and the `agent_task` issue form.
 
-## Example response template (use this shape)
+## Frameworks-first defaults (use before inventing your own)
 
-- Add `Temporal.TopologyDelta` trait to `crates/metis` with empty stub.
-- Wire Tauri command to call the new trait via `WorkerState` adapter.
-- Extend the React canvas store to request topology delta and render placeholder counts.
+- **TS/React:** React 19, shadcn/ui + Tailwind, React Flow/XYFlow canvases, React Hook Form, Testing Library + Vitest, pnpm 10, Node 24; TanStack Table for tables.
+- **Rust:** Rust 2024, tokio, serde, thiserror, tracing + the `log` facade, dirs/directories for platform paths; anyhow for internal glue only.
+- Do not build your own UI kits, form/state helpers, logging wrappers, or async executors. Detail: CODING-STANDARDS §3.
 
-PATCH
+## UI work (Praxis Canvas / Aideon Desktop shell)
 
-- Unified diffs here, paths from repo root.
+- Target the Aideon Desktop shell; do not give individual workspaces their own chrome. Use the **design-system proxies** for Sidebar, Resizable, Menubar, and Toolbar — never raw shadcn or react-resizable-panels primitives, and never bespoke layout primitives.
+- Copy the golden pattern: hooks expose `[state, actions]`, IPC via the `praxisApi` wrapper, shadcn cards for layout, alerts/skeletons for loading/error. Cover loading/error/empty states in tests; mock IPC at the boundary.
+- **Visually inspect the rendered result before calling UI work done.** Screenshot the Storybook story (e.g. via the Playwright CLI against the running Storybook iframe) in both light and dark, at representative widths. Headless render/play tests assert "renders without error", not layout, spacing, clipping, or theme regressions — those are only caught by looking at pixels. This is required, not optional.
+- **Storybook MCP** (`@storybook/addon-mcp` at `http://localhost:6006/mcp` when `pnpm run storybook` is running): **never hallucinate component props** — run `get-documentation <component>` to verify a prop exists before using it. Use `list-all-documentation`, `run-story-tests`, and `get-storybook-story-instructions`. Stories live alongside components in `src/design-system/blocks/*.stories.tsx`.
 
-- New unit tests for topology_delta stub in `crates/metis`; Vitest store smoke tests.
+### Golden-pattern files
 
-RUN
+- Desktop shell: `src/design-system/src/desktop-shell/DesktopShell.tsx`, `src/root.tsx`.
+- Workspace navigation: `src/DesktopTree.tsx`. Selection plumbing: `src/canvas/app.tsx` + `src/DesktopPropertiesPanel.tsx`.
+- Chrome-free canvas surface: `src/canvas/app.tsx` (`PraxisCanvasSurface`).
+- Engine/host command wiring: `src-tauri/src/temporal.rs`, `crates/praxis/tests/merge_flow.rs`.
 
-- pnpm run test && pnpm run lint && pnpm run typecheck
-- cargo test --all --all-targets
+## Where to look per module
 
-CHECKS
+- **Aideon Desktop (`src/`)** — React canvas, design-system proxies, adapters, DTOs. Read [`docs/frontend/`](docs/frontend/README.md). Tests: `pnpm run node:test`.
+- **Aideon Host (`src-tauri/`)** — Tauri trust boundary; typed commands only, no renderer HTTP, no open ports. Read [`docs/05-modules/host/`](docs/05-modules/host/README.md). Tests: `cargo test -p aideon_desktop`; checks via `pnpm run host:lint && pnpm run host:check`.
+- **Engines (`crates/praxis`, `chrona`, `metis`, `continuum`, `mneme`)** — no Tauri/UI deps; obey the time-first commit model and adapter boundaries. Read each [`docs/05-modules/<module>/`](docs/05-modules/). Tests: `cargo test -p <crate>`.
 
-- No renderer HTTP added; no new network ports; adapters unchanged in renderer.
-- PII redaction unaffected. Expected p95 unchanged; added memoisation in worker.
+## Desktop environment
 
-NOTES
+This ships as packaged binaries on Windows/macOS/Linux. Resolve config/state paths via platform conventions (AppData / Application Support / XDG) or Tauri helpers — never hardcode repo-relative paths or assume files can be written next to the binary. Reach for the bundled plugins (`tauri-plugin-fs`, `tauri-plugin-dialog`, `tauri-plugin-window-state`, …) instead of rolling your own file handling.
 
-- Next: add SVG compare export and benchmark on 50k/200k dataset.
+## Boundary, contract, and doc changes
 
-## Agent skills
+- Touching a Rust ↔ host ↔ renderer boundary: keep DTOs in sync (TS in `src/dtos`, Rust in `crates/mneme`) and update [`docs/04-contracts/`](docs/04-contracts/README.md) when schemas or IPC error shapes change.
+- All documentation lives under `docs/` (per-module under `docs/05-modules/<module>/`) — never in `crates/`, `src/`, or `src-tauri/` (repo-root `README.md`/`CONTRIBUTING.md` excepted). Prefer extending an existing single-topic file; add a new one only when a topic has no home. Durable decisions become ADRs ([`docs/02-standards/DESIGN-GOVERNANCE.md`](docs/02-standards/DESIGN-GOVERNANCE.md), [`ADR-FORMAT.md`](docs/02-standards/ADR-FORMAT.md)).
+- The legacy Svelte renderer (`app/PraxisDesktop/`) has been removed; ignore any references to it.
 
-### Issue tracker
+## Commits, CI, and issue tracking
 
-Issues are tracked in GitHub Issues (`aideon-ai/aideon-desktop`) via the `gh` CLI and the **GitHub Project** (the tracking source of truth). Issue forms live in `.github/ISSUE_TEMPLATE/`. The contextual axes — Kind, Area, Module, Priority, Status — are **project fields**, not labels; the labels still applied are the triage labels and `area/*`. See `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`.
+- **CI must pass:** `pnpm run ci` (TS/React + Rust lint, typecheck, tests, format). A Husky pre-commit hook runs this; keep it fast and deterministic.
+- **Conventional Commits** in PR titles and commits (e.g. `feat(time): add plateau diff endpoint`). Link the issue and updated design docs in the PR. Follow `CONTRIBUTING.md` for the Definition of Done.
+- **Coverage** ≥80% lines/branches/functions on new code (engines trend ≥90%). Detail in CODING-STANDARDS §16 and [`docs/02-standards/testing/`](docs/02-standards/testing/README.md).
+- **Issue tracking:** GitHub Issues + the GitHub Project (the source of truth for workflow state). The contextual axes — Kind, Area, Module, Priority, Status — are **project fields**, not labels; the labels still applied are `area/*` and the triage labels. See [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md) and [`docs/agents/triage-labels.md`](docs/agents/triage-labels.md). Milestones and aspect ownership: [`docs/build-contracts/MILESTONES.md`](docs/build-contracts/MILESTONES.md).
 
-### Triage labels
+## When to ask vs. proceed
 
-The five canonical triage roles map 1:1 to existing repo labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: `CONTEXT.md` at the repo root (created lazily) + ADRs at `docs/06-adrs/`. See `docs/agents/domain.md`.
-
-### Storybook MCP
-
-The project runs a Storybook MCP server (`@storybook/addon-mcp`) at `http://localhost:6006/mcp` when Storybook is active (`pnpm run storybook`). Registered in `.mcp.json` as `aideon-storybook`.
-
-**When working on UI components**, use the MCP tools before any UI action:
-
-- **CRITICAL: Never hallucinate component properties!** Before using ANY prop on a design-system component, run `get-documentation` to verify the prop exists.
-- `list-all-documentation` — discover all components and their stories.
-- `get-documentation <component>` — see all props and usage examples.
-- `run-story-tests` — verify generated stories pass interaction tests.
-- `get-storybook-story-instructions` — get current story authoring conventions.
-
-Stories live alongside components in `src/design-system/blocks/*.stories.tsx`. Follow existing stories as the golden pattern: single concept per story, descriptive names, JSDoc on the meta `description` field.
+- **Ask** (emit a short plan + questions) if requirements conflict with these guardrails, the change touches security/IPC/meta-model, or a dependency is ambiguous. See also the agent stop rule above.
+- **Proceed** with sensible defaults if the task is a local refactor or additive feature within a package and follows this guide.
