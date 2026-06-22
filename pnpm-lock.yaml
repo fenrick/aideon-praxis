@@ -256,8 +256,8 @@ importers:
         specifier: ^0.6.0
         version: 0.6.0(@storybook/addon-vitest@0.0.0-pr-35110-sha-d663f060(@vitest/browser-playwright@4.1.8)(@vitest/browser@4.1.8)(@vitest/runner@4.1.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@0.0.0-pr-35110-sha-d663f060(@types/react@19.2.17)(prettier@3.8.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(vitest@4.1.9))(storybook@0.0.0-pr-35110-sha-d663f060(@types/react@19.2.17)(prettier@3.8.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)
       '@storybook/addon-themes':
-        specifier: 0.0.0-pr-35110-sha-d663f060
-        version: 0.0.0-pr-35110-sha-d663f060(storybook@0.0.0-pr-35110-sha-d663f060(@types/react@19.2.17)(prettier@3.8.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
+        specifier: 10.4.6
+        version: 10.4.6(storybook@0.0.0-pr-35110-sha-d663f060(@types/react@19.2.17)(prettier@3.8.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       '@storybook/addon-vitest':
         specifier: 0.0.0-pr-35110-sha-d663f060
         version: 0.0.0-pr-35110-sha-d663f060(@vitest/browser-playwright@4.1.8)(@vitest/browser@4.1.8)(@vitest/runner@4.1.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@0.0.0-pr-35110-sha-d663f060(@types/react@19.2.17)(prettier@3.8.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(vitest@4.1.9)
@@ -3004,10 +3004,10 @@ packages:
       '@storybook/addon-vitest':
         optional: true
 
-  '@storybook/addon-themes@0.0.0-pr-35110-sha-d663f060':
-    resolution: {integrity: sha512-VwVdVC+wvQ9TIipwIcTG2XL1Ag47OCFc3jf5DArFR+ThI7Gdv9eFHDY5bVPL5hi+fm/F3mCN5IXFo9EZeZFywA==}
+  '@storybook/addon-themes@10.4.6':
+    resolution: {integrity: sha512-80d622oB9xWZs3VH4uywkLOA5L2DAx04lVouvCM4XH+pLnJElidoylOLm3i3ByvlGkRjCbB27OUVsW94IgyDrw==}
     peerDependencies:
-      storybook: ^0.0.0-pr-35110-sha-d663f060
+      storybook: ^10.4.6
 
   '@storybook/addon-vitest@0.0.0-pr-35110-sha-d663f060':
     resolution: {integrity: sha512-c3Dct2/LkdQrvhcwrzz/ZdFgFGiV7giTtKWPYZ+7BZOuwiQYW5MkJcwmADOmFk4rv7uCsn0GcafcPUz3wPpSlA==}
@@ -11266,7 +11266,7 @@ snapshots:
       - '@tmcp/auth'
       - typescript
 
-  '@storybook/addon-themes@0.0.0-pr-35110-sha-d663f060(storybook@0.0.0-pr-35110-sha-d663f060(@types/react@19.2.17)(prettier@3.8.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
+  '@storybook/addon-themes@10.4.6(storybook@0.0.0-pr-35110-sha-d663f060(@types/react@19.2.17)(prettier@3.8.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
     dependencies:
       storybook: 0.0.0-pr-35110-sha-d663f060(@types/react@19.2.17)(prettier@3.8.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       ts-dedent: 2.3.0
