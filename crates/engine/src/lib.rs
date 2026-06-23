@@ -8,6 +8,7 @@
 #![forbid(unsafe_code)]
 
 use serde::Serialize;
+use specta::Type;
 
 pub use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 pub use mneme_core::{Id, Value};
@@ -17,7 +18,7 @@ pub use mneme_store::{FoundationProjectionSnapshot, Manifest, Workspace};
 use std::path::Path;
 
 /// A host-facing summary of an open workspace's foundation state.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceStatus {
     /// The portable container identity.

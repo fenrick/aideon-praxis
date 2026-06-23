@@ -1,8 +1,9 @@
 //! Canvas DTOs used for renderer scene construction.
 
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CanvasShape {
     pub id: String,
@@ -15,7 +16,7 @@ pub struct CanvasShape {
     pub label: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CanvasNode {
     pub id: String,
@@ -32,7 +33,7 @@ pub struct CanvasNode {
     pub group_id: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CanvasEdge {
     pub id: String,
@@ -44,7 +45,7 @@ pub struct CanvasEdge {
     pub z: Option<i32>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CanvasGroup {
     pub id: String,
@@ -56,7 +57,7 @@ pub struct CanvasGroup {
     pub z: Option<i32>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CanvasLayoutSaveRequest {
     pub doc_id: String,
@@ -73,7 +74,7 @@ pub struct CanvasLayoutSaveRequest {
     pub groups: Vec<CanvasGroup>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CanvasLayoutGetRequest {
     pub doc_id: String,

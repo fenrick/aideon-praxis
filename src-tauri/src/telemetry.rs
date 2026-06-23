@@ -180,6 +180,7 @@ where
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn system_logging_context() -> std::result::Result<LoggingContextDto, String> {
     command_invoked("system_logging_context", "logging_context");
     let start = Instant::now();
@@ -197,6 +198,7 @@ pub fn system_logging_context() -> std::result::Result<LoggingContextDto, String
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn system_metrics_snapshot() -> MetricsSnapshot {
     command_invoked("system_metrics_snapshot", "metrics");
     let start = Instant::now();

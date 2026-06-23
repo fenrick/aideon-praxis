@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ViewFilters {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -11,7 +11,7 @@ pub struct ViewFilters {
     pub search: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphViewDefinition {
     pub id: String,
@@ -32,14 +32,14 @@ pub struct GraphViewDefinition {
     pub scope: Option<GraphViewScope>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphViewScope {
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub root_ids: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogueViewDefinition {
     pub id: String,
@@ -60,7 +60,7 @@ pub struct CatalogueViewDefinition {
     pub limit: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct MatrixViewDefinition {
     pub id: String,
@@ -82,7 +82,7 @@ pub struct MatrixViewDefinition {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartViewDefinition {
     pub id: String,
@@ -103,7 +103,7 @@ pub struct ChartViewDefinition {
     pub filters: Option<ViewFilters>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct TwinNode {
     pub id: String,
@@ -113,7 +113,7 @@ pub struct TwinNode {
     pub props: Option<Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct TwinEdge {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -128,7 +128,7 @@ pub struct TwinEdge {
     pub props: Option<Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphNodeView {
     pub id: String,
@@ -141,7 +141,7 @@ pub struct GraphNodeView {
     pub props: Option<Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphEdgeView {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -156,14 +156,14 @@ pub struct GraphEdgeView {
     pub props: Option<Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Position {
     pub x: f64,
     pub y: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ViewMetadata {
     pub id: String,
@@ -177,7 +177,7 @@ pub struct ViewMetadata {
     pub source: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ViewStats {
     pub nodes: usize,

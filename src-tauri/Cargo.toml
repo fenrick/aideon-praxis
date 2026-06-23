@@ -32,6 +32,9 @@ aideon_chrona = { path = "../crates/chrona" }
 aideon_continuum = { path = "../crates/continuum" }
 aideon_engine = { path = "../crates/engine" }
 time = { version = "0.3.47", features = ["formatting"] }
+specta = { version = "=2.0.0-rc.22", features = ["derive", "serde_json"] }
+specta-typescript = "=0.0.9"
+tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 window-vibrancy = { version = "0.7.1" }

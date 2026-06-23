@@ -1,6 +1,6 @@
 #![cfg(not(target_os = "windows"))]
 use super::{
-    OpenWindowPayload, SystemWindowTarget, parse_window_target, system_window_open, to_string,
+    OpenWindowPayload, SystemWindowTarget, parse_window_target, system_window_open_inner, to_string,
 };
 #[cfg(not(target_os = "windows"))]
 use super::{create_windows, open_about, open_settings, open_status, open_styleguide};
@@ -38,7 +38,7 @@ fn parse_window_target_maps_known_ids() {
 #[tokio::test]
 async fn system_window_open_rejects_unknown_window() {
     let app = tauri::test::mock_app();
-    let response = system_window_open(
+    let response = system_window_open_inner(
         app.handle().clone(),
         IpcRequest {
             request_id: "req-1".to_string(),
@@ -57,7 +57,7 @@ async fn system_window_open_rejects_unknown_window() {
 #[cfg(not(target_os = "windows"))]
 async fn system_window_open_handles_known_windows() {
     let app = tauri::test::mock_app();
-    let response = system_window_open(
+    let response = system_window_open_inner(
         app.handle().clone(),
         IpcRequest {
             request_id: "req-2".to_string(),
@@ -70,7 +70,7 @@ async fn system_window_open_handles_known_windows() {
     .expect("response");
     assert!(matches!(response.status, "ok" | "error"));
 
-    let response = system_window_open(
+    let response = system_window_open_inner(
         app.handle().clone(),
         IpcRequest {
             request_id: "req-3".to_string(),

@@ -5,6 +5,7 @@
 
 use aideon_engine::{Engine, StoreError, WorkspaceStatus};
 use serde::Deserialize;
+use specta::Type;
 use tauri::State;
 use tokio::sync::Mutex;
 
@@ -19,7 +20,7 @@ pub struct WorkspaceManager {
 }
 
 /// Payload for create/open: the host-resolved workspace root.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct OpenWorkspacePayload {
     pub root: String,
@@ -63,6 +64,7 @@ pub(crate) fn map_store_error(error: StoreError) -> HostError {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_create(
     manager: State<'_, WorkspaceManager>,
     request: IpcRequest<OpenWorkspacePayload>,
@@ -79,6 +81,7 @@ pub async fn workspace_create(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_open(
     manager: State<'_, WorkspaceManager>,
     request: IpcRequest<OpenWorkspacePayload>,
@@ -95,6 +98,7 @@ pub async fn workspace_open(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_status(
     manager: State<'_, WorkspaceManager>,
     request: IpcRequest<EmptyPayload>,
@@ -112,6 +116,7 @@ pub async fn workspace_status(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_close(
     manager: State<'_, WorkspaceManager>,
     request: IpcRequest<EmptyPayload>,

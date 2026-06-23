@@ -2,7 +2,7 @@
 use {
     crate::ipc::IpcRequest,
     crate::temporal::chrona_temporal_state_at,
-    crate::windows::{OpenWindowPayload, create_windows, system_window_open},
+    crate::windows::{OpenWindowPayload, create_windows, system_window_open_inner},
     crate::worker::WorkerState,
     aideon_chrona::TemporalEngine,
     aideon_praxis::praxis::temporal::StateAtArgs,
@@ -37,7 +37,7 @@ async fn tauri_routes_and_ipc_smoke() {
         "expected main route, got {main_url}"
     );
 
-    let response = system_window_open(
+    let response = system_window_open_inner(
         app.handle().clone(),
         IpcRequest {
             request_id: "req-settings".to_string(),
@@ -56,7 +56,7 @@ async fn tauri_routes_and_ipc_smoke() {
         "expected settings route, got {settings_url}"
     );
 
-    let response = system_window_open(
+    let response = system_window_open_inner(
         app.handle().clone(),
         IpcRequest {
             request_id: "req-status".to_string(),
@@ -90,7 +90,7 @@ async fn tauri_routes_and_ipc_smoke() {
     assert!(!result.commit_id.is_empty());
     assert_eq!(result.scenario.as_deref(), Some("main"));
 
-    let response = system_window_open(
+    let response = system_window_open_inner(
         app.handle().clone(),
         IpcRequest {
             request_id: "req-styleguide".to_string(),
@@ -111,7 +111,7 @@ async fn tauri_routes_and_ipc_smoke() {
         "expected styleguide route, got {styleguide_url}"
     );
 
-    let response = system_window_open(
+    let response = system_window_open_inner(
         app.handle().clone(),
         IpcRequest {
             request_id: "req-about".to_string(),

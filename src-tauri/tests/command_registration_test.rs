@@ -1,4 +1,8 @@
-const APP_RS: &str = include_str!("../src/app.rs");
+// The IPC surface is registered via `collect_commands!` in `bindings.rs`
+// (ADR-0039): the same builder both registers the handlers and generates the
+// TypeScript client, so this guards that the required commands are in that one
+// source of truth.
+const BINDINGS_RS: &str = include_str!("../src/bindings.rs");
 
 #[test]
 fn app_registers_core_ipc_commands() {
@@ -32,8 +36,8 @@ fn app_registers_core_ipc_commands() {
 
     for path in required {
         assert!(
-            APP_RS.contains(path),
-            "app.rs missing required invoke handler: {path}"
+            BINDINGS_RS.contains(path),
+            "bindings.rs missing required collected command: {path}"
         );
     }
 }

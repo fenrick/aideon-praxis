@@ -1,3 +1,7 @@
+# Generated surface mirror (ADR-0039): this allowlist must equal the command set
+# generated into `src/adapters/ipc-bindings.gen.ts` from the Rust commands. The
+# `appcommands_permission_matches_generated_surface` test enforces the equality;
+# change this list only by adding/removing a `#[tauri::command]` in the builder.
 [[permission]]
 identifier = "appcommands"
 description = "Allow Aideon Desktop application IPC commands."
@@ -22,14 +26,17 @@ commands.allow = [
   "praxis_metamodel_get",
   "praxis_scenario_list",
   "praxis_task_apply_operations",
-  "system_setup_complete",
-  "system_setup_state",
   "system_logging_context",
   "system_metrics_snapshot",
-  "system_factory_reset",
+  "system_setup_complete",
+  "system_setup_state",
   "system_window_open",
   "system_worker_health",
+  "workspace_close",
+  "workspace_create",
+  "workspace_open",
   "workspace_projects_list",
+  "workspace_status",
   "workspace_templates_list",
   "workspace_templates_save",
 ]

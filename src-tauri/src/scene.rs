@@ -6,11 +6,13 @@ use aideon_praxis::praxis::canvas::{CanvasLayoutGetRequest, CanvasLayoutSaveRequ
 use aideon_praxis::praxis::graph_layout::{GraphLayoutGetRequest, GraphLayoutSaveRequest};
 use log::info;
 use serde::Deserialize;
+use specta::Type;
 
 use crate::ipc::{HostError, IpcRequest, IpcResponse, is_missing_snapshot_error};
 
 /// Return a raw scene for the canvas. The renderer performs layout when needed.
 #[tauri::command]
+#[specta::specta]
 pub async fn canvas_scene(as_of: Option<String>) -> Result<Vec<CanvasShape>, HostError> {
     info!("host: canvas_scene requested as_of={:?}", as_of);
     // Return raw scene primitives; renderer performs layout via elkjs by default.
@@ -19,7 +21,7 @@ pub async fn canvas_scene(as_of: Option<String>) -> Result<Vec<CanvasShape>, Hos
     Ok(shapes)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CanvasScenePayload {
     #[serde(default)]
@@ -28,6 +30,7 @@ pub struct CanvasScenePayload {
 
 /// Namespaced + requestId-wrapped canvas scene query.
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_canvas_get_scene(
     request: IpcRequest<CanvasScenePayload>,
 ) -> Result<IpcResponse<Vec<CanvasShape>>, HostError> {
@@ -140,6 +143,7 @@ fn canvas_snapshot_base() -> Result<std::path::PathBuf, HostError> {
 
 /// Persist a canvas layout snapshot (geometry, z-order, grouping) for a document and asOf.
 #[tauri::command]
+#[specta::specta]
 pub async fn canvas_save_layout(payload: CanvasLayoutSaveRequest) -> Result<(), HostError> {
     info!(
         "host: canvas_save_layout doc_id={} as_of={} nodes={} edges={} groups={}",
@@ -168,6 +172,7 @@ pub async fn canvas_save_layout(payload: CanvasLayoutSaveRequest) -> Result<(), 
 
 /// Load a canvas layout snapshot (if any) for a document and time context.
 #[tauri::command]
+#[specta::specta]
 pub async fn canvas_get_layout(
     payload: CanvasLayoutGetRequest,
 ) -> Result<Option<CanvasLayoutSaveRequest>, HostError> {
@@ -197,6 +202,7 @@ pub async fn canvas_get_layout(
 
 /// Persist a graph layout snapshot for a specific widget in a document.
 #[tauri::command]
+#[specta::specta]
 pub async fn graph_layout_save(payload: GraphLayoutSaveRequest) -> Result<(), HostError> {
     info!(
         "host: graph_layout_save doc_id={} widget_id={} as_of={} nodes={}",
@@ -225,6 +231,7 @@ pub async fn graph_layout_save(payload: GraphLayoutSaveRequest) -> Result<(), Ho
 
 /// Load a graph layout snapshot for a specific widget (if available).
 #[tauri::command]
+#[specta::specta]
 pub async fn graph_layout_get(
     payload: GraphLayoutGetRequest,
 ) -> Result<Option<GraphLayoutSaveRequest>, HostError> {
@@ -255,6 +262,7 @@ pub async fn graph_layout_get(
 
 /// Namespaced + requestId-wrapped graph layout load command.
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_graph_layout_get(
     request: IpcRequest<GraphLayoutGetRequest>,
 ) -> Result<IpcResponse<Option<GraphLayoutSaveRequest>>, HostError> {
@@ -268,6 +276,7 @@ pub async fn praxis_graph_layout_get(
 
 /// Namespaced + requestId-wrapped graph layout persistence command.
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_graph_layout_save(
     request: IpcRequest<GraphLayoutSaveRequest>,
 ) -> Result<IpcResponse<()>, HostError> {
@@ -281,6 +290,7 @@ pub async fn praxis_graph_layout_save(
 
 /// Namespaced + requestId-wrapped canvas layout load command.
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_canvas_get_layout(
     request: IpcRequest<CanvasLayoutGetRequest>,
 ) -> Result<IpcResponse<Option<CanvasLayoutSaveRequest>>, HostError> {
@@ -294,6 +304,7 @@ pub async fn praxis_canvas_get_layout(
 
 /// Namespaced + requestId-wrapped canvas layout persistence command.
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_canvas_save_layout(
     request: IpcRequest<CanvasLayoutSaveRequest>,
 ) -> Result<IpcResponse<()>, HostError> {

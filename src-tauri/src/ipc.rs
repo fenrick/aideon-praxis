@@ -6,13 +6,14 @@
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{Value, json};
+use specta::Type;
 use std::fmt;
 
 /// Stable error envelope returned by host commands.
 ///
 /// - `code` is a stable, machine-readable identifier (snake_case).
 /// - `message` is user-facing and may change between releases.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct HostError {
     pub code: &'static str,
@@ -52,7 +53,7 @@ impl HostError {
 ///
 /// Matches the host design doc contract:
 /// `{ requestId: "uuid", payload: { ... } }`.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IpcRequest<T> {
     pub request_id: String,
@@ -60,7 +61,7 @@ pub struct IpcRequest<T> {
 }
 
 /// Payload used when a command requires a payload object but has no inputs.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct EmptyPayload {}
 
@@ -68,7 +69,7 @@ pub struct EmptyPayload {}
 ///
 /// Matches the host design doc contract:
 /// `{ requestId, status, result?, error? }`.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IpcResponse<T> {
     pub request_id: String,
@@ -79,7 +80,7 @@ pub struct IpcResponse<T> {
     pub error: Option<IpcError>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IpcError {
     pub code: &'static str,

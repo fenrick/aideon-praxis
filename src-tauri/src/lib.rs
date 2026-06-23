@@ -1,6 +1,7 @@
 //! Aideon Tauri host entrypoint and IPC commands.
 
 mod app;
+mod bindings;
 mod commands;
 mod contracts;
 mod health;

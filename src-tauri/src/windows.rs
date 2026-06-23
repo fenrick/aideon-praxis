@@ -1,6 +1,7 @@
 #[cfg(target_os = "windows")]
 use log::warn;
 use serde::Deserialize;
+use specta::Type;
 use tauri::webview::PageLoadEvent;
 use tauri::{App, AppHandle, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 
@@ -63,6 +64,7 @@ pub fn create_windows<R: Runtime>(app: &App<R>) -> Result<(), String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn open_settings<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
     if let Some(window) = app.get_webview_window("settings") {
         let _ = window.set_focus();
@@ -80,6 +82,7 @@ pub fn open_settings<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn open_about<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
     if let Some(window) = app.get_webview_window("about") {
         let _ = window.set_focus();
@@ -97,6 +100,7 @@ pub fn open_about<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn open_status<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
     if let Some(window) = app.get_webview_window("status") {
         let _ = window.set_focus();
@@ -115,6 +119,7 @@ pub fn open_status<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn open_styleguide<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
     if !cfg!(debug_assertions) {
         return Err(HostError::new(
@@ -138,7 +143,7 @@ pub fn open_styleguide<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
         .map_err(|err| HostError::internal(err.to_string()))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct OpenWindowPayload {
     pub window: String,
@@ -178,8 +183,19 @@ async fn run_system_window_open<R: Runtime>(
     }
 }
 
+/// The registered command is concrete over `tauri::Wry` (the codegen seam
+/// cannot collect a runtime-generic command); the generic `_inner` keeps the
+/// behaviour testable under `MockRuntime`.
 #[tauri::command]
-pub async fn system_window_open<R: Runtime>(
+#[specta::specta]
+pub async fn system_window_open(
+    app: AppHandle,
+    request: IpcRequest<OpenWindowPayload>,
+) -> Result<IpcResponse<()>, HostError> {
+    system_window_open_inner(app, request).await
+}
+
+pub(crate) async fn system_window_open_inner<R: Runtime>(
     app: AppHandle<R>,
     request: IpcRequest<OpenWindowPayload>,
 ) -> Result<IpcResponse<()>, HostError> {

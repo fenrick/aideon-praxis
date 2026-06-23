@@ -57,24 +57,30 @@ fn default_capability_maps_enabled_plugins() {
 }
 
 #[test]
-fn appcommands_permission_matches_ipc_manifest_contract() {
+fn appcommands_permission_matches_generated_surface() {
     // CARGO_MANIFEST_DIR is <repo>/src-tauri, so the repo root is one level up.
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("repo root");
 
-    let ipc_path = repo.join("docs/contracts/ipc-manifest.json");
-    let ipc_raw = std::fs::read_to_string(&ipc_path)
-        .unwrap_or_else(|_| panic!("read {}", ipc_path.display()));
-    let ipc: serde_json::Value =
-        serde_json::from_str(&ipc_raw).unwrap_or_else(|_| panic!("parse {}", ipc_path.display()));
-    let ipc_commands = ipc["commands"]
-        .as_array()
-        .expect("ipc manifest commands array")
-        .iter()
-        .filter_map(|value| value.as_str())
-        .map(str::to_string)
-        .collect::<BTreeSet<String>>();
+    // The deny-by-default allowlist must equal the command set generated from the
+    // Rust commands (ADR-0039): no command is registered+generated without being
+    // permitted, and no stale permission outlives its command.
+    let client_path = repo.join("src/adapters/ipc-bindings.gen.ts");
+    let client = std::fs::read_to_string(&client_path)
+        .unwrap_or_else(|_| panic!("read {}", client_path.display()));
+    let mut generated = BTreeSet::<String>::new();
+    for (idx, _) in client.match_indices("TAURI_INVOKE(\"") {
+        let rest = &client[idx + "TAURI_INVOKE(\"".len()..];
+        if let Some(end) = rest.find('"') {
+            generated.insert(rest[..end].to_string());
+        }
+    }
+    assert!(
+        !generated.is_empty(),
+        "no commands parsed from generated client at {}",
+        client_path.display()
+    );
 
     let perm_path = repo.join("src-tauri/permissions/appcommands.toml");
     let perm_raw = std::fs::read_to_string(&perm_path)
@@ -105,7 +111,7 @@ fn appcommands_permission_matches_ipc_manifest_contract() {
         .collect::<BTreeSet<String>>();
 
     assert_eq!(
-        allowed_commands, ipc_commands,
-        "appcommands allowlist must match the IPC contract surface; rerun `cargo run -p aideon_xtask -- ipc-manifest` and update permissions before exposing new commands"
+        allowed_commands, generated,
+        "appcommands allowlist must equal the generated command surface; update src-tauri/permissions/appcommands.toml to mirror the commands in src/adapters/ipc-bindings.gen.ts"
     );
 }

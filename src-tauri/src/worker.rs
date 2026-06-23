@@ -7,6 +7,7 @@ use aideon_chrona::TemporalEngine;
 use aideon_praxis::praxis::PraxisEngine;
 use log::{debug, info};
 use serde::Serialize;
+use specta::Type;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, Wry};
@@ -17,7 +18,7 @@ use crate::setup::{SetupSeedSummary, emit_setup_progress, emit_setup_seed_summar
 ///
 /// This was previously sourced from the (now-removed) Mneme prototype; it is a
 /// host-local type until the M0 storage rebuild provides a real health surface.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Type)]
 pub struct WorkerHealth {
     pub ok: bool,
     pub timestamp_ms: u64,

@@ -12,6 +12,7 @@ use aideon_praxis::praxis::temporal::{
 use aideon_praxis::praxis::{PraxisError, PraxisErrorCode};
 use log::{debug, error, info};
 use serde::Deserialize;
+use specta::Type;
 use std::time::Instant;
 use tauri::State;
 
@@ -21,6 +22,7 @@ use crate::worker::WorkerState;
 
 /// Namespaced + requestId-wrapped temporal state query.
 #[tauri::command]
+#[specta::specta]
 pub async fn chrona_temporal_state_at(
     state: State<'_, WorkerState>,
     request: IpcRequest<StateAtArgs>,
@@ -55,6 +57,7 @@ async fn temporal_state_at_inner(
 
 /// Namespaced + requestId-wrapped diff summary query.
 #[tauri::command]
+#[specta::specta]
 pub async fn chrona_temporal_diff(
     state: State<'_, WorkerState>,
     request: IpcRequest<DiffArgs>,
@@ -103,6 +106,7 @@ async fn commit_changes(
 
 /// Namespaced + requestId-wrapped commit application command.
 #[tauri::command]
+#[specta::specta]
 pub async fn chrona_temporal_commit_changes(
     state: State<'_, WorkerState>,
     request: IpcRequest<CommitChangesRequest>,
@@ -115,7 +119,7 @@ pub async fn chrona_temporal_commit_changes(
     )
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ListCommitsPayload {
     pub branch: String,
@@ -143,6 +147,7 @@ pub async fn list_commits(
 
 /// Namespaced + requestId-wrapped commit list query.
 #[tauri::command]
+#[specta::specta]
 pub async fn chrona_temporal_list_commits(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListCommitsPayload>,
@@ -164,6 +169,7 @@ async fn list_commits_inner(
 
 /// Namespaced + requestId-wrapped branch creation command.
 #[tauri::command]
+#[specta::specta]
 pub async fn chrona_temporal_create_branch(
     state: State<'_, WorkerState>,
     request: IpcRequest<CreateBranchRequest>,
@@ -188,6 +194,7 @@ async fn create_branch_inner(
 
 /// Namespaced + requestId-wrapped branch list query.
 #[tauri::command]
+#[specta::specta]
 pub async fn chrona_temporal_list_branches(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
@@ -206,6 +213,7 @@ async fn list_branches_inner(engine: &aideon_chrona::TemporalEngine) -> ListBran
 
 /// Namespaced + requestId-wrapped branch merge command.
 #[tauri::command]
+#[specta::specta]
 pub async fn chrona_temporal_merge_branches(
     state: State<'_, WorkerState>,
     request: IpcRequest<MergeRequest>,
@@ -227,6 +235,7 @@ async fn merge_branches_inner(
 
 /// Namespaced + requestId-wrapped topology delta query.
 #[tauri::command]
+#[specta::specta]
 pub async fn chrona_temporal_topology_delta(
     state: State<'_, WorkerState>,
     request: IpcRequest<TopologyDeltaArgs>,
@@ -248,6 +257,7 @@ async fn topology_delta_inner(
 
 /// Namespaced + requestId-wrapped metamodel query.
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_metamodel_get(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,

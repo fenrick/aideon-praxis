@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum PraxisOperation {
     CreateNode { node: TwinNode },
@@ -9,7 +9,7 @@ pub enum PraxisOperation {
     DeleteEdge { edge_id: String },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct OperationBatchResult {
     pub accepted: bool,
