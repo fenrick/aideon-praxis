@@ -118,6 +118,14 @@ impl<T> IpcResponse<T> {
     }
 }
 
+/// Recognise an engine error meaning "the derived snapshot does not exist yet"
+/// — absence, not failure. Callers (scene, workspace) treat it as an empty
+/// result. One predicate so detection lives in a single place rather than being
+/// re-implemented per command module.
+pub(crate) fn is_missing_snapshot_error(message: &str) -> bool {
+    message.contains("os error 2") || message.contains("No such file")
+}
+
 pub async fn ipc_handle<T, Fut>(request_id: String, fut: Fut) -> IpcResponse<T>
 where
     Fut: Future<Output = Result<T, HostError>>,
