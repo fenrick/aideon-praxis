@@ -130,6 +130,43 @@ where
     }
 }
 
+/// The one command envelope: unpack the request, stamp `correlation_id` +
+/// telemetry, run the handler, wrap success, and map errors to the stable IPC
+/// envelope. Every host command delegates through this so envelope behaviour
+/// lives in one place. Internal/unclassified errors are redacted on the way
+/// out; known domain errors keep their stable code and safe message.
+pub async fn command_envelope<Req, Res, F, Fut>(
+    command: &'static str,
+    request: IpcRequest<Req>,
+    handler: F,
+) -> IpcResponse<Res>
+where
+    F: FnOnce(Req) -> Fut,
+    Fut: Future<Output = Result<Res, HostError>>,
+{
+    let correlation_id = request.request_id.clone();
+    match record_command(command, &correlation_id, handler(request.payload)).await {
+        Ok(payload) => IpcResponse::ok(correlation_id, payload),
+        // `record_command` has already logged the raw error; redact before it
+        // crosses the boundary so internal detail never reaches the renderer.
+        Err(error) => IpcResponse::err(correlation_id, redact_external(error)),
+    }
+}
+
+/// Stable, non-sensitive message returned for internal/unclassified errors.
+const INTERNAL_ERROR_MESSAGE: &str = "An internal error occurred.";
+
+/// Redact an error for the renderer. Known, user-actionable errors keep their
+/// stable code and safe message; internal/unclassified errors keep their code
+/// but get a generic message — the raw detail stays in the logs only.
+fn redact_external(error: HostError) -> HostError {
+    if error.code == "internal_error" {
+        HostError::new(error.code, INTERNAL_ERROR_MESSAGE)
+    } else {
+        error
+    }
+}
+
 pub async fn respond_with_request<P, ResultType, Handler, HandlerFuture>(
     command: &'static str,
     request: IpcRequest<P>,
@@ -139,12 +176,7 @@ where
     Handler: FnOnce(P) -> HandlerFuture,
     HandlerFuture: Future<Output = Result<ResultType, HostError>>,
 {
-    let correlation_id = request.request_id.clone();
-    let record = record_command(command, &correlation_id, handler(request.payload)).await;
-    match record {
-        Ok(payload) => Ok(IpcResponse::ok(correlation_id, payload)),
-        Err(error) => Ok(IpcResponse::err(correlation_id, error)),
-    }
+    Ok(command_envelope(command, request, handler).await)
 }
 
 #[tauri::command]
@@ -197,6 +229,77 @@ mod telemetry_tests {
 
         assert_eq!(response.status, "ok");
         assert_eq!(response.result, Some(7));
+    }
+
+    #[tokio::test]
+    async fn command_envelope_wraps_success_and_echoes_request_id() {
+        let request = IpcRequest {
+            request_id: "req-1".to_string(),
+            payload: "payload".to_string(),
+        };
+
+        let response: IpcResponse<usize> =
+            command_envelope("envelope_success", request, |payload: String| async move {
+                Ok::<usize, HostError>(payload.len())
+            })
+            .await;
+
+        assert_eq!(response.status, "ok");
+        assert_eq!(response.result, Some(7));
+        assert_eq!(response.request_id, "req-1");
+    }
+
+    #[tokio::test]
+    async fn command_envelope_preserves_known_domain_error() {
+        let request = IpcRequest {
+            request_id: "req-e".to_string(),
+            payload: (),
+        };
+
+        let response: IpcResponse<()> =
+            command_envelope("envelope_known_err", request, |_: ()| async move {
+                Err::<(), HostError>(HostError::invalid_time("as_of is in the future"))
+            })
+            .await;
+
+        assert_eq!(response.status, "error");
+        let error = response.error.expect("error payload");
+        assert_eq!(error.code, "invalid_time");
+        // Known, user-actionable error: message preserved, never redacted.
+        assert_eq!(error.message, "as_of is in the future");
+    }
+
+    #[tokio::test]
+    async fn command_envelope_redacts_internal_error_message() {
+        let request = IpcRequest {
+            request_id: "req-i".to_string(),
+            payload: (),
+        };
+
+        let response: IpcResponse<()> =
+            command_envelope("envelope_internal", request, |_: ()| async move {
+                Err::<(), HostError>(HostError::internal(
+                    "sqlite error at /Users/secret/db.sqlite: disk I/O failed",
+                ))
+            })
+            .await;
+
+        assert_eq!(response.status, "error");
+        let error = response.error.expect("error payload");
+        assert_eq!(error.code, "internal_error");
+        // Raw internal detail must not reach the renderer.
+        assert!(
+            !error.message.contains("/Users/secret"),
+            "leaked path: {}",
+            error.message
+        );
+        assert!(
+            !error.message.contains("sqlite"),
+            "leaked detail: {}",
+            error.message
+        );
+        // A stable, safe, generic message instead.
+        assert_eq!(error.message, "An internal error occurred.");
     }
 
     #[tokio::test]

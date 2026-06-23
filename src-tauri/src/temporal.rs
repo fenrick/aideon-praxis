@@ -15,7 +15,8 @@ use serde::Deserialize;
 use std::time::Instant;
 use tauri::State;
 
-use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse, ipc_handle};
+use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
+use crate::telemetry::command_envelope;
 use crate::worker::WorkerState;
 
 /// Namespaced + requestId-wrapped temporal state query.
@@ -24,11 +25,12 @@ pub async fn chrona_temporal_state_at(
     state: State<'_, WorkerState>,
     request: IpcRequest<StateAtArgs>,
 ) -> Result<IpcResponse<StateAtResult>, HostError> {
-    let IpcRequest {
-        request_id,
-        payload,
-    } = request;
-    Ok(ipc_handle(request_id, temporal_state_at_inner(state.engine(), payload)).await)
+    Ok(
+        command_envelope("chrona_temporal_state_at", request, |payload| {
+            temporal_state_at_inner(state.engine(), payload)
+        })
+        .await,
+    )
 }
 
 async fn temporal_state_at_inner(
@@ -57,11 +59,12 @@ pub async fn chrona_temporal_diff(
     state: State<'_, WorkerState>,
     request: IpcRequest<DiffArgs>,
 ) -> Result<IpcResponse<DiffSummary>, HostError> {
-    let IpcRequest {
-        request_id,
-        payload,
-    } = request;
-    Ok(ipc_handle(request_id, temporal_diff_inner(state.engine(), payload)).await)
+    Ok(
+        command_envelope("chrona_temporal_diff", request, |payload| {
+            temporal_diff_inner(state.engine(), payload)
+        })
+        .await,
+    )
 }
 
 async fn temporal_diff_inner(
@@ -104,11 +107,12 @@ pub async fn chrona_temporal_commit_changes(
     state: State<'_, WorkerState>,
     request: IpcRequest<CommitChangesRequest>,
 ) -> Result<IpcResponse<CommitChangesResponse>, HostError> {
-    let IpcRequest {
-        request_id,
-        payload,
-    } = request;
-    Ok(ipc_handle(request_id, commit_changes(state, payload)).await)
+    Ok(
+        command_envelope("chrona_temporal_commit_changes", request, |payload| {
+            commit_changes(state, payload)
+        })
+        .await,
+    )
 }
 
 #[derive(Debug, Deserialize)]
@@ -143,11 +147,12 @@ pub async fn chrona_temporal_list_commits(
     state: State<'_, WorkerState>,
     request: IpcRequest<ListCommitsPayload>,
 ) -> Result<IpcResponse<ListCommitsResponse>, HostError> {
-    let IpcRequest {
-        request_id,
-        payload,
-    } = request;
-    Ok(ipc_handle(request_id, list_commits(state, payload.branch)).await)
+    Ok(
+        command_envelope("chrona_temporal_list_commits", request, |payload| {
+            list_commits(state, payload.branch)
+        })
+        .await,
+    )
 }
 
 async fn list_commits_inner(
@@ -163,11 +168,12 @@ pub async fn chrona_temporal_create_branch(
     state: State<'_, WorkerState>,
     request: IpcRequest<CreateBranchRequest>,
 ) -> Result<IpcResponse<BranchInfo>, HostError> {
-    let IpcRequest {
-        request_id,
-        payload,
-    } = request;
-    Ok(ipc_handle(request_id, create_branch_inner(state.engine(), payload)).await)
+    Ok(
+        command_envelope("chrona_temporal_create_branch", request, |payload| {
+            create_branch_inner(state.engine(), payload)
+        })
+        .await,
+    )
 }
 
 async fn create_branch_inner(
@@ -186,11 +192,12 @@ pub async fn chrona_temporal_list_branches(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<ListBranchesResponse>, HostError> {
-    let request_id = request.request_id;
-    Ok(IpcResponse::ok(
-        request_id,
-        list_branches_inner(state.engine()).await,
-    ))
+    Ok(command_envelope(
+        "chrona_temporal_list_branches",
+        request,
+        |_payload| async move { Ok::<_, HostError>(list_branches_inner(state.engine()).await) },
+    )
+    .await)
 }
 
 async fn list_branches_inner(engine: &aideon_chrona::TemporalEngine) -> ListBranchesResponse {
@@ -203,11 +210,12 @@ pub async fn chrona_temporal_merge_branches(
     state: State<'_, WorkerState>,
     request: IpcRequest<MergeRequest>,
 ) -> Result<IpcResponse<MergeResponse>, HostError> {
-    let IpcRequest {
-        request_id,
-        payload,
-    } = request;
-    Ok(ipc_handle(request_id, merge_branches_inner(state.engine(), payload)).await)
+    Ok(
+        command_envelope("chrona_temporal_merge_branches", request, |payload| {
+            merge_branches_inner(state.engine(), payload)
+        })
+        .await,
+    )
 }
 
 async fn merge_branches_inner(
@@ -223,11 +231,12 @@ pub async fn chrona_temporal_topology_delta(
     state: State<'_, WorkerState>,
     request: IpcRequest<TopologyDeltaArgs>,
 ) -> Result<IpcResponse<TopologyDeltaResult>, HostError> {
-    let IpcRequest {
-        request_id,
-        payload,
-    } = request;
-    Ok(ipc_handle(request_id, topology_delta_inner(state.engine(), payload)).await)
+    Ok(
+        command_envelope("chrona_temporal_topology_delta", request, |payload| {
+            topology_delta_inner(state.engine(), payload)
+        })
+        .await,
+    )
 }
 
 async fn topology_delta_inner(
@@ -243,11 +252,12 @@ pub async fn praxis_metamodel_get(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<MetaModelDocument>, HostError> {
-    let request_id = request.request_id;
-    Ok(IpcResponse::ok(
-        request_id,
-        temporal_metamodel_get_inner(state.engine()).await,
-    ))
+    Ok(
+        command_envelope("praxis_metamodel_get", request, |_payload| async move {
+            Ok::<_, HostError>(temporal_metamodel_get_inner(state.engine()).await)
+        })
+        .await,
+    )
 }
 
 async fn temporal_metamodel_get_inner(engine: &aideon_chrona::TemporalEngine) -> MetaModelDocument {

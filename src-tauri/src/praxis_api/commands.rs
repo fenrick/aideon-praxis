@@ -7,6 +7,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
+use crate::telemetry::command_envelope;
 use crate::worker::WorkerState;
 
 const DEFAULT_BRANCH: &str = "main";
@@ -86,11 +87,10 @@ async fn praxis_artefact_execute_graph_inner(
     engine: &TemporalEngine,
     request: IpcRequest<GraphViewDefinition>,
 ) -> IpcResponse<GraphViewModel> {
-    let request_id = request.request_id;
-    match praxis_graph_view_inner(engine, request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    }
+    command_envelope("praxis_artefact_execute_graph", request, |definition| {
+        praxis_graph_view_inner(engine, definition)
+    })
+    .await
 }
 
 async fn praxis_catalogue_view_inner(
@@ -111,11 +111,10 @@ async fn praxis_artefact_execute_catalogue_inner(
     engine: &TemporalEngine,
     request: IpcRequest<CatalogueViewDefinition>,
 ) -> IpcResponse<CatalogueViewModel> {
-    let request_id = request.request_id;
-    match praxis_catalogue_view_inner(engine, request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    }
+    command_envelope("praxis_artefact_execute_catalogue", request, |definition| {
+        praxis_catalogue_view_inner(engine, definition)
+    })
+    .await
 }
 
 async fn praxis_matrix_view_inner(
@@ -136,11 +135,10 @@ async fn praxis_artefact_execute_matrix_inner(
     engine: &TemporalEngine,
     request: IpcRequest<MatrixViewDefinition>,
 ) -> IpcResponse<MatrixViewModel> {
-    let request_id = request.request_id;
-    match praxis_matrix_view_inner(engine, request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    }
+    command_envelope("praxis_artefact_execute_matrix", request, |definition| {
+        praxis_matrix_view_inner(engine, definition)
+    })
+    .await
 }
 
 async fn praxis_chart_view_inner(
@@ -161,11 +159,10 @@ async fn praxis_artefact_execute_chart_inner(
     engine: &TemporalEngine,
     request: IpcRequest<ChartViewDefinition>,
 ) -> IpcResponse<ChartViewModel> {
-    let request_id = request.request_id;
-    match praxis_chart_view_inner(engine, request.payload).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    }
+    command_envelope("praxis_artefact_execute_chart", request, |definition| {
+        praxis_chart_view_inner(engine, definition)
+    })
+    .await
 }
 
 async fn praxis_apply_operations_inner(
@@ -214,17 +211,10 @@ async fn praxis_task_apply_operations_inner(
     engine: &TemporalEngine,
     request: IpcRequest<ApplyOperationsPayload>,
 ) -> IpcResponse<OperationBatchResult> {
-    let request_id = request.request_id;
-    match praxis_apply_operations_inner(
-        engine,
-        request.payload.operations,
-        request.payload.branch,
-    )
+    command_envelope("praxis_task_apply_operations", request, |payload| {
+        praxis_apply_operations_inner(engine, payload.operations, payload.branch)
+    })
     .await
-    {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    }
 }
 
 pub(crate) async fn praxis_list_scenarios_inner(
@@ -247,11 +237,10 @@ async fn praxis_scenario_list_inner(
     engine: &TemporalEngine,
     request: IpcRequest<EmptyPayload>,
 ) -> IpcResponse<Vec<ScenarioSummary>> {
-    let request_id = request.request_id;
-    match praxis_list_scenarios_inner(engine).await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    }
+    command_envelope("praxis_scenario_list", request, |_payload| {
+        praxis_list_scenarios_inner(engine)
+    })
+    .await
 }
 
 async fn resolve_snapshot(
@@ -290,9 +279,11 @@ fn change_set_from_operations(
                 let existing = snapshot
                     .node(&node.id)
                     .ok_or_else(|| HostError::invalid_input("node missing for update"))?;
-                let node_type = node.r#type.clone().or_else(|| existing.r#type.clone()).ok_or_else(
-                    || HostError::invalid_input("node type is required"),
-                )?;
+                let node_type = node
+                    .r#type
+                    .clone()
+                    .or_else(|| existing.r#type.clone())
+                    .ok_or_else(|| HostError::invalid_input("node type is required"))?;
                 let merged_props = merge_props(existing.props.clone(), node.props);
                 changes.node_updates.push(NodeVersion {
                     id: node.id,
@@ -320,9 +311,11 @@ fn change_set_from_operations(
             PraxisOperation::UpdateEdge { edge } => {
                 let existing = find_edge(snapshot, edge.id.as_deref(), &edge.from, &edge.to)
                     .ok_or_else(|| HostError::invalid_input("edge missing for update"))?;
-                let edge_type = edge.r#type.clone().or_else(|| existing.r#type.clone()).ok_or_else(
-                    || HostError::invalid_input("edge type is required"),
-                )?;
+                let edge_type = edge
+                    .r#type
+                    .clone()
+                    .or_else(|| existing.r#type.clone())
+                    .ok_or_else(|| HostError::invalid_input("edge type is required"))?;
                 let merged_props = merge_props(existing.props.clone(), edge.props);
                 changes.edge_updates.push(EdgeVersion {
                     id: edge.id.or_else(|| existing.id.clone()),

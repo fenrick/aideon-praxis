@@ -7,7 +7,7 @@ use aideon_praxis::praxis::graph_layout::{GraphLayoutGetRequest, GraphLayoutSave
 use log::info;
 use serde::Deserialize;
 
-use crate::ipc::{HostError, IpcRequest, IpcResponse};
+use crate::ipc::{HostError, IpcRequest, IpcResponse, is_missing_snapshot_error};
 
 /// Return a raw scene for the canvas. The renderer performs layout when needed.
 #[tauri::command]
@@ -136,10 +136,6 @@ fn canvas_snapshot_base() -> Result<std::path::PathBuf, HostError> {
     Ok(dirs::data_dir()
         .ok_or_else(|| HostError::internal("no data dir"))?
         .join("AideonPraxis"))
-}
-
-fn is_missing_snapshot_error(message: &str) -> bool {
-    message.contains("os error 2") || message.contains("No such file")
 }
 
 /// Persist a canvas layout snapshot (geometry, z-order, grouping) for a document and asOf.

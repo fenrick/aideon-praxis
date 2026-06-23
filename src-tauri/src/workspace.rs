@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tauri::State;
 
-use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
+use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse, is_missing_snapshot_error};
 use crate::praxis_api::ScenarioSummary;
 use crate::telemetry::respond_with_request;
 use crate::worker::WorkerState;
@@ -272,10 +272,6 @@ fn default_templates() -> Vec<TemplatePayload> {
             ],
         },
     ]
-}
-
-fn is_missing_snapshot_error(message: &str) -> bool {
-    message.contains("os error 2") || message.contains("No such file")
 }
 
 fn load_templates() -> Result<Vec<TemplatePayload>, HostError> {

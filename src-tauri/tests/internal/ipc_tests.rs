@@ -26,6 +26,20 @@ fn ipc_response_ok_serializes_camel_case_envelope() {
 }
 
 #[test]
+fn missing_snapshot_error_is_recognised() {
+    // Absence of a derived snapshot is "no data yet", not a failure — one
+    // shared predicate recognises it so scene + workspace don't each re-detect.
+    assert!(is_missing_snapshot_error(
+        "io error: No such file or directory (os error 2)"
+    ));
+    assert!(is_missing_snapshot_error("open failed: os error 2"));
+    assert!(!is_missing_snapshot_error(
+        "permission denied (os error 13)"
+    ));
+    assert!(!is_missing_snapshot_error("invalid utf-8 in segment"));
+}
+
+#[test]
 fn ipc_response_err_serializes_stable_error_envelope() {
     let response: IpcResponse<()> = IpcResponse::err("req-2", HostError::invalid_input("bad"));
     let value = serde_json::to_value(&response).expect("serialize IpcResponse");
