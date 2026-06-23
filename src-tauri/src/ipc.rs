@@ -7,7 +7,6 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::fmt;
-use std::future::Future;
 
 /// Stable error envelope returned by host commands.
 ///
@@ -124,16 +123,6 @@ impl<T> IpcResponse<T> {
 /// re-implemented per command module.
 pub(crate) fn is_missing_snapshot_error(message: &str) -> bool {
     message.contains("os error 2") || message.contains("No such file")
-}
-
-pub async fn ipc_handle<T, Fut>(request_id: String, fut: Fut) -> IpcResponse<T>
-where
-    Fut: Future<Output = Result<T, HostError>>,
-{
-    match fut.await {
-        Ok(result) => IpcResponse::ok(request_id, result),
-        Err(err) => IpcResponse::err(request_id, err),
-    }
 }
 
 #[cfg(test)]
