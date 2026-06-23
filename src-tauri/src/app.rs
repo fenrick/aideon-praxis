@@ -224,3 +224,7 @@ fn log_level() -> LevelFilter {
 #[cfg(test)]
 #[path = "../tests/internal/app_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "../tests/internal/host_dispatch_tests.rs"]
+mod host_dispatch_tests;
