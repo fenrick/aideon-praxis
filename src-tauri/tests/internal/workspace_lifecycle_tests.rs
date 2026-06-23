@@ -183,6 +183,12 @@ async fn rebuild_runs_as_accepted_work_and_readiness_carries_the_pre_wipe_hash()
         ready["jobId"], run_id,
         "readiness binds to the accepted job"
     );
+    // correlation_id propagates from the initiating command (requestId "w1") to
+    // the readiness event, joining it to the host log/trace (ADR-0019/ADR-0040).
+    assert_eq!(
+        ready["correlationId"], "w1",
+        "correlation id propagates to the event"
+    );
     assert_eq!(
         ready["foundationRebuildHash"], hash_before,
         "rebuild yields a logically equivalent foundation; the proof matches"
