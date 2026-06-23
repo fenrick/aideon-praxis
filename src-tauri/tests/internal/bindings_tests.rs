@@ -41,7 +41,26 @@ fn commands_regenerate_the_renderer_client_and_manifest() {
         .export(typescript(), GENERATED_CLIENT)
         .expect("export typescript bindings");
 
+    // tauri-specta always imports `Channel as TAURI_CHANNEL` in its globals, but
+    // M0 declares no channels, so it is an unused import (flagged by CodeQL).
+    // Strip it deterministically — regeneration re-applies this, so the
+    // committed file never drifts.
+    let raw = std::fs::read_to_string(GENERATED_CLIENT).expect("read generated client");
+    if raw.contains("TAURI_CHANNEL") {
+        let pruned = raw
+            .lines()
+            .filter(|line| !line.contains("Channel as TAURI_CHANNEL"))
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n";
+        std::fs::write(GENERATED_CLIENT, pruned).expect("rewrite pruned client");
+    }
+
     let ts = std::fs::read_to_string(GENERATED_CLIENT).expect("read generated client");
+    assert!(
+        !ts.contains("TAURI_CHANNEL"),
+        "unused Channel import must be pruned from the generated client"
+    );
     // Smoke the seam end-to-end: a host command, an engine DTO carried across the
     // crate boundary, and the shared envelope all reach the generated client.
     for token in [
