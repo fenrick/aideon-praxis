@@ -3,20 +3,151 @@
 //! access; the renderer crosses via typed IPC only. Long rebuilds run as
 //! accepted work — added in a later increment ([workspace-lifecycle](../../docs/05-modules/host/workspace-lifecycle.md)).
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use aideon_engine::{Engine, StoreError, WorkspaceStatus};
 use serde::Deserialize;
 use specta::Type;
-use tauri::State;
+use tauri::{AppHandle, Emitter, Runtime, State};
 use tokio::sync::Mutex;
+use uuid::Uuid;
 
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
+use crate::jobs::{
+    AcceptedJob, EVENT_LIFECYCLE_CHANGED, EVENT_READY_READ_WRITE, LifecycleState,
+    WorkspaceLifecycleEvent, WorkspaceReadinessEvent,
+};
 use crate::telemetry::command_envelope;
 
 /// Holds the single open workspace for the session — the host's single-writer
-/// hold on the canonical material.
-#[derive(Default)]
+/// hold on the canonical material. The engine lives behind an `Arc<Mutex<…>>` so
+/// the rebuild job can run off the IPC call thread.
+#[derive(Default, Clone)]
 pub struct WorkspaceManager {
-    open: Mutex<Option<Engine>>,
+    open: Arc<Mutex<Option<Engine>>>,
+    /// True while a rebuild job is in flight — the M0 backpressure signal.
+    rebuilding: Arc<AtomicBool>,
+}
+
+/// ISO-8601 acceptance timestamp for an accepted job.
+fn now_iso() -> String {
+    time::OffsetDateTime::now_utc()
+        .format(&time::format_description::well_known::Rfc3339)
+        .unwrap_or_default()
+}
+
+/// Announce a lifecycle state transition to the workspace window.
+fn emit_lifecycle<R: Runtime>(
+    app: &AppHandle<R>,
+    workspace_id: String,
+    state: LifecycleState,
+    job_id: Option<String>,
+    error_code: Option<String>,
+    correlation_id: String,
+) {
+    let _ = app.emit(
+        EVENT_LIFECYCLE_CHANGED,
+        WorkspaceLifecycleEvent {
+            workspace_id,
+            state,
+            job_id,
+            error_code,
+            correlation_id,
+        },
+    );
+}
+
+/// Run the foundation rebuild off the IPC call: wipe the derived runtime, replay
+/// canonical material, and only then publish proof-carrying read-write
+/// readiness. A rebuild failure leaves the workspace closed (canonical files
+/// untouched) and transitions to recovery, never read-write ([ADR-0040]).
+fn spawn_rebuild<R: Runtime>(
+    app: AppHandle<R>,
+    open: Arc<Mutex<Option<Engine>>>,
+    rebuilding: Arc<AtomicBool>,
+    run_id: String,
+    correlation_id: String,
+) {
+    tauri::async_runtime::spawn(async move {
+        let mut guard = open.lock().await;
+        let engine = match guard.take() {
+            Some(engine) => engine,
+            None => {
+                rebuilding.store(false, Ordering::SeqCst);
+                return;
+            }
+        };
+        let workspace_id = engine
+            .status()
+            .map(|status| status.workspace_id)
+            .unwrap_or_default();
+        emit_lifecycle(
+            &app,
+            workspace_id.clone(),
+            LifecycleState::Rebuilding,
+            Some(run_id.clone()),
+            None,
+            correlation_id.clone(),
+        );
+
+        match engine.rebuild() {
+            Ok(rebuilt) => {
+                let status = rebuilt.status();
+                *guard = Some(rebuilt);
+                drop(guard);
+                match status {
+                    Ok(status) => {
+                        // Proof-carrying readiness: the event carries the hash
+                        // the rebuilt foundation became ready against.
+                        let _ = app.emit(
+                            EVENT_READY_READ_WRITE,
+                            WorkspaceReadinessEvent::read_write(
+                                status.workspace_id.clone(),
+                                run_id.clone(),
+                                status.foundation_rebuild_hash,
+                                Uuid::new_v4().to_string(),
+                                correlation_id.clone(),
+                            ),
+                        );
+                        emit_lifecycle(
+                            &app,
+                            status.workspace_id,
+                            LifecycleState::ReadyReadWrite,
+                            Some(run_id),
+                            None,
+                            correlation_id,
+                        );
+                    }
+                    Err(error) => {
+                        let mapped = map_store_error(error);
+                        emit_lifecycle(
+                            &app,
+                            workspace_id,
+                            LifecycleState::RecoveryReadOnly,
+                            Some(run_id),
+                            Some(mapped.code.to_string()),
+                            correlation_id,
+                        );
+                    }
+                }
+            }
+            Err(error) => {
+                // `rebuild` consumed the engine; the workspace is now closed.
+                drop(guard);
+                let mapped = map_store_error(error);
+                emit_lifecycle(
+                    &app,
+                    workspace_id,
+                    LifecycleState::RecoveryReadOnly,
+                    Some(run_id),
+                    Some(mapped.code.to_string()),
+                    correlation_id,
+                );
+            }
+        }
+        rebuilding.store(false, Ordering::SeqCst);
+    });
 }
 
 /// Payload for create/open: the host-resolved workspace root.
@@ -125,6 +256,57 @@ pub async fn workspace_close(
         command_envelope("workspace_close", request, |_payload| async move {
             *manager.open.lock().await = None;
             Ok(())
+        })
+        .await,
+    )
+}
+
+/// Rebuild the derived foundation runtime as accepted work ([ADR-0040]).
+/// Returns an [`AcceptedJob`] immediately (never a blocking response); the
+/// rebuild runs off-thread and publishes proof-carrying readiness when the
+/// foundation projections complete. Read-write is withheld until then.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_rebuild(
+    app: AppHandle,
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<EmptyPayload>,
+) -> Result<IpcResponse<AcceptedJob>, HostError> {
+    workspace_rebuild_inner(app, manager, request).await
+}
+
+/// Generic over the runtime so the rebuild flow (and its emitted lifecycle /
+/// readiness events) is dispatch-testable under `MockRuntime`; the registered
+/// `workspace_rebuild` is the concrete-`Wry` wrapper for the codegen seam.
+#[tauri::command]
+pub async fn workspace_rebuild_inner<R: Runtime>(
+    app: AppHandle<R>,
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<EmptyPayload>,
+) -> Result<IpcResponse<AcceptedJob>, HostError> {
+    let correlation_id = request.request_id.clone();
+    Ok(
+        command_envelope("workspace_rebuild", request, move |_payload| async move {
+            if manager.open.lock().await.is_none() {
+                return Err(HostError::new("workspace_not_open", "no workspace is open"));
+            }
+            // Backpressure: M0 admits a single rebuild at a time.
+            if manager.rebuilding.swap(true, Ordering::SeqCst) {
+                return Err(HostError::new(
+                    "BACKPRESSURE",
+                    "a workspace rebuild is already running",
+                ));
+            }
+            let run_id = Uuid::new_v4().to_string();
+            let accepted = AcceptedJob::rebuild(run_id.clone(), correlation_id.clone(), now_iso());
+            spawn_rebuild(
+                app.clone(),
+                manager.open.clone(),
+                manager.rebuilding.clone(),
+                run_id,
+                correlation_id.clone(),
+            );
+            Ok(accepted)
         })
         .await,
     )

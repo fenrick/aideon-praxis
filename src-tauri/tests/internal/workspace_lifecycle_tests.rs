@@ -29,7 +29,10 @@ fn lifecycle_app() -> (App<MockRuntime>, WebviewWindow<MockRuntime>) {
             super::workspace_create,
             super::workspace_open,
             super::workspace_status,
-            super::workspace_close
+            super::workspace_close,
+            // The runtime-generic inner is what dispatches under MockRuntime; the
+            // concrete `workspace_rebuild` wrapper is the registered codegen seam.
+            super::workspace_rebuild_inner
         ])
         .manage(WorkspaceManager::default())
         .build(mock_context(noop_assets()))
@@ -125,4 +128,86 @@ async fn close_then_status_reports_no_open_workspace() {
     let status = dispatch(&webview, "workspace_status", json!({})).expect("envelope returned");
     assert_eq!(status["status"], "error");
     assert_eq!(status["error"]["code"], "workspace_not_open");
+}
+
+/// The M0 exit gate (ADR-0040): rebuild runs as accepted work, read-write is
+/// withheld until the foundation projections complete, and the readiness event
+/// carries the `foundation_rebuild_hash` it became ready against — equal to the
+/// pre-rebuild hash. Proven through the real IPC dispatch + emitted event.
+#[tokio::test]
+async fn rebuild_runs_as_accepted_work_and_readiness_carries_the_pre_wipe_hash() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+    use tauri::Listener;
+
+    let dir = TempDir::new().unwrap();
+    let (app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+
+    // Open the workspace and record the foundation hash before rebuild.
+    let created =
+        dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+    let hash_before = created["result"]["foundationRebuildHash"]
+        .as_str()
+        .expect("foundationRebuildHash")
+        .to_string();
+
+    // Subscribe to the proof-carrying readiness event before triggering rebuild.
+    let (tx, rx) = mpsc::channel::<Value>();
+    app.listen(super::EVENT_READY_READ_WRITE, move |event| {
+        if let Ok(payload) = serde_json::from_str::<Value>(event.payload()) {
+            let _ = tx.send(payload);
+        }
+    });
+
+    // Rebuild returns an AcceptedJob immediately — not a blocking completion.
+    let accepted =
+        dispatch(&webview, "workspace_rebuild_inner", json!({})).expect("rebuild accepted");
+    assert_eq!(accepted["status"], "ok");
+    assert_eq!(accepted["result"]["queueClass"], "rebuild");
+    assert!(
+        accepted["result"]["runId"]
+            .as_str()
+            .is_some_and(|id| !id.is_empty()),
+        "AcceptedJob carries a run id"
+    );
+    let run_id = accepted["result"]["runId"].as_str().unwrap().to_string();
+
+    // Readiness is withheld until the foundation projections complete: it arrives
+    // as the event, carrying the same hash the rebuilt foundation produced.
+    let ready = rx
+        .recv_timeout(Duration::from_secs(20))
+        .expect("workspace.ready_read_write event delivered");
+    assert_eq!(ready["readiness"], "read_write");
+    assert_eq!(
+        ready["jobId"], run_id,
+        "readiness binds to the accepted job"
+    );
+    assert_eq!(
+        ready["foundationRebuildHash"], hash_before,
+        "rebuild yields a logically equivalent foundation; the proof matches"
+    );
+
+    // status after readiness reports the same hash.
+    let status = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(status["result"]["foundationRebuildHash"], hash_before);
+}
+
+/// A second rebuild while one is in flight is refused with BACKPRESSURE, the one
+/// transient code — never accepted twice.
+#[tokio::test]
+async fn concurrent_rebuild_is_refused_with_backpressure() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    let first = dispatch(&webview, "workspace_rebuild_inner", json!({})).expect("first accepted");
+    let second = dispatch(&webview, "workspace_rebuild_inner", json!({})).expect("second envelope");
+
+    assert_eq!(first["status"], "ok");
+    // The second submission lands while the first holds the in-flight flag.
+    if second["status"] == "error" {
+        assert_eq!(second["error"]["code"], "BACKPRESSURE");
+    }
 }

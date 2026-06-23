@@ -36,6 +36,7 @@ commands.allow = [
   "workspace_create",
   "workspace_open",
   "workspace_projects_list",
+  "workspace_rebuild",
   "workspace_status",
   "workspace_templates_list",
   "workspace_templates_save",

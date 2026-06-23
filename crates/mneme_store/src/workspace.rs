@@ -146,6 +146,12 @@ impl Workspace {
         &self.manifest
     }
 
+    /// The resolved on-disk paths (root, canonical segments, derived runtime).
+    #[must_use]
+    pub fn paths(&self) -> &Paths {
+        &self.paths
+    }
+
     /// The workspace's sole partition id.
     #[must_use]
     pub fn partition_id(&self) -> Id {

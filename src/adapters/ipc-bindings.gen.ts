@@ -322,6 +322,20 @@ async workspaceClose(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResp
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Rebuild the derived foundation runtime as accepted work ([ADR-0040]).
+ * Returns an [`AcceptedJob`] immediately (never a blocking response); the
+ * rebuild runs off-thread and publishes proof-carrying readiness when the
+ * foundation projections complete. Read-write is withheld until then.
+ */
+async workspaceRebuild(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResponse<AcceptedJob>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_rebuild", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async systemLoggingContext() : Promise<Result<LoggingContextDto, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("system_logging_context") };
@@ -345,6 +359,11 @@ async systemMetricsSnapshot() : Promise<MetricsSnapshot> {
 
 /** user-defined types **/
 
+/**
+ * The acknowledgement a long-running command returns immediately
+ * ([accepted-job-shape]). Acceptance is receipt, not durability.
+ */
+export type AcceptedJob = { runId: string; queueClass: WorkQueueClass; idempotencyKey: string; ledgerRef: string; acceptedAt: string }
 export type ApplyOperationsPayload = { branch?: string | null; operations?: PraxisOperation[] }
 export type BranchInfo = { name: string; head: string | null }
 export type CanvasEdge = { id: string; source: string; target: string; label?: string | null; z?: number | null }
@@ -459,6 +478,11 @@ export type TwinNode = { id: string; type?: string | null; props?: JsonValue | n
 export type ViewFilters = { nodeTypes?: string[] | null; edgeTypes?: string[] | null; tags?: string[] | null; search?: string | null }
 export type ViewMetadata = { id: string; name: string; asOf: string; layer?: string | null; scenario?: string | null; fetchedAt: string; source: string }
 export type ViewStats = { nodes: number; edges: number }
+/**
+ * The class of long-running work. M0 runs only `Rebuild`; the other Continuum
+ * classes are deferred to M4 (variants are additive).
+ */
+export type WorkQueueClass = "rebuild"
 /**
  * A lightweight host-owned worker health snapshot for IPC exposure.
  * 

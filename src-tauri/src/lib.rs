@@ -6,6 +6,7 @@ mod commands;
 mod contracts;
 mod health;
 mod ipc;
+mod jobs;
 mod logging;
 mod menu;
 mod metrics;
