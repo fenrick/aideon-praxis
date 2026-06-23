@@ -20,7 +20,7 @@ fn ipc_response_serializes_ok_shape() {
 
 #[test]
 fn ipc_response_serializes_error_shape_with_details() {
-    let error = HostError::new("validation_failed", "Bad input");
+    let error = HostError::new("VALIDATION_FAILED", "Bad input");
     let response: IpcResponse<serde_json::Value> = IpcResponse::err("req-3", error);
     let json = serde_json::to_string(&response).expect("serialize");
     assert!(json.contains("\"requestId\""));

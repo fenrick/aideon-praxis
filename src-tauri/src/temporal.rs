@@ -276,12 +276,12 @@ async fn temporal_metamodel_get_inner(engine: &aideon_chrona::TemporalEngine) ->
 
 pub(crate) fn host_error(error: PraxisError) -> HostError {
     let code = match error.code() {
-        PraxisErrorCode::UnknownBranch => "unknown_branch",
-        PraxisErrorCode::UnknownCommit => "unknown_commit",
-        PraxisErrorCode::ConcurrencyConflict => "concurrency_conflict",
-        PraxisErrorCode::ValidationFailed => "validation_failed",
-        PraxisErrorCode::IntegrityViolation => "integrity_violation",
-        PraxisErrorCode::MergeConflict => "merge_conflict",
+        PraxisErrorCode::UnknownBranch => "UNKNOWN_BRANCH",
+        PraxisErrorCode::UnknownCommit => "UNKNOWN_COMMIT",
+        PraxisErrorCode::ConcurrencyConflict => "CONCURRENCY_CONFLICT",
+        PraxisErrorCode::ValidationFailed => "VALIDATION_FAILED",
+        PraxisErrorCode::IntegrityViolation => "INTEGRITY_VIOLATION",
+        PraxisErrorCode::MergeConflict => "MERGE_CONFLICT",
     };
     error!("host: praxis error code={} detail={error}", code);
     HostError::new(code, error.to_string())

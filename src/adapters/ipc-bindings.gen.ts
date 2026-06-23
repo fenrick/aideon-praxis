@@ -413,7 +413,16 @@ export type GraphViewScope = { rootIds?: string[] }
  * - `message` is user-facing and may change between releases.
  */
 export type HostError = { code: string; message: string }
-export type IpcError = { code: string; message: string; details: JsonValue }
+/**
+ * The RFC-9457 Problem Detail carried over IPC ([error-envelope], [ADR-0016]).
+ * `HostError` maps to this at the boundary, gaining the category, recovery
+ * hint, and correlation id that let the renderer react generically.
+ */
+export type IpcError = { 
+/**
+ * Stable, non-dereferenceable problem URI (`aideon:problem/<kebab-code>`).
+ */
+type: string; code: string; title: string; detail: string; category: ProblemCategory; recovery: ProblemRecovery; correlationId: string; details: JsonValue }
 /**
  * Canonical IPC request envelope.
  * 
@@ -463,6 +472,15 @@ export type OpenWorkspacePayload = { root: string }
 export type OperationBatchResult = { accepted: boolean; message?: string | null; commitId?: string | null }
 export type Position = { x: number; y: number }
 export type PraxisOperation = { kind: "createNode"; node: TwinNode } | { kind: "updateNode"; node: TwinNode } | { kind: "deleteNode"; node_id: string } | { kind: "createEdge"; edge: TwinEdge } | { kind: "updateEdge"; edge: TwinEdge } | { kind: "deleteEdge"; edge_id: string }
+/**
+ * RFC-9457 problem category ([error-envelope]): the renderer reacts to the
+ * category generically rather than hard-coding per-code knowledge ([ADR-0016]).
+ */
+export type ProblemCategory = "validation" | "permission" | "conflict" | "transient" | "internal"
+/**
+ * RFC-9457 machine-readable recovery hint.
+ */
+export type ProblemRecovery = "retry" | "reconcile" | "refresh" | "none" | "report"
 export type ProjectPayload = { id: string; name: string; scenarios: ScenarioSummary[] }
 export type ScenarioSummary = { id: string; name: string; branch: string; description?: string | null; updatedAt: string; isDefault?: boolean | null }
 export type SetupCompletePayload = { task: string }

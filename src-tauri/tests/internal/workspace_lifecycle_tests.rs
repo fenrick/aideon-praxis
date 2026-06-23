@@ -97,7 +97,7 @@ async fn status_with_no_open_workspace_is_an_honest_error() {
 
     let status = dispatch(&webview, "workspace_status", json!({})).expect("envelope returned");
     assert_eq!(status["status"], "error");
-    assert_eq!(status["error"]["code"], "workspace_not_open");
+    assert_eq!(status["error"]["code"], "WORKSPACE_NOT_OPEN");
 }
 
 #[tokio::test]
@@ -113,7 +113,7 @@ async fn opening_a_missing_workspace_maps_to_workspace_not_found() {
     )
     .expect("envelope returned");
     assert_eq!(opened["status"], "error");
-    assert_eq!(opened["error"]["code"], "workspace_not_found");
+    assert_eq!(opened["error"]["code"], "WORKSPACE_NOT_FOUND");
 }
 
 #[tokio::test]
@@ -127,7 +127,7 @@ async fn close_then_status_reports_no_open_workspace() {
 
     let status = dispatch(&webview, "workspace_status", json!({})).expect("envelope returned");
     assert_eq!(status["status"], "error");
-    assert_eq!(status["error"]["code"], "workspace_not_open");
+    assert_eq!(status["error"]["code"], "WORKSPACE_NOT_OPEN");
 }
 
 /// The M0 exit gate (ADR-0040): rebuild runs as accepted work, read-write is

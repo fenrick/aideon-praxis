@@ -40,7 +40,7 @@ fn missing_snapshot_error_is_recognised() {
 }
 
 #[test]
-fn ipc_response_err_serializes_stable_error_envelope() {
+fn ipc_response_err_serializes_rfc9457_problem_detail() {
     let response: IpcResponse<()> = IpcResponse::err("req-2", HostError::invalid_input("bad"));
     let value = serde_json::to_value(&response).expect("serialize IpcResponse");
     assert_eq!(
@@ -49,8 +49,14 @@ fn ipc_response_err_serializes_stable_error_envelope() {
             "requestId": "req-2",
             "status": "error",
             "error": {
-                "code": "invalid_input",
-                "message": "bad",
+                "type": "aideon:problem/invalid-input",
+                "code": "INVALID_INPUT",
+                "title": "Invalid input",
+                "detail": "bad",
+                "category": "validation",
+                "recovery": "none",
+                // The request id is the command's correlation id.
+                "correlationId": "req-2",
                 "details": {}
             }
         })

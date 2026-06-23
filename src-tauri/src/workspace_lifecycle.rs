@@ -164,28 +164,28 @@ pub struct OpenWorkspacePayload {
 pub(crate) fn map_store_error(error: StoreError) -> HostError {
     match &error {
         StoreError::WorkspaceLocked => HostError::new(
-            "workspace_locked",
+            "WORKSPACE_LOCKED",
             "the workspace is open in another process",
         ),
         StoreError::WorkspaceFormatTooNew { .. } => {
-            HostError::new("workspace_format_too_new", error.to_string())
+            HostError::new("WORKSPACE_FORMAT_TOO_NEW", error.to_string())
         }
-        StoreError::SchemaTooNew { .. } => HostError::new("schema_too_new", error.to_string()),
+        StoreError::SchemaTooNew { .. } => HostError::new("SCHEMA_TOO_NEW", error.to_string()),
         StoreError::UnsupportedFeature(_) => {
-            HostError::new("unsupported_feature", error.to_string())
+            HostError::new("UNSUPPORTED_FEATURE", error.to_string())
         }
         StoreError::ForeignPartition { .. } => {
-            HostError::new("foreign_partition", error.to_string())
+            HostError::new("FOREIGN_PARTITION", error.to_string())
         }
         StoreError::ScenarioUnsupported => {
-            HostError::new("scenario_unsupported", error.to_string())
+            HostError::new("SCENARIO_UNSUPPORTED", error.to_string())
         }
         StoreError::IdentityCollision { .. } => {
-            HostError::new("identity_collision", error.to_string())
+            HostError::new("IDENTITY_COLLISION", error.to_string())
         }
-        StoreError::Corruption(_) => HostError::new("workspace_corrupt", error.to_string()),
+        StoreError::Corruption(_) => HostError::new("WORKSPACE_CORRUPT", error.to_string()),
         StoreError::Io(io) if io.kind() == std::io::ErrorKind::NotFound => {
-            HostError::new("workspace_not_found", "workspace not found")
+            HostError::new("WORKSPACE_NOT_FOUND", "workspace not found")
         }
         // Internal / unclassified — detail stays in logs; the envelope redacts.
         StoreError::Io(_) | StoreError::Core(_) | StoreError::Runtime(_) | StoreError::Json(_) => {
@@ -239,7 +239,7 @@ pub async fn workspace_status(
             let guard = manager.open.lock().await;
             let engine = guard
                 .as_ref()
-                .ok_or_else(|| HostError::new("workspace_not_open", "no workspace is open"))?;
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
             engine.status().map_err(map_store_error)
         })
         .await,
@@ -288,7 +288,7 @@ pub async fn workspace_rebuild_inner<R: Runtime>(
     Ok(
         command_envelope("workspace_rebuild", request, move |_payload| async move {
             if manager.open.lock().await.is_none() {
-                return Err(HostError::new("workspace_not_open", "no workspace is open"));
+                return Err(HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"));
             }
             // Backpressure: M0 admits a single rebuild at a time.
             if manager.rebuilding.swap(true, Ordering::SeqCst) {

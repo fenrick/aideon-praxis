@@ -53,7 +53,7 @@ fn telemetry_bridge_records_milestones() {
     assert_eq!(payloads[1]["correlation_id"], "corr-id");
 
     assert_eq!(payloads[2]["event_name"], "command_failed");
-    assert_eq!(payloads[2]["error.kind"], "internal_error");
+    assert_eq!(payloads[2]["error.kind"], "INTERNAL_ERROR");
     assert_eq!(payloads[2]["error.message"], "failing to migrate");
 
     assert_eq!(payloads[3]["event_name"], "job_started");

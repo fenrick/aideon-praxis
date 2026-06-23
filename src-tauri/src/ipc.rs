@@ -37,15 +37,69 @@ impl HostError {
     }
 
     pub fn invalid_input(message: impl Into<String>) -> Self {
-        Self::new("invalid_input", message)
+        Self::new("INVALID_INPUT", message)
     }
 
     pub fn invalid_time(message: impl Into<String>) -> Self {
-        Self::new("invalid_time", message)
+        Self::new("INVALID_TIME", message)
     }
 
     pub fn internal(message: impl Into<String>) -> Self {
-        Self::new("internal_error", message)
+        Self::new("INTERNAL_ERROR", message)
+    }
+}
+
+/// RFC-9457 problem category ([error-envelope]): the renderer reacts to the
+/// category generically rather than hard-coding per-code knowledge ([ADR-0016]).
+#[derive(Debug, Clone, Copy, Serialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum ProblemCategory {
+    Validation,
+    Permission,
+    Conflict,
+    Transient,
+    Internal,
+}
+
+/// RFC-9457 machine-readable recovery hint.
+#[derive(Debug, Clone, Copy, Serialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum ProblemRecovery {
+    Retry,
+    Reconcile,
+    Refresh,
+    None,
+    Report,
+}
+
+/// The one error catalogue ([ADR-0016]): map a stable code to its category,
+/// recovery hint, and a short human-safe title. Unknown codes fall back to
+/// internal/report so a new code is never silently treated as user-actionable.
+fn classify(code: &str) -> (ProblemCategory, ProblemRecovery, &'static str) {
+    use ProblemCategory::{Conflict, Internal, Permission, Transient, Validation};
+    use ProblemRecovery::{None, Reconcile, Refresh, Report, Retry};
+    match code {
+        "INVALID_INPUT" => (Validation, None, "Invalid input"),
+        "INVALID_TIME" => (Validation, None, "Invalid time"),
+        "VALIDATION_FAILED" => (Validation, None, "Validation failed"),
+        "SCENARIO_UNSUPPORTED" => (Validation, None, "Scenario not supported"),
+        "FOREIGN_PARTITION" => (Validation, None, "Operation belongs to another partition"),
+        "WORKSPACE_NOT_OPEN" => (Validation, None, "No workspace is open"),
+        "UNKNOWN_BRANCH" => (Validation, None, "Unknown branch"),
+        "UNKNOWN_COMMIT" => (Validation, None, "Unknown commit"),
+        "WORKSPACE_NOT_FOUND" => (Permission, None, "Workspace not found"),
+        "WORKSPACE_LOCKED" => (Conflict, Refresh, "Workspace is locked"),
+        "IDENTITY_COLLISION" => (Conflict, Reconcile, "Identity collision"),
+        "INTEGRITY_VIOLATION" => (Conflict, Reconcile, "Integrity violation"),
+        "MERGE_CONFLICT" => (Conflict, Reconcile, "Merge conflict"),
+        "CONCURRENCY_CONFLICT" => (Conflict, Retry, "Concurrent modification"),
+        "BACKPRESSURE" => (Transient, Retry, "Work queue is saturated"),
+        "SCHEMA_TOO_NEW" => (Internal, Report, "Schema is too new"),
+        "WORKSPACE_FORMAT_TOO_NEW" => (Internal, Report, "Workspace format is too new"),
+        "UNSUPPORTED_FEATURE" => (Internal, Report, "Unsupported workspace feature"),
+        "WORKSPACE_CORRUPT" => (Internal, Report, "Workspace is corrupt"),
+        "TEMPORAL_INIT_FAILED" => (Internal, Report, "Temporal engine failed to initialise"),
+        _ => (Internal, Report, "Internal error"),
     }
 }
 
@@ -80,19 +134,40 @@ pub struct IpcResponse<T> {
     pub error: Option<IpcError>,
 }
 
+/// The RFC-9457 Problem Detail carried over IPC ([error-envelope], [ADR-0016]).
+/// `HostError` maps to this at the boundary, gaining the category, recovery
+/// hint, and correlation id that let the renderer react generically.
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IpcError {
-    pub code: &'static str,
-    pub message: String,
+    /// Stable, non-dereferenceable problem URI (`aideon:problem/<kebab-code>`).
+    #[serde(rename = "type")]
+    pub type_uri: String,
+    pub code: String,
+    pub title: String,
+    pub detail: String,
+    pub category: ProblemCategory,
+    pub recovery: ProblemRecovery,
+    pub correlation_id: String,
     pub details: Value,
 }
 
-impl From<HostError> for IpcError {
-    fn from(value: HostError) -> Self {
+impl IpcError {
+    /// Map a host error to the wire Problem Detail, joining it to its command's
+    /// correlation id and classifying it from the catalogue.
+    fn from_host(error: HostError, correlation_id: String) -> Self {
+        let (category, recovery, title) = classify(error.code);
         Self {
-            code: value.code,
-            message: value.message,
+            type_uri: format!(
+                "aideon:problem/{}",
+                error.code.to_ascii_lowercase().replace('_', "-")
+            ),
+            code: error.code.to_string(),
+            title: title.to_string(),
+            detail: error.message,
+            category,
+            recovery,
+            correlation_id,
             details: json!({}),
         }
     }
@@ -108,12 +183,15 @@ impl<T> IpcResponse<T> {
         }
     }
 
-    pub fn err(request_id: impl Into<String>, error: impl Into<IpcError>) -> Self {
+    pub fn err(request_id: impl Into<String>, error: HostError) -> Self {
+        let request_id = request_id.into();
         Self {
-            request_id: request_id.into(),
+            request_id: request_id.clone(),
             status: "error",
             result: None,
-            error: Some(error.into()),
+            // The request id is the command's correlation id; the error carries
+            // it too so the renderer error joins to the host log and trace.
+            error: Some(IpcError::from_host(error, request_id)),
         }
     }
 }

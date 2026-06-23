@@ -259,7 +259,7 @@ pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), HostError> {
         job_failed(
             "backend_setup",
             "setup",
-            "temporal_init_failed",
+            "TEMPORAL_INIT_FAILED",
             &error.message,
         );
         return Err(error);

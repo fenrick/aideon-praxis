@@ -160,7 +160,7 @@ const INTERNAL_ERROR_MESSAGE: &str = "An internal error occurred.";
 /// stable code and safe message; internal/unclassified errors keep their code
 /// but get a generic message — the raw detail stays in the logs only.
 fn redact_external(error: HostError) -> HostError {
-    if error.code == "internal_error" {
+    if error.code == "INTERNAL_ERROR" {
         HostError::new(error.code, INTERNAL_ERROR_MESSAGE)
     } else {
         error
@@ -266,9 +266,9 @@ mod telemetry_tests {
 
         assert_eq!(response.status, "error");
         let error = response.error.expect("error payload");
-        assert_eq!(error.code, "invalid_time");
+        assert_eq!(error.code, "INVALID_TIME");
         // Known, user-actionable error: message preserved, never redacted.
-        assert_eq!(error.message, "as_of is in the future");
+        assert_eq!(error.detail, "as_of is in the future");
     }
 
     #[tokio::test]
@@ -288,20 +288,20 @@ mod telemetry_tests {
 
         assert_eq!(response.status, "error");
         let error = response.error.expect("error payload");
-        assert_eq!(error.code, "internal_error");
+        assert_eq!(error.code, "INTERNAL_ERROR");
         // Raw internal detail must not reach the renderer.
         assert!(
-            !error.message.contains("/Users/secret"),
+            !error.detail.contains("/Users/secret"),
             "leaked path: {}",
-            error.message
+            error.detail
         );
         assert!(
-            !error.message.contains("sqlite"),
+            !error.detail.contains("sqlite"),
             "leaked detail: {}",
-            error.message
+            error.detail
         );
         // A stable, safe, generic message instead.
-        assert_eq!(error.message, "An internal error occurred.");
+        assert_eq!(error.detail, "An internal error occurred.");
     }
 
     #[tokio::test]
@@ -324,7 +324,7 @@ mod telemetry_tests {
 
         assert_eq!(response.status, "error");
         let error = response.error.expect("error payload");
-        assert_eq!(error.code, "invalid_input");
+        assert_eq!(error.code, "INVALID_INPUT");
     }
 
     #[tokio::test]
@@ -342,7 +342,7 @@ mod telemetry_tests {
         .await
         .unwrap_err();
 
-        assert_eq!(err.code, "internal_error");
+        assert_eq!(err.code, "INTERNAL_ERROR");
     }
 
     #[test]
@@ -391,7 +391,7 @@ mod telemetry_tests {
         assert_eq!(payloads[1]["event_name"], "command_completed");
         assert!(payloads[1]["duration_ms"].is_number());
         assert_eq!(payloads[2]["event_name"], "command_failed");
-        assert_eq!(payloads[2]["error.kind"], "internal_error");
+        assert_eq!(payloads[2]["error.kind"], "INTERNAL_ERROR");
         assert_eq!(payloads[2]["error.message"], "failing to migrate");
 
         assert_eq!(payloads[3]["event_name"], "job_started");
