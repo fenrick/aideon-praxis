@@ -18,6 +18,7 @@ mod temporal;
 mod windows;
 mod worker;
 mod workspace;
+mod workspace_lifecycle;
 
 pub use aideon_praxis::praxis::temporal::{DiffArgs, DiffSummary, StateAtArgs, StateAtResult};
 pub use ipc::{HostError, IpcRequest, IpcResponse};

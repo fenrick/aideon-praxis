@@ -35,6 +35,7 @@ pub fn run() {
                 .build(),
         )
         .manage(Mutex::new(SetupState::new()))
+        .manage(crate::workspace_lifecycle::WorkspaceManager::default())
         .setup(|app| {
             build_menu(app)?;
 
@@ -136,6 +137,10 @@ pub fn run() {
             crate::workspace::workspace_projects_list,
             crate::workspace::workspace_templates_list,
             crate::workspace::workspace_templates_save,
+            crate::workspace_lifecycle::workspace_create,
+            crate::workspace_lifecycle::workspace_open,
+            crate::workspace_lifecycle::workspace_status,
+            crate::workspace_lifecycle::workspace_close,
             crate::setup::system_setup_state,
             crate::telemetry::system_logging_context,
             crate::telemetry::system_metrics_snapshot,

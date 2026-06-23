@@ -60,6 +60,7 @@ version = "0.2.0"
 dependencies = [
  "aideon_chrona",
  "aideon_continuum",
+ "aideon_engine",
  "aideon_praxis",
  "dirs",
  "log",
