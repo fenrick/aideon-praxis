@@ -19,7 +19,6 @@ async fn main() -> Result<()> {
         Command::MigrateState(args) => migrate_state(args).await,
         Command::ImportDataset(args) => import_dataset(args).await,
         Command::Health(args) => check_health(args).await,
-        Command::IpcManifest(args) => export_ipc_manifest(args).await,
         Command::EventManifest(args) => export_event_manifest(args).await,
         Command::ShellCommandManifest(args) => export_shell_command_manifest(args).await,
         Command::CheckCrateBoundaries => check_crate_boundaries(),
@@ -45,8 +44,6 @@ enum Command {
     ImportDataset(ImportDatasetArgs),
     /// Validate datastore integrity by scanning commits, heads, and snapshots.
     Health(HealthArgs),
-    /// Generate a manifest of host IPC command names (for contract tests).
-    IpcManifest(IpcManifestArgs),
     /// Generate a manifest of host→renderer event names (for contract tests).
     EventManifest(EventManifestArgs),
     /// Generate a manifest of host shell command ids (for contract tests).
@@ -98,13 +95,6 @@ struct HealthArgs {
 }
 
 #[derive(Parser)]
-struct IpcManifestArgs {
-    /// Path to write the manifest JSON to (relative to repo root by default).
-    #[arg(long, default_value = "docs/contracts/ipc-manifest.json")]
-    out: PathBuf,
-}
-
-#[derive(Parser)]
 struct EventManifestArgs {
     /// Path to write the manifest JSON to (relative to repo root by default).
     #[arg(long, default_value = "docs/contracts/event-manifest.json")]
@@ -116,13 +106,6 @@ struct ShellCommandManifestArgs {
     /// Path to write the manifest JSON to (relative to repo root by default).
     #[arg(long, default_value = "docs/contracts/shell-command-manifest.json")]
     out: PathBuf,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-struct IpcManifest {
-    schema_version: u32,
-    commands: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -158,112 +141,6 @@ fn repo_root() -> PathBuf {
         .parent()
         .expect("repo root")
         .to_path_buf()
-}
-
-fn collect_rs_files(dir: &PathBuf, out: &mut Vec<PathBuf>) -> Result<()> {
-    for entry in fs::read_dir(dir).with_context(|| format!("read_dir {}", dir.display()))? {
-        let entry = entry?;
-        let path = entry.path();
-        let metadata = entry.metadata()?;
-        if metadata.is_dir() {
-            collect_rs_files(&path, out)?;
-            continue;
-        }
-        if metadata.is_file() && path.extension().is_some_and(|ext| ext == "rs") {
-            out.push(path);
-        }
-    }
-    Ok(())
-}
-
-fn extract_tauri_commands(source: &str) -> Vec<String> {
-    let mut found = Vec::new();
-    let mut pending_command_attr = false;
-    let mut in_attr = false;
-    let mut attr_buffer = String::new();
-
-    for line in source.lines() {
-        let trimmed = line.trim();
-
-        if in_attr {
-            attr_buffer.push_str(trimmed);
-            if trimmed.contains(']') {
-                in_attr = false;
-                pending_command_attr = attr_buffer.contains("#[tauri::command");
-                attr_buffer.clear();
-            }
-            continue;
-        }
-
-        if trimmed.contains("#[tauri::command") {
-            if trimmed.contains(']') {
-                pending_command_attr = true;
-            } else {
-                in_attr = true;
-                attr_buffer.push_str(trimmed);
-            }
-            continue;
-        }
-
-        if pending_command_attr
-            && let Some(name) = trimmed
-                .split_whitespace()
-                .skip_while(|segment| *segment != "fn")
-                .nth(1)
-        {
-            let name = name.trim_start_matches(|c: char| !c.is_alphabetic() && c != '_');
-            let name = name
-                .chars()
-                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
-                .collect::<String>();
-            if !name.is_empty() {
-                found.push(name);
-                pending_command_attr = false;
-            }
-        }
-    }
-
-    found
-}
-
-fn build_ipc_manifest() -> Result<IpcManifest> {
-    let mut files = Vec::new();
-    let desktop_src = repo_root().join("src-tauri/src");
-    collect_rs_files(&desktop_src, &mut files)?;
-
-    let mut commands = std::collections::BTreeSet::<String>::new();
-    for path in files {
-        let contents =
-            fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
-        for command in extract_tauri_commands(&contents) {
-            if is_contract_command(&command) {
-                commands.insert(command);
-            }
-        }
-    }
-
-    Ok(IpcManifest {
-        schema_version: 2,
-        commands: commands.into_iter().collect(),
-    })
-}
-
-async fn export_ipc_manifest(args: IpcManifestArgs) -> Result<()> {
-    let repo = repo_root();
-    let out = if args.out.is_absolute() {
-        args.out
-    } else {
-        repo.join(args.out)
-    };
-    if let Some(parent) = out.parent() {
-        fs::create_dir_all(parent)
-            .with_context(|| format!("create_dir_all {}", parent.display()))?;
-    }
-    let manifest = build_ipc_manifest()?;
-    let json = serde_json::to_string_pretty(&manifest)?;
-    fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
-    println!("Wrote IPC manifest to {}", out.display());
-    Ok(())
 }
 
 fn extract_event_names_from_contracts_rs(source: &str) -> Vec<String> {
@@ -430,28 +307,6 @@ async fn export_shell_command_manifest(args: ShellCommandManifestArgs) -> Result
     Ok(())
 }
 
-fn is_contract_command(command: &str) -> bool {
-    const PREFIXES: [&str; 16] = [
-        "chrona_temporal_",
-        "mneme_store_",
-        "praxis_artefact_",
-        "praxis_canvas_",
-        "praxis_graph_layout_",
-        "praxis_metamodel_",
-        "praxis_scenario_",
-        "praxis_task_",
-        "system_setup_",
-        "system_window_",
-        "system_factory_",
-        "system_worker_",
-        "system_logging_",
-        "system_metrics_",
-        "workspace_projects_",
-        "workspace_templates_",
-    ];
-    PREFIXES.iter().any(|prefix| command.starts_with(prefix))
-}
-
 async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
     let raw = fs::read_to_string(&args.input)
         .with_context(|| format!("failed to read {}", args.input.display()))?;
@@ -577,23 +432,9 @@ mod tests {
         }
     }
 
-    #[test]
-    fn ipc_manifest_is_deterministic_and_checked_in() {
-        let repo = repo_root();
-        let manifest = build_ipc_manifest().expect("build manifest");
-        let path = repo.join("docs/contracts/ipc-manifest.json");
-        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
-            panic!(
-                "missing {}; run `cargo run -p aideon_xtask -- ipc-manifest` to generate it",
-                path.display()
-            )
-        });
-        let on_disk: IpcManifest = serde_json::from_str(&raw).expect("parse ipc-manifest.json");
-        assert_eq!(
-            on_disk, manifest,
-            "ipc-manifest.json drifted; rerun `cargo run -p aideon_xtask -- ipc-manifest`"
-        );
-    }
+    // ipc-manifest.json is now generated from the Rust commands by the host
+    // bindings test (ADR-0039); xtask no longer owns it, so there is no xtask
+    // drift check for it here.
 
     #[test]
     fn event_manifest_is_deterministic_and_checked_in() {
@@ -630,45 +471,6 @@ mod tests {
             on_disk, manifest,
             "shell-command-manifest.json drifted; rerun `cargo run -p aideon_xtask -- shell-command-manifest`"
         );
-    }
-
-    #[test]
-    fn extract_tauri_commands_handles_single_and_multiline_attributes() {
-        let source = r#"
-            #[tauri::command]
-            pub async fn demo() {}
-
-            #[tauri::command(
-              async,
-            )]
-            pub async fn demo2() {}
-
-            #[tauri::command]
-            pub async fn no_rename() {}
-        "#;
-        let mut commands = extract_tauri_commands(source);
-        commands.sort();
-        assert_eq!(
-            commands,
-            vec![
-                "demo".to_string(),
-                "demo2".to_string(),
-                "no_rename".to_string()
-            ]
-        );
-    }
-
-    #[tokio::test]
-    async fn export_ipc_manifest_writes_json_file() {
-        let dir = tempdir().expect("tempdir");
-        let out = dir.path().join("ipc-manifest.json");
-        export_ipc_manifest(IpcManifestArgs { out: out.clone() })
-            .await
-            .expect("export manifest");
-        let raw = fs::read_to_string(&out).expect("read manifest");
-        let manifest: IpcManifest = serde_json::from_str(&raw).expect("parse manifest");
-        assert_eq!(manifest.schema_version, 2);
-        assert!(!manifest.commands.is_empty());
     }
 
     #[tokio::test]

@@ -13,6 +13,7 @@ use crate::worker::WorkerState;
 const DEFAULT_BRANCH: &str = "main";
 
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_artefact_execute_graph(
     state: State<'_, WorkerState>,
     request: IpcRequest<GraphViewDefinition>,
@@ -21,6 +22,7 @@ pub async fn praxis_artefact_execute_graph(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_artefact_execute_catalogue(
     state: State<'_, WorkerState>,
     request: IpcRequest<CatalogueViewDefinition>,
@@ -29,6 +31,7 @@ pub async fn praxis_artefact_execute_catalogue(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_artefact_execute_matrix(
     state: State<'_, WorkerState>,
     request: IpcRequest<MatrixViewDefinition>,
@@ -37,6 +40,7 @@ pub async fn praxis_artefact_execute_matrix(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_artefact_execute_chart(
     state: State<'_, WorkerState>,
     request: IpcRequest<ChartViewDefinition>,
@@ -44,7 +48,7 @@ pub async fn praxis_artefact_execute_chart(
     Ok(praxis_artefact_execute_chart_inner(state.engine(), request).await)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplyOperationsPayload {
     #[serde(default)]
@@ -54,6 +58,7 @@ pub struct ApplyOperationsPayload {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_task_apply_operations(
     state: State<'_, WorkerState>,
     request: IpcRequest<ApplyOperationsPayload>,
@@ -62,6 +67,7 @@ pub async fn praxis_task_apply_operations(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn praxis_scenario_list(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
@@ -371,12 +377,12 @@ fn merge_props(existing: Option<Value>, patch: Option<Value>) -> Option<Value> {
 
 fn praxis_host_error(error: PraxisError) -> HostError {
     let code = match error.code() {
-        aideon_praxis::PraxisErrorCode::UnknownBranch => "unknown_branch",
-        aideon_praxis::PraxisErrorCode::UnknownCommit => "unknown_commit",
-        aideon_praxis::PraxisErrorCode::ConcurrencyConflict => "concurrency_conflict",
-        aideon_praxis::PraxisErrorCode::ValidationFailed => "validation_failed",
-        aideon_praxis::PraxisErrorCode::IntegrityViolation => "integrity_violation",
-        aideon_praxis::PraxisErrorCode::MergeConflict => "merge_conflict",
+        aideon_praxis::PraxisErrorCode::UnknownBranch => "UNKNOWN_BRANCH",
+        aideon_praxis::PraxisErrorCode::UnknownCommit => "UNKNOWN_COMMIT",
+        aideon_praxis::PraxisErrorCode::ConcurrencyConflict => "CONCURRENCY_CONFLICT",
+        aideon_praxis::PraxisErrorCode::ValidationFailed => "VALIDATION_FAILED",
+        aideon_praxis::PraxisErrorCode::IntegrityViolation => "INTEGRITY_VIOLATION",
+        aideon_praxis::PraxisErrorCode::MergeConflict => "MERGE_CONFLICT",
     };
     HostError::new(code, error.to_string())
 }

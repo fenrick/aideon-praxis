@@ -1,10 +1,12 @@
 //! Aideon Tauri host entrypoint and IPC commands.
 
 mod app;
+mod bindings;
 mod commands;
 mod contracts;
 mod health;
 mod ipc;
+mod jobs;
 mod logging;
 mod menu;
 mod metrics;
@@ -18,6 +20,7 @@ mod temporal;
 mod windows;
 mod worker;
 mod workspace;
+mod workspace_lifecycle;
 
 pub use aideon_praxis::praxis::temporal::{DiffArgs, DiffSummary, StateAtArgs, StateAtResult};
 pub use ipc::{HostError, IpcRequest, IpcResponse};

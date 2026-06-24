@@ -84,8 +84,10 @@ async function invokeEnvelopeCommand(command, payload) {
     throw new Error(result.error || `IPC command ${command} failed`);
   }
   if (result.response?.status && result.response.status !== 'ok') {
+    // RFC-9457 Problem Detail: the human explanation is `detail` (ADR-0016).
+    const problem = result.response?.error;
     throw new Error(
-      `IPC command ${command} failed: ${result.response?.error?.message ?? 'unknown error'}`,
+      `IPC command ${command} failed: ${problem?.detail ?? problem?.message ?? 'unknown error'}`,
     );
   }
   return result.response?.result;

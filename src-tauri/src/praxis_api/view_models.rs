@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphViewModel {
     pub metadata: ViewMetadata,
@@ -120,7 +120,7 @@ impl GraphViewModel {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogueColumn {
     pub id: String,
@@ -128,7 +128,7 @@ pub struct CatalogueColumn {
     pub r#type: CatalogueColumnType,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum CatalogueColumnType {
     String,
@@ -136,14 +136,14 @@ pub enum CatalogueColumnType {
     Boolean,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogueRow {
     pub id: String,
     pub values: Map<String, Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogueViewModel {
     pub metadata: ViewMetadata,
@@ -235,21 +235,21 @@ impl CatalogueViewModel {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct MatrixAxis {
     pub id: String,
     pub label: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum MatrixCellState {
     Connected,
     Missing,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct MatrixCell {
     pub row_id: String,
@@ -261,7 +261,7 @@ pub struct MatrixCell {
     pub value: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct MatrixViewModel {
     pub metadata: ViewMetadata,
@@ -271,7 +271,7 @@ pub struct MatrixViewModel {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartPoint {
     pub label: String,
@@ -281,7 +281,7 @@ pub struct ChartPoint {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartSeries {
     pub id: String,
@@ -292,7 +292,7 @@ pub struct ChartSeries {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartKpiSummary {
     pub value: f64,
@@ -305,7 +305,7 @@ pub struct ChartKpiSummary {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartViewModel {
     pub metadata: ViewMetadata,
@@ -598,10 +598,16 @@ fn edge_strength(edge: &EdgeVersion) -> Option<f32> {
     if let Some(value) = props.get("strength") {
         return value.as_f64().map(|v| v as f32);
     }
-    props.get("confidence").and_then(|value| value.as_f64()).map(|v| v as f32)
+    props
+        .get("confidence")
+        .and_then(|value| value.as_f64())
+        .map(|v| v as f32)
 }
 
 fn edge_value(edge: &EdgeVersion) -> Option<String> {
     let props = props_map(&edge.props)?;
-    props.get("value").and_then(|value| value.as_str()).map(|value| value.to_string())
+    props
+        .get("value")
+        .and_then(|value| value.as_str())
+        .map(|value| value.to_string())
 }

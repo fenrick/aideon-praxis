@@ -1,0 +1,22 @@
+# Mutating + accepted-work command surface — granted ONLY to the workspace-
+# bearing `main` window ([capabilities-and-csp] per-window scoping, #318). A
+# child window opened from `main` does not inherit these; it gets its own
+# explicit capability. Every entry carries an idempotency posture
+# ([mvp-command-registry]); the rebuild trigger runs as accepted work.
+[[permission]]
+identifier = "appcommands-mutating"
+description = "Mutating + accepted-work Aideon Desktop IPC commands (main window only)."
+commands.allow = [
+  "chrona_temporal_commit_changes",
+  "chrona_temporal_create_branch",
+  "chrona_temporal_merge_branches",
+  "praxis_canvas_save_layout",
+  "praxis_graph_layout_save",
+  "praxis_task_apply_operations",
+  "system_setup_complete",
+  "workspace_close",
+  "workspace_create",
+  "workspace_open",
+  "workspace_rebuild",
+  "workspace_templates_save",
+]

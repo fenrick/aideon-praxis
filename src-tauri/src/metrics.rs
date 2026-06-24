@@ -1,18 +1,19 @@
 use once_cell::sync::Lazy;
 use serde::Serialize;
+use specta::Type;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
 
 #[allow(dead_code)]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Type)]
 pub struct DurationSummary {
     pub count: u64,
     pub total_ms: u64,
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Type)]
 pub struct MetricsSnapshot {
     pub command_failures: HashMap<String, u64>,
     pub job_failures: HashMap<String, u64>,

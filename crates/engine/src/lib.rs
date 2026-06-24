@@ -8,6 +8,7 @@
 #![forbid(unsafe_code)]
 
 use serde::Serialize;
+use specta::Type;
 
 pub use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 pub use mneme_core::{Id, Value};
@@ -17,7 +18,7 @@ pub use mneme_store::{FoundationProjectionSnapshot, Manifest, Workspace};
 use std::path::Path;
 
 /// A host-facing summary of an open workspace's foundation state.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceStatus {
     /// The portable container identity.
@@ -50,6 +51,25 @@ impl Engine {
         Ok(Self {
             workspace: Workspace::open(root)?,
         })
+    }
+
+    /// Delete the derived runtime and rebuild it from canonical material.
+    ///
+    /// Releases the writer lock, wipes `.aideon/runtime/`, then reopens — which
+    /// replays the canonical op log into a fresh projection. The rebuilt engine
+    /// reports the same [`WorkspaceStatus::foundation_rebuild_hash`] when the
+    /// canonical material is unchanged ([ADR-0027]); this is the host's
+    /// foundation rebuild path, run as accepted work.
+    pub fn rebuild(self) -> Result<Self> {
+        let runtime_dir = self.workspace.paths().runtime_dir();
+        let root = self.workspace.paths().root().to_path_buf();
+        // Drop the open workspace first so the writer lock is released and the
+        // SQLite connection is closed before the runtime directory is removed.
+        drop(self.workspace);
+        if runtime_dir.exists() {
+            std::fs::remove_dir_all(&runtime_dir).map_err(StoreError::Io)?;
+        }
+        Self::open(root)
     }
 
     /// Author one operation through the canonical write path.
@@ -122,5 +142,34 @@ mod tests {
         // Reopen through the seam and confirm the state survives.
         let reopened = Engine::open(dir.path()).unwrap();
         assert_eq!(reopened.status().unwrap().applied_op_count, 1);
+    }
+
+    #[test]
+    fn rebuild_wipes_runtime_and_preserves_the_foundation_hash() {
+        let dir = TempDir::new().unwrap();
+        let actor = Id::new_v4();
+        let mut engine = Engine::create(dir.path(), Some(actor)).unwrap();
+        engine
+            .author(
+                actor,
+                Origin::manual(),
+                OpPayload::ActorDeclare(ActorDeclare {
+                    declared_actor_id: actor,
+                    actor_kind: ActorKind::Person,
+                    display_name: "Architect".into(),
+                }),
+            )
+            .unwrap();
+        let before = engine.status().unwrap();
+
+        // Rebuild deletes the derived runtime and replays canonical material.
+        let rebuilt = engine.rebuild().unwrap();
+        let after = rebuilt.status().unwrap();
+
+        assert_eq!(after.applied_op_count, before.applied_op_count);
+        assert_eq!(
+            after.foundation_rebuild_hash, before.foundation_rebuild_hash,
+            "rebuild yields a logically equivalent foundation"
+        );
     }
 }

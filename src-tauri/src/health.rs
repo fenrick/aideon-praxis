@@ -22,6 +22,7 @@ pub async fn worker_health(state: State<'_, WorkerState>) -> Result<WorkerHealth
 
 /// Namespaced + requestId-wrapped worker health command.
 #[tauri::command]
+#[specta::specta]
 pub async fn system_worker_health(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,

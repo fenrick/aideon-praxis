@@ -6,9 +6,15 @@ export interface IpcRequest<Payload> {
   readonly payload: Payload;
 }
 
+/** RFC-9457 Problem Detail carried over IPC (ADR-0016, error-envelope.md). */
 export interface IpcError {
+  readonly type: string;
   readonly code: string;
-  readonly message: string;
+  readonly title: string;
+  readonly detail: string;
+  readonly category: 'validation' | 'permission' | 'conflict' | 'transient' | 'internal';
+  readonly recovery: 'retry' | 'reconcile' | 'refresh' | 'none' | 'report';
+  readonly correlationId: string;
   readonly details: unknown;
 }
 
@@ -211,9 +217,10 @@ function resolveResultFromRecord(
   }
 
   const error = record.error as Partial<IpcError> | undefined;
-  const code = typeof error?.code === 'string' ? error.code : 'unknown_error';
+  const code = typeof error?.code === 'string' ? error.code : 'UNKNOWN_ERROR';
+  // RFC-9457 Problem Detail: the human explanation is `detail`.
   const message =
-    typeof error?.message === 'string' ? error.message : 'Host reported an unknown error.';
+    typeof error?.detail === 'string' ? error.detail : 'Host reported an unknown error.';
   const details = error?.details ?? {};
   emitLog(shouldLog, {
     severity: 'error',

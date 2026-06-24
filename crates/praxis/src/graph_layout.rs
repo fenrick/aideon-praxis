@@ -1,8 +1,9 @@
 //! Graph layout DTOs used for persisting renderer geometry.
 
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphLayoutNode {
     pub id: String,
@@ -10,7 +11,7 @@ pub struct GraphLayoutNode {
     pub y: f64,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphLayoutSaveRequest {
     pub doc_id: String,
@@ -24,7 +25,7 @@ pub struct GraphLayoutSaveRequest {
     pub nodes: Vec<GraphLayoutNode>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphLayoutGetRequest {
     pub doc_id: String,

@@ -1,9 +1,10 @@
 //! Canonical meta-model document types for Praxis.
 
 use serde::{Deserialize, Serialize};
+use specta::Type;
 use std::collections::HashMap;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct MetaModelDocument {
     pub version: String,
     pub description: Option<String>,
@@ -12,7 +13,7 @@ pub struct MetaModelDocument {
     pub validation: Option<MetaValidationRules>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct MetaType {
     pub id: String,
     #[serde(default)]
@@ -26,7 +27,7 @@ pub struct MetaType {
     pub effect_types: Option<Vec<String>>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Type)]
 pub struct MetaAttribute {
     pub name: String,
     #[serde(default)]
@@ -39,7 +40,7 @@ pub struct MetaAttribute {
     pub enum_values: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum MetaAttributeKind {
     String,
@@ -51,7 +52,7 @@ pub enum MetaAttributeKind {
     Blob,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct MetaRelationship {
     pub id: String,
     #[serde(default)]
@@ -65,19 +66,19 @@ pub struct MetaRelationship {
     pub attributes: Vec<MetaAttribute>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct MetaMultiplicity {
     pub from: String,
     pub to: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct MetaValidationRules {
     pub attributes: Option<MetaAttributeRules>,
     pub relationships: Option<HashMap<String, MetaRelationshipValidation>>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct MetaAttributeRules {
     pub string: Option<MetaStringRule>,
     pub text: Option<MetaStringRule>,
@@ -85,19 +86,19 @@ pub struct MetaAttributeRules {
     pub enum_rule: Option<MetaEnumRule>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct MetaStringRule {
     #[serde(rename = "maxLength")]
     pub max_length: Option<usize>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct MetaEnumRule {
     #[serde(rename = "caseSensitive")]
     pub case_sensitive: Option<bool>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct MetaRelationshipValidation {
     #[serde(rename = "allowSelf")]
     pub allow_self: Option<bool>,

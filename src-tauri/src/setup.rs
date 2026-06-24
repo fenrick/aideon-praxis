@@ -6,6 +6,7 @@ use log::{error, info, warn};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::json;
+use specta::Type;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State, Wry};
 
 use crate::contracts::{
@@ -127,7 +128,7 @@ fn close_delay(state: &SetupState) -> Duration {
     MIN_SPLASH.checked_sub(elapsed).unwrap_or_default()
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Type)]
 pub struct SetupFlags {
     frontend: bool,
     backend: bool,
@@ -162,6 +163,7 @@ pub fn emit_setup_seed_summary<R: Runtime>(app: &AppHandle<R>, summary: &SetupSe
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_complete<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, Mutex<SetupState>>,
@@ -237,6 +239,7 @@ pub async fn set_complete<R: Runtime>(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_setup_state(state: State<'_, Mutex<SetupState>>) -> Result<SetupFlags, HostError> {
     let state = state.lock().unwrap();
     Ok(SetupFlags {
@@ -256,7 +259,7 @@ pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), HostError> {
         job_failed(
             "backend_setup",
             "setup",
-            "temporal_init_failed",
+            "TEMPORAL_INIT_FAILED",
             &error.message,
         );
         return Err(error);
@@ -284,15 +287,28 @@ pub async fn run_backend_setup(app: AppHandle<Wry>) -> Result<(), HostError> {
     Ok(())
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SetupCompletePayload {
     pub task: String,
 }
 
 /// Namespaced + requestId-wrapped setup completion signal.
+///
+/// The registered command is concrete over `tauri::Wry` (the codegen seam
+/// cannot collect a runtime-generic command); the generic `_inner` keeps the
+/// behaviour testable under `MockRuntime`.
 #[tauri::command]
-pub async fn system_setup_complete<R: Runtime>(
+#[specta::specta]
+pub async fn system_setup_complete(
+    app: AppHandle,
+    state: State<'_, Mutex<SetupState>>,
+    request: IpcRequest<SetupCompletePayload>,
+) -> Result<IpcResponse<()>, HostError> {
+    system_setup_complete_inner(app, state, request).await
+}
+
+pub(crate) async fn system_setup_complete_inner<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, Mutex<SetupState>>,
     request: IpcRequest<SetupCompletePayload>,
@@ -312,7 +328,7 @@ pub async fn system_setup_complete<R: Runtime>(
 #[allow(dead_code)]
 const FACTORY_RESET_CONFIRMATION: &str = "CONFIRM-FACTORY-RESET";
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)]
 pub struct FactoryResetPayload {
@@ -337,6 +353,7 @@ async fn perform_factory_reset<R: Runtime>(
 
 /// Namespaced + requestId-wrapped factory reset command.
 #[tauri::command]
+#[specta::specta]
 #[allow(dead_code)]
 pub async fn system_factory_reset<R: Runtime>(
     app: AppHandle<R>,
@@ -351,6 +368,7 @@ pub async fn system_factory_reset<R: Runtime>(
 
 /// Namespaced + requestId-wrapped setup state query.
 #[tauri::command]
+#[specta::specta]
 pub async fn system_setup_state(
     state: State<'_, Mutex<SetupState>>,
     request: IpcRequest<EmptyPayload>,

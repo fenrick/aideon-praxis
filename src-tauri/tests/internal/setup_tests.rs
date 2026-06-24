@@ -26,7 +26,7 @@ async fn splash_is_only_closed_after_both_tasks_complete() {
     let app = tauri::test::mock_app();
     app.manage(std::sync::Mutex::new(SetupState::new()));
 
-    let response = system_setup_complete(
+    let response = system_setup_complete_inner(
         app.handle().clone(),
         app.state::<std::sync::Mutex<SetupState>>(),
         crate::ipc::IpcRequest {
@@ -49,7 +49,7 @@ async fn splash_is_only_closed_after_both_tasks_complete() {
         );
     }
 
-    let response = system_setup_complete(
+    let response = system_setup_complete_inner(
         app.handle().clone(),
         app.state::<std::sync::Mutex<SetupState>>(),
         crate::ipc::IpcRequest {
@@ -115,7 +115,7 @@ async fn system_setup_complete_marks_tasks() {
     let app = tauri::test::mock_app();
     app.manage(std::sync::Mutex::new(SetupState::new()));
 
-    let response = system_setup_complete(
+    let response = system_setup_complete_inner(
         app.handle().clone(),
         app.state::<std::sync::Mutex<SetupState>>(),
         crate::ipc::IpcRequest {
@@ -129,7 +129,7 @@ async fn system_setup_complete_marks_tasks() {
     .expect("frontend complete");
     assert_eq!(response.status, "ok");
 
-    let response = system_setup_complete(
+    let response = system_setup_complete_inner(
         app.handle().clone(),
         app.state::<std::sync::Mutex<SetupState>>(),
         crate::ipc::IpcRequest {

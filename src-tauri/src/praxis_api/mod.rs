@@ -4,6 +4,7 @@ use aideon_praxis::GraphSnapshot;
 use aideon_praxis::temporal::{EdgeVersion, NodeVersion};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use specta::Type;
 use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 
 include!("commands.rs");

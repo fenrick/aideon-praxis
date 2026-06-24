@@ -23,6 +23,11 @@ static SESSION_MARKER_PATH: OnceCell<PathBuf> = OnceCell::new();
 
 pub fn run() {
     let log_level = log_level();
+    // The typed IPC surface is generated from the Rust commands (ADR-0039):
+    // this builder both registers the handlers and is the source the TypeScript
+    // client is generated from, so the registered set and the generated set
+    // cannot drift.
+    let ipc = crate::bindings::ipc_builder();
     tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()
@@ -35,6 +40,7 @@ pub fn run() {
                 .build(),
         )
         .manage(Mutex::new(SetupState::new()))
+        .manage(crate::workspace_lifecycle::WorkspaceManager::default())
         .setup(|app| {
             build_menu(app)?;
 
@@ -109,37 +115,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![
-            crate::setup::system_setup_complete,
-            crate::health::system_worker_health,
-            crate::temporal::chrona_temporal_state_at,
-            crate::temporal::chrona_temporal_diff,
-            crate::temporal::chrona_temporal_commit_changes,
-            crate::temporal::chrona_temporal_list_commits,
-            crate::temporal::chrona_temporal_create_branch,
-            crate::temporal::chrona_temporal_list_branches,
-            crate::temporal::chrona_temporal_merge_branches,
-            crate::temporal::chrona_temporal_topology_delta,
-            crate::temporal::praxis_metamodel_get,
-            crate::scene::praxis_canvas_get_scene,
-            crate::scene::praxis_canvas_get_layout,
-            crate::scene::praxis_canvas_save_layout,
-            crate::scene::praxis_graph_layout_get,
-            crate::scene::praxis_graph_layout_save,
-            crate::praxis_api::praxis_artefact_execute_graph,
-            crate::praxis_api::praxis_artefact_execute_catalogue,
-            crate::praxis_api::praxis_artefact_execute_matrix,
-            crate::praxis_api::praxis_artefact_execute_chart,
-            crate::praxis_api::praxis_task_apply_operations,
-            crate::praxis_api::praxis_scenario_list,
-            crate::windows::system_window_open,
-            crate::workspace::workspace_projects_list,
-            crate::workspace::workspace_templates_list,
-            crate::workspace::workspace_templates_save,
-            crate::setup::system_setup_state,
-            crate::telemetry::system_logging_context,
-            crate::telemetry::system_metrics_snapshot,
-        ])
+        .invoke_handler(ipc.invoke_handler())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 

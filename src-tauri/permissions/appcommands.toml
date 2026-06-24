@@ -1,13 +1,16 @@
+# Read surface — granted to every window (least-privilege per window is refined
+# further in the capabilities, but reads never mutate the twin). Mutating and
+# accepted-work commands live in `appcommands-mutating` and are granted to the
+# workspace-bearing `main` window only ([capabilities-and-csp], #318). The
+# `appcommands_permission_matches_generated_surface` test enforces that read ∪
+# mutating equals the generated command surface, with no overlap.
 [[permission]]
 identifier = "appcommands"
-description = "Allow Aideon Desktop application IPC commands."
+description = "Read-only Aideon Desktop IPC commands (granted to all windows)."
 commands.allow = [
-  "chrona_temporal_commit_changes",
-  "chrona_temporal_create_branch",
   "chrona_temporal_diff",
   "chrona_temporal_list_branches",
   "chrona_temporal_list_commits",
-  "chrona_temporal_merge_branches",
   "chrona_temporal_state_at",
   "chrona_temporal_topology_delta",
   "praxis_artefact_execute_catalogue",
@@ -16,20 +19,15 @@ commands.allow = [
   "praxis_artefact_execute_matrix",
   "praxis_canvas_get_layout",
   "praxis_canvas_get_scene",
-  "praxis_canvas_save_layout",
   "praxis_graph_layout_get",
-  "praxis_graph_layout_save",
   "praxis_metamodel_get",
   "praxis_scenario_list",
-  "praxis_task_apply_operations",
-  "system_setup_complete",
-  "system_setup_state",
   "system_logging_context",
   "system_metrics_snapshot",
-  "system_factory_reset",
+  "system_setup_state",
   "system_window_open",
   "system_worker_health",
   "workspace_projects_list",
+  "workspace_status",
   "workspace_templates_list",
-  "workspace_templates_save",
 ]

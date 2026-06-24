@@ -12,6 +12,7 @@ name = "aideon_engine"
 aideon_mneme_core = { path = "../mneme_core" }
 aideon_mneme_store = { path = "../mneme_store" }
 serde = { version = "1.0.228", features = ["derive"] }
+specta = { version = "=2.0.0-rc.22", features = ["derive"] }
 
 [dev-dependencies]
 tempfile = "3.27"

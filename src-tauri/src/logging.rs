@@ -1,5 +1,6 @@
 use once_cell::sync::OnceCell;
 use serde_json::{Map, Value, json};
+use specta::Type;
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 
@@ -141,7 +142,7 @@ fn severity_text(severity: u8) -> &'static str {
     }
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Type)]
 pub struct LoggingContextDto {
     pub session_id: String,
     pub build_version: String,

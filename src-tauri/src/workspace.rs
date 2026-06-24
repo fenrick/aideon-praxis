@@ -6,6 +6,7 @@
 use aideon_continuum::{FileSnapshotStore, SnapshotStore};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use specta::Type;
 use tauri::State;
 
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse, is_missing_snapshot_error};
@@ -13,7 +14,7 @@ use crate::praxis_api::ScenarioSummary;
 use crate::telemetry::respond_with_request;
 use crate::worker::WorkerState;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectPayload {
     pub id: String,
@@ -26,6 +27,7 @@ pub struct ProjectPayload {
 /// M0 scaffolding: returns a single default project with scenarios sourced from the temporal
 /// engine branches.
 #[tauri::command]
+#[specta::specta]
 pub async fn list_projects(
     state: State<'_, WorkerState>,
 ) -> Result<Vec<ProjectPayload>, HostError> {
@@ -39,6 +41,7 @@ pub async fn list_projects(
 
 /// Namespaced + requestId-wrapped project list query.
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_projects_list(
     state: State<'_, WorkerState>,
     request: IpcRequest<EmptyPayload>,
@@ -50,7 +53,7 @@ pub async fn workspace_projects_list(
     .await
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct TemplatePayload {
     pub id: String,
@@ -60,7 +63,7 @@ pub struct TemplatePayload {
     pub widgets: Vec<TemplateWidgetPayload>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct TemplateWidgetPayload {
     pub id: String,
@@ -73,6 +76,7 @@ pub struct TemplateWidgetPayload {
 
 /// List canvas templates stored/managed by the host.
 #[tauri::command]
+#[specta::specta]
 pub async fn list_templates() -> Result<Vec<TemplatePayload>, HostError> {
     let templates = load_templates()?;
     if !templates.is_empty() {
@@ -88,6 +92,7 @@ pub async fn list_templates() -> Result<Vec<TemplatePayload>, HostError> {
 
 /// Namespaced + requestId-wrapped template list query.
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_templates_list(
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<Vec<TemplatePayload>>, HostError> {
@@ -101,6 +106,7 @@ pub async fn workspace_templates_list(
 
 /// Persist a template snapshot so the host is the source of truth.
 #[tauri::command]
+#[specta::specta]
 pub async fn save_template(payload: TemplatePayload) -> Result<TemplatePayload, HostError> {
     let trimmed_id = payload.id.trim();
     if trimmed_id.is_empty() {
@@ -124,6 +130,7 @@ pub async fn save_template(payload: TemplatePayload) -> Result<TemplatePayload, 
 
 /// Namespaced + requestId-wrapped template save command.
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_templates_save(
     request: IpcRequest<TemplatePayload>,
 ) -> Result<IpcResponse<TemplatePayload>, HostError> {

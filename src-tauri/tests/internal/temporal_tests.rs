@@ -23,14 +23,14 @@ fn host_error_maps_codes() {
         message: "bad".into(),
     };
     let mapped = host_error(err);
-    assert_eq!(mapped.code, "validation_failed");
+    assert_eq!(mapped.code, "VALIDATION_FAILED");
     assert!(mapped.message.contains("bad"));
 
     let err = PraxisError::IntegrityViolation {
         message: "dup".into(),
     };
     let mapped = host_error(err);
-    assert_eq!(mapped.code, "integrity_violation");
+    assert_eq!(mapped.code, "INTEGRITY_VIOLATION");
 }
 
 #[test]
@@ -40,13 +40,13 @@ fn host_error_covers_all_codes() {
             PraxisError::UnknownBranch {
                 branch: "main".to_string(),
             },
-            "unknown_branch",
+            "UNKNOWN_BRANCH",
         ),
         (
             PraxisError::UnknownCommit {
                 commit: "abc123".to_string(),
             },
-            "unknown_commit",
+            "UNKNOWN_COMMIT",
         ),
         (
             PraxisError::ConcurrencyConflict {
@@ -54,24 +54,20 @@ fn host_error_covers_all_codes() {
                 expected: Some("a1".to_string()),
                 actual: Some("b2".to_string()),
             },
-            "concurrency_conflict",
+            "CONCURRENCY_CONFLICT",
         ),
         (
             PraxisError::MergeConflict {
                 message: "edge".to_string(),
             },
-            "merge_conflict",
+            "MERGE_CONFLICT",
         ),
     ];
 
     for (error, code) in cases {
         let mapped = host_error(error);
         assert_eq!(mapped.code, code);
-        assert!(
-            mapped
-                .message
-                .contains(code.split('_').next().unwrap_or(""))
-        );
+        assert!(!mapped.message.is_empty(), "carries a human detail");
     }
 }
 

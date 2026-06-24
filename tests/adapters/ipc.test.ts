@@ -49,7 +49,8 @@ describe('invokeIpc instrumentation', () => {
       Promise.resolve(
         buildErrorResponse(arguments_, {
           code: 'boom',
-          message: 'failure',
+          // RFC-9457 Problem Detail: the human explanation is `detail`.
+          detail: 'failure',
           details: { source: 'host' },
         }),
       ),

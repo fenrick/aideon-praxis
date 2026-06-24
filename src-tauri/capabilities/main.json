@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-mutating",
+  "description": "Mutating and accepted-work commands, granted only to the workspace-bearing main window (per-window scoping, ADR-0006/ADR-0023).",
+  "windows": ["main"],
+  "permissions": ["appcommands-mutating"]
+}
