@@ -44,6 +44,8 @@
     "preflight": "node tools/preflight.mjs",
     "components:refresh": "pnpm dlx shadcn@latest add --all --overwrite --yes && pnpm dlx shadcn@latest add @reactflow/node-search @reactflow/base-node @reactflow/node-tooltip @reactflow/animated-svg-edge @reactflow/node-status-indicator @reactflow/node-appendix @reactflow/placeholder-node @reactflow/labeled-group-node @reactflow/base-handle @reactflow/labeled-handle @reactflow/button-handle @reactflow/button-edge @reactflow/data-edge @reactflow/zoom-slider @reactflow/zoom-select @reactflow/devtools --overwrite --yes",
     "node:e2e": "node tests/e2e/run.mjs",
+    "tier2:test": "node tests/e2e/run.mjs",
+    "tier2:test:headless": "xvfb-run -a node tests/e2e/run.mjs",
     "webdriver:test": "wdio run tests/webdriver/wdio.conf.js",
     "webdriver:test:headless": "xvfb-run -a wdio run tests/webdriver/wdio.conf.js",
     "commitlint": "commitlint --from=origin/main --to=HEAD",

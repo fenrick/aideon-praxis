@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
-const configPath = path.join(repoRoot, 'crates', 'desktop', 'tauri.conf.json');
 
 const binaryName = process.platform === 'win32' ? 'aideon_desktop.exe' : 'aideon_desktop';
 const candidatePaths = [
@@ -35,7 +34,7 @@ function buildApp() {
   if (process.env.TAURI_E2E_SKIP_BUILD === '1') {
     return;
   }
-  const result = spawnSync('pnpm', ['tauri', 'build', '--debug', '--no-bundle', '-c', configPath], {
+  const result = spawnSync('pnpm', ['tauri', 'build', '--debug', '--no-bundle'], {
     cwd: repoRoot,
     stdio: 'inherit',
   });
