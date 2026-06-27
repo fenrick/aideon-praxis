@@ -17,6 +17,7 @@ export * from './blocks/property-list';
 export * from './blocks/provenance-badge';
 export * from './blocks/provenance-panel';
 export * from './blocks/rebuilding-indicator';
+export * from './blocks/resizable-shell';
 export * from './blocks/sidebar';
 export * from './blocks/stale-badge';
 export * from './blocks/status-badge';
