@@ -293,7 +293,7 @@ fn fresh_op_after_rebuild_sorts_after_all_canonical_history() {
 
     let mut ws = Workspace::open(dir.path()).unwrap();
     // Author a fresh op; its asserted time must exceed every replayed op.
-    let env = ws
+    let frontier = ws
         .author(
             id(ACTOR),
             Origin::manual(),
@@ -310,7 +310,7 @@ fn fresh_op_after_rebuild_sorts_after_all_canonical_history() {
     let snapshot = ws.snapshot().unwrap();
     assert_eq!(snapshot.partitions[0].applied_ops.len(), 10);
     // The minted op's HLC is strictly greater than any other op's.
-    assert!(env.asserted_at.0 > 0);
+    assert!(frontier.hlc_watermark.0 > 0);
 }
 
 #[test]

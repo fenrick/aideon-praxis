@@ -13,7 +13,7 @@ use specta::Type;
 pub use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 pub use mneme_core::{Id, Value};
 pub use mneme_store::error::{Result, StoreError};
-pub use mneme_store::{FoundationProjectionSnapshot, Manifest, Workspace};
+pub use mneme_store::{AppliedFrontier, FoundationProjectionSnapshot, Manifest, Workspace};
 
 use std::path::Path;
 
@@ -78,7 +78,7 @@ impl Engine {
         actor_id: Id,
         origin: Origin,
         payload: OpPayload,
-    ) -> Result<OpEnvelope> {
+    ) -> Result<AppliedFrontier> {
         self.workspace.author(actor_id, origin, payload)
     }
 

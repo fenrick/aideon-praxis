@@ -33,21 +33,45 @@ use crate::rebuild::{self, FoundationProjectionSnapshot};
 use crate::segment::{self, SegmentWriter};
 
 /// One parsed canonical record with its contract digest.
-struct LogRecord {
-    env: OpEnvelope,
-    digest: String,
+pub(crate) struct LogRecord {
+    pub(crate) env: OpEnvelope,
+    pub(crate) digest: String,
 }
 
 /// The open-time rebuild decision ([workspace-integrity-and-recovery],
 /// "The four-case open decision").
 #[derive(Debug, PartialEq, Eq)]
-enum OpenDecision {
+pub(crate) enum OpenDecision {
     /// Runtime absent/unusable/inconsistent — discard and full replay.
     FullRebuild,
     /// Runtime is at the canonical tail — no replay.
     Current,
     /// Runtime is a strict prefix — replay only `(head, tail]`.
     Incremental { from_count: u64 },
+}
+
+/// The frontier advanced to by a single [`Workspace::author`] call.
+///
+/// Exposes both the canonical tail (the durable segment cursor after the
+/// append) and the projection replay head read back from the DB after
+/// the commit, so canonical↔projection frontier agreement can be asserted
+/// at the [`Workspace::author`] seam — not only through the end-to-end
+/// rebuild oracle ([ADR-0027]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppliedFrontier {
+    /// The id of the operation that was authored.
+    pub op_id: Id,
+    /// The canonical tail cursor after this write (segment seqno + byte
+    /// offset + record count + digest).
+    pub canonical_head: ReplayHead,
+    /// The projection replay head read back from the DB after commit.
+    ///
+    /// Invariant ([ADR-0027]): `projection_head == canonical_head`.
+    /// Divergence would mean the transaction did not commit the head
+    /// correctly — this is the test's job to assert.
+    pub projection_head: ReplayHead,
+    /// The HLC minted for this operation (= the operation's `asserted_at`).
+    pub hlc_watermark: Hlc,
 }
 
 /// An open canonical workspace held under the writer lock.
@@ -174,12 +198,16 @@ impl Workspace {
     /// Author a new operation: mint its identity and asserted time, stamp the
     /// payload's authoritative coordinates, append it canonically (the commit),
     /// then apply the projection and advance the replay head in one transaction.
+    ///
+    /// Returns an [`AppliedFrontier`] whose `canonical_head` and
+    /// `projection_head` must agree — the read-back of the projection head from
+    /// the DB is the locality proof of the [ADR-0027] invariant.
     pub fn author(
         &mut self,
         actor_id: Id,
         origin: Origin,
         mut payload: OpPayload,
-    ) -> Result<OpEnvelope> {
+    ) -> Result<AppliedFrontier> {
         let hlc = self.clock.mint()?;
         let op_id = Id::new_v4();
         stamp_payload(&mut payload, self.manifest.partition_id, actor_id, hlc)?;
@@ -198,21 +226,30 @@ impl Workspace {
         if let OpPayload::UpsertMetamodelBatch(batch) = &env.payload {
             materialize_one(&tx, &self.paths, batch)?;
         }
-        let head = ReplayHead {
+        let canonical_head = ReplayHead {
             segment_seqno: self.head.segment_seqno,
             byte_offset: new_len,
             applied_record_count: self.head.applied_record_count + 1,
             last_record_digest: Some(digest),
         };
-        set_replay_head(&tx, partition, &head)?;
+        set_replay_head(&tx, partition, &canonical_head)?;
         set_hlc_watermark(&tx, partition, hlc.0)?;
         tx.commit()?;
-        self.head = head;
+        self.head = canonical_head.clone();
         // Keep the deterministic schema inventory in step after a schema change.
         if matches!(env.payload, OpPayload::UpsertMetamodelBatch(_)) {
             write_schema_index(&self.conn, &self.paths)?;
         }
-        Ok(env)
+        // Read back the projection frontier after commit: the locality proof that
+        // the transaction advanced the replay head to the canonical tail.
+        let projection_head = projection::replay_head(&self.conn, partition)?
+            .expect("replay head must be present immediately after commit");
+        Ok(AppliedFrontier {
+            op_id,
+            canonical_head,
+            projection_head,
+            hlc_watermark: hlc,
+        })
     }
 
     /// The test-only foundation-state snapshot.
@@ -291,7 +328,7 @@ fn payload_scenario_is_set(env: &OpEnvelope) -> bool {
     }
 }
 
-fn decide_open(
+pub(crate) fn decide_open(
     conn: &Connection,
     manifest: &Manifest,
     tail: &ReplayHead,
@@ -513,4 +550,238 @@ fn stamp_payload(payload: &mut OpPayload, partition: Id, actor: Id, hlc: Hlc) ->
         OpPayload::UpsertMetamodelBatch(_) | OpPayload::ActorDeclare(_) => {}
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod seam_tests {
+    use super::*;
+    use mneme_core::ops::{ActorDeclare, ActorKind, OpPayload, Origin};
+    use tempfile::TempDir;
+
+    fn actor_declare_payload(actor: Id) -> OpPayload {
+        OpPayload::ActorDeclare(ActorDeclare {
+            declared_actor_id: actor,
+            actor_kind: ActorKind::Person,
+            display_name: "Test actor".into(),
+        })
+    }
+
+    /// After every `author()` call the canonical head and the projection head
+    /// read back from the DB must agree ([ADR-0027]).
+    #[test]
+    fn frontier_agreement_after_each_author() {
+        let dir = TempDir::new().unwrap();
+        let actor = Id::new_v4();
+        let mut ws = Workspace::create(dir.path(), Some(actor)).unwrap();
+
+        for i in 0u64..3 {
+            let frontier = ws
+                .author(actor, Origin::manual(), actor_declare_payload(actor))
+                .unwrap();
+            assert_eq!(
+                frontier.canonical_head, frontier.projection_head,
+                "canonical ↔ projection frontier must agree after op {i}"
+            );
+            assert_eq!(frontier.canonical_head.applied_record_count, i + 1);
+        }
+    }
+
+    /// `decide_open` returns `Current` when the projection head exactly matches
+    /// the canonical tail.
+    #[test]
+    fn decide_open_current_when_projection_matches_tail() {
+        let dir = TempDir::new().unwrap();
+        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
+        let paths = Paths::new(dir.path());
+        let conn = open_runtime(&paths).unwrap();
+
+        let workspace_id = Id::new_v4();
+        let partition_id = Id::new_v4();
+        let manifest = Manifest::new(workspace_id, partition_id, None);
+        let tail = ReplayHead::empty();
+
+        projection::set_identity(&conn, workspace_id, partition_id).unwrap();
+        projection::set_meta(
+            &conn,
+            "runtime_schema_version",
+            &RUNTIME_SCHEMA_VERSION.to_string(),
+        )
+        .unwrap();
+        set_replay_head(&conn, partition_id, &tail).unwrap();
+
+        assert_eq!(
+            decide_open(&conn, &manifest, &tail, &[]).unwrap(),
+            OpenDecision::Current
+        );
+    }
+
+    /// `decide_open` returns `FullRebuild` when the DB has no identity (fresh or
+    /// wiped runtime).
+    #[test]
+    fn decide_open_full_rebuild_when_no_identity() {
+        let dir = TempDir::new().unwrap();
+        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
+        let paths = Paths::new(dir.path());
+        let conn = open_runtime(&paths).unwrap();
+
+        let manifest = Manifest::new(Id::new_v4(), Id::new_v4(), None);
+        let tail = ReplayHead::empty();
+
+        assert_eq!(
+            decide_open(&conn, &manifest, &tail, &[]).unwrap(),
+            OpenDecision::FullRebuild
+        );
+    }
+
+    /// `decide_open` returns `FullRebuild` when the DB identity matches but the
+    /// schema version is wrong.
+    #[test]
+    fn decide_open_full_rebuild_when_schema_version_mismatch() {
+        let dir = TempDir::new().unwrap();
+        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
+        let paths = Paths::new(dir.path());
+        let conn = open_runtime(&paths).unwrap();
+
+        let workspace_id = Id::new_v4();
+        let partition_id = Id::new_v4();
+        let manifest = Manifest::new(workspace_id, partition_id, None);
+        let tail = ReplayHead::empty();
+
+        projection::set_identity(&conn, workspace_id, partition_id).unwrap();
+        projection::set_meta(&conn, "runtime_schema_version", "999").unwrap();
+
+        assert_eq!(
+            decide_open(&conn, &manifest, &tail, &[]).unwrap(),
+            OpenDecision::FullRebuild
+        );
+    }
+
+    /// `decide_open` returns `Incremental` when the projection head is a strict
+    /// prefix of the canonical tail.
+    #[test]
+    fn decide_open_incremental_from_strict_prefix() {
+        let dir = TempDir::new().unwrap();
+        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
+        let paths = Paths::new(dir.path());
+        let conn = open_runtime(&paths).unwrap();
+
+        let workspace_id = Id::new_v4();
+        let partition_id = Id::new_v4();
+        let manifest = Manifest::new(workspace_id, partition_id, None);
+
+        projection::set_identity(&conn, workspace_id, partition_id).unwrap();
+        projection::set_meta(
+            &conn,
+            "runtime_schema_version",
+            &RUNTIME_SCHEMA_VERSION.to_string(),
+        )
+        .unwrap();
+
+        // Manufacture two records with known digests.
+        let digest1 = "aaaa".to_string();
+        let digest2 = "bbbb".to_string();
+        let dummy_env = OpEnvelope::new(
+            Id::new_v4(),
+            Id::new_v4(),
+            mneme_core::Hlc(1),
+            Origin::manual(),
+            vec![],
+            OpPayload::ActorDeclare(ActorDeclare {
+                declared_actor_id: Id::new_v4(),
+                actor_kind: ActorKind::Person,
+                display_name: "x".into(),
+            }),
+        );
+        let records = vec![
+            LogRecord {
+                env: dummy_env.clone(),
+                digest: digest1.clone(),
+            },
+            LogRecord {
+                env: dummy_env.clone(),
+                digest: digest2.clone(),
+            },
+        ];
+
+        // Projection head is at record 1; tail is at record 2.
+        let head = ReplayHead {
+            segment_seqno: 1,
+            byte_offset: 50,
+            applied_record_count: 1,
+            last_record_digest: Some(digest1),
+        };
+        let tail = ReplayHead {
+            segment_seqno: 1,
+            byte_offset: 100,
+            applied_record_count: 2,
+            last_record_digest: Some(digest2),
+        };
+        set_replay_head(&conn, partition_id, &head).unwrap();
+
+        assert_eq!(
+            decide_open(&conn, &manifest, &tail, &records).unwrap(),
+            OpenDecision::Incremental { from_count: 1 }
+        );
+    }
+
+    /// `decide_open` returns `FullRebuild` when the projection head does not
+    /// form a valid prefix of the canonical log (diverged).
+    #[test]
+    fn decide_open_full_rebuild_on_divergence() {
+        let dir = TempDir::new().unwrap();
+        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
+        let paths = Paths::new(dir.path());
+        let conn = open_runtime(&paths).unwrap();
+
+        let workspace_id = Id::new_v4();
+        let partition_id = Id::new_v4();
+        let manifest = Manifest::new(workspace_id, partition_id, None);
+
+        projection::set_identity(&conn, workspace_id, partition_id).unwrap();
+        projection::set_meta(
+            &conn,
+            "runtime_schema_version",
+            &RUNTIME_SCHEMA_VERSION.to_string(),
+        )
+        .unwrap();
+
+        let dummy_env = OpEnvelope::new(
+            Id::new_v4(),
+            Id::new_v4(),
+            mneme_core::Hlc(1),
+            Origin::manual(),
+            vec![],
+            OpPayload::ActorDeclare(ActorDeclare {
+                declared_actor_id: Id::new_v4(),
+                actor_kind: ActorKind::Person,
+                display_name: "x".into(),
+            }),
+        );
+        let records = vec![LogRecord {
+            env: dummy_env,
+            digest: "canonical-digest".to_string(),
+        }];
+
+        // Projection claims count=1 but with a non-matching digest.
+        let head = ReplayHead {
+            segment_seqno: 1,
+            byte_offset: 50,
+            applied_record_count: 1,
+            last_record_digest: Some("different-digest".to_string()),
+        };
+        let tail = ReplayHead {
+            segment_seqno: 1,
+            byte_offset: 50,
+            applied_record_count: 1,
+            last_record_digest: Some("canonical-digest".to_string()),
+        };
+        set_replay_head(&conn, partition_id, &head).unwrap();
+
+        // head.applied_record_count == tail.applied_record_count but digests
+        // differ → neither Current nor Incremental → FullRebuild.
+        assert_eq!(
+            decide_open(&conn, &manifest, &tail, &records).unwrap(),
+            OpenDecision::FullRebuild
+        );
+    }
 }
