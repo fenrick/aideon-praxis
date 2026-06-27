@@ -199,6 +199,116 @@ async fn rebuild_runs_as_accepted_work_and_readiness_carries_the_pre_wipe_hash()
     assert_eq!(status["result"]["foundationRebuildHash"], hash_before);
 }
 
+/// Golden-journey step 8: close → reopen → workspace identity and foundation hash
+/// are continuous across the session boundary (ADR-0040, golden-journey.md §8).
+#[tokio::test]
+async fn close_and_reopen_preserves_workspace_continuity() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+
+    let created =
+        dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+    let workspace_id = created["result"]["workspaceId"]
+        .as_str()
+        .expect("workspaceId")
+        .to_string();
+    let hash_before = created["result"]["foundationRebuildHash"]
+        .as_str()
+        .expect("foundationRebuildHash")
+        .to_string();
+
+    dispatch(&webview, "workspace_close", json!({})).expect("close ok");
+
+    let reopened =
+        dispatch(&webview, "workspace_open", json!({ "root": root })).expect("reopen ok");
+    assert_eq!(reopened["status"], "ok", "reopen succeeds");
+    assert_eq!(
+        reopened["result"]["workspaceId"], workspace_id,
+        "workspace identity survives a session boundary"
+    );
+    assert_eq!(
+        reopened["result"]["foundationRebuildHash"], hash_before,
+        "foundation hash is continuous across close/reopen"
+    );
+}
+
+/// Golden-journey steps 9+10: delete `.aideon/runtime/` while the workspace is
+/// closed; reopen — the host detects the absent runtime and rebuilds it
+/// synchronously; the returned `foundation_rebuild_hash` equals the pre-wipe hash
+/// (ADR-0027 equivalence, golden-journey.md §9–10).
+#[tokio::test]
+async fn delete_runtime_externally_and_reopen_rebuilds_deterministically() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+
+    let created =
+        dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+    let hash_before = created["result"]["foundationRebuildHash"]
+        .as_str()
+        .expect("foundationRebuildHash")
+        .to_string();
+
+    dispatch(&webview, "workspace_close", json!({})).expect("close ok");
+
+    // Step 9: delete the derived runtime externally while the workspace is closed.
+    let runtime_dir = dir.path().join(".aideon").join("runtime");
+    assert!(runtime_dir.exists(), "runtime dir present before deletion");
+    std::fs::remove_dir_all(&runtime_dir).expect("delete runtime dir");
+    assert!(!runtime_dir.exists(), "runtime dir absent after deletion");
+
+    // Step 10: reopen — the host detects no runtime and rebuilds from canonical
+    // files; the returned status carries a hash that equals the pre-wipe hash.
+    let reopened =
+        dispatch(&webview, "workspace_open", json!({ "root": root })).expect("reopen ok");
+    assert_eq!(
+        reopened["status"], "ok",
+        "reopen with missing runtime succeeds"
+    );
+    assert_eq!(
+        reopened["result"]["foundationRebuildHash"], hash_before,
+        "rebuild yields a logically equivalent foundation; the proof matches"
+    );
+}
+
+/// RFC-9457 / ADR-0016: every error envelope that crosses the host boundary must
+/// carry no Rust-internal strings — no source paths, no type names, no stack
+/// frames — that would leak implementation details to the renderer (ADR-0040).
+#[tokio::test]
+async fn error_envelope_carries_no_rust_internal_strings() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let missing = dir.path().join("does-not-exist");
+
+    let envelope = dispatch(
+        &webview,
+        "workspace_open",
+        json!({ "root": missing.to_string_lossy() }),
+    )
+    .expect("envelope returned");
+    assert_eq!(envelope["status"], "error");
+
+    let raw = serde_json::to_string(&envelope).expect("serialize for leakage check");
+
+    // Rust-internal strings that must never reach the renderer.
+    for forbidden in [
+        "StoreError",
+        "IoError",
+        "panicked",
+        "unwrap",
+        "src/",
+        "crates/",
+        ".rs:",
+        "::Error",
+    ] {
+        assert!(
+            !raw.contains(forbidden),
+            "error envelope leaks Rust internal string {forbidden:?}: {raw}"
+        );
+    }
+}
+
 /// A second rebuild while one is in flight is refused with BACKPRESSURE, the one
 /// transient code — never accepted twice.
 #[tokio::test]
