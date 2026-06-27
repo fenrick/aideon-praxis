@@ -352,6 +352,13 @@ async systemMetricsSnapshot() : Promise<MetricsSnapshot> {
 /** user-defined events **/
 
 
+export const events = __makeEvents__<{
+workspaceLifecycleChanged: WorkspaceLifecycleEvent,
+workspaceReadyReadWrite: WorkspaceReadinessEvent
+}>({
+workspaceLifecycleChanged: "workspace:lifecycle_changed",
+workspaceReadyReadWrite: "workspace:ready_read_write"
+})
 
 /** user-defined constants **/
 
@@ -438,6 +445,14 @@ export type IpcRequest<T> = { requestId: string; payload: T }
  */
 export type IpcResponse<T> = { requestId: string; status: string; result?: T | null; error?: IpcError | null }
 export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
+/**
+ * The M0 flat lifecycle state ([workspace-lifecycle]): write capability is
+ * enabled only in `ready_read_write`. M0 deliberately does not name semantic
+ * axes (effective schema, temporal) it cannot prove; those arrive as additive
+ * sibling fields at M1/M2. M0 emits the states the rebuild path produces; the
+ * `opening`/`closed` transitions on create/open/close are a follow-up (#291).
+ */
+export type LifecycleState = "rebuilding" | "ready_read_write" | "recovery_read_only"
 export type ListBranchesResponse = { branches: BranchInfo[] }
 export type ListCommitsPayload = { branch: string }
 export type ListCommitsResponse = { commits: CommitSummary[] }
@@ -508,6 +523,15 @@ export type WorkQueueClass = "rebuild"
  * host-local type until the M0 storage rebuild provides a real health surface.
  */
 export type WorkerHealth = { ok: boolean; timestamp_ms: number }
+/**
+ * `workspace.lifecycle.changed` payload — the state-transition announcement.
+ */
+export type WorkspaceLifecycleEvent = { workspaceId: string; state: LifecycleState; jobId: string | null; errorCode: string | null; correlationId: string }
+/**
+ * `workspace.ready_read_write` payload — proof-carrying readiness ([ADR-0040]):
+ * an integrity claim with the foundation hash attached, not a status message.
+ */
+export type WorkspaceReadinessEvent = { workspaceId: string; jobId: string; readiness: string; foundationRebuildHash: string; runtimeGeneration: string; correlationId: string }
 /**
  * A host-facing summary of an open workspace's foundation state.
  */

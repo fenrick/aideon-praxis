@@ -143,7 +143,7 @@ fn repo_root() -> PathBuf {
         .to_path_buf()
 }
 
-fn extract_event_names_from_contracts_rs(source: &str) -> Vec<String> {
+fn extract_event_names_from_source(source: &str) -> Vec<String> {
     let mut found = Vec::new();
 
     for line in source.lines() {
@@ -153,9 +153,10 @@ fn extract_event_names_from_contracts_rs(source: &str) -> Vec<String> {
         }
         if let Some((_, rest)) = trimmed.split_once('"')
             && let Some((event, _)) = rest.split_once('"')
+            && !event.is_empty()
             && event
                 .chars()
-                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == ':')
         {
             found.push(event.to_string());
         }
@@ -192,19 +193,47 @@ fn payload_keys_for_event(name: &str) -> Vec<String> {
             .into_iter()
             .map(String::from)
             .collect(),
+        "workspace:lifecycle_changed" => vec![
+            "workspaceId",
+            "state",
+            "jobId",
+            "errorCode",
+            "correlationId",
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect(),
+        "workspace:ready_read_write" => vec![
+            "workspaceId",
+            "jobId",
+            "readiness",
+            "foundationRebuildHash",
+            "runtimeGeneration",
+            "correlationId",
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect(),
         _ => Vec::new(),
     }
 }
 
 fn build_event_manifest() -> Result<EventManifest> {
     let repo = repo_root();
-    let contracts = repo.join("src-tauri/src/contracts.rs");
-    let raw =
-        fs::read_to_string(&contracts).with_context(|| format!("read {}", contracts.display()))?;
+
+    // Scan all source files that declare `pub const EVENT_` constants.
+    let source_files = [
+        repo.join("src-tauri/src/contracts.rs"),
+        repo.join("src-tauri/src/jobs.rs"),
+    ];
 
     let mut events = std::collections::BTreeSet::<String>::new();
-    for name in extract_event_names_from_contracts_rs(&raw) {
-        events.insert(name);
+    for path in &source_files {
+        if let Ok(raw) = fs::read_to_string(path) {
+            for name in extract_event_names_from_source(&raw) {
+                events.insert(name);
+            }
+        }
     }
 
     let events = events
