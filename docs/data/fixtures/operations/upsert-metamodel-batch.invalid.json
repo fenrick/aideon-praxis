@@ -9,7 +9,7 @@
   "payload": {
     "types": [
       {
-        "type_id": "ab0aefe4-902f-5f99-8ce3-eae00286ebe0",
+        "type_id": "c8d3aeef-d3d2-5143-9c63-7e11c2f019a2",
         "applies_to": "node",
         "label": "Application",
         "is_abstract": false,
@@ -18,7 +18,7 @@
     ],
     "fields": [
       {
-        "field_id": "cba320a9-7e3c-5597-b42f-284aad9a6406",
+        "field_id": "d4c7fcfa-3c4c-5ceb-abd3-1fc14e28c273",
         "label": "disposition",
         "value_type": "enum",
         "cardinality_multi": false,

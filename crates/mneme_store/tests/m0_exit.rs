@@ -28,9 +28,9 @@ fn id(s: &str) -> Id {
 }
 
 const ACTOR: &str = "00000000-0000-4000-8000-0000000000a1";
-const TYPE_APP: &str = "ab0aefe4-902f-5f99-8ce3-eae00286ebe0";
-const FIELD_DISPOSITION: &str = "cba320a9-7e3c-5597-b42f-284aad9a6406";
-const REL_REALISES: &str = "ea3b966e-7c80-537a-9965-65943211827d";
+const TYPE_APP: &str = "c8d3aeef-d3d2-5143-9c63-7e11c2f019a2";
+const FIELD_DISPOSITION: &str = "d4c7fcfa-3c4c-5ceb-abd3-1fc14e28c273";
+const REL_REALISES: &str = "5189e2d3-0b57-520d-9829-40c3d731f863";
 const N1: &str = "11111111-0000-4000-8000-000000000003";
 const N2: &str = "11111111-0000-4000-8000-000000000004";
 const EDGE: &str = "22222222-0000-4000-8000-000000000005";

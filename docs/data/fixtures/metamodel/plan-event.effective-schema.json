@@ -2,7 +2,7 @@
   "type_id": "PlanEvent",
   "label": "Plan Event",
   "category": "Planning",
-  "uuid": "c8079bb8-078e-5ba9-b93e-3e2312d99798",
+  "uuid": "4ec5772b-2eb6-53f0-885a-b39afce94c3f",
   "extends": null,
   "inheritance_chain": ["PlanEvent"],
   "slots": [
@@ -10,35 +10,39 @@
       "key": "name",
       "kind": "string",
       "required": true,
+      "cardinality": "single",
       "max_length": 256,
-      "uuid": "9a2d4453-4e33-5cfe-ab75-646072e0ce2f",
+      "uuid": "77dfe604-8ab0-524d-b177-30ce43827609",
       "source": "self"
     },
     {
       "key": "effective_at",
       "kind": "datetime",
       "required": true,
+      "cardinality": "single",
       "format": "rfc3339",
-      "uuid": "384b84b8-ffa4-5db6-82d5-c2db905ff649",
+      "uuid": "d7b202c2-5581-5cfe-812e-10f2fc7cbb41",
       "source": "self"
     },
     {
       "key": "confidence",
       "kind": "number",
       "required": false,
-      "uuid": "919c0d4e-2c2d-5269-974f-5db6e59a054b",
+      "cardinality": "single",
+      "uuid": "9e6d4ec5-7fb8-5c8c-b84a-2844bd09606e",
       "source": "self"
     },
     {
       "key": "source.priority",
       "kind": "enum",
       "required": false,
+      "cardinality": "single",
       "enum": ["P0", "P1", "P2"],
       "case_sensitive": false,
-      "uuid": "df3ae5a5-6962-5016-8b0d-d276a7e8d162",
+      "uuid": "327ff9e7-d8e8-5681-b296-9f38b564399b",
       "source": "self"
     }
   ],
   "effect_types": ["create", "update", "delete", "link", "unlink"],
-  "notes": "PlanEvent carries two required slots (name string, effective_at datetime/RFC3339), an optional number (confidence), and a dotted-name enum slot (source.priority). The dot in 'source.priority' is treated as a flat slot key, consistent with core-v1.json which lists it as a single attribute name; whether it denotes a nested object is design-intent (see M2-time.md open questions). effect_types is a type-level descriptor on PlanEvent, not a slot; it enumerates the Plan Event effect operations and mirrors the plan_effect relationship's op enum."
+  "notes": "PlanEvent carries two required slots (name string, effective_at datetime/RFC3339), an optional number (confidence), and a dotted-name enum slot (source.priority). The dot in 'source.priority' is treated as a flat slot key and hashed as one opaque string for UUID derivation (ADR-0038). effect_types is a type-level descriptor on PlanEvent, not a slot. UUIDs derived from namespace b0a75355-d2a9-5fb4-8ff2-59e31e205475 (ADR-0038, name_path_version 1)."
 }

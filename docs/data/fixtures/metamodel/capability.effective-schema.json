@@ -2,7 +2,7 @@
   "type_id": "Capability",
   "label": "Capability",
   "category": "Business",
-  "uuid": "ec929adf-eb79-51b8-a757-38d0452885ae",
+  "uuid": "88c36fbe-5c8e-5485-92eb-952a4636be57",
   "extends": null,
   "inheritance_chain": ["Capability"],
   "slots": [
@@ -10,28 +10,31 @@
       "key": "name",
       "kind": "string",
       "required": true,
+      "cardinality": "single",
       "max_length": 256,
-      "uuid": "89efcd94-5145-5439-8023-9424c6c381f8",
+      "uuid": "a1fc3738-3b42-5737-b0ed-1eba8774623c",
       "source": "self"
     },
     {
       "key": "tier",
       "kind": "enum",
       "required": false,
+      "cardinality": "single",
       "enum": ["Strategic", "Core", "Supporting"],
       "case_sensitive": false,
-      "uuid": "c27ee320-dea9-5263-b362-d94c4a22bb77",
+      "uuid": "935bc847-8e37-5ba3-9af9-7547fddce21f",
       "source": "self"
     },
     {
       "key": "lifecycle",
       "kind": "enum",
       "required": false,
+      "cardinality": "single",
       "enum": ["Target", "Current", "Retire"],
       "case_sensitive": false,
-      "uuid": "23917fa3-e91c-57af-9650-9e8e58b1d18a",
+      "uuid": "0b94086b-18e7-5f46-b01f-0ba456451e40",
       "source": "self"
     }
   ],
-  "notes": "Capability declares no extends, so its effective schema is exactly its own three slots. All slots single-valued (seed declares no cardinality). UUIDs read from core-v1.json, never minted here."
+  "notes": "Capability declares no extends, so its effective schema is exactly its own three slots. All slots single-valued. UUIDs derived from namespace b0a75355-d2a9-5fb4-8ff2-59e31e205475 (ADR-0038, name_path_version 1)."
 }

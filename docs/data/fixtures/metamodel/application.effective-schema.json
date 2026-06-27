@@ -2,7 +2,7 @@
   "type_id": "Application",
   "label": "Application",
   "category": "Application",
-  "uuid": "ab0aefe4-902f-5f99-8ce3-eae00286ebe0",
+  "uuid": "c8d3aeef-d3d2-5143-9c63-7e11c2f019a2",
   "extends": null,
   "inheritance_chain": ["Application"],
   "slots": [
@@ -10,36 +10,40 @@
       "key": "name",
       "kind": "string",
       "required": true,
+      "cardinality": "single",
       "max_length": 256,
-      "uuid": "bb59958c-4475-58e3-8bbb-c438785d4934",
+      "uuid": "03e12e7f-c494-5387-bb4f-a8c472ea6e79",
       "source": "self"
     },
     {
       "key": "vendor",
       "kind": "string",
       "required": false,
+      "cardinality": "single",
       "max_length": 256,
-      "uuid": "8b325050-8ae1-52b7-843a-1ac2efaf0e41",
+      "uuid": "8555b467-6189-5783-a813-8dd0a385f7d4",
       "source": "self"
     },
     {
       "key": "disposition",
       "kind": "enum",
       "required": false,
+      "cardinality": "single",
       "enum": ["Invest", "Tolerate", "Migrate", "Eliminate"],
       "case_sensitive": false,
-      "uuid": "cba320a9-7e3c-5597-b42f-284aad9a6406",
+      "uuid": "d4c7fcfa-3c4c-5ceb-abd3-1fc14e28c273",
       "source": "self"
     },
     {
       "key": "lifecycle",
       "kind": "enum",
       "required": false,
+      "cardinality": "single",
       "enum": ["Plan", "Build", "Run", "Retire"],
       "case_sensitive": false,
-      "uuid": "c9c636f1-5c02-5ba0-9c26-4b4a69b64a74",
+      "uuid": "8d8a3e48-9771-509a-a473-76fa166504b5",
       "source": "self"
     }
   ],
-  "notes": "Application has no extends; four own slots, two of them enums. Note disposition and lifecycle are distinct enum slots whose variant lists differ from any other type's lifecycle enum (Capability.lifecycle is Target/Current/Retire). UUIDs read from core-v1.json."
+  "notes": "Application has no extends; four own slots, two of them enums. Note disposition and lifecycle are distinct enum slots whose variant lists differ from any other type's lifecycle enum (Capability.lifecycle is Target/Current/Retire). UUIDs derived from namespace b0a75355-d2a9-5fb4-8ff2-59e31e205475 (ADR-0038, name_path_version 1)."
 }

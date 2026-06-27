@@ -2,45 +2,37 @@
   "type_id": "ValueStreamStage",
   "label": "Value Stream Stage",
   "category": "Business",
-  "uuid": "e653141e-dc30-5be5-882b-31ead5f1b0d2",
-  "extends": "Stage",
-  "extends_resolved": false,
+  "uuid": "9472618f-07ce-555f-9582-2b1fd330de68",
+  "extends": null,
   "inheritance_chain": ["ValueStreamStage"],
   "slots": [
     {
       "key": "name",
       "kind": "string",
       "required": true,
+      "cardinality": "single",
       "max_length": 256,
-      "uuid": "c13cf5bd-ec27-5085-8eb8-2849bb7ccde6",
+      "uuid": "578015f8-6bfd-5eb8-8e25-e61514dcca20",
       "source": "self"
     },
     {
       "key": "purpose",
       "kind": "string",
       "required": false,
+      "cardinality": "single",
       "max_length": 256,
-      "uuid": "c1b3a129-ca0e-50dd-8985-72a93220a993",
+      "uuid": "dac8b144-6faa-5b56-84bb-c429765108f4",
       "source": "self"
     },
     {
       "key": "owner",
       "kind": "string",
       "required": false,
+      "cardinality": "single",
       "max_length": 256,
-      "uuid": "6def842e-fbfc-5e1a-b6a1-f3e17f32a86e",
+      "uuid": "52707e42-820c-5fc9-8d9c-82b66f07ee99",
       "source": "self"
     }
   ],
-  "gap": {
-    "kind": "unresolved_supertype",
-    "missing_type": "Stage",
-    "effect": "core-v1.json declares ValueStreamStage extends Stage but does not declare a Stage type. The extends reference is unresolved: it contributes no inherited slot, so the effective schema is exactly ValueStreamStage's three own slots. This fixture records the gap honestly rather than inventing a Stage definition.",
-    "reconciliation": "Either declare Stage as an abstract base type (additive/minor) or drop the extends clause (editorial). Owned by the metamodel design; not resolved by this fixture.",
-    "sources": [
-      "docs/data/README.md (Known reconciliation — the Stage gap)",
-      "docs/03-design/metamodel/slots-and-effective-schema.md (Honest-state note)"
-    ]
-  },
-  "notes": "extends_resolved is false because no Stage effective schema exists to flatten. If a Stage type is later added with slots, those slots would be flattened in (source: inherited) ahead of these, with same-named child slots winning."
+  "notes": "ValueStreamStage has no supertype; three own slots, all single-valued. UUIDs derived from namespace b0a75355-d2a9-5fb4-8ff2-59e31e205475 (ADR-0038, name_path_version 1)."
 }
