@@ -3,14 +3,10 @@ use crate::ipc::IpcRequest;
 use aideon_praxis::praxis::canvas::CanvasNode;
 use aideon_praxis::praxis::graph_layout::GraphLayoutNode;
 use std::fs;
-use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tokio::sync::Mutex;
 
-static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-
-fn env_lock() -> &'static Mutex<()> {
-    ENV_LOCK.get_or_init(|| Mutex::new(()))
+fn env_lock() -> &'static tokio::sync::Mutex<()> {
+    crate::test_support::env_lock()
 }
 
 fn ipc_request<T>(payload: T) -> IpcRequest<T> {

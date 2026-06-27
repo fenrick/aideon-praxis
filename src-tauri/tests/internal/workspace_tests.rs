@@ -4,15 +4,11 @@ use crate::worker::WorkerState;
 use aideon_chrona::TemporalEngine;
 use serde_json::json;
 use std::fs;
-use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Manager;
-use tokio::sync::Mutex;
 
-static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-
-fn env_lock() -> &'static Mutex<()> {
-    ENV_LOCK.get_or_init(|| Mutex::new(()))
+fn env_lock() -> &'static tokio::sync::Mutex<()> {
+    crate::test_support::env_lock()
 }
 
 #[tokio::test]
