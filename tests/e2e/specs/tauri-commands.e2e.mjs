@@ -11,12 +11,16 @@ const invokedCommands = new Set();
 // whose handle order is not guaranteed by WebKitGTK's WebDriver implementation.
 let mainWindowHandle;
 
-// Returns true when called inside the Tauri main window (root route, '/').
-// Secondary windows (splash, settings, status, etc.) have named sub-paths so
-// this is a reliable discriminator that doesn't depend on React render state.
-function isMainWindowPathname() {
-  const p = window.location.pathname ?? '';
-  return p === '/' || p === '' || p === '/index.html';
+// Returns 'main' when evaluated inside the Tauri main window, otherwise the
+// actual label or undefined. Tauri window metadata is the primary source
+// (set at window-creation time, before React mounts); URL pathname is the fallback.
+// Called inside browser.execute(), so the function body runs in the webview.
+function getWindowId() {
+  const label = window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label;
+  if (label) return label;
+  const p = window.location.pathname || '';
+  if (p === '/' || p === '' || p === '/index.html') return 'main';
+  return undefined;
 }
 
 function nextId(prefix) {
@@ -74,19 +78,19 @@ async function invokeCommand(command, payload) {
 
 async function ensureActiveWindow() {
   // Prefer the pinned main window handle established by waitForMainWindow().
-  // Verify by URL pathname (root route = main window with appcommands-mutating)
-  // rather than by Tauri invoke presence, which all windows share.
+  // Verify using Tauri window label ('main') — set at window-creation time and
+  // therefore stable even before React mounts. URL pathname is the fallback.
   if (mainWindowHandle) {
     try {
       await browser.switchToWindow(mainWindowHandle);
-      const isMain = await browser.execute(isMainWindowPathname);
-      if (isMain) return;
+      const id = await browser.execute(getWindowId);
+      if (id === 'main') return;
     } catch {
       // stale or closed handle — fall through to re-scan
     }
     mainWindowHandle = undefined;
   }
-  // Re-find the main window by URL pathname.
+  // Re-find the main window by label / pathname.
   const handles = await browser.getWindowHandles();
   if (handles.length === 0) {
     throw new Error('no window handles available');
@@ -94,8 +98,8 @@ async function ensureActiveWindow() {
   for (let i = handles.length - 1; i >= 0; i -= 1) {
     try {
       await browser.switchToWindow(handles[i]);
-      const isMain = await browser.execute(isMainWindowPathname);
-      if (isMain) {
+      const id = await browser.execute(getWindowId);
+      if (id === 'main') {
         mainWindowHandle = handles[i];
         return;
       }
@@ -103,16 +107,15 @@ async function ensureActiveWindow() {
       continue;
     }
   }
-  throw new Error('no main window (root route) found among open handles');
+  throw new Error('no main window found among open handles');
 }
 
 // Wait until the main window's shell content is rendered, then switch to it
 // and pin the handle in mainWindowHandle so ensureActiveWindow() always returns
 // to this window instead of scanning and potentially landing on the splash window.
 //
-// Identification strategy: URL pathname '/' (main window's root route) is
-// checked first, which is more stable than DOM-content probing — it is available
-// even before React has mounted. The DOM check then confirms the shell is ready.
+// Identification: Tauri window label 'main' (primary, stable before React mounts)
+// with URL pathname '/' as fallback. DOM-content check confirms shell is ready.
 async function waitForMainWindow() {
   await browser.waitUntil(
     async () => {
@@ -120,10 +123,10 @@ async function waitForMainWindow() {
       for (let i = handles.length - 1; i >= 0; i -= 1) {
         try {
           await browser.switchToWindow(handles[i]);
-          // Skip windows that are not the root route (splash/, settings/, etc.).
-          const isMain = await browser.execute(isMainWindowPathname);
-          if (!isMain) continue;
-          // Confirm shell content is rendered — this verifies IPC is wired up.
+          // Identify the main window by Tauri label or URL pathname.
+          const id = await browser.execute(getWindowId);
+          if (id !== 'main') continue;
+          // Confirm shell content is rendered — verifies React + IPC are up.
           const hasContent = await browser.execute(() =>
             Boolean(document.querySelector('[data-testid="aideon-shell-content"]')),
           );
@@ -139,7 +142,7 @@ async function waitForMainWindow() {
     },
     {
       timeout: 60_000,
-      timeoutMsg: 'main window (root route) shell content did not appear within 60 s',
+      timeoutMsg: 'main window shell content did not appear within 60 s',
     },
   );
   await browser.switchToWindow(mainWindowHandle);
