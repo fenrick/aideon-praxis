@@ -25,7 +25,7 @@ Each row is owned by exactly one milestone. "Validated by" states the **real** g
 | Minimal accepted-work core (job runner, RunEvent, readiness, backpressure) [D1]                                      | M0    | Tier-1 host boundary test — proof-carrying readiness round-trip [D4·ADR-0040]         | ✅     |
 | Typed IPC surface + capability enforcement + **codegen** manifest [D7]                                               | M0    | Tier-1 host boundary test (round-trip, per-window deny, drift) [D4·ADR-0040]          | ✅     |
 | Shell chrome + lifecycle/honest-state UX [D5]                                                                        | M0    | Tier-2 in-window: Win/Linux interaction · macOS launch-smoke+screenshot [D2·ADR-0040] | ✅     |
-| Observability / trace-context baseline [D14]                                                                         | M0    | correlation-id propagation test                                                       | ☐      |
+| Observability baseline — `correlation_id` reconstruction [D14]                                                       | M0    | `correlation_id` end-to-end test (#367); full OTel/traceparent deferred to #271       | ◐      |
 | Architecture fitness functions (renderer/host/engine boundary · crate-dep direction) [D9·D21]                        | M0    | ESLint boundary rule + Rust crate-dep-direction `xtask` check, both merge-blocking    | ✅     |
 | Metamodel — authored/structural (materialise `authored/`)                                                            | M0    | `mneme_core` schema fixtures                                                          | ✅     |
 | Metamodel — effective compile + validation                                                                           | M1    | effective-schema fixtures + rejection tests                                           | ☐      |
@@ -57,7 +57,7 @@ Each row is owned by exactly one milestone. "Validated by" states the **real** g
 
 - **Owns:** canonical storage/JSON/HLC/blobs/rebuild · workspace lifecycle + lock · minimal accepted-work core [D1] · typed IPC + capability + codegen manifest [D7] · shell + lifecycle UX [D5] · observability baseline · authored metamodel.
 - **Done (✅):** engine crates with real oracle tests (#314); operation-fixtures contract test; architecture fitness functions (ESLint boundary + `xtask` crate-dep direction, both merge-blocking); typed IPC codegen (ADR-0039, #303); workspace lifecycle IPC + per-window capability (#290, #318); proof-carrying accepted-work readiness (#316, ADR-0040); Tier-1 host boundary gate (#319); shell composition + Tier-2 WebDriver e2e (#317, #320).
-- **Remaining in M0:** observability / trace-context baseline (#271, `ready-for-human` — correlation-id propagation test + W3C trace context).
+- **Remaining in M0:** observability baseline (#367, `ready-for-agent` — prove `correlation_id` reconstruction end-to-end; no OTel/traceparent). Full W3C trace-context + OTel span hierarchy (#271, `ready-for-human`) is **not** an M0 exit requirement — current `correlation_id` propagation satisfies the M0 baseline.
 - **Exit gate:** golden-journey lifecycle steps (1, 8, 9, 10) run in the real window — **met** as of PR #362 + #364.
 
 ### M1 — Meaning · ☐
