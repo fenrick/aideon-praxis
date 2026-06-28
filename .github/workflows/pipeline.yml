@@ -78,6 +78,8 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo check --locked --all-targets --all-features
       - run: cargo test --locked --all --quiet
+      - name: Architecture fitness — crate dependency direction (ADR-0011/D9)
+        run: cargo run --locked -p aideon_xtask -- check-crate-boundaries
 
   build:
     name: Tauri Build (${{ matrix.os }})
