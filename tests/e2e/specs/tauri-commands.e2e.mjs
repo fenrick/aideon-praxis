@@ -6,6 +6,11 @@ import path from 'node:path';
 let requestCounter = 0;
 const invokedCommands = new Set();
 
+// Established by waitForMainWindow() — used by ensureActiveWindow() to prefer
+// the main window (appcommands-mutating capable) over the splash or other windows
+// whose handle order is not guaranteed by WebKitGTK's WebDriver implementation.
+let mainWindowHandle;
+
 function nextId(prefix) {
   return crypto.randomUUID();
 }
@@ -50,6 +55,23 @@ async function invokeCommand(command, payload) {
 }
 
 async function ensureActiveWindow() {
+  // Prefer the pinned main window handle established by waitForMainWindow().
+  // WebKitGTK's getWindowHandles() order is not guaranteed to match creation
+  // order, so scanning from the end may land on the splash window — which
+  // lacks appcommands-mutating — rather than the main window.
+  if (mainWindowHandle) {
+    try {
+      await browser.switchToWindow(mainWindowHandle);
+      const hasInvoke = await browser.execute(
+        () => typeof window.__TAURI_INTERNALS__?.invoke === 'function',
+      );
+      if (hasInvoke) {
+        return;
+      }
+    } catch {
+      mainWindowHandle = undefined; // stale — fall through to full scan
+    }
+  }
   const handles = await browser.getWindowHandles();
   if (handles.length === 0) {
     throw new Error('no window handles available');
@@ -63,19 +85,17 @@ async function ensureActiveWindow() {
       if (hasInvoke) {
         return;
       }
-    } catch (error) {
+    } catch {
       continue;
     }
   }
   throw new Error('no valid window handle with tauri invoke available');
 }
 
-// Wait until the main window's shell content is rendered, then switch to it.
-// The app starts with a splash window (appcommands only) before transitioning to
-// the main window (appcommands + appcommands-mutating). Mutating commands fail if
-// we proceed while the splash is still the only window accessible to WebDriver.
+// Wait until the main window's shell content is rendered, then switch to it
+// and pin the handle in mainWindowHandle so ensureActiveWindow() always returns
+// to this window instead of scanning and potentially landing on the splash window.
 async function waitForMainWindow() {
-  let mainHandle;
   await browser.waitUntil(
     async () => {
       const handles = await browser.getWindowHandles();
@@ -86,7 +106,7 @@ async function waitForMainWindow() {
             Boolean(document.querySelector('[data-testid="aideon-shell-content"]')),
           );
           if (hasContent) {
-            mainHandle = handles[i];
+            mainWindowHandle = handles[i];
             return true;
           }
         } catch {
@@ -97,7 +117,7 @@ async function waitForMainWindow() {
     },
     { timeout: 60_000, timeoutMsg: 'main window shell content did not appear within 60 s' },
   );
-  await browser.switchToWindow(mainHandle);
+  await browser.switchToWindow(mainWindowHandle);
 }
 
 async function invokeIpc(command, payload) {
