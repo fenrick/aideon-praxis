@@ -190,6 +190,21 @@ describe('tauri e2e command coverage', () => {
 
     assertOk(await invokeIpc('system_worker_health', {}), 'system_worker_health');
     assertOk(await invokeIpc('system_setup_state', {}), 'system_setup_state');
+
+    // Diagnostic: verify we are still in the correct window before invoking a
+    // mutating command. On WebKitGTK, executeAsync may be routed differently
+    // from execute — capture the label and pathname so failures are actionable.
+    const windowDiag = await browser.execute(() => ({
+      pathname: window.location.pathname ?? null,
+      label: window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label ?? null,
+    }));
+    assert.equal(
+      windowDiag.label,
+      'main',
+      `expected Tauri window label "main" before mutating IPC; ` +
+        `got label="${windowDiag.label}" pathname="${windowDiag.pathname}"`,
+    );
+
     assertOk(
       await invokeIpc('system_setup_complete', { task: 'frontend' }),
       'system_setup_complete',
