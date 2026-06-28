@@ -70,6 +70,36 @@ async function ensureActiveWindow() {
   throw new Error('no valid window handle with tauri invoke available');
 }
 
+// Wait until the main window's shell content is rendered, then switch to it.
+// The app starts with a splash window (appcommands only) before transitioning to
+// the main window (appcommands + appcommands-mutating). Mutating commands fail if
+// we proceed while the splash is still the only window accessible to WebDriver.
+async function waitForMainWindow() {
+  let mainHandle;
+  await browser.waitUntil(
+    async () => {
+      const handles = await browser.getWindowHandles();
+      for (let i = handles.length - 1; i >= 0; i -= 1) {
+        try {
+          await browser.switchToWindow(handles[i]);
+          const hasContent = await browser.execute(() =>
+            Boolean(document.querySelector('[data-testid="aideon-shell-content"]')),
+          );
+          if (hasContent) {
+            mainHandle = handles[i];
+            return true;
+          }
+        } catch {
+          // window not yet ready
+        }
+      }
+      return false;
+    },
+    { timeout: 60_000, timeoutMsg: 'main window shell content did not appear within 60 s' },
+  );
+  await browser.switchToWindow(mainHandle);
+}
+
 async function invokeIpc(command, payload) {
   return invokeCommand(command, {
     request: {
@@ -96,6 +126,11 @@ function assertOkOrError(response, label) {
 
 describe('tauri e2e command coverage', () => {
   it('executes all IPC commands over the tauri bridge', async () => {
+    // Block until the main window (appcommands-mutating capable) is visible and
+    // fully rendered. The splash window, which lacks mutating permissions, may be
+    // the only WebDriver-accessible window during the first seconds of startup.
+    await waitForMainWindow();
+
     const hasInvoke = await browser.execute(
       () => typeof window.__TAURI_INTERNALS__?.invoke === 'function',
     );

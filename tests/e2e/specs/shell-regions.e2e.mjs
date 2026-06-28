@@ -132,21 +132,36 @@ describe('Tier-2: per-window capability denial (real WebView ACL)', () => {
     // `main` window (security_posture.rs::mutating_commands_are_granted_only_to_the_main_window).
     // Invoking it from the settings WebView must be denied by Tauri's RuntimeAuthority —
     // proving the real capability boundary is enforced, not just declared in config files.
-    const denial = await browser.executeAsync((done) => {
-      const invoke = window.__TAURI_INTERNALS__?.invoke;
-      if (!invoke) {
-        done({ denied: false, reason: 'no-tauri-invoke' });
-        return;
+    //
+    // On WebKitGTK the denial travels as a WebDriverError rather than a JS promise
+    // rejection — browser.executeAsync throws instead of resolving through done().
+    // Both paths prove the ACL layer is active; catch the WebDriverError form here.
+    let denial;
+    try {
+      denial = await browser.executeAsync((done) => {
+        const invoke = window.__TAURI_INTERNALS__?.invoke;
+        if (!invoke) {
+          done({ denied: false, reason: 'no-tauri-invoke' });
+          return;
+        }
+        invoke('workspace_create', {
+          request: {
+            requestId: 'acl-deny-probe',
+            payload: { root: '/tmp/acl-deny-probe' },
+          },
+        })
+          .then(() => done({ denied: false }))
+          .catch((error) => done({ denied: true, error: String(error) }));
+      });
+    } catch (error) {
+      const msg = String(error?.message ?? error);
+      if (msg.includes('not allowed') && msg.includes('appcommands-mutating')) {
+        // WebKitGTK propagated the denial as a WebDriverError — the ACL layer is active.
+        denial = { denied: true, error: msg };
+      } else {
+        throw error;
       }
-      invoke('workspace_create', {
-        request: {
-          requestId: 'acl-deny-probe',
-          payload: { root: '/tmp/acl-deny-probe' },
-        },
-      })
-        .then(() => done({ denied: false }))
-        .catch((error) => done({ denied: true, error: String(error) }));
-    });
+    }
 
     assert.notEqual(
       denial.reason,
