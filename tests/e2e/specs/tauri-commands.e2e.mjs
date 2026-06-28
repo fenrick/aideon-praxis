@@ -33,25 +33,35 @@ async function invokeCommand(command, payload) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       await ensureActiveWindow();
-      return await browser.executeAsync(
-        (cmd, args, done) => {
+      // Use execute() + waitUntil polling instead of executeAsync().
+      // On WebKitGTK, the two WebDriver endpoints use different internal window
+      // routing: execute/sync honours the window set by switchToWindow(), but
+      // execute/async may fire in a different webview — causing ACL denials
+      // from a context that lacks appcommands-mutating.
+      await browser.execute(
+        (cmd, args) => {
+          window.__e2eResult__ = null;
           const invoke = window.__TAURI_INTERNALS__?.invoke;
           if (!invoke) {
-            done({ ok: false, error: 'tauri invoke not available' });
+            window.__e2eResult__ = { ok: false, error: 'tauri invoke not available' };
             return;
           }
           invoke(cmd, args)
-            .then((result) => done({ ok: true, result }))
-            .catch((error) =>
-              done({
-                ok: false,
-                error: error?.message ?? String(error),
-              }),
-            );
+            .then((result) => {
+              window.__e2eResult__ = { ok: true, result };
+            })
+            .catch((error) => {
+              window.__e2eResult__ = { ok: false, error: error?.message ?? String(error) };
+            });
         },
         command,
         payload,
       );
+      await browser.waitUntil(() => browser.execute(() => window.__e2eResult__ !== null), {
+        timeout: 30_000,
+        timeoutMsg: `${command} did not resolve within 30 s`,
+      });
+      return await browser.execute(() => window.__e2eResult__);
     } catch (error) {
       if (String(error).includes('no such window') && attempt === 0) {
         continue;
@@ -190,21 +200,6 @@ describe('tauri e2e command coverage', () => {
 
     assertOk(await invokeIpc('system_worker_health', {}), 'system_worker_health');
     assertOk(await invokeIpc('system_setup_state', {}), 'system_setup_state');
-
-    // Diagnostic: verify we are still in the correct window before invoking a
-    // mutating command. On WebKitGTK, executeAsync may be routed differently
-    // from execute — capture the label and pathname so failures are actionable.
-    const windowDiag = await browser.execute(() => ({
-      pathname: window.location.pathname ?? null,
-      label: window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label ?? null,
-    }));
-    assert.equal(
-      windowDiag.label,
-      'main',
-      `expected Tauri window label "main" before mutating IPC; ` +
-        `got label="${windowDiag.label}" pathname="${windowDiag.pathname}"`,
-    );
-
     assertOk(
       await invokeIpc('system_setup_complete', { task: 'frontend' }),
       'system_setup_complete',
