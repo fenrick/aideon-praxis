@@ -24,6 +24,18 @@ OpenTelemetry supplies the tracing model and the logs↔traces correlation; W3C 
 
 - **Tracing uses OpenTelemetry; trace context propagates with W3C Trace Context.** The host creates a span per IPC command invocation ([LOGGING_FRAMEWORK.md §11](../LOGGING_FRAMEWORK.md)); major workflow steps are child spans. The renderer propagates trace context to the host using the W3C Trace Context `traceparent` representation across the IPC boundary, so the host span is a child of the renderer's action span rather than an orphan (OpenTelemetry; W3C Trace Context).
 
+- **`traceparent` is an optional sibling of `requestId` in the IPC request envelope — not inside `payload`.** The contract is:
+
+  ```ts
+  type IpcRequest<T> = { requestId: string; traceparent?: string; payload: T };
+  ```
+
+  ```rust
+  pub struct IpcRequest<T> { pub request_id: String, pub traceparent: Option<String>, pub payload: T }
+  ```
+
+  `traceparent` is transport/observability metadata, not domain data; placing it beside `requestId` keeps the payload schema stable. When present the host creates the IPC command span as a child of the supplied context; when absent the host starts a root span. `requestId`/`correlation_id` remain the product-level reconstruction fields — they must not be conflated with the span hierarchy. When present, `traceparent` must match the W3C format (`^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$`); an invalid value is an envelope error (`code: invalid_trace_context`), not a domain error. The raw invalid value must not be echoed back.
+
 - **Correlation IDs tie renderer → host → engine → events → logs.** The renderer creates a `correlation_id` per user-initiated workflow and a trace context for it; the host binds both to the command execution context; engine work and the events it emits ([ACCEPTED-WORK-AND-EVENTS.md](../04-contracts/ACCEPTED-WORK-AND-EVENTS.md), [PROJECTION-AND-INVALIDATION.md](../04-contracts/PROJECTION-AND-INVALIDATION.md)) carry the same `correlation_id`; every log line on both layers includes it, plus `trace_id`/`span_id` when tracing is enabled. One user action is reconstructable end to end ([LOGGING_FRAMEWORK.md §13](../LOGGING_FRAMEWORK.md)).
 
 - **Errors and events join the trace.** The error envelope carries the `correlation_id` of the failing command ([ADR-0016](./ADR-0016-error-envelope-rfc9457.md)), so a UI error joins to host logs and the span. An event's `eventId` and `correlation_id` ([ADR-0018](./ADR-0018-idempotency-and-deduplication.md)) let deduplicated processing be traced.
@@ -47,9 +59,9 @@ OpenTelemetry supplies the tracing model and the logs↔traces correlation; W3C 
 
 ## Follow-ups / Open Questions
 
+- ~~The exact IPC field carrying `traceparent` and its place in the request envelope.~~ **Decided:** optional `traceparent` sibling of `requestId` in `IpcRequest<T>`; see Decision above.
 - The exporter/backend and sampling policy for local capture.
 - Whether trace context extends across sync peers in hosted deployments.
-- The exact IPC field carrying `traceparent` and its place in the request envelope.
 
 ## References & standards
 
