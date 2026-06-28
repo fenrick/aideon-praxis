@@ -85,6 +85,12 @@ export function GraphWidget({
   const [showControls, setShowControls] = useState(true);
   const [layoutHydrated, setLayoutHydrated] = useState(true);
   const viewReference = useRef<GraphViewModel | undefined>(undefined);
+  const onViewChangeRef = useRef(onViewChange);
+  onViewChangeRef.current = onViewChange;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  const onRequestMetaModelFocusRef = useRef(onRequestMetaModelFocus);
+  onRequestMetaModelFocusRef.current = onRequestMetaModelFocus;
 
   const definition = useMemo(() => widget.view, [widget.view]);
 
@@ -128,31 +134,28 @@ export function GraphWidget({
     [persistLayout, setNodes],
   );
 
-  const attachInspectHandlers = useCallback(
-    (flowNodes: Node<GraphNodeData>[]) => {
-      if (!onRequestMetaModelFocus) {
-        return flowNodes;
-      }
-      return flowNodes.map((node) => {
-        const types = (node.data.entityTypes ?? []).filter((value: string) => {
-          return isNonEmptyString(value);
-        });
-        if (types.length === 0) {
-          return node;
-        }
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            onInspect: () => {
-              onRequestMetaModelFocus(types);
-            },
-          },
-        };
+  const attachInspectHandlers = useCallback((flowNodes: Node<GraphNodeData>[]) => {
+    if (!onRequestMetaModelFocusRef.current) {
+      return flowNodes;
+    }
+    return flowNodes.map((node) => {
+      const types = (node.data.entityTypes ?? []).filter((value: string) => {
+        return isNonEmptyString(value);
       });
-    },
-    [onRequestMetaModelFocus],
-  );
+      if (types.length === 0) {
+        return node;
+      }
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          onInspect: () => {
+            onRequestMetaModelFocusRef.current?.(types);
+          },
+        },
+      };
+    });
+  }, []);
 
   const loadView = useCallback(async () => {
     setLoading(true);
@@ -187,25 +190,16 @@ export function GraphWidget({
         setNodes(flowNodes);
       }
       setEdges(buildFlowEdges(view));
-      onViewChange?.(view);
+      onViewChangeRef.current?.(view);
     } catch (unknownError) {
       const message = toErrorMessage(unknownError);
       setError(message);
-      onError?.(message);
+      onErrorRef.current?.(message);
     } finally {
       setLayoutHydrated(true);
       setLoading(false);
     }
-  }, [
-    attachInspectHandlers,
-    definition,
-    graphLayoutContext,
-    onError,
-    onViewChange,
-    setEdges,
-    setNodes,
-    widget.id,
-  ]);
+  }, [attachInspectHandlers, definition, graphLayoutContext, setEdges, setNodes, widget.id]);
 
   useEffect(() => {
     loadView().catch((_ignoredError: unknown) => {
