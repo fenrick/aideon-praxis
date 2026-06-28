@@ -86,7 +86,7 @@ export function GraphWidget({
   const [layoutHydrated, setLayoutHydrated] = useState(true);
   const viewReference = useRef<GraphViewModel | undefined>(undefined);
 
-  const definition = widget.view;
+  const definition = useMemo(() => widget.view, [widget.view]);
 
   const persistLayout = useCallback(
     (nextNodes: Node<GraphNodeData>[], options?: { force?: boolean }) => {
