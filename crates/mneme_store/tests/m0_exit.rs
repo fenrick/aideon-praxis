@@ -28,9 +28,9 @@ fn id(s: &str) -> Id {
 }
 
 const ACTOR: &str = "00000000-0000-4000-8000-0000000000a1";
-const TYPE_APP: &str = "ab0aefe4-902f-5f99-8ce3-eae00286ebe0";
-const FIELD_DISPOSITION: &str = "cba320a9-7e3c-5597-b42f-284aad9a6406";
-const REL_REALISES: &str = "ea3b966e-7c80-537a-9965-65943211827d";
+const TYPE_APP: &str = "c8d3aeef-d3d2-5143-9c63-7e11c2f019a2";
+const FIELD_DISPOSITION: &str = "d4c7fcfa-3c4c-5ceb-abd3-1fc14e28c273";
+const REL_REALISES: &str = "5189e2d3-0b57-520d-9829-40c3d731f863";
 const N1: &str = "11111111-0000-4000-8000-000000000003";
 const N2: &str = "11111111-0000-4000-8000-000000000004";
 const EDGE: &str = "22222222-0000-4000-8000-000000000005";
@@ -293,7 +293,7 @@ fn fresh_op_after_rebuild_sorts_after_all_canonical_history() {
 
     let mut ws = Workspace::open(dir.path()).unwrap();
     // Author a fresh op; its asserted time must exceed every replayed op.
-    let env = ws
+    let frontier = ws
         .author(
             id(ACTOR),
             Origin::manual(),
@@ -310,7 +310,7 @@ fn fresh_op_after_rebuild_sorts_after_all_canonical_history() {
     let snapshot = ws.snapshot().unwrap();
     assert_eq!(snapshot.partitions[0].applied_ops.len(), 10);
     // The minted op's HLC is strictly greater than any other op's.
-    assert!(env.asserted_at.0 > 0);
+    assert!(frontier.hlc_watermark.0 > 0);
 }
 
 #[test]

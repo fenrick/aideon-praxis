@@ -160,3 +160,35 @@ fn mutating_commands_are_granted_only_to_the_main_window() {
         "mutating commands must be granted to the main window only, got {granting_windows:?}"
     );
 }
+
+/// Static parity guard: no capability file grants a wildcard (`**`) permission to
+/// any window. Deny-by-default holds only if every granted permission is an explicit
+/// named entry — a wildcard would silently grant future commands without a review
+/// step (ADR-0040 Tier-1 static parity, M0-foundation.md §Tier-1).
+#[test]
+fn no_capability_grants_a_wildcard_permission() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("repo root");
+    let cap_dir = repo.join("src-tauri/capabilities");
+
+    for entry in std::fs::read_dir(&cap_dir).expect("read capabilities dir") {
+        let path = entry.expect("dir entry").path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let cap: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).expect("read capability"))
+                .expect("parse capability");
+        for perm in cap["permissions"].as_array().into_iter().flatten() {
+            let name = perm.as_str().unwrap_or("");
+            assert!(
+                !name.contains("**"),
+                "capability {} grants wildcard permission {:?} — deny-by-default requires \
+                 explicit named entries only (ADR-0040)",
+                path.file_name().unwrap_or_default().to_string_lossy(),
+                name,
+            );
+        }
+    }
+}

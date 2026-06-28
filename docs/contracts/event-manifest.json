@@ -35,6 +35,27 @@
         "command",
         "payload"
       ]
+    },
+    {
+      "name": "workspace:lifecycle_changed",
+      "payloadKeys": [
+        "workspaceId",
+        "state",
+        "jobId",
+        "errorCode",
+        "correlationId"
+      ]
+    },
+    {
+      "name": "workspace:ready_read_write",
+      "payloadKeys": [
+        "workspaceId",
+        "jobId",
+        "readiness",
+        "foundationRebuildHash",
+        "runtimeGeneration",
+        "correlationId"
+      ]
     }
   ]
 }

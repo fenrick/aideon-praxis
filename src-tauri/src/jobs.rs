@@ -14,6 +14,7 @@
 
 use serde::Serialize;
 use specta::Type;
+use tauri_specta::Event;
 
 /// Event channel names ([accepted-work event-model], [workspace-lifecycle]).
 /// Tauri event names forbid `.`; the wire channel uses the `:` convention (as
@@ -90,6 +91,17 @@ pub struct WorkspaceReadinessEvent {
     pub foundation_rebuild_hash: String,
     pub runtime_generation: String,
     pub correlation_id: String,
+}
+
+// Manual `Event` impls keep the wire channel names in sync with the
+// `EVENT_*` constants rather than the struct-name kebab-case that the derive
+// macro would generate. The channel names use `:` (Tauri forbids `.`).
+impl Event for WorkspaceLifecycleEvent {
+    const NAME: &'static str = EVENT_LIFECYCLE_CHANGED;
+}
+
+impl Event for WorkspaceReadinessEvent {
+    const NAME: &'static str = EVENT_READY_READ_WRITE;
 }
 
 impl WorkspaceReadinessEvent {

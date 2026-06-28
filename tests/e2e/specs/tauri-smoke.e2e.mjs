@@ -66,6 +66,11 @@ async function invokeIpc(command, payload) {
 
 describe('tauri e2e smoke', () => {
   it('bridges node-driven invoke into rust commands', async () => {
+    // Ensure we have a valid active window before executing any scripts.
+    // The default WebDriver context may point to the splash window, which closes
+    // once setup completes — leaving a stale handle that throws "no such window".
+    await ensureActiveWindow();
+
     const hasInvoke = await browser.execute(
       () => typeof window.__TAURI_INTERNALS__?.invoke === 'function',
     );

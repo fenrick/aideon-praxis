@@ -1,4 +1,12 @@
 {
+  "package": {
+    "id": "core",
+    "symbol_uuid": {
+      "algorithm": "uuidv5",
+      "namespace": "b0a75355-d2a9-5fb4-8ff2-59e31e205475",
+      "name_path_version": 1
+    }
+  },
   "version": "1.0.0",
   "description": "Canonical Aideon meta-model aligned to ArchiMate-style concepts.",
   "types": [
@@ -6,28 +14,30 @@
       "id": "ValueStreamStage",
       "label": "Value Stream Stage",
       "category": "Business",
-      "extends": "Stage",
       "attributes": [
         {
           "name": "name",
           "type": "string",
           "required": true,
-          "uuid": "c13cf5bd-ec27-5085-8eb8-2849bb7ccde6"
+          "cardinality": "single",
+          "uuid": "578015f8-6bfd-5eb8-8e25-e61514dcca20"
         },
         {
           "name": "purpose",
           "type": "string",
           "required": false,
-          "uuid": "c1b3a129-ca0e-50dd-8985-72a93220a993"
+          "cardinality": "single",
+          "uuid": "dac8b144-6faa-5b56-84bb-c429765108f4"
         },
         {
           "name": "owner",
           "type": "string",
           "required": false,
-          "uuid": "6def842e-fbfc-5e1a-b6a1-f3e17f32a86e"
+          "cardinality": "single",
+          "uuid": "52707e42-820c-5fc9-8d9c-82b66f07ee99"
         }
       ],
-      "uuid": "e653141e-dc30-5be5-882b-31ead5f1b0d2"
+      "uuid": "9472618f-07ce-555f-9582-2b1fd330de68"
     },
     {
       "id": "Capability",
@@ -38,24 +48,27 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "uuid": "89efcd94-5145-5439-8023-9424c6c381f8"
+          "cardinality": "single",
+          "uuid": "a1fc3738-3b42-5737-b0ed-1eba8774623c"
         },
         {
           "name": "tier",
           "type": "enum",
           "enum": ["Strategic", "Core", "Supporting"],
           "required": false,
-          "uuid": "c27ee320-dea9-5263-b362-d94c4a22bb77"
+          "cardinality": "single",
+          "uuid": "935bc847-8e37-5ba3-9af9-7547fddce21f"
         },
         {
           "name": "lifecycle",
           "type": "enum",
           "enum": ["Target", "Current", "Retire"],
           "required": false,
-          "uuid": "23917fa3-e91c-57af-9650-9e8e58b1d18a"
+          "cardinality": "single",
+          "uuid": "0b94086b-18e7-5f46-b01f-0ba456451e40"
         }
       ],
-      "uuid": "ec929adf-eb79-51b8-a757-38d0452885ae"
+      "uuid": "88c36fbe-5c8e-5485-92eb-952a4636be57"
     },
     {
       "id": "BusinessProcess",
@@ -66,23 +79,26 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "uuid": "96a65a2c-020c-51a1-8757-6d28fb97c762"
+          "cardinality": "single",
+          "uuid": "0312468e-8bc4-5bfe-8a7c-65237402d861"
         },
         {
           "name": "description",
           "type": "text",
           "required": false,
-          "uuid": "cd4c20d1-3ad8-51ba-a7dc-c12783299e82"
+          "cardinality": "single",
+          "uuid": "494db14d-4c1d-5201-b509-7fa25df35604"
         },
         {
           "name": "criticality",
           "type": "enum",
           "enum": ["High", "Medium", "Low"],
           "required": false,
-          "uuid": "a39b7e1b-8f92-5ddf-bb48-cdc0fd3a2a21"
+          "cardinality": "single",
+          "uuid": "1336c735-87f0-5c58-b942-b346d78c3310"
         }
       ],
-      "uuid": "87226b40-8642-5f4a-ae2b-fe21388aa225"
+      "uuid": "56def333-1887-5c69-9d47-595d614acee5"
     },
     {
       "id": "Application",
@@ -93,30 +109,34 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "uuid": "bb59958c-4475-58e3-8bbb-c438785d4934"
+          "cardinality": "single",
+          "uuid": "03e12e7f-c494-5387-bb4f-a8c472ea6e79"
         },
         {
           "name": "vendor",
           "type": "string",
           "required": false,
-          "uuid": "8b325050-8ae1-52b7-843a-1ac2efaf0e41"
+          "cardinality": "single",
+          "uuid": "8555b467-6189-5783-a813-8dd0a385f7d4"
         },
         {
           "name": "disposition",
           "type": "enum",
           "enum": ["Invest", "Tolerate", "Migrate", "Eliminate"],
           "required": false,
-          "uuid": "cba320a9-7e3c-5597-b42f-284aad9a6406"
+          "cardinality": "single",
+          "uuid": "d4c7fcfa-3c4c-5ceb-abd3-1fc14e28c273"
         },
         {
           "name": "lifecycle",
           "type": "enum",
           "enum": ["Plan", "Build", "Run", "Retire"],
           "required": false,
-          "uuid": "c9c636f1-5c02-5ba0-9c26-4b4a69b64a74"
+          "cardinality": "single",
+          "uuid": "8d8a3e48-9771-509a-a473-76fa166504b5"
         }
       ],
-      "uuid": "ab0aefe4-902f-5f99-8ce3-eae00286ebe0"
+      "uuid": "c8d3aeef-d3d2-5143-9c63-7e11c2f019a2"
     },
     {
       "id": "DataEntity",
@@ -127,17 +147,19 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "uuid": "4719a027-0650-536f-8c89-fdb245be76a3"
+          "cardinality": "single",
+          "uuid": "a3e3776a-f6a9-59ac-b21f-0a5c8ef4849d"
         },
         {
           "name": "sensitivity",
           "type": "enum",
           "enum": ["Public", "Internal", "Confidential"],
           "required": false,
-          "uuid": "67c1dc3b-3050-54da-a179-7b0356526a09"
+          "cardinality": "single",
+          "uuid": "927434a0-aed9-54c6-9a2b-9475ab2c48a4"
         }
       ],
-      "uuid": "28a07159-2698-5c91-93f5-732dba0fc0d1"
+      "uuid": "b91e1182-36fc-56d3-a6ec-21c9e3cb5bde"
     },
     {
       "id": "TechnologyComponent",
@@ -148,23 +170,26 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "uuid": "633889a5-5eee-5e25-958f-ad6d70b739b4"
+          "cardinality": "single",
+          "uuid": "f6ec2c60-45e4-5271-94a5-73a9bbc7f5ab"
         },
         {
           "name": "provider",
           "type": "string",
           "required": false,
-          "uuid": "a2513423-f17d-59dd-83ed-114b31750ea2"
+          "cardinality": "single",
+          "uuid": "dbe3f500-e3b1-5a23-bde2-815649bb8db7"
         },
         {
           "name": "deployment",
           "type": "enum",
           "enum": ["On-Prem", "IaaS", "PaaS", "SaaS"],
           "required": false,
-          "uuid": "4b893c3a-5789-5111-9e45-da630a906b86"
+          "cardinality": "single",
+          "uuid": "d203c341-41d8-5b57-b714-8bbdbfc53974"
         }
       ],
-      "uuid": "20861a4e-26ac-5125-b8b8-c42782deb25e"
+      "uuid": "d3077ab8-4a52-50fb-8b6b-814816b8c521"
     },
     {
       "id": "PlanEvent",
@@ -175,30 +200,34 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "uuid": "9a2d4453-4e33-5cfe-ab75-646072e0ce2f"
+          "cardinality": "single",
+          "uuid": "77dfe604-8ab0-524d-b177-30ce43827609"
         },
         {
           "name": "effective_at",
           "type": "datetime",
           "required": true,
-          "uuid": "384b84b8-ffa4-5db6-82d5-c2db905ff649"
+          "cardinality": "single",
+          "uuid": "d7b202c2-5581-5cfe-812e-10f2fc7cbb41"
         },
         {
           "name": "confidence",
           "type": "number",
           "required": false,
-          "uuid": "919c0d4e-2c2d-5269-974f-5db6e59a054b"
+          "cardinality": "single",
+          "uuid": "9e6d4ec5-7fb8-5c8c-b84a-2844bd09606e"
         },
         {
           "name": "source.priority",
           "type": "enum",
           "enum": ["P0", "P1", "P2"],
           "required": false,
-          "uuid": "df3ae5a5-6962-5016-8b0d-d276a7e8d162"
+          "cardinality": "single",
+          "uuid": "327ff9e7-d8e8-5681-b296-9f38b564399b"
         }
       ],
       "effectTypes": ["create", "update", "delete", "link", "unlink"],
-      "uuid": "c8079bb8-078e-5ba9-b93e-3e2312d99798"
+      "uuid": "4ec5772b-2eb6-53f0-885a-b39afce94c3f"
     },
     {
       "id": "MetaModelEntry",
@@ -209,22 +238,25 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "uuid": "89612939-d29a-5f5f-bcf4-7343e6a014b2"
+          "cardinality": "single",
+          "uuid": "9b8bdbd9-f7e6-55cb-a194-a195bb929464"
         },
         {
           "name": "description",
           "type": "text",
           "required": false,
-          "uuid": "0169f9e3-0736-5e37-bdd5-23df6ddae038"
+          "cardinality": "single",
+          "uuid": "6cd7d0e3-0f30-562b-be54-cfd250057538"
         },
         {
           "name": "payload",
           "type": "text",
           "required": true,
-          "uuid": "f12aeffa-071c-5832-b3d5-3d26cdf52bee"
+          "cardinality": "single",
+          "uuid": "a2cc4fd0-49c5-5038-8027-1b549fb91865"
         }
       ],
-      "uuid": "41a794d5-c817-5139-87ca-03bdd6357dbe"
+      "uuid": "6fa47ff1-a5b3-5e48-8a8d-5a3ef2095df7"
     }
   ],
   "relationships": [
@@ -234,11 +266,13 @@
       "from": ["Capability"],
       "to": ["ValueStreamStage"],
       "directed": true,
+      "allowSelf": false,
+      "allowDuplicate": true,
       "multiplicity": {
         "from": "many",
         "to": "many"
       },
-      "uuid": "ef6e5aed-cb2d-5d59-a0f3-ac7ab38189e5"
+      "uuid": "1da64e39-cb18-5fd8-a35d-7c42ed6e13b8"
     },
     {
       "id": "realises",
@@ -246,11 +280,13 @@
       "from": ["Application", "TechnologyComponent"],
       "to": ["Capability", "BusinessProcess"],
       "directed": true,
+      "allowSelf": false,
+      "allowDuplicate": true,
       "multiplicity": {
         "from": "many",
         "to": "many"
       },
-      "uuid": "ea3b966e-7c80-537a-9965-65943211827d"
+      "uuid": "5189e2d3-0b57-520d-9829-40c3d731f863"
     },
     {
       "id": "accesses",
@@ -258,16 +294,23 @@
       "from": ["BusinessProcess", "Application"],
       "to": ["DataEntity"],
       "directed": true,
+      "allowSelf": false,
+      "allowDuplicate": false,
+      "multiplicity": {
+        "from": "many",
+        "to": "many"
+      },
       "attributes": [
         {
           "name": "mode",
           "type": "enum",
           "enum": ["read", "write", "readwrite"],
           "required": true,
-          "uuid": "f504d232-380a-54bd-82de-3f04de8e6375"
+          "cardinality": "single",
+          "uuid": "dbc127b5-6875-5ee9-abbc-782716778317"
         }
       ],
-      "uuid": "40160c5d-4d4a-51b0-818e-31c8eb1a3d87"
+      "uuid": "71bccc12-2ebd-5454-bff5-2f230e0a911f"
     },
     {
       "id": "hosts",
@@ -275,11 +318,13 @@
       "from": ["TechnologyComponent"],
       "to": ["Application"],
       "directed": true,
+      "allowSelf": false,
+      "allowDuplicate": true,
       "multiplicity": {
         "from": "many",
         "to": "many"
       },
-      "uuid": "0873d91c-b465-5bc7-9810-27ec2bf6befb"
+      "uuid": "f5dd87c0-d7fa-5ca1-9e3c-b95b23221677"
     },
     {
       "id": "plan_effect",
@@ -287,22 +332,30 @@
       "from": ["PlanEvent"],
       "to": ["Capability", "BusinessProcess", "Application", "TechnologyComponent"],
       "directed": true,
+      "allowSelf": false,
+      "allowDuplicate": true,
+      "multiplicity": {
+        "from": "many",
+        "to": "many"
+      },
       "attributes": [
         {
           "name": "op",
           "type": "enum",
           "enum": ["create", "update", "delete", "link", "unlink"],
           "required": true,
-          "uuid": "f182b2a4-6b94-524d-aae5-b60165d17890"
+          "cardinality": "single",
+          "uuid": "e888ce5a-8a2f-5ff6-9357-31e86645fa21"
         },
         {
           "name": "target_ref",
           "type": "string",
           "required": true,
-          "uuid": "a458d1db-2f7c-5c37-9b62-e33b01e6c91a"
+          "cardinality": "single",
+          "uuid": "d3789921-568f-5ed7-a722-d075a9b1f1c4"
         }
       ],
-      "uuid": "d73a80bd-4422-5a5a-adc1-88a7256cbb24"
+      "uuid": "45b3be4b-fea7-5d94-9b0e-ed1b0251d051"
     }
   ],
   "validation": {
@@ -315,14 +368,6 @@
       },
       "enum": {
         "caseSensitive": false
-      }
-    },
-    "relationships": {
-      "serves": {
-        "allowSelf": false
-      },
-      "accesses": {
-        "allowDuplicate": false
       }
     }
   }
