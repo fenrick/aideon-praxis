@@ -212,23 +212,23 @@ describe('tauri e2e command coverage', () => {
     assert.equal(hasInvoke, true, 'expected tauri internals invoke to be available');
 
     const ids = {
-      partitionId: nextId('partition'),
-      actorId: nextId('actor'),
-      typeNodeId: nextId('type-node'),
-      typeEdgeId: nextId('type-edge'),
-      fieldId: nextId('field'),
       nodeA: nextId('node-a'),
       nodeB: nextId('node-b'),
-      edgeId: nextId('edge'),
-      scenarioId: nextId('scenario'),
       widgetId: nextId('widget'),
       docId: nextId('doc'),
     };
-    const emptyPartitionId = nextId('partition-empty');
-    const assertedAt = '1';
-    const validTime = '1';
 
     assertOk(await invokeIpc('system_worker_health', {}), 'system_worker_health');
+
+    // system_logging_context and system_metrics_snapshot bypass the IpcRequest/IpcResponse
+    // envelope — they are raw Tauri commands returning their payload directly (not wrapped
+    // in IpcResponse<T>). Invoke via invokeCommand (no envelope wrapper) and assert the
+    // JS promise resolved rather than threw.
+    const loggingCtx = await invokeCommand('system_logging_context', {});
+    assert.equal(loggingCtx.ok, true, loggingCtx.error ?? 'system_logging_context failed');
+    const metricsSnap = await invokeCommand('system_metrics_snapshot', {});
+    assert.equal(metricsSnap.ok, true, metricsSnap.error ?? 'system_metrics_snapshot failed');
+
     assertOk(await invokeIpc('system_setup_state', {}), 'system_setup_state');
     assertOk(
       await invokeIpc('system_setup_complete', { task: 'frontend' }),
@@ -490,615 +490,57 @@ describe('tauri e2e command coverage', () => {
       'chrona_temporal_merge_branches',
     );
 
-    assertOk(
-      await invokeIpc('mneme_store_upsert_metamodel_batch', {
-        partitionId: ids.partitionId,
-        actorId: ids.actorId,
-        assertedAt,
-        batch: {
-          types: [
-            {
-              type_id: ids.typeNodeId,
-              applies_to: 'Node',
-              label: 'Capability',
-              is_abstract: false,
-              parent_type_id: null,
-            },
-            {
-              type_id: ids.typeEdgeId,
-              applies_to: 'Edge',
-              label: 'relates',
-              is_abstract: false,
-              parent_type_id: null,
-            },
-          ],
-          fields: [
-            {
-              field_id: ids.fieldId,
-              label: 'name',
-              value_type: 'Str',
-              cardinality_multi: false,
-              merge_policy: 'Lww',
-              is_indexed: true,
-              disallow_overlap: false,
-            },
-          ],
-          type_fields: [
-            {
-              type_id: ids.typeNodeId,
-              field_id: ids.fieldId,
-              is_required: false,
-              default_value: null,
-              override_default: false,
-              tighten_required: false,
-              disallow_overlap: null,
-            },
-          ],
-          edge_type_rules: [
-            {
-              edge_type_id: ids.typeEdgeId,
-              allowed_src_type_ids: [ids.typeNodeId],
-              allowed_dst_type_ids: [ids.typeNodeId],
-              semantic_direction: 'out',
-            },
-          ],
-          metamodel_version: 'e2e',
-          metamodel_source: 'e2e',
-        },
-        scenarioId: null,
-      }),
-      'mneme_store_upsert_metamodel_batch',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_compile_effective_schema', {
-        partitionId: ids.partitionId,
-        actorId: ids.actorId,
-        assertedAt,
-        typeId: ids.typeNodeId,
-        scenarioId: null,
-      }),
-      'mneme_store_compile_effective_schema',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_effective_schema', {
-        partitionId: ids.partitionId,
-        typeId: ids.typeNodeId,
-      }),
-      'mneme_store_get_effective_schema',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_list_edge_type_rules', {
-        partitionId: ids.partitionId,
-        edgeTypeId: null,
-      }),
-      'mneme_store_list_edge_type_rules',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_create_node', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        actorId: ids.actorId,
-        assertedAt,
-        nodeId: ids.nodeA,
-        typeId: ids.typeNodeId,
-        aclGroupId: null,
-        ownerActorId: null,
-        visibility: null,
-      }),
-      'mneme_store_create_node',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_create_node', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        actorId: ids.actorId,
-        assertedAt,
-        nodeId: ids.nodeB,
-        typeId: ids.typeNodeId,
-        aclGroupId: null,
-        ownerActorId: null,
-        visibility: null,
-      }),
-      'mneme_store_create_node',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_create_edge', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        actorId: ids.actorId,
-        assertedAt,
-        edgeId: ids.edgeId,
-        typeId: ids.typeEdgeId,
-        srcId: ids.nodeA,
-        dstId: ids.nodeB,
-        existsValidFrom: validTime,
-        existsValidTo: null,
-        layer: null,
-        weight: null,
-        aclGroupId: null,
-        ownerActorId: null,
-        visibility: null,
-      }),
-      'mneme_store_create_edge',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_set_edge_existence_interval', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        actorId: ids.actorId,
-        assertedAt,
-        edgeId: ids.edgeId,
-        validFrom: validTime,
-        validTo: null,
-        layer: null,
-        isTombstone: false,
-      }),
-      'mneme_store_set_edge_existence_interval',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_set_property_interval', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        actorId: ids.actorId,
-        assertedAt,
-        entityId: ids.nodeA,
-        fieldId: ids.fieldId,
-        value: { Str: 'Node A' },
-        validFrom: validTime,
-        validTo: null,
-        layer: null,
-      }),
-      'mneme_store_set_property_interval',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_clear_property_interval', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        actorId: ids.actorId,
-        assertedAt,
-        entityId: ids.nodeA,
-        fieldId: ids.fieldId,
-        validFrom: validTime,
-        validTo: null,
-        layer: null,
-      }),
-      'mneme_store_clear_property_interval',
-    );
+    // Workspace lifecycle — independent of the in-process WorkerState used by
+    // chrona/praxis, so these calls do not affect the engine commands above.
+    // workspace_create writes a real workspace to /tmp; ok-or-error is used
+    // because create may fail in constrained CI environments.
     assertOkOrError(
-      await invokeIpc('mneme_store_or_set_update', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        actorId: ids.actorId,
-        assertedAt,
-        entityId: ids.nodeA,
-        fieldId: ids.fieldId,
-        op: 'Add',
-        element: { Str: 'tag-a' },
-        validFrom: validTime,
-        validTo: null,
-        layer: null,
-      }),
-      'mneme_store_or_set_update',
+      await invokeIpc('workspace_create', { root: `/tmp/e2e-wksp-${nextId('wksp')}` }),
+      'workspace_create',
     );
+    assertOkOrError(await invokeIpc('workspace_status', {}), 'workspace_status');
+    assertOkOrError(await invokeIpc('workspace_rebuild', {}), 'workspace_rebuild');
+    assertOkOrError(await invokeIpc('workspace_close', {}), 'workspace_close');
+    // workspace_open with a non-existent path exercises the command over the
+    // real bridge; a WORKSPACE_NOT_FOUND error response is a valid outcome.
     assertOkOrError(
-      await invokeIpc('mneme_store_counter_update', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        actorId: ids.actorId,
-        assertedAt,
-        entityId: ids.nodeA,
-        fieldId: ids.fieldId,
-        delta: 1,
-        validFrom: validTime,
-        validTo: null,
-        layer: null,
-      }),
-      'mneme_store_counter_update',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_read_entity_at_time', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        entityId: ids.nodeA,
-        at: validTime,
-        asOfAssertedAt: null,
-        fieldIds: null,
-        includeDefaults: true,
-      }),
-      'mneme_store_read_entity_at_time',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_traverse_at_time', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        fromEntityId: ids.nodeA,
-        direction: 'Out',
-        edgeTypeId: null,
-        at: validTime,
-        asOfAssertedAt: null,
-        limit: 10,
-      }),
-      'mneme_store_traverse_at_time',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_list_entities', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        kind: 'Node',
-        typeId: ids.typeNodeId,
-        at: validTime,
-        asOfAssertedAt: null,
-        filters: [
-          {
-            fieldId: ids.fieldId,
-            op: 'Eq',
-            value: { Str: 'Node A' },
-          },
-        ],
-        limit: 25,
-        cursor: null,
-      }),
-      'mneme_store_list_entities',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_changes_since', {
-        partitionId: ids.partitionId,
-        fromSequence: null,
-        limit: 50,
-      }),
-      'mneme_store_get_changes_since',
-    );
-    const subscription = assertOk(
-      await invokeIpc('mneme_store_subscribe_partition', {
-        partitionId: ids.partitionId,
-        fromSequence: null,
-        eventName: 'mneme_change_event',
-      }),
-      'mneme_store_subscribe_partition',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_unsubscribe_partition', {
-        subscriptionId: subscription.subscriptionId,
-      }),
-      'mneme_store_unsubscribe_partition',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_projection_edges', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        asOfValidTime: null,
-        asOfAssertedAt: null,
-        edgeTypeFilter: null,
-        limit: 25,
-      }),
-      'mneme_store_get_projection_edges',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_graph_degree_stats', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        asOfValidTime: null,
-        entityIds: null,
-        limit: 25,
-      }),
-      'mneme_store_get_graph_degree_stats',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_graph_edge_type_counts', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        edgeTypeIds: null,
-        limit: 25,
-      }),
-      'mneme_store_get_graph_edge_type_counts',
-    );
-    const pagerank = assertOk(
-      await invokeIpc('mneme_store_store_pagerank_scores', {
-        partitionId: ids.partitionId,
-        actorId: ids.actorId,
-        assertedAt,
-        asOfValidTime: null,
-        asOfAssertedAt: null,
-        params: {
-          damping: 0.85,
-          maxIters: 20,
-          tol: 0.0001,
-          personalisedSeed: null,
-        },
-        scores: [
-          {
-            id: ids.nodeA,
-            score: 0.5,
-          },
-        ],
-        scenarioId: null,
-      }),
-      'mneme_store_store_pagerank_scores',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_pagerank_scores', {
-        partitionId: ids.partitionId,
-        runId: pagerank.runId,
-        topN: 10,
-      }),
-      'mneme_store_get_pagerank_scores',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_export_ops', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        sinceAssertedAt: null,
-        limit: 100,
-      }),
-      'mneme_store_export_ops',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_ingest_ops', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        ops: [],
-      }),
-      'mneme_store_ingest_ops',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_partition_head', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-      }),
-      'mneme_store_get_partition_head',
-    );
-    assertOkOrError(
-      await invokeIpc('mneme_store_create_scenario', {
-        partitionId: ids.partitionId,
-        actorId: ids.actorId,
-        assertedAt,
-        name: ids.scenarioId,
-      }),
-      'mneme_store_create_scenario',
-    );
-    assertOkOrError(
-      await invokeIpc('mneme_store_delete_scenario', {
-        partitionId: ids.partitionId,
-        actorId: ids.actorId,
-        assertedAt,
-        scenarioId: ids.scenarioId,
-      }),
-      'mneme_store_delete_scenario',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_export_ops_stream', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        sinceAssertedAt: null,
-        untilAssertedAt: null,
-        includeSchema: true,
-        includeDataOps: true,
-        includeScenarios: true,
-      }),
-      'mneme_store_export_ops_stream',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_import_ops_stream', {
-        targetPartition: ids.partitionId,
-        scenarioId: null,
-        allowPartitionCreate: true,
-        remapActorIds: null,
-        strictSchema: false,
-        records: [],
-      }),
-      'mneme_store_import_ops_stream',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_export_snapshot_stream', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        asOfAssertedAt: assertedAt,
-        includeFacts: true,
-        includeEntities: true,
-      }),
-      'mneme_store_export_snapshot_stream',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_import_snapshot_stream', {
-        targetPartition: emptyPartitionId,
-        scenarioId: null,
-        allowPartitionCreate: true,
-        remapActorIds: null,
-        strictSchema: false,
-        records: [
-          {
-            record_type: 'snapshot_header',
-            data: {
-              partition_id: emptyPartitionId,
-              scenario_id: null,
-              as_of_asserted_at: 1,
-            },
-          },
-          {
-            record_type: 'snapshot_footer',
-            data: { complete: true },
-          },
-        ],
-      }),
-      'mneme_store_import_snapshot_stream',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_upsert_validation_rules', {
-        partitionId: ids.partitionId,
-        actorId: ids.actorId,
-        assertedAt,
-        rules: [],
-      }),
-      'mneme_store_upsert_validation_rules',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_list_validation_rules', {
-        partitionId: ids.partitionId,
-      }),
-      'mneme_store_list_validation_rules',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_upsert_computed_rules', {
-        partitionId: ids.partitionId,
-        actorId: ids.actorId,
-        assertedAt,
-        rules: [],
-      }),
-      'mneme_store_upsert_computed_rules',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_list_computed_rules', {
-        partitionId: ids.partitionId,
-      }),
-      'mneme_store_list_computed_rules',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_upsert_computed_cache', {
-        partitionId: ids.partitionId,
-        entries: [],
-      }),
-      'mneme_store_upsert_computed_cache',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_list_computed_cache', {
-        partitionId: ids.partitionId,
-        entityId: null,
-        fieldId: ids.fieldId,
-        atValidTime: null,
-        limit: 25,
-      }),
-      'mneme_store_list_computed_cache',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_trigger_rebuild_effective_schema', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        reason: 'e2e rebuild',
-      }),
-      'mneme_store_trigger_rebuild_effective_schema',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_trigger_refresh_integrity', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        reason: 'e2e integrity',
-      }),
-      'mneme_store_trigger_refresh_integrity',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_trigger_refresh_analytics_projections', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        reason: 'e2e analytics',
-      }),
-      'mneme_store_trigger_refresh_analytics_projections',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_trigger_retention', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        policy: {
-          keepOpsDays: null,
-          keepFactsDays: null,
-          keepFailedJobsDays: null,
-          keepPagerankRunsDays: null,
-        },
-        reason: 'e2e retention',
-      }),
-      'mneme_store_trigger_retention',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_trigger_compaction', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        reason: 'e2e compaction',
-      }),
-      'mneme_store_trigger_compaction',
-    );
-    assertOkOrError(
-      await invokeIpc('mneme_store_run_processing_worker', {
-        maxJobs: 1,
-        leaseMillis: 1000,
-      }),
-      'mneme_store_run_processing_worker',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_list_jobs', {
-        partitionId: ids.partitionId,
-        status: null,
-        limit: 25,
-      }),
-      'mneme_store_list_jobs',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_integrity_head', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-      }),
-      'mneme_store_get_integrity_head',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_last_schema_compile', {
-        partitionId: ids.partitionId,
-        typeId: ids.typeNodeId,
-      }),
-      'mneme_store_get_last_schema_compile',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_list_failed_jobs', {
-        partitionId: ids.partitionId,
-        limit: 25,
-      }),
-      'mneme_store_list_failed_jobs',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_get_schema_manifest', {
-        partitionId: ids.partitionId,
-      }),
-      'mneme_store_get_schema_manifest',
-    );
-    assertOkOrError(
-      await invokeIpc('mneme_store_explain_resolution', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        entityId: ids.nodeA,
-        fieldId: ids.fieldId,
-        at: validTime,
-        asOfAssertedAt: null,
-      }),
-      'mneme_store_explain_resolution',
-    );
-    assertOkOrError(
-      await invokeIpc('mneme_store_explain_traversal', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        edgeId: ids.edgeId,
-        at: validTime,
-        asOfAssertedAt: null,
-      }),
-      'mneme_store_explain_traversal',
-    );
-    assertOk(
-      await invokeIpc('mneme_store_tombstone_entity', {
-        partitionId: ids.partitionId,
-        scenarioId: null,
-        actorId: ids.actorId,
-        assertedAt,
-        entityId: ids.nodeB,
-      }),
-      'mneme_store_tombstone_entity',
+      await invokeIpc('workspace_open', { root: '/tmp/e2e-wksp-nonexistent' }),
+      'workspace_open',
     );
 
+    // -------------------------------------------------------------------------
+    // Manifest parity guards
+    //
+    // The authoritative IPC surface is ipc-manifest.json. Two invariants:
+    // 1. Every manifest command is exercised — no registered command is silently
+    //    dropped from the e2e gate.
+    // 2. No invoked command is absent from the manifest — guards against aspirational
+    //    calls referencing commands not yet implemented and registered.
+    //    (mvp-command-registry.md is design intent; ipc-manifest.json is the
+    //    current executable surface.)
+    // -------------------------------------------------------------------------
     const manifestRaw = await fs.readFile(
       path.resolve(process.cwd(), 'docs/contracts/ipc-manifest.json'),
       'utf8',
     );
     const manifest = JSON.parse(manifestRaw);
+
     const missing = manifest.commands.filter((command) => !invokedCommands.has(command));
     assert.equal(
       missing.length,
       0,
       missing.length ? `Missing command coverage: ${missing.join(', ')}` : undefined,
+    );
+
+    const aspirational = [...invokedCommands].filter(
+      (command) => !manifest.commands.includes(command),
+    );
+    assert.equal(
+      aspirational.length,
+      0,
+      aspirational.length
+        ? `Commands invoked but absent from ipc-manifest.json: ${aspirational.join(', ')}`
+        : undefined,
     );
   });
 });
