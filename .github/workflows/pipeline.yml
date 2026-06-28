@@ -145,12 +145,14 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
       - name: Cache tauri-driver install
+        id: cache-tauri-driver-webdriver
         uses: actions/cache@v5
         with:
           path: ~/.cargo/bin/tauri-driver
           key: tauri-driver-${{ runner.os }}-${{ hashFiles('src-tauri/Cargo.lock') }}
 
       - name: Install tauri-driver
+        if: steps.cache-tauri-driver-webdriver.outputs.cache-hit != 'true'
         run: cargo install tauri-driver --locked
 
       - run: pnpm install --frozen-lockfile
@@ -194,12 +196,14 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
       - name: Cache tauri-driver install
+        id: cache-tauri-driver-tier2
         uses: actions/cache@v5
         with:
           path: ~/.cargo/bin/tauri-driver
           key: tauri-driver-${{ runner.os }}-${{ hashFiles('src-tauri/Cargo.lock') }}
 
       - name: Install tauri-driver
+        if: steps.cache-tauri-driver-tier2.outputs.cache-hit != 'true'
         run: cargo install tauri-driver --locked
 
       - run: pnpm install --frozen-lockfile
