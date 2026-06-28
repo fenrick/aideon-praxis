@@ -51,14 +51,15 @@ Each row is owned by exactly one milestone. "Validated by" states the **real** g
 
 ## Per-milestone
 
-### M0 — Foundation · **complete** ✅
+### M0 — Foundation · **in progress** ◐
 
 [contract](./M0-foundation.md) · capability gate: a portable workspace opens, round-trips, and rebuilds losslessly; typed IPC + capabilities enforced; no open ports.
 
 - **Owns:** canonical storage/JSON/HLC/blobs/rebuild · workspace lifecycle + lock · minimal accepted-work core [D1] · typed IPC + capability + codegen manifest [D7] · shell + lifecycle UX [D5] · observability baseline · authored metamodel.
 - **Done (✅):** engine crates with real oracle tests (#314); operation-fixtures contract test; architecture fitness functions (ESLint boundary + `xtask` crate-dep direction, both merge-blocking); typed IPC codegen (ADR-0039, #303); workspace lifecycle IPC + per-window capability (#290, #318); proof-carrying accepted-work readiness (#316, ADR-0040); Tier-1 host boundary gate (#319); shell composition + Tier-2 WebDriver e2e (#317, #320).
-- **Remaining in M0:** observability baseline (#367, `ready-for-agent` — prove `correlation_id` reconstruction end-to-end; no OTel/traceparent). Full W3C trace-context + OTel span hierarchy (#271, `ready-for-human`) is **not** an M0 exit requirement — current `correlation_id` propagation satisfies the M0 baseline.
-- **Exit gate:** golden-journey lifecycle steps (1, 8, 9, 10) run in the real window — **met** as of PR #362 + #364.
+- **Remaining in M0 (blocker):** host workspace lifecycle wired to canonical portable workspace format — `PraxisEngine::with_sqlite()` must be replaced end-to-end; Tier-1 host boundary test must prove create/open/author/rebuild/`foundation_rebuild_hash` equivalence via canonical files (#254, `ready-for-agent`).
+- **Remaining in M0:** observability baseline (#367, `ready-for-agent` — prove `correlation_id` reconstruction end-to-end; no OTel/traceparent). Full W3C trace-context + OTel span hierarchy (#271, `ready-for-human`) is **not** an M0 exit requirement — current `correlation_id` propagation satisfies the M0 baseline. Visual regression tests for honest-state design-system blocks (#280, `ready-for-agent`). M0 accessibility baseline — keyboard, accessible names, axe smoke check (#368, `ready-for-agent`). M0 host-boundary security baseline — capability parity, redaction, path validation (#369, `ready-for-agent`). Crash-recovery fault injection (#251, `ready-for-human`, blocked by #254).
+- **Exit gate:** golden-journey lifecycle steps (1, 8, 9, 10) in the real window through the canonical file path. Not met until #254 closes.
 
 ### M1 — Meaning · ☐
 
