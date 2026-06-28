@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 
-// Finds the most-recently-opened window that has __TAURI_INTERNALS__.invoke.
+// Finds the shell window: has __TAURI_INTERNALS__.invoke AND aideon-shell-content.
+// Requiring shell content excludes the splash window (which has Tauri invoke but
+// closes immediately after setup — making its handle stale before switchToWindow
+// can be called from the outer scope). The main window is stable once rendered.
 async function findShellWindow() {
   const handles = await browser.getWindowHandles();
   for (let index = handles.length - 1; index >= 0; index -= 1) {
@@ -10,7 +13,11 @@ async function findShellWindow() {
       const hasTauri = await browser.execute(
         () => typeof window.__TAURI_INTERNALS__?.invoke === 'function',
       );
-      if (hasTauri) return handles[index];
+      if (!hasTauri) continue;
+      const hasShell = await browser.execute(() =>
+        Boolean(document.querySelector('[data-testid="aideon-shell-content"]')),
+      );
+      if (hasShell) return handles[index];
     } catch {
       // window closed or unreachable — try next
     }

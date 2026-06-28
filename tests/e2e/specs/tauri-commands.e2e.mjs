@@ -148,6 +148,29 @@ async function waitForMainWindow() {
   await browser.switchToWindow(mainWindowHandle);
 }
 
+// Wait until only the main window remains open (splash has fully closed).
+//
+// On WebKitGTK, the WebDriver execute/sync endpoint sometimes routes to a
+// different webview than the one set by switchToWindow when multiple windows
+// exist simultaneously. Once only one window handle remains, there is no
+// routing ambiguity — all execute() calls must go to the main window.
+// Call this before any appcommands-mutating invocations.
+async function waitForSplashClosed() {
+  await browser.waitUntil(
+    async () => {
+      const handles = await browser.getWindowHandles();
+      return handles.length === 1;
+    },
+    {
+      timeout: 15_000,
+      timeoutMsg: 'splash window did not close within 15 s of shell content appearing',
+    },
+  );
+  const [handle] = await browser.getWindowHandles();
+  mainWindowHandle = handle;
+  await browser.switchToWindow(handle);
+}
+
 async function invokeIpc(command, payload) {
   return invokeCommand(command, {
     request: {
@@ -178,6 +201,10 @@ describe('tauri e2e command coverage', () => {
     // fully rendered. The splash window, which lacks mutating permissions, may be
     // the only WebDriver-accessible window during the first seconds of startup.
     await waitForMainWindow();
+    // Block until splash is fully closed. On WebKitGTK, execute/sync sometimes
+    // routes to a different webview when multiple windows are open simultaneously.
+    // Once only one handle exists there is no routing ambiguity.
+    await waitForSplashClosed();
 
     const hasInvoke = await browser.execute(
       () => typeof window.__TAURI_INTERNALS__?.invoke === 'function',
