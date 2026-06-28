@@ -61,9 +61,10 @@ interface Seed {
  */
 function uuidv5(namespace: string, name: string): string {
   const nsBytes = Buffer.from(namespace.replaceAll('-', ''), 'hex');
-  // codeql[js/weak-cryptographic-algorithm] -- SHA-1 is mandated by UUIDv5 (RFC 9562 §5.5); not a security context
-  // eslint-disable-next-line sonarjs/hashing -- SHA-1 is mandated by UUIDv5 (RFC 9562 §5.5); not a security context
+  /* eslint-disable sonarjs/hashing -- SHA-1 is mandated by UUIDv5 (RFC 9562 §5.5) */
+  /* codeql[js/weak-cryptographic-algorithm] -- SHA-1 is mandated by UUIDv5 (RFC 9562 §5.5) */
   const hash = crypto.createHash('sha1').update(nsBytes).update(name, 'utf8').digest();
+  /* eslint-enable sonarjs/hashing */
   // Version 5 in the high nibble of byte 6; RFC variant in byte 8.
   hash[6] = ((hash[6] ?? 0) & 0x0f) | 0x50;
   hash[8] = ((hash[8] ?? 0) & 0x3f) | 0x80;
