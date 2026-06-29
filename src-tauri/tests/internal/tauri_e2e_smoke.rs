@@ -41,6 +41,7 @@ async fn tauri_routes_and_ipc_smoke() {
         app.handle().clone(),
         IpcRequest {
             request_id: "req-settings".to_string(),
+            traceparent: None,
             payload: OpenWindowPayload {
                 window: "settings".to_string(),
             },
@@ -60,6 +61,7 @@ async fn tauri_routes_and_ipc_smoke() {
         app.handle().clone(),
         IpcRequest {
             request_id: "req-status".to_string(),
+            traceparent: None,
             payload: OpenWindowPayload {
                 window: "status".to_string(),
             },
@@ -80,6 +82,7 @@ async fn tauri_routes_and_ipc_smoke() {
         state,
         IpcRequest {
             request_id: "req-state-at".to_string(),
+            traceparent: None,
             payload: StateAtArgs::new("main".to_string(), Some("main".to_string()), None, None),
         },
     )
@@ -94,6 +97,7 @@ async fn tauri_routes_and_ipc_smoke() {
         app.handle().clone(),
         IpcRequest {
             request_id: "req-styleguide".to_string(),
+            traceparent: None,
             payload: OpenWindowPayload {
                 window: "styleguide".to_string(),
             },
@@ -115,6 +119,7 @@ async fn tauri_routes_and_ipc_smoke() {
         app.handle().clone(),
         IpcRequest {
             request_id: "req-about".to_string(),
+            traceparent: None,
             payload: OpenWindowPayload {
                 window: "about".to_string(),
             },

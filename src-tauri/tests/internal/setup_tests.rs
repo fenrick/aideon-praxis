@@ -31,6 +31,7 @@ async fn splash_is_only_closed_after_both_tasks_complete() {
         app.state::<std::sync::Mutex<SetupState>>(),
         crate::ipc::IpcRequest {
             request_id: "req-frontend".to_string(),
+            traceparent: None,
             payload: SetupCompletePayload {
                 task: "frontend".to_string(),
             },
@@ -54,6 +55,7 @@ async fn splash_is_only_closed_after_both_tasks_complete() {
         app.state::<std::sync::Mutex<SetupState>>(),
         crate::ipc::IpcRequest {
             request_id: "req-backend".to_string(),
+            traceparent: None,
             payload: SetupCompletePayload {
                 task: "backend".to_string(),
             },
@@ -101,6 +103,7 @@ async fn setup_state_roundtrips_over_ipc_envelope() {
         app.state::<std::sync::Mutex<SetupState>>(),
         crate::ipc::IpcRequest {
             request_id: "req-1".to_string(),
+            traceparent: None,
             payload: crate::ipc::EmptyPayload {},
         },
     )
@@ -120,6 +123,7 @@ async fn system_setup_complete_marks_tasks() {
         app.state::<std::sync::Mutex<SetupState>>(),
         crate::ipc::IpcRequest {
             request_id: "req-frontend".to_string(),
+            traceparent: None,
             payload: SetupCompletePayload {
                 task: "frontend".to_string(),
             },
@@ -134,6 +138,7 @@ async fn system_setup_complete_marks_tasks() {
         app.state::<std::sync::Mutex<SetupState>>(),
         crate::ipc::IpcRequest {
             request_id: "req-backend".to_string(),
+            traceparent: None,
             payload: SetupCompletePayload {
                 task: "backend".to_string(),
             },

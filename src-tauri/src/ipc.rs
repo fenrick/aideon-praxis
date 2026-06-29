@@ -93,6 +93,7 @@ fn classify(code: &str) -> (ProblemCategory, ProblemRecovery, &'static str) {
         "INTEGRITY_VIOLATION" => (Conflict, Reconcile, "Integrity violation"),
         "MERGE_CONFLICT" => (Conflict, Reconcile, "Merge conflict"),
         "CONCURRENCY_CONFLICT" => (Conflict, Retry, "Concurrent modification"),
+        "INVALID_TRACE_CONTEXT" => (Validation, None, "Invalid trace context"),
         "BACKPRESSURE" => (Transient, Retry, "Work queue is saturated"),
         "SCHEMA_TOO_NEW" => (Internal, Report, "Schema is too new"),
         "WORKSPACE_FORMAT_TOO_NEW" => (Internal, Report, "Workspace format is too new"),
@@ -106,12 +107,70 @@ fn classify(code: &str) -> (ProblemCategory, ProblemRecovery, &'static str) {
 /// Canonical IPC request envelope.
 ///
 /// Matches the host design doc contract:
-/// `{ requestId: "uuid", payload: { ... } }`.
+/// `{ requestId: "uuid", traceparent?: string, payload: { ... } }`.
+///
+/// `traceparent` is W3C Trace Context transport metadata (ADR-0019). It is
+/// optional: absent means no span context; present but invalid returns
+/// `INVALID_TRACE_CONTEXT` without echoing the raw value.
 #[derive(Debug, Clone, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IpcRequest<T> {
     pub request_id: String,
+    #[serde(default)]
+    pub traceparent: Option<String>,
     pub payload: T,
+}
+
+impl<T> IpcRequest<T> {
+    /// Construct a request with no trace context — used in tests and
+    /// internal callers that don't need W3C span propagation.
+    pub fn new(request_id: impl Into<String>, payload: T) -> Self {
+        Self {
+            request_id: request_id.into(),
+            traceparent: None,
+            payload,
+        }
+    }
+
+    /// Validate the `traceparent` field if present.
+    ///
+    /// Returns `Ok(())` when absent or when it matches the W3C format.
+    /// Returns `Err(HostError)` with code `INVALID_TRACE_CONTEXT` when
+    /// present but malformed. The raw invalid value is not included in the
+    /// error message (ADR-0019).
+    pub fn validate_traceparent(&self) -> Result<(), HostError> {
+        let Some(tp) = &self.traceparent else {
+            return Ok(());
+        };
+        // Simple manual match — avoids a regex crate dependency.
+        if is_valid_traceparent(tp) {
+            Ok(())
+        } else {
+            Err(HostError::new(
+                "INVALID_TRACE_CONTEXT",
+                "traceparent must be a valid W3C Trace Context value",
+            ))
+        }
+    }
+}
+
+/// Validates a W3C Trace Context `traceparent` header value without
+/// a regex dependency: `00-<32 lowercase hex>-<16 lowercase hex>-<2 lowercase hex>`.
+fn is_valid_traceparent(value: &str) -> bool {
+    // Expected: "00-" + 32 hex + "-" + 16 hex + "-" + 2 hex = 55 chars
+    let bytes = value.as_bytes();
+    if bytes.len() != 55 {
+        return false;
+    }
+    let is_hex = |b: u8| b.is_ascii_digit() || (b'a'..=b'f').contains(&b);
+    bytes[0] == b'0'
+        && bytes[1] == b'0'
+        && bytes[2] == b'-'
+        && bytes[3..35].iter().all(|&b| is_hex(b))
+        && bytes[35] == b'-'
+        && bytes[36..52].iter().all(|&b| is_hex(b))
+        && bytes[52] == b'-'
+        && bytes[53..55].iter().all(|&b| is_hex(b))
 }
 
 /// Payload used when a command requires a payload object but has no inputs.

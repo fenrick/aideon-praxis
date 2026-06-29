@@ -29,6 +29,7 @@ async fn health_commands_return_ipc_envelope() {
         state,
         crate::ipc::IpcRequest {
             request_id: "req-1".to_string(),
+            traceparent: None,
             payload: crate::ipc::EmptyPayload {},
         },
     )

@@ -434,9 +434,13 @@ type: string; code: string; title: string; detail: string; category: ProblemCate
  * Canonical IPC request envelope.
  * 
  * Matches the host design doc contract:
- * `{ requestId: "uuid", payload: { ... } }`.
+ * `{ requestId: "uuid", traceparent?: string, payload: { ... } }`.
+ * 
+ * `traceparent` is W3C Trace Context transport metadata (ADR-0019). It is
+ * optional: absent means no span context; present but invalid returns
+ * `INVALID_TRACE_CONTEXT` without echoing the raw value.
  */
-export type IpcRequest<T> = { requestId: string; payload: T }
+export type IpcRequest<T> = { requestId: string; traceparent?: string | null; payload: T }
 /**
  * Canonical IPC response envelope.
  * 

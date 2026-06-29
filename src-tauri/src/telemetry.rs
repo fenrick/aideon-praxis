@@ -145,6 +145,11 @@ where
     Fut: Future<Output = Result<Res, HostError>>,
 {
     let correlation_id = request.request_id.clone();
+    // Validate traceparent before the handler runs (ADR-0019). Invalid values
+    // return an envelope error; the raw value is not echoed back.
+    if let Err(err) = request.validate_traceparent() {
+        return IpcResponse::err(correlation_id, err);
+    }
     match record_command(command, &correlation_id, handler(request.payload)).await {
         Ok(payload) => IpcResponse::ok(correlation_id, payload),
         // `record_command` has already logged the raw error; redact before it
@@ -218,6 +223,7 @@ mod telemetry_tests {
     async fn respond_with_request_wraps_success() {
         let request = IpcRequest {
             request_id: "req-ok".to_string(),
+            traceparent: None,
             payload: "payload".to_string(),
         };
 
@@ -237,6 +243,7 @@ mod telemetry_tests {
     async fn command_envelope_wraps_success_and_echoes_request_id() {
         let request = IpcRequest {
             request_id: "req-1".to_string(),
+            traceparent: None,
             payload: "payload".to_string(),
         };
 
@@ -255,6 +262,7 @@ mod telemetry_tests {
     async fn command_envelope_preserves_known_domain_error() {
         let request = IpcRequest {
             request_id: "req-e".to_string(),
+            traceparent: None,
             payload: (),
         };
 
@@ -275,6 +283,7 @@ mod telemetry_tests {
     async fn command_envelope_redacts_internal_error_message() {
         let request = IpcRequest {
             request_id: "req-i".to_string(),
+            traceparent: None,
             payload: (),
         };
 
@@ -308,6 +317,7 @@ mod telemetry_tests {
     async fn respond_with_request_wraps_failure() {
         let request = IpcRequest {
             request_id: "req-err".to_string(),
+            traceparent: None,
             payload: (),
         };
 
