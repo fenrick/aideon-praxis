@@ -213,11 +213,15 @@ pub fn system_metrics_snapshot() -> MetricsSnapshot {
 }
 
 #[cfg(test)]
+#[path = "../tests/internal/logging_bridge_e2e.rs"]
+mod logging_bridge_e2e;
+
+#[cfg(test)]
 mod telemetry_tests {
     use super::*;
     use crate::ipc::IpcRequest;
-    use logtest::Logger;
     use serde_json::Value;
+    use serial_test::serial;
 
     #[tokio::test]
     async fn respond_with_request_wraps_success() {
@@ -356,8 +360,9 @@ mod telemetry_tests {
     }
 
     #[test]
+    #[serial(logtest)]
     fn telemetry_logging_records_milestones() {
-        let mut logger = Logger::start();
+        let mut logger = super::logging_bridge_e2e::start_logger_once();
         command_invoked("setup:init", "corr-id");
         command_completed("setup:init", "corr-id", Duration::from_millis(312));
         let error = HostError::internal("failing to migrate");

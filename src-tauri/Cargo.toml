@@ -45,3 +45,4 @@ tauri = { version = "2.11.2", features = ["test"] }
 regex = "1.12.4"
 toml = "1.1.2"
 logtest = "2.0"
+serial_test = "3"
