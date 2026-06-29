@@ -6,7 +6,7 @@ How renderer surfaces are tested: the layers, the tools, and where the IPC bound
 
 ## The principle
 
-A surface is tested at three layers — the state hook, the rendered component, and the end-to-end journey — with the IPC boundary mocked at the adapter so tests never reach a real host ([ipc-adapters-and-dtos.md](./ipc-adapters-and-dtos.md)). Each layer answers a different question, and a surface is not done until each is covered ([praxis-workspace](./praxis-workspace/README.md)).
+A surface is tested at three layers — the state hook, the rendered component, and the end-to-end journey — with the IPC boundary mocked at the adapter so tests never reach a real host ([ipc-adapters-and-dtos.md](./ipc-adapters-and-dtos.md)). Each layer answers a different question, and a surface is not done until each is covered ([praxis-contributions](./praxis-contributions/README.md)).
 
 ## The layers and tools
 
@@ -30,7 +30,7 @@ The host is never reached in a renderer test; the IPC boundary is mocked at the 
 
 ## What each surface tests
 
-Every surface mirrors the golden vertical: hook tests for state machines, component tests for rendering and interaction, IPC mocked at the boundary ([praxis-workspace](./praxis-workspace/README.md)). The minimum fixtures cover the honest states, not just the happy path:
+Every surface mirrors the golden vertical: hook tests for state machines, component tests for rendering and interaction, IPC mocked at the boundary ([praxis-contributions](./praxis-contributions/README.md)). The minimum fixtures cover the honest states, not just the happy path:
 
 - **Empty** — no data (no failed jobs, no branches, no results).
 - **Loading** — fetch in flight.

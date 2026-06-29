@@ -1,6 +1,6 @@
 # Chrona Time
 
-The renderer's viewpoint controls, facing [Chrona](../../05-modules/chrona/README.md): selecting as-of time, layer, scenario, viewing a bounded diff, and handling merges. This is a shell-level shared surface every workspace adopts so time-first behaviour is consistent ([shell.md](../shell.md)); it is used most heavily inside [praxis-workspace](../praxis-workspace/README.md).
+The renderer's viewpoint controls, facing [Chrona](../../05-modules/chrona/README.md): selecting as-of time, layer, scenario, viewing a bounded diff, and handling merges. This is a shell-level shared surface every workspace adopts so time-first behaviour is consistent ([shell.md](../shell.md)); it is used most heavily inside [praxis-contributions](../praxis-contributions/README.md).
 
 This README is the contract; [DESIGN.md](./DESIGN.md) carries the `useChrona` hook contract and the diff/merge UX detail.
 

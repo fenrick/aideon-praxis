@@ -1,21 +1,21 @@
-# Praxis Workspace — Internal Design
+# Praxis contributions — Internal Design
 
-The component, state, canvas, and interaction contracts of the primary modelling surface. This file is for anyone building or reviewing a Praxis workspace surface. The package contract is in [README.md](./README.md).
+The component, state, canvas, and interaction contracts of the primary modelling surface. This file is for anyone building or reviewing a Praxis contributions surface. The package contract is in [README.md](./README.md).
 
 ---
 
 ## Widgets contributed
 
-Praxis is an `EngineDefinition` (`src/engines/praxis/engine.tsx`); it contributes widget types that the platform's content surface renders, and a `renderWidget(widget, context)` dispatcher the platform's widget catalogue routes to ([shell.md](../shell.md)). It owns no shell regions — navigation, toolbar, content, and inspector belong to the platform. The engine also exposes the toolbar content the platform's `PlatformToolbar` renders (`PraxisWorkspaceToolbar`, layout-preset and temporal controls) and a chrome-free surface for embedding:
+Praxis is an `EngineDefinition` (`src/engines/praxis/engine.tsx`); it contributes widget types that the platform's content surface renders, and a `renderWidget(widget, context)` dispatcher the platform's widget catalogue routes to ([shell.md](../shell.md)). It owns no shell regions — navigation, toolbar, content, and inspector belong to the platform. The engine also exposes the toolbar content the platform's `PlatformToolbar` renders (`PraxisToolbarContribution`, layout-preset and temporal controls) and a chrome-free surface for embedding:
 
-| Item                     | Kind            | Owns                                                     |
-| ------------------------ | --------------- | -------------------------------------------------------- |
-| `graph`                  | Widget          | The active graph canvas (the **Topos** canvas, below)    |
-| `catalogue`              | Widget          | The catalogue widget over the twin                       |
-| `matrix`                 | Widget          | The matrix widget (cell selection, below)                |
-| `chart`                  | Widget          | The chart widget over artefact results                   |
-| `PraxisWorkspaceToolbar` | Toolbar content | Layout-preset and temporal controls the platform renders |
-| `ToposCanvasSurface`     | —               | A chrome-free surface for tests and previews             |
+| Item                        | Kind            | Owns                                                     |
+| --------------------------- | --------------- | -------------------------------------------------------- |
+| `graph`                     | Widget          | The active graph canvas (the **Topos** canvas, below)    |
+| `catalogue`                 | Widget          | The catalogue widget over the twin                       |
+| `matrix`                    | Widget          | The matrix widget (cell selection, below)                |
+| `chart`                     | Widget          | The chart widget over artefact results                   |
+| `PraxisToolbarContribution` | Toolbar content | Layout-preset and temporal controls the platform renders |
+| `ToposCanvasSurface`        | —               | A chrome-free surface for tests and previews             |
 
 Each widget is a `WidgetContribution` — `{ engineId, type, label, description, icon, defaultSize, createWidget }` ([shell.md](../shell.md)). Widgets prefer design-system blocks and primitives — cards, badges, buttons, the canvas blocks — over bespoke wrappers; the golden vertical (time cursor + artefact widgets) is the template for a new widget ([blocks.md](../../03-design/design-system/blocks.md)).
 
