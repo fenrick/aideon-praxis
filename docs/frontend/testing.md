@@ -39,7 +39,7 @@ Every surface mirrors the golden vertical: hook tests for state machines, compon
 - **In progress / queued** — accepted work streaming, and a `BACKPRESSURE` queued state.
 - **Stale / rebuilding** — a host freshness status driving a badge and refetch.
 
-The chrome-free surface variant (e.g. `PraxisCanvasSurface`) is the unit under component test, so an engine's widgets are testable without the full shell ([shell.md](./shell.md)).
+The chrome-free surface variant (e.g. `ToposCanvasSurface`) is the unit under component test, so an engine's widgets are testable without the full shell ([shell.md](./shell.md)).
 
 ## DTO and contract tests
 

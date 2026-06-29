@@ -10,7 +10,7 @@ This README is the contract; [DESIGN.md](./DESIGN.md) carries the component, sta
 - A `renderWidget(widget, context)` dispatcher the platform's widget catalogue routes to ([shell.md](../shell.md)).
 - The toolbar content the platform's `PlatformToolbar` renders — layout-preset and temporal controls (`PraxisWorkspaceToolbar`) — beside the shared viewpoint controls ([chrona-time](../chrona-time/README.md)).
 - The selection contract that drives the platform inspector.
-- A chrome-free `PraxisCanvasSurface` for tests and previews.
+- A chrome-free `ToposCanvasSurface` for tests and previews.
 - Time-first canvas behaviour: layout geometry persisted per viewpoint and re-run only on demand.
 
 ## Faces

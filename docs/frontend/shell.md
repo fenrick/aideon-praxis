@@ -71,7 +71,7 @@ An engine is a package under `src/engines/<module>/` that exports an `EngineDefi
 - `useLicensing()` (`src/platform/licensing.tsx`) gates which engines' capabilities and widgets are available (quietly — never as a navigation label); `useWidgetCatalog()` (`src/platform/widget-catalog.ts`) flattens the licensed engines' `widgets` into one catalogue and routes `renderWidget(widget, context)` to the owning engine. `PlatformContent` renders the **active surface instance** from its composition; within a **composable** surface (chiefly the modelling studio) the [widget library dialog](./package-layout.md) adds widgets from the catalogue, gated by the surface's allowed contributions.
 - The platform owns a single state provider, `HostPlatformProvider` (`src/platform/host-platform-provider.tsx`), consumed via `useHostPlatform()`; state — the active surface, **Workspace structure** (scenarios, saved structures, artefacts, review work — _not_ a "project tree"; "project" has no single canonical meaning here), layout presets, selection, temporal cursor, surface composition/layout, inspector patch — is owned once for the whole shell, not duplicated per engine ([state-architecture.md](./state-architecture.md)).
 
-An engine **must** keep a chrome-free surface variant (e.g. `PraxisCanvasSurface`) for standalone embedding in tests and previews, so a widget is testable without the full shell ([testing.md](./testing.md)).
+An engine **must** keep a chrome-free surface variant (e.g. `ToposCanvasSurface`) for standalone embedding in tests and previews, so a widget is testable without the full shell ([testing.md](./testing.md)).
 
 ## Keyboard and the native menu
 
