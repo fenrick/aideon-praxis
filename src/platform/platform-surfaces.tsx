@@ -1,12 +1,15 @@
 import type { PraxisWidgetKind as WidgetKind } from 'praxis/types';
+
 import { useHostPlatform } from './host-platform-context';
 import { useWidgetCatalog } from './widget-catalog';
 import { WidgetLibraryDialog } from './widget-library-dialog';
 
-export function PlatformToolbar() {
-  return null;
+/** Toolbar slot — not yet implemented. */
+export function PlatformToolbar(): undefined {
+  return undefined;
 }
 
+/** Content slot — widget library dialog; canvas surface not yet implemented. */
 export function PlatformContent() {
   const { widgetLibraryOpen, onToggleWidgetLibrary, onCreateWidgetType } = useHostPlatform();
   const catalog = useWidgetCatalog();
@@ -23,6 +26,7 @@ export function PlatformContent() {
   );
 }
 
-export function PlatformInspector() {
-  return null;
+/** Inspector slot — not yet implemented. */
+export function PlatformInspector(): undefined {
+  return undefined;
 }

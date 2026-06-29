@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from 'design-system';
 import { AideonDesktopShell } from './aideon-desktop-shell';
 import { AideonToolbar } from './aideon-toolbar';
 
+/** Placeholder content surface for shell stories. */
 function ContentSurface() {
   return (
     <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-2">
@@ -22,6 +23,7 @@ function ContentSurface() {
   );
 }
 
+/** Placeholder inspector surface for shell stories. */
 function InspectorSurface() {
   return (
     <div className="space-y-3">
