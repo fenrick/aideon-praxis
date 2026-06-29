@@ -1,7 +1,6 @@
 import { createContext, useContext, type RefCallback } from 'react';
 
 import type { CanvasRuntimeLayoutPersistence } from 'aideon/canvas/canvas-runtime';
-import type { SelectionKind } from 'praxis/components/template-screen/properties-inspector';
 import type { ProjectSummary } from 'praxis/domain-data';
 import type { LayoutPreset } from 'praxis/layouts';
 import type { ScenarioSummary } from 'praxis/praxis-api';
@@ -9,6 +8,7 @@ import type {
   PraxisCanvasWidget as CanvasWidget,
   GraphLayoutContext,
   PraxisWidgetViewEvent,
+  SelectionKind,
   SelectionState,
   PraxisWidgetKind as WidgetKind,
 } from 'praxis/types';

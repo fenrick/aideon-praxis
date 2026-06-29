@@ -621,6 +621,148 @@ mod tests {
         .expect_err("missing datastore");
         assert!(!err.to_string().is_empty());
     }
+
+    // ---- check-crate-boundaries tests (ADR-0011 / D9 / D21) ----
+
+    fn pkg(name: &str, path: &str, deps: &[&str]) -> CargoPackage {
+        CargoPackage {
+            name: name.into(),
+            manifest_path: path.into(),
+            dependencies: deps
+                .iter()
+                .map(|d| CargoDependency { name: (*d).into() })
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn boundaries_clean_on_current_workspace() {
+        check_crate_boundaries()
+            .expect("crate dependency direction violation(s) found in the current workspace");
+    }
+
+    #[test]
+    fn boundaries_rejects_engine_depending_on_tauri() {
+        let metadata = CargoMetadata {
+            packages: vec![pkg(
+                "aideon_praxis",
+                "/workspace/crates/praxis/Cargo.toml",
+                &["tauri"],
+            )],
+        };
+        let v = collect_boundary_violations(&metadata);
+        assert!(
+            !v.is_empty(),
+            "should flag tauri import from an engine crate"
+        );
+        assert!(
+            v[0].contains("tauri"),
+            "violation message should name tauri"
+        );
+    }
+
+    #[test]
+    fn boundaries_rejects_engine_depending_on_host() {
+        let metadata = CargoMetadata {
+            packages: vec![
+                pkg("aideon_desktop", "/workspace/src-tauri/Cargo.toml", &[]),
+                pkg(
+                    "aideon_praxis",
+                    "/workspace/crates/praxis/Cargo.toml",
+                    &["aideon_desktop"],
+                ),
+            ],
+        };
+        let v = collect_boundary_violations(&metadata);
+        assert!(
+            !v.is_empty(),
+            "should flag engine depending on host (aideon_desktop)"
+        );
+    }
+
+    #[test]
+    fn boundaries_rejects_praxis_depending_on_metis() {
+        let metadata = CargoMetadata {
+            packages: vec![pkg(
+                "aideon_praxis",
+                "/workspace/crates/praxis/Cargo.toml",
+                &["aideon_metis"],
+            )],
+        };
+        let v = collect_boundary_violations(&metadata);
+        assert!(!v.is_empty(), "praxis must not depend on metis (D9)");
+        assert!(
+            v[0].contains("lateral"),
+            "violation message should say 'lateral'"
+        );
+    }
+
+    #[test]
+    fn boundaries_rejects_metis_depending_on_chrona() {
+        let metadata = CargoMetadata {
+            packages: vec![pkg(
+                "aideon_metis",
+                "/workspace/crates/metis/Cargo.toml",
+                &["aideon_chrona"],
+            )],
+        };
+        let v = collect_boundary_violations(&metadata);
+        assert!(!v.is_empty(), "metis must not depend on chrona");
+    }
+
+    #[test]
+    fn boundaries_allows_mneme_store_depending_on_mneme_core() {
+        let metadata = CargoMetadata {
+            packages: vec![pkg(
+                "aideon_mneme_store",
+                "/workspace/crates/mneme_store/Cargo.toml",
+                &["aideon_mneme_core"],
+            )],
+        };
+        let v = collect_boundary_violations(&metadata);
+        assert!(
+            v.is_empty(),
+            "mneme_store → mneme_core is an allowed storage-layer edge"
+        );
+    }
+
+    #[test]
+    fn boundaries_allows_chrona_depending_on_praxis() {
+        // chrona→praxis is a contract-only dependency; allowed at the crate level
+        // (neutral contracts crate not yet extracted — D21).
+        let metadata = CargoMetadata {
+            packages: vec![pkg(
+                "aideon_chrona",
+                "/workspace/crates/chrona/Cargo.toml",
+                &["aideon_praxis"],
+            )],
+        };
+        let v = collect_boundary_violations(&metadata);
+        assert!(
+            v.is_empty(),
+            "chrona → praxis is the allowed contract-only edge"
+        );
+    }
+
+    #[test]
+    fn boundaries_engine_harness_is_exempt() {
+        // aideon_engine is the composition harness; it may depend on every engine.
+        let metadata = CargoMetadata {
+            packages: vec![
+                pkg("aideon_desktop", "/workspace/src-tauri/Cargo.toml", &[]),
+                pkg(
+                    "aideon_engine",
+                    "/workspace/crates/engine/Cargo.toml",
+                    &["aideon_praxis", "aideon_metis", "aideon_chrona"],
+                ),
+            ],
+        };
+        let v = collect_boundary_violations(&metadata);
+        assert!(
+            v.is_empty(),
+            "the engine harness is exempt from lateral checks"
+        );
+    }
 }
 
 async fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
@@ -916,26 +1058,11 @@ struct CargoDependency {
     name: String,
 }
 
-/// Enforce the allowed crate-dependency direction so architectural drift is a
-/// failing check, not a reviewer-memory item: engine crates (`crates/*`) never
-/// depend on Tauri or the host crate, and there is no Praxis↔Metis
-/// implementation edge. Exits non-zero on violation so CI can gate it.
-/// See ADR-0011 (module taxonomy) and defect-register D9/D21.
-fn check_crate_boundaries() -> Result<()> {
-    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
-    let output = std::process::Command::new(cargo)
-        .args(["metadata", "--no-deps", "--format-version", "1"])
-        .output()
-        .context("running `cargo metadata`")?;
-    if !output.status.success() {
-        return Err(anyhow!(
-            "`cargo metadata` failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
-    let metadata: CargoMetadata =
-        serde_json::from_slice(&output.stdout).context("parsing cargo metadata JSON")?;
-
+/// Pure check logic over a parsed `CargoMetadata` graph — extracted for unit testing.
+///
+/// Returns the list of violations (empty = clean). The caller decides whether to
+/// print/exit with an error.
+fn collect_boundary_violations(metadata: &CargoMetadata) -> Vec<String> {
     let pkg_at = |needle: &str| {
         metadata
             .packages
@@ -947,7 +1074,6 @@ fn check_crate_boundaries() -> Result<()> {
     let harness_pkg = pkg_at("/crates/engine/"); // `aideon_engine` — composes engines, exempt
 
     let mut violations: Vec<String> = Vec::new();
-    let mut checked = 0_usize;
 
     for pkg in &metadata.packages {
         // Domain engines live under crates/*; the host and xtask are exempt, and
@@ -958,7 +1084,6 @@ fn check_crate_boundaries() -> Result<()> {
         if harness_pkg.as_deref() == Some(pkg.name.as_str()) {
             continue;
         }
-        checked += 1;
         let pkg_lower = pkg.name.to_lowercase();
 
         // Flat-forbidden lateral engine→engine edges (MODULE-DEPENDENCY-MAP.md).
@@ -997,6 +1122,49 @@ fn check_crate_boundaries() -> Result<()> {
             }
         }
     }
+
+    violations
+}
+
+/// Enforce the allowed crate-dependency direction so architectural drift is a
+/// failing check, not a reviewer-memory item: engine crates (`crates/*`) never
+/// depend on Tauri or the host crate, and there is no Praxis↔Metis
+/// implementation edge. Exits non-zero on violation so CI can gate it.
+/// See ADR-0011 (module taxonomy) and defect-register D9/D21.
+fn check_crate_boundaries() -> Result<()> {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    let output = std::process::Command::new(cargo)
+        .args(["metadata", "--no-deps", "--format-version", "1"])
+        .output()
+        .context("running `cargo metadata`")?;
+    if !output.status.success() {
+        return Err(anyhow!(
+            "`cargo metadata` failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+    let metadata: CargoMetadata =
+        serde_json::from_slice(&output.stdout).context("parsing cargo metadata JSON")?;
+
+    let violations = collect_boundary_violations(&metadata);
+    let checked = metadata
+        .packages
+        .iter()
+        .filter(|p| {
+            p.manifest_path.replace('\\', "/").contains("/crates/")
+                && p.name
+                    != metadata
+                        .packages
+                        .iter()
+                        .find(|q| {
+                            q.manifest_path
+                                .replace('\\', "/")
+                                .contains("/crates/engine/")
+                        })
+                        .map(|q| q.name.as_str())
+                        .unwrap_or("")
+        })
+        .count();
 
     if violations.is_empty() {
         println!(

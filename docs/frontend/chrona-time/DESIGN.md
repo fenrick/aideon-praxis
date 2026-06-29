@@ -53,7 +53,7 @@ The golden implementation is the `useChrona` hook returning `[state, actions]` (
 
 **Branch and commit selection.** Selecting a branch refreshes the commit list, the snapshot for the latest commit, and the bounded diff. Selecting a commit refreshes its snapshot. A branch with no commits shows a clear empty state, not a silent failure. Switching branches never keeps a stale `commitId` from the previous branch. A snapshot load failure does not erase the prior snapshot unless the UI explicitly transitions to an error state that explains why.
 
-**Layer switching.** Switching layer refreshes the snapshot for the active reference and applies consistently to every artefact execution. It does not change the selected branch/commit, and it **must** update any persistence key that includes layer — including the canvas layout snapshot key ([praxis-workspace](../praxis-workspace/DESIGN.md)).
+**Layer switching.** Switching layer refreshes the snapshot for the active reference and applies consistently to every artefact execution. It does not change the selected branch/commit, and it **must** update any persistence key that includes layer — including the canvas layout snapshot key ([praxis-contributions](../praxis-contributions/DESIGN.md)).
 
 **Diff preview.** The diff is bounded and shows the reference pair (`from`, `to`), summary counts (adds/mods/dels), and a truncation warning when limited. It defaults to the most recent two commits in the active branch and labels what it represents (e.g. "Diff: previous → latest"). The diff kind is derived from which viewpoint coordinates differ, not chosen up front ([CONTEXT.md](../../../CONTEXT.md)).
 

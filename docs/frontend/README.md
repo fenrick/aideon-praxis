@@ -61,7 +61,7 @@ Engine packages mirror the modules they face, one folder per module under `src/e
 
 | Package                                                  | Faces                                          | What it provides                                                                                             |
 | -------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| [praxis-workspace](./praxis-workspace/README.md)         | [Praxis](../05-modules/praxis/README.md)       | The primary modelling widgets: graph canvas (**Topos**), catalogue, matrix, chart, the time-first inspector. |
+| [praxis-contributions](./praxis-contributions/README.md) | [Praxis](../05-modules/praxis/README.md)       | The primary modelling widgets: graph canvas (**Topos**), catalogue, matrix, chart, the time-first inspector. |
 | [chrona-time](./chrona-time/README.md)                   | [Chrona](../05-modules/chrona/README.md)       | The viewpoint controls: as-of time, layer, scenario, diff, and merge UX, owned by the platform toolbar.      |
 | [metis-workspace](./metis-workspace/README.md)           | [Metis](../05-modules/metis/README.md)         | The analytics widgets: bounded, explainable runs, results, and evidence.                                     |
 | [mneme-workspace](./mneme-workspace/README.md)           | [Mneme](../05-modules/mneme/README.md)         | The operator widgets: storage health, jobs, integrity, schema, maintenance.                                  |

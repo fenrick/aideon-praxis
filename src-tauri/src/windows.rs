@@ -2,6 +2,8 @@
 use log::warn;
 use serde::Deserialize;
 use specta::Type;
+#[cfg(target_os = "macos")]
+use tauri::TitleBarStyle;
 use tauri::webview::PageLoadEvent;
 use tauri::{App, AppHandle, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 
@@ -40,11 +42,18 @@ pub fn create_windows<R: Runtime>(app: &App<R>) -> Result<(), String> {
         .build()
         .map_err(to_string)?;
 
-    let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::App(ROUTE_MAIN.into()))
+    let main_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::App(ROUTE_MAIN.into()))
         .title("Aideon")
         .visible(false)
         .inner_size(1060.0, 720.0)
         .center();
+    // Unified native chrome: traffic lights float over the app's own top bar.
+    // macOS-only; Windows keeps its Mica treatment below.
+    #[cfg(target_os = "macos")]
+    let main_builder = main_builder
+        .title_bar_style(TitleBarStyle::Overlay)
+        .hidden_title(true);
+    let main = main_builder;
 
     #[cfg(target_os = "windows")]
     let main_window = main.build().map_err(to_string)?;

@@ -85,8 +85,20 @@ export function GraphWidget({
   const [showControls, setShowControls] = useState(true);
   const [layoutHydrated, setLayoutHydrated] = useState(true);
   const viewReference = useRef<GraphViewModel | undefined>(undefined);
+  // Hold the callback props in refs so loadView/attachInspectHandlers don't
+  // depend on them — the parent passes new inline closures every render, which
+  // would otherwise recreate loadView and refire its effect in a loop. Synced
+  // in an effect (not during render) per the repo's react-hooks/refs rule.
+  const onViewChangeReference = useRef(onViewChange);
+  const onErrorReference = useRef(onError);
+  const onRequestMetaModelFocusReference = useRef(onRequestMetaModelFocus);
+  useEffect(() => {
+    onViewChangeReference.current = onViewChange;
+    onErrorReference.current = onError;
+    onRequestMetaModelFocusReference.current = onRequestMetaModelFocus;
+  });
 
-  const definition = widget.view;
+  const definition = useMemo(() => widget.view, [widget.view]);
 
   const persistLayout = useCallback(
     (nextNodes: Node<GraphNodeData>[], options?: { force?: boolean }) => {
@@ -128,31 +140,28 @@ export function GraphWidget({
     [persistLayout, setNodes],
   );
 
-  const attachInspectHandlers = useCallback(
-    (flowNodes: Node<GraphNodeData>[]) => {
-      if (!onRequestMetaModelFocus) {
-        return flowNodes;
-      }
-      return flowNodes.map((node) => {
-        const types = (node.data.entityTypes ?? []).filter((value: string) => {
-          return isNonEmptyString(value);
-        });
-        if (types.length === 0) {
-          return node;
-        }
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            onInspect: () => {
-              onRequestMetaModelFocus(types);
-            },
-          },
-        };
+  const attachInspectHandlers = useCallback((flowNodes: Node<GraphNodeData>[]) => {
+    if (!onRequestMetaModelFocusReference.current) {
+      return flowNodes;
+    }
+    return flowNodes.map((node) => {
+      const types = (node.data.entityTypes ?? []).filter((value: string) => {
+        return isNonEmptyString(value);
       });
-    },
-    [onRequestMetaModelFocus],
-  );
+      if (types.length === 0) {
+        return node;
+      }
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          onInspect: () => {
+            onRequestMetaModelFocusReference.current?.(types);
+          },
+        },
+      };
+    });
+  }, []);
 
   const loadView = useCallback(async () => {
     setLoading(true);
@@ -187,25 +196,16 @@ export function GraphWidget({
         setNodes(flowNodes);
       }
       setEdges(buildFlowEdges(view));
-      onViewChange?.(view);
+      onViewChangeReference.current?.(view);
     } catch (unknownError) {
       const message = toErrorMessage(unknownError);
       setError(message);
-      onError?.(message);
+      onErrorReference.current?.(message);
     } finally {
       setLayoutHydrated(true);
       setLoading(false);
     }
-  }, [
-    attachInspectHandlers,
-    definition,
-    graphLayoutContext,
-    onError,
-    onViewChange,
-    setEdges,
-    setNodes,
-    widget.id,
-  ]);
+  }, [attachInspectHandlers, definition, graphLayoutContext, setEdges, setNodes, widget.id]);
 
   useEffect(() => {
     loadView().catch((_ignoredError: unknown) => {

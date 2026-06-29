@@ -155,7 +155,7 @@ export function AideonDesktopShell({
             style={headerStyle}
           >
             <Sidebar side="right" collapsible="offcanvas" data-testid="aideon-shell-inspector">
-              <SidebarContent className="p-4">{inspector}</SidebarContent>
+              <SidebarContent className="p-0">{inspector}</SidebarContent>
             </Sidebar>
           </SidebarProvider>
         </div>

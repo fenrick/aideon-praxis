@@ -9,7 +9,6 @@ import {
 } from 'react';
 
 import { dedupeIds } from 'aideon/canvas/selection';
-import type { SelectionKind } from 'praxis/components/template-screen/properties-inspector';
 import {
   listLayoutsFromHost,
   listProjectsWithScenarios,
@@ -24,6 +23,7 @@ import { type GraphViewModel } from 'praxis/praxis-api';
 import type {
   PraxisCanvasWidget as CanvasWidget,
   PraxisWidgetViewEvent,
+  SelectionKind,
   SelectionState,
   PraxisWidgetKind as WidgetKind,
 } from 'praxis/types';

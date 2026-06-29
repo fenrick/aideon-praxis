@@ -32,7 +32,7 @@ Every server-state cache key includes the full [`Viewpoint`](../../CONTEXT.md) �
 
 - Changing the viewpoint is not a refetch of the same key — it is a **different key**.
 - A read cached at one viewpoint is **never** served for another, mirroring the host's projection-identity rule.
-- This applies to **server-state** (data read at a viewpoint). **Surface layout is persistent UI state and is _not_ keyed by the viewpoint** — changing valid time, layer, or scenario changes the data shown, never the arrangement. The layout key is `workspace_id + local user/profile + surface_id + surface_instance/destination_id + layout_preset_id` ([shell.md](./shell.md), composition). A **saved structure** may bundle a saved layout _and_ an optional recorded viewpoint as **distinct fields**; opening it can visibly apply both, but changing the live viewpoint afterwards never silently forks a new layout ([praxis-workspace](./praxis-workspace/README.md)).
+- This applies to **server-state** (data read at a viewpoint). **Surface layout is persistent UI state and is _not_ keyed by the viewpoint** — changing valid time, layer, or scenario changes the data shown, never the arrangement. The layout key is `workspace_id + local user/profile + surface_id + surface_instance/destination_id + layout_preset_id` ([shell.md](./shell.md), composition). A **saved structure** may bundle a saved layout _and_ an optional recorded viewpoint as **distinct fields**; opening it can visibly apply both, but changing the live viewpoint afterwards never silently forks a new layout ([praxis-contributions](./praxis-contributions/README.md)).
 
 A worked example: a graph surface cached at `{ asOf: 2026-06-10, layer: actual, scenario: null }` is a distinct cache entry from the same surface at `{ scenario: scn_plan_q3 }`. Switching scenario refetches rather than reusing; a host `stale` status flips the surface to a staleness badge and triggers a refetch.
 
@@ -46,7 +46,7 @@ Layout and theme choices persist locally across reloads but are not workspace ca
 
 ## State ownership in the platform
 
-The platform owns a single state provider (`HostPlatformProvider`, consumed via `useHostPlatform()`) shared across the shell's four regions ([shell.md](./shell.md)); state is owned once, not duplicated per engine. The golden pattern is a hook returning `[state, actions]`, with async side effects inside the hook and UI-ready state derived from DTOs ([praxis-workspace](./praxis-workspace/README.md), [chrona-time](./chrona-time/README.md)):
+The platform owns a single state provider (`HostPlatformProvider`, consumed via `useHostPlatform()`) shared across the shell's four regions ([shell.md](./shell.md)); state is owned once, not duplicated per engine. The golden pattern is a hook returning `[state, actions]`, with async side effects inside the hook and UI-ready state derived from DTOs ([praxis-contributions](./praxis-contributions/README.md), [chrona-time](./chrona-time/README.md)):
 
 - Co-locate state in hooks (e.g. `useTemporalPanel`, `useChrona`); avoid global singletons.
 - Derive UI-ready state from DTOs in the hook; keep IPC mapping in the adapter layer, not the component.

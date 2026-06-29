@@ -49,7 +49,7 @@ An engine package does **not** own: the shell or its regions (the platform owns 
 
 The seed renderer ships:
 
-- `src/engines/praxis` — the only engine registered in `ENGINES` today; contributes the graph/catalogue/matrix/chart widgets ([praxis-workspace](./praxis-workspace/README.md)).
+- `src/engines/praxis` — the only engine registered in `ENGINES` today; contributes the graph/catalogue/matrix/chart widgets ([praxis-contributions](./praxis-contributions/README.md)).
 - `src/engines/mneme` — the Mneme engine API scaffold backing contract tests ([mneme-workspace](./mneme-workspace/README.md)); not yet a registered widget-contributing engine.
 - The Metis and Continuum surfaces ([metis-workspace](./metis-workspace/README.md), [continuum-automation](./continuum-automation/README.md)) and the shell-level [chrona-time](./chrona-time/README.md) viewpoint control are documented as design intent until their engine packages register widgets.
 

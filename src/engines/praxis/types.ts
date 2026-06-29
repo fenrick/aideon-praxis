@@ -56,3 +56,5 @@ export interface PraxisWidgetErrorEvent {
 }
 
 export type { SelectionState, WidgetSelection } from 'aideon/canvas/types';
+
+export type SelectionKind = 'widget' | 'node' | 'edge' | 'cell' | 'none';

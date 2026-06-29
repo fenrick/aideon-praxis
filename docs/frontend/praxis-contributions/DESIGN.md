@@ -1,21 +1,21 @@
-# Praxis Workspace — Internal Design
+# Praxis contributions — Internal Design
 
-The component, state, canvas, and interaction contracts of the primary modelling surface. This file is for anyone building or reviewing a Praxis workspace surface. The package contract is in [README.md](./README.md).
+The component, state, canvas, and interaction contracts of the primary modelling surface. This file is for anyone building or reviewing a Praxis contributions surface. The package contract is in [README.md](./README.md).
 
 ---
 
 ## Widgets contributed
 
-Praxis is an `EngineDefinition` (`src/engines/praxis/engine.tsx`); it contributes widget types that the platform's content surface renders, and a `renderWidget(widget, context)` dispatcher the platform's widget catalogue routes to ([shell.md](../shell.md)). It owns no shell regions — navigation, toolbar, content, and inspector belong to the platform. The engine also exposes the toolbar content the platform's `PlatformToolbar` renders (`PraxisWorkspaceToolbar`, layout-preset and temporal controls) and a chrome-free surface for embedding:
+Praxis is an `EngineDefinition` (`src/engines/praxis/engine.tsx`); it contributes widget types that the platform's content surface renders, and a `renderWidget(widget, context)` dispatcher the platform's widget catalogue routes to ([shell.md](../shell.md)). It owns no shell regions — navigation, toolbar, content, and inspector belong to the platform. The engine also exposes the toolbar content the platform's `PlatformToolbar` renders (`PraxisToolbarContribution`, layout-preset and temporal controls) and a chrome-free surface for embedding:
 
-| Item                     | Kind            | Owns                                                     |
-| ------------------------ | --------------- | -------------------------------------------------------- |
-| `graph`                  | Widget          | The active graph canvas (the **Topos** canvas, below)    |
-| `catalogue`              | Widget          | The catalogue widget over the twin                       |
-| `matrix`                 | Widget          | The matrix widget (cell selection, below)                |
-| `chart`                  | Widget          | The chart widget over artefact results                   |
-| `PraxisWorkspaceToolbar` | Toolbar content | Layout-preset and temporal controls the platform renders |
-| `PraxisCanvasSurface`    | —               | A chrome-free surface for tests and previews             |
+| Item                        | Kind            | Owns                                                     |
+| --------------------------- | --------------- | -------------------------------------------------------- |
+| `graph`                     | Widget          | The active graph canvas (the **Topos** canvas, below)    |
+| `catalogue`                 | Widget          | The catalogue widget over the twin                       |
+| `matrix`                    | Widget          | The matrix widget (cell selection, below)                |
+| `chart`                     | Widget          | The chart widget over artefact results                   |
+| `PraxisToolbarContribution` | Toolbar content | Layout-preset and temporal controls the platform renders |
+| `ToposCanvasSurface`        | —               | A chrome-free surface for tests and previews             |
 
 Each widget is a `WidgetContribution` — `{ engineId, type, label, description, icon, defaultSize, createWidget }` ([shell.md](../shell.md)). Widgets prefer design-system blocks and primitives — cards, badges, buttons, the canvas blocks — over bespoke wrappers; the golden vertical (time cursor + artefact widgets) is the template for a new widget ([blocks.md](../../03-design/design-system/blocks.md)).
 
@@ -43,7 +43,7 @@ Identifiers are real seed ids — a scenario read keys on its scenario id (e.g. 
 
 ## The selection contract
 
-`PraxisCanvasSurface` accepts an optional `onSelectionChange` callback and emits the current `SelectionState` whenever it changes, so the platform or a test harness can observe selection. Selection is the global driver of the platform inspector ([ux/selection-model.md](../../03-design/ux/selection-model.md)):
+`ToposCanvasSurface` accepts an optional `onSelectionChange` callback and emits the current `SelectionState` whenever it changes, so the platform or a test harness can observe selection. Selection is the global driver of the platform inspector ([ux/selection-model.md](../../03-design/ux/selection-model.md)):
 
 - A single node/edge selection surfaces editable fields in the inspector and dispatches scoped operations (below).
 - A multi-select is bulk-only.
@@ -55,6 +55,16 @@ The canvas renders the **effective graph** — the node-and-edge projection of a
 
 - **Praxis side of Topos** — the layout _computation_: running ELK (the Eclipse Layout Kernel) to assign node positions and edge routes for a graph and a layout intent. Deterministic and bounded.
 - **Renderer side of Topos** — the canvas _presentation_: panning, zooming, framing, minimap, the selection grammar, and node/edge rendering conforming to tokens. Built on XYFlow (React Flow), wrapped in the design-system canvas blocks and never imported raw ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)).
+
+The chrome-free surface is named **`ToposCanvasSurface`**, not `PraxisCanvasSurface`. The canvas is Topos's concern (spatial presentation, layout, cartography); Praxis owns meaning and layout computation. The naming split to follow:
+
+| Name prefix             | Owns                                                                     |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `Praxis*`               | Metamodel, semantic validation, artefact execution, integrity — meaning  |
+| `Topos*`                | Graph canvas, layout presentation, pan/zoom/minimap, spatial arrangement |
+| `Platform*` / `Aideon*` | Shell regions, widget catalogue, toolbar/inspector slots, composition    |
+
+So a graph widget belongs to Praxis, but the canvas surface it renders into is Topos: `PraxisGraphWidget uses ToposCanvasSurface`. Do not use `ModelCanvasSurface` — it loses the Topos boundary.
 
 The canvas blocks consume layout from Topos; they do not invent positions for a structured layout. Auto-layout is **user-triggered**: the default layout uses ELK-compatible routines but must not override existing coordinates unless explicitly requested. A free-form arrangement the user drags is held as their authored arrangement; an automatic layout is a Topos computation ([canvas-and-graph.md](../../03-design/design-system/canvas-and-graph.md)).
 
@@ -78,7 +88,7 @@ Widgets receive `loading`, `error`, and optional `empty` hints from their hook a
 
 ## Testing
 
-Mirror the golden vertical ([testing.md](../testing.md)): hook tests for the selection and time state machines (including viewpoint-change refetch), component tests for rendering and interaction across loading/error/empty/partial states, IPC mocked at the adapter with a stub graph (e.g. `DevelopmentMemoryGraph`, [praxis-adapters](../praxis-adapters/README.md)). The chrome-free `PraxisCanvasSurface` is the unit under component test.
+Mirror the golden vertical ([testing.md](../testing.md)): hook tests for the selection and time state machines (including viewpoint-change refetch), component tests for rendering and interaction across loading/error/empty/partial states, IPC mocked at the adapter with a stub graph (e.g. `DevelopmentMemoryGraph`, [praxis-adapters](../praxis-adapters/README.md)). The chrome-free `ToposCanvasSurface` is the unit under component test.
 
 ## Security invariants
 
