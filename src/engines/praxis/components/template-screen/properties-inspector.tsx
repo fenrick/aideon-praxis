@@ -682,12 +682,11 @@ export function PropertiesInspector({
       <ScrollArea className="relative flex-1 overflow-hidden">
         <CardContent className="space-y-4 p-4">
           {showEmptyState && (
-            <div className="space-y-4">
-              <div className="border-border/60 bg-muted/40 text-muted-foreground rounded-md border p-3 text-xs">
-                <p className="text-foreground font-semibold">Page properties</p>
-                <p>Mainline FY25 · Executive overview</p>
-                <p>Last updated just now</p>
-              </div>
+            <div className="text-muted-foreground flex flex-col items-center gap-1 py-10 text-center">
+              <p className="text-sm font-medium">Nothing selected</p>
+              <p className="text-xs">
+                Select a widget, node, or edge on the canvas to edit it here.
+              </p>
             </div>
           )}
 

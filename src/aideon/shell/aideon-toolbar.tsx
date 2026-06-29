@@ -534,15 +534,15 @@ function ToolbarStartSection({
       {start}
       <Button
         type="button"
-        variant="outline"
+        variant="ghost"
         size="sm"
-        className="hidden h-8 gap-2 md:inline-flex"
+        className="text-muted-foreground hidden h-7 gap-1.5 px-2 md:inline-flex"
         aria-label="Open command palette"
+        title="Command palette"
         onClick={onOpenCommandPalette}
       >
         <CommandIcon className="size-4" />
-        Commands
-        <Kbd className="ml-1">{shortcutLabelFor('K')}</Kbd>
+        <Kbd>{shortcutLabelFor('K')}</Kbd>
       </Button>
       <ToolbarSeparator />
       <div className="min-w-0">
