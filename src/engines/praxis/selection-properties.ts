@@ -1,5 +1,5 @@
-import type { SelectionKind } from 'praxis/components/template-screen/properties-inspector';
 import type { GraphViewModel } from 'praxis/praxis-api';
+import type { SelectionKind } from 'praxis/types';
 
 import type { SelectionProperties } from './stores/selection-store';
 

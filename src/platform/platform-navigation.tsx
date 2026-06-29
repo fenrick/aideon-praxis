@@ -13,11 +13,8 @@ import {
 } from 'design-system/desktop-shell';
 import { Brain, Database, LayoutGrid } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
-import { ProjectsSidebar } from 'praxis/components/template-screen/projects-sidebar';
-
 import type { EngineId } from './engine';
 import { ENGINES } from './engines';
-import { useHostPlatform } from './host-platform-context';
 import { useLicensing } from './licensing';
 
 const ENGINE_ICONS: Partial<Record<EngineId, ComponentType<{ className?: string }>>> = {
@@ -40,8 +37,6 @@ interface PlatformNavigationProperties {
  */
 export function PlatformNavigation({ className }: PlatformNavigationProperties) {
   const { licensed } = useLicensing();
-  const { projectState, scenarioState, activeScenarioId, onSelectScenario, onRetryProjects } =
-    useHostPlatform();
   const engines = ENGINES.filter((engine) => licensed(engine.id));
 
   return (
@@ -80,15 +75,7 @@ export function PlatformNavigation({ className }: PlatformNavigationProperties) 
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
-        <ProjectsSidebar
-          projects={projectState.data}
-          scenarios={scenarioState.data}
-          loading={projectState.loading}
-          error={projectState.error}
-          activeScenarioId={activeScenarioId}
-          onSelectScenario={onSelectScenario}
-          onRetry={onRetryProjects}
-        />
+        <SidebarContent />
       </Sidebar>
     </TooltipProvider>
   );
