@@ -733,13 +733,18 @@ export function AideonToolbar({
     };
   }, []);
 
+  // macOS overlay titlebar: the traffic lights occupy the top-left ~70px, so
+  // the first row's content is inset to clear them. Other platforms get none.
+  const needsTrafficLightInset = isTauri && isMac;
+
   return (
-    <div
-      data-tauri-drag-region="false"
-      className={cn('flex flex-col gap-2', className)}
-      {...properties}
-    >
-      <Toolbar className="h-12 w-full rounded-2xl px-3 py-2">
+    <div className={cn('flex flex-col', className)} {...properties}>
+      {/* The titlebar row is the OS drag region; interactive children still
+          receive clicks. Empty space drags the window like a native app. */}
+      <Toolbar
+        data-tauri-drag-region
+        className={cn('h-10 w-full', needsTrafficLightInset && 'pl-[78px]')}
+      >
         <ToolbarStartSection
           sidebar={sidebar}
           shell={shell}
@@ -764,9 +769,16 @@ export function AideonToolbar({
         <ToolbarEndSection end={end} theme={theme} />
       </Toolbar>
 
-      <ToolbarStatusMessage statusMessage={statusMessage} />
+      {statusMessage ? (
+        <div className="px-3 pb-2">
+          <ToolbarStatusMessage statusMessage={statusMessage} />
+        </div>
+      ) : undefined}
 
-      {workspaceToolbar ? <div className="w-full">{workspaceToolbar}</div> : undefined}
+      {/* Workspace context subheader: a flush second row under a hairline. */}
+      {workspaceToolbar ? (
+        <div className="border-border/60 w-full border-t">{workspaceToolbar}</div>
+      ) : undefined}
 
       <AideonCommandPalette
         open={commandPaletteOpen}

@@ -14,7 +14,6 @@ import {
   AccordionTrigger,
   Badge,
   Button,
-  Card,
   CardContent,
   CardDescription,
   CardFooter,
@@ -132,7 +131,7 @@ interface WidgetFormPanelProperties {
  */
 function DataSection({ form, copy }: WidgetFormPanelProperties) {
   return (
-    <AccordionItem value="data" className="border-border/60 rounded-2xl border">
+    <AccordionItem value="data" className="border-border/60 rounded-md border">
       <AccordionTrigger>Data</AccordionTrigger>
       <AccordionContent className="space-y-4 pt-3">
         <FormField
@@ -180,7 +179,7 @@ function DisplaySection({
   readonly copy: typeof templateScreenCopy.properties;
 }) {
   return (
-    <AccordionItem value="display" className="border-border/60 rounded-2xl border">
+    <AccordionItem value="display" className="border-border/60 rounded-md border">
       <AccordionTrigger>Display</AccordionTrigger>
       <AccordionContent className="space-y-4 pt-3">
         <FormField
@@ -248,7 +247,7 @@ function DisplaySection({
  */
 function FiltersSection({ form }: { readonly form: UseFormReturn<FormValues> }) {
   return (
-    <AccordionItem value="filters" className="border-border/60 rounded-2xl border">
+    <AccordionItem value="filters" className="border-border/60 rounded-md border">
       <AccordionTrigger>Filters</AccordionTrigger>
       <AccordionContent className="space-y-4 pt-3">
         <FormField
@@ -276,7 +275,7 @@ function FiltersSection({ form }: { readonly form: UseFormReturn<FormValues> }) 
  */
 function InteractionsSection({ form }: { readonly form: UseFormReturn<FormValues> }) {
   return (
-    <AccordionItem value="interactions" className="border-border/60 rounded-2xl border">
+    <AccordionItem value="interactions" className="border-border/60 rounded-md border">
       <AccordionTrigger>Interactions</AccordionTrigger>
       <AccordionContent className="space-y-4 pt-3">
         <FormField
@@ -339,7 +338,7 @@ function NodeFormPanel({ form, typeLabel }: NodeFormPanelProperties) {
   return (
     <Form {...form}>
       <Accordion type="single" collapsible defaultValue="details" className="space-y-3">
-        <AccordionItem value="details" className="border-border/60 rounded-2xl border">
+        <AccordionItem value="details" className="border-border/60 rounded-md border">
           <AccordionTrigger>Details</AccordionTrigger>
           <AccordionContent className="space-y-4 pt-3">
             <FormField
@@ -401,7 +400,7 @@ function EdgeFormPanel({ form, typeLabel, from, to }: EdgeFormPanelProperties) {
   return (
     <Form {...form}>
       <Accordion type="single" collapsible defaultValue="details" className="space-y-3">
-        <AccordionItem value="details" className="border-border/60 rounded-2xl border">
+        <AccordionItem value="details" className="border-border/60 rounded-md border">
           <AccordionTrigger>Details</AccordionTrigger>
           <AccordionContent className="space-y-4 pt-3">
             <FormField
@@ -475,11 +474,11 @@ function CellDetailsPanel({ selectionId }: CellDetailsPanelProperties) {
         Cell edits are coming next. For now, review row/column context.
       </p>
       <div className="grid gap-3">
-        <div className="border-border/60 bg-muted/20 rounded-2xl border p-3">
+        <div className="border-border/60 bg-muted/20 rounded-md border p-3">
           <p className="text-muted-foreground text-xs tracking-[0.3em] uppercase">Row</p>
           <p className="text-sm font-semibold">{parsed?.rowId ?? '—'}</p>
         </div>
-        <div className="border-border/60 bg-muted/20 rounded-2xl border p-3">
+        <div className="border-border/60 bg-muted/20 rounded-md border p-3">
           <p className="text-muted-foreground text-xs tracking-[0.3em] uppercase">Column</p>
           <p className="text-sm font-semibold">{parsed?.columnId ?? '—'}</p>
         </div>
@@ -669,7 +668,7 @@ export function PropertiesInspector({
   }
 
   return (
-    <Card className="border-border/60 bg-card/90 flex min-h-full flex-col shadow-sm">
+    <div className="bg-background flex min-h-full flex-col">
       <CardHeader className="space-y-2 p-4">
         <div className="flex items-center justify-between gap-2">
           <CardTitle>Properties</CardTitle>
@@ -684,10 +683,7 @@ export function PropertiesInspector({
         <CardContent className="space-y-4 p-4">
           {showEmptyState && (
             <div className="space-y-4">
-              <p className="text-muted-foreground text-sm">
-                Select a widget to edit its data, display, or interactions.
-              </p>
-              <div className="border-border/60 bg-muted text-muted-foreground rounded-2xl border p-4 text-xs">
+              <div className="border-border/60 bg-muted/40 text-muted-foreground rounded-md border p-3 text-xs">
                 <p className="text-foreground font-semibold">Page properties</p>
                 <p>Mainline FY25 · Executive overview</p>
                 <p>Last updated just now</p>
@@ -715,6 +711,6 @@ export function PropertiesInspector({
       </ScrollArea>
 
       {footer}
-    </Card>
+    </div>
   );
 }

@@ -85,12 +85,18 @@ export function GraphWidget({
   const [showControls, setShowControls] = useState(true);
   const [layoutHydrated, setLayoutHydrated] = useState(true);
   const viewReference = useRef<GraphViewModel | undefined>(undefined);
-  const onViewChangeRef = useRef(onViewChange);
-  onViewChangeRef.current = onViewChange;
-  const onErrorRef = useRef(onError);
-  onErrorRef.current = onError;
-  const onRequestMetaModelFocusRef = useRef(onRequestMetaModelFocus);
-  onRequestMetaModelFocusRef.current = onRequestMetaModelFocus;
+  // Hold the callback props in refs so loadView/attachInspectHandlers don't
+  // depend on them — the parent passes new inline closures every render, which
+  // would otherwise recreate loadView and refire its effect in a loop. Synced
+  // in an effect (not during render) per the repo's react-hooks/refs rule.
+  const onViewChangeReference = useRef(onViewChange);
+  const onErrorReference = useRef(onError);
+  const onRequestMetaModelFocusReference = useRef(onRequestMetaModelFocus);
+  useEffect(() => {
+    onViewChangeReference.current = onViewChange;
+    onErrorReference.current = onError;
+    onRequestMetaModelFocusReference.current = onRequestMetaModelFocus;
+  });
 
   const definition = useMemo(() => widget.view, [widget.view]);
 
@@ -135,7 +141,7 @@ export function GraphWidget({
   );
 
   const attachInspectHandlers = useCallback((flowNodes: Node<GraphNodeData>[]) => {
-    if (!onRequestMetaModelFocusRef.current) {
+    if (!onRequestMetaModelFocusReference.current) {
       return flowNodes;
     }
     return flowNodes.map((node) => {
@@ -150,7 +156,7 @@ export function GraphWidget({
         data: {
           ...node.data,
           onInspect: () => {
-            onRequestMetaModelFocusRef.current?.(types);
+            onRequestMetaModelFocusReference.current?.(types);
           },
         },
       };
@@ -190,11 +196,11 @@ export function GraphWidget({
         setNodes(flowNodes);
       }
       setEdges(buildFlowEdges(view));
-      onViewChangeRef.current?.(view);
+      onViewChangeReference.current?.(view);
     } catch (unknownError) {
       const message = toErrorMessage(unknownError);
       setError(message);
-      onErrorRef.current?.(message);
+      onErrorReference.current?.(message);
     } finally {
       setLayoutHydrated(true);
       setLoading(false);

@@ -18,7 +18,9 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProperties>(function To
     <div
       ref={reference}
       className={cn(
-        'border-border/70 bg-card/90 flex min-h-10 items-center gap-2 rounded-full border px-3 py-1 text-sm shadow-sm backdrop-blur',
+        // Flush, edge-to-edge desktop bar — no pill, no shadow, no border.
+        // Separation comes from the enclosing header's hairline, not the bar.
+        'flex min-h-10 items-center gap-2 px-3 text-sm',
         className,
       )}
       {...properties}

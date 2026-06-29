@@ -92,14 +92,14 @@ export function PraxisWorkspaceToolbar({
 
   return (
     <>
-      <div className="border-border/60 bg-background/90 border-t px-3 pt-3 pb-3 md:px-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
-          <h1 className="text-foreground shrink-0 text-base leading-none font-semibold">
+      <div className="bg-background/90 px-3 py-2 md:px-4">
+        <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
+          <h1 className="text-foreground shrink-0 text-sm leading-none font-semibold">
             {headerTitle}
           </h1>
-          <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+          <div className="flex flex-wrap items-center justify-start gap-1.5 lg:justify-end">
             <ViewpointBar state={temporalState} actions={temporalActions} />
-            <div className="w-[180px]">
+            <div className="w-[170px]">
               {shouldUseNativeSelect ? (
                 <select
                   aria-label="Select layout"
@@ -112,7 +112,7 @@ export function PraxisWorkspaceToolbar({
                     }
                   }}
                   className={cn(
-                    'border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50',
+                    'border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full rounded-md border px-3 text-sm shadow-xs transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50',
                   )}
                 >
                   <option value="" disabled>
@@ -133,7 +133,7 @@ export function PraxisWorkspaceToolbar({
                   }}
                   aria-label="Select layout"
                 >
-                  <SelectTrigger className="h-9 w-full">
+                  <SelectTrigger className="h-8 w-full">
                     <SelectValue placeholder="Select layout" />
                   </SelectTrigger>
                   <SelectContent>
@@ -157,7 +157,7 @@ export function PraxisWorkspaceToolbar({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9"
+                  className="size-8"
                   aria-label="More workspace actions"
                 >
                   <MoreHorizontal />

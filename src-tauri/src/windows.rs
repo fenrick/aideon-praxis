@@ -3,7 +3,7 @@ use log::warn;
 use serde::Deserialize;
 use specta::Type;
 use tauri::webview::PageLoadEvent;
-use tauri::{App, AppHandle, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
+use tauri::{App, AppHandle, Manager, Runtime, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 
 use crate::ipc::{HostError, IpcRequest, IpcResponse};
 use crate::setup::{SetupState, set_complete};
@@ -44,6 +44,12 @@ pub fn create_windows<R: Runtime>(app: &App<R>) -> Result<(), String> {
         .title("Aideon")
         .visible(false)
         .inner_size(1060.0, 720.0)
+        // Unified native chrome: the traffic lights float over the app's own
+        // top bar (one titlebar, not two). The window title is hidden so the
+        // app draws its own breadcrumb/toolbar edge-to-edge from y=0. No-op on
+        // non-macOS; Windows keeps its Mica treatment below.
+        .title_bar_style(TitleBarStyle::Overlay)
+        .hidden_title(true)
         .center();
 
     #[cfg(target_os = "windows")]

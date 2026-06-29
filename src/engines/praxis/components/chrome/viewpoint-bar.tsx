@@ -47,13 +47,13 @@ export function ViewpointBar({
       role="toolbar"
       aria-label="Viewpoint"
       className={cn(
-        'border-border/60 bg-background/80 inline-flex h-9 items-center rounded-2xl border px-1 shadow-xs',
+        'border-border/60 inline-flex h-8 items-center rounded-md border px-1',
         className,
       )}
     >
       <Coordinate icon={<GitBranch />} label="Scenario">
         <Select
-          value={hasScenarios ? state.branch : undefined}
+          value={hasScenarios ? state.branch : ''}
           disabled={state.loading || !hasScenarios}
           onValueChange={(value) => {
             void actions.selectBranch(value);
@@ -78,7 +78,7 @@ export function ViewpointBar({
 
       <Coordinate icon={<Clock />} label="As of">
         <Select
-          value={hasCommits ? (state.commitId ?? latestCommitId) : undefined}
+          value={hasCommits ? (state.commitId ?? latestCommitId ?? '') : ''}
           disabled={state.loading || !hasCommits}
           onValueChange={(value) => {
             actions.selectCommit(value);
