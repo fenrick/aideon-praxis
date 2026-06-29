@@ -36,10 +36,10 @@ fn drain_filtered(logger: &mut Logger, count: usize, keep: impl Fn(&Value) -> bo
         match logger.pop() {
             Some(record) => {
                 scanned += 1;
-                if let Ok(payload) = serde_json::from_str::<Value>(record.args()) {
-                    if keep(&payload) {
-                        out.push(payload);
-                    }
+                if let Ok(payload) = serde_json::from_str::<Value>(record.args())
+                    && keep(&payload)
+                {
+                    out.push(payload);
                 }
             }
             None => break,

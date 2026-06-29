@@ -6,7 +6,7 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import axe from 'axe-core';
+import { run as axeRun } from 'axe-core';
 import { describe, expect, it } from 'vitest';
 
 import { ProvenanceBadge } from './provenance-badge';
@@ -24,8 +24,6 @@ describe('StatusBadge', () => {
 
   it('renders icon as aria-hidden so it does not double-announce the label', () => {
     const { container } = render(<StatusBadge tone="stale" label="Stale" icon={undefined} />);
-    // When an icon is present it must be aria-hidden (icon tests below).
-    // When absent the badge still has a text label.
     expect(container.querySelector('[aria-label]')).toBeNull();
     expect(screen.getByText('Stale')).toBeInTheDocument();
   });
@@ -49,8 +47,7 @@ describe('ProvenanceBadge', () => {
     '%s renders a text label (not colour-only)',
     (classification) => {
       render(<ProvenanceBadge classification={classification} />);
-      // Each classification maps to a capitalized label text.
-      const expectedLabel = classification[0].toUpperCase() + classification.slice(1);
+      const expectedLabel = classification.charAt(0).toUpperCase() + classification.slice(1);
       expect(screen.getByText(expectedLabel)).toBeInTheDocument();
     },
   );
@@ -81,35 +78,52 @@ describe('WarningBanner', () => {
 
 // ── axe-core smoke checks ─────────────────────────────────────────────────────
 
-async function assertNoBlockingViolations(container: HTMLElement) {
-  const results = await axe.run(container);
-  const blocking = results.violations.filter(
-    (v) => v.impact === 'critical' || v.impact === 'serious',
-  );
-  if (blocking.length > 0) {
-    const summary = blocking.map((v) => `  [${v.impact}] ${v.id}: ${v.description}`).join('\n');
-    throw new Error(`axe found ${String(blocking.length)} blocking violation(s):\n${summary}`);
-  }
-}
-
 describe('axe smoke check — honest-state blocks', () => {
   it('StaleBadge has no critical/serious violations', async () => {
     const { container } = render(<StaleBadge timestamp="2 min ago" />);
-    await assertNoBlockingViolations(container);
+    const results = await axeRun(container);
+    const blocking = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    );
+    expect(
+      blocking,
+      blocking.map((v) => `${v.impact ?? 'unknown'}: ${v.id}`).join(', '),
+    ).toHaveLength(0);
   });
 
   it('StatusBadge has no critical/serious violations', async () => {
     const { container } = render(<StatusBadge tone="info" label="In progress" />);
-    await assertNoBlockingViolations(container);
+    const results = await axeRun(container);
+    const blocking = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    );
+    expect(
+      blocking,
+      blocking.map((v) => `${v.impact ?? 'unknown'}: ${v.id}`).join(', '),
+    ).toHaveLength(0);
   });
 
   it('ProvenanceBadge (asserted) has no critical/serious violations', async () => {
     const { container } = render(<ProvenanceBadge classification="asserted" />);
-    await assertNoBlockingViolations(container);
+    const results = await axeRun(container);
+    const blocking = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    );
+    expect(
+      blocking,
+      blocking.map((v) => `${v.impact ?? 'unknown'}: ${v.id}`).join(', '),
+    ).toHaveLength(0);
   });
 
   it('WarningBanner has no critical/serious violations', async () => {
     const { container } = render(<WarningBanner message="Check your data" />);
-    await assertNoBlockingViolations(container);
+    const results = await axeRun(container);
+    const blocking = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    );
+    expect(
+      blocking,
+      blocking.map((v) => `${v.impact ?? 'unknown'}: ${v.id}`).join(', '),
+    ).toHaveLength(0);
   });
 });
