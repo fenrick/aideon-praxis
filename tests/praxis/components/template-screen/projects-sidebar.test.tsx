@@ -68,8 +68,8 @@ describe('ProjectsSidebar', () => {
         </SidebarProvider>
       </TooltipProvider>,
     );
-    fireEvent.click(screen.getByText('Retry'));
+    expect(screen.getByRole('alert')).toHaveTextContent('boom');
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
     expect(onRetry).toHaveBeenCalled();
-    expect(screen.getByText(/Failed to load scenarios/)).toBeInTheDocument();
   });
 });

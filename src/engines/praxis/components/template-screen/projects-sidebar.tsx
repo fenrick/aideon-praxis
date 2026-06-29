@@ -1,6 +1,13 @@
 import { useMemo, useState } from 'react';
 
-import { Badge, Button, Skeleton } from 'design-system';
+import {
+  Badge,
+  EmptyState,
+  ErrorFrame,
+  RebuildingIndicator,
+  Skeleton,
+  StaleBadge,
+} from 'design-system';
 import {
   Sidebar,
   SidebarContent,
@@ -43,9 +50,7 @@ function renderProjectScenarioMenuItems(parameters: {
     return [
       header,
       <SidebarMenuItem key={`${project.id}-empty`}>
-        <SidebarMenuButton disabled className="text-muted-foreground text-left text-xs">
-          No scenarios yet.
-        </SidebarMenuButton>
+        <EmptyState title="No scenarios yet." className="py-4" />
       </SidebarMenuItem>,
     ];
   }
@@ -125,23 +130,7 @@ function renderProjectsSidebarMenu(parameters: {
   if (errorMessage) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton
-          disabled
-          className="text-destructive hover:text-destructive text-left text-xs"
-        >
-          Failed to load scenarios: {errorMessage}
-        </SidebarMenuButton>
-        {onRetry ? (
-          <Button
-            variant="link"
-            className="px-0 text-xs"
-            onClick={() => {
-              onRetry();
-            }}
-          >
-            Retry
-          </Button>
-        ) : undefined}
+        <ErrorFrame message={errorMessage} onRetry={onRetry} className="w-full" />
       </SidebarMenuItem>
     );
   }
@@ -149,9 +138,7 @@ function renderProjectsSidebarMenu(parameters: {
   if (projectList.length === 0) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton disabled className="text-muted-foreground text-left text-sm">
-          No projects yet.
-        </SidebarMenuButton>
+        <EmptyState title="No projects yet." className="py-4" />
       </SidebarMenuItem>
     );
   }
@@ -159,9 +146,7 @@ function renderProjectsSidebarMenu(parameters: {
   if (query.trim() && filteredProjects.length === 0) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton disabled className="text-muted-foreground text-left text-sm">
-          No scenarios match “{query.trim()}”.
-        </SidebarMenuButton>
+        <EmptyState title={'No scenarios match "' + query.trim() + '".'} className="py-4" />
       </SidebarMenuItem>
     );
   }
@@ -180,6 +165,8 @@ interface ProjectsSidebarProperties {
   readonly scenarios: ScenarioSummary[];
   readonly loading: boolean;
   readonly error?: string;
+  readonly stale?: boolean;
+  readonly rebuilding?: boolean;
   readonly activeScenarioId?: string;
   readonly onSelectScenario?: (scenarioId: string) => void;
   readonly onRetry?: () => void;
@@ -207,6 +194,8 @@ export function ProjectsSidebar({
   scenarios,
   loading,
   error: errorMessage,
+  stale,
+  rebuilding,
   activeScenarioId,
   onSelectScenario,
   onRetry,
@@ -237,11 +226,15 @@ export function ProjectsSidebar({
   return (
     <Sidebar collapsible="none" className="bg-sidebar hidden flex-1 overflow-hidden md:flex">
       <SidebarHeader className="gap-3 border-b p-4">
-        <div className="flex w-full items-center justify-between">
+        <div className="flex w-full items-center justify-between gap-2">
           <div className="text-foreground text-base font-medium">Scenarios</div>
-          <Badge variant="secondary" className="text-xs">
-            {scenarioCount.toString()}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            {rebuilding && <RebuildingIndicator />}
+            {stale && !rebuilding && <StaleBadge />}
+            <Badge variant="secondary" className="text-xs">
+              {scenarioCount.toString()}
+            </Badge>
+          </div>
         </div>
         <SidebarInput
           value={query}

@@ -17,8 +17,12 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  ErrorFrame,
+  PartialBanner,
+  RebuildingIndicator,
   Separator,
   Skeleton,
+  StaleBadge,
 } from 'design-system';
 
 import type {
@@ -155,6 +159,9 @@ export interface PraxisCanvasWorkspaceProperties {
   readonly onGraphMetadataChange?: (metadata: GraphViewModel['metadata']) => void;
   readonly onGraphErrorMessage?: (message?: string) => void;
   readonly errorMessage?: string;
+  readonly partialMessage?: string;
+  readonly stale?: boolean;
+  readonly rebuilding?: boolean;
 }
 
 const SUGGESTED_WIDGETS = ['KPI', 'Graph', 'Catalogue snapshot'] as const;
@@ -194,6 +201,9 @@ export function PraxisCanvasWorkspace({
   onGraphMetadataChange,
   onGraphErrorMessage,
   errorMessage,
+  partialMessage,
+  stale,
+  rebuilding,
 }: PraxisCanvasWorkspaceProperties) {
   const { reloadVersion } = useReloadVersion(reloadSignal);
   const [stats, setStats] = useState<GraphViewModel['stats'] | undefined>();
@@ -237,7 +247,10 @@ export function PraxisCanvasWorkspace({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      {activeError ? <p className="text-destructive text-sm">{activeError}</p> : undefined}
+      {rebuilding ? <RebuildingIndicator /> : undefined}
+      {stale && !rebuilding ? <StaleBadge /> : undefined}
+      {activeError ? <ErrorFrame message={activeError} className="mb-0" /> : undefined}
+      {partialMessage ? <PartialBanner message={partialMessage} /> : undefined}
 
       <Card className="border-border/60 bg-muted/30 relative flex-1 overflow-hidden rounded-2xl border border-dashed">
         {showLoadingPlaceholder && (

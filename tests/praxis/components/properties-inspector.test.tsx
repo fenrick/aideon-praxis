@@ -50,8 +50,11 @@ describe('PropertiesInspector', () => {
     render(<PropertiesInspector selectionKind="none" selection={emptySelection} />);
 
     expect(
-      screen.getAllByText(/select a widget to edit its data, display, or interactions/i),
-    ).toHaveLength(2);
+      screen.getByText(/select a widget to edit its data, display, or interactions/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/select a widget, node, or edge on the canvas to edit it here/i),
+    ).toBeInTheDocument();
   });
 
   it('renders widget fields when a widget is selected', () => {

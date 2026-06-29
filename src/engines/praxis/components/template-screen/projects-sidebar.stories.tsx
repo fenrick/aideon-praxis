@@ -79,6 +79,38 @@ export const WithError: Story = {
   },
 };
 
+export const Stale: Story = {
+  args: {
+    loading: false,
+    stale: true,
+    scenarios: [
+      {
+        id: 's1',
+        name: 'Current State',
+        branch: 'main',
+        isDefault: true,
+        updatedAt: '2025-06-01T10:00:00Z',
+      },
+    ],
+  },
+};
+
+export const Rebuilding: Story = {
+  args: {
+    loading: false,
+    rebuilding: true,
+    scenarios: [
+      {
+        id: 's1',
+        name: 'Current State',
+        branch: 'main',
+        isDefault: true,
+        updatedAt: '2025-06-01T10:00:00Z',
+      },
+    ],
+  },
+};
+
 export const ActiveScenario: Story = {
   args: {
     loading: false,
