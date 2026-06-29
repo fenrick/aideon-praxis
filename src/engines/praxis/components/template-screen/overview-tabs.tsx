@@ -118,7 +118,7 @@ export function OverviewTabs({
       onValueChange={(value) => {
         setActiveTab(value as typeof initialTab);
       }}
-      className={cn('flex min-h-0 flex-col space-y-6', className)}
+      className={cn('flex h-full min-h-0 flex-col space-y-6', className)}
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-4">

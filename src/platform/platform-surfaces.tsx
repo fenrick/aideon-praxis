@@ -69,7 +69,7 @@ export function PlatformContent() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="h-full min-h-0">
         <OverviewTabs
           state={temporalState}
           actions={temporalActions}
