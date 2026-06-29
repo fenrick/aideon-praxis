@@ -66,48 +66,6 @@ export const WithGraphWidget: Story = {
   },
 };
 
-export const Stale: Story = {
-  args: {
-    widgets: [],
-    selection: EMPTY_SELECTION,
-    stale: true,
-    onSelectionChange: () => {
-      return;
-    },
-    onAddWidget: () => {
-      return;
-    },
-  },
-};
-
-export const Rebuilding: Story = {
-  args: {
-    widgets: [],
-    selection: EMPTY_SELECTION,
-    rebuilding: true,
-    onSelectionChange: () => {
-      return;
-    },
-    onAddWidget: () => {
-      return;
-    },
-  },
-};
-
-export const Partial: Story = {
-  args: {
-    widgets: [],
-    selection: EMPTY_SELECTION,
-    partialMessage: 'Showing top 100 of 2 400 nodes. Zoom in or apply filters to see more.',
-    onSelectionChange: () => {
-      return;
-    },
-    onAddWidget: () => {
-      return;
-    },
-  },
-};
-
 export const WithError: Story = {
   args: {
     widgets: [
