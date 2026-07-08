@@ -18,6 +18,7 @@ use mneme_core::{Hlc, Id, ValidTime};
 use mneme_store::error::StoreError;
 use mneme_store::manifest::Manifest;
 use mneme_store::paths::Paths;
+use mneme_store::segment;
 use mneme_store::workspace::Workspace;
 
 use tempfile::TempDir;
@@ -541,4 +542,219 @@ fn second_writer_is_locked_out() {
         Workspace::open(dir.path()),
         Err(StoreError::WorkspaceLocked)
     ));
+}
+
+// --- Crash-recovery fault injection + rebuild-equivalence (#251) ---
+//
+// A fault point is simulated by raw filesystem manipulation between dropping
+// a `Workspace` (releasing the writer lock, as a real process death would)
+// and the next `Workspace::open` — the same idiom already used above by
+// `one_op_beyond_head_triggers_incremental_replay` and by
+// `segment::tests::torn_final_record_is_truncated_not_lost`. This exercises
+// exactly what a killed process leaves on disk, with no extra instrumentation
+// hooks needed in `Workspace` itself.
+
+/// The three documented canonical write boundaries a crash can interrupt
+/// ([workspace-integrity-and-recovery], "The atomic-write / fsync sequence").
+enum FaultPoint {
+    /// A partial trailing record with no terminating LF.
+    OpAppendMidWrite,
+    /// A stray `.part` temp file in blob staging, never renamed into place.
+    BlobTempWrite,
+    /// A whole op record durably appended, but no projection commit yet.
+    PostAppendPreProjectionCommit,
+    /// A sealed segment's checksum trailer appended and fsynced, but the
+    /// rename to the sealed name never happened.
+    ProjectionSealMidWrite,
+}
+
+const CRASH_EXTRA_NODE: &str = "33333333-0000-4000-8000-000000000006";
+
+/// Leave on disk exactly what a process killed at `fault` would leave.
+fn inject_fault(dir: &Path, fault: &FaultPoint) {
+    use std::io::Write;
+    let paths = Paths::new(dir);
+    match fault {
+        FaultPoint::OpAppendMidWrite => {
+            let mut f = fs::OpenOptions::new()
+                .append(true)
+                .open(paths.current_segment())
+                .unwrap();
+            f.write_all(br#"{"partial":"#).unwrap();
+            f.sync_all().unwrap();
+        }
+        FaultPoint::BlobTempWrite => {
+            let staging = paths.staging_blobs_dir();
+            fs::create_dir_all(&staging).unwrap();
+            fs::write(staging.join("deadbeef.part"), b"never finished").unwrap();
+        }
+        FaultPoint::PostAppendPreProjectionCommit => {
+            let manifest = Manifest::read(&paths).unwrap();
+            let extra = mneme_core::OpEnvelope::new(
+                Id::new_v4(),
+                id(ACTOR),
+                Hlc(9_000_000_000_000_000_000),
+                Origin::manual(),
+                vec![],
+                OpPayload::CreateNode(CreateNode {
+                    partition: manifest.partition_id,
+                    scenario_id: None,
+                    actor: id(ACTOR),
+                    asserted_at: Hlc(9_000_000_000_000_000_000),
+                    node_id: id(CRASH_EXTRA_NODE),
+                    type_id: None,
+                    write_options: None,
+                }),
+            );
+            let record = extra.canonical_record_bytes().unwrap();
+            let mut f = fs::OpenOptions::new()
+                .append(true)
+                .open(paths.current_segment())
+                .unwrap();
+            f.write_all(&record).unwrap();
+            f.sync_all().unwrap();
+        }
+        FaultPoint::ProjectionSealMidWrite => {
+            let covered = fs::read(paths.current_segment()).unwrap();
+            let checksum = segment::checksum_record_bytes(&covered, 9).unwrap();
+            let mut f = fs::OpenOptions::new()
+                .append(true)
+                .open(paths.current_segment())
+                .unwrap();
+            f.write_all(&checksum).unwrap();
+            f.sync_all().unwrap();
+        }
+    }
+}
+
+/// A fresh workspace seeded with the standard nine ops, ready for a fault to
+/// be injected after the handle is dropped (releasing the writer lock).
+fn seeded_workspace_dir() -> TempDir {
+    let dir = TempDir::new().unwrap();
+    let mut ws = Workspace::create(dir.path(), Some(id(ACTOR))).unwrap();
+    author_seed(&mut ws);
+    dir
+}
+
+/// The rebuild-equivalence oracle: the hash reached by ordinary crash recovery
+/// must equal the hash reached by discarding the runtime and doing a full
+/// rebuild from the same canonical log ([ADR-0001], [ADR-0002]).
+fn assert_rebuild_equivalent(dir: &Path) {
+    let paths = Paths::new(dir);
+    let hash_recovered = {
+        let ws = Workspace::open(dir).unwrap();
+        ws.foundation_rebuild_hash().unwrap()
+    };
+    fs::remove_dir_all(paths.runtime_dir()).unwrap();
+    let hash_full_rebuild = {
+        let ws = Workspace::open(dir).unwrap();
+        ws.foundation_rebuild_hash().unwrap()
+    };
+    assert_eq!(
+        hash_recovered, hash_full_rebuild,
+        "fault-recovered state must equal a full rebuild from the same canonical log"
+    );
+}
+
+/// No canonical file is left partially written or corrupted: every op segment
+/// is composed of whole, parseable JSON lines, and every content-addressed
+/// object still verifies against its own digest.
+fn assert_canonical_files_are_whole(paths: &Paths) {
+    for entry in fs::read_dir(paths.ops_dir()).unwrap() {
+        let path = entry.unwrap().path();
+        let data = fs::read(&path).unwrap();
+        assert!(
+            data.is_empty() || data.ends_with(b"\n"),
+            "{path:?} ends mid-record"
+        );
+        for line in String::from_utf8_lossy(&data).lines() {
+            assert!(
+                serde_json::from_str::<serde_json::Value>(line).is_ok(),
+                "{path:?} has a non-JSON line"
+            );
+        }
+    }
+    for (digest, _len) in mneme_store::blob::list_objects(paths).unwrap() {
+        let bytes = fs::read(paths.object_path(&digest)).unwrap();
+        assert_eq!(
+            mneme_store::blob::sha256_hex(&bytes),
+            digest,
+            "object {digest} fails its own address"
+        );
+    }
+}
+
+#[test]
+fn crash_during_op_append_discards_torn_segment_and_recovers() {
+    let dir = seeded_workspace_dir();
+    inject_fault(dir.path(), &FaultPoint::OpAppendMidWrite);
+
+    let ws = Workspace::open(dir.path()).unwrap();
+    assert_eq!(ws.snapshot().unwrap().partitions[0].applied_ops.len(), 9);
+    drop(ws);
+
+    assert_canonical_files_are_whole(&Paths::new(dir.path()));
+    assert_rebuild_equivalent(dir.path());
+}
+
+#[test]
+fn crash_during_blob_temp_write_discards_partial_blob() {
+    let dir = seeded_workspace_dir();
+    inject_fault(dir.path(), &FaultPoint::BlobTempWrite);
+
+    let ws = Workspace::open(dir.path()).unwrap();
+    let paths = Paths::new(dir.path());
+    // The stray temp file never appears as a valid content-addressed object.
+    assert!(mneme_store::blob::list_objects(&paths).unwrap().is_empty());
+    assert!(ws.orphan_blob_report().unwrap().is_empty());
+    // A fresh blob write still works cleanly alongside the stray temp file.
+    let blob = ws.write_blob(b"fresh", None).unwrap();
+    assert_eq!(ws.read_blob(&blob).unwrap(), b"fresh");
+}
+
+#[test]
+fn crash_post_append_pre_runtime_commit_recovers_via_incremental_catchup() {
+    let dir = seeded_workspace_dir();
+    inject_fault(dir.path(), &FaultPoint::PostAppendPreProjectionCommit);
+
+    let ws = Workspace::open(dir.path()).unwrap();
+    // The durably-appended-but-uncommitted op is replayed on incremental catch-up.
+    assert_eq!(ws.snapshot().unwrap().partitions[0].applied_ops.len(), 10);
+    drop(ws);
+
+    assert_canonical_files_are_whole(&Paths::new(dir.path()));
+    assert_rebuild_equivalent(dir.path());
+}
+
+#[test]
+fn crash_during_projection_seal_discards_incomplete_projection() {
+    let dir = seeded_workspace_dir();
+    let paths = Paths::new(dir.path());
+    inject_fault(dir.path(), &FaultPoint::ProjectionSealMidWrite);
+    // The rename never happened — no sealed segment exists.
+    assert!(!paths.sealed_segment(1).exists());
+
+    // The loose segment is still authoritative; the checksum artifact is
+    // discarded, not treated as a corrupt operation record.
+    let ws = Workspace::open(dir.path()).unwrap();
+    assert_eq!(ws.snapshot().unwrap().partitions[0].applied_ops.len(), 9);
+    drop(ws);
+
+    assert_canonical_files_are_whole(&paths);
+    assert_rebuild_equivalent(dir.path());
+}
+
+#[test]
+fn canonical_files_checksum_clean_after_every_fault_point() {
+    for fault in [
+        FaultPoint::OpAppendMidWrite,
+        FaultPoint::BlobTempWrite,
+        FaultPoint::PostAppendPreProjectionCommit,
+        FaultPoint::ProjectionSealMidWrite,
+    ] {
+        let dir = seeded_workspace_dir();
+        inject_fault(dir.path(), &fault);
+        let _ws = Workspace::open(dir.path()).unwrap();
+        assert_canonical_files_are_whole(&Paths::new(dir.path()));
+    }
 }
