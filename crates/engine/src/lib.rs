@@ -33,6 +33,18 @@ pub struct WorkspaceStatus {
     pub foundation_rebuild_hash: String,
 }
 
+/// A host-facing projected node — the derived twin listing entry.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct NodeRecord {
+    /// The node id.
+    pub node_id: String,
+    /// The declared node type, if any.
+    pub type_id: Option<String>,
+    /// Whether a tombstone has retired the node.
+    pub tombstoned: bool,
+}
+
 /// The in-process engine handle wrapping one open workspace.
 pub struct Engine {
     workspace: Workspace,
@@ -80,6 +92,68 @@ impl Engine {
         payload: OpPayload,
     ) -> Result<AppliedFrontier> {
         self.workspace.author(actor_id, origin, payload)
+    }
+
+    /// Author one `create-node` through the canonical write path, minting the
+    /// node id and self-declaring a session actor on a fresh workspace (the
+    /// actor registry's first entry is the session actor thereafter).
+    pub fn author_node(&mut self, type_id: Option<Id>) -> Result<NodeRecord> {
+        let actor = self.session_actor()?;
+        let node_id = Id::new_v4();
+        self.workspace.author(
+            actor,
+            Origin::manual(),
+            OpPayload::CreateNode(mneme_core::ops::CreateNode {
+                partition: self.workspace.partition_id(),
+                scenario_id: None,
+                actor,
+                asserted_at: mneme_core::Hlc(0),
+                node_id,
+                type_id,
+                write_options: None,
+            }),
+        )?;
+        Ok(NodeRecord {
+            node_id: node_id.to_canonical_string(),
+            type_id: type_id.map(|t| t.to_canonical_string()),
+            tombstoned: false,
+        })
+    }
+
+    /// The projected node listing — the derived twin view, re-derived on
+    /// every rebuild.
+    pub fn nodes(&self) -> Result<Vec<NodeRecord>> {
+        Ok(self
+            .workspace
+            .list_nodes()?
+            .into_iter()
+            .map(|n| NodeRecord {
+                node_id: n.node_id,
+                type_id: n.type_id,
+                tombstoned: n.tombstoned,
+            })
+            .collect())
+    }
+
+    /// The session actor: the first declared actor, or a fresh `Local User`
+    /// declared on first use.
+    fn session_actor(&mut self) -> Result<Id> {
+        if let Some(first) = self.workspace.list_actors()?.first() {
+            use std::str::FromStr;
+            return Id::from_str(&first.actor_id)
+                .map_err(|e| StoreError::Corruption(format!("actor id not a UUID: {e}")));
+        }
+        let actor = Id::new_v4();
+        self.workspace.author(
+            actor,
+            Origin::manual(),
+            OpPayload::ActorDeclare(mneme_core::ops::ActorDeclare {
+                declared_actor_id: actor,
+                actor_kind: mneme_core::ops::ActorKind::Person,
+                display_name: "Local User".into(),
+            }),
+        )?;
+        Ok(actor)
     }
 
     /// The host-facing workspace status DTO.
@@ -142,6 +216,36 @@ mod tests {
         // Reopen through the seam and confirm the state survives.
         let reopened = Engine::open(dir.path()).unwrap();
         assert_eq!(reopened.status().unwrap().applied_op_count, 1);
+    }
+
+    #[test]
+    fn author_node_declares_session_actor_and_lists_the_node() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), None).unwrap();
+
+        // First authoring on a fresh workspace self-declares the session actor.
+        let node = engine.author_node(None).unwrap();
+        assert!(!node.tombstoned);
+        assert!(node.type_id.is_none());
+
+        let status = engine.status().unwrap();
+        assert_eq!(
+            status.applied_op_count, 2,
+            "actor-declare + create-node both land in the canonical log"
+        );
+
+        // A second node reuses the session actor — one more op, not two.
+        let second = engine.author_node(None).unwrap();
+        assert_ne!(node.node_id, second.node_id);
+        assert_eq!(engine.status().unwrap().applied_op_count, 3);
+
+        let nodes = engine.nodes().unwrap();
+        assert_eq!(nodes.len(), 2);
+
+        // The listing is derived state: it survives close/reopen.
+        drop(engine);
+        let reopened = Engine::open(dir.path()).unwrap();
+        assert_eq!(reopened.nodes().unwrap().len(), 2);
     }
 
     #[test]
