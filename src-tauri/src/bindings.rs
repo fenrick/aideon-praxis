@@ -49,6 +49,8 @@ pub fn ipc_builder() -> Builder<tauri::Wry> {
             crate::workspace_lifecycle::workspace_status,
             crate::workspace_lifecycle::workspace_close,
             crate::workspace_lifecycle::workspace_rebuild,
+            crate::workspace_lifecycle::workspace_author_node,
+            crate::workspace_lifecycle::workspace_nodes,
             crate::telemetry::system_logging_context,
             crate::telemetry::system_metrics_snapshot,
         ])

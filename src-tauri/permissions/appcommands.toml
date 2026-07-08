@@ -27,6 +27,7 @@ commands.allow = [
   "system_setup_state",
   "system_window_open",
   "system_worker_health",
+  "workspace_nodes",
   "workspace_projects_list",
   "workspace_status",
   "workspace_templates_list",

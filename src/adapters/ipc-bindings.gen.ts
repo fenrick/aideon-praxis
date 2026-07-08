@@ -336,6 +336,30 @@ async workspaceRebuild(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcRe
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Author one `create-node` into the open workspace's canonical log
+ * ([golden-journey] step 3). The node id is minted host-side; a session
+ * actor self-declares on the first authoring of a fresh workspace.
+ */
+async workspaceAuthorNode(request: IpcRequest<AuthorNodePayload>) : Promise<Result<IpcResponse<NodeRecord>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_author_node", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * List the derived twin's projected nodes ([golden-journey] step 3 read-back).
+ */
+async workspaceNodes(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResponse<NodeRecord[]>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_nodes", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async systemLoggingContext() : Promise<Result<LoggingContextDto, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("system_logging_context") };
@@ -372,6 +396,10 @@ workspaceReadyReadWrite: "workspace:ready_read_write"
  */
 export type AcceptedJob = { runId: string; queueClass: WorkQueueClass; idempotencyKey: string; ledgerRef: string; acceptedAt: string }
 export type ApplyOperationsPayload = { branch?: string | null; operations?: PraxisOperation[] }
+/**
+ * Payload for authoring one node: an optional declared type id.
+ */
+export type AuthorNodePayload = { typeId: string | null }
 export type BranchInfo = { name: string; head: string | null }
 export type CanvasEdge = { id: string; source: string; target: string; label?: string | null; z?: number | null }
 export type CanvasGroup = { id: string; name?: string | null; parentId?: string | null; z?: number | null }
@@ -481,6 +509,22 @@ export type MetaStringRule = { maxLength: number | null }
 export type MetaType = { id: string; uuid?: string | null; label: string | null; category: string | null; extends: string | null; attributes?: MetaAttribute[]; effectTypes?: string[] | null }
 export type MetaValidationRules = { attributes: MetaAttributeRules | null; relationships: Partial<{ [key in string]: MetaRelationshipValidation }> | null }
 export type MetricsSnapshot = { command_failures: Partial<{ [key in string]: number }>; job_failures: Partial<{ [key in string]: number }>; command_durations: Partial<{ [key in string]: DurationSummary }>; job_durations: Partial<{ [key in string]: DurationSummary }> }
+/**
+ * A host-facing projected node — the derived twin listing entry.
+ */
+export type NodeRecord = { 
+/**
+ * The node id.
+ */
+nodeId: string; 
+/**
+ * The declared node type, if any.
+ */
+typeId: string | null; 
+/**
+ * Whether a tombstone has retired the node.
+ */
+tombstoned: boolean }
 export type NodeTombstone = { id: string }
 export type NodeVersion = { id: string; type: string | null; props: JsonValue | null }
 export type OpenWindowPayload = { window: string }

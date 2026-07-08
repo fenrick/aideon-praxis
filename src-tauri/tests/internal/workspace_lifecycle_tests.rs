@@ -32,7 +32,9 @@ fn lifecycle_app() -> (App<MockRuntime>, WebviewWindow<MockRuntime>) {
             super::workspace_close,
             // The runtime-generic inner is what dispatches under MockRuntime; the
             // concrete `workspace_rebuild` wrapper is the registered codegen seam.
-            super::workspace_rebuild_inner
+            super::workspace_rebuild_inner,
+            super::workspace_author_node,
+            super::workspace_nodes
         ])
         .manage(WorkspaceManager::default())
         .build(mock_context(noop_assets()))
@@ -326,4 +328,72 @@ async fn concurrent_rebuild_is_refused_with_backpressure() {
     if second["status"] == "error" {
         assert_eq!(second["error"]["code"], "BACKPRESSURE");
     }
+}
+
+/// The MVP end-to-end authoring slice ([golden-journey] steps 1 + 3 + 8–10):
+/// create → author nodes over the boundary → list the derived twin → close →
+/// reopen → the twin re-derives and the foundation hash is unchanged.
+#[tokio::test]
+async fn author_node_then_list_survives_reopen_with_hash_equality() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    // Author two nodes through the real dispatch seam.
+    let first =
+        dispatch(&webview, "workspace_author_node", json!({ "typeId": null })).expect("author ok");
+    assert_eq!(first["status"], "ok");
+    let first_id = first["result"]["nodeId"]
+        .as_str()
+        .expect("nodeId")
+        .to_string();
+    assert_eq!(first["result"]["tombstoned"], false);
+
+    let second =
+        dispatch(&webview, "workspace_author_node", json!({ "typeId": null })).expect("author ok");
+    assert_ne!(second["result"]["nodeId"], first_id.as_str());
+
+    // The derived twin lists both.
+    let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
+    assert_eq!(nodes["status"], "ok");
+    assert_eq!(nodes["result"].as_array().map(Vec::len), Some(2));
+
+    // Op count: 1 session actor-declare + 2 create-node.
+    let status = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(status["result"]["appliedOpCount"], 3);
+    let hash = status["result"]["foundationRebuildHash"]
+        .as_str()
+        .expect("hash")
+        .to_string();
+
+    // Close, reopen: the twin re-derives from canonical material, hash equal.
+    dispatch(&webview, "workspace_close", json!({})).expect("close ok");
+    let reopened = dispatch(
+        &webview,
+        "workspace_open",
+        json!({ "root": dir.path().to_string_lossy() }),
+    )
+    .expect("open ok");
+    assert_eq!(reopened["result"]["foundationRebuildHash"], hash.as_str());
+    let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
+    assert_eq!(nodes["result"].as_array().map(Vec::len), Some(2));
+    assert!(
+        nodes["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|n| n["nodeId"] == first_id.as_str()),
+        "the first authored node survives reopen"
+    );
+}
+
+#[tokio::test]
+async fn author_node_with_no_open_workspace_is_an_honest_error() {
+    let (_app, webview) = lifecycle_app();
+    let authored = dispatch(&webview, "workspace_author_node", json!({ "typeId": null }))
+        .expect("envelope returned");
+    assert_eq!(authored["status"], "error");
+    assert_eq!(authored["error"]["code"], "WORKSPACE_NOT_OPEN");
 }

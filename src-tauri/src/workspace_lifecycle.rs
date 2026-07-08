@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use aideon_engine::{Engine, StoreError, WorkspaceStatus};
+use aideon_engine::{Engine, NodeRecord, StoreError, WorkspaceStatus};
 use serde::Deserialize;
 use specta::Type;
 use tauri::{AppHandle, Emitter, Runtime, State};
@@ -241,6 +241,61 @@ pub async fn workspace_status(
                 .as_ref()
                 .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
             engine.status().map_err(map_store_error)
+        })
+        .await,
+    )
+}
+
+/// Payload for authoring one node: an optional declared type id.
+#[derive(Debug, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthorNodePayload {
+    pub type_id: Option<String>,
+}
+
+/// Author one `create-node` into the open workspace's canonical log
+/// ([golden-journey] step 3). The node id is minted host-side; a session
+/// actor self-declares on the first authoring of a fresh workspace.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_author_node(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<AuthorNodePayload>,
+) -> Result<IpcResponse<NodeRecord>, HostError> {
+    Ok(
+        command_envelope("workspace_author_node", request, |payload| async move {
+            let type_id = payload
+                .type_id
+                .map(|raw| {
+                    use std::str::FromStr;
+                    aideon_engine::Id::from_str(&raw)
+                        .map_err(|_| HostError::new("INVALID_TYPE_ID", "typeId is not a UUID"))
+                })
+                .transpose()?;
+            let mut guard = manager.open.lock().await;
+            let engine = guard
+                .as_mut()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine.author_node(type_id).map_err(map_store_error)
+        })
+        .await,
+    )
+}
+
+/// List the derived twin's projected nodes ([golden-journey] step 3 read-back).
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_nodes(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<EmptyPayload>,
+) -> Result<IpcResponse<Vec<NodeRecord>>, HostError> {
+    Ok(
+        command_envelope("workspace_nodes", request, |_payload| async move {
+            let guard = manager.open.lock().await;
+            let engine = guard
+                .as_ref()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine.nodes().map_err(map_store_error)
         })
         .await,
     )
