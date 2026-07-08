@@ -2,6 +2,12 @@ import { withThemeByClassName } from '@storybook/addon-themes';
 import type { Preview } from '@storybook/nextjs-vite';
 import { ThemeProvider } from 'next-themes';
 import React from 'react';
+import { sb } from 'storybook/test';
+
+// The host IPC boundary is mocked in stories: components render against
+// story-provided responses, never a live Tauri host.
+sb.mock(import('../src/adapters/ipc.ts'), { spy: true });
+sb.mock(import('@tauri-apps/api/event'), { spy: true });
 
 import { ColorThemeProvider } from '../src/design-system/theme/color-theme';
 import '../src/styles.css';
