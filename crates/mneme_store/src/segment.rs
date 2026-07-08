@@ -81,6 +81,12 @@ impl SegmentWriter {
 
 /// Scan the loose segment, accepting every complete LF-terminated JSON line and
 /// truncating a partial trailing record so the next append starts clean.
+///
+/// A trailing `segment-checksum` record is also discarded: it means a seal
+/// was interrupted after the checksum append but before the rename
+/// ([workspace-integrity-and-recovery], "Mid-seal (before rename)") — the
+/// loose segment is still authoritative, so the artifact is stripped and
+/// sealing simply re-runs later.
 pub fn recover_loose_tail(paths: &Paths) -> Result<LooseRecovery> {
     let path = paths.current_segment();
     if !path.exists() {
@@ -91,7 +97,7 @@ pub fn recover_loose_tail(paths: &Paths) -> Result<LooseRecovery> {
         });
     }
     let data = fs::read(&path)?;
-    let mut records = Vec::new();
+    let mut records: Vec<(usize, String)> = Vec::new();
     let mut offset = 0usize;
     let mut valid_len = 0usize;
     while offset < data.len() {
@@ -105,21 +111,38 @@ pub fn recover_loose_tail(paths: &Paths) -> Result<LooseRecovery> {
         if serde_json::from_slice::<serde_json::Value>(line).is_err() {
             break;
         }
-        records.push(String::from_utf8_lossy(line).into_owned());
+        records.push((offset, String::from_utf8_lossy(line).into_owned()));
         valid_len = line_end + 1;
         offset = line_end + 1;
     }
-    let truncated = valid_len != data.len();
+    let mut truncated = valid_len != data.len();
+    if let Some((line_start, line)) = records.last()
+        && is_checksum_record(line)
+    {
+        valid_len = *line_start;
+        records.pop();
+        truncated = true;
+    }
     if truncated {
         let file = OpenOptions::new().write(true).open(&path)?;
         file.set_len(valid_len as u64)?;
         file.sync_all()?;
     }
     Ok(LooseRecovery {
-        records,
+        records: records.into_iter().map(|(_, line)| line).collect(),
         valid_len: valid_len as u64,
         truncated,
     })
+}
+
+/// Whether a loose-segment line is a sealed-segment checksum trailer rather
+/// than an operation record.
+fn is_checksum_record(line: &str) -> bool {
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(line) else {
+        return false;
+    };
+    value.get("record_type").and_then(serde_json::Value::as_str)
+        == Some(SEGMENT_CHECKSUM_RECORD_TYPE)
 }
 
 /// The ascending list of sealed segment sequence numbers, validating the
@@ -311,6 +334,40 @@ mod tests {
         let again = recover_loose_tail(&paths).unwrap();
         assert!(!again.truncated, "second open sees a clean tail");
         assert_eq!(again.records.len(), 1);
+    }
+
+    #[test]
+    fn interrupted_seal_checksum_trailer_is_discarded_on_recovery() {
+        let dir = tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        let mut w = SegmentWriter::open(&paths).unwrap();
+        w.append(&record(r#"{"a":1}"#)).unwrap();
+        drop(w);
+
+        // Simulate a crash mid-seal: the checksum trailer is appended and
+        // fsynced, but the rename to a sealed segment name never happens.
+        let covered = fs::read(paths.current_segment()).unwrap();
+        let checksum = checksum_record_bytes(&covered, 1).unwrap();
+        let mut f = OpenOptions::new()
+            .append(true)
+            .open(paths.current_segment())
+            .unwrap();
+        f.write_all(&checksum).unwrap();
+        f.sync_all().unwrap();
+        drop(f);
+
+        let recovered = recover_loose_tail(&paths).unwrap();
+        assert_eq!(recovered.records, vec![r#"{"a":1}"#.to_string()]);
+        assert!(
+            recovered.truncated,
+            "the checksum artifact must be stripped"
+        );
+
+        // The file itself is truncated back to the op record — a fresh
+        // append lands directly after it, not after the discarded trailer.
+        assert_eq!(fs::read(paths.current_segment()).unwrap(), covered);
+        let again = recover_loose_tail(&paths).unwrap();
+        assert!(!again.truncated, "second read sees a clean tail");
     }
 
     #[test]
