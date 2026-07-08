@@ -15,7 +15,8 @@ use crate::error::{Result, StoreError};
 use crate::paths::Paths;
 
 /// The derived-runtime schema version; a mismatch forces a full rebuild.
-pub const RUNTIME_SCHEMA_VERSION: i64 = 1;
+/// v2 added the `aideon_nodes` foundation projection.
+pub const RUNTIME_SCHEMA_VERSION: i64 = 2;
 
 /// The replay frontier persisted per partition ([workspace-integrity-and-recovery],
 /// "The replay frontier (`ReplayHead`)").
@@ -116,6 +117,13 @@ pub fn init_schema(conn: &Connection) -> Result<()> {
             partition_id TEXT PRIMARY KEY,
             last_hlc INTEGER NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS aideon_nodes (
+            partition_id TEXT NOT NULL,
+            node_id TEXT NOT NULL,
+            type_id TEXT,
+            tombstoned INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (partition_id, node_id)
+        );
         ",
     )?;
     set_meta(
@@ -209,28 +217,103 @@ pub fn record_applied_op(
     Ok(ApplyOutcome::Applied)
 }
 
-/// Apply the per-kind foundation effect of an operation (actor registry only at
-/// the projection level; schema-doc and object effects are applied by the
-/// workspace where the on-disk projection is materialised).
+/// Apply the per-kind foundation effect of an operation (actor and node
+/// registries at the projection level; schema-doc and object effects are
+/// applied by the workspace where the on-disk projection is materialised).
 pub fn apply_kind_effect(conn: &Connection, env: &OpEnvelope) -> Result<()> {
-    if let OpPayload::ActorDeclare(actor) = &env.payload {
-        let digest = env.canonical_record_digest()?;
-        conn.execute(
-            "INSERT INTO aideon_actors(actor_id, actor_kind, display_name, declaration_digest)
-             VALUES (?1, ?2, ?3, ?4)
-             ON CONFLICT(actor_id) DO UPDATE SET
-                actor_kind = excluded.actor_kind,
-                display_name = excluded.display_name,
-                declaration_digest = excluded.declaration_digest",
-            params![
-                actor.declared_actor_id.to_canonical_string(),
-                format!("{:?}", actor.actor_kind).to_lowercase(),
-                actor.display_name,
-                digest
-            ],
-        )?;
+    match &env.payload {
+        OpPayload::ActorDeclare(actor) => {
+            let digest = env.canonical_record_digest()?;
+            conn.execute(
+                "INSERT INTO aideon_actors(actor_id, actor_kind, display_name, declaration_digest)
+                 VALUES (?1, ?2, ?3, ?4)
+                 ON CONFLICT(actor_id) DO UPDATE SET
+                    actor_kind = excluded.actor_kind,
+                    display_name = excluded.display_name,
+                    declaration_digest = excluded.declaration_digest",
+                params![
+                    actor.declared_actor_id.to_canonical_string(),
+                    format!("{:?}", actor.actor_kind).to_lowercase(),
+                    actor.display_name,
+                    digest
+                ],
+            )?;
+        }
+        OpPayload::CreateNode(node) => {
+            conn.execute(
+                "INSERT INTO aideon_nodes(partition_id, node_id, type_id, tombstoned)
+                 VALUES (?1, ?2, ?3, 0)
+                 ON CONFLICT(partition_id, node_id) DO UPDATE SET
+                    type_id = excluded.type_id",
+                params![
+                    node.partition.to_canonical_string(),
+                    node.node_id.to_canonical_string(),
+                    node.type_id.map(|t| t.to_canonical_string()),
+                ],
+            )?;
+        }
+        OpPayload::TombstoneEntity(tomb) => {
+            // A no-op when the entity is not a node (e.g. an edge).
+            conn.execute(
+                "UPDATE aideon_nodes SET tombstoned = 1
+                 WHERE partition_id = ?1 AND node_id = ?2",
+                params![
+                    tomb.partition.to_canonical_string(),
+                    tomb.entity_id.to_canonical_string(),
+                ],
+            )?;
+        }
+        _ => {}
     }
     Ok(())
+}
+
+/// One projected node row: the derived twin listing of `create-node` /
+/// `tombstone-entity` effects, re-derived on every rebuild.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NodeRow {
+    /// The node id.
+    pub node_id: String,
+    /// The declared node type, if any.
+    pub type_id: Option<String>,
+    /// Whether a tombstone has retired the node.
+    pub tombstoned: bool,
+}
+
+/// One projected actor-registry row.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ActorRow {
+    /// The actor id.
+    pub actor_id: String,
+    /// The declared display name.
+    pub display_name: String,
+}
+
+/// List every projected node, ordered by node id.
+pub fn list_nodes(conn: &Connection) -> Result<Vec<NodeRow>> {
+    let mut stmt =
+        conn.prepare("SELECT node_id, type_id, tombstoned FROM aideon_nodes ORDER BY node_id")?;
+    let rows = stmt.query_map([], |row| {
+        Ok(NodeRow {
+            node_id: row.get(0)?,
+            type_id: row.get(1)?,
+            tombstoned: row.get::<_, i64>(2)? != 0,
+        })
+    })?;
+    Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+}
+
+/// List every declared actor, ordered by actor id.
+pub fn list_actors(conn: &Connection) -> Result<Vec<ActorRow>> {
+    let mut stmt =
+        conn.prepare("SELECT actor_id, display_name FROM aideon_actors ORDER BY actor_id")?;
+    let rows = stmt.query_map([], |row| {
+        Ok(ActorRow {
+            actor_id: row.get(0)?,
+            display_name: row.get(1)?,
+        })
+    })?;
+    Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
 }
 
 /// Record (or update) an authored schema-document registry row.

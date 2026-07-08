@@ -544,6 +544,44 @@ fn second_writer_is_locked_out() {
     ));
 }
 
+// --- Node projection: the derived twin listing re-derives from the log ---
+
+#[test]
+fn authored_nodes_are_listed_and_survive_runtime_wipe() {
+    let dir = TempDir::new().unwrap();
+    let paths = Paths::new(dir.path());
+    {
+        let mut ws = Workspace::create(dir.path(), Some(id(ACTOR))).unwrap();
+        author_seed(&mut ws);
+        // Seed authored N1 and N2 (typed) then tombstoned N2.
+        let nodes = ws.list_nodes().unwrap();
+        assert_eq!(nodes.len(), 2);
+        let n1 = nodes.iter().find(|n| n.node_id == N1).unwrap();
+        let n2 = nodes.iter().find(|n| n.node_id == N2).unwrap();
+        assert_eq!(n1.type_id.as_deref(), Some(TYPE_APP));
+        assert!(!n1.tombstoned);
+        assert!(n2.tombstoned, "TombstoneEntity must project onto the node");
+    }
+
+    // The node projection is derived state: wipe the runtime and it re-derives.
+    fs::remove_dir_all(paths.runtime_dir()).unwrap();
+    let ws = Workspace::open(dir.path()).unwrap();
+    let nodes = ws.list_nodes().unwrap();
+    assert_eq!(nodes.len(), 2);
+    assert!(nodes.iter().any(|n| n.node_id == N2 && n.tombstoned));
+}
+
+#[test]
+fn declared_actors_are_listed() {
+    let dir = TempDir::new().unwrap();
+    let mut ws = Workspace::create(dir.path(), Some(id(ACTOR))).unwrap();
+    author_seed(&mut ws);
+    let actors = ws.list_actors().unwrap();
+    assert_eq!(actors.len(), 1);
+    assert_eq!(actors[0].actor_id, ACTOR);
+    assert_eq!(actors[0].display_name, "Seed Architect");
+}
+
 // --- Crash-recovery fault injection + rebuild-equivalence (#251) ---
 //
 // A fault point is simulated by raw filesystem manipulation between dropping

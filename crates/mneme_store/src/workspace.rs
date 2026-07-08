@@ -262,6 +262,17 @@ impl Workspace {
         self.snapshot()?.foundation_rebuild_hash()
     }
 
+    /// The projected node listing — the derived twin view of `create-node` /
+    /// `tombstone-entity` effects, re-derived on every rebuild.
+    pub fn list_nodes(&self) -> Result<Vec<projection::NodeRow>> {
+        projection::list_nodes(&self.conn)
+    }
+
+    /// The projected actor registry.
+    pub fn list_actors(&self) -> Result<Vec<projection::ActorRow>> {
+        projection::list_actors(&self.conn)
+    }
+
     /// A conservative dry-run orphan-blob report.
     pub fn orphan_blob_report(&self) -> Result<Vec<String>> {
         let referenced = referenced_blob_digests(&self.read_all_records()?);
@@ -376,6 +387,7 @@ fn prefix_matches(records: &[LogRecord], head: &ReplayHead) -> bool {
 fn reset_runtime(conn: &Connection) -> Result<()> {
     conn.execute_batch(
         "DELETE FROM aideon_applied_ops;
+         DELETE FROM aideon_nodes;
          DELETE FROM aideon_actors;
          DELETE FROM aideon_schema_docs;
          DELETE FROM aideon_objects;
