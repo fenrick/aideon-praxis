@@ -387,6 +387,43 @@ async workspaceAuthorTypedNode(request: IpcRequest<AuthorTypedNodePayload>) : Pr
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Assert a slot value on a layer over a valid-time interval — a plan or actual
+ * claim ([golden-journey] step 4). The value is validated against the
+ * attribute's metamodel kind/enum before any operation is appended.
+ */
+async workspaceSetClaim(request: IpcRequest<SetClaimPayload>) : Promise<Result<IpcResponse<null>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_set_claim", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Resolve the twin at a viewpoint — every entity with its slots' effective
+ * values ([golden-journey] step 5).
+ */
+async workspaceStateAt(request: IpcRequest<Viewpoint>) : Promise<Result<IpcResponse<ResolvedEntity[]>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_state_at", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Compare the twin at two viewpoints, returning the slots whose resolved value
+ * differs ([golden-journey] step 6).
+ */
+async workspaceDiff(request: IpcRequest<DiffPayload>) : Promise<Result<IpcResponse<PropertyDelta[]>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_diff", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async systemLoggingContext() : Promise<Result<LoggingContextDto, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("system_logging_context") };
@@ -457,6 +494,10 @@ export type CommitRef = { id: string } | { branch: { branch: string; at: string 
 export type CommitSummary = { id: string; parents: string[]; branch: string; author: string | null; time: string | null; message: string; tags: string[]; changeCount: number }
 export type CreateBranchRequest = { name: string; from: CommitRef | null }
 export type DiffArgs = { from: CommitRef; to: CommitRef; scope: string | null }
+/**
+ * Payload for a two-viewpoint diff ([golden-journey] step 6, [ADR-0008]).
+ */
+export type DiffPayload = { before: Viewpoint; after: Viewpoint }
 export type DiffSummary = { from: string; to: string; nodeAdds: number; nodeMods: number; nodeDels: number; edgeAdds: number; edgeMods: number; edgeDels: number }
 export type DurationSummary = { count: number; total_ms: number }
 export type EdgeTombstone = { from: string; to: string }
@@ -619,7 +660,74 @@ export type ProblemCategory = "validation" | "permission" | "conflict" | "transi
  */
 export type ProblemRecovery = "retry" | "reconcile" | "refresh" | "none" | "report"
 export type ProjectPayload = { id: string; name: string; scenarios: ScenarioSummary[] }
+/**
+ * One slot whose resolved value differs between two viewpoints ([ADR-0008]:
+ * a diff compares two viewpoints).
+ */
+export type PropertyDelta = { 
+/**
+ * The entity id.
+ */
+nodeId: string; 
+/**
+ * The metamodel domain type key, if known.
+ */
+typeLabel: string | null; 
+/**
+ * The attribute name.
+ */
+field: string; 
+/**
+ * The value resolved at the first viewpoint, if any.
+ */
+before: string | null; 
+/**
+ * The value resolved at the second viewpoint, if any.
+ */
+after: string | null }
+/**
+ * An entity with its slots resolved at a viewpoint.
+ */
+export type ResolvedEntity = { 
+/**
+ * The entity id.
+ */
+nodeId: string; 
+/**
+ * The metamodel domain type key, if known.
+ */
+typeLabel: string | null; 
+/**
+ * The entity's resolved slots at the viewpoint, ordered by attribute name.
+ */
+properties: ResolvedProperty[] }
+/**
+ * A single resolved slot value at a viewpoint — the winning fact after
+ * interval, layer, and asserted-time selection ([M2 core]).
+ */
+export type ResolvedProperty = { 
+/**
+ * The attribute name (e.g. `lifecycle`), resolved from its symbol UUID.
+ */
+field: string; 
+/**
+ * The effective value's display form.
+ */
+value: string; 
+/**
+ * The layer the winning fact came from (`plan` / `actual`).
+ */
+layer: string }
 export type ScenarioSummary = { id: string; name: string; branch: string; description?: string | null; updatedAt: string; isDefault?: boolean | null }
+/**
+ * Payload for asserting one plan/actual claim at a valid time ([golden-journey]
+ * step 4).
+ */
+export type SetClaimPayload = { entityId: string; typeId: string; attribute: string; value: string; 
+/**
+ * `"plan"` or `"actual"`.
+ */
+layer: string; validFrom: number; validTo: number | null }
 export type SetupCompletePayload = { task: string }
 export type SetupFlags = { frontend: boolean; backend: boolean }
 export type StateAtArgs = { asOf: CommitRef; scenario: string | null; confidence: number | null; layer?: string | null }
@@ -633,6 +741,19 @@ export type TwinNode = { id: string; type?: string | null; props?: JsonValue | n
 export type ViewFilters = { nodeTypes?: string[] | null; edgeTypes?: string[] | null; tags?: string[] | null; search?: string | null }
 export type ViewMetadata = { id: string; name: string; asOf: string; layer?: string | null; scenario?: string | null; fetchedAt: string; source: string }
 export type ViewStats = { nodes: number; edges: number }
+/**
+ * A viewpoint: an `as_of` valid time and an ordered layer preference
+ * (highest priority first).
+ */
+export type Viewpoint = { 
+/**
+ * The valid-time coordinate to resolve at.
+ */
+asOf: number; 
+/**
+ * The layer preference, highest priority first (e.g. `["actual","plan"]`).
+ */
+layers: string[] }
 /**
  * The class of long-running work. M0 runs only `Rebuild`; the other Continuum
  * classes are deferred to M4 (variants are additive).

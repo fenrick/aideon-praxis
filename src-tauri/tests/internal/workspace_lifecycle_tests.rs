@@ -36,7 +36,10 @@ fn lifecycle_app() -> (App<MockRuntime>, WebviewWindow<MockRuntime>) {
             super::workspace_author_node,
             super::workspace_nodes,
             super::workspace_metamodel_types,
-            super::workspace_author_typed_node
+            super::workspace_author_typed_node,
+            super::workspace_set_claim,
+            super::workspace_state_at,
+            super::workspace_diff
         ])
         .manage(WorkspaceManager::default())
         .build(mock_context(noop_assets()))
@@ -413,6 +416,85 @@ async fn metamodel_types_are_listed_without_an_open_workspace() {
             .any(|t| t["id"] == "Capability"),
         "the seed metamodel palette is available before opening a workspace"
     );
+}
+
+#[tokio::test]
+async fn plan_actual_claims_resolve_and_diff_over_dispatch() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    // Author an Application, then a plan claim and an actual claim on lifecycle.
+    let app = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Application", "props": { "name": "Billing" } }),
+    )
+    .expect("author ok");
+    let id = app["result"]["nodeId"].as_str().unwrap().to_string();
+
+    dispatch(
+        &webview,
+        "workspace_set_claim",
+        json!({ "entityId": id, "typeId": "Application", "attribute": "lifecycle",
+                "value": "Build", "layer": "plan", "validFrom": 0, "validTo": 100 }),
+    )
+    .expect("plan claim ok");
+    dispatch(
+        &webview,
+        "workspace_set_claim",
+        json!({ "entityId": id, "typeId": "Application", "attribute": "lifecycle",
+                "value": "Run", "layer": "actual", "validFrom": 50, "validTo": null }),
+    )
+    .expect("actual claim ok");
+
+    let vp_early = json!({ "asOf": 10, "layers": ["actual", "plan"] });
+    let vp_late = json!({ "asOf": 60, "layers": ["actual", "plan"] });
+
+    // Resolve at as_of=60: the actual layer wins.
+    let late = dispatch(&webview, "workspace_state_at", vp_late.clone()).expect("state ok");
+    let entity = late["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["nodeId"] == id.as_str())
+        .unwrap();
+    let life = entity["properties"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["field"] == "lifecycle")
+        .unwrap();
+    assert_eq!(life["value"], "Run");
+    assert_eq!(life["layer"], "actual");
+
+    // Diff the two viewpoints: lifecycle changes Build -> Run.
+    let diff = dispatch(
+        &webview,
+        "workspace_diff",
+        json!({ "before": vp_early, "after": vp_late }),
+    )
+    .expect("diff ok");
+    let delta = diff["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|d| d["field"] == "lifecycle")
+        .unwrap();
+    assert_eq!(delta["before"], "Build");
+    assert_eq!(delta["after"], "Run");
+
+    // A claim with an out-of-range enum is refused at the boundary.
+    let bad = dispatch(
+        &webview,
+        "workspace_set_claim",
+        json!({ "entityId": id, "typeId": "Application", "attribute": "lifecycle",
+                "value": "Nonsense", "layer": "plan", "validFrom": 0, "validTo": null }),
+    )
+    .expect("envelope returned");
+    assert_eq!(bad["status"], "error");
+    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
 }
 
 #[tokio::test]

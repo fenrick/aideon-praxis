@@ -16,7 +16,8 @@ use crate::paths::Paths;
 
 /// The derived-runtime schema version; a mismatch forces a full rebuild.
 /// v2 added the `aideon_nodes` foundation projection.
-pub const RUNTIME_SCHEMA_VERSION: i64 = 2;
+/// v3 added the `aideon_facts` property-fact projection (M2 resolution input).
+pub const RUNTIME_SCHEMA_VERSION: i64 = 3;
 
 /// The replay frontier persisted per partition ([workspace-integrity-and-recovery],
 /// "The replay frontier (`ReplayHead`)").
@@ -124,6 +125,23 @@ pub fn init_schema(conn: &Connection) -> Result<()> {
             tombstoned INTEGER NOT NULL DEFAULT 0,
             PRIMARY KEY (partition_id, node_id)
         );
+        -- One row per set-property-interval operation: an asserted claim of a
+        -- slot value over a valid-time interval on a layer. Resolution (M2)
+        -- selects the effective value at a viewpoint from these rows; this table
+        -- is append-shaped and never authoritative ([ADR-0027]).
+        CREATE TABLE IF NOT EXISTS aideon_facts (
+            apply_seq INTEGER PRIMARY KEY AUTOINCREMENT,
+            partition_id TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            field_id TEXT NOT NULL,
+            layer TEXT NOT NULL,
+            valid_from INTEGER NOT NULL,
+            valid_to INTEGER,
+            asserted_at INTEGER NOT NULL,
+            value_json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS aideon_facts_slot
+            ON aideon_facts (partition_id, entity_id, field_id);
         ",
     )?;
     set_meta(
@@ -263,9 +281,125 @@ pub fn apply_kind_effect(conn: &Connection, env: &OpEnvelope) -> Result<()> {
                 ],
             )?;
         }
+        OpPayload::SetPropertyInterval(spi) => {
+            let layer = match spi.layer {
+                mneme_core::ops::Layer::Plan => "plan",
+                mneme_core::ops::Layer::Actual => "actual",
+            };
+            let value_json = serde_json::to_string(&spi.value)?;
+            conn.execute(
+                "INSERT INTO aideon_facts(
+                    partition_id, entity_id, field_id, layer,
+                    valid_from, valid_to, asserted_at, value_json)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![
+                    spi.partition.to_canonical_string(),
+                    spi.entity_id.to_canonical_string(),
+                    spi.field_id.to_canonical_string(),
+                    layer,
+                    spi.valid_from.0,
+                    spi.valid_to.map(|v| v.0),
+                    spi.asserted_at.0,
+                    value_json,
+                ],
+            )?;
+        }
         _ => {}
     }
     Ok(())
+}
+
+/// One effective slot value resolved at a viewpoint — the winning fact after
+/// interval, layer-priority, and asserted-time selection.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResolvedFact {
+    /// The entity the slot belongs to.
+    pub entity_id: String,
+    /// The attribute symbol UUID.
+    pub field_id: String,
+    /// The layer the winning fact was asserted on.
+    pub layer: String,
+    /// The winning value, as its canonical-JSON encoding.
+    pub value_json: String,
+}
+
+/// Resolve every slot's effective value at a viewpoint: an `as_of` valid time
+/// and an ordered layer preference (highest priority first). For each
+/// `(entity, field)` the winner is the fact whose valid interval contains
+/// `as_of` on the highest-priority layer that has any covering fact, breaking
+/// ties by latest `asserted_at` then latest apply order ([resolution-rules]).
+///
+/// This is the thin M2 core over the canonical op log: single-valued selection
+/// across valid time + layer + asserted time, base scenario only.
+pub fn resolve_at(
+    conn: &Connection,
+    as_of: i64,
+    layer_priority: &[&str],
+) -> Result<Vec<ResolvedFact>> {
+    let mut stmt = conn.prepare(
+        "SELECT entity_id, field_id, layer, value_json, asserted_at, apply_seq
+         FROM aideon_facts
+         WHERE valid_from <= ?1 AND (valid_to IS NULL OR ?1 < valid_to)
+         ORDER BY entity_id, field_id",
+    )?;
+    struct Candidate {
+        layer: String,
+        value_json: String,
+        asserted_at: i64,
+        apply_seq: i64,
+    }
+    let rows = stmt.query_map(params![as_of], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            Candidate {
+                layer: row.get(2)?,
+                value_json: row.get(3)?,
+                asserted_at: row.get(4)?,
+                apply_seq: row.get(5)?,
+            },
+        ))
+    })?;
+
+    // Rank per (entity, field): prefer the earliest layer in `layer_priority`,
+    // then latest asserted_at, then latest apply order.
+    use std::collections::BTreeMap;
+    let mut best: BTreeMap<(String, String), Candidate> = BTreeMap::new();
+    let rank = |layer: &str| {
+        layer_priority
+            .iter()
+            .position(|l| *l == layer)
+            .unwrap_or(usize::MAX)
+    };
+    for row in rows {
+        let (entity_id, field_id, cand) = row?;
+        let key = (entity_id, field_id);
+        let take = match best.get(&key) {
+            None => true,
+            Some(current) => {
+                let (a, b) = (rank(&cand.layer), rank(&current.layer));
+                a < b
+                    || (a == b && cand.asserted_at > current.asserted_at)
+                    || (a == b
+                        && cand.asserted_at == current.asserted_at
+                        && cand.apply_seq > current.apply_seq)
+            }
+        };
+        if take {
+            best.insert(key, cand);
+        }
+    }
+
+    Ok(best
+        .into_iter()
+        .filter(|((_, _), c)| rank(&c.layer) != usize::MAX)
+        .map(|((entity_id, field_id), c)| ResolvedFact {
+            entity_id,
+            field_id,
+            layer: c.layer,
+            value_json: c.value_json,
+        })
+        .collect())
 }
 
 /// One projected node row: the derived twin listing of `create-node` /
@@ -414,4 +548,85 @@ pub fn applied_op_count(conn: &Connection) -> Result<u64> {
             row.get::<_, i64>(0)
         })? as u64,
     )
+}
+
+#[cfg(test)]
+mod resolve_tests {
+    use super::*;
+
+    /// Insert one fact row directly (bypassing the op layer) for resolver tests.
+    #[allow(clippy::too_many_arguments)]
+    fn insert_fact(
+        conn: &Connection,
+        entity: &str,
+        field: &str,
+        layer: &str,
+        valid_from: i64,
+        valid_to: Option<i64>,
+        asserted_at: i64,
+        value: &str,
+    ) {
+        conn.execute(
+            "INSERT INTO aideon_facts(
+                partition_id, entity_id, field_id, layer,
+                valid_from, valid_to, asserted_at, value_json)
+             VALUES ('p', ?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                entity,
+                field,
+                layer,
+                valid_from,
+                valid_to,
+                asserted_at,
+                value
+            ],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn resolve_picks_by_interval_then_layer_then_asserted_time() {
+        let conn = Connection::open_in_memory().unwrap();
+        init_schema(&conn).unwrap();
+
+        // A plan claim over [0,10); an actual claim over [5, open).
+        insert_fact(&conn, "e1", "f1", "plan", 0, Some(10), 1, "\"planned\"");
+        insert_fact(&conn, "e1", "f1", "actual", 5, None, 2, "\"realised\"");
+
+        let policy = ["actual", "plan"];
+
+        // as_of=2: only the plan interval covers it.
+        let at2 = resolve_at(&conn, 2, &policy).unwrap();
+        assert_eq!(at2.len(), 1);
+        assert_eq!(at2[0].layer, "plan");
+        assert_eq!(at2[0].value_json, "\"planned\"");
+
+        // as_of=7: both cover; actual wins on layer priority.
+        let at7 = resolve_at(&conn, 7, &policy).unwrap();
+        assert_eq!(at7[0].layer, "actual");
+        assert_eq!(at7[0].value_json, "\"realised\"");
+
+        // Plan-only policy at as_of=7 ignores the actual layer entirely.
+        let plan_only = resolve_at(&conn, 7, &["plan"]).unwrap();
+        assert_eq!(plan_only[0].layer, "plan");
+        assert_eq!(plan_only[0].value_json, "\"planned\"");
+
+        // as_of=20: plan's [0,10) has lapsed; the open-ended actual still covers.
+        let at20 = resolve_at(&conn, 20, &policy).unwrap();
+        assert_eq!(at20[0].layer, "actual");
+
+        // Before any interval starts, nothing resolves.
+        assert!(resolve_at(&conn, -1, &policy).unwrap().is_empty());
+    }
+
+    #[test]
+    fn later_assertion_on_same_layer_supersedes() {
+        let conn = Connection::open_in_memory().unwrap();
+        init_schema(&conn).unwrap();
+        insert_fact(&conn, "e1", "f1", "plan", 0, None, 1, "\"first\"");
+        insert_fact(&conn, "e1", "f1", "plan", 0, None, 5, "\"second\"");
+        let out = resolve_at(&conn, 3, &["plan"]).unwrap();
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].value_json, "\"second\"", "latest asserted_at wins");
+    }
 }

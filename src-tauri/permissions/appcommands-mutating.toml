@@ -20,5 +20,6 @@ commands.allow = [
   "workspace_create",
   "workspace_open",
   "workspace_rebuild",
+  "workspace_set_claim",
   "workspace_templates_save",
 ]
