@@ -91,7 +91,8 @@ fn telemetry_bridge_records_milestones() {
     );
 
     assert_eq!(payloads[0]["event_name"], "command_invoked");
-    assert_eq!(payloads[0]["syslog.severity"], 6);
+    // Per-command lifecycle is DEBUG (severity 7); failures remain ERROR.
+    assert_eq!(payloads[0]["syslog.severity"], 7);
     assert_eq!(payloads[0]["component"], "core");
 
     assert_eq!(payloads[1]["event_name"], "command_completed");

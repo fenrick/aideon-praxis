@@ -10,8 +10,11 @@ use std::future::Future;
 use std::time::{Duration, Instant};
 
 pub fn command_invoked(command: &str, correlation_id: &str) {
+    // Per-command lifecycle is DEBUG: routine and high-volume (every IPC call
+    // emits invoked+completed on both the host and the webview mirror). Failures
+    // stay at ERROR. Raise the log filter to see these during triage.
     crate::log_event!(
-        severity = 6,
+        severity = 7,
         component = "core",
         event = "command_invoked",
         message = "Command invocation received",
@@ -24,7 +27,7 @@ pub fn command_invoked(command: &str, correlation_id: &str) {
 
 pub fn command_completed(command: &str, correlation_id: &str, duration: Duration) {
     crate::log_event!(
-        severity = 6,
+        severity = 7,
         component = "core",
         event = "command_completed",
         message = "Command completed successfully",
