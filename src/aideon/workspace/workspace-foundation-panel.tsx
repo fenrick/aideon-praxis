@@ -31,6 +31,8 @@ import type {
   Viewpoint,
 } from '@/adapters/ipc-bindings.gen';
 
+import { pickWorkspaceFolder } from '@/adapters/dialog';
+
 import type { ClaimInput } from './use-workspace-foundation';
 import { useWorkspaceFoundation } from './use-workspace-foundation';
 
@@ -553,6 +555,20 @@ export function WorkspaceFoundationPanel() {
                 setRoot(event.target.value);
               }}
             />
+            <Button
+              variant="outline"
+              disabled={phase === 'busy'}
+              onClick={() => {
+                void (async () => {
+                  const picked = await pickWorkspaceFolder();
+                  if (picked !== undefined) {
+                    setRoot(picked);
+                  }
+                })();
+              }}
+            >
+              Browse…
+            </Button>
             <Button
               disabled={root.trim() === '' || phase === 'busy'}
               onClick={() => {
