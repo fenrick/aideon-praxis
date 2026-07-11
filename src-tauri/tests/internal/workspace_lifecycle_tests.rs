@@ -34,7 +34,9 @@ fn lifecycle_app() -> (App<MockRuntime>, WebviewWindow<MockRuntime>) {
             // concrete `workspace_rebuild` wrapper is the registered codegen seam.
             super::workspace_rebuild_inner,
             super::workspace_author_node,
-            super::workspace_nodes
+            super::workspace_nodes,
+            super::workspace_metamodel_types,
+            super::workspace_author_typed_node
         ])
         .manage(WorkspaceManager::default())
         .build(mock_context(noop_assets()))
@@ -396,4 +398,57 @@ async fn author_node_with_no_open_workspace_is_an_honest_error() {
         .expect("envelope returned");
     assert_eq!(authored["status"], "error");
     assert_eq!(authored["error"]["code"], "WORKSPACE_NOT_OPEN");
+}
+
+#[tokio::test]
+async fn metamodel_types_are_listed_without_an_open_workspace() {
+    let (_app, webview) = lifecycle_app();
+    let types = dispatch(&webview, "workspace_metamodel_types", json!({})).expect("types ok");
+    assert_eq!(types["status"], "ok");
+    assert!(
+        types["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|t| t["id"] == "Capability"),
+        "the seed metamodel palette is available before opening a workspace"
+    );
+}
+
+#[tokio::test]
+async fn typed_authoring_validates_and_a_rejected_write_never_enters_the_op_log() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    // A valid Capability lands through the dispatch seam.
+    let ok = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Capability", "props": { "name": "Customer Insight", "tier": "Strategic" } }),
+    )
+    .expect("author ok");
+    assert_eq!(ok["status"], "ok");
+    assert_eq!(ok["result"]["typeLabel"], "Capability");
+
+    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    let op_count = before["result"]["appliedOpCount"].clone();
+
+    // A structurally-fine but metamodel-invalid write is refused …
+    let bad = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Capability", "props": { "name": "Bad", "tier": "Tactical" } }),
+    )
+    .expect("envelope returned");
+    assert_eq!(bad["status"], "error");
+    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
+
+    // … and the canonical op log is unchanged (the M1 oracle assertion).
+    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(
+        after["result"]["appliedOpCount"], op_count,
+        "a rejected write never enters model/ops/"
+    );
 }

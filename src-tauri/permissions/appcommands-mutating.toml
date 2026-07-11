@@ -15,6 +15,7 @@ commands.allow = [
   "praxis_task_apply_operations",
   "system_setup_complete",
   "workspace_author_node",
+  "workspace_author_typed_node",
   "workspace_close",
   "workspace_create",
   "workspace_open",

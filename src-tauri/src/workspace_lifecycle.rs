@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use aideon_engine::{Engine, NodeRecord, StoreError, WorkspaceStatus};
+use aideon_engine::{Engine, MetaTypeInfo, NodeRecord, StoreError, WorkspaceStatus};
 use serde::Deserialize;
 use specta::Type;
 use tauri::{AppHandle, Emitter, Runtime, State};
@@ -184,6 +184,8 @@ pub(crate) fn map_store_error(error: StoreError) -> HostError {
             HostError::new("IDENTITY_COLLISION", error.to_string())
         }
         StoreError::Corruption(_) => HostError::new("WORKSPACE_CORRUPT", error.to_string()),
+        // The validation message is authored to be safe to surface (no path/PII).
+        StoreError::Validation { .. } => HostError::new("VALIDATION_FAILED", error.to_string()),
         StoreError::Io(io) if io.kind() == std::io::ErrorKind::NotFound => {
             HostError::new("WORKSPACE_NOT_FOUND", "workspace not found")
         }
@@ -251,6 +253,65 @@ pub async fn workspace_status(
 #[serde(rename_all = "camelCase")]
 pub struct AuthorNodePayload {
     pub type_id: Option<String>,
+}
+
+/// List the seed metamodel's authorable entity types and their attributes —
+/// the palette the renderer offers ([golden-journey] step 2). Read-only; needs
+/// no open workspace since the metamodel is embedded at build time.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_metamodel_types(
+    request: IpcRequest<EmptyPayload>,
+) -> Result<IpcResponse<Vec<MetaTypeInfo>>, HostError> {
+    Ok(command_envelope(
+        "workspace_metamodel_types",
+        request,
+        |_payload| async move { Ok(Engine::metamodel_types_embedded()) },
+    )
+    .await)
+}
+
+/// Payload for authoring one typed entity: the domain type key plus a flat
+/// string-valued attribute map (name, enum choices, …).
+#[derive(Debug, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthorTypedNodePayload {
+    pub type_id: String,
+    #[serde(default)]
+    pub props: std::collections::HashMap<String, String>,
+}
+
+/// Author one **metamodel-validated** entity into the open workspace's canonical
+/// log ([golden-journey] step 3). The write is checked against the seed
+/// effective schema before any operation is appended; an invalid write returns
+/// `VALIDATION_FAILED` and never enters the op log.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_author_typed_node(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<AuthorTypedNodePayload>,
+) -> Result<IpcResponse<NodeRecord>, HostError> {
+    Ok(command_envelope(
+        "workspace_author_typed_node",
+        request,
+        |payload| async move {
+            let props = serde_json::Value::Object(
+                payload
+                    .props
+                    .into_iter()
+                    .map(|(k, v)| (k, serde_json::Value::String(v)))
+                    .collect(),
+            );
+            let mut guard = manager.open.lock().await;
+            let engine = guard
+                .as_mut()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine
+                .author_typed_node(&payload.type_id, props)
+                .map_err(map_store_error)
+        },
+    )
+    .await)
 }
 
 /// Author one `create-node` into the open workspace's canonical log

@@ -11,7 +11,9 @@ name = "aideon_engine"
 [dependencies]
 aideon_mneme_core = { path = "../mneme_core" }
 aideon_mneme_store = { path = "../mneme_store" }
+aideon_praxis = { path = "../praxis" }
 serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
 specta = { version = "=2.0.0-rc.22", features = ["derive"] }
 
 [dev-dependencies]

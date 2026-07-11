@@ -81,6 +81,17 @@ pub enum StoreError {
     /// failed its hash, or framing is broken in a sealed segment).
     #[error("canonical corruption: {0}")]
     Corruption(String),
+
+    /// A write is structurally well-formed but invalid against the metamodel
+    /// (unknown type, missing required attribute, out-of-range enum, illegal
+    /// relationship endpoint, …). Rejected at the boundary before any operation
+    /// is appended — it never enters the op log (`VALIDATION_FAILED`, M1 /
+    /// [ADR-0016]). The message is user-facing and carries no path or PII.
+    #[error("{message}")]
+    Validation {
+        /// The user-facing reason the write was refused.
+        message: String,
+    },
 }
 
 /// Convenience alias for fallible storage operations.

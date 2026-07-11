@@ -360,6 +360,33 @@ async workspaceNodes(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResp
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * List the seed metamodel's authorable entity types and their attributes —
+ * the palette the renderer offers ([golden-journey] step 2). Read-only; needs
+ * no open workspace since the metamodel is embedded at build time.
+ */
+async workspaceMetamodelTypes(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResponse<MetaTypeInfo[]>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_metamodel_types", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Author one **metamodel-validated** entity into the open workspace's canonical
+ * log ([golden-journey] step 3). The write is checked against the seed
+ * effective schema before any operation is appended; an invalid write returns
+ * `VALIDATION_FAILED` and never enters the op log.
+ */
+async workspaceAuthorTypedNode(request: IpcRequest<AuthorTypedNodePayload>) : Promise<Result<IpcResponse<NodeRecord>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_author_typed_node", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async systemLoggingContext() : Promise<Result<LoggingContextDto, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("system_logging_context") };
@@ -400,6 +427,11 @@ export type ApplyOperationsPayload = { branch?: string | null; operations?: Prax
  * Payload for authoring one node: an optional declared type id.
  */
 export type AuthorNodePayload = { typeId: string | null }
+/**
+ * Payload for authoring one typed entity: the domain type key plus a flat
+ * string-valued attribute map (name, enum choices, …).
+ */
+export type AuthorTypedNodePayload = { typeId: string; props?: Partial<{ [key in string]: string }> }
 export type BranchInfo = { name: string; head: string | null }
 export type CanvasEdge = { id: string; source: string; target: string; label?: string | null; z?: number | null }
 export type CanvasGroup = { id: string; name?: string | null; parentId?: string | null; z?: number | null }
@@ -498,6 +530,22 @@ export type MergeConflict = { reference: string; kind: string; message: string }
 export type MergeRequest = { source: string; target: string }
 export type MergeResponse = { result: string | null; conflicts: MergeConflict[] | null }
 export type MetaAttribute = { name: string; uuid?: string | null; type: MetaAttributeKind; required?: boolean; enum?: string[] }
+/**
+ * A host-facing metamodel attribute descriptor for an entity type.
+ */
+export type MetaAttributeInfo = { 
+/**
+ * The attribute name (e.g. `name`, `tier`).
+ */
+name: string; 
+/**
+ * Whether a valid write must carry it.
+ */
+required: boolean; 
+/**
+ * The closed enum choices, when the attribute is an enum; else empty.
+ */
+enumValues: string[] }
 export type MetaAttributeKind = "string" | "text" | "number" | "boolean" | "enum" | "datetime" | "blob"
 export type MetaAttributeRules = { string: MetaStringRule | null; text: MetaStringRule | null; enum: MetaEnumRule | null }
 export type MetaEnumRule = { caseSensitive: boolean | null }
@@ -507,6 +555,27 @@ export type MetaRelationship = { id: string; uuid?: string | null; label: string
 export type MetaRelationshipValidation = { allowSelf: boolean | null; allowDuplicate: boolean | null }
 export type MetaStringRule = { maxLength: number | null }
 export type MetaType = { id: string; uuid?: string | null; label: string | null; category: string | null; extends: string | null; attributes?: MetaAttribute[]; effectTypes?: string[] | null }
+/**
+ * A host-facing metamodel entity type — the authorable palette the renderer
+ * offers ([M1 build contract], step 2).
+ */
+export type MetaTypeInfo = { 
+/**
+ * The domain type key (e.g. `Application`).
+ */
+id: string; 
+/**
+ * A human label; falls back to the id.
+ */
+label: string; 
+/**
+ * The metamodel category (e.g. `Business`, `Application`).
+ */
+category: string | null; 
+/**
+ * The type's authorable attributes.
+ */
+attributes: MetaAttributeInfo[] }
 export type MetaValidationRules = { attributes: MetaAttributeRules | null; relationships: Partial<{ [key in string]: MetaRelationshipValidation }> | null }
 export type MetricsSnapshot = { command_failures: Partial<{ [key in string]: number }>; job_failures: Partial<{ [key in string]: number }>; command_durations: Partial<{ [key in string]: DurationSummary }>; job_durations: Partial<{ [key in string]: DurationSummary }> }
 /**
@@ -518,9 +587,14 @@ export type NodeRecord = {
  */
 nodeId: string; 
 /**
- * The declared node type, if any.
+ * The declared node type's storage symbol UUID, if any.
  */
 typeId: string | null; 
+/**
+ * The metamodel domain type key (e.g. `Application`), resolved from the
+ * symbol UUID via the registry; `None` for an untyped or unknown-symbol node.
+ */
+typeLabel: string | null; 
 /**
  * Whether a tombstone has retired the node.
  */

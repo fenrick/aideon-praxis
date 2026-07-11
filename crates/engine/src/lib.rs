@@ -10,12 +10,19 @@
 use serde::Serialize;
 use specta::Type;
 
+use aideon_praxis::meta::MetaModelRegistry;
+use aideon_praxis::temporal::NodeVersion;
+
 pub use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 pub use mneme_core::{Id, Value};
 pub use mneme_store::error::{Result, StoreError};
 pub use mneme_store::{AppliedFrontier, FoundationProjectionSnapshot, Manifest, Workspace};
 
+use mneme_core::ops::{CreateNode, Layer, SetPropertyInterval};
+use mneme_core::time::ValidTime;
+use std::collections::BTreeMap;
 use std::path::Path;
+use std::str::FromStr;
 
 /// A host-facing summary of an open workspace's foundation state.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
@@ -39,29 +46,80 @@ pub struct WorkspaceStatus {
 pub struct NodeRecord {
     /// The node id.
     pub node_id: String,
-    /// The declared node type, if any.
+    /// The declared node type's storage symbol UUID, if any.
     pub type_id: Option<String>,
+    /// The metamodel domain type key (e.g. `Application`), resolved from the
+    /// symbol UUID via the registry; `None` for an untyped or unknown-symbol node.
+    pub type_label: Option<String>,
     /// Whether a tombstone has retired the node.
     pub tombstoned: bool,
+}
+
+/// A host-facing metamodel entity type — the authorable palette the renderer
+/// offers ([M1 build contract], step 2).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct MetaTypeInfo {
+    /// The domain type key (e.g. `Application`).
+    pub id: String,
+    /// A human label; falls back to the id.
+    pub label: String,
+    /// The metamodel category (e.g. `Business`, `Application`).
+    pub category: Option<String>,
+    /// The type's authorable attributes.
+    pub attributes: Vec<MetaAttributeInfo>,
+}
+
+/// A host-facing metamodel attribute descriptor for an entity type.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct MetaAttributeInfo {
+    /// The attribute name (e.g. `name`, `tier`).
+    pub name: String,
+    /// Whether a valid write must carry it.
+    pub required: bool,
+    /// The closed enum choices, when the attribute is an enum; else empty.
+    pub enum_values: Vec<String>,
 }
 
 /// The in-process engine handle wrapping one open workspace.
 pub struct Engine {
     workspace: Workspace,
+    /// The compiled seed metamodel used to validate every authoring write
+    /// before it reaches the canonical op log (M1). Embedded at build time.
+    registry: MetaModelRegistry,
+    /// Reverse map from a type's storage symbol UUID to its domain key, so a
+    /// projected node's raw `type_id` can be surfaced as `Application` etc.
+    type_labels: BTreeMap<String, String>,
 }
 
 impl Engine {
     /// Create a new workspace and open it for writing.
     pub fn create(root: impl AsRef<Path>, created_by_actor_id: Option<Id>) -> Result<Self> {
-        Ok(Self {
-            workspace: Workspace::create(root, created_by_actor_id)?,
-        })
+        Self::wrap(Workspace::create(root, created_by_actor_id)?)
     }
 
     /// Open an existing workspace for writing (rebuilding the runtime as needed).
     pub fn open(root: impl AsRef<Path>) -> Result<Self> {
+        Self::wrap(Workspace::open(root)?)
+    }
+
+    /// Wrap an open workspace with the embedded seed metamodel registry and its
+    /// symbol-UUID→domain-key reverse map.
+    fn wrap(workspace: Workspace) -> Result<Self> {
+        let registry = MetaModelRegistry::embedded().map_err(|e| {
+            StoreError::Corruption(format!("seed metamodel failed to compile: {e}"))
+        })?;
+        let mut type_labels = BTreeMap::new();
+        for ty in registry.document().types {
+            if let Some(uuid) = ty.uuid {
+                type_labels.insert(uuid, ty.id);
+            }
+        }
         Ok(Self {
-            workspace: Workspace::open(root)?,
+            workspace,
+            registry,
+            type_labels,
         })
     }
 
@@ -103,7 +161,7 @@ impl Engine {
         self.workspace.author(
             actor,
             Origin::manual(),
-            OpPayload::CreateNode(mneme_core::ops::CreateNode {
+            OpPayload::CreateNode(CreateNode {
                 partition: self.workspace.partition_id(),
                 scenario_id: None,
                 actor,
@@ -113,11 +171,100 @@ impl Engine {
                 write_options: None,
             }),
         )?;
-        Ok(NodeRecord {
-            node_id: node_id.to_canonical_string(),
-            type_id: type_id.map(|t| t.to_canonical_string()),
-            tombstoned: false,
-        })
+        Ok(self.record_of(
+            node_id.to_canonical_string(),
+            type_id.map(|t| t.to_canonical_string()),
+        ))
+    }
+
+    /// The metamodel entity types a user may author, with their attributes —
+    /// the authorable palette the renderer offers ([M1 build contract], step 2).
+    pub fn metamodel_entity_types(&self) -> Vec<MetaTypeInfo> {
+        meta_types(&self.registry)
+    }
+
+    /// The seed metamodel's authorable types, read without an open workspace —
+    /// the metamodel is embedded at build time. Empty only if the seed fails to
+    /// compile (a build-time invariant, so this is effectively infallible).
+    pub fn metamodel_types_embedded() -> Vec<MetaTypeInfo> {
+        MetaModelRegistry::embedded()
+            .map(|r| meta_types(&r))
+            .unwrap_or_default()
+    }
+
+    /// Author a typed entity, **validated against the seed metamodel before any
+    /// operation is appended** ([M1 build contract]). A write naming an unknown
+    /// type, omitting a required attribute, or carrying an out-of-range enum is
+    /// rejected with [`StoreError::Validation`] and **never enters the op log**.
+    ///
+    /// On success it appends a `create-node` (carrying the type's symbol UUID)
+    /// followed by one `set-property-interval` per supplied attribute, on the
+    /// `plan` layer over the open-ended interval.
+    pub fn author_typed_node(
+        &mut self,
+        type_id: &str,
+        props: serde_json::Value,
+    ) -> Result<NodeRecord> {
+        let node_id = Id::new_v4();
+        // Validate the intended write against the compiled effective schema.
+        let candidate = NodeVersion {
+            id: node_id.to_canonical_string(),
+            r#type: Some(type_id.to_string()),
+            props: Some(props.clone()),
+        };
+        self.registry
+            .validate_node(&candidate)
+            .map_err(|e| StoreError::Validation {
+                message: e.to_string(),
+            })?;
+
+        let type_symbol = self.type_symbol(type_id)?;
+        let actor = self.session_actor()?;
+        let partition = self.workspace.partition_id();
+
+        self.workspace.author(
+            actor,
+            Origin::manual(),
+            OpPayload::CreateNode(CreateNode {
+                partition,
+                scenario_id: None,
+                actor,
+                asserted_at: mneme_core::Hlc(0),
+                node_id,
+                type_id: Some(type_symbol),
+                write_options: None,
+            }),
+        )?;
+
+        // Persist each supplied attribute as a plan-layer fact so the meaning is
+        // canonical, not just validated in flight.
+        if let Some(map) = props.as_object() {
+            for (name, json) in map {
+                let field_id = self.attribute_symbol(type_id, name)?;
+                self.workspace.author(
+                    actor,
+                    Origin::manual(),
+                    OpPayload::SetPropertyInterval(SetPropertyInterval {
+                        partition,
+                        scenario_id: None,
+                        actor,
+                        asserted_at: mneme_core::Hlc(0),
+                        entity_id: node_id,
+                        field_id,
+                        value: to_value(json)?,
+                        valid_from: ValidTime(0),
+                        valid_to: None,
+                        layer: Layer::Plan,
+                        write_options: None,
+                    }),
+                )?;
+            }
+        }
+
+        Ok(self.record_of(
+            node_id.to_canonical_string(),
+            Some(type_symbol.to_canonical_string()),
+        ))
     }
 
     /// The projected node listing — the derived twin view, re-derived on
@@ -127,19 +274,52 @@ impl Engine {
             .workspace
             .list_nodes()?
             .into_iter()
-            .map(|n| NodeRecord {
-                node_id: n.node_id,
-                type_id: n.type_id,
-                tombstoned: n.tombstoned,
-            })
+            .map(|n| self.record_of(n.node_id, n.type_id))
             .collect())
+    }
+
+    /// Build a [`NodeRecord`], resolving the symbol UUID to its domain key.
+    fn record_of(&self, node_id: String, type_id: Option<String>) -> NodeRecord {
+        let type_label = type_id
+            .as_ref()
+            .and_then(|uuid| self.type_labels.get(uuid).cloned());
+        NodeRecord {
+            node_id,
+            type_id,
+            type_label,
+            tombstoned: false,
+        }
+    }
+
+    /// Resolve a domain type key to its storage symbol UUID, or a validation
+    /// error naming the unknown type.
+    fn type_symbol(&self, type_id: &str) -> Result<Id> {
+        let uuid = self
+            .registry
+            .type_uuid(type_id)
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("unknown entity type '{type_id}'"),
+            })?;
+        Id::from_str(uuid)
+            .map_err(|e| StoreError::Corruption(format!("type symbol not a UUID: {e}")))
+    }
+
+    /// Resolve a `(type, attribute)` to its storage symbol UUID.
+    fn attribute_symbol(&self, type_id: &str, attribute: &str) -> Result<Id> {
+        let uuid = self
+            .registry
+            .attribute_uuid(type_id, attribute)
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("unknown attribute '{attribute}' on type '{type_id}'"),
+            })?;
+        Id::from_str(uuid)
+            .map_err(|e| StoreError::Corruption(format!("attribute symbol not a UUID: {e}")))
     }
 
     /// The session actor: the first declared actor, or a fresh `Local User`
     /// declared on first use.
     fn session_actor(&mut self) -> Result<Id> {
         if let Some(first) = self.workspace.list_actors()?.first() {
-            use std::str::FromStr;
             return Id::from_str(&first.actor_id)
                 .map_err(|e| StoreError::Corruption(format!("actor id not a UUID: {e}")));
         }
@@ -185,6 +365,46 @@ impl Engine {
     }
 }
 
+/// Map a compiled registry's entity types into the host-facing palette.
+fn meta_types(registry: &MetaModelRegistry) -> Vec<MetaTypeInfo> {
+    registry
+        .document()
+        .types
+        .into_iter()
+        .map(|ty| MetaTypeInfo {
+            label: ty.label.clone().unwrap_or_else(|| ty.id.clone()),
+            category: ty.category.clone(),
+            attributes: ty
+                .attributes
+                .iter()
+                .map(|a| MetaAttributeInfo {
+                    name: a.name.clone(),
+                    required: a.required,
+                    enum_values: a.enum_values.clone(),
+                })
+                .collect(),
+            id: ty.id,
+        })
+        .collect()
+}
+
+/// Convert a JSON attribute value into the canonical [`Value`] algebra. The M1
+/// slice authors string and enum (string) and boolean attributes; an integer is
+/// carried as `i64`. A non-integral number or a composite value is refused —
+/// the seed's authorable slots do not use them yet.
+fn to_value(json: &serde_json::Value) -> Result<Value> {
+    match json {
+        serde_json::Value::String(s) => Ok(Value::Str(s.clone())),
+        serde_json::Value::Bool(b) => Ok(Value::Bool(*b)),
+        serde_json::Value::Number(n) if n.as_i64().is_some() => {
+            Ok(Value::I64(mneme_core::value::IntStr(n.as_i64().unwrap())))
+        }
+        _ => Err(StoreError::Validation {
+            message: "unsupported attribute value type".into(),
+        }),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -227,6 +447,7 @@ mod tests {
         let node = engine.author_node(None).unwrap();
         assert!(!node.tombstoned);
         assert!(node.type_id.is_none());
+        assert!(node.type_label.is_none());
 
         let status = engine.status().unwrap();
         assert_eq!(
@@ -246,6 +467,68 @@ mod tests {
         drop(engine);
         let reopened = Engine::open(dir.path()).unwrap();
         assert_eq!(reopened.nodes().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn author_typed_node_validates_against_the_metamodel() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), None).unwrap();
+
+        // The seed metamodel is authorable through the engine.
+        let types = engine.metamodel_entity_types();
+        assert!(
+            types.iter().any(|t| t.id == "Capability"),
+            "seed metamodel exposes Capability"
+        );
+
+        // A valid Capability lands: create-node + two property facts (name, tier),
+        // plus the self-declared session actor = 4 ops.
+        let node = engine
+            .author_typed_node(
+                "Capability",
+                serde_json::json!({ "name": "Customer Insight", "tier": "Strategic" }),
+            )
+            .unwrap();
+        assert_eq!(node.type_label.as_deref(), Some("Capability"));
+        let after_valid = engine.status().unwrap().applied_op_count;
+        assert_eq!(after_valid, 4, "actor + create-node + name + tier");
+
+        // Enum match is case-insensitive per the seed (tier lower-case still valid).
+        engine
+            .author_typed_node(
+                "Capability",
+                serde_json::json!({ "name": "X", "tier": "core" }),
+            )
+            .unwrap();
+        let after_second = engine.status().unwrap().applied_op_count;
+
+        // An out-of-range enum is rejected and appends NOTHING to the op log.
+        let bad_enum = engine.author_typed_node(
+            "Capability",
+            serde_json::json!({ "name": "Y", "tier": "Tactical" }),
+        );
+        assert!(matches!(bad_enum, Err(StoreError::Validation { .. })));
+        assert_eq!(
+            engine.status().unwrap().applied_op_count,
+            after_second,
+            "a rejected write never enters the op log"
+        );
+
+        // An unknown type is likewise refused with a validation error, no op.
+        let bad_type = engine.author_typed_node("Wizard", serde_json::json!({ "name": "Z" }));
+        assert!(matches!(bad_type, Err(StoreError::Validation { .. })));
+        assert_eq!(engine.status().unwrap().applied_op_count, after_second);
+
+        // The typed node survives a runtime wipe (derived listing re-derives it).
+        let node_id = node.node_id.clone();
+        let rebuilt = engine.rebuild().unwrap();
+        let listed = rebuilt.nodes().unwrap();
+        assert!(
+            listed
+                .iter()
+                .any(|n| n.node_id == node_id && n.type_label.as_deref() == Some("Capability")),
+            "the typed node is re-derived after a rebuild"
+        );
     }
 
     #[test]

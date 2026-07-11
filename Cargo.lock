@@ -98,7 +98,9 @@ version = "0.2.0"
 dependencies = [
  "aideon_mneme_core",
  "aideon_mneme_store",
+ "aideon_praxis",
  "serde",
+ "serde_json",
  "specta",
  "tempfile",
 ]
