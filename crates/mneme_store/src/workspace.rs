@@ -273,6 +273,16 @@ impl Workspace {
         projection::list_actors(&self.conn)
     }
 
+    /// Resolve every slot's effective value at a viewpoint (`as_of` valid time +
+    /// ordered layer preference) from the derived fact projection ([M2 core]).
+    pub fn resolve_at(
+        &self,
+        as_of: i64,
+        layer_priority: &[&str],
+    ) -> Result<Vec<projection::ResolvedFact>> {
+        projection::resolve_at(&self.conn, as_of, layer_priority)
+    }
+
     /// A conservative dry-run orphan-blob report.
     pub fn orphan_blob_report(&self) -> Result<Vec<String>> {
         let referenced = referenced_blob_digests(&self.read_all_records()?);
@@ -388,6 +398,7 @@ fn reset_runtime(conn: &Connection) -> Result<()> {
     conn.execute_batch(
         "DELETE FROM aideon_applied_ops;
          DELETE FROM aideon_nodes;
+         DELETE FROM aideon_facts;
          DELETE FROM aideon_actors;
          DELETE FROM aideon_schema_docs;
          DELETE FROM aideon_objects;

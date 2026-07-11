@@ -2,7 +2,13 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, mocked, userEvent } from 'storybook/test';
 
 import { invokeIpc } from '@/adapters/ipc';
-import type { NodeRecord, WorkspaceStatus } from '@/adapters/ipc-bindings.gen';
+import type {
+  MetaTypeInfo,
+  NodeRecord,
+  PropertyDelta,
+  ResolvedEntity,
+  WorkspaceStatus,
+} from '@/adapters/ipc-bindings.gen';
 
 import { WorkspaceFoundationPanel } from './workspace-foundation-panel';
 
@@ -14,13 +20,56 @@ const STATUS: WorkspaceStatus = {
   foundationRebuildHash: 'a'.repeat(64),
 };
 
-// The generated wire type carries `null` for an absent typeId (serde Option).
+// The generated wire type carries `null` for an absent field (serde Option).
 // eslint-disable-next-line unicorn/no-null
-const NO_TYPE: string | null = null;
+const NONE: string | null = null;
+
+const TYPES: MetaTypeInfo[] = [
+  {
+    id: 'Capability',
+    label: 'Capability',
+    category: 'Business',
+    attributes: [
+      { name: 'name', required: true, enumValues: [] },
+      { name: 'tier', required: false, enumValues: ['Strategic', 'Core', 'Supporting'] },
+    ],
+  },
+];
 
 const NODES: NodeRecord[] = [
-  { nodeId: '11111111-0000-4000-8000-000000000003', typeId: NO_TYPE, tombstoned: false },
-  { nodeId: '11111111-0000-4000-8000-000000000004', typeId: NO_TYPE, tombstoned: true },
+  {
+    nodeId: '11111111-0000-4000-8000-000000000003',
+    typeId: NONE,
+    typeLabel: 'Capability',
+    tombstoned: false,
+  },
+  {
+    nodeId: '11111111-0000-4000-8000-000000000004',
+    typeId: NONE,
+    typeLabel: 'Capability',
+    tombstoned: true,
+  },
+];
+
+const RESOLVED: ResolvedEntity[] = [
+  {
+    nodeId: '11111111-0000-4000-8000-000000000003',
+    typeLabel: 'Capability',
+    properties: [
+      { field: 'name', value: 'Customer Insight', layer: 'plan' },
+      { field: 'tier', value: 'Strategic', layer: 'actual' },
+    ],
+  },
+];
+
+const DELTAS: PropertyDelta[] = [
+  {
+    nodeId: '11111111-0000-4000-8000-000000000003',
+    typeLabel: 'Capability',
+    field: 'tier',
+    before: 'Core',
+    after: 'Strategic',
+  },
 ];
 
 /**
@@ -38,7 +87,20 @@ function mockHost(nodes: NodeRecord[]) {
       case 'workspace_nodes': {
         return Promise.resolve(nodes);
       }
-      case 'workspace_author_node': {
+      case 'workspace_metamodel_types': {
+        return Promise.resolve(TYPES);
+      }
+      case 'workspace_state_at': {
+        return Promise.resolve(nodes.length > 0 ? RESOLVED : []);
+      }
+      case 'workspace_diff': {
+        return Promise.resolve(DELTAS);
+      }
+      case 'workspace_set_claim': {
+        return Promise.resolve();
+      }
+      case 'workspace_author_node':
+      case 'workspace_author_typed_node': {
         return Promise.resolve(nodes[0]);
       }
       default: {
@@ -73,6 +135,27 @@ export const OpenWithNodes: Story = {
     const list = await canvas.findByRole('list', { name: 'Node list' });
     await expect(list.children).toHaveLength(2);
     await expect(canvas.getByText('tombstoned')).toBeVisible();
+    // Each derived node surfaces its metamodel type label.
+    await expect(canvas.getAllByText('Capability').length).toBeGreaterThan(0);
+  },
+};
+
+export const AuthorTypedEntity: Story = {
+  name: 'Author a typed entity',
+  beforeEach: () => {
+    mockHost([]);
+  },
+  play: async ({ canvas }) => {
+    await userEvent.type(canvas.getByLabelText('Workspace folder'), '/Users/demo/workspaces/demo');
+    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    await expect(await canvas.findByText(/No entities yet/)).toBeVisible();
+
+    // Pick a type from the seed metamodel palette, fill required name, create.
+    await userEvent.click(canvas.getByLabelText('Entity type'));
+    await userEvent.click(await canvas.findByRole('option', { name: 'Capability' }));
+    await userEvent.type(canvas.getByLabelText('name'), 'Customer Insight');
+    await userEvent.click(canvas.getByRole('button', { name: /Create Capability/ }));
+    await expect(canvas.getByRole('button', { name: /Create Capability/ })).toBeVisible();
   },
 };
 
@@ -84,7 +167,7 @@ export const OpenEmpty: Story = {
   play: async ({ canvas }) => {
     await userEvent.type(canvas.getByLabelText('Workspace folder'), '/Users/demo/workspaces/demo');
     await userEvent.click(canvas.getByRole('button', { name: 'Open' }));
-    await expect(await canvas.findByText(/No nodes yet/)).toBeVisible();
+    await expect(await canvas.findByText(/No entities yet/)).toBeVisible();
   },
 };
 

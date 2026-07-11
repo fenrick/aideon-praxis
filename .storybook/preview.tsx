@@ -10,6 +10,10 @@ sb.mock(import('../src/adapters/ipc.ts'), { spy: true });
 sb.mock(import('@tauri-apps/api/event'), { spy: true });
 
 import { ColorThemeProvider } from '../src/design-system/theme/color-theme';
+// globals.css (design-system base) before styles.css (font-role overrides),
+// matching the load order in src/app/layout.tsx. Both go through the JS
+// resolver so the paths behave identically under Vite and Turbopack.
+import '../src/design-system/styles/globals.css';
 import '../src/styles.css';
 
 function DesignSystemDecorator({ children }: { children: React.ReactNode }) {

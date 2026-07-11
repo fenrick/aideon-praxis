@@ -1,4 +1,10 @@
-@import './design-system/styles/globals.css';
+/*
+ * The design-system base layer (globals.css) is loaded ahead of this file by
+ * the renderer entry (src/app/layout.tsx) and the Storybook preview, via the
+ * JS module resolver — not a CSS-relative `@import` here, which Turbopack fails
+ * to resolve under `next dev`. This file only layers font roles and color-scheme
+ * on top, so it must load after globals.css.
+ */
 
 /* Self-hosted variable fonts (offline-first; no runtime CDN). */
 @import '@fontsource-variable/geist';

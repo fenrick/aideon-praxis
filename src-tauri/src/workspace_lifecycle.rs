@@ -6,7 +6,10 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use aideon_engine::{Engine, NodeRecord, StoreError, WorkspaceStatus};
+use aideon_engine::{
+    Engine, MetaTypeInfo, NodeRecord, PropertyDelta, ResolvedEntity, StoreError, Viewpoint,
+    WorkspaceStatus,
+};
 use serde::Deserialize;
 use specta::Type;
 use tauri::{AppHandle, Emitter, Runtime, State};
@@ -184,6 +187,8 @@ pub(crate) fn map_store_error(error: StoreError) -> HostError {
             HostError::new("IDENTITY_COLLISION", error.to_string())
         }
         StoreError::Corruption(_) => HostError::new("WORKSPACE_CORRUPT", error.to_string()),
+        // The validation message is authored to be safe to surface (no path/PII).
+        StoreError::Validation { .. } => HostError::new("VALIDATION_FAILED", error.to_string()),
         StoreError::Io(io) if io.kind() == std::io::ErrorKind::NotFound => {
             HostError::new("WORKSPACE_NOT_FOUND", "workspace not found")
         }
@@ -251,6 +256,161 @@ pub async fn workspace_status(
 #[serde(rename_all = "camelCase")]
 pub struct AuthorNodePayload {
     pub type_id: Option<String>,
+}
+
+/// List the seed metamodel's authorable entity types and their attributes —
+/// the palette the renderer offers ([golden-journey] step 2). Read-only; needs
+/// no open workspace since the metamodel is embedded at build time.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_metamodel_types(
+    request: IpcRequest<EmptyPayload>,
+) -> Result<IpcResponse<Vec<MetaTypeInfo>>, HostError> {
+    Ok(command_envelope(
+        "workspace_metamodel_types",
+        request,
+        |_payload| async move { Ok(Engine::metamodel_types_embedded()) },
+    )
+    .await)
+}
+
+/// Payload for authoring one typed entity: the domain type key plus a flat
+/// string-valued attribute map (name, enum choices, …).
+#[derive(Debug, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthorTypedNodePayload {
+    pub type_id: String,
+    #[serde(default)]
+    pub props: std::collections::HashMap<String, String>,
+}
+
+/// Author one **metamodel-validated** entity into the open workspace's canonical
+/// log ([golden-journey] step 3). The write is checked against the seed
+/// effective schema before any operation is appended; an invalid write returns
+/// `VALIDATION_FAILED` and never enters the op log.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_author_typed_node(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<AuthorTypedNodePayload>,
+) -> Result<IpcResponse<NodeRecord>, HostError> {
+    Ok(command_envelope(
+        "workspace_author_typed_node",
+        request,
+        |payload| async move {
+            let props = serde_json::Value::Object(
+                payload
+                    .props
+                    .into_iter()
+                    .map(|(k, v)| (k, serde_json::Value::String(v)))
+                    .collect(),
+            );
+            let mut guard = manager.open.lock().await;
+            let engine = guard
+                .as_mut()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine
+                .author_typed_node(&payload.type_id, props)
+                .map_err(map_store_error)
+        },
+    )
+    .await)
+}
+
+/// Payload for asserting one plan/actual claim at a valid time ([golden-journey]
+/// step 4).
+#[derive(Debug, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SetClaimPayload {
+    pub entity_id: String,
+    pub type_id: String,
+    pub attribute: String,
+    pub value: String,
+    /// `"plan"` or `"actual"`.
+    pub layer: String,
+    pub valid_from: i64,
+    pub valid_to: Option<i64>,
+}
+
+/// Assert a slot value on a layer over a valid-time interval — a plan or actual
+/// claim ([golden-journey] step 4). The value is validated against the
+/// attribute's metamodel kind/enum before any operation is appended.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_set_claim(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<SetClaimPayload>,
+) -> Result<IpcResponse<()>, HostError> {
+    Ok(
+        command_envelope("workspace_set_claim", request, |payload| async move {
+            let mut guard = manager.open.lock().await;
+            let engine = guard
+                .as_mut()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine
+                .set_property_claim(
+                    &payload.entity_id,
+                    &payload.type_id,
+                    &payload.attribute,
+                    &payload.value,
+                    &payload.layer,
+                    payload.valid_from,
+                    payload.valid_to,
+                )
+                .map_err(map_store_error)
+        })
+        .await,
+    )
+}
+
+/// Resolve the twin at a viewpoint — every entity with its slots' effective
+/// values ([golden-journey] step 5).
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_state_at(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<Viewpoint>,
+) -> Result<IpcResponse<Vec<ResolvedEntity>>, HostError> {
+    Ok(
+        command_envelope("workspace_state_at", request, |view| async move {
+            let guard = manager.open.lock().await;
+            let engine = guard
+                .as_ref()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine.state_at(&view).map_err(map_store_error)
+        })
+        .await,
+    )
+}
+
+/// Payload for a two-viewpoint diff ([golden-journey] step 6, [ADR-0008]).
+#[derive(Debug, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DiffPayload {
+    pub before: Viewpoint,
+    pub after: Viewpoint,
+}
+
+/// Compare the twin at two viewpoints, returning the slots whose resolved value
+/// differs ([golden-journey] step 6).
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_diff(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<DiffPayload>,
+) -> Result<IpcResponse<Vec<PropertyDelta>>, HostError> {
+    Ok(
+        command_envelope("workspace_diff", request, |payload| async move {
+            let guard = manager.open.lock().await;
+            let engine = guard
+                .as_ref()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine
+                .diff(&payload.before, &payload.after)
+                .map_err(map_store_error)
+        })
+        .await,
+    )
 }
 
 /// Author one `create-node` into the open workspace's canonical log

@@ -360,6 +360,70 @@ async workspaceNodes(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResp
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * List the seed metamodel's authorable entity types and their attributes —
+ * the palette the renderer offers ([golden-journey] step 2). Read-only; needs
+ * no open workspace since the metamodel is embedded at build time.
+ */
+async workspaceMetamodelTypes(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResponse<MetaTypeInfo[]>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_metamodel_types", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Author one **metamodel-validated** entity into the open workspace's canonical
+ * log ([golden-journey] step 3). The write is checked against the seed
+ * effective schema before any operation is appended; an invalid write returns
+ * `VALIDATION_FAILED` and never enters the op log.
+ */
+async workspaceAuthorTypedNode(request: IpcRequest<AuthorTypedNodePayload>) : Promise<Result<IpcResponse<NodeRecord>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_author_typed_node", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Assert a slot value on a layer over a valid-time interval — a plan or actual
+ * claim ([golden-journey] step 4). The value is validated against the
+ * attribute's metamodel kind/enum before any operation is appended.
+ */
+async workspaceSetClaim(request: IpcRequest<SetClaimPayload>) : Promise<Result<IpcResponse<null>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_set_claim", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Resolve the twin at a viewpoint — every entity with its slots' effective
+ * values ([golden-journey] step 5).
+ */
+async workspaceStateAt(request: IpcRequest<Viewpoint>) : Promise<Result<IpcResponse<ResolvedEntity[]>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_state_at", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Compare the twin at two viewpoints, returning the slots whose resolved value
+ * differs ([golden-journey] step 6).
+ */
+async workspaceDiff(request: IpcRequest<DiffPayload>) : Promise<Result<IpcResponse<PropertyDelta[]>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_diff", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async systemLoggingContext() : Promise<Result<LoggingContextDto, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("system_logging_context") };
@@ -400,6 +464,11 @@ export type ApplyOperationsPayload = { branch?: string | null; operations?: Prax
  * Payload for authoring one node: an optional declared type id.
  */
 export type AuthorNodePayload = { typeId: string | null }
+/**
+ * Payload for authoring one typed entity: the domain type key plus a flat
+ * string-valued attribute map (name, enum choices, …).
+ */
+export type AuthorTypedNodePayload = { typeId: string; props?: Partial<{ [key in string]: string }> }
 export type BranchInfo = { name: string; head: string | null }
 export type CanvasEdge = { id: string; source: string; target: string; label?: string | null; z?: number | null }
 export type CanvasGroup = { id: string; name?: string | null; parentId?: string | null; z?: number | null }
@@ -425,6 +494,10 @@ export type CommitRef = { id: string } | { branch: { branch: string; at: string 
 export type CommitSummary = { id: string; parents: string[]; branch: string; author: string | null; time: string | null; message: string; tags: string[]; changeCount: number }
 export type CreateBranchRequest = { name: string; from: CommitRef | null }
 export type DiffArgs = { from: CommitRef; to: CommitRef; scope: string | null }
+/**
+ * Payload for a two-viewpoint diff ([golden-journey] step 6, [ADR-0008]).
+ */
+export type DiffPayload = { before: Viewpoint; after: Viewpoint }
 export type DiffSummary = { from: string; to: string; nodeAdds: number; nodeMods: number; nodeDels: number; edgeAdds: number; edgeMods: number; edgeDels: number }
 export type DurationSummary = { count: number; total_ms: number }
 export type EdgeTombstone = { from: string; to: string }
@@ -498,6 +571,22 @@ export type MergeConflict = { reference: string; kind: string; message: string }
 export type MergeRequest = { source: string; target: string }
 export type MergeResponse = { result: string | null; conflicts: MergeConflict[] | null }
 export type MetaAttribute = { name: string; uuid?: string | null; type: MetaAttributeKind; required?: boolean; enum?: string[] }
+/**
+ * A host-facing metamodel attribute descriptor for an entity type.
+ */
+export type MetaAttributeInfo = { 
+/**
+ * The attribute name (e.g. `name`, `tier`).
+ */
+name: string; 
+/**
+ * Whether a valid write must carry it.
+ */
+required: boolean; 
+/**
+ * The closed enum choices, when the attribute is an enum; else empty.
+ */
+enumValues: string[] }
 export type MetaAttributeKind = "string" | "text" | "number" | "boolean" | "enum" | "datetime" | "blob"
 export type MetaAttributeRules = { string: MetaStringRule | null; text: MetaStringRule | null; enum: MetaEnumRule | null }
 export type MetaEnumRule = { caseSensitive: boolean | null }
@@ -507,6 +596,27 @@ export type MetaRelationship = { id: string; uuid?: string | null; label: string
 export type MetaRelationshipValidation = { allowSelf: boolean | null; allowDuplicate: boolean | null }
 export type MetaStringRule = { maxLength: number | null }
 export type MetaType = { id: string; uuid?: string | null; label: string | null; category: string | null; extends: string | null; attributes?: MetaAttribute[]; effectTypes?: string[] | null }
+/**
+ * A host-facing metamodel entity type — the authorable palette the renderer
+ * offers ([M1 build contract], step 2).
+ */
+export type MetaTypeInfo = { 
+/**
+ * The domain type key (e.g. `Application`).
+ */
+id: string; 
+/**
+ * A human label; falls back to the id.
+ */
+label: string; 
+/**
+ * The metamodel category (e.g. `Business`, `Application`).
+ */
+category: string | null; 
+/**
+ * The type's authorable attributes.
+ */
+attributes: MetaAttributeInfo[] }
 export type MetaValidationRules = { attributes: MetaAttributeRules | null; relationships: Partial<{ [key in string]: MetaRelationshipValidation }> | null }
 export type MetricsSnapshot = { command_failures: Partial<{ [key in string]: number }>; job_failures: Partial<{ [key in string]: number }>; command_durations: Partial<{ [key in string]: DurationSummary }>; job_durations: Partial<{ [key in string]: DurationSummary }> }
 /**
@@ -518,9 +628,14 @@ export type NodeRecord = {
  */
 nodeId: string; 
 /**
- * The declared node type, if any.
+ * The declared node type's storage symbol UUID, if any.
  */
 typeId: string | null; 
+/**
+ * The metamodel domain type key (e.g. `Application`), resolved from the
+ * symbol UUID via the registry; `None` for an untyped or unknown-symbol node.
+ */
+typeLabel: string | null; 
 /**
  * Whether a tombstone has retired the node.
  */
@@ -545,7 +660,74 @@ export type ProblemCategory = "validation" | "permission" | "conflict" | "transi
  */
 export type ProblemRecovery = "retry" | "reconcile" | "refresh" | "none" | "report"
 export type ProjectPayload = { id: string; name: string; scenarios: ScenarioSummary[] }
+/**
+ * One slot whose resolved value differs between two viewpoints ([ADR-0008]:
+ * a diff compares two viewpoints).
+ */
+export type PropertyDelta = { 
+/**
+ * The entity id.
+ */
+nodeId: string; 
+/**
+ * The metamodel domain type key, if known.
+ */
+typeLabel: string | null; 
+/**
+ * The attribute name.
+ */
+field: string; 
+/**
+ * The value resolved at the first viewpoint, if any.
+ */
+before: string | null; 
+/**
+ * The value resolved at the second viewpoint, if any.
+ */
+after: string | null }
+/**
+ * An entity with its slots resolved at a viewpoint.
+ */
+export type ResolvedEntity = { 
+/**
+ * The entity id.
+ */
+nodeId: string; 
+/**
+ * The metamodel domain type key, if known.
+ */
+typeLabel: string | null; 
+/**
+ * The entity's resolved slots at the viewpoint, ordered by attribute name.
+ */
+properties: ResolvedProperty[] }
+/**
+ * A single resolved slot value at a viewpoint — the winning fact after
+ * interval, layer, and asserted-time selection ([M2 core]).
+ */
+export type ResolvedProperty = { 
+/**
+ * The attribute name (e.g. `lifecycle`), resolved from its symbol UUID.
+ */
+field: string; 
+/**
+ * The effective value's display form.
+ */
+value: string; 
+/**
+ * The layer the winning fact came from (`plan` / `actual`).
+ */
+layer: string }
 export type ScenarioSummary = { id: string; name: string; branch: string; description?: string | null; updatedAt: string; isDefault?: boolean | null }
+/**
+ * Payload for asserting one plan/actual claim at a valid time ([golden-journey]
+ * step 4).
+ */
+export type SetClaimPayload = { entityId: string; typeId: string; attribute: string; value: string; 
+/**
+ * `"plan"` or `"actual"`.
+ */
+layer: string; validFrom: number; validTo: number | null }
 export type SetupCompletePayload = { task: string }
 export type SetupFlags = { frontend: boolean; backend: boolean }
 export type StateAtArgs = { asOf: CommitRef; scenario: string | null; confidence: number | null; layer?: string | null }
@@ -559,6 +741,19 @@ export type TwinNode = { id: string; type?: string | null; props?: JsonValue | n
 export type ViewFilters = { nodeTypes?: string[] | null; edgeTypes?: string[] | null; tags?: string[] | null; search?: string | null }
 export type ViewMetadata = { id: string; name: string; asOf: string; layer?: string | null; scenario?: string | null; fetchedAt: string; source: string }
 export type ViewStats = { nodes: number; edges: number }
+/**
+ * A viewpoint: an `as_of` valid time and an ordered layer preference
+ * (highest priority first).
+ */
+export type Viewpoint = { 
+/**
+ * The valid-time coordinate to resolve at.
+ */
+asOf: number; 
+/**
+ * The layer preference, highest priority first (e.g. `["actual","plan"]`).
+ */
+layers: string[] }
 /**
  * The class of long-running work. M0 runs only `Rebuild`; the other Continuum
  * classes are deferred to M4 (variants are additive).
