@@ -2,7 +2,13 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, mocked, userEvent } from 'storybook/test';
 
 import { invokeIpc } from '@/adapters/ipc';
-import type { MetaTypeInfo, NodeRecord, WorkspaceStatus } from '@/adapters/ipc-bindings.gen';
+import type {
+  MetaTypeInfo,
+  NodeRecord,
+  PropertyDelta,
+  ResolvedEntity,
+  WorkspaceStatus,
+} from '@/adapters/ipc-bindings.gen';
 
 import { WorkspaceFoundationPanel } from './workspace-foundation-panel';
 
@@ -45,6 +51,27 @@ const NODES: NodeRecord[] = [
   },
 ];
 
+const RESOLVED: ResolvedEntity[] = [
+  {
+    nodeId: '11111111-0000-4000-8000-000000000003',
+    typeLabel: 'Capability',
+    properties: [
+      { field: 'name', value: 'Customer Insight', layer: 'plan' },
+      { field: 'tier', value: 'Strategic', layer: 'actual' },
+    ],
+  },
+];
+
+const DELTAS: PropertyDelta[] = [
+  {
+    nodeId: '11111111-0000-4000-8000-000000000003',
+    typeLabel: 'Capability',
+    field: 'tier',
+    before: 'Core',
+    after: 'Strategic',
+  },
+];
+
 /**
  * Route mocked IPC responses per command.
  * @param nodes - The node listing to return.
@@ -62,6 +89,15 @@ function mockHost(nodes: NodeRecord[]) {
       }
       case 'workspace_metamodel_types': {
         return Promise.resolve(TYPES);
+      }
+      case 'workspace_state_at': {
+        return Promise.resolve(nodes.length > 0 ? RESOLVED : []);
+      }
+      case 'workspace_diff': {
+        return Promise.resolve(DELTAS);
+      }
+      case 'workspace_set_claim': {
+        return Promise.resolve();
       }
       case 'workspace_author_node':
       case 'workspace_author_typed_node': {

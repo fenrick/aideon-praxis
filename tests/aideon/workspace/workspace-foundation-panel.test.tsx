@@ -6,7 +6,13 @@ vi.mock('@/adapters/ipc', () => ({ invokeIpc: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
 import { invokeIpc } from '@/adapters/ipc';
-import type { MetaTypeInfo, NodeRecord, WorkspaceStatus } from '@/adapters/ipc-bindings.gen';
+import type {
+  MetaTypeInfo,
+  NodeRecord,
+  PropertyDelta,
+  ResolvedEntity,
+  WorkspaceStatus,
+} from '@/adapters/ipc-bindings.gen';
 import { WorkspaceFoundationPanel } from '@/aideon/workspace/workspace-foundation-panel';
 
 const invokeMock = vi.mocked(invokeIpc);
@@ -50,6 +56,24 @@ const NODES: NodeRecord[] = [
   },
 ];
 
+const RESOLVED: ResolvedEntity[] = [
+  {
+    nodeId: '11111111-0000-4000-8000-000000000003',
+    typeLabel: 'Capability',
+    properties: [{ field: 'tier', value: 'Strategic', layer: 'plan' }],
+  },
+];
+
+const DELTAS: PropertyDelta[] = [
+  {
+    nodeId: '11111111-0000-4000-8000-000000000003',
+    typeLabel: 'Capability',
+    field: 'tier',
+    before: 'Strategic',
+    after: 'Core',
+  },
+];
+
 /**
  * Route the mocked IPC boundary per command.
  * @param nodes - Node listing the host returns.
@@ -67,6 +91,15 @@ function mockHost(nodes: NodeRecord[]) {
       }
       case 'workspace_metamodel_types': {
         return Promise.resolve(TYPES);
+      }
+      case 'workspace_state_at': {
+        return Promise.resolve(RESOLVED);
+      }
+      case 'workspace_diff': {
+        return Promise.resolve(DELTAS);
+      }
+      case 'workspace_set_claim': {
+        return Promise.resolve();
       }
       case 'workspace_author_node':
       case 'workspace_author_typed_node': {
@@ -131,6 +164,26 @@ describe('WorkspaceFoundationPanel', () => {
     expect(screen.getByLabelText('Entity type')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create entity' })).toBeDisabled();
     expect(invokeMock).toHaveBeenCalledWith('workspace_metamodel_types', {});
+  });
+
+  it('renders the catalogue resolved at a viewpoint with layer provenance', async () => {
+    mockHost(NODES);
+    render(<WorkspaceFoundationPanel />);
+    await openWorkspace('Open');
+
+    await waitFor(() => {
+      expect(screen.getByText('Catalogue at a viewpoint')).toBeInTheDocument();
+    });
+    const rows = screen.getByRole('list', { name: 'Catalogue rows' });
+    expect(rows).toBeInTheDocument();
+    // The resolved slot shows its value and the layer it resolved from.
+    expect(screen.getByText('Strategic')).toBeInTheDocument();
+    expect(screen.getAllByText('plan').length).toBeGreaterThan(0);
+    // The catalogue resolves at the default viewpoint (actual over plan, as-of 0).
+    expect(invokeMock).toHaveBeenCalledWith('workspace_state_at', {
+      asOf: 0,
+      layers: ['actual', 'plan'],
+    });
   });
 
   it('shows an honest error state when the host refuses', async () => {
