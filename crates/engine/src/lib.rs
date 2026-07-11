@@ -877,6 +877,79 @@ mod tests {
     }
 
     #[test]
+    fn full_thread_rebuild_is_structurally_and_semantically_equivalent() {
+        // The golden journey's final assertion over the whole slice: author a
+        // typed twin + plan/actual claims, then wipe the runtime and rebuild —
+        // the structural foundation hash AND the resolved semantic state must
+        // both come back identical ([golden-journey] step 10).
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), None).unwrap();
+
+        let cap = engine
+            .author_typed_node(
+                "Capability",
+                serde_json::json!({ "name": "Insight", "tier": "Strategic" }),
+            )
+            .unwrap();
+        let app = engine
+            .author_typed_node("Application", serde_json::json!({ "name": "Billing" }))
+            .unwrap();
+        engine
+            .set_property_claim(
+                &app.node_id,
+                "Application",
+                "lifecycle",
+                "Build",
+                "plan",
+                0,
+                Some(100),
+            )
+            .unwrap();
+        engine
+            .set_property_claim(
+                &app.node_id,
+                "Application",
+                "lifecycle",
+                "Run",
+                "actual",
+                50,
+                None,
+            )
+            .unwrap();
+
+        let view = Viewpoint {
+            as_of: 60,
+            layers: vec!["actual".into(), "plan".into()],
+        };
+        let hash_before = engine.status().unwrap().foundation_rebuild_hash;
+        let state_before = engine.state_at(&view).unwrap();
+
+        let rebuilt = engine.rebuild().unwrap();
+        let hash_after = rebuilt.status().unwrap().foundation_rebuild_hash;
+        let state_after = rebuilt.state_at(&view).unwrap();
+
+        assert_eq!(
+            hash_before, hash_after,
+            "structural foundation hash is stable across a wipe"
+        );
+        assert_eq!(
+            state_before, state_after,
+            "resolved semantic state re-derives identically"
+        );
+        // Sanity: the semantic state actually carries the resolved thread.
+        assert!(state_after.iter().any(|e| e.node_id == cap.node_id));
+        assert!(
+            state_after
+                .iter()
+                .find(|e| e.node_id == app.node_id)
+                .unwrap()
+                .properties
+                .iter()
+                .any(|p| p.field == "lifecycle" && p.value == "Run" && p.layer == "actual")
+        );
+    }
+
+    #[test]
     fn rebuild_wipes_runtime_and_preserves_the_foundation_hash() {
         let dir = TempDir::new().unwrap();
         let actor = Id::new_v4();
