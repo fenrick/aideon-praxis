@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { invokeIpc } from '@/adapters/ipc';
-import type { NodeRecord, WorkspaceStatus } from '@/adapters/ipc-bindings.gen';
+import type { MetaTypeInfo, NodeRecord, WorkspaceStatus } from '@/adapters/ipc-bindings.gen';
 import { waitForWorkspaceReady } from '@/adapters/workspace-events';
 
 /** The foundation panel's lifecycle phase. */
@@ -11,6 +11,8 @@ export interface WorkspaceFoundationState {
   readonly phase: FoundationPhase;
   readonly status: WorkspaceStatus | undefined;
   readonly nodes: readonly NodeRecord[];
+  /** The seed metamodel's authorable entity types (the authoring palette). */
+  readonly metamodelTypes: readonly MetaTypeInfo[];
   readonly errorMessage: string | undefined;
 }
 
@@ -18,6 +20,8 @@ export interface WorkspaceFoundationActions {
   readonly createWorkspace: (root: string) => Promise<void>;
   readonly openWorkspace: (root: string) => Promise<void>;
   readonly authorNode: () => Promise<void>;
+  /** Author a metamodel-validated typed entity; rejects invalid at the boundary. */
+  readonly authorTypedNode: (typeId: string, properties: Record<string, string>) => Promise<void>;
   readonly rebuild: () => Promise<void>;
 }
 
@@ -38,13 +42,18 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
   const [phase, setPhase] = useState<FoundationPhase>('closed');
   const [status, setStatus] = useState<WorkspaceStatus | undefined>();
   const [nodes, setNodes] = useState<readonly NodeRecord[]>([]);
+  const [metamodelTypes, setMetamodelTypes] = useState<readonly MetaTypeInfo[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const refresh = useCallback(async () => {
     const nextStatus = await invokeIpc<WorkspaceStatus>('workspace_status', {});
     const nextNodes = await invokeIpc<NodeRecord[]>('workspace_nodes', {});
+    // The metamodel is embedded host-side and workspace-independent; fetching it
+    // on refresh keeps the authoring palette in sync without a separate effect.
+    const nextTypes = await invokeIpc<MetaTypeInfo[]>('workspace_metamodel_types', {});
     setStatus(nextStatus);
     setNodes(nextNodes);
+    setMetamodelTypes(nextTypes);
   }, []);
 
   const run = useCallback(
@@ -87,6 +96,15 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
     });
   }, [run]);
 
+  const authorTypedNode = useCallback(
+    async (typeId: string, properties: Record<string, string>) => {
+      await run(async () => {
+        await invokeIpc<NodeRecord>('workspace_author_typed_node', { typeId, props: properties });
+      });
+    },
+    [run],
+  );
+
   const rebuild = useCallback(async () => {
     await run(async () => {
       // Accepted work: the command returns immediately; read-write (and the
@@ -98,7 +116,7 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
   }, [run]);
 
   return [
-    { phase, status, nodes, errorMessage },
-    { createWorkspace, openWorkspace, authorNode, rebuild },
+    { phase, status, nodes, metamodelTypes, errorMessage },
+    { createWorkspace, openWorkspace, authorNode, authorTypedNode, rebuild },
   ];
 }

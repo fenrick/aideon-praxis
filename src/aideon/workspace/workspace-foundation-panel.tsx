@@ -14,10 +14,120 @@ import {
   CardHeader,
   CardTitle,
   Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Skeleton,
 } from 'design-system';
 
+import type { MetaTypeInfo } from '@/adapters/ipc-bindings.gen';
+
 import { useWorkspaceFoundation } from './use-workspace-foundation';
+
+/**
+ * Author one metamodel-typed entity: pick a type, fill its attributes, create.
+ * The write is validated host-side against the seed effective schema before any
+ * operation is appended — an invalid one is refused and never enters the log.
+ * @param root0 - Form props.
+ * @param root0.types - The seed metamodel's authorable entity types.
+ * @param root0.onAuthor - Called with the chosen type and non-empty attributes.
+ */
+function TypedAuthoringForm({
+  types,
+  onAuthor,
+}: {
+  readonly types: readonly MetaTypeInfo[];
+  readonly onAuthor: (typeId: string, properties: Record<string, string>) => void;
+}) {
+  const [typeId, setTypeId] = useState('');
+  const [values, setValues] = useState<Record<string, string>>({});
+  const selected = types.find((t) => t.id === typeId);
+
+  const setValue = (name: string, value: string) => {
+    setValues((previous) => ({ ...previous, [name]: value }));
+  };
+
+  return (
+    <div className="flex flex-col gap-3 rounded-md border p-3">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="entity-type">Entity type</Label>
+        <Select
+          value={typeId}
+          onValueChange={(next) => {
+            setTypeId(next);
+            setValues({});
+          }}
+        >
+          <SelectTrigger id="entity-type" aria-label="Entity type">
+            <SelectValue placeholder="Choose a type…" />
+          </SelectTrigger>
+          <SelectContent>
+            {types.map((type) => (
+              <SelectItem key={type.id} value={type.id}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {selected?.attributes.map((attribute) => (
+        <div key={attribute.name} className="flex flex-col gap-1.5">
+          <Label htmlFor={`attr-${attribute.name}`}>
+            {attribute.name}
+            {attribute.required ? <span className="text-destructive"> *</span> : undefined}
+          </Label>
+          {attribute.enumValues.length > 0 ? (
+            <Select
+              value={values[attribute.name] ?? ''}
+              onValueChange={(next) => {
+                setValue(attribute.name, next);
+              }}
+            >
+              <SelectTrigger id={`attr-${attribute.name}`} aria-label={attribute.name}>
+                <SelectValue placeholder={`Choose ${attribute.name}…`} />
+              </SelectTrigger>
+              <SelectContent>
+                {attribute.enumValues.map((choice) => (
+                  <SelectItem key={choice} value={choice}>
+                    {choice}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id={`attr-${attribute.name}`}
+              aria-label={attribute.name}
+              value={values[attribute.name] ?? ''}
+              onChange={(event) => {
+                setValue(attribute.name, event.target.value);
+              }}
+            />
+          )}
+        </div>
+      ))}
+
+      <div>
+        <Button
+          size="sm"
+          disabled={typeId === ''}
+          onClick={() => {
+            const properties = Object.fromEntries(
+              Object.entries(values).filter(([, value]) => value.trim() !== ''),
+            );
+            onAuthor(typeId, properties);
+          }}
+        >
+          Create {selected?.label ?? 'entity'}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 /**
  * The M0 end-to-end foundation surface: create/open a canonical workspace,
@@ -29,7 +139,8 @@ import { useWorkspaceFoundation } from './use-workspace-foundation';
  * `model/ops/*.jsonl` on disk, never from renderer state.
  */
 export function WorkspaceFoundationPanel() {
-  const [{ phase, status, nodes, errorMessage }, actions] = useWorkspaceFoundation();
+  const [{ phase, status, nodes, metamodelTypes, errorMessage }, actions] =
+    useWorkspaceFoundation();
   const [root, setRoot] = useState('');
 
   return (
@@ -129,26 +240,23 @@ export function WorkspaceFoundationPanel() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Nodes</CardTitle>
+              <CardTitle>Entities</CardTitle>
               <CardDescription>
-                The derived twin listing — re-derived from the op log on every rebuild.
+                Author entities against the seed metamodel. A write is validated before it enters
+                the canonical log; the listing below is re-derived from the op log on every rebuild.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              <div>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    void actions.authorNode();
-                  }}
-                >
-                  Add node
-                </Button>
-              </div>
+              <TypedAuthoringForm
+                types={metamodelTypes}
+                onAuthor={(typeId, properties) => {
+                  void actions.authorTypedNode(typeId, properties);
+                }}
+              />
               {nodes.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
-                  No nodes yet. Add one — it lands in the canonical log first, then appears here
-                  from the derived projection.
+                  No entities yet. Create one — it lands in the canonical log first, then appears
+                  here from the derived projection.
                 </p>
               ) : (
                 <ul className="flex flex-col gap-1" aria-label="Node list">
@@ -157,7 +265,12 @@ export function WorkspaceFoundationPanel() {
                       key={node.nodeId}
                       className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
                     >
-                      <code className="truncate">{node.nodeId}</code>
+                      <span className="flex items-center gap-2">
+                        {node.typeLabel === null ? undefined : (
+                          <Badge variant="secondary">{node.typeLabel}</Badge>
+                        )}
+                        <code className="truncate">{node.nodeId.slice(0, 8)}…</code>
+                      </span>
                       {node.tombstoned ? <Badge variant="outline">tombstoned</Badge> : undefined}
                     </li>
                   ))}
