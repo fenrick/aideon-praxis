@@ -565,6 +565,7 @@ describe('tauri e2e command coverage', () => {
     // feature PR itself. `assertOkOrError` accepts an error response, so a command
     // that needs an open workspace can still be covered with a minimal payload.
     // -------------------------------------------------------------------------
+    // nosemgrep: rule-non-literal-fs-filename -- fixed in-repo manifest path, no external input
     const manifestRaw = await fs.readFile(
       path.resolve(process.cwd(), 'docs/contracts/ipc-manifest.json'),
       'utf8',

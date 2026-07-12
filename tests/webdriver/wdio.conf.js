@@ -37,6 +37,7 @@ function cleanupNativeDrivers() {
 }
 
 function ensureAppBinary() {
+  // nosemgrep: rule-non-literal-fs-filename -- appPath is a build-output path from local env config
   if (fs.existsSync(appPath)) {
     return;
   }

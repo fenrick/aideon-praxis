@@ -57,7 +57,10 @@ function isFormIssue(body) {
  */
 function isSectionNonEmpty(body, sectionHeadingPattern) {
   // Extend the pattern to consume the rest of the heading line so that afterHeading
-  // starts at the newline after the heading (not mid-heading).
+  // starts at the newline after the heading (not mid-heading). `sectionHeadingPattern`
+  // is always one of the hard-coded literals defined in this script — never external
+  // input — so there is no untrusted-regex (ReDoS) surface here.
+  // nosemgrep: rule-non-literal-regexp
   const fullLinePattern = new RegExp(
     sectionHeadingPattern.source + '[^\\n]*',
     sectionHeadingPattern.flags,
