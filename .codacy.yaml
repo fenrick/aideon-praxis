@@ -1,0 +1,10 @@
+# Codacy repository configuration.
+#
+# Exclude vendored, third-party agent-skill definitions from analysis: the
+# `.agents/` and `.claude/` trees are synced from upstream skill packages, not
+# authored here (they are also prettier-ignored, see .prettierignore). Linting
+# them generated thousands of issues (Bandit/markdownlint/…) against code we do
+# not own and cannot fix without diverging from upstream on the next sync.
+exclude_paths:
+  - '.agents/**'
+  - '.claude/**'
