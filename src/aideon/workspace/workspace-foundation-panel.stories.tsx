@@ -3,6 +3,7 @@ import { expect, mocked, userEvent } from 'storybook/test';
 
 import { invokeIpc } from '@/adapters/ipc';
 import type {
+  EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
   PropertyDelta,
@@ -72,6 +73,17 @@ const DELTAS: PropertyDelta[] = [
   },
 ];
 
+const EDGES: EdgeRecord[] = [
+  {
+    edgeId: '22222222-0000-4000-8000-000000000009',
+    typeId: NONE,
+    typeLabel: 'realises',
+    srcId: '11111111-0000-4000-8000-000000000003',
+    dstId: '11111111-0000-4000-8000-000000000004',
+    tombstoned: false,
+  },
+];
+
 /**
  * Route mocked IPC responses per command.
  * @param nodes - The node listing to return.
@@ -86,6 +98,12 @@ function mockHost(nodes: NodeRecord[]) {
       }
       case 'workspace_nodes': {
         return Promise.resolve(nodes);
+      }
+      case 'workspace_edges': {
+        return Promise.resolve(nodes.length > 0 ? EDGES : []);
+      }
+      case 'workspace_author_typed_edge': {
+        return Promise.resolve(EDGES[0]);
       }
       case 'workspace_metamodel_types': {
         return Promise.resolve(TYPES);

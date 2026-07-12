@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import { invokeIpc } from '@/adapters/ipc';
 import type {
+  EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
   PropertyDelta,
@@ -30,6 +31,8 @@ export interface WorkspaceFoundationState {
   readonly phase: FoundationPhase;
   readonly status: WorkspaceStatus | undefined;
   readonly nodes: readonly NodeRecord[];
+  /** The derived twin's relationship listing. */
+  readonly edges: readonly EdgeRecord[];
   /** The seed metamodel's authorable entity types (the authoring palette). */
   readonly metamodelTypes: readonly MetaTypeInfo[];
   /** The viewpoint the catalogue currently resolves at. */
@@ -45,6 +48,13 @@ export interface WorkspaceFoundationActions {
   readonly authorNode: () => Promise<void>;
   /** Author a metamodel-validated typed entity; rejects invalid at the boundary. */
   readonly authorTypedNode: (typeId: string, properties: Record<string, string>) => Promise<void>;
+  /** Author a metamodel-validated relationship; rejects invalid at the boundary. */
+  readonly authorTypedEdge: (
+    relationshipType: string,
+    sourceId: string,
+    destinationId: string,
+    properties: Record<string, string>,
+  ) => Promise<void>;
   /** Assert a plan/actual claim on a slot over a valid-time interval. */
   readonly setClaim: (claim: ClaimInput) => Promise<void>;
   /** Re-resolve the catalogue at a new viewpoint. */
@@ -73,6 +83,7 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
   const [phase, setPhase] = useState<FoundationPhase>('closed');
   const [status, setStatus] = useState<WorkspaceStatus | undefined>();
   const [nodes, setNodes] = useState<readonly NodeRecord[]>([]);
+  const [edges, setEdges] = useState<readonly EdgeRecord[]>([]);
   const [metamodelTypes, setMetamodelTypes] = useState<readonly MetaTypeInfo[]>([]);
   // eslint-disable-next-line react/hook-use-state -- the public setter is the `setViewpoint` action below, which also re-resolves
   const [viewpoint, setViewpointState] = useState<Viewpoint>(DEFAULT_VIEWPOINT);
@@ -82,6 +93,7 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
   const refresh = useCallback(async (view: Viewpoint) => {
     const nextStatus = await invokeIpc<WorkspaceStatus>('workspace_status', {});
     const nextNodes = await invokeIpc<NodeRecord[]>('workspace_nodes', {});
+    const nextEdges = await invokeIpc<EdgeRecord[]>('workspace_edges', {});
     // The metamodel is embedded host-side and workspace-independent; fetching
     // it on refresh keeps the authoring palette in sync without a separate effect.
     const nextTypes = await invokeIpc<MetaTypeInfo[]>('workspace_metamodel_types', {});
@@ -89,6 +101,7 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
     const nextResolved = await invokeIpc<ResolvedEntity[]>('workspace_state_at', view);
     setStatus(nextStatus);
     setNodes(nextNodes);
+    setEdges(nextEdges);
     setMetamodelTypes(nextTypes);
     setResolved(nextResolved);
   }, []);
@@ -145,6 +158,25 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
     [run],
   );
 
+  const authorTypedEdge = useCallback(
+    async (
+      relationshipType: string,
+      sourceId: string,
+      destinationId: string,
+      properties: Record<string, string>,
+    ) => {
+      await run(async () => {
+        await invokeIpc<EdgeRecord>('workspace_author_typed_edge', {
+          relType: relationshipType,
+          srcId: sourceId,
+          dstId: destinationId,
+          props: properties,
+        });
+      });
+    },
+    [run],
+  );
+
   const setClaim = useCallback(
     async (claim: ClaimInput) => {
       await run(async () => {
@@ -186,12 +218,13 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
   }, [run]);
 
   return [
-    { phase, status, nodes, metamodelTypes, viewpoint, resolved, errorMessage },
+    { phase, status, nodes, edges, metamodelTypes, viewpoint, resolved, errorMessage },
     {
       createWorkspace,
       openWorkspace,
       authorNode,
       authorTypedNode,
+      authorTypedEdge,
       setClaim,
       setViewpoint,
       diff,

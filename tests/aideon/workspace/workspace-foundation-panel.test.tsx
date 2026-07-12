@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
 import { invokeIpc } from '@/adapters/ipc';
 import type {
+  EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
   PropertyDelta,
@@ -56,6 +57,17 @@ const NODES: NodeRecord[] = [
   },
 ];
 
+const EDGES: EdgeRecord[] = [
+  {
+    edgeId: '22222222-0000-4000-8000-000000000009',
+    typeId: NONE,
+    typeLabel: 'realises',
+    srcId: '11111111-0000-4000-8000-000000000003',
+    dstId: '11111111-0000-4000-8000-000000000004',
+    tombstoned: false,
+  },
+];
+
 const RESOLVED: ResolvedEntity[] = [
   {
     nodeId: '11111111-0000-4000-8000-000000000003',
@@ -88,6 +100,12 @@ function mockHost(nodes: NodeRecord[]) {
       }
       case 'workspace_nodes': {
         return Promise.resolve(nodes);
+      }
+      case 'workspace_edges': {
+        return Promise.resolve(EDGES);
+      }
+      case 'workspace_author_typed_edge': {
+        return Promise.resolve(EDGES[0]);
       }
       case 'workspace_metamodel_types': {
         return Promise.resolve(TYPES);
@@ -164,6 +182,52 @@ describe('WorkspaceFoundationPanel', () => {
     expect(screen.getByLabelText('Entity type')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create entity' })).toBeDisabled();
     expect(invokeMock).toHaveBeenCalledWith('workspace_metamodel_types', {});
+  });
+
+  it('lists relationships and gates the edge-authoring form', async () => {
+    mockHost(NODES);
+    render(<WorkspaceFoundationPanel />);
+    await openWorkspace('Open');
+
+    await waitFor(() => {
+      expect(screen.getByText('Relationships')).toBeInTheDocument();
+    });
+    // The derived edge inspector re-derives from the op log.
+    const edges = screen.getByRole('list', { name: 'Edge list' });
+    expect(edges.children).toHaveLength(1);
+    expect(screen.getByText('realises')).toBeInTheDocument();
+    expect(invokeMock).toHaveBeenCalledWith('workspace_edges', {});
+    // The create action is gated until a verb + both endpoints are chosen.
+    // (The pick-and-author interaction is exercised in the Storybook play test.)
+    expect(screen.getByLabelText('Relationship')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create relationship' })).toBeDisabled();
+  });
+
+  it('shows an empty relationships state before any edge is authored', async () => {
+    invokeMock.mockImplementation((command: string) => {
+      switch (command) {
+        case 'workspace_create':
+        case 'workspace_status': {
+          return Promise.resolve(STATUS);
+        }
+        case 'workspace_metamodel_types': {
+          return Promise.resolve(TYPES);
+        }
+        case 'workspace_state_at': {
+          return Promise.resolve([]);
+        }
+        // No nodes, no edges yet.
+        default: {
+          return Promise.resolve([]);
+        }
+      }
+    });
+    render(<WorkspaceFoundationPanel />);
+    await openWorkspace('Create');
+
+    await waitFor(() => {
+      expect(screen.getByText(/No relationships yet/)).toBeInTheDocument();
+    });
   });
 
   it('renders the catalogue resolved at a viewpoint with layer provenance', async () => {

@@ -24,6 +24,7 @@ import {
 } from 'design-system';
 
 import type {
+  EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
   PropertyDelta,
@@ -141,6 +142,183 @@ function TypedAuthoringForm({
         </Button>
       </div>
     </div>
+  );
+}
+
+/** The seed metamodel's relationship vocabulary (Praxis owns the verbs). */
+const SEED_RELATIONSHIPS = ['serves', 'realises', 'accesses', 'hosts', 'plan_effect'] as const;
+
+/**
+ * Author one metamodel-typed relationship: pick a verb and two endpoints, create.
+ * Endpoint-type, self-link, duplicate, and attribute rules are checked host-side
+ * against the compiled effective schema before any operation is appended.
+ * @param root0 - Form props.
+ * @param root0.nodes - The authored entities to choose endpoints from.
+ * @param root0.onAuthor - Called with the verb, endpoints, and any attributes.
+ */
+function EdgeAuthoringForm({
+  nodes,
+  onAuthor,
+}: {
+  readonly nodes: readonly NodeRecord[];
+  readonly onAuthor: (
+    relationshipType: string,
+    sourceId: string,
+    destinationId: string,
+    properties: Record<string, string>,
+  ) => void;
+}) {
+  const [relationshipType, setRelationshipType] = useState('');
+  const [sourceId, setSourceId] = useState('');
+  const [destinationId, setDestinationId] = useState('');
+  const [mode, setMode] = useState('');
+
+  const nodeLabel = (node: NodeRecord) =>
+    `${node.typeLabel ?? 'node'} · ${node.nodeId.slice(0, 8)}…`;
+
+  return (
+    <div className="flex flex-col gap-3 rounded-md border p-3">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="rel-type">Relationship</Label>
+        <Select value={relationshipType} onValueChange={setRelationshipType}>
+          <SelectTrigger id="rel-type" aria-label="Relationship">
+            <SelectValue placeholder="Choose a relationship…" />
+          </SelectTrigger>
+          <SelectContent>
+            {SEED_RELATIONSHIPS.map((verb) => (
+              <SelectItem key={verb} value={verb}>
+                {verb}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="edge-src">Source</Label>
+        <Select value={sourceId} onValueChange={setSourceId}>
+          <SelectTrigger id="edge-src" aria-label="Source">
+            <SelectValue placeholder="Choose a source entity…" />
+          </SelectTrigger>
+          <SelectContent>
+            {nodes.map((node) => (
+              <SelectItem key={node.nodeId} value={node.nodeId}>
+                {nodeLabel(node)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="edge-dst">Destination</Label>
+        <Select value={destinationId} onValueChange={setDestinationId}>
+          <SelectTrigger id="edge-dst" aria-label="Destination">
+            <SelectValue placeholder="Choose a destination entity…" />
+          </SelectTrigger>
+          <SelectContent>
+            {nodes.map((node) => (
+              <SelectItem key={node.nodeId} value={node.nodeId}>
+                {nodeLabel(node)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {relationshipType === 'accesses' ? (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="edge-mode">
+            mode<span className="text-destructive"> *</span>
+          </Label>
+          <Input
+            id="edge-mode"
+            aria-label="mode"
+            value={mode}
+            onChange={(event) => {
+              setMode(event.target.value);
+            }}
+          />
+        </div>
+      ) : undefined}
+
+      <div>
+        <Button
+          size="sm"
+          disabled={relationshipType === '' || sourceId === '' || destinationId === ''}
+          onClick={() => {
+            const properties: Record<string, string> =
+              mode.trim() === '' ? {} : { mode: mode.trim() };
+            onAuthor(relationshipType, sourceId, destinationId, properties);
+          }}
+        >
+          Create relationship
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The relationship authoring form plus the derived edge inspector.
+ * @param root0 - Card props.
+ * @param root0.edges - The projected relationships (re-derived from the op log).
+ * @param root0.nodes - The authored entities (endpoint choices).
+ * @param root0.onAuthor - Called with the verb, endpoints, and any attributes.
+ */
+function RelationshipsCard({
+  edges,
+  nodes,
+  onAuthor,
+}: {
+  readonly edges: readonly EdgeRecord[];
+  readonly nodes: readonly NodeRecord[];
+  readonly onAuthor: (
+    relationshipType: string,
+    sourceId: string,
+    destinationId: string,
+    properties: Record<string, string>,
+  ) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Relationships</CardTitle>
+        <CardDescription>
+          Author relationships between entities. Endpoint types, self-links, duplicates, and
+          attributes are validated against the metamodel before the write enters the log; the
+          inspector below re-derives from the op log on every rebuild.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <EdgeAuthoringForm nodes={nodes} onAuthor={onAuthor} />
+        {edges.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            No relationships yet. Author one — an invalid endpoint, self-link, or duplicate is
+            refused at the boundary and never lands.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1" aria-label="Edge list">
+            {edges.map((edge) => (
+              <li
+                key={edge.edgeId}
+                className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+              >
+                <span className="flex items-center gap-2">
+                  {edge.typeLabel === null ? undefined : (
+                    <Badge variant="secondary">{edge.typeLabel}</Badge>
+                  )}
+                  <code className="truncate">
+                    {edge.srcId.slice(0, 8)}… → {edge.dstId.slice(0, 8)}…
+                  </code>
+                </span>
+                {edge.tombstoned ? <Badge variant="outline">tombstoned</Badge> : undefined}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -531,8 +709,10 @@ function DiffCard({
  * `model/ops/*.jsonl` on disk, never from renderer state.
  */
 export function WorkspaceFoundationPanel() {
-  const [{ phase, status, nodes, metamodelTypes, viewpoint, resolved, errorMessage }, actions] =
-    useWorkspaceFoundation();
+  const [
+    { phase, status, nodes, edges, metamodelTypes, viewpoint, resolved, errorMessage },
+    actions,
+  ] = useWorkspaceFoundation();
   const [root, setRoot] = useState('');
 
   return (
@@ -684,6 +864,14 @@ export function WorkspaceFoundationPanel() {
               )}
             </CardContent>
           </Card>
+
+          <RelationshipsCard
+            edges={edges}
+            nodes={nodes}
+            onAuthor={(relationshipType, sourceId, destinationId, properties) => {
+              void actions.authorTypedEdge(relationshipType, sourceId, destinationId, properties);
+            }}
+          />
 
           <CatalogueCard
             entities={resolved}
