@@ -21,12 +21,19 @@
         "field_id": "d4c7fcfa-3c4c-5ceb-abd3-1fc14e28c273",
         "label": "disposition",
         "value_type": "enum",
+        "semantic_kind": "enum",
+        "enum_values": ["Invest", "Tolerate", "Migrate", "Eliminate"],
         "cardinality_multi": false,
         "is_indexed": true
       }
     ],
     "type_fields": [],
     "edge_type_rules": [],
+    "validation": {
+      "string_max_length": 256,
+      "text_max_length": 4096,
+      "enum_case_sensitive": false
+    },
     "metamodel_version": "1.0.0",
     "metamodel_source": "core-v1.json"
   }

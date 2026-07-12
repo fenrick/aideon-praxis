@@ -11,7 +11,10 @@ use mneme_core::ops::{
     ActorDeclare, ActorKind, ClearPropertyInterval, CreateEdge, CreateNode, Layer, OpPayload,
     Origin, SetEdgeExistenceInterval, SetPropertyInterval, TombstoneEntity,
 };
-use mneme_core::schema::{AuthoredMetamodelBatch, EntityKind, FieldDef, TypeDef, ValueType};
+use mneme_core::schema::{
+    AuthoredMetamodelBatch, AuthoredValidationRules, EntityKind, FieldDef, FieldKind, TypeDef,
+    ValueType,
+};
 use mneme_core::value::Value;
 use mneme_core::{Hlc, Id, ValidTime};
 
@@ -71,11 +74,23 @@ fn author_seed(ws: &mut Workspace) {
                 field_id: id(FIELD_DISPOSITION),
                 label: "disposition".into(),
                 value_type: ValueType::Str,
+                semantic_kind: FieldKind::Enum,
+                enum_values: vec![
+                    "Invest".into(),
+                    "Tolerate".into(),
+                    "Migrate".into(),
+                    "Eliminate".into(),
+                ],
                 cardinality_multi: false,
                 is_indexed: true,
             }],
             type_fields: vec![],
             edge_type_rules: vec![],
+            validation: AuthoredValidationRules {
+                string_max_length: Some(256),
+                text_max_length: Some(4096),
+                enum_case_sensitive: false,
+            },
             metamodel_version: Some("1.0.0".into()),
             metamodel_source: Some("core".into()),
         }),

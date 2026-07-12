@@ -6,6 +6,13 @@
 //! those are derived M1 outputs ([op-fact-schema-model]). M0 records the batch
 //! after structural validation and materialises it under
 //! `model/schema/authored/`; it does not compile or semantically validate it.
+//!
+//! The authored source is richer than the storage `value_type`: a field carries
+//! its authored [`FieldKind`] (string vs text vs enum vs datetime …) and, for an
+//! enum, its variant list; the batch carries the global [`AuthoredValidationRules`]
+//! (length caps, enum case-sensitivity). This is what makes the M1 effective
+//! schema fully rebuildable from the op log — `value_type` alone collapses
+//! string/text/enum to `str` and cannot reproduce the compiled slot descriptors.
 
 use serde::{Deserialize, Serialize};
 
@@ -59,6 +66,29 @@ pub struct TypeDef {
     pub parent_type_id: Option<Id>,
 }
 
+/// The authored semantic kind of a field. Richer than the storage
+/// [`ValueType`]: `String`/`Text`/`Enum` all store as `str` but validate and
+/// compile differently, and `Datetime`/`Number` carry format/kind the effective
+/// schema surfaces. This is authored source, not a storage detail.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FieldKind {
+    /// Short UTF-8 string (length-capped by [`AuthoredValidationRules::string_max_length`]).
+    String,
+    /// Long UTF-8 text (length-capped by [`AuthoredValidationRules::text_max_length`]).
+    Text,
+    /// Finite number.
+    Number,
+    /// One of a closed set of variants ([`FieldDef::enum_values`]).
+    Enum,
+    /// RFC 3339 datetime.
+    Datetime,
+    /// Boolean.
+    Boolean,
+    /// Content-addressed binary reference.
+    Blob,
+}
+
 /// A field/slot definition (authored source).
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -67,8 +97,12 @@ pub struct FieldDef {
     pub field_id: Id,
     /// Human-readable label.
     pub label: String,
-    /// The field's value type.
+    /// The field's storage value type.
     pub value_type: ValueType,
+    /// The authored semantic kind — what the effective schema and validator use.
+    pub semantic_kind: FieldKind,
+    /// Allowed variants when `semantic_kind` is [`FieldKind::Enum`]; empty otherwise.
+    pub enum_values: Vec<String>,
     /// Whether the field admits multiple concurrent values.
     pub cardinality_multi: bool,
     /// Whether the field is indexed in the derived runtime.
@@ -107,6 +141,20 @@ pub struct EdgeTypeRule {
     pub semantic_direction: Option<String>,
 }
 
+/// Global attribute validation rules (authored source). Carried with the batch
+/// so the derived effective schema (per-slot `max_length`, enum `case_sensitive`)
+/// is rebuildable from the op log without re-reading the authoring document.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AuthoredValidationRules {
+    /// Max length for `string` fields (character count); `null` = uncapped.
+    pub string_max_length: Option<u32>,
+    /// Max length for `text` fields (character count); `null` = uncapped.
+    pub text_max_length: Option<u32>,
+    /// Whether enum matching is case-sensitive.
+    pub enum_case_sensitive: bool,
+}
+
 /// The `upsert-metamodel-batch` payload: authored, unflattened definitions.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -119,6 +167,8 @@ pub struct AuthoredMetamodelBatch {
     pub type_fields: Vec<TypeFieldDef>,
     /// Edge endpoint rules.
     pub edge_type_rules: Vec<EdgeTypeRule>,
+    /// Global attribute validation rules applied during effective-schema compile.
+    pub validation: AuthoredValidationRules,
     /// The package version this batch publishes (immutable once published).
     pub metamodel_version: Option<String>,
     /// Source metadata for the batch.
