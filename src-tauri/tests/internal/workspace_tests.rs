@@ -51,6 +51,7 @@ async fn projects_list_wraps_request_id() {
 #[tokio::test]
 async fn templates_list_is_bootstrapped_and_wrapped() {
     let _guard = env_lock().lock().await;
+    // nosemgrep: rust.lang.security.temp-dir.temp-dir -- test-only scratch dir, not a security path
     let base = std::env::temp_dir().join(format!(
         "aideon-templates-list-{}",
         SystemTime::now()
@@ -58,6 +59,7 @@ async fn templates_list_is_bootstrapped_and_wrapped() {
             .unwrap()
             .as_millis()
     ));
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::set_var("AIDEON_TEST_DATA_DIR", base.to_string_lossy().to_string());
     }
@@ -82,6 +84,7 @@ async fn templates_list_is_bootstrapped_and_wrapped() {
     assert!(!response.result.unwrap().is_empty());
 
     let _ = fs::remove_dir_all(base);
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::remove_var("AIDEON_TEST_DATA_DIR");
     }
@@ -90,6 +93,7 @@ async fn templates_list_is_bootstrapped_and_wrapped() {
 #[tokio::test]
 async fn templates_save_roundtrips() {
     let _guard = env_lock().lock().await;
+    // nosemgrep: rust.lang.security.temp-dir.temp-dir -- test-only scratch dir, not a security path
     let base = std::env::temp_dir().join(format!(
         "aideon-templates-{}",
         SystemTime::now()
@@ -97,6 +101,7 @@ async fn templates_save_roundtrips() {
             .unwrap()
             .as_millis()
     ));
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::set_var("AIDEON_TEST_DATA_DIR", base.to_string_lossy().to_string());
     }
@@ -132,6 +137,7 @@ async fn templates_save_roundtrips() {
     assert_eq!(response.status, "ok");
 
     let _ = fs::remove_dir_all(base);
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::remove_var("AIDEON_TEST_DATA_DIR");
     }

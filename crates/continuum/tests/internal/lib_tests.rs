@@ -4,6 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[test]
 fn file_store_put_get_roundtrip() {
+    // nosemgrep: rust.lang.security.temp-dir.temp-dir -- test-only scratch dir, not a security path
     let base = std::env::temp_dir().join(format!(
         "aideon-test-{}",
         SystemTime::now()

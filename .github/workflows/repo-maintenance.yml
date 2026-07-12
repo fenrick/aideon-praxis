@@ -14,7 +14,7 @@ jobs:
       actions: write # Required to delete workflow runs / logs / artifacts
     steps:
       - name: Delete workflow runs
-        uses: viascom/github-maintenance-action@v0.2.0
+        uses: viascom/github-maintenance-action@100787bdd54a85f51117c429b6b4d93a6a52eaf6 # v0.2.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           retention_days: 7
