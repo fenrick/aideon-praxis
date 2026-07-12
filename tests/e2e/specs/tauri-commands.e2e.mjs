@@ -556,6 +556,14 @@ describe('tauri e2e command coverage', () => {
     //    calls referencing commands not yet implemented and registered.
     //    (mvp-command-registry.md is design intent; ipc-manifest.json is the
     //    current executable surface.)
+    //
+    // MAINTENANCE CONTRACT (see docs/02-standards/CI-CHECKS.md "Keep enumerated
+    // gates in sync"): when you add a `#[tauri::command]`, you MUST add an
+    // invocation for it above — extending the manifest and extending this spec
+    // are ONE change, not two. Omitting it is a latent failure that only surfaces
+    // when this (non-required) Tier-2 gate next runs on a full PR, not on the
+    // feature PR itself. `assertOkOrError` accepts an error response, so a command
+    // that needs an open workspace can still be covered with a minimal payload.
     // -------------------------------------------------------------------------
     const manifestRaw = await fs.readFile(
       path.resolve(process.cwd(), 'docs/contracts/ipc-manifest.json'),
