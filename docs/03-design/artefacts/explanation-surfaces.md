@@ -24,7 +24,7 @@ A user moves from a summary result to the underlying entity, from the entity to 
 to its evidence, and from evidence to a valid action — **without losing orientation and without switching mental
 models**. If the user must break the conceptual frame to follow the evidence, the explanation surface is incomplete.
 
-```
+```text
 Artefact result
   └─▶ Inspector: properties + explanation + provenance
         └─▶ Evidence: contributing entities, relationships, paths

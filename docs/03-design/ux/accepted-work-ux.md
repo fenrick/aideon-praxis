@@ -22,7 +22,7 @@ lifecycle — it does not invent its own.
 Every module uses the **same** status vocabulary. There is no per-module polling protocol and no private status set; a
 user who learns the vocabulary once reads every module's work the same way.
 
-```
+```text
 Submit
   └─▶ accepted   (system acknowledged the work, assigned a runId)
         ├─▶ running     (progress events streaming)

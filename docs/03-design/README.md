@@ -18,7 +18,7 @@ written in is fixed by the [Documentation Standard](../02-standards/DOCUMENTATIO
 Start with the design spine, then follow the area that answers your question. Each area below is a folder of small
 single-topic files indexed by its own README (Documentation Standard §4).
 
-```
+```text
 overview & axioms  →  design/ (this README + the spine files)
 the workspace      →  desktop-first-workspace/
 the product unit   →  artefacts/

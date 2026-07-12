@@ -31,7 +31,7 @@ a proxy boundary, and a thin typed-IPC seam to the host. Engines are gated by li
 contributes nothing. Nothing durable lives in the renderer; everything it shows is a cache of host truth read at a
 [viewpoint](../../CONTEXT.md), and everything it changes is a command.
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │  Aideon Desktop shell (one shell, four regions)            │
 │  ┌──────────────┬───────────────────────────┬───────────┐ │

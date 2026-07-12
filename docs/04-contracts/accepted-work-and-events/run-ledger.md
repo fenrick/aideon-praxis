@@ -8,7 +8,7 @@ window. It is owned by [Continuum](../../05-modules/continuum/snapshot-store-and
 
 ## Storage location
 
-```
+```text
 <workspace>/
 └── ops/
     └── runs/

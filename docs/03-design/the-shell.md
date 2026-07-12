@@ -8,7 +8,7 @@ The shell has four permanent jobs: keep orientation stable, keep context visible
 make action available without forcing the user to hunt for it. The regions' proportions vary by surface; their roles
 never change.
 
-```
+```text
 ┌────────────────────────────────────────────────────────────┐
 │  Toolbar   workspace identity · time + scenario · search · status │
 ├─────────┬────────────────────────────────────┬─────────────┤

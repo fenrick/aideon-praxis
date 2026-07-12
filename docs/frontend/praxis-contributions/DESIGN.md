@@ -46,7 +46,7 @@ are avoided.
 Server-state reads key on the surface, the resource, its params, and the full viewpoint
 ([data-fetching.md](../data-fetching.md)):
 
-```
+```text
 [ "praxis", "graphSlice", { scope }, viewpoint ]
 [ "praxis", "artefactResult", { artefactId }, viewpoint ]
 [ "praxis", "metaModel", {}, viewpoint ]

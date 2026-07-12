@@ -12,7 +12,7 @@ boundaries, or security posture must be reviewed against [`DESIGN-GOVERNANCE.md`
 
 ## Header block
 
-```
+```text
 # ADR-XXXX: Title
 
 - Status: Proposed | Accepted | Superseded
