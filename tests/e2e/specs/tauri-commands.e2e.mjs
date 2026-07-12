@@ -508,6 +508,44 @@ describe('tauri e2e command coverage', () => {
       'workspace_open',
     );
 
+    // M1–M3 authoring/temporal surface (metamodel-typed authoring, plan/actual
+    // claims, viewpoint resolution + diff). ok-or-error: with no open workspace
+    // most return WORKSPACE_NOT_OPEN — a valid outcome that still exercises the
+    // command over the real bridge.
+    assertOkOrError(await invokeIpc('workspace_metamodel_types', {}), 'workspace_metamodel_types');
+    assertOkOrError(await invokeIpc('workspace_nodes', {}), 'workspace_nodes');
+    assertOkOrError(
+      await invokeIpc('workspace_author_node', { typeId: null }),
+      'workspace_author_node',
+    );
+    assertOkOrError(
+      await invokeIpc('workspace_author_typed_node', { typeId: 'Capability', props: {} }),
+      'workspace_author_typed_node',
+    );
+    assertOkOrError(
+      await invokeIpc('workspace_set_claim', {
+        entityId: '00000000-0000-4000-8000-000000000000',
+        typeId: 'Capability',
+        attribute: 'tier',
+        value: 'Strategic',
+        layer: 'plan',
+        validFrom: 0,
+        validTo: null,
+      }),
+      'workspace_set_claim',
+    );
+    assertOkOrError(
+      await invokeIpc('workspace_state_at', { asOf: 0, layers: ['actual', 'plan'] }),
+      'workspace_state_at',
+    );
+    assertOkOrError(
+      await invokeIpc('workspace_diff', {
+        before: { asOf: 0, layers: ['actual', 'plan'] },
+        after: { asOf: 1, layers: ['actual', 'plan'] },
+      }),
+      'workspace_diff',
+    );
+
     // -------------------------------------------------------------------------
     // Manifest parity guards
     //
