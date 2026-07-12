@@ -181,12 +181,32 @@
         "edge_type_id",
         "allowed_src_type_ids",
         "allowed_dst_type_ids",
+        "allow_self",
+        "allow_duplicate",
+        "multiplicity_src",
+        "multiplicity_dst",
         "semantic_direction"
       ],
       "properties": {
         "edge_type_id": { "$ref": "#/$defs/id" },
         "allowed_src_type_ids": { "type": "array", "items": { "$ref": "#/$defs/id" } },
         "allowed_dst_type_ids": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "allow_self": {
+          "type": "boolean",
+          "description": "Whether a self-referential edge is permitted."
+        },
+        "allow_duplicate": {
+          "type": "boolean",
+          "description": "Whether more than one edge between the same ordered endpoint pair is permitted."
+        },
+        "multiplicity_src": {
+          "type": "string",
+          "description": "Source-side multiplicity bound (e.g. one, many)."
+        },
+        "multiplicity_dst": {
+          "type": "string",
+          "description": "Destination-side multiplicity bound (e.g. one, many)."
+        },
         "semantic_direction": { "type": ["string", "null"] }
       }
     }

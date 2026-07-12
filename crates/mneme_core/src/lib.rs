@@ -21,6 +21,7 @@ pub mod ids;
 pub mod ops;
 pub mod schema;
 pub mod time;
+pub mod validate;
 pub mod value;
 
 pub use error::{CoreError, Result};

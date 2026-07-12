@@ -138,7 +138,10 @@ pub struct TypeFieldDef {
     pub tighten_required: bool,
 }
 
-/// An edge-type endpoint rule (authored source).
+/// An edge-type endpoint rule (authored source). The structural constraints a
+/// relationship write is validated against at M1 (endpoints, self-links,
+/// duplicates, multiplicity); slot/attribute rules come from the edge type's
+/// compiled effective schema.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EdgeTypeRule {
@@ -148,6 +151,14 @@ pub struct EdgeTypeRule {
     pub allowed_src_type_ids: Vec<Id>,
     /// Allowed destination entity types.
     pub allowed_dst_type_ids: Vec<Id>,
+    /// Whether an edge from an entity to itself is permitted.
+    pub allow_self: bool,
+    /// Whether more than one edge between the same ordered endpoint pair is permitted.
+    pub allow_duplicate: bool,
+    /// Source-side multiplicity bound (e.g. `one`, `many`).
+    pub multiplicity_src: String,
+    /// Destination-side multiplicity bound (e.g. `one`, `many`).
+    pub multiplicity_dst: String,
     /// Optional semantic direction label.
     pub semantic_direction: Option<String>,
 }

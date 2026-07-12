@@ -129,6 +129,26 @@ pub struct EffectiveSchema {
     pub effect_types: Vec<String>,
 }
 
+/// A relationship's structural rule, resolved to stable domain keys (never
+/// storage UUIDs) so validation and the registry never see a raw storage id.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize)]
+pub struct EffectiveEdgeRule {
+    /// Stable relationship key (e.g. `serves`).
+    pub key: String,
+    /// Allowed source entity type keys.
+    pub allowed_src: Vec<String>,
+    /// Allowed destination entity type keys.
+    pub allowed_dst: Vec<String>,
+    /// Whether a self-referential edge is permitted.
+    pub allow_self: bool,
+    /// Whether a duplicate edge between the same ordered pair is permitted.
+    pub allow_duplicate: bool,
+    /// Source-side multiplicity bound.
+    pub multiplicity_src: String,
+    /// Destination-side multiplicity bound.
+    pub multiplicity_dst: String,
+}
+
 /// Compile every node/edge type in `batch` into its effective schema.
 ///
 /// # Errors
@@ -136,6 +156,47 @@ pub struct EffectiveSchema {
 /// dangling field attachment — before any schema is published.
 pub fn compile(batch: &AuthoredMetamodelBatch) -> Result<Vec<EffectiveSchema>, CompileError> {
     batch.types.iter().map(|t| compile_type(batch, t)).collect()
+}
+
+/// Compile each edge-type rule to its key-resolved form.
+///
+/// # Errors
+/// Returns [`CompileError::UnknownParent`] (reused as "unresolved reference")
+/// when a rule names an `edge_type_id` or endpoint `type_id` absent from the batch.
+pub fn compile_edge_rules(
+    batch: &AuthoredMetamodelBatch,
+) -> Result<Vec<EffectiveEdgeRule>, CompileError> {
+    batch
+        .edge_type_rules
+        .iter()
+        .map(|rule| {
+            let edge = find_type(batch, &rule.edge_type_id).ok_or_else(|| {
+                CompileError::UnknownParent {
+                    type_key: rule.edge_type_id.to_canonical_string(),
+                }
+            })?;
+            let resolve = |ids: &[Id]| -> Result<Vec<String>, CompileError> {
+                ids.iter()
+                    .map(|tid| {
+                        find_type(batch, tid).map(|t| t.key.clone()).ok_or_else(|| {
+                            CompileError::UnknownParent {
+                                type_key: edge.key.clone(),
+                            }
+                        })
+                    })
+                    .collect()
+            };
+            Ok(EffectiveEdgeRule {
+                key: edge.key.clone(),
+                allowed_src: resolve(&rule.allowed_src_type_ids)?,
+                allowed_dst: resolve(&rule.allowed_dst_type_ids)?,
+                allow_self: rule.allow_self,
+                allow_duplicate: rule.allow_duplicate,
+                multiplicity_src: rule.multiplicity_src.clone(),
+                multiplicity_dst: rule.multiplicity_dst.clone(),
+            })
+        })
+        .collect()
 }
 
 /// Compile a single type into its effective schema.
