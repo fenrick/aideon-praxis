@@ -331,3 +331,6 @@ target
 
 **/gen/
 storybook-static/
+
+# Codacy CLI local cache/config (created by `codacy-cli install`); not committed.
+.codacy/

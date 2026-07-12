@@ -90,17 +90,14 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  // Injects a <style> block of CSS custom properties derived entirely from the
+  // A <style> block of CSS custom properties derived entirely from the
   // developer-supplied ChartConfig (theme keys + colour tokens), never user
-  // input — the canonical shadcn chart pattern, no XSS surface.
-  return (
-    // nosemgrep: rule-dangerouslysetinnerhtml
-    <style
-      // nosemgrep: react-dangerouslysetinnerhtml
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
+  // input. Passed as a plain text child rather than dangerouslySetInnerHTML —
+  // React renders it verbatim into the <style> element (the browser parses it
+  // as CSS), so there is no innerHTML sink.
+  const css = Object.entries(THEMES)
+    .map(
+      ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
@@ -112,11 +109,10 @@ ${colorConfig
   .join("\n")}
 }
 `
-          )
-          .join("\n"),
-      }}
-    />
-  )
+    )
+    .join("\n")
+
+  return <style>{css}</style>
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip
