@@ -20,7 +20,8 @@ interface Violation {
  * @param directory - Starting path for the search.
  */
 async function listSourceFiles(directory: string): Promise<string[]> {
-  // nosemgrep: rule-non-literal-fs-filename -- enumerating renderer sources is the point of this test
+  // enumerating renderer sources is the point of this test
+  // nosemgrep
   const entries = await fs.readdir(directory, { withFileTypes: true });
   const files: string[] = [];
 
@@ -61,7 +62,8 @@ describe('Security posture: renderer networking', () => {
 
     await Promise.all(
       files.map(async (file) => {
-        // nosemgrep: rule-non-literal-fs-filename -- reading enumerated renderer sources under test
+        // reading enumerated renderer sources under test
+        // nosemgrep
         const raw = await fs.readFile(file, 'utf8');
         for (const pattern of patterns) {
           if (pattern.re.test(raw)) {

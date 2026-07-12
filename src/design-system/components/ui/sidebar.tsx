@@ -602,12 +602,17 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
   showIcon?: boolean
 }) {
-  // Random width between 50 to 90%. Purely cosmetic skeleton jitter in a
-  // vendored shadcn component — no security relevance.
-  const [width] = React.useState(() => {
-    // nosemgrep: rule-node-insecure-random-generator
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  })
+  // Cosmetic skeleton jitter: a width in [50, 90]% that varies per skeleton row
+  // but is derived deterministically from the component's id, so it is stable
+  // across renders and avoids a (flagged, and here pointless) Math.random() call.
+  const id = React.useId()
+  const width = React.useMemo(() => {
+    let hash = 0
+    for (let i = 0; i < id.length; i++) {
+      hash = (hash * 31 + id.charCodeAt(i)) | 0
+    }
+    return `${50 + (Math.abs(hash) % 41)}%`
+  }, [id])
 
   return (
     <div
