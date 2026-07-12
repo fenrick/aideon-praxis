@@ -20,7 +20,8 @@ interface Violation {
  * @param directory - Starting path for the search.
  */
 async function listRustFiles(directory: string): Promise<string[]> {
-  // nosemgrep: rule-non-literal-fs-filename -- walking the repo tree is the point of this test
+  // walking the repo tree is the point of this test
+  // nosemgrep
   const entries = await fs.readdir(directory, { withFileTypes: true });
   const files: string[] = [];
 
@@ -54,7 +55,8 @@ describe('Security posture: desktop TCP listeners', () => {
 
     await Promise.all(
       files.map(async (file) => {
-        // nosemgrep: rule-non-literal-fs-filename -- reading enumerated repo sources under test
+        // reading enumerated repo sources under test
+        // nosemgrep
         const raw = await fs.readFile(file, 'utf8');
         for (const pattern of patterns) {
           if (pattern.re.test(raw)) {

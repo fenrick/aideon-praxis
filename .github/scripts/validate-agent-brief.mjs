@@ -56,18 +56,13 @@ function isFormIssue(body) {
  * @returns {boolean} true if the section heading exists AND is followed by non-empty content
  */
 function isSectionNonEmpty(body, sectionHeadingPattern) {
-  // Extend the pattern to consume the rest of the heading line so that afterHeading
-  // starts at the newline after the heading (not mid-heading). `sectionHeadingPattern`
-  // is always one of the hard-coded literals defined in this script — never external
-  // input — so there is no untrusted-regex (ReDoS) surface here.
-  // nosemgrep: rule-non-literal-regexp
-  const fullLinePattern = new RegExp(
-    sectionHeadingPattern.source + '[^\\n]*',
-    sectionHeadingPattern.flags,
-  );
-  const match = fullLinePattern.exec(body);
+  const match = sectionHeadingPattern.exec(body);
   if (!match) return false;
-  const afterHeading = body.slice(match.index + match[0].length);
+  // Advance past the rest of the heading line (to the newline that ends it) so
+  // afterHeading starts at the section body, not mid-heading. Done with plain
+  // string ops to avoid building a RegExp from a variable.
+  const lineEnd = body.indexOf('\n', match.index + match[0].length);
+  const afterHeading = lineEnd === -1 ? '' : body.slice(lineEnd);
   const contentBefore = afterHeading.match(/^([\s\S]*?)(?=\n#{1,3}\s|$)/);
   return Boolean(contentBefore && contentBefore[1].trim().length > 0);
 }
