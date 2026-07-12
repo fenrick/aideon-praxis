@@ -281,8 +281,7 @@ function HostPlatformStateProvider({
       return;
     }
     const storedProperties = Reflect.get(selectionState.properties, selectionId) as
-      | SelectionProperties
-      | undefined;
+      SelectionProperties | undefined;
     const view = selectionState.selection.sourceWidgetId
       ? graphViewCache.get(selectionState.selection.sourceWidgetId)
       : undefined;

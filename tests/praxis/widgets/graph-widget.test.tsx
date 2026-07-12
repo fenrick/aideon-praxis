@@ -38,8 +38,7 @@ interface ContextMenuNode {
 }
 
 let latestContextMenuHandler:
-  | ((event: { preventDefault: () => void }, node: ContextMenuNode) => void)
-  | undefined;
+  ((event: { preventDefault: () => void }, node: ContextMenuNode) => void) | undefined;
 let latestNodesChangeHandler:
   | ((
       changes: {
