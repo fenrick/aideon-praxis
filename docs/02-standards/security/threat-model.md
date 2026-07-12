@@ -1,8 +1,12 @@
 # Threat Model
 
-The asset and adversary model for Aideon Desktop, and a STRIDE analysis of the trust boundary. This realises the threat-model decision ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)); the controls that verify each mitigation are mapped to OWASP ASVS 5.0 in [controls-asvs.md](./controls-asvs.md).
+The asset and adversary model for Aideon Desktop, and a STRIDE analysis of the trust boundary. This realises the
+threat-model decision ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)); the controls that verify each
+mitigation are mapped to OWASP ASVS 5.0 in [controls-asvs.md](./controls-asvs.md).
 
-A boundary with as much riding on it as the Tauri seam ([trust-boundary.md](./trust-boundary.md)) needs a recorded threat model, not ad-hoc hardening. STRIDE forces every threat category to be considered against the boundary; OWASP ASVS 5.0 supplies the testable controls.
+A boundary with as much riding on it as the Tauri seam ([trust-boundary.md](./trust-boundary.md)) needs a recorded
+threat model, not ad-hoc hardening. STRIDE forces every threat category to be considered against the boundary; OWASP
+ASVS 5.0 supplies the testable controls.
 
 ## Assets
 
@@ -20,15 +24,27 @@ What the model protects, in priority order:
 
 The realistic adversaries for a desktop EA tool, and what each can do:
 
-- **A compromised or malicious renderer** — a WebView running untrusted or XSS-injected script. It can issue any IPC call the window's capabilities allow, and nothing more; it has no filesystem, network, or shell ([trust-boundary.md](./trust-boundary.md)). This is the central adversary the boundary is built against.
-- **A hostile import file** — a file the user chose to import whose content is malformed, oversized, or crafted to inject bad twin content ([ADR-0013](../../06-adrs/ADR-0013-interchange-and-interoperability-pylon.md)). The user vouches for provenance, not content.
-- **A supply-chain attacker** — a compromised dependency or build step that injects code before signing ([supply-chain.md](./supply-chain.md)).
-- **A local attacker with disk access** — someone who can read the cleartext workspace folder on a shared or stolen device. Workspace metadata does not stop them; confidentiality for sharing comes from filtered/encrypted exports ([pii-and-export-redaction.md](./pii-and-export-redaction.md)), and OS-level disk encryption is the user's responsibility.
-- **(Deferred) a network adversary** in hosted/sync mode — a man-in-the-middle or a malicious peer. The hosted threat model is deferred because the desktop default has no network trust boundary ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md), [ADR-0030](../../06-adrs/ADR-0030-governance-themis.md)).
+- **A compromised or malicious renderer** — a WebView running untrusted or XSS-injected script. It can issue any IPC
+  call the window's capabilities allow, and nothing more; it has no filesystem, network, or shell
+  ([trust-boundary.md](./trust-boundary.md)). This is the central adversary the boundary is built against.
+- **A hostile import file** — a file the user chose to import whose content is malformed, oversized, or crafted to
+  inject bad twin content ([ADR-0013](../../06-adrs/ADR-0013-interchange-and-interoperability-pylon.md)). The user
+  vouches for provenance, not content.
+- **A supply-chain attacker** — a compromised dependency or build step that injects code before signing
+  ([supply-chain.md](./supply-chain.md)).
+- **A local attacker with disk access** — someone who can read the cleartext workspace folder on a shared or stolen
+  device. Workspace metadata does not stop them; confidentiality for sharing comes from filtered/encrypted exports
+  ([pii-and-export-redaction.md](./pii-and-export-redaction.md)), and OS-level disk encryption is the user's
+  responsibility.
+- **(Deferred) a network adversary** in hosted/sync mode — a man-in-the-middle or a malicious peer. The hosted threat
+  model is deferred because the desktop default has no network trust boundary
+  ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md),
+  [ADR-0030](../../06-adrs/ADR-0030-governance-themis.md)).
 
 ## STRIDE at the trust boundary
 
-Each STRIDE category, mapped to the Tauri seam with its primary control ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)):
+Each STRIDE category, mapped to the Tauri seam with its primary control
+([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)):
 
 | STRIDE category            | Threat at the seam                                             | Primary control                                                                                                                                                                                                                                |
 | -------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,11 +55,19 @@ Each STRIDE category, mapped to the Tauri seam with its primary control ([ADR-00
 | **Denial of service**      | Saturating the write queue or a long job                       | Explicit backpressure ([accepted-work contract](../../04-contracts/accepted-work-and-events/README.md)); bounded analytics ([ADR-0027](../../06-adrs/ADR-0027-projection-consistency-model.md))                                                |
 | **Elevation of privilege** | Renderer gaining host powers (FS, shell)                       | Renderer gets product capabilities, not host capabilities ([ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)); no raw FS/shell                                                                                          |
 
-The renderer-untrusted invariant is the control that carries most categories: spoofing, tampering, and elevation of privilege all reduce to "the renderer cannot do this because the host owns it". The threat model makes that load-bearing invariant explicit and verifiable rather than implicit.
+The renderer-untrusted invariant is the control that carries most categories: spoofing, tampering, and elevation of
+privilege all reduce to "the renderer cannot do this because the host owns it". The threat model makes that load-bearing
+invariant explicit and verifiable rather than implicit.
 
 ## Worked example
 
-A cross-site-scripting payload executes in the renderer and tries to exfiltrate a `DataEntity` flagged `sensitivity: confidential` ([core-v1.json](../../data/meta/core-v1.json)). It cannot read the filesystem or open a socket (no host capability), so it cannot reach the blob directly (Elevation of privilege blocked). It can only call IPC commands the window declares; an export command applies deny-by-default redaction before writing ([pii-and-export-redaction.md](./pii-and-export-redaction.md)), so a confidential field does not leave the host in cleartext (Information disclosure blocked). The attempt is attributable through the correlated command log (Repudiation blocked). No single control is novel; the boundary composes them.
+A cross-site-scripting payload executes in the renderer and tries to exfiltrate a `DataEntity` flagged
+`sensitivity: confidential` ([core-v1.json](../../data/meta/core-v1.json)). It cannot read the filesystem or open a
+socket (no host capability), so it cannot reach the blob directly (Elevation of privilege blocked). It can only call IPC
+commands the window declares; an export command applies deny-by-default redaction before writing
+([pii-and-export-redaction.md](./pii-and-export-redaction.md)), so a confidential field does not leave the host in
+cleartext (Information disclosure blocked). The attempt is attributable through the correlated command log (Repudiation
+blocked). No single control is novel; the boundary composes them.
 
 ## References & standards
 

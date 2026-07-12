@@ -1,14 +1,18 @@
 # C4 Model Views
 
-The Structurizr DSL source for Aideon Desktop's architecture views, and how to render them. These views are the canonical diagrams of the system's shape; architecture documents reference them rather than redrawing the structure _(Brown, The C4 Model for Visualising Software Architecture)_.
+The Structurizr DSL source for Aideon Desktop's architecture views, and how to render them. These views are the
+canonical diagrams of the system's shape; architecture documents reference them rather than redrawing the structure
+_(Brown, The C4 Model for Visualising Software Architecture)_.
 
-The single source is [`workspace.dsl`](./workspace.dsl). It is the design-time artefact; CI does not render diagrams. Render locally only when a picture is needed for review or a document.
+The single source is [`workspace.dsl`](./workspace.dsl). It is the design-time artefact; CI does not render diagrams.
+Render locally only when a picture is needed for review or a document.
 
 ---
 
 ## The C4 levels used
 
-The C4 model describes software at four levels of zoom. This workspace uses the first three; level 4 (code) is left to the source and the per-module designs.
+The C4 model describes software at four levels of zoom. This workspace uses the first three; level 4 (code) is left to
+the source and the per-module designs.
 
 | Level                        | View                | What it shows                                                                                                                                                                      | Defined in `workspace.dsl` |
 | ---------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
@@ -17,15 +21,23 @@ The C4 model describes software at four levels of zoom. This workspace uses the 
 | **L3 — Component (Host)**    | `host-components`   | Inside the host: the IPC and capability layer, workspace lifecycle, job orchestrator, event distribution, and the `engine` harness that wires the engines behind their traits.     | `component aideon.host`    |
 | **L3 — Component (Engines)** | `engine-components` | Inside the domain engines: Praxis, Mneme, Metis, Chrona, Continuum, and the planned Lexis, Pylon, Sophia, and Kerux — behind traits, with Mneme as the only storage seam.          | `component aideon.engines` |
 
-The two L3 views are where this workspace adds detail over the earlier two-view version: the host is decomposed to show the engine harness, and the engines are decomposed to show the five current engines plus the four planned ones as components. Planned engines are labelled `(planned)` in their names so a reader cannot mistake design intent for an existing crate.
+The two L3 views are where this workspace adds detail over the earlier two-view version: the host is decomposed to show
+the engine harness, and the engines are decomposed to show the five current engines plus the four planned ones as
+components. Planned engines are labelled `(planned)` in their names so a reader cannot mistake design intent for an
+existing crate.
 
-The container and component structure matches the crate dependency graph in [`../module-dependency-map.md`](../module-dependency-map.md) and the boundary diagram in [`../boundary/README.md`](../boundary/README.md); the three views are the same architecture at three zoom levels.
+The container and component structure matches the crate dependency graph in
+[`../module-dependency-map.md`](../module-dependency-map.md) and the boundary diagram in
+[`../boundary/README.md`](../boundary/README.md); the three views are the same architecture at three zoom levels.
 
 ---
 
 ## A note on the word "viewpoint"
 
-A C4 view is, in ISO/IEC/IEEE 42010:2022 terms, a **view** governed by an **architecture viewpoint (42010)**. This is _not_ the product's **Viewpoint** (the bitemporal query frame). The 01-architecture [`README.md`](../README.md) §7 maps these architecture viewpoints (42010) to stakeholders and concerns. Throughout this corpus the bare word **Viewpoint** always means the product's query frame.
+A C4 view is, in ISO/IEC/IEEE 42010:2022 terms, a **view** governed by an **architecture viewpoint (42010)**. This is
+_not_ the product's **Viewpoint** (the bitemporal query frame). The 01-architecture [`README.md`](../README.md) §7 maps
+these architecture viewpoints (42010) to stakeholders and concerns. Throughout this corpus the bare word **Viewpoint**
+always means the product's query frame.
 
 ---
 
@@ -60,7 +72,8 @@ Outputs land under `docs/01-architecture/c4/out/` and are gitignored — they ar
 
 ## Files
 
-- [`workspace.dsl`](./workspace.dsl) — the DSL source: System Context (L1), Container (L2), and two Component views (L3).
+- [`workspace.dsl`](./workspace.dsl) — the DSL source: System Context (L1), Container (L2), and two Component views
+  (L3).
 - `out/` — local exports (not committed).
 
 ---

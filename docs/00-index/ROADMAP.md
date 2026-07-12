@@ -1,30 +1,51 @@
 # Roadmap and build sequence
 
-What "done" means for Aideon, what the minimum viable product is, and the order the modules are built in. For a reader who needs to know what to build first, what each milestone must prove before the next begins, and why the sequence is shaped the way it is. This is the roadmap the module-introducing ADRs (0012–0015, 0028–0032) refer to when they say a module "joins the roadmap".
+What "done" means for Aideon, what the minimum viable product is, and the order the modules are built in. For a reader
+who needs to know what to build first, what each milestone must prove before the next begins, and why the sequence is
+shaped the way it is. This is the roadmap the module-introducing ADRs (0012–0015, 0028–0032) refer to when they say a
+module "joins the roadmap".
 
-> **Honest state.** This is design intent. The implemented set today is the seven engines in the [module map](../03-design/module-map.md) (Praxis, Mneme, Metis, Chrona, Continuum, Host, Engine); the nine planned modules are design intent until their crate exists. The milestones below are **capability gates, not dates** — each is defined by what must be demonstrably true before the next begins, so the sequence holds regardless of calendar.
+> **Honest state.** This is design intent. The implemented set today is the seven engines in the
+> [module map](../03-design/module-map.md) (Praxis, Mneme, Metis, Chrona, Continuum, Host, Engine); the nine planned
+> modules are design intent until their crate exists. The milestones below are **capability gates, not dates** — each is
+> defined by what must be demonstrably true before the next begins, so the sequence holds regardless of calendar.
 
 ---
 
 ## The minimum viable product
 
-The MVP is the smallest build that delivers the product's one idea: a **desktop-first, local-first, time-first digital twin** a single architect can author, time-travel, and reason over, with no server and no account.
+The MVP is the smallest build that delivers the product's one idea: a **desktop-first, local-first, time-first digital
+twin** a single architect can author, time-travel, and reason over, with no server and no account.
 
 An MVP build satisfies all of:
 
-- **A workspace is a portable folder.** Create, open, and close a workspace whose canonical state is append-only operations + schema-as-data + content-addressed blobs; the runtime database is a rebuildable cache ([ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md), [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)).
-- **Meaning is authored against a metamodel.** A user creates entities and relationships that validate against the seed metamodel ([metamodel/](../03-design/metamodel/README.md)); invalid writes are rejected at the boundary, not stored.
-- **Every read is time-and-scenario qualified.** The same query answered at two `as-of` points, or in two scenarios, returns the resolved effective state for that viewpoint ([temporal-and-scenario/](../04-contracts/temporal-and-scenario/README.md)).
-- **At least one artefact renders.** A view or catalogue executes against the twin and renders deterministically, with integrity surfaced ([artefacts/](../03-design/artefacts/README.md)).
-- **The boundary holds.** Renderer reaches engines only through typed IPC; no renderer HTTP, no open ports in desktop mode ([host/](../05-modules/host/README.md)).
+- **A workspace is a portable folder.** Create, open, and close a workspace whose canonical state is append-only
+  operations + schema-as-data + content-addressed blobs; the runtime database is a rebuildable cache
+  ([ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md),
+  [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)).
+- **Meaning is authored against a metamodel.** A user creates entities and relationships that validate against the seed
+  metamodel ([metamodel/](../03-design/metamodel/README.md)); invalid writes are rejected at the boundary, not stored.
+- **Every read is time-and-scenario qualified.** The same query answered at two `as-of` points, or in two scenarios,
+  returns the resolved effective state for that viewpoint
+  ([temporal-and-scenario/](../04-contracts/temporal-and-scenario/README.md)).
+- **At least one artefact renders.** A view or catalogue executes against the twin and renders deterministically, with
+  integrity surfaced ([artefacts/](../03-design/artefacts/README.md)).
+- **The boundary holds.** Renderer reaches engines only through typed IPC; no renderer HTTP, no open ports in desktop
+  mode ([host/](../05-modules/host/README.md)).
 
-What the MVP explicitly excludes: collaboration/sync, AI assistance, connectors and automated discovery, governance/RBAC, and reporting/publishing. Each is a later milestone owned by a planned module. The MVP is single-user, offline, and authored by hand.
+What the MVP explicitly excludes: collaboration/sync, AI assistance, connectors and automated discovery,
+governance/RBAC, and reporting/publishing. Each is a later milestone owned by a planned module. The MVP is single-user,
+offline, and authored by hand.
 
 ---
 
 ## Build sequence
 
-The order is fixed by the acyclic engine dependency graph ([module-dependency-map](../01-architecture/module-dependency-map.md), axiom 6 of [design-axioms](../03-design/design-axioms.md)): a module is built only after everything it depends on can carry it. Foundation before meaning, meaning before time and analytics, the single-user core before anything multi-user or assistive.
+The order is fixed by the acyclic engine dependency graph
+([module-dependency-map](../01-architecture/module-dependency-map.md), axiom 6 of
+[design-axioms](../03-design/design-axioms.md)): a module is built only after everything it depends on can carry it.
+Foundation before meaning, meaning before time and analytics, the single-user core before anything multi-user or
+assistive.
 
 | Milestone | Theme                 | Modules                               | Exit criteria (what must be true to start the next)                                                                                                                                                                                                                                                                              |
 | --------- | --------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -36,17 +57,30 @@ The order is fixed by the acyclic engine dependency graph ([module-dependency-ma
 | **M5**    | Reach                 | Lexis, Kerux, Sophia                  | Viewpoint-aware search; deterministic reporting/publishing with redaction by default; AI assistance behind guardrails with all output classified Generated ([ADR-0014](../06-adrs/ADR-0014-ai-assistance-and-generated-provenance-sophia.md)).                                                                                   |
 | **M6**    | Scale-out             | Koinon, Themis, Aegis, Skopos, Kairos | Multi-user sync with convergent merge ([ADR-0005](../06-adrs/ADR-0005-sync-and-conflict-model.md)); identity/RBAC/approvals/audit; continuous reality-sync into the `actual` layer; investment/portfolio planning.                                                                                                               |
 
-The full ordering within a milestone follows each module's dependency edges; a planned module's README states the boundary it will occupy and the ADR that introduces it ([module-map](../03-design/module-map.md), planned modules).
+The full ordering within a milestone follows each module's dependency edges; a planned module's README states the
+boundary it will occupy and the ADR that introduces it ([module-map](../03-design/module-map.md), planned modules).
 
-Each MVP milestone has an executable **build contract** under [`build-contracts/`](../build-contracts/README.md) — [M0](../build-contracts/M0-foundation.md), [M1](../build-contracts/M1-meaning.md), [M2](../build-contracts/M2-time.md), [M3](../build-contracts/M3-artefacts.md) — pinning its exact schemas, fixtures, and exit tests, joined by the [golden journey](../build-contracts/golden-journey.md). Open conflicts, contradictions, and coverage gaps across the milestones are tracked in the [defect register](../build-contracts/defect-register.md).
+Each MVP milestone has an executable **build contract** under [`build-contracts/`](../build-contracts/README.md) —
+[M0](../build-contracts/M0-foundation.md), [M1](../build-contracts/M1-meaning.md), [M2](../build-contracts/M2-time.md),
+[M3](../build-contracts/M3-artefacts.md) — pinning its exact schemas, fixtures, and exit tests, joined by the
+[golden journey](../build-contracts/golden-journey.md). Open conflicts, contradictions, and coverage gaps across the
+milestones are tracked in the [defect register](../build-contracts/defect-register.md).
 
-> **Accepted-work two-tier split (defect D1).** Continuum (M4) owns the full accepted-work orchestration, but a **minimal accepted-work core** (host-local job runner + readiness/`RunEvent` events + backpressure) is owned by **M0**, because M0's workspace rebuild must run as accepted work. M4 supersedes the core without changing the `AcceptedJob`/`RunEvent` contract. Continuum's row below is the orchestration tier, not the M0 core.
+> **Accepted-work two-tier split (defect D1).** Continuum (M4) owns the full accepted-work orchestration, but a
+> **minimal accepted-work core** (host-local job runner + readiness/`RunEvent` events + backpressure) is owned by
+> **M0**, because M0's workspace rebuild must run as accepted work. M4 supersedes the core without changing the
+> `AcceptedJob`/`RunEvent` contract. Continuum's row below is the orchestration tier, not the M0 core.
 
 ---
 
 ## How a milestone is judged complete
 
-A milestone is complete when its exit criteria are demonstrable on the seed dataset ([`baseline.yaml`](../data/base/baseline.yaml)) and held by tests, not when its code merely compiles. Each criterion above maps to an assertion: a workspace round-trip test (M0), a metamodel-validation rejection test (M1), a resolution golden test (M2), an artefact render + a Bounded-analytics test (M3), and so on. The Definition of Done in [`CONTRIBUTING.md`](../../CONTRIBUTING.md) governs each merge within a milestone; this roadmap governs the order of the milestones themselves.
+A milestone is complete when its exit criteria are demonstrable on the seed dataset
+([`baseline.yaml`](../data/base/baseline.yaml)) and held by tests, not when its code merely compiles. Each criterion
+above maps to an assertion: a workspace round-trip test (M0), a metamodel-validation rejection test (M1), a resolution
+golden test (M2), an artefact render + a Bounded-analytics test (M3), and so on. The Definition of Done in
+[`CONTRIBUTING.md`](../../CONTRIBUTING.md) governs each merge within a milestone; this roadmap governs the order of the
+milestones themselves.
 
 ---
 

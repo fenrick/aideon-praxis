@@ -1,16 +1,21 @@
 # 7. How to log in Rust (the host)
 
-How the Tauri core process initialises logging, attributes log lines to their call site, emits the JSON contract, and survives panics. Part of the [logging standard](./README.md).
+How the Tauri core process initialises logging, attributes log lines to their call site, emits the JSON contract, and
+survives panics. Part of the [logging standard](./README.md).
 
 ---
 
 ## 7.1 The sink
 
-Rust **must** use the official Tauri logging plugin to initialise the global logger and write to LogDir ([where logs go](./where-logs-go.md)). Initialisation **must** happen once, and early — before meaningful work, but after environment configuration is loaded.
+Rust **must** use the official Tauri logging plugin to initialise the global logger and write to LogDir
+([where logs go](./where-logs-go.md)). Initialisation **must** happen once, and early — before meaningful work, but
+after environment configuration is loaded.
 
 ## 7.2 Use the `log` macros (call-site attribution)
 
-Application code **must** use the standard `log` macros (`log::error!`, `log::warn!`, `log::info!`, `log::debug!`) so the logger records the true file, line, and module ([source attribution](./log-record-contract.md#9-source-attribution)).
+Application code **must** use the standard `log` macros (`log::error!`, `log::warn!`, `log::info!`, `log::debug!`) so
+the logger records the true file, line, and module
+([source attribution](./log-record-contract.md#9-source-attribution)).
 
 Where standardised fields are needed, implement helpers as Rust **macros** (`macro_rules!`), never as functions:
 
@@ -19,7 +24,9 @@ Where standardised fields are needed, implement helpers as Rust **macros** (`mac
 
 ## 7.3 Emitting the JSON contract
 
-Rust logs **must** be one JSON object per line. Build a JSON object containing the [contract fields](./log-record-contract.md) and render it as the log message; do not rely on ad-hoc string formatting. This keeps the LogDir sink behaviour independent of any one formatter.
+Rust logs **must** be one JSON object per line. Build a JSON object containing the
+[contract fields](./log-record-contract.md) and render it as the log message; do not rely on ad-hoc string formatting.
+This keeps the LogDir sink behaviour independent of any one formatter.
 
 ## 7.4 Error logging
 
@@ -29,11 +36,14 @@ On any failure returned from a command:
 - set `syslog.severity` to 3 (Error) unless the failure threatens integrity, in which case use 0–2;
 - populate `error.kind`, `error.message`, and a summarised cause chain.
 
-Rust **must not** log raw error structs that might contain secrets ([privacy and redaction](./privacy-and-redaction.md)).
+Rust **must not** log raw error structs that might contain secrets
+([privacy and redaction](./privacy-and-redaction.md)).
 
 ## 7.5 The panic hook
 
-Rust **must** install a panic hook that emits a final Emergency/Alert record with minimal safe context. The hook **must** avoid allocation where practical, **must not** deadlock, and **must** fall back to stderr if the logger is unavailable. Do not log large stacks or internal dumps on the panic path.
+Rust **must** install a panic hook that emits a final Emergency/Alert record with minimal safe context. The hook
+**must** avoid allocation where practical, **must not** deadlock, and **must** fall back to stderr if the logger is
+unavailable. Do not log large stacks or internal dumps on the panic path.
 
 ```rust
 use std::panic;
@@ -71,7 +81,8 @@ fn install_panic_hook(session_id: String) {
 }
 ```
 
-The `correlation_id` is `"unknown"` here because a panic is not bound to a command context; `session_id` ties the record to the run. The hook logs once and chains to the default so the process still aborts as configured.
+The `correlation_id` is `"unknown"` here because a panic is not bound to a command context; `session_id` ties the record
+to the run. The hook logs once and chains to the default so the process still aborts as configured.
 
 ## 7.6 Performance
 

@@ -1,12 +1,14 @@
 # Required surface elements
 
-The six elements every signal must surface. A signal that cannot present all six belongs in a raw diagnostics panel, not on a first-class surface. This page is the checklist a renderer and a payload author both work against.
+The six elements every signal must surface. A signal that cannot present all six belongs in a raw diagnostics panel, not
+on a first-class surface. This page is the checklist a renderer and a payload author both work against.
 
 ---
 
 ## The six elements
 
-Every signal surface makes these findable without a secondary click. The signal payload carries them; the host renders them and never fabricates a missing one ([ownership-by-module.md](./ownership-by-module.md)).
+Every signal surface makes these findable without a secondary click. The signal payload carries them; the host renders
+them and never fabricates a missing one ([ownership-by-module.md](./ownership-by-module.md)).
 
 | Element                           | What it answers                                                                                                                                                                                                                                                     |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -19,20 +21,28 @@ Every signal surface makes these findable without a secondary click. The signal 
 
 ## The graduation test
 
-The six elements are a gate, not a wish list. If a producing module cannot supply all six for a given signal, that output **must not** be promoted to a first-class surface; it stays in a raw diagnostics panel with a clear label. This keeps the signal surface trustworthy: every item on it can be understood, traced, and acted on.
+The six elements are a gate, not a wish list. If a producing module cannot supply all six for a given signal, that
+output **must not** be promoted to a first-class surface; it stays in a raw diagnostics panel with a clear label. This
+keeps the signal surface trustworthy: every item on it can be understood, traced, and acted on.
 
-A signal also carries its content classification — Asserted, Inferred, or Generated (§9) — and any result states it is in (Fresh, Stale, Partial / Bounded, and so on). These are not a seventh element to invent; they are the honest-state vocabulary referenced from the [Documentation Standard](../../02-standards/DOCUMENTATION-STANDARD.md) and shown alongside the six.
+A signal also carries its content classification — Asserted, Inferred, or Generated (§9) — and any result states it is
+in (Fresh, Stale, Partial / Bounded, and so on). These are not a seventh element to invent; they are the honest-state
+vocabulary referenced from the [Documentation Standard](../../02-standards/DOCUMENTATION-STANDARD.md) and shown
+alongside the six.
 
 ## Worked example
 
 A Metis concentration warning on `Insight Hub` (`n:application:insight-hub`) surfaces:
 
 - **Signal type** — warning.
-- **Affected scope** — `n:application:insight-hub`, via its `realises` relationship to `Customer Insight` (`e:insight-realises-insight`) and its `hosts`, `accesses` relationships.
-- **Why it fired** — three inbound/outbound critical relationships converge on one Run-lifecycle application, above the concentration threshold.
+- **Affected scope** — `n:application:insight-hub`, via its `realises` relationship to `Customer Insight`
+  (`e:insight-realises-insight`) and its `hosts`, `accesses` relationships.
+- **Why it fired** — three inbound/outbound critical relationships converge on one Run-lifecycle application, above the
+  concentration threshold.
 - **Strength or confidence** — Medium; a probabilistic concentration score, not a hard rule.
 - **Temporal and scenario context** — computed at as-of valid time today, base case (no scenario), actual layer; Fresh.
-- **Valid actions** — inspect `Insight Hub`, review the contributing relationships, accept (open a review task), suppress, or rerun.
+- **Valid actions** — inspect `Insight Hub`, review the contributing relationships, accept (open a review task),
+  suppress, or rerun.
 
 All six are present, so the warning is a first-class surface. Were the score missing, it would stay in diagnostics.
 

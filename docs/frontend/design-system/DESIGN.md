@@ -1,12 +1,17 @@
 # Design System (renderer-side) — Internal Design
 
-The internal structure of `src/design-system`, its tokens, and its theming. This file is for anyone adding or theming a wrapper. The package contract is in [README.md](./README.md); the visual contract is [03-design/design-system](../../03-design/design-system/README.md).
+The internal structure of `src/design-system`, its tokens, and its theming. This file is for anyone adding or theming a
+wrapper. The package contract is in [README.md](./README.md); the visual contract is
+[03-design/design-system](../../03-design/design-system/README.md).
 
 ---
 
 ## Scope
 
-The renderer-side design system centralises UI primitives and blocks for the React renderer: it wraps shadcn/ui and the XYFlow registry components behind the proxy boundary and exposes a small, opinionated set of blocks and tokens ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)). It lives inside `src/design-system` and is imported through fixed entry points — never through internal paths.
+The renderer-side design system centralises UI primitives and blocks for the React renderer: it wraps shadcn/ui and the
+XYFlow registry components behind the proxy boundary and exposes a small, opinionated set of blocks and tokens
+([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)). It lives inside
+`src/design-system` and is imported through fixed entry points — never through internal paths.
 
 ## Internal structure
 
@@ -22,11 +27,14 @@ The renderer-side design system centralises UI primitives and blocks for the Rea
 | `src/design-system/styles/globals.css` | Tailwind entry, CSS variable definitions, Tailwind token mappings                                                                     |
 | `src/design-system/theme/`             | Colour-theme provider and persistent theme logic                                                                                      |
 
-Generated components are not edited directly; all customisation happens in wrappers and blocks, so `components:refresh` stays safe. New UI prefers existing primitives (`Button`, `Badge`, `Select`, `ToggleGroup`, `ScrollArea`, the canvas wrappers) over a bespoke tree; a wrapper is added only when multiple features share the exact composition.
+Generated components are not edited directly; all customisation happens in wrappers and blocks, so `components:refresh`
+stays safe. New UI prefers existing primitives (`Button`, `Badge`, `Select`, `ToggleGroup`, `ScrollArea`, the canvas
+wrappers) over a bespoke tree; a wrapper is added only when multiple features share the exact composition.
 
 ## Import entry points
 
-Product code uses exactly three import paths — nothing else ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)):
+Product code uses exactly three import paths — nothing else
+([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)):
 
 | Import path                   | What to import                                                      |
 | ----------------------------- | ------------------------------------------------------------------- |
@@ -34,29 +42,49 @@ Product code uses exactly three import paths — nothing else ([ADR-0010](../../
 | `'design-system/icons'`       | Icon components (kept separate to avoid name clash with `Command`)  |
 | `'design-system/reactflow/*'` | Canvas-only wrappers: `node-search`, `praxis-node`, `timeline-edge` |
 
-Sub-paths like `design-system/lib/utilities`, `design-system/theme/color-theme`, and `design-system/desktop-shell` are allowed for utilities and theme providers that sit outside the main barrel.
+Sub-paths like `design-system/lib/utilities`, `design-system/theme/color-theme`, and `design-system/desktop-shell` are
+allowed for utilities and theme providers that sit outside the main barrel.
 
-**Enforced by ESLint** — importing from `lucide-react`, `@radix-ui/*`, `design-system/components/**`, or `design-system/blocks/**` directly is an error in all product code outside `src/design-system/`.
+**Enforced by ESLint** — importing from `lucide-react`, `@radix-ui/*`, `design-system/components/**`, or
+`design-system/blocks/**` directly is an error in all product code outside `src/design-system/`.
 
 ## Tokens
 
-Tokens are the source of styling truth, authored in the W3C DTCG format and generated to CSS variables ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md), [tokens.md](../../03-design/design-system/tokens.md)). They are tiered: a **reference** token is a raw value (`teal.500`, `space.4`), a **semantic** token gives it a role (`color.action.destructive`, `surface.raised`). Product code and proxy components consume **semantic** tokens only, never raw values; this makes theming a remap rather than a find-and-replace. Tailwind v4 resolves utilities through the `@theme inline` mappings; a new token is a CSS variable in `:root`/`.dark` mapped to `--color-*`, never an edit to `components/ui`.
+Tokens are the source of styling truth, authored in the W3C DTCG format and generated to CSS variables
+([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md), [tokens.md](../../03-design/design-system/tokens.md)).
+They are tiered: a **reference** token is a raw value (`teal.500`, `space.4`), a **semantic** token gives it a role
+(`color.action.destructive`, `surface.raised`). Product code and proxy components consume **semantic** tokens only,
+never raw values; this makes theming a remap rather than a find-and-replace. Tailwind v4 resolves utilities through the
+`@theme inline` mappings; a new token is a CSS variable in `:root`/`.dark` mapped to `--color-*`, never an edit to
+`components/ui`.
 
-Accessibility defaults live in the token layer: motion tokens resolve to minimal animation under a reduced-motion preference, and target-size tokens default to the WCAG 2.2 minimum, so a component inherits them by consuming the semantic token ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md), [accessibility.md](../accessibility.md)).
+Accessibility defaults live in the token layer: motion tokens resolve to minimal animation under a reduced-motion
+preference, and target-size tokens default to the WCAG 2.2 minimum, so a component inherits them by consuming the
+semantic token ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md),
+[accessibility.md](../accessibility.md)).
 
 ## Theming
 
-Light and dark are semantic remaps — a theme rebinds semantic tokens to different reference values and components are unchanged ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)). Colour themes are override files; the runtime applies a `data-color-theme` attribute on the document root, lazily loads the theme CSS, and persists the choice locally as persistent UI state ([state-architecture.md](../state-architecture.md)). The active theme is not workspace truth.
+Light and dark are semantic remaps — a theme rebinds semantic tokens to different reference values and components are
+unchanged ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)). Colour themes are override files; the
+runtime applies a `data-color-theme` attribute on the document root, lazily loads the theme CSS, and persists the choice
+locally as persistent UI state ([state-architecture.md](../state-architecture.md)). The active theme is not workspace
+truth.
 
 ## The shell primitives
 
-Application-level layout uses only the proxied primitives — `Sidebar`, `SidebarInset` + `SidebarTrigger`, `Resizable`, `Menubar`/`NavigationMenu` + `Toolbar`, and `ScrollArea`/`Card`/`Form` for inspector content ([shell.md](../shell.md)). No other primitive is used for the shell, so layout composition stays consistent across modules. The shell follows the shadcn sidebar layout: `SidebarProvider` wraps the shell, the workspace `Sidebar` is a sibling of `SidebarInset`, and `SidebarTrigger` lives in the header.
+Application-level layout uses only the proxied primitives — `Sidebar`, `SidebarInset` + `SidebarTrigger`, `Resizable`,
+`Menubar`/`NavigationMenu` + `Toolbar`, and `ScrollArea`/`Card`/`Form` for inspector content ([shell.md](../shell.md)).
+No other primitive is used for the shell, so layout composition stays consistent across modules. The shell follows the
+shadcn sidebar layout: `SidebarProvider` wraps the shell, the workspace `Sidebar` is a sibling of `SidebarInset`, and
+`SidebarTrigger` lives in the header.
 
 ## Constraints
 
 - Generated components must not be edited directly; customise in wrappers/blocks.
 - Tokens stay centralised to avoid drift; no hard-coded colour utilities in product code.
-- The design system carries no domain semantics ([README.md](./README.md)); a block naming a domain type is rejected at review.
+- The design system carries no domain semantics ([README.md](./README.md)); a block naming a domain type is rejected at
+  review.
 
 ## Related documents
 

@@ -1,6 +1,7 @@
 # Crate structure
 
-The layout of the `praxis` crate (`aideon_praxis`), file by file, so a reader can locate where each responsibility is implemented. For a reader navigating the source.
+The layout of the `praxis` crate (`aideon_praxis`), file by file, so a reader can locate where each responsibility is
+implemented. For a reader navigating the source.
 
 ---
 
@@ -49,7 +50,8 @@ crates/praxis/src/
 | `canvas.rs`, `graph_layout.rs` | Canvas and graph-layout persistence for artefact presentation.                                                                                                                                                                     |
 | `error.rs`                     | `PraxisError` and `PraxisResult` — the crate's failure surface ([failure modes](./failure-modes.md)).                                                                                                                              |
 
-The crate exposes capability traits and typed structs; consuming modules depend on those traits, not on these concrete types ([boundaries](./boundaries.md)).
+The crate exposes capability traits and typed structs; consuming modules depend on those traits, not on these concrete
+types ([boundaries](./boundaries.md)).
 
 ---
 

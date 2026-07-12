@@ -1,8 +1,11 @@
 # Product Design — Overview
 
-The short entry point into the product design layer. Aideon Desktop is a desktop-first, local-first, time-first digital-twin modelling application: a Tauri v2 shell with a Rust core and an untrusted React renderer. This document orients a reader; the full layer is indexed by [`README.md`](./README.md).
+The short entry point into the product design layer. Aideon Desktop is a desktop-first, local-first, time-first
+digital-twin modelling application: a Tauri v2 shell with a Rust core and an untrusted React renderer. This document
+orients a reader; the full layer is indexed by [`README.md`](./README.md).
 
-The design rests on a small set of invariants and one shared shell, and treats the **artefact** as its primary product. Rather than restating those here, this layer is decomposed into focused files:
+The design rests on a small set of invariants and one shared shell, and treats the **artefact** as its primary product.
+Rather than restating those here, this layer is decomposed into focused files:
 
 | To understand…                                      | Read                                                            |
 | --------------------------------------------------- | --------------------------------------------------------------- |
@@ -15,7 +18,8 @@ The design rests on a small set of invariants and one shared shell, and treats t
 | The artefact — the product unit                     | [artefacts/](./artefacts/README.md)                             |
 | How the product behaves (UX)                        | [ux/](./ux/README.md)                                           |
 
-The full set of areas — including the metamodel, semantic spine, signal surfaces, analytics, host surfaces, and participation — is listed in the [layer index](./README.md).
+The full set of areas — including the metamodel, semantic spine, signal surfaces, analytics, host surfaces, and
+participation — is listed in the [layer index](./README.md).
 
 ## Related documents
 

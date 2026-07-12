@@ -8,14 +8,14 @@ metadata:
 
 ## Status after 2026-06-29 cleanup
 
-All legacy screen-level components deleted (`src/engines/praxis/components/`).
-Work originally done against those components was partially correct at the design-system block level
-but cannot count for surface-level requirements until canonical surfaces are built.
+All legacy screen-level components deleted (`src/engines/praxis/components/`). Work originally done against those
+components was partially correct at the design-system block level but cannot count for surface-level requirements until
+canonical surfaces are built.
 
 ## Design-system blocks — DONE (blocks exist and are correct)
 
-`ErrorFrame`, `EmptyState`, `PartialBanner`, `StaleBadge`, `RebuildingIndicator`, `Skeleton`
-all exist in `src/design-system/blocks/`.
+`ErrorFrame`, `EmptyState`, `PartialBanner`, `StaleBadge`, `RebuildingIndicator`, `Skeleton` all exist in
+`src/design-system/blocks/`.
 
 Issues closed and staying closed:
 
@@ -38,7 +38,8 @@ Issues closed and staying closed:
 
 ## What was deleted (2026-06-29)
 
-- `src/engines/praxis/components/` — all 56 files (template-screen, canvas, chrome, dashboard, shell, blocks, debug-overlay)
+- `src/engines/praxis/components/` — all 56 files (template-screen, canvas, chrome, dashboard, shell, blocks,
+  debug-overlay)
 - `tests/praxis/components/` — all 25 legacy component test files
 
 ## What survives
@@ -52,8 +53,6 @@ Issues closed and staying closed:
 
 ## Why deleted
 
-PraxisCanvasWorkspace and the template-screen pattern had no design-doc backing.
-The canonical canvas surface is `PraxisCanvasSurface` (specified in
-`docs/frontend/praxis-workspace/DESIGN.md`) but not yet built.
-All new surfaces must be built from the design-system layer per
-`docs/frontend/praxis-workspace/DESIGN.md` and `docs/frontend/shell.md`.
+PraxisCanvasWorkspace and the template-screen pattern had no design-doc backing. The canonical canvas surface is
+`PraxisCanvasSurface` (specified in `docs/frontend/praxis-workspace/DESIGN.md`) but not yet built. All new surfaces must
+be built from the design-system layer per `docs/frontend/praxis-workspace/DESIGN.md` and `docs/frontend/shell.md`.

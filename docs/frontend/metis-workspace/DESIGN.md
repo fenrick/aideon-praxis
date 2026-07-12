@@ -21,10 +21,15 @@ This workspace does not implement analytics logic. It renders results produced b
 
 ## Widgets contributed
 
-This is **design intent**: Metis is not yet registered in the platform's `ENGINES` ([package-layout.md](../package-layout.md)). When the Metis engine is licensed it contributes widgets to the one shared shell; the platform owns navigation, toolbar, content, and inspector, and Metis ships no chrome of its own ([shell.md](../shell.md)). The widgets it intends to contribute:
+This is **design intent**: Metis is not yet registered in the platform's `ENGINES`
+([package-layout.md](../package-layout.md)). When the Metis engine is licensed it contributes widgets to the one shared
+shell; the platform owns navigation, toolbar, content, and inspector, and Metis ships no chrome of its own
+([shell.md](../shell.md)). The widgets it intends to contribute:
 
-- **Analysis configuration** — a form widget for a bounded run (scope, parameters, limits), surfacing boundedness constraints (e.g. “limited to 500 results”).
-- **Result** — table/graph cards rendering a run's output, with loading skeletons, empty states (no results yet), and human-readable error states with retry. Large results are virtualized and/or paged; no unbounded rendering.
+- **Analysis configuration** — a form widget for a bounded run (scope, parameters, limits), surfacing boundedness
+  constraints (e.g. “limited to 500 results”).
+- **Result** — table/graph cards rendering a run's output, with loading skeletons, empty states (no results yet), and
+  human-readable error states with retry. Large results are virtualized and/or paged; no unbounded rendering.
 - **Evidence** — the read-only “why?” view for a selected result, navigable back to underlying twin ids.
 
 Intended analysis kinds the widgets cover (minimum):
@@ -53,9 +58,15 @@ Result rendering contract — a result widget always shows:
 
 How the shared shell hosts these widgets:
 
-- **Navigation** (platform-owned) surfaces saved analyses (immutable definitions with stable ids) and runs history (immutable results tied to a `job_id` and timestamps), filterable by scenario/branch, layer, analysis kind, and status (running/completed/failed).
-- **Toolbar** (platform-owned) carries the shared viewpoint controls (valid time, layer, scenario) plus the run actions Metis registers — “Run analysis” (disabled when invalid; capability-gated export is PII-redacted by default; “Save” stores the request definition, not results, unless explicitly requested).
-- **Inspector** (platform-owned) shows selection-driven details for a result item (node/edge info by id, metric breakdown, contributing paths/evidence) and run metadata (bounds applied, warnings, job links). Inspector actions are task/job driven, with no renderer-side mutation; “Copy evidence” produces a safe, redacted summary by default.
+- **Navigation** (platform-owned) surfaces saved analyses (immutable definitions with stable ids) and runs history
+  (immutable results tied to a `job_id` and timestamps), filterable by scenario/branch, layer, analysis kind, and status
+  (running/completed/failed).
+- **Toolbar** (platform-owned) carries the shared viewpoint controls (valid time, layer, scenario) plus the run actions
+  Metis registers — “Run analysis” (disabled when invalid; capability-gated export is PII-redacted by default; “Save”
+  stores the request definition, not results, unless explicitly requested).
+- **Inspector** (platform-owned) shows selection-driven details for a result item (node/edge info by id, metric
+  breakdown, contributing paths/evidence) and run metadata (bounds applied, warnings, job links). Inspector actions are
+  task/job driven, with no renderer-side mutation; “Copy evidence” produces a safe, redacted summary by default.
 - **Footer / status** (platform-owned) carries the job tray entrypoint and last-run status.
 
 ## Interaction contracts

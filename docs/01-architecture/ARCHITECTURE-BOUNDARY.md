@@ -1,6 +1,7 @@
 # Architecture Boundary Rules
 
-This document has been decomposed into the [`boundary/`](./boundary/) folder, one focused file per topic, per the [Documentation Standard](../02-standards/DOCUMENTATION-STANDARD.md) §4 (prefer small single-topic files with an index).
+This document has been decomposed into the [`boundary/`](./boundary/) folder, one focused file per topic, per the
+[Documentation Standard](../02-standards/DOCUMENTATION-STANDARD.md) §4 (prefer small single-topic files with an index).
 
 **Start at [`boundary/README.md`](./boundary/README.md).**
 
@@ -17,4 +18,5 @@ The content that lived here now lives in:
 | Artefact execution boundary                                                       | [`boundary/artefact-execution-boundary.md`](./boundary/artefact-execution-boundary.md) |
 | Versioning and evolution                                                          | [`boundary/versioning-and-evolution.md`](./boundary/versioning-and-evolution.md)       |
 
-See also the [architecture layer index](./README.md), the [module dependency map](./module-dependency-map.md), and the [quality attributes](./quality-attributes.md).
+See also the [architecture layer index](./README.md), the [module dependency map](./module-dependency-map.md), and the
+[quality attributes](./quality-attributes.md).

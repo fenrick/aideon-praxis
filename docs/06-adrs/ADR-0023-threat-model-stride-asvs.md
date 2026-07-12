@@ -7,22 +7,34 @@
 
 ## Context
 
-The product's principal trust boundary is the Tauri seam: the WebView renderer is untrusted, Rust owns all side effects, and capabilities decide which window may call which command ([ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md)). A boundary with that much riding on it needs a recorded threat model and a verification standard, not ad-hoc hardening. Two further surfaces carry risk: imports cross a trust boundary (untrusted files become twin content, via Pylon, [ADR-0013](./ADR-0013-interchange-and-interoperability-pylon.md)), and the supply chain (dependencies and build) is itself an attack surface.
+The product's principal trust boundary is the Tauri seam: the WebView renderer is untrusted, Rust owns all side effects,
+and capabilities decide which window may call which command
+([ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md)). A boundary with that much riding on it needs a recorded
+threat model and a verification standard, not ad-hoc hardening. Two further surfaces carry risk: imports cross a trust
+boundary (untrusted files become twin content, via Pylon,
+[ADR-0013](./ADR-0013-interchange-and-interoperability-pylon.md)), and the supply chain (dependencies and build) is
+itself an attack surface.
 
-STRIDE frames the threats; OWASP ASVS 5.0 supplies the verification controls; SLSA and SBOM frame supply-chain integrity.
+STRIDE frames the threats; OWASP ASVS 5.0 supplies the verification controls; SLSA and SBOM frame supply-chain
+integrity.
 
 ## Governance Framing
 
-- **Decision type:** Stable seam (the threat model frames the trust boundary; the control mapping is the verification contract) + invariant (the renderer is untrusted; imports and dependencies are treated as hostile until verified).
-- **Known future pressure:** hosted/sync deployments adding a network boundary; more connectors widening the import surface; new dependencies.
-- **What stays stable:** STRIDE as the frame; ASVS 5.0 as the control standard; the renderer-untrusted invariant; deny-by-default on untrusted input.
+- **Decision type:** Stable seam (the threat model frames the trust boundary; the control mapping is the verification
+  contract) + invariant (the renderer is untrusted; imports and dependencies are treated as hostile until verified).
+- **Known future pressure:** hosted/sync deployments adding a network boundary; more connectors widening the import
+  surface; new dependencies.
+- **What stays stable:** STRIDE as the frame; ASVS 5.0 as the control standard; the renderer-untrusted invariant;
+  deny-by-default on untrusted input.
 - **What is provisional:** the specific ASVS control selections and the SBOM/SLSA tooling.
 - **What is deferred:** the hosted-deployment threat model (a network trust boundary the desktop default does not have).
-- **Why hard to reverse:** the control mapping is a verification commitment audited at release; relaxing the renderer-untrusted invariant would invalidate the whole model.
+- **Why hard to reverse:** the control mapping is a verification commitment audited at release; relaxing the
+  renderer-untrusted invariant would invalidate the whole model.
 
 ## Decision
 
-- **The trust boundary is threat-modelled with STRIDE** (Microsoft, STRIDE). Each STRIDE category is mapped to the boundary:
+- **The trust boundary is threat-modelled with STRIDE** (Microsoft, STRIDE). Each STRIDE category is mapped to the
+  boundary:
 
   | STRIDE category            | At the Tauri seam                                            | Primary control                                                                                                                                                                                                                     |
   | -------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,22 +45,36 @@ STRIDE frames the threats; OWASP ASVS 5.0 supplies the verification controls; SL
   | **Denial of service**      | Saturating the write queue or a long job                     | Explicit backpressure ([ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md)); bounded analytics ([ADR-0027](./ADR-0027-projection-consistency-model.md))                                                                    |
   | **Elevation of privilege** | Renderer gaining host powers (FS, shell)                     | Renderer gets product capabilities, not host capabilities ([ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md)); no raw FS/shell                                                                                           |
 
-- **Verification controls map to OWASP ASVS 5.0** (OWASP ASVS 5.0). Each security concern is verified against named ASVS controls — input validation on every IPC payload, output encoding, secure logging, secret handling, and access control at the capability layer. ASVS is the checklist a release is verified against; the mapping lives in [SECURITY.md](../02-standards/SECURITY.md).
+- **Verification controls map to OWASP ASVS 5.0** (OWASP ASVS 5.0). Each security concern is verified against named ASVS
+  controls — input validation on every IPC payload, output encoding, secure logging, secret handling, and access control
+  at the capability layer. ASVS is the checklist a release is verified against; the mapping lives in
+  [SECURITY.md](../02-standards/SECURITY.md).
 
-- **Untrusted input is deny-by-default.** A Pylon import treats the source file as hostile: it is validated against the metamodel, compiled to reviewable operations, and surfaces anything ambiguous as `Awaiting review` rather than executing it ([ADR-0013](./ADR-0013-interchange-and-interoperability-pylon.md)). Generated content is never silently promoted ([ADR-0014](./ADR-0014-ai-assistance-and-generated-provenance-sophia.md)). The renderer is untrusted at all times.
+- **Untrusted input is deny-by-default.** A Pylon import treats the source file as hostile: it is validated against the
+  metamodel, compiled to reviewable operations, and surfaces anything ambiguous as `Awaiting review` rather than
+  executing it ([ADR-0013](./ADR-0013-interchange-and-interoperability-pylon.md)). Generated content is never silently
+  promoted ([ADR-0014](./ADR-0014-ai-assistance-and-generated-provenance-sophia.md)). The renderer is untrusted at all
+  times.
 
-- **Supply-chain integrity uses SLSA and an SBOM.** The build produces a software bill of materials (CycloneDX or SPDX) and targets SLSA provenance for build integrity, so a shipped binary's dependencies and build are attestable. Dependencies are an attack surface, treated as such.
+- **Supply-chain integrity uses SLSA and an SBOM.** The build produces a software bill of materials (CycloneDX or SPDX)
+  and targets SLSA provenance for build integrity, so a shipped binary's dependencies and build are attestable.
+  Dependencies are an attack surface, treated as such.
 
 ## Considered Options
 
-- **Ad-hoc hardening without a frame (rejected):** leaves gaps no one owns; STRIDE forces every threat category to be considered against the boundary.
-- **OWASP Top 10 alone as the control set (rejected):** a useful risk checklist but not a verification standard; ASVS provides testable controls and is retained informatively as the risk lens.
-- **Trusting imports because the user chose the file (rejected):** the user vouches for provenance, not content; deny-by-default validation is the safe posture.
+- **Ad-hoc hardening without a frame (rejected):** leaves gaps no one owns; STRIDE forces every threat category to be
+  considered against the boundary.
+- **OWASP Top 10 alone as the control set (rejected):** a useful risk checklist but not a verification standard; ASVS
+  provides testable controls and is retained informatively as the risk lens.
+- **Trusting imports because the user chose the file (rejected):** the user vouches for provenance, not content;
+  deny-by-default validation is the safe posture.
 
 ## Consequences
 
-- Every IPC payload is validated; a validation failure is a `validation`-category error ([ADR-0016](./ADR-0016-error-envelope-rfc9457.md)).
-- The renderer-untrusted invariant from [ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md) is the load-bearing control across most STRIDE categories; this ADR makes that explicit and verifiable.
+- Every IPC payload is validated; a validation failure is a `validation`-category error
+  ([ADR-0016](./ADR-0016-error-envelope-rfc9457.md)).
+- The renderer-untrusted invariant from [ADR-0006](./ADR-0006-tauri-trust-boundary-and-typed-ipc.md) is the load-bearing
+  control across most STRIDE categories; this ADR makes that explicit and verifiable.
 - Releases carry an SBOM and SLSA provenance, making the supply chain auditable.
 - The hosted-deployment threat model is deferred; the desktop default has no network trust boundary to model.
 

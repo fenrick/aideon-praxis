@@ -73,7 +73,8 @@ If any of these are missing, the agent should:
 
 2. ✅ Update `AGENTS.md`:
    - Under coding standards for React:
-     - “For app shell: always use design system proxies for Sidebar, Resizable, Menubar, Toolbar, not raw third-party imports.”
+     - “For app shell: always use design system proxies for Sidebar, Resizable, Menubar, Toolbar, not raw third-party
+       imports.”
 
 ### 2.2 Install shadcn components and add DS proxies
 
@@ -110,7 +111,8 @@ If any of these are missing, the agent should:
 
 **Tests**
 
-- Add a minimal test to ensure design system proxies compile and export correctly (simple type-level or smoke test if needed).
+- Add a minimal test to ensure design system proxies compile and export correctly (simple type-level or smoke test if
+  needed).
 
 **Definition of done**
 
@@ -229,7 +231,8 @@ If any of these are missing, the agent should:
    }
    ```
 
-3. ✅ Hook this into your bundler/entrypoint (e.g. `main.tsx`) and ensure Tauri’s `tauri.conf.json` points to the new app HTML/JS entry.
+3. ✅ Hook this into your bundler/entrypoint (e.g. `main.tsx`) and ensure Tauri’s `tauri.conf.json` points to the new
+   app HTML/JS entry.
 
 ### 4.2 Smoke tests
 
@@ -238,7 +241,8 @@ If any of these are missing, the agent should:
 - ✅ Add a high-level React test for `AideonDesktopRoot`:
   - Verifies that the placeholder content renders inside the expected DOM structure.
 
-- Optionally, add a very simple Tauri smoke test or script that boots the app and asserts the main window loads (depending on your existing approach).
+- Optionally, add a very simple Tauri smoke test or script that boots the app and asserts the main window loads
+  (depending on your existing approach).
 
 **Definition of done**
 
@@ -259,7 +263,8 @@ If any of these are missing, the agent should:
    - Clarify that PraxisCanvas now exposes a **surface component** without global chrome:
      - `PraxisCanvasSurface` = canvas view, timelines, nodes, etc.
 
-   - Note any legacy app-level layout in PraxisCanvas as deprecated: “To be removed once all usage is via Aideon Desktop.”
+   - Note any legacy app-level layout in PraxisCanvas as deprecated: “To be removed once all usage is via Aideon
+     Desktop.”
 
 **Code**
 
@@ -340,7 +345,8 @@ If any of these are missing, the agent should:
 **Code (second pass)**
 
 4. ✅ Wire to real data:
-   - Tree now uses `listScenarios` from the Praxis adapters (via `@aideon/PraxisCanvas`) and maps scenarios to workspace entries under a Scenarios project group.
+   - Tree now uses `listScenarios` from the Praxis adapters (via `@aideon/PraxisCanvas`) and maps scenarios to workspace
+     entries under a Scenarios project group.
    - Added `useWorkspaceTree` hook with loading/error handling.
    - `DesktopTree` renders loading skeletons, error state, and empty state.
 
@@ -402,7 +408,8 @@ If any of these are missing, the agent should:
 **Docs**
 
 - Update `AGENTS.md` “Examples” section with:
-  - Pointers to `DesktopShell`, `AideonDesktopRoot`, `DesktopTree`, `DesktopPropertiesPanel`, and `PraxisCanvasSurface` as golden patterns.
+  - Pointers to `DesktopShell`, `AideonDesktopRoot`, `DesktopTree`, `DesktopPropertiesPanel`, and `PraxisCanvasSurface`
+    as golden patterns.
 
 - Mark any old workspace-specific headers/sidebars as deprecated and note target refactors.
 

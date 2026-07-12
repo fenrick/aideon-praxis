@@ -1,6 +1,8 @@
 # 6. The event catalogue
 
-The mandatory events, by category. These are definition statements, not examples: each event listed **must** be emitted at the stated severity when its condition occurs. Part of the [logging standard](./README.md). Every event carries the [log-record contract](./log-record-contract.md) fields, including `correlation_id`.
+The mandatory events, by category. These are definition statements, not examples: each event listed **must** be emitted
+at the stated severity when its condition occurs. Part of the [logging standard](./README.md). Every event carries the
+[log-record contract](./log-record-contract.md) fields, including `correlation_id`.
 
 ---
 
@@ -29,13 +31,15 @@ The mandatory events, by category. These are definition statements, not examples
 
 ## 6.4 User command boundary
 
-For every invokable command ([correlation and tracing §4.5](./correlation-and-tracing.md#45-command-boundary-behaviour-mandatory)):
+For every invokable command
+([correlation and tracing §4.5](./correlation-and-tracing.md#45-command-boundary-behaviour-mandatory)):
 
 - `command_invoked` (Info)
 - `command_completed` (Info)
 - `command_failed` (Error)
 
-If the command triggers a multi-step workflow, also emit `workflow_step` (Info/Notice) with `workflow.name`, `workflow.step`, and an `elapsed_ms` where available.
+If the command triggers a multi-step workflow, also emit `workflow_step` (Info/Notice) with `workflow.name`,
+`workflow.step`, and an `elapsed_ms` where available.
 
 ## 6.5 Background work and retries
 
@@ -48,7 +52,8 @@ If the command triggers a multi-step workflow, also emit `workflow_step` (Info/N
 - `network_state_changed` (Notice) — include `network.state` (`online` / `offline` / `degraded`)
 - `request_failed` (Warning/Error) — include `http.status` if present and `error.kind`
 
-Do not log URLs with embedded tokens or query parameters that may contain PII ([privacy and redaction](./privacy-and-redaction.md)).
+Do not log URLs with embedded tokens or query parameters that may contain PII
+([privacy and redaction](./privacy-and-redaction.md)).
 
 ## 6.7 Security and permission boundaries
 

@@ -1,27 +1,40 @@
 # Error, Loading, Empty, and Honest State
 
-The contract every surface meets for the states between "nothing yet" and "fully loaded and correct". This file is for anyone building a surface that fetches data or runs work. It maps the renderer's states onto the §9 honest-state vocabulary; it does not redefine that vocabulary.
+The contract every surface meets for the states between "nothing yet" and "fully loaded and correct". This file is for
+anyone building a surface that fetches data or runs work. It maps the renderer's states onto the §9 honest-state
+vocabulary; it does not redefine that vocabulary.
 
 ---
 
 ## The principle
 
-A surface is never silent about its state. Loading, empty, partial, stale, rebuilding, in-progress, awaiting-review, generated, and failed are all states the user can see, drawn from one shared vocabulary ([DOCUMENTATION-STANDARD.md §9](../02-standards/DOCUMENTATION-STANDARD.md)) and rendered with the shared honest-state treatments ([honest-state-treatments.md](../03-design/design-system/honest-state-treatments.md)). A confident surface showing something that is stale, partial, or generated as if it were fresh, complete, and asserted is the most expensive failure the product can make ([trust-and-honesty.md](../03-design/trust-and-honesty.md)).
+A surface is never silent about its state. Loading, empty, partial, stale, rebuilding, in-progress, awaiting-review,
+generated, and failed are all states the user can see, drawn from one shared vocabulary
+([DOCUMENTATION-STANDARD.md §9](../02-standards/DOCUMENTATION-STANDARD.md)) and rendered with the shared honest-state
+treatments ([honest-state-treatments.md](../03-design/design-system/honest-state-treatments.md)). A confident surface
+showing something that is stale, partial, or generated as if it were fresh, complete, and asserted is the most expensive
+failure the product can make ([trust-and-honesty.md](../03-design/trust-and-honesty.md)).
 
-The renderer **must not** fake state. It shows the state the host reports; it does not locally invent freshness, completeness, or a diff the host did not produce ([state-architecture.md](./state-architecture.md)).
+The renderer **must not** fake state. It shows the state the host reports; it does not locally invent freshness,
+completeness, or a diff the host did not produce ([state-architecture.md](./state-architecture.md)).
 
 ## The two axes
 
-State has two orthogonal axes, never collapsed into one badge ([DOCUMENTATION-STANDARD.md §9](../02-standards/DOCUMENTATION-STANDARD.md)):
+State has two orthogonal axes, never collapsed into one badge
+([DOCUMENTATION-STANDARD.md §9](../02-standards/DOCUMENTATION-STANDARD.md)):
 
-- **Content classification** — what kind of claim an element is: **Asserted**, **Inferred**, or **Generated**. Rendered with the provenance treatment ([honest-state-treatments.md](../03-design/design-system/honest-state-treatments.md)).
-- **Result state** — the condition of a result at the moment it is shown: **Fresh**, **Stale**, **Rebuilding**, **Partial/Bounded**, **In progress**, **Awaiting review**, **Failed**.
+- **Content classification** — what kind of claim an element is: **Asserted**, **Inferred**, or **Generated**. Rendered
+  with the provenance treatment ([honest-state-treatments.md](../03-design/design-system/honest-state-treatments.md)).
+- **Result state** — the condition of a result at the moment it is shown: **Fresh**, **Stale**, **Rebuilding**,
+  **Partial/Bounded**, **In progress**, **Awaiting review**, **Failed**.
 
-A surface element may carry one content classification and any number of result states; a Generated element can also be Stale. The renderer maps host-reported status onto these and never improvises a new badge or colour.
+A surface element may carry one content classification and any number of result states; a Generated element can also be
+Stale. The renderer maps host-reported status onto these and never improvises a new badge or colour.
 
 ## The states a surface renders
 
-Every data-fetching surface handles these explicitly; a hook exposes `loading` / `error` / `empty` hints and the host's result state, and the component renders the matching treatment ([state-architecture.md](./state-architecture.md)):
+Every data-fetching surface handles these explicitly; a hook exposes `loading` / `error` / `empty` hints and the host's
+result state, and the component renders the matching treatment ([state-architecture.md](./state-architecture.md)):
 
 | State                     | When                                             | Treatment                                                                                                                                      |
 | ------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -35,11 +48,15 @@ Every data-fetching surface handles these explicitly; a hook exposes `loading` /
 | **Queued (backpressure)** | Host returned `BACKPRESSURE`                     | A queued state; the write is not shown as landed ([ux/backpressure-ux.md](../03-design/ux/backpressure-ux.md))                                 |
 | **Failed**                | Execution errored                                | Partial results, if any, shown with explicit coverage; a human-readable failure summary                                                        |
 
-A loading state **must not** block the whole workspace — artefacts continue rendering using the last known good context where safe, and only the affected pane shows its loading or error state ([chrona-time](./chrona-time/README.md)).
+A loading state **must not** block the whole workspace — artefacts continue rendering using the last known good context
+where safe, and only the affected pane shows its loading or error state ([chrona-time](./chrona-time/README.md)).
 
 ## The error playbook
 
-Errors arrive as the typed error envelope ([error-envelope.md](../04-contracts/ipc/error-envelope.md), RFC 9457, [ADR-0016](../06-adrs/ADR-0016-error-envelope-rfc9457.md)) and are mapped to user-facing messages at the adapter boundary ([ipc-adapters-and-dtos.md](./ipc-adapters-and-dtos.md)). The renderer maps by stable code, not by parsing prose:
+Errors arrive as the typed error envelope ([error-envelope.md](../04-contracts/ipc/error-envelope.md), RFC 9457,
+[ADR-0016](../06-adrs/ADR-0016-error-envelope-rfc9457.md)) and are mapped to user-facing messages at the adapter
+boundary ([ipc-adapters-and-dtos.md](./ipc-adapters-and-dtos.md)). The renderer maps by stable code, not by parsing
+prose:
 
 | Envelope code class                                      | User-facing message                             | Next action                                                                                      |
 | -------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -51,11 +68,16 @@ Errors arrive as the typed error envelope ([error-envelope.md](../04-contracts/i
 | Compatibility-fatal (`SCHEMA_TOO_NEW`)                   | The workspace was written by a newer version    | Update the app ([ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md))                  |
 | Internal                                                 | A stable message                                | "Open Status window" / "Copy diagnostics" with correlation ids (`request_id`, `job_id`)          |
 
-Errors **must** carry correlation ids where present and offer a copy-diagnostics affordance; a raw error object is never shown by default ([mneme-workspace](./mneme-workspace/README.md)).
+Errors **must** carry correlation ids where present and offer a copy-diagnostics affordance; a raw error object is never
+shown by default ([mneme-workspace](./mneme-workspace/README.md)).
 
 ## Accessibility of state
 
-Honest-state indicators are perceivable without colour alone: a `Generated` or `Stale` element carries text or shape in addition to colour ([ADR-0024](../06-adrs/ADR-0024-accessibility-baseline-wcag22.md), WCAG 1.4.1). A state change is announced through an `aria-live` region where the change is not otherwise focus-driven (e.g. "Time context updated", "Analysis complete") ([accessibility.md](./accessibility.md)). The honesty obligation and the accessibility obligation reinforce each other here.
+Honest-state indicators are perceivable without colour alone: a `Generated` or `Stale` element carries text or shape in
+addition to colour ([ADR-0024](../06-adrs/ADR-0024-accessibility-baseline-wcag22.md), WCAG 1.4.1). A state change is
+announced through an `aria-live` region where the change is not otherwise focus-driven (e.g. "Time context updated",
+"Analysis complete") ([accessibility.md](./accessibility.md)). The honesty obligation and the accessibility obligation
+reinforce each other here.
 
 ## Related documents
 

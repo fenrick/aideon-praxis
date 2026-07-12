@@ -1,10 +1,16 @@
 # Quality Attributes
 
-The quality scenarios Aideon Desktop's architecture is designed to meet — performance and latency, portability, recoverability, security, accessibility, and extensibility — written in arc42 quality-scenario style. Each scenario states a stimulus, the environment it occurs in, and the response the architecture is designed to produce.
+The quality scenarios Aideon Desktop's architecture is designed to meet — performance and latency, portability,
+recoverability, security, accessibility, and extensibility — written in arc42 quality-scenario style. Each scenario
+states a stimulus, the environment it occurs in, and the response the architecture is designed to produce.
 
-> **Numeric budgets are targets and design intent, not measured facts.** Every latency or size figure below is a design budget the architecture aims at, against which an implementation is later measured. Where no measurement exists yet, the figure says what the design is trying to achieve, not what has been observed. A measured figure, when it exists, supersedes the target and is recorded against the relevant module.
+> **Numeric budgets are targets and design intent, not measured facts.** Every latency or size figure below is a design
+> budget the architecture aims at, against which an implementation is later measured. Where no measurement exists yet,
+> the figure says what the design is trying to achieve, not what has been observed. A measured figure, when it exists,
+> supersedes the target and is recorded against the relevant module.
 
-The arc42 quality-scenario form distinguishes **usage scenarios** (the system under normal stimulus) from **change scenarios** (the system under modification or failure). Both appear below, grouped by attribute.
+The arc42 quality-scenario form distinguishes **usage scenarios** (the system under normal stimulus) from **change
+scenarios** (the system under modification or failure). Both appear below, grouped by attribute.
 
 ---
 
@@ -16,7 +22,9 @@ The arc42 quality-scenario form distinguishes **usage scenarios** (the system un
 | **Environment**              | The state the system is in when the stimulus arrives.                      |
 | **Response (design intent)** | What the architecture is designed to do, and the target where one applies. |
 
-The unified honest-state vocabulary _(see [`../02-standards/DOCUMENTATION-STANDARD.md`](../02-standards/DOCUMENTATION-STANDARD.md) §9)_ names the result states a response may surface: **Fresh**, **Stale**, **Rebuilding**, **Partial / Bounded**, **In progress**, **Failed**.
+The unified honest-state vocabulary _(see
+[`../02-standards/DOCUMENTATION-STANDARD.md`](../02-standards/DOCUMENTATION-STANDARD.md) §9)_ names the result states a
+response may surface: **Fresh**, **Stale**, **Rebuilding**, **Partial / Bounded**, **In progress**, **Failed**.
 
 ---
 
@@ -30,7 +38,10 @@ The unified honest-state vocabulary _(see [`../02-standards/DOCUMENTATION-STANDA
 | P4  | A user changes the Viewpoint (valid time, layer policy, or scenario).           | Facts already resolved at a prior Viewpoint. | Re-resolution reuses cached projections where the canonical inputs are unchanged; only the affected slice recomputes.                                                                      |
 | P5  | The write queue saturates under a burst.                                        | Many operations enqueued at once.            | The host returns `BACKPRESSURE`; the renderer shows a queued state; no write is dropped or silently retried.                                                                               |
 
-Latency targets are design budgets; the per-module performance budgets in [`../05-modules/`](../05-modules/) refine and measure them. Analytics complexity bounds are stated with the algorithms in [`../05-modules/metis/README.md`](../05-modules/metis/README.md) _(Newman, Networks, 2018; Brandes, fast betweenness, 2001)_.
+Latency targets are design budgets; the per-module performance budgets in [`../05-modules/`](../05-modules/) refine and
+measure them. Analytics complexity bounds are stated with the algorithms in
+[`../05-modules/metis/README.md`](../05-modules/metis/README.md) _(Newman, Networks, 2018; Brandes, fast
+betweenness, 2001)_.
 
 ---
 
@@ -42,7 +53,8 @@ Latency targets are design budgets; the per-module performance budgets in [`../0
 | PT2 | The storage engine is swapped (SQLite → an alternative behind the trait).                 | Same canonical workspace.                              | No change to the canonical format and no change above the [storage trait](../05-modules/mneme/RUNTIME-AND-ENGINE.md); the resolved twin is unchanged, per **[ADR-0004](../06-adrs/ADR-0004-storage-engine-abstraction.md)**. |
 | PT3 | A workspace is opened by a host whose schema understanding is older than the workspace's. | Schema version in `manifest.json` newer than the host. | The host returns `SCHEMA_TOO_NEW` and refuses to guess, per **[ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)**.                                                                                                |
 
-Portability rests on the canonical-vs-derived split: because everything machine- or engine-specific is derived, only the canonical, portable files travel. See [`boundary/canonical-vs-derived.md`](./boundary/canonical-vs-derived.md).
+Portability rests on the canonical-vs-derived split: because everything machine- or engine-specific is derived, only the
+canonical, portable files travel. See [`boundary/canonical-vs-derived.md`](./boundary/canonical-vs-derived.md).
 
 ---
 
@@ -56,7 +68,8 @@ Portability rests on the canonical-vs-derived split: because everything machine-
 | R4  | The renderer crashes or is restarted mid-edit.                                   | In-flight edits held only in the renderer. | No canonical truth is lost — the renderer is disposable; durable state was already appended or was never canonical. In-flight UI state is ephemeral by design.                                                 |
 | R5  | The app exits during a long job.                                                 | An `AcceptedJob` was running.              | On restart the host recovers the job ledger; completed work is durable, incomplete work is reported as not finished. Continuum's run ledger is the recovery point _(Garcia-Molina & Salem, Sagas, 1987)_.      |
 
-The failure-and-recovery table in [`boundary/canonical-vs-derived.md`](./boundary/canonical-vs-derived.md) gives the runtime-view detail behind R1–R3.
+The failure-and-recovery table in [`boundary/canonical-vs-derived.md`](./boundary/canonical-vs-derived.md) gives the
+runtime-view detail behind R1–R3.
 
 ---
 
@@ -81,7 +94,9 @@ The full posture and controls are in [`../02-standards/SECURITY.md`](../02-stand
 | A2  | A screen-reader user reads an artefact result.                              | Assistive technology active. | Honest-state badges (Generated, Stale, Partial) carry accessible names; the result is conveyed without relying on colour alone.         |
 | A3  | The product is audited for conformance.                                     | Release gate.                | The **target** is WCAG 2.2 Level AA conformance, per **[ADR-0024](../06-adrs/ADR-0024-accessibility-baseline-wcag22.md)** _(WCAG 2.2)_. |
 
-Accessibility is realised in the renderer and design system; the architecture's contribution is that honest-state classification rides on results from the engine, so accessible presentation does not depend on the renderer re-deriving meaning. See [`../03-design/DESIGN-SYSTEM.md`](../03-design/DESIGN-SYSTEM.md).
+Accessibility is realised in the renderer and design system; the architecture's contribution is that honest-state
+classification rides on results from the engine, so accessible presentation does not depend on the renderer re-deriving
+meaning. See [`../03-design/DESIGN-SYSTEM.md`](../03-design/DESIGN-SYSTEM.md).
 
 ---
 
@@ -94,7 +109,8 @@ Accessibility is realised in the renderer and design system; the architecture's 
 | X3  | The metamodel is extended with a new type or relationship. | Forward-only schema.                 | The extension is additive and recorded; the append-only op log preserves history; older operations resolve under the schema in force when asserted.                                                                                                                                          |
 | X4  | A storage backend is added behind the trait.               | Same canonical workspace.            | The renderer and IPC surface are unaware; it is an engine swap, not a UI fork.                                                                                                                                                                                                               |
 
-Extensibility is the practical pay-off of the [dependency rules](./boundary/dependency-rules.md): because coupling is to traits and contracts, the new part attaches without rippling change through the old.
+Extensibility is the practical pay-off of the [dependency rules](./boundary/dependency-rules.md): because coupling is to
+traits and contracts, the new part attaches without rippling change through the old.
 
 ---
 
@@ -103,7 +119,8 @@ Extensibility is the practical pay-off of the [dependency rules](./boundary/depe
 _Informative — quality-scenario method:_
 
 - **arc42** template — quality-scenario structure (usage and change scenarios).
-- **ISO/IEC 25010** — the product-quality model whose attribute names (performance efficiency, portability, security, recoverability, usability/accessibility, maintainability/extensibility) this document groups by.
+- **ISO/IEC 25010** — the product-quality model whose attribute names (performance efficiency, portability, security,
+  recoverability, usability/accessibility, maintainability/extensibility) this document groups by.
 
 _Normative — adopted obligations referenced above:_
 
@@ -111,7 +128,8 @@ _Normative — adopted obligations referenced above:_
 - **OWASP ASVS 5.0**; **STRIDE** _(Microsoft)_ — security verification and threat frame.
 - **Semantic Versioning 2.0.0** — contract evolution.
 
-Full bibliography and the modules that use each source: [`../02-standards/STANDARDS-REGISTER.md`](../02-standards/STANDARDS-REGISTER.md).
+Full bibliography and the modules that use each source:
+[`../02-standards/STANDARDS-REGISTER.md`](../02-standards/STANDARDS-REGISTER.md).
 
 ## Related documents
 

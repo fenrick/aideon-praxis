@@ -1,10 +1,15 @@
 # Standards Register
 
-The shared bibliography for Aideon Desktop's design documentation. Every "best practice" claim in the corpus cites a source recorded here, so the whole documentation set leans on one set of references rather than many ad-hoc ones. New citations are added here first, then referenced from documents.
+The shared bibliography for Aideon Desktop's design documentation. Every "best practice" claim in the corpus cites a
+source recorded here, so the whole documentation set leans on one set of references rather than many ad-hoc ones. New
+citations are added here first, then referenced from documents.
 
-Each entry records whether the corpus treats the source as **normative** (it defines an obligation the design adopts) or **informative** (it explains or justifies a design), and which modules or documents rely on it. Sources are cited by author/body, title, and year — stable identifiers that do not rot the way URLs do.
+Each entry records whether the corpus treats the source as **normative** (it defines an obligation the design adopts) or
+**informative** (it explains or justifies a design), and which modules or documents rely on it. Sources are cited by
+author/body, title, and year — stable identifiers that do not rot the way URLs do.
 
-The two primary enterprise-architecture references for this product are **TOGAF Standard, 10th Edition** and **ArchiMate 3.2**. The metamodel, edge catalogue, artefact families, and semantic spine are aligned to them.
+The two primary enterprise-architecture references for this product are **TOGAF Standard, 10th Edition** and **ArchiMate
+3.2**. The metamodel, edge catalogue, artefact families, and semantic spine are aligned to them.
 
 ---
 

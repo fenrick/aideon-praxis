@@ -1,6 +1,8 @@
 # Backpressure
 
-When the internal write queue reaches its capacity threshold, the executor returns a structured error instead of accepting new work. `BACKPRESSURE` is the one `transient` code in the [error taxonomy](../ipc/error-envelope.md) — the renderer treats it as a queued state, not a failure.
+When the internal write queue reaches its capacity threshold, the executor returns a structured error instead of
+accepting new work. `BACKPRESSURE` is the one `transient` code in the [error taxonomy](../ipc/error-envelope.md) — the
+renderer treats it as a queued state, not a failure.
 
 ---
 
@@ -18,13 +20,20 @@ When the internal write queue reaches its capacity threshold, the executor retur
 
 ## How the renderer reacts
 
-The renderer treats `BACKPRESSURE` as a distinct UI state: the initiating action shows a **queued** badge, not a failure. The caller may retry the command once queue depth drops. `BACKPRESSURE` is **not** retried automatically by the host — retry is a renderer responsibility, with exponential backoff. The `transient`/`retry` category-and-hint ([error-envelope.md](../ipc/error-envelope.md)) is what lets the renderer react generically rather than hard-coding knowledge of this one code.
+The renderer treats `BACKPRESSURE` as a distinct UI state: the initiating action shows a **queued** badge, not a
+failure. The caller may retry the command once queue depth drops. `BACKPRESSURE` is **not** retried automatically by the
+host — retry is a renderer responsibility, with exponential backoff. The `transient`/`retry` category-and-hint
+([error-envelope.md](../ipc/error-envelope.md)) is what lets the renderer react generically rather than hard-coding
+knowledge of this one code.
 
-A backpressure retry is safe because the submission carries an [idempotency key](./idempotency-rules.md): the same key means the work lands at most once even though the caller retries.
+A backpressure retry is safe because the submission carries an [idempotency key](./idempotency-rules.md): the same key
+means the work lands at most once even though the caller retries.
 
 ## Two sources, one code
 
-Saturated-queue behaviour is distinct from a `BACKPRESSURE` on an individual write operation (e.g. `append_ops`); both use the same code, but the `queueClass` field in `details` disambiguates the source. A renderer shows the same queued affordance for either.
+Saturated-queue behaviour is distinct from a `BACKPRESSURE` on an individual write operation (e.g. `append_ops`); both
+use the same code, but the `queueClass` field in `details` disambiguates the source. A renderer shows the same queued
+affordance for either.
 
 ## References & standards
 

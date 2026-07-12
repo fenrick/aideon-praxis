@@ -18,4 +18,14 @@ export default {
   tabWidth: 2,
   useTabs: false,
   endOfLine: 'lf',
+
+  // Markdown/MDX: hard-wrap prose at 120 to match .markdownlint.json MD013
+  // (line_length 120), enforced via the existing node:format:check gate.
+  // Vendored skill docs under .agents/ are excluded in .prettierignore.
+  overrides: [
+    {
+      files: ['*.md', '*.mdx'],
+      options: { proseWrap: 'always', printWidth: 120 },
+    },
+  ],
 };

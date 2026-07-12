@@ -1,20 +1,34 @@
 # Artefact Results
 
-The typed output shapes a renderer receives when Praxis executes an artefact at a viewpoint. This area binds the engine that produces a result to the renderer that displays it: the common envelope every result carries, and the per-form payload each [form](../../03-design/artefacts/forms.md) shapes that envelope into. A practitioner building or auditing a renderer reads this area to know what crosses the boundary, without reading the engine.
+The typed output shapes a renderer receives when Praxis executes an artefact at a viewpoint. This area binds the engine
+that produces a result to the renderer that displays it: the common envelope every result carries, and the per-form
+payload each [form](../../03-design/artefacts/forms.md) shapes that envelope into. A practitioner building or auditing a
+renderer reads this area to know what crosses the boundary, without reading the engine.
 
-The execution that produces these shapes is [Praxis artefact execution](../../05-modules/praxis/artefact-execution.md); the durable decisions behind it are [ADR-0033](../../06-adrs/ADR-0033-artefact-execution-model.md). Result provenance and result state use the unified vocabulary of the [Documentation Standard §9](../../02-standards/DOCUMENTATION-STANDARD.md) and are not redefined here.
+The execution that produces these shapes is [Praxis artefact execution](../../05-modules/praxis/artefact-execution.md);
+the durable decisions behind it are [ADR-0033](../../06-adrs/ADR-0033-artefact-execution-model.md). Result provenance
+and result state use the unified vocabulary of the
+[Documentation Standard §9](../../02-standards/DOCUMENTATION-STANDARD.md) and are not redefined here.
 
 ---
 
 ## The grouping is by form, not family
 
-An [artefact family](../../03-design/artefacts/families.md) fixes the _question_; a [form](../../03-design/artefacts/forms.md) fixes the _presentation shape_, and it is the form — not the family — that determines the output payload a renderer receives. The same application-portfolio family can return a **catalogue** payload or a **map** payload. This area is therefore organised by the six controlled forms — **view, catalogue, matrix, map, report, page** ([`CONTEXT.md`](../../../CONTEXT.md)) — one file per form's output shape.
+An [artefact family](../../03-design/artefacts/families.md) fixes the _question_; a
+[form](../../03-design/artefacts/forms.md) fixes the _presentation shape_, and it is the form — not the family — that
+determines the output payload a renderer receives. The same application-portfolio family can return a **catalogue**
+payload or a **map** payload. This area is therefore organised by the six controlled forms — **view, catalogue, matrix,
+map, report, page** ([`CONTEXT.md`](../../../CONTEXT.md)) — one file per form's output shape.
 
 ---
 
 ## Core invariant
 
-A result is **data, not instructions** ([artefact execution boundary](../../01-architecture/boundary/artefact-execution-boundary.md)). The renderer interprets the payload; it never runs logic shipped in it, never resolves the twin, and never re-derives an element's [content classification](../../03-design/artefacts/content-classification.md). Rust owns the wire shape and TypeScript consumes generated types ([contracts](../README.md)); a result field exists because a Rust struct declares it.
+A result is **data, not instructions**
+([artefact execution boundary](../../01-architecture/boundary/artefact-execution-boundary.md)). The renderer interprets
+the payload; it never runs logic shipped in it, never resolves the twin, and never re-derives an element's
+[content classification](../../03-design/artefacts/content-classification.md). Rust owns the wire shape and TypeScript
+consumes generated types ([contracts](../README.md)); a result field exists because a Rust struct declares it.
 
 ---
 
@@ -52,8 +66,12 @@ Every artefact result, regardless of form, carries the same envelope. The per-fo
 
 Two cross-cutting shapes recur inside every `body` and are defined once here:
 
-- **`classification`** — every element-bearing field carries one of `asserted`, `inferred`, `generated` ([content classification](../../03-design/artefacts/content-classification.md)), set by Praxis, never by the renderer.
-- **`page`** — list-shaped bodies (catalogue, and the row sets inside report and page) carry a pagination block: `{ "offset": int, "pageSize": int, "total": int | null, "hasMore": bool }`. `total` is `null` when computing it would itself exceed a bound. Pagination is a complete result delivered in pages and is **not** the same as `partialBounded`, which means coverage is incomplete by design.
+- **`classification`** — every element-bearing field carries one of `asserted`, `inferred`, `generated`
+  ([content classification](../../03-design/artefacts/content-classification.md)), set by Praxis, never by the renderer.
+- **`page`** — list-shaped bodies (catalogue, and the row sets inside report and page) carry a pagination block:
+  `{ "offset": int, "pageSize": int, "total": int | null, "hasMore": bool }`. `total` is `null` when computing it would
+  itself exceed a bound. Pagination is a complete result delivered in pages and is **not** the same as `partialBounded`,
+  which means coverage is incomplete by design.
 
 ---
 
@@ -72,14 +90,18 @@ Two cross-cutting shapes recur inside every `body` and are defined once here:
 
 ## Versioning and compatibility
 
-The envelope and every `body` follow the contract layer's rules: a shape change is a versioned, drift-checked event, not a silent edit ([versioning and compatibility](../ipc/versioning-and-compatibility.md), [generated-schema discipline](../ipc/generated-schema-discipline.md)). A failed execution returns the [RFC 9457 error envelope](../ipc/error-envelope.md), not a malformed result.
+The envelope and every `body` follow the contract layer's rules: a shape change is a versioned, drift-checked event, not
+a silent edit ([versioning and compatibility](../ipc/versioning-and-compatibility.md),
+[generated-schema discipline](../ipc/generated-schema-discipline.md)). A failed execution returns the
+[RFC 9457 error envelope](../ipc/error-envelope.md), not a malformed result.
 
 ## References & standards
 
 _Normative:_
 
 - **JSON Schema 2020-12** — the validation schemas generated from the Rust source ([contracts](../README.md)).
-- **RFC 9457**, Problem Details — the envelope a failed execution surfaces through ([ADR-0016](../../06-adrs/ADR-0016-error-envelope-rfc9457.md)).
+- **RFC 9457**, Problem Details — the envelope a failed execution surfaces through
+  ([ADR-0016](../../06-adrs/ADR-0016-error-envelope-rfc9457.md)).
 
 _Informative:_
 

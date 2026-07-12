@@ -1,14 +1,27 @@
 # Metamodel v1 effective-schema fixtures
 
-The expected **compiled effective schema** for representative seed types, as JSON, plus the complete validation error-code set. These are the M1 oracle: the flattened slot set a conformant metamodel compiler must produce after inheritance resolution, so two implementations cannot diverge on flattening or on which writes are rejected. They are tier-4 tested fixtures under the [contract precedence](../../../build-contracts/README.md#contract-precedence); the authority on _meaning_ is the [metamodel design](../../../03-design/metamodel/README.md), and the source these are compiled from is [`core-v1.json`](../../meta/core-v1.json) (version `1.0.0` — **this is metamodel v1**).
+The expected **compiled effective schema** for representative seed types, as JSON, plus the complete validation
+error-code set. These are the M1 oracle: the flattened slot set a conformant metamodel compiler must produce after
+inheritance resolution, so two implementations cannot diverge on flattening or on which writes are rejected. They are
+tier-4 tested fixtures under the [contract precedence](../../../build-contracts/README.md#contract-precedence); the
+authority on _meaning_ is the [metamodel design](../../../03-design/metamodel/README.md), and the source these are
+compiled from is [`core-v1.json`](../../meta/core-v1.json) (version `1.0.0` — **this is metamodel v1**).
 
 ---
 
 ## What the oracle is
 
-The metamodel is **authored** as `core-v1.json` and **compiled** into an effective schema per type. The [effective schema](../../../03-design/metamodel/slots-and-effective-schema.md) is the flattened, derived slot-and-rule set after `extends` is resolved depth-first, parent slots are flattened into the child, child declarations override same-named parent ones, and the global [validation rules](../../../03-design/metamodel/validation-rules.md) are attached. It is never authored directly; it is what `validate_node` checks every write against and what the resolver reads to know a type's slots.
+The metamodel is **authored** as `core-v1.json` and **compiled** into an effective schema per type. The
+[effective schema](../../../03-design/metamodel/slots-and-effective-schema.md) is the flattened, derived slot-and-rule
+set after `extends` is resolved depth-first, parent slots are flattened into the child, child declarations override
+same-named parent ones, and the global [validation rules](../../../03-design/metamodel/validation-rules.md) are
+attached. It is never authored directly; it is what `validate_node` checks every write against and what the resolver
+reads to know a type's slots.
 
-Each `*.effective-schema.json` here is the expected compiled output for one type. A compiler is conformant for that type when its compiled effective schema equals the fixture under a canonical serialisation. Re-compiling from the same source must reproduce the fixture byte-for-byte ([metamodel-ownership](../../../05-modules/praxis/metamodel-ownership.md): the persisted batch is a derived projection — delete it and Praxis recompiles the same thing).
+Each `*.effective-schema.json` here is the expected compiled output for one type. A compiler is conformant for that type
+when its compiled effective schema equals the fixture under a canonical serialisation. Re-compiling from the same source
+must reproduce the fixture byte-for-byte ([metamodel-ownership](../../../05-modules/praxis/metamodel-ownership.md): the
+persisted batch is a derived projection — delete it and Praxis recompiles the same thing).
 
 The fixtures cover four representative types, chosen to exercise every compilation path the seed has:
 
@@ -21,7 +34,9 @@ The fixtures cover four representative types, chosen to exercise every compilati
 
 ### The fixture shape
 
-Each fixture is an object with: `type_id`, `label`, `category`, `uuid` (the type's stable UUID from the seed), `extends` (the declared parent or `null`), `inheritance_chain` (the resolved chain, root last), and `slots` — an array of flattened slot descriptors. Each slot carries:
+Each fixture is an object with: `type_id`, `label`, `category`, `uuid` (the type's stable UUID from the seed), `extends`
+(the declared parent or `null`), `inheritance_chain` (the resolved chain, root last), and `slots` — an array of
+flattened slot descriptors. Each slot carries:
 
 | Field            | Meaning                                                                                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -35,13 +50,21 @@ Each fixture is an object with: `type_id`, `label`, `category`, `uuid` (the type
 | `uuid`           | The slot's stable UUID, **read from the seed, never minted here**.                                                                                           |
 | `source`         | `self` for a slot the type declares; `inherited` for one flattened from a parent. In the seed, no fixture has an `inherited` slot (no resolvable `extends`). |
 
-`max_length` values come from the seed's global `validation` block (`string.maxLength = 256`, `text.maxLength = 4096`); they are attached to every slot of that kind at compile time, not declared per slot in `core-v1.json`.
+`max_length` values come from the seed's global `validation` block (`string.maxLength = 256`, `text.maxLength = 4096`);
+they are attached to every slot of that kind at compile time, not declared per slot in `core-v1.json`.
 
 ---
 
 ## The validation error-code set
 
-These are the codes a write can be rejected with at the M1 boundary, grounded in [validation-rules](../../../03-design/metamodel/validation-rules.md). The seed surfaces them as one typed `ValidationFailed` error carried in the RFC 9457 envelope ([ADR-0016](../../../06-adrs/ADR-0016-error-envelope-rfc9457.md)) with a human-readable message that names the offending node/edge `id`, the rule broken, and the expected shape ([data/README, importer error reporting](../../README.md)). The codes below are the **enumerated reasons** `ValidationFailed` can carry — the sub-reason an implementation should attach so a surface can act on each case. The `kind`/`category` is `validation` for all of them (surface the problem; do not retry unchanged).
+These are the codes a write can be rejected with at the M1 boundary, grounded in
+[validation-rules](../../../03-design/metamodel/validation-rules.md). The seed surfaces them as one typed
+`ValidationFailed` error carried in the RFC 9457 envelope
+([ADR-0016](../../../06-adrs/ADR-0016-error-envelope-rfc9457.md)) with a human-readable message that names the offending
+node/edge `id`, the rule broken, and the expected shape ([data/README, importer error reporting](../../README.md)). The
+codes below are the **enumerated reasons** `ValidationFailed` can carry — the sub-reason an implementation should attach
+so a surface can act on each case. The `kind`/`category` is `validation` for all of them (surface the problem; do not
+retry unchanged).
 
 | Reason code                  | Applies to | Trigger                                                                                                                     | Source                                               |
 | ---------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
@@ -59,9 +82,15 @@ These are the codes a write can be rejected with at the M1 boundary, grounded in
 
 Notes on honest naming:
 
-- The reason codes are **design-intent labels** for the sub-reasons `ValidationFailed` carries. `core-v1.json` does not enumerate these strings; the contract that they exist as distinct, machine-readable reasons comes from [validation-rules](../../../03-design/metamodel/validation-rules.md) and [data/README](../../README.md). An implementation may name them differently as long as each distinct rule is separately identifiable; the **set of distinguishable failures** is what this table pins.
-- `INHERITANCE_CYCLE` and `SCHEMA_VERSION_MISMATCH` are **compile-time** rejections (the document fails to compile), not write-time rejections; they are listed here because they belong to the same metamodel-validation surface.
-- A rejected write **does not enter the op log** — that non-entry is itself an M1 oracle assertion ([golden-journey](../../../build-contracts/golden-journey.md), step 3).
+- The reason codes are **design-intent labels** for the sub-reasons `ValidationFailed` carries. `core-v1.json` does not
+  enumerate these strings; the contract that they exist as distinct, machine-readable reasons comes from
+  [validation-rules](../../../03-design/metamodel/validation-rules.md) and [data/README](../../README.md). An
+  implementation may name them differently as long as each distinct rule is separately identifiable; the **set of
+  distinguishable failures** is what this table pins.
+- `INHERITANCE_CYCLE` and `SCHEMA_VERSION_MISMATCH` are **compile-time** rejections (the document fails to compile), not
+  write-time rejections; they are listed here because they belong to the same metamodel-validation surface.
+- A rejected write **does not enter the op log** — that non-entry is itself an M1 oracle assertion
+  ([golden-journey](../../../build-contracts/golden-journey.md), step 3).
 
 ---
 
@@ -69,11 +98,26 @@ Notes on honest naming:
 
 These are recorded so a fixture consumer does not mistake an absence for an assertion:
 
-- **The `Stage` supertype gap — decided ([#343](https://github.com/aideon-ai/aideon-desktop/issues/343)): drop the `extends`.** `ValueStreamStage` declares `extends: Stage`, but no `Stage` type exists. Resolution is to **remove the dangling `extends`** (not add `Stage` — a one-subtype, no-lifted-slots placeholder); the M1 compiler rejects any unresolved `extends` target. Until #343 lands the fixture still sets `extends_resolved: false` with its `gap` block; it is rebaselined (gap removed) then.
-- **UUID minting — decided ([#343](https://github.com/aideon-ai/aideon-desktop/issues/343)): re-mint under a recorded namespace.** The committed UUIDs are not reproducible from the seed (the namespace was unrecorded and is unrecoverable). #343 records `package.symbol_uuid { namespace, name_path_version }` in `core-v1.json`, re-mints every symbol, and adds a compiler verify test (recompute = committed, else package error). Until then the fixtures **read** every UUID from the seed and cannot recompute one.
-- **Slot cardinality is unstated.** No seed attribute declares single- vs multi-valued cardinality. The fixtures treat every slot as single-valued by default. The op/fact model carries `cardinality` on `FieldDef` ([op-fact-schema-model](../../../05-modules/mneme/op-fact-schema-model.md)) but the seed does not populate it; multi-valued behaviour is exercised only as design-intent in the temporal vectors.
-- **Default structural rules.** `allowSelf` is declared only for `serves` and `allowDuplicate` only for `accesses`. The behaviour of the unstated cases for `realises`, `hosts`, and `plan_effect` is the compiler default, which `core-v1.json` does not state; the fixtures do not assert it.
-- **`source.priority` dotted name.** `PlanEvent.source.priority` carries a dot. The fixture treats it as a single flat slot key (matching how `core-v1.json` lists it as one `attribute.name`); whether the dot denotes a nested object is design-intent.
+- **The `Stage` supertype gap — decided ([#343](https://github.com/aideon-ai/aideon-desktop/issues/343)): drop the
+  `extends`.** `ValueStreamStage` declares `extends: Stage`, but no `Stage` type exists. Resolution is to **remove the
+  dangling `extends`** (not add `Stage` — a one-subtype, no-lifted-slots placeholder); the M1 compiler rejects any
+  unresolved `extends` target. Until #343 lands the fixture still sets `extends_resolved: false` with its `gap` block;
+  it is rebaselined (gap removed) then.
+- **UUID minting — decided ([#343](https://github.com/aideon-ai/aideon-desktop/issues/343)): re-mint under a recorded
+  namespace.** The committed UUIDs are not reproducible from the seed (the namespace was unrecorded and is
+  unrecoverable). #343 records `package.symbol_uuid { namespace, name_path_version }` in `core-v1.json`, re-mints every
+  symbol, and adds a compiler verify test (recompute = committed, else package error). Until then the fixtures **read**
+  every UUID from the seed and cannot recompute one.
+- **Slot cardinality is unstated.** No seed attribute declares single- vs multi-valued cardinality. The fixtures treat
+  every slot as single-valued by default. The op/fact model carries `cardinality` on `FieldDef`
+  ([op-fact-schema-model](../../../05-modules/mneme/op-fact-schema-model.md)) but the seed does not populate it;
+  multi-valued behaviour is exercised only as design-intent in the temporal vectors.
+- **Default structural rules.** `allowSelf` is declared only for `serves` and `allowDuplicate` only for `accesses`. The
+  behaviour of the unstated cases for `realises`, `hosts`, and `plan_effect` is the compiler default, which
+  `core-v1.json` does not state; the fixtures do not assert it.
+- **`source.priority` dotted name.** `PlanEvent.source.priority` carries a dot. The fixture treats it as a single flat
+  slot key (matching how `core-v1.json` lists it as one `attribute.name`); whether the dot denotes a nested object is
+  design-intent.
 
 ---
 

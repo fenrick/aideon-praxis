@@ -1,6 +1,7 @@
 # Accepted job shape
 
-Every Tauri command that initiates long-running work returns an `AcceptedJob` immediately. The renderer stores it and subscribes to [events](./event-model.md) filtered by `runId`.
+Every Tauri command that initiates long-running work returns an `AcceptedJob` immediately. The renderer stores it and
+subscribes to [events](./event-model.md) filtered by `runId`.
 
 ---
 
@@ -38,7 +39,9 @@ pub struct AcceptedJob {
 }
 ```
 
-The `idempotencyKey` is the caller-supplied key that makes the submission safe to retry ([idempotency-rules.md](./idempotency-rules.md)); `ledgerRef` points to the [run ledger](./run-ledger.md) entry (e.g. `ops/runs/run_abc/run.json`); `acceptedAt` is an [HLC timestamp](../temporal-and-scenario/hlc-encoding.md).
+The `idempotencyKey` is the caller-supplied key that makes the submission safe to retry
+([idempotency-rules.md](./idempotency-rules.md)); `ledgerRef` points to the [run ledger](./run-ledger.md) entry (e.g.
+`ops/runs/run_abc/run.json`); `acceptedAt` is an [HLC timestamp](../temporal-and-scenario/hlc-encoding.md).
 
 ## Work queue classes
 
@@ -59,7 +62,8 @@ pub enum WorkQueueClass {
 }
 ```
 
-The class determines the [phase](./event-model.md) vocabulary the run emits and the [queue](./backpressure.md) it competes for. New variants are additive ([versioning-and-compatibility.md](../ipc/versioning-and-compatibility.md)).
+The class determines the [phase](./event-model.md) vocabulary the run emits and the [queue](./backpressure.md) it
+competes for. New variants are additive ([versioning-and-compatibility.md](../ipc/versioning-and-compatibility.md)).
 
 ## Worked example: an accepted rebuild job
 
@@ -75,11 +79,14 @@ The renderer triggers a schema rebuild for the seed workspace. The command retur
 }
 ```
 
-The renderer subscribes to the [event channel](./event-model.md) filtered by `runId = run_abc` and shows a queued indicator until the first `run.started` event. The full event sequence for this run is in [event-model.md](./event-model.md).
+The renderer subscribes to the [event channel](./event-model.md) filtered by `runId = run_abc` and shows a queued
+indicator until the first `run.started` event. The full event sequence for this run is in
+[event-model.md](./event-model.md).
 
 ## References & standards
 
-- (System contract) [ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md) — the command boundary that returns this envelope.
+- (System contract) [ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md) — the command boundary that
+  returns this envelope.
 
 ## Related documents
 

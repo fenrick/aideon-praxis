@@ -1,177 +1,255 @@
 # Aideon Desktop
 
-The domain glossary for Aideon Desktop — a time-first digital twin of an organisation. This file defines the project's canonical vocabulary. It is a glossary, not a spec: it says what each term _is_, never how it is implemented.
+The domain glossary for Aideon Desktop — a time-first digital twin of an organisation. This file defines the project's
+canonical vocabulary. It is a glossary, not a spec: it says what each term _is_, never how it is implemented.
 
 ## Twin and workspace
 
-**Twin**:
-The complete modelled organisation represented by a workspace, across all slots, layers, scenarios, valid time, and asserted time, as derivable from the canonical operation log and schema. The twin is the whole; a **snapshot** is the twin resolved through one **viewpoint**. Conceptual and resolvable — not a single stored object.
-_Avoid_: current state, present state (that collapses the twin into a snapshot); database, model store (the twin is the resolvable model, not the stored material — see Workspace).
+**Twin**: The complete modelled organisation represented by a workspace, across all slots, layers, scenarios, valid
+time, and asserted time, as derivable from the canonical operation log and schema. The twin is the whole; a **snapshot**
+is the twin resolved through one **viewpoint**. Conceptual and resolvable — not a single stored object. _Avoid_: current
+state, present state (that collapses the twin into a snapshot); database, model store (the twin is the resolvable model,
+not the stored material — see Workspace).
 
-**Workspace**:
-The portable container that stores the canonical material and supporting artefacts for one twin: operation log, schema, metadata, indexes, caches, attachments, exports, and configuration as applicable. The canonical truth is the op log plus schema; indexes, caches, and exported snapshots are derived and rebuildable. Default rule: **one workspace represents one twin** (multiple twins per workspace would be a later, explicit design decision — not the assumed model).
-_Avoid_: database, project file, repo (workspace is the canonical term); twin (the workspace is the container; the twin is the model it represents).
+**Workspace**: The portable container that stores the canonical material and supporting artefacts for one twin:
+operation log, schema, metadata, indexes, caches, attachments, exports, and configuration as applicable. The canonical
+truth is the op log plus schema; indexes, caches, and exported snapshots are derived and rebuildable. Default rule:
+**one workspace represents one twin** (multiple twins per workspace would be a later, explicit design decision — not the
+assumed model). _Avoid_: database, project file, repo (workspace is the canonical term); twin (the workspace is the
+container; the twin is the model it represents).
 
 ## Time
 
-**Fact**:
-A temporal claim about a **slot**, derived from the append-only operation log and used by the resolver. A fact carries a value, **slot**, **layer**, **scenario**, **valid-time** interval, and **asserted time**. Its valid-time interval is `[valid_from, valid_to)`, where `valid_to` may be null for an open-ended claim. A fact is not edited in place; changes are represented by later operations that derive newer or superseding facts. The op log is canonical truth; facts are derived resolution inputs, not the stored primitive.
-_Avoid_: record, row, op-log entry (a fact is the derived semantic claim, not the canonical mutation — see Operation).
+**Fact**: A temporal claim about a **slot**, derived from the append-only operation log and used by the resolver. A fact
+carries a value, **slot**, **layer**, **scenario**, **valid-time** interval, and **asserted time**. Its valid-time
+interval is `[valid_from, valid_to)`, where `valid_to` may be null for an open-ended claim. A fact is not edited in
+place; changes are represented by later operations that derive newer or superseding facts. The op log is canonical
+truth; facts are derived resolution inputs, not the stored primitive. _Avoid_: record, row, op-log entry (a fact is the
+derived semantic claim, not the canonical mutation — see Operation).
 
-**Valid time**:
-The business/world time over which a fact claims to apply. Represented as a half-open interval `[valid_from, valid_to)`: `valid_from` is inclusive; `valid_to` is exclusive and optional. A null `valid_to` is open-ended (holds until superseded or otherwise constrained by resolution); a set `valid_to` is an explicitly bounded claim that does not apply at or after `valid_to`.
-_Avoid_: effective date, start date (say _valid-from_ / _valid-to_); calling a fact "valid-from only" (valid time is an interval, with valid-to optional).
+**Valid time**: The business/world time over which a fact claims to apply. Represented as a half-open interval
+`[valid_from, valid_to)`: `valid_from` is inclusive; `valid_to` is exclusive and optional. A null `valid_to` is
+open-ended (holds until superseded or otherwise constrained by resolution); a set `valid_to` is an explicitly bounded
+claim that does not apply at or after `valid_to`. _Avoid_: effective date, start date (say _valid-from_ / _valid-to_);
+calling a fact "valid-from only" (valid time is an interval, with valid-to optional).
 
-**Asserted time**:
-When the system was told a fact — the instant it was recorded. Fully decoupled from valid time: a fact may be asserted now with a valid-from in the future (planning) or in the past (late correction). The audit axis.
+**Asserted time**: When the system was told a fact — the instant it was recorded. Fully decoupled from valid time: a
+fact may be asserted now with a valid-from in the future (planning) or in the past (late correction). The audit axis.
 _Avoid_: created at, recorded at, transaction time (asserted time is the canonical name).
 
-**Effective interval**:
-The resolved span over which a value actually holds in a snapshot after applying resolution rules. It is derived from the fact's own valid-time interval plus competing facts, layer policy, asserted time, interval specificity, and supersession, and may be narrower than the fact's stored valid-time interval. For example: `sky.colour = blue [0, null)` has a stored valid interval of `[0, ∞)`; if `sky.colour = red [3000, null)` exists in the same layer/scenario and wins resolution from 3000, then blue's effective interval is `[0, 3000)`.
-_Avoid_: effective time, effective date (say _effective interval_); conflating it with a fact's stored valid-time interval (that interval is one input; the effective interval is the resolved result).
+**Effective interval**: The resolved span over which a value actually holds in a snapshot after applying resolution
+rules. It is derived from the fact's own valid-time interval plus competing facts, layer policy, asserted time, interval
+specificity, and supersession, and may be narrower than the fact's stored valid-time interval. For example:
+`sky.colour = blue [0, null)` has a stored valid interval of `[0, ∞)`; if `sky.colour = red [3000, null)` exists in the
+same layer/scenario and wins resolution from 3000, then blue's effective interval is `[0, 3000)`. _Avoid_: effective
+time, effective date (say _effective interval_); conflating it with a fact's stored valid-time interval (that interval
+is one input; the effective interval is the resolved result).
 
-**Viewpoint**:
-The complete frame for resolving or analysing the twin: an as-of **valid time**, an as-of **asserted time** (which belief — what the system knew as of that recording instant), a **layer** or **layer policy** (a single layer such as actual-only, or a blend such as actual-over-plan), a **scenario** (which world), and a **scope**. The first four answer _which version_ of the twin you are looking at; scope answers _which part_. A resolved snapshot or diff is not fully specified without all of them — which is why scope rides inside the viewpoint, not beside it. The asserted coordinate is part of the question, not just audit metadata: pinning it replays a past belief, leaving it at latest shows current belief.
-_Avoid_: subjective time, as-of context, temporal context (viewpoint is the canonical term); bare "as-of" (ambiguous — say _as-of valid time_ / _as-of asserted time_); artefact family (that is the product-layer grouping/lens, not the query frame — see Artefact family).
+**Viewpoint**: The complete frame for resolving or analysing the twin: an as-of **valid time**, an as-of **asserted
+time** (which belief — what the system knew as of that recording instant), a **layer** or **layer policy** (a single
+layer such as actual-only, or a blend such as actual-over-plan), a **scenario** (which world), and a **scope**. The
+first four answer _which version_ of the twin you are looking at; scope answers _which part_. A resolved snapshot or
+diff is not fully specified without all of them — which is why scope rides inside the viewpoint, not beside it. The
+asserted coordinate is part of the question, not just audit metadata: pinning it replays a past belief, leaving it at
+latest shows current belief. _Avoid_: subjective time, as-of context, temporal context (viewpoint is the canonical
+term); bare "as-of" (ambiguous — say _as-of valid time_ / _as-of asserted time_); artefact family (that is the
+product-layer grouping/lens, not the query frame — see Artefact family).
 
-**Snapshot**:
-The twin's resolved state at a single viewpoint. A resolved _view_, not necessarily a stored copy — it is computed from facts for the given valid time, asserted time, layer policy, and scenario.
-_Avoid_: copy, dump, export (a snapshot is a resolved view, not a materialised artefact).
+**Snapshot**: The twin's resolved state at a single viewpoint. A resolved _view_, not necessarily a stored copy — it is
+computed from facts for the given valid time, asserted time, layer policy, and scenario. _Avoid_: copy, dump, export (a
+snapshot is a resolved view, not a materialised artefact).
 
-**Effective graph**:
-The entity-and-relationship graph form of a **snapshot** — the resolved nodes and edges at a viewpoint, derived from the op log and rebuildable. Here "effective" means _resolved / in effect_; do **not** confuse it with **effective interval** (a derived time span).
-_Avoid_: current graph (it is viewpoint-relative, not "now"); using "effective" loosely (reserve it for _effective graph_ and _effective interval_, which are distinct).
+**Effective graph**: The entity-and-relationship graph form of a **snapshot** — the resolved nodes and edges at a
+viewpoint, derived from the op log and rebuildable. Here "effective" means _resolved / in effect_; do **not** confuse it
+with **effective interval** (a derived time span). _Avoid_: current graph (it is viewpoint-relative, not "now"); using
+"effective" loosely (reserve it for _effective graph_ and _effective interval_, which are distinct).
 
-**Diff**:
-A comparison of two snapshots, one per viewpoint. The kind of delta — valid-time, asserted/belief, layer (variance), scenario, or mixed — is _derived_ from which viewpoint coordinates differ between the two sides; it is not an enumerated kind the caller chooses up front.
-_Avoid_: compare, delta-kind enum, time_delta / scenario_delta (those name a fixed taxonomy; the delta kind is derived from the viewpoints).
+**Diff**: A comparison of two snapshots, one per viewpoint. The kind of delta — valid-time, asserted/belief, layer
+(variance), scenario, or mixed — is _derived_ from which viewpoint coordinates differ between the two sides; it is not
+an enumerated kind the caller chooses up front. _Avoid_: compare, delta-kind enum, time_delta / scenario_delta (those
+name a fixed taxonomy; the delta kind is derived from the viewpoints).
 
 ## Model
 
-**Entity**:
-An identified thing in the twin that can carry slots, with a **type** from the metamodel. Examples: application, vendor, team, capability, process, system, control. The subject a slot belongs to.
-_Avoid_: node (the graph projection of an entity — storage/validation/traversal/layout/canvas only), object, record, item.
+**Entity**: An identified thing in the twin that can carry slots, with a **type** from the metamodel. Examples:
+application, vendor, team, capability, process, system, control. The subject a slot belongs to. _Avoid_: node (the graph
+projection of an entity — storage/validation/traversal/layout/canvas only), object, record, item.
 
-**Relationship**:
-A typed, directed connection between entities. It is itself **addressable** — a relationship carries its own slots, so its attributes are facts over time (e.g. an application _depends on_ a system, and that dependency has criticality, confidence, source, or review status that change). This requires stable relationship identity, so slots can attach to the relationship itself, not only to its source or target entity.
-_Avoid_: edge (the graph projection of a relationship — storage/validation/traversal/layout/canvas only), link, connection, association.
+**Relationship**: A typed, directed connection between entities. It is itself **addressable** — a relationship carries
+its own slots, so its attributes are facts over time (e.g. an application _depends on_ a system, and that dependency has
+criticality, confidence, source, or review status that change). This requires stable relationship identity, so slots can
+attach to the relationship itself, not only to its source or target entity. _Avoid_: edge (the graph projection of a
+relationship — storage/validation/traversal/layout/canvas only), link, connection, association.
 
-**Node**:
-The graph projection of an **entity** — its representation in storage, validation, indexing, traversal, layout, and canvas (React Flow). Use only when the topic is the graph itself; the domain term is entity.
-_Avoid_: entity (in domain prose say entity; node is the graph form).
+**Node**: The graph projection of an **entity** — its representation in storage, validation, indexing, traversal,
+layout, and canvas (React Flow). Use only when the topic is the graph itself; the domain term is entity. _Avoid_: entity
+(in domain prose say entity; node is the graph form).
 
-**Edge**:
-The graph projection of a **relationship** — its representation in storage, validation, traversal, layout, and canvas. Use only when the topic is the graph itself; the domain term is relationship.
-_Avoid_: relationship (in domain prose say relationship; edge is the graph form).
+**Edge**: The graph projection of a **relationship** — its representation in storage, validation, traversal, layout, and
+canvas. Use only when the topic is the graph itself; the domain term is relationship. _Avoid_: relationship (in domain
+prose say relationship; edge is the graph form).
 
-**Slot**:
-The addressable claim target in the twin — the stable question a fact answers, independent of the value, valid time, asserted time, layer, and scenario. A slot defines a resolution key: facts about the same slot compete or compose according to that slot's cardinality and resolution rule. An attribute, relationship, membership, classification, or metric is each a _kind_ of slot, never the definition of one.
-_Avoid_: entity attribute, field, cell, edge (those are special cases of a slot, not the general claim target).
+**Slot**: The addressable claim target in the twin — the stable question a fact answers, independent of the value, valid
+time, asserted time, layer, and scenario. A slot defines a resolution key: facts about the same slot compete or compose
+according to that slot's cardinality and resolution rule. An attribute, relationship, membership, classification, or
+metric is each a _kind_ of slot, never the definition of one. _Avoid_: entity attribute, field, cell, edge (those are
+special cases of a slot, not the general claim target).
 
-**Layer**:
-A resolution coordinate that answers "what kind of claim is this?" — `plan`, `actual`, and extensibly `forecast`, `budget`, `target`, or other baselines. Part of a fact's identity: a plan value and an actual value coexist for the same slot, valid time, and scenario. How layers combine on read is a **policy** chosen by the viewpoint (a single selected layer, or a blend such as actual-over-plan) — never a fixed precedence, because variance analysis requires plan and actual to stay visible side by side.
-_Avoid_: baseline, band, track (those name a specific layer value, not the coordinate); treating "actual overrides plan" as a universal rule (it is one selectable policy).
+**Layer**: A resolution coordinate that answers "what kind of claim is this?" — `plan`, `actual`, and extensibly
+`forecast`, `budget`, `target`, or other baselines. Part of a fact's identity: a plan value and an actual value coexist
+for the same slot, valid time, and scenario. How layers combine on read is a **policy** chosen by the viewpoint (a
+single selected layer, or a blend such as actual-over-plan) — never a fixed precedence, because variance analysis
+requires plan and actual to stay visible side by side. _Avoid_: baseline, band, track (those name a specific layer
+value, not the coordinate); treating "actual overrides plan" as a universal rule (it is one selectable policy).
 
-**Scenario**:
-An alternate modelling branch or world that facts belong to — an additive overlay on the base case. Orthogonal to layer: a scenario carries its own layers, so you can compare plan vs actual _within_ one scenario, or one scenario's plan against another's. Omitting a scenario resolves the base case.
-_Avoid_: branch, variant, what-if, version (scenario is the canonical term); layer (a scenario is a world; a layer is a kind of claim within it).
+**Scenario**: An alternate modelling branch or world that facts belong to — an additive overlay on the base case.
+Orthogonal to layer: a scenario carries its own layers, so you can compare plan vs actual _within_ one scenario, or one
+scenario's plan against another's. Omitting a scenario resolves the base case. _Avoid_: branch, variant, what-if,
+version (scenario is the canonical term); layer (a scenario is a world; a layer is a kind of claim within it).
 
-**Scope**:
-The "which part" coordinate of a viewpoint — the selection that narrows a question to a slice of the twin (a snapshot, diff, export, impact, centrality, or any query). Composable, not one fixed mechanism: select by type, by explicit entity set, by traversal from seed refs (e.g. dependencies within N hops), by relationship filter, by attribute filter, and later by named saved scopes. Scope changes what is _included_ in the question and answer; it never changes the underlying twin.
-_Avoid_: filter, query, selection, view (those are partial mechanisms; scope is the composable selection coordinate as a whole).
+**Scope**: The "which part" coordinate of a viewpoint — the selection that narrows a question to a slice of the twin (a
+snapshot, diff, export, impact, centrality, or any query). Composable, not one fixed mechanism: select by type, by
+explicit entity set, by traversal from seed refs (e.g. dependencies within N hops), by relationship filter, by attribute
+filter, and later by named saved scopes. Scope changes what is _included_ in the question and answer; it never changes
+the underlying twin. _Avoid_: filter, query, selection, view (those are partial mechanisms; scope is the composable
+selection coordinate as a whole).
 
-**Content classification**:
-A per-claim axis stating _what kind of claim_ a fact carries — **Asserted**, **Inferred**, or **Generated**. Orthogonal to **layer** (actual/plan/forecast/…) and to the producing **Change Event** (what authored the change): a fact has a layer, a content classification, and an asserted time independently.
-_Avoid_: provenance (that is the source/origin; content classification is the claim kind), confidence (a separate quality signal).
+**Content classification**: A per-claim axis stating _what kind of claim_ a fact carries — **Asserted**, **Inferred**,
+or **Generated**. Orthogonal to **layer** (actual/plan/forecast/…) and to the producing **Change Event** (what authored
+the change): a fact has a layer, a content classification, and an asserted time independently. _Avoid_: provenance (that
+is the source/origin; content classification is the claim kind), confidence (a separate quality signal).
 
-**Asserted** (content):
-A claim that has been explicitly stated or accepted as a claim — by a user, source system, import, or approved process. The controlled truth of the model; not silently overwritten by automation.
-_Avoid_: confusing with **asserted time** — asserted time is _when_ the claim entered canonical history; Asserted content is _what kind_ of claim it is. A fact can be Asserted, Inferred, or Generated content, each with its own asserted time. (Do not rename to "stated"/"authored"; Asserted is canonical.)
+**Asserted** (content): A claim that has been explicitly stated or accepted as a claim — by a user, source system,
+import, or approved process. The controlled truth of the model; not silently overwritten by automation. _Avoid_:
+confusing with **asserted time** — asserted time is _when_ the claim entered canonical history; Asserted content is
+_what kind_ of claim it is. A fact can be Asserted, Inferred, or Generated content, each with its own asserted time. (Do
+not rename to "stated"/"authored"; Asserted is canonical.)
 
-**Inferred** (content):
-A claim the system derived from asserted facts via declared rules, structure, or analytics. Traceable to its inputs and automatically reconsidered when they change. Grounded in assertions, but not itself a human assertion.
-_Avoid_: computed, calculated (acceptable informally, but Inferred is the canonical classification).
+**Inferred** (content): A claim the system derived from asserted facts via declared rules, structure, or analytics.
+Traceable to its inputs and automatically reconsidered when they change. Grounded in assertions, but not itself a human
+assertion. _Avoid_: computed, calculated (acceptable informally, but Inferred is the canonical classification).
 
-**Generated** (content):
-A claim produced by an LLM/ML process (summary, suggested mapping, draft, annotation). A suggestion until accepted. Acceptance is a **new operation** that records an Asserted claim — the original Generated item is never mutated in place and remains traceable as provenance.
-_Avoid_: AI content, draft (Generated is the canonical classification); treating Generated as fact before acceptance.
+**Generated** (content): A claim produced by an LLM/ML process (summary, suggested mapping, draft, annotation). A
+suggestion until accepted. Acceptance is a **new operation** that records an Asserted claim — the original Generated
+item is never mutated in place and remains traceable as provenance. _Avoid_: AI content, draft (Generated is the
+canonical classification); treating Generated as fact before acceptance.
 
-**Change Event**:
-The user-facing authoring object: it captures intent and context — owner, rationale, source, approval state, grouping, dependencies, lifecycle. When applied it compiles into one or more **operations**. **Plan Event** is a subtype that authors a non-actual layer; other subtypes represent observation, import, reconciliation, or correction (which may author the actual layer).
-_Avoid_: operation (an op is the canonical storage mutation a Change Event compiles into), transaction, command (Change Event is the canonical term for the authoring object).
+**Change Event**: The user-facing authoring object: it captures intent and context — owner, rationale, source, approval
+state, grouping, dependencies, lifecycle. When applied it compiles into one or more **operations**. **Plan Event** is a
+subtype that authors a non-actual layer; other subtypes represent observation, import, reconciliation, or correction
+(which may author the actual layer). _Avoid_: operation (an op is the canonical storage mutation a Change Event compiles
+into), transaction, command (Change Event is the canonical term for the authoring object).
 
-**Plan Event**:
-A subtype of **Change Event** — an authoring object representing an intended change. When applied it produces slot-level **facts** in a selected non-actual **layer** (default plan, also forecast / target / budget / baseline), under the base case or a **scenario**; its `effective_at` is the **valid-from** of those facts, and its effects describe the claims to write (attribute updates, relationship link / unlink, create, delete). It also carries planning context — owner, rationale, source, approval state, dependencies, grouping — that facts do not. The twin resolves the produced facts, not the Plan Event directly. Actual-layer facts come from observation, import, reconciliation, or explicit correction — not from Plan Events.
-_Avoid_: change, edit, transaction (a Plan Event is the authored intention, not a generic write); reading its `effective_at` as "effective interval" (on a Plan Event it is valid-from).
+**Plan Event**: A subtype of **Change Event** — an authoring object representing an intended change. When applied it
+produces slot-level **facts** in a selected non-actual **layer** (default plan, also forecast / target / budget /
+baseline), under the base case or a **scenario**; its `effective_at` is the **valid-from** of those facts, and its
+effects describe the claims to write (attribute updates, relationship link / unlink, create, delete). It also carries
+planning context — owner, rationale, source, approval state, dependencies, grouping — that facts do not. The twin
+resolves the produced facts, not the Plan Event directly. Actual-layer facts come from observation, import,
+reconciliation, or explicit correction — not from Plan Events. _Avoid_: change, edit, transaction (a Plan Event is the
+authored intention, not a generic write); reading its `effective_at` as "effective interval" (on a Plan Event it is
+valid-from).
 
-**Operation** (op):
-The canonical, append-only mutation recorded in the **op log** — create, update, delete, link, unlink, or similar. It records that a mutation happened, carrying the claim payload, valid-from, layer, scenario, provenance, and asserted time (the append instant). The op log is the durable truth from which facts are derived; reserve "operation" for this storage layer.
-_Avoid_: change, edit (those are authoring; see Change Event); fact (a fact is the derived claim, an op is the mutation that records it); transaction.
+**Operation** (op): The canonical, append-only mutation recorded in the **op log** — create, update, delete, link,
+unlink, or similar. It records that a mutation happened, carrying the claim payload, valid-from, layer, scenario,
+provenance, and asserted time (the append instant). The op log is the durable truth from which facts are derived;
+reserve "operation" for this storage layer. _Avoid_: change, edit (those are authoring; see Change Event); fact (a fact
+is the derived claim, an op is the mutation that records it); transaction.
 
 ## Metamodel
 
-**Metamodel**:
-The authored, portable definition of the twin's modelling language for a workspace — entity types, relationship types, slot definitions, inheritance, validation rules, defaults, and merge policies. Schema-as-data: the authority for what can exist in the twin.
-_Avoid_: schema (too overloaded — say _metamodel_ for the authored definition and _effective schema_ for the compiled form), ontology, data model.
+**Metamodel**: The authored, portable definition of the twin's modelling language for a workspace — entity types,
+relationship types, slot definitions, inheritance, validation rules, defaults, and merge policies. Schema-as-data: the
+authority for what can exist in the twin. _Avoid_: schema (too overloaded — say _metamodel_ for the authored definition
+and _effective schema_ for the compiled form), ontology, data model.
 
-**Type**:
-A metamodel-defined **kind** for an entity or a relationship; it governs which **slots** an instance may carry and the rules for them (cardinality, merge policy, required, defaults, validation). Say _entity type_ / _relationship type_ when the distinction matters. An **entity type** defines the allowed slots and rules for entities of that kind (attributes, allowed relationships, category, inheritance, defaults). A **relationship type** defines a typed, directed connection between entity types: valid source/target types, multiplicity, direction, and any slots the relationship itself carries.
-_Avoid_: class, category (category is one facet of a type, not the type itself).
+**Type**: A metamodel-defined **kind** for an entity or a relationship; it governs which **slots** an instance may carry
+and the rules for them (cardinality, merge policy, required, defaults, validation). Say _entity type_ / _relationship
+type_ when the distinction matters. An **entity type** defines the allowed slots and rules for entities of that kind
+(attributes, allowed relationships, category, inheritance, defaults). A **relationship type** defines a typed, directed
+connection between entity types: valid source/target types, multiplicity, direction, and any slots the relationship
+itself carries. _Avoid_: class, category (category is one facet of a type, not the type itself).
 
-**Effective schema**:
-The compiled, flattened slot-and-rule set for a single type after inheritance and metamodel rules are applied. Derived from the **metamodel** and used by validation and resolution — never authored directly.
-_Avoid_: schema (bare), type definition (effective schema is the compiled view; the metamodel is the authored source).
+**Effective schema**: The compiled, flattened slot-and-rule set for a single type after inheritance and metamodel rules
+are applied. Derived from the **metamodel** and used by validation and resolution — never authored directly. _Avoid_:
+schema (bare), type definition (effective schema is the compiled view; the metamodel is the authored source).
 
 ## Artefacts
 
-**Artefact family**:
-A named grouping of artefacts that corresponds to a recognisable business question or starting shape — e.g. business motivation, service blueprint, operating model, capability map, roadmap. It guides the initial structure and interpretation of an artefact, but it is **not** a temporal, scenario, layer, or scope frame.
-_Avoid_: viewpoint (in this project **Viewpoint** means the bitemporal/model query frame used to resolve or analyse the twin — see Viewpoint); lens, perspective.
+**Artefact family**: A named grouping of artefacts that corresponds to a recognisable business question or starting
+shape — e.g. business motivation, service blueprint, operating model, capability map, roadmap. It guides the initial
+structure and interpretation of an artefact, but it is **not** a temporal, scenario, layer, or scope frame. _Avoid_:
+viewpoint (in this project **Viewpoint** means the bitemporal/model query frame used to resolve or analyse the twin —
+see Viewpoint); lens, perspective.
 
-**Artefact**:
-A named, versioned, executable **definition**: it declares the business question being answered and how to answer it from the twin — purpose, audience, **artefact family**, **form**, default **scope**, inclusion rules, execution contract, and output expectations. Stored, reusable, and versioned. Distinct from an **Artefact result** (a single execution). Chain: _Artefact + Viewpoint → Artefact result._
-_Avoid_: report, diagram, document, export (those are forms or outputs, not the definition); using "artefact" for a single execution (that is an artefact result).
+**Artefact**: A named, versioned, executable **definition**: it declares the business question being answered and how to
+answer it from the twin — purpose, audience, **artefact family**, **form**, default **scope**, inclusion rules,
+execution contract, and output expectations. Stored, reusable, and versioned. Distinct from an **Artefact result** (a
+single execution). Chain: _Artefact + Viewpoint → Artefact result._ _Avoid_: report, diagram, document, export (those
+are forms or outputs, not the definition); using "artefact" for a single execution (that is an artefact result).
 
-**Artefact result**:
-The output of executing an **Artefact** at a specific **Viewpoint** — a bounded, content-classified, provenance-carrying projection **derived from** the resolved **Snapshot** and shaped by the artefact's form, scope, inclusion rules, classification rules, and presentation contract. It is _not_ the snapshot: one snapshot can back many artefact results, and one artefact yields different results at different viewpoints.
-_Avoid_: snapshot (a result is derived from a snapshot, not equal to it); artefact (that is the reusable definition).
+**Artefact result**: The output of executing an **Artefact** at a specific **Viewpoint** — a bounded,
+content-classified, provenance-carrying projection **derived from** the resolved **Snapshot** and shaped by the
+artefact's form, scope, inclusion rules, classification rules, and presentation contract. It is _not_ the snapshot: one
+snapshot can back many artefact results, and one artefact yields different results at different viewpoints. _Avoid_:
+snapshot (a result is derived from a snapshot, not equal to it); artefact (that is the reusable definition).
 
-**Form**:
-The presentation shape of an artefact result — how the result is structured and rendered. A controlled but extensible set: view, catalogue, matrix, map, report, page. A form shapes the result contract (a matrix has rows and columns; a map has nodes and relationships; a report has sections) but does not change the underlying twin, viewpoint, facts, or artefact family.
-_Avoid_: artefact type (Type means the metamodel kind of an entity/relationship); diagram (only one form among several); treating form as the business question (that belongs to the Artefact and artefact family).
+**Form**: The presentation shape of an artefact result — how the result is structured and rendered. A controlled but
+extensible set: view, catalogue, matrix, map, report, page. A form shapes the result contract (a matrix has rows and
+columns; a map has nodes and relationships; a report has sections) but does not change the underlying twin, viewpoint,
+facts, or artefact family. _Avoid_: artefact type (Type means the metamodel kind of an entity/relationship); diagram
+(only one form among several); treating form as the business question (that belongs to the Artefact and artefact
+family).
 
 ## Signals and quality
 
-**Signal**:
-A system-generated prompt for human judgement over the twin — a **warning**, **ranking**, **recommendation**, or **review task** (the four families). Each declares six required elements: signal type, affected scope, why it fired, strength (confidence), viewpoint context, and valid actions. A signal never commits truth, mutates an artefact, or resolves itself: acting on it is a **new operation** that records an **Asserted** claim attributed to the person, with the signal kept as provenance. Distinct from accepted-work status, validation errors, provenance notices, and assistant chat.
-_Avoid_: alert, notification (signal is the canonical term — not one undifferentiated alert layer); warning (that is one family, not the umbrella).
+**Signal**: A system-generated prompt for human judgement over the twin — a **warning**, **ranking**,
+**recommendation**, or **review task** (the four families). Each declares six required elements: signal type, affected
+scope, why it fired, strength (confidence), viewpoint context, and valid actions. A signal never commits truth, mutates
+an artefact, or resolves itself: acting on it is a **new operation** that records an **Asserted** claim attributed to
+the person, with the signal kept as provenance. Distinct from accepted-work status, validation errors, provenance
+notices, and assistant chat. _Avoid_: alert, notification (signal is the canonical term — not one undifferentiated alert
+layer); warning (that is one family, not the umbrella).
 
-**Confidence**:
-The unified quality scale qualifying how much a result, signal, or claim can be relied upon — High (≥ 0.85), Medium (0.60–0.85), Low (0.30–0.60), Indicative (< 0.30); ADR-0021. The same scale a fact's confidence and a signal's strength use; always bounded, never unqualified certainty.
-_Avoid_: integrity (that scores model content, not reliance — see Integrity); certainty, trust score (confidence is the canonical term).
+**Confidence**: The unified quality scale qualifying how much a result, signal, or claim can be relied upon — High (≥
+0.85), Medium (0.60–0.85), Low (0.30–0.60), Indicative (< 0.30); ADR-0021. The same scale a fact's confidence and a
+signal's strength use; always bounded, never unqualified certainty. _Avoid_: integrity (that scores model content, not
+reliance — see Integrity); certainty, trust score (confidence is the canonical term).
 
-**Integrity**:
-How well-founded model **content** is — an entity, relationship, artefact result, or subgraph — across five dimensions (completeness, connectivity, recency, consistency, corroboration), computed by Praxis; ADR-0020. It scores the content itself, not the output about it.
-_Avoid_: confidence (that qualifies a result/signal; integrity qualifies the content — see Confidence); quality, health (too vague).
+**Integrity**: How well-founded model **content** is — an entity, relationship, artefact result, or subgraph — across
+five dimensions (completeness, connectivity, recency, consistency, corroboration), computed by Praxis; ADR-0020. It
+scores the content itself, not the output about it. _Avoid_: confidence (that qualifies a result/signal; integrity
+qualifies the content — see Confidence); quality, health (too vague).
 
-**Result state**:
-The user-visible honesty status of an artefact result, signal, analysis, or other derived output — whether it is current, outdated, incomplete, rebuilding, or awaiting human review. The current states: **Fresh** (current against its inputs and viewpoint), **Stale** (was valid but inputs / viewpoint / definition / dependencies changed), **Partial** (intentionally incomplete — some inputs, scope, permissions, or dependencies unavailable), **Rebuilding** (being regenerated; not final), **Awaiting review** (includes generated/inferred or review-gated content needing human acceptance before it is treated as asserted). The canonical labels, display rules, and allowed combinations are defined in **Documentation Standard §9** — the single source of truth; this entry names the concept, not the state machine.
-_Avoid_: duplicating the §9 state machine here; "status" used loosely where _result state_ is meant; hiding Stale or Partial behind neutral wording; treating Awaiting review as an error state.
+**Result state**: The user-visible honesty status of an artefact result, signal, analysis, or other derived output —
+whether it is current, outdated, incomplete, rebuilding, or awaiting human review. The current states: **Fresh**
+(current against its inputs and viewpoint), **Stale** (was valid but inputs / viewpoint / definition / dependencies
+changed), **Partial** (intentionally incomplete — some inputs, scope, permissions, or dependencies unavailable),
+**Rebuilding** (being regenerated; not final), **Awaiting review** (includes generated/inferred or review-gated content
+needing human acceptance before it is treated as asserted). The canonical labels, display rules, and allowed
+combinations are defined in **Documentation Standard §9** — the single source of truth; this entry names the concept,
+not the state machine. _Avoid_: duplicating the §9 state machine here; "status" used loosely where _result state_ is
+meant; hiding Stale or Partial behind neutral wording; treating Awaiting review as an error state.
 
 ## Roadmap and plateaus
 
-**Plateau**:
-A marked, labelled waypoint on the twin's timeline: a named **viewpoint** representing a relatively stable state of a defined **scope** over a limited period (the ArchiMate sense of a relatively stable architecture state). Normally defined by as-of valid time, asserted time, layer (or layer policy), scenario if applicable, scope, and label. The marker is **authored** (model/product layer); the state resolved at it is a derived **snapshot** — neither is canonical truth.
-_Avoid_: any stable interval found by analysis (that is _plateau detection_); equating a plateau with the snapshot resolved at it; treating a plateau as canonical truth.
+**Plateau**: A marked, labelled waypoint on the twin's timeline: a named **viewpoint** representing a relatively stable
+state of a defined **scope** over a limited period (the ArchiMate sense of a relatively stable architecture state).
+Normally defined by as-of valid time, asserted time, layer (or layer policy), scenario if applicable, scope, and label.
+The marker is **authored** (model/product layer); the state resolved at it is a derived **snapshot** — neither is
+canonical truth. _Avoid_: any stable interval found by analysis (that is _plateau detection_); equating a plateau with
+the snapshot resolved at it; treating a plateau as canonical truth.
 
-**Roadmap**:
-An ordered sequence of **plateaus** — the waypoints (now, intermediate states, target) a piece of the twin is planned to move through.
-_Avoid_: timeline (a roadmap is the ordered plateaus, not the time axis itself).
+**Roadmap**: An ordered sequence of **plateaus** — the waypoints (now, intermediate states, target) a piece of the twin
+is planned to move through. _Avoid_: timeline (a roadmap is the ordered plateaus, not the time axis itself).
 
-**Transition**:
-The derived change between two adjacent **plateaus** in a roadmap, computed as a **diff** of the two plateau viewpoints (the ArchiMate **Gap**). The delta kind is derived per [ADR-0008](docs/06-adrs/ADR-0008-diff-compares-two-viewpoints.md) from the coordinates that differ. Derived on demand, never authored.
-_Avoid_: gap (acceptable as the ArchiMate alias, but transition is canonical); treating a transition as authored truth (it is derived from the adjacent plateau snapshots).
+**Transition**: The derived change between two adjacent **plateaus** in a roadmap, computed as a **diff** of the two
+plateau viewpoints (the ArchiMate **Gap**). The delta kind is derived per
+[ADR-0008](docs/06-adrs/ADR-0008-diff-compares-two-viewpoints.md) from the coordinates that differ. Derived on demand,
+never authored. _Avoid_: gap (acceptable as the ArchiMate alias, but transition is canonical); treating a transition as
+authored truth (it is derived from the adjacent plateau snapshots).
 
-**Plateau detection**:
-A **signal** or analysis that identifies candidate stable periods or potential plateaus from the twin. It may _suggest_ plateaus, but it does not define one — a plateau exists only when a user or accepted process authors its marker.
-_Avoid_: using "plateau" for the detected interval (the detected interval is a candidate; the plateau is the authored waypoint — see Plateau).
+**Plateau detection**: A **signal** or analysis that identifies candidate stable periods or potential plateaus from the
+twin. It may _suggest_ plateaus, but it does not define one — a plateau exists only when a user or accepted process
+authors its marker. _Avoid_: using "plateau" for the detected interval (the detected interval is a candidate; the
+plateau is the authored waypoint — see Plateau).

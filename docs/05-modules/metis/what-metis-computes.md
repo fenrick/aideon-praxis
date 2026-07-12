@@ -1,8 +1,11 @@
 # What Metis computes
 
-The families of computation Metis owns — centrality, impact, paths, and cost — and what each answers. For a reader deciding which family fits a question. The named algorithms and their complexity are in [algorithms and bounds](./algorithms-and-bounds.md); this file is the catalogue of capabilities.
+The families of computation Metis owns — centrality, impact, paths, and cost — and what each answers. For a reader
+deciding which family fits a question. The named algorithms and their complexity are in
+[algorithms and bounds](./algorithms-and-bounds.md); this file is the catalogue of capabilities.
 
-This describes **design intent**: the families and their result shapes are specified here; the engine that runs them is not yet implemented ([README](./README.md)).
+This describes **design intent**: the families and their result shapes are specified here; the engine that runs them is
+not yet implemented ([README](./README.md)).
 
 ---
 
@@ -17,7 +20,9 @@ This describes **design intent**: the families and their result shapes are speci
 | **Risk and diagnostics**    | Concentration risk, structural weak points                                  | Where is the twin structurally fragile?                                                                  |
 | **Temporal summaries**      | Change summaries across time or scenario                                    | What changed between two viewpoints, and how much?                                                       |
 
-Each family is a typed surface — ranked items with scores and contributing factors, impact sets with supporting paths, path bundles with node and relationship sequences — not a free-form blob. The evidence each carries is in [explainable evidence](./explainable-evidence.md).
+Each family is a typed surface — ranked items with scores and contributing factors, impact sets with supporting paths,
+path bundles with node and relationship sequences — not a free-form blob. The evidence each carries is in
+[explainable evidence](./explainable-evidence.md).
 
 ---
 
@@ -25,9 +30,13 @@ Each family is a typed surface — ranked items with scores and contributing fac
 
 Three properties hold across all of them, and are invariants ([README](./README.md)):
 
-- **Computed at a viewpoint.** Every job declares its input: a workspace or partition boundary, an explicit as-of valid time and optional scenario, and a filtered graph projection ([determinism and bounds](./determinism-and-bounds.md)). The result carries the viewpoint it was computed at.
-- **Inferred, never canonical.** A result is a view, recomputed when its projection is invalidated ([ADR-0027](../../06-adrs/ADR-0027-projection-consistency-model.md)); it never updates entity state.
-- **Bounded and flagged.** Every result carries truncation flags, approximation markers, and warnings where input quality affected it ([algorithms and bounds](./algorithms-and-bounds.md)).
+- **Computed at a viewpoint.** Every job declares its input: a workspace or partition boundary, an explicit as-of valid
+  time and optional scenario, and a filtered graph projection ([determinism and bounds](./determinism-and-bounds.md)).
+  The result carries the viewpoint it was computed at.
+- **Inferred, never canonical.** A result is a view, recomputed when its projection is invalidated
+  ([ADR-0027](../../06-adrs/ADR-0027-projection-consistency-model.md)); it never updates entity state.
+- **Bounded and flagged.** Every result carries truncation flags, approximation markers, and warnings where input
+  quality affected it ([algorithms and bounds](./algorithms-and-bounds.md)).
 
 ---
 
@@ -46,7 +55,13 @@ Metis gives these surfaces something defensible to show; it does not own their l
 
 ## Worked example — ranking capabilities by structural importance
 
-Over the [baseline](../../data/base/baseline.yaml), a centrality job ranks the three capabilities — `Customer Insight`, `Journey Orchestration`, `Automation Fabric` — by their position in the resolved graph. Importance flows along the canonical relationships: a capability is more central when more applications `realises` it and it `serves` more value-stream stages. In the small baseline each capability serves exactly one stage and is realised by one application, so the ranking is driven by their wider connectivity and the relationship weights (`serves.confidence`, `realises.criticality`). The result is a ranked list, each item carrying its score and its top contributing relationships ([explainable evidence](./explainable-evidence.md)) — not a bare number.
+Over the [baseline](../../data/base/baseline.yaml), a centrality job ranks the three capabilities — `Customer Insight`,
+`Journey Orchestration`, `Automation Fabric` — by their position in the resolved graph. Importance flows along the
+canonical relationships: a capability is more central when more applications `realises` it and it `serves` more
+value-stream stages. In the small baseline each capability serves exactly one stage and is realised by one application,
+so the ranking is driven by their wider connectivity and the relationship weights (`serves.confidence`,
+`realises.criticality`). The result is a ranked list, each item carrying its score and its top contributing
+relationships ([explainable evidence](./explainable-evidence.md)) — not a bare number.
 
 ---
 

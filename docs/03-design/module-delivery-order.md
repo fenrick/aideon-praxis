@@ -1,22 +1,36 @@
 # Module delivery order
 
-Why the modules ship in the order they do — the dependency rationale behind the milestone sequence, the critical path through it, and what each delivered module unlocks. For a reader who has seen the milestone table in the [roadmap](../00-index/ROADMAP.md) and wants to know _why_ the order is the only safe one, not _what_ the milestones contain.
+Why the modules ship in the order they do — the dependency rationale behind the milestone sequence, the critical path
+through it, and what each delivered module unlocks. For a reader who has seen the milestone table in the
+[roadmap](../00-index/ROADMAP.md) and wants to know _why_ the order is the only safe one, not _what_ the milestones
+contain.
 
-This document is the _why_. The milestone table, the MVP definition, and the per-milestone exit criteria live in the [roadmap](../00-index/ROADMAP.md) and are not repeated here; the authoritative dependency graph the order rests on is the [module dependency map](../01-architecture/module-dependency-map.md).
+This document is the _why_. The milestone table, the MVP definition, and the per-milestone exit criteria live in the
+[roadmap](../00-index/ROADMAP.md) and are not repeated here; the authoritative dependency graph the order rests on is
+the [module dependency map](../01-architecture/module-dependency-map.md).
 
 ---
 
 ## The order is forced, not chosen
 
-The delivery order is not a product-priority preference that could be reshuffled by demand. It is **forced by the acyclic engine dependency graph** ([module dependency map](../01-architecture/module-dependency-map.md)): a module can be built only after everything it depends on can carry it, because a module that reads through Mneme cannot be exercised before Mneme stores anything, and a module that maps onto the metamodel cannot be exercised before Praxis defines one. The graph is acyclic by construction ([ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)), so it admits a topological order; the milestone sequence _is_ that topological order, grouped into capability gates.
+The delivery order is not a product-priority preference that could be reshuffled by demand. It is **forced by the
+acyclic engine dependency graph** ([module dependency map](../01-architecture/module-dependency-map.md)): a module can
+be built only after everything it depends on can carry it, because a module that reads through Mneme cannot be exercised
+before Mneme stores anything, and a module that maps onto the metamodel cannot be exercised before Praxis defines one.
+The graph is acyclic by construction ([ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)), so it admits a
+topological order; the milestone sequence _is_ that topological order, grouped into capability gates.
 
-Naming the consequence: because the order follows dependencies, it cannot be accelerated by working harder on a later module. Building Sophia before Praxis validates against the metamodel would produce Generated suggestions with nothing well-formed to suggest against. The sequence is a constraint the architecture imposes, and the trade-off it accepts is that a high-demand later capability still waits for its foundation.
+Naming the consequence: because the order follows dependencies, it cannot be accelerated by working harder on a later
+module. Building Sophia before Praxis validates against the metamodel would produce Generated suggestions with nothing
+well-formed to suggest against. The sequence is a constraint the architecture imposes, and the trade-off it accepts is
+that a high-demand later capability still waits for its foundation.
 
 ---
 
 ## The critical path
 
-One chain runs the length of the build, and every other module hangs off a point on it. This is the critical path — the longest dependency chain, the one that fixes the earliest each downstream module can begin.
+One chain runs the length of the build, and every other module hangs off a point on it. This is the critical path — the
+longest dependency chain, the one that fixes the earliest each downstream module can begin.
 
 ```mermaid
 graph LR
@@ -27,20 +41,31 @@ graph LR
     REACH --> SCALE["Koinon · Themis · Aegis · Skopos · Kairos<br/>(scale-out)"]
 ```
 
-_Figure 1 — The critical path. Each stage can begin only when the stage to its left satisfies its exit criteria ([roadmap](../00-index/ROADMAP.md)). Modules within a stage parallelise; the stages themselves are ordered._
+_Figure 1 — The critical path. Each stage can begin only when the stage to its left satisfies its exit criteria
+([roadmap](../00-index/ROADMAP.md)). Modules within a stage parallelise; the stages themselves are ordered._
 
 The path reads as four claims about what must be true before the next thing is possible:
 
-- **Storage and the boundary come first** because every engine reads and writes through Mneme ([module dependency map](../01-architecture/module-dependency-map.md), allowed edges) and every renderer call crosses the host trust boundary ([ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)). Nothing can be exercised against a twin that cannot yet store or guard one.
-- **Meaning comes before time and analytics** because Chrona consumes Praxis contract types ([module dependency map](../01-architecture/module-dependency-map.md)) and Metis reads projections of a graph whose types Praxis defines. Time-travel and centrality over an untyped store would have nothing to resolve or rank.
-- **The single-user core completes before anything multi-user or assistive** because collaboration, governance, AI assistance, and automated discovery all presuppose a twin that one user can already author, time-travel, and reason over. The MVP boundary is drawn exactly here ([roadmap](../00-index/ROADMAP.md), MVP).
-- **Interchange precedes reach and scale-out** because Pylon and Skopos both write through the canonical op-log path the foundation established, and the reach modules (search, reporting, AI) operate over content that import and authoring have put there.
+- **Storage and the boundary come first** because every engine reads and writes through Mneme
+  ([module dependency map](../01-architecture/module-dependency-map.md), allowed edges) and every renderer call crosses
+  the host trust boundary ([ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)). Nothing can be
+  exercised against a twin that cannot yet store or guard one.
+- **Meaning comes before time and analytics** because Chrona consumes Praxis contract types
+  ([module dependency map](../01-architecture/module-dependency-map.md)) and Metis reads projections of a graph whose
+  types Praxis defines. Time-travel and centrality over an untyped store would have nothing to resolve or rank.
+- **The single-user core completes before anything multi-user or assistive** because collaboration, governance, AI
+  assistance, and automated discovery all presuppose a twin that one user can already author, time-travel, and reason
+  over. The MVP boundary is drawn exactly here ([roadmap](../00-index/ROADMAP.md), MVP).
+- **Interchange precedes reach and scale-out** because Pylon and Skopos both write through the canonical op-log path the
+  foundation established, and the reach modules (search, reporting, AI) operate over content that import and authoring
+  have put there.
 
 ---
 
 ## What each delivery unlocks
 
-The order is best understood as a chain of unlocks: each delivered module removes a blocker for the next. The table reads the [roadmap](../00-index/ROADMAP.md) milestones as enablement edges rather than as dates.
+The order is best understood as a chain of unlocks: each delivered module removes a blocker for the next. The table
+reads the [roadmap](../00-index/ROADMAP.md) milestones as enablement edges rather than as dates.
 
 | When this lands                                           | It unlocks                                                                                   | Because                                                                                                                                                                                                                                                      |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -56,13 +81,21 @@ The order is best understood as a chain of unlocks: each delivered module remove
 
 ## Where the order has slack
 
-Not every edge is on the critical path; within a stage, modules that share no dependency edge are built in parallel, and the order between them is free.
+Not every edge is on the critical path; within a stage, modules that share no dependency edge are built in parallel, and
+the order between them is free.
 
-- **Within the reach stage**, Lexis, Kerux, and Sophia each read through Mneme and depend on no other engine ([module dependency map](../01-architecture/module-dependency-map.md)); their relative order is a product-priority call, not a dependency one.
-- **Pylon and Skopos are independent of each other** ([Skopos vs Pylon](../05-modules/skopos/vs-pylon.md)) — they share no machinery beyond the canonical write path — so Skopos's scale-out placement reflects its reliance on the established reconciliation discipline and Continuum scheduling, not a dependency on Pylon.
-- **Kairos depends on Skopos as its entropy feeder** ([entropy-feeder-for-kairos](../05-modules/skopos/entropy-feeder-for-kairos.md)), which is why both sit in the final stage; Kairos cannot detect drift from a fresh `actual` layer that nothing keeps fresh.
+- **Within the reach stage**, Lexis, Kerux, and Sophia each read through Mneme and depend on no other engine
+  ([module dependency map](../01-architecture/module-dependency-map.md)); their relative order is a product-priority
+  call, not a dependency one.
+- **Pylon and Skopos are independent of each other** ([Skopos vs Pylon](../05-modules/skopos/vs-pylon.md)) — they share
+  no machinery beyond the canonical write path — so Skopos's scale-out placement reflects its reliance on the
+  established reconciliation discipline and Continuum scheduling, not a dependency on Pylon.
+- **Kairos depends on Skopos as its entropy feeder**
+  ([entropy-feeder-for-kairos](../05-modules/skopos/entropy-feeder-for-kairos.md)), which is why both sit in the final
+  stage; Kairos cannot detect drift from a fresh `actual` layer that nothing keeps fresh.
 
-The slack is real but bounded: it exists _within_ a stage, never _across_ one. A reach module cannot jump ahead of the MVP, and a scale-out module cannot precede the interchange path it builds on.
+The slack is real but bounded: it exists _within_ a stage, never _across_ one. A reach module cannot jump ahead of the
+MVP, and a scale-out module cannot precede the interchange path it builds on.
 
 ---
 

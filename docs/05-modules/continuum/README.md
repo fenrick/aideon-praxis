@@ -1,18 +1,28 @@
 # Continuum
 
-The local durable executor for Aideon Desktop. Continuum runs the multi-step, cross-engine work the product schedules or triggers — connector ingest, refresh pipelines, scheduled recompute — and keeps every run visible, governed, and replayable through a durable run ledger held in the workspace. There is no external orchestration service; the executor is in-process and workspace-backed, so work survives restarts and every run can answer what it did, why, what it wrote, what failed, and what is safe to retry.
+The local durable executor for Aideon Desktop. Continuum runs the multi-step, cross-engine work the product schedules or
+triggers — connector ingest, refresh pipelines, scheduled recompute — and keeps every run visible, governed, and
+replayable through a durable run ledger held in the workspace. There is no external orchestration service; the executor
+is in-process and workspace-backed, so work survives restarts and every run can answer what it did, why, what it wrote,
+what failed, and what is safe to retry.
 
-Continuum is named for continuous, durable execution over time. It is where the work that other modules _decide on_ actually _gets done_: it executes the work that the planned **Kairos** plans ([ADR-0028](../../06-adrs/ADR-0028-investment-and-portfolio-planning-kairos.md)) and the ingestion that the planned **Skopos** schedules ([DOCUMENTATION-STANDARD §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
+Continuum is named for continuous, durable execution over time. It is where the work that other modules _decide on_
+actually _gets done_: it executes the work that the planned **Kairos** plans
+([ADR-0028](../../06-adrs/ADR-0028-investment-and-portfolio-planning-kairos.md)) and the ingestion that the planned
+**Skopos** schedules ([DOCUMENTATION-STANDARD §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 ---
 
 ## Contents
 
-1. [The durable executor model](./durable-executor-model.md) — why execution is in-process, workspace-backed, and durable.
-2. [Run and step lifecycle](./run-and-step-lifecycle.md) — the run/step/event records, DAG step dependencies, cancellation, leases.
+1. [The durable executor model](./durable-executor-model.md) — why execution is in-process, workspace-backed, and
+   durable.
+2. [Run and step lifecycle](./run-and-step-lifecycle.md) — the run/step/event records, DAG step dependencies,
+   cancellation, leases.
 3. [Retry and backoff](./retry-and-backoff.md) — exponential backoff with jitter; transient vs permanent.
 4. [Idempotency and deduplication](./idempotency-and-dedup.md) — exactly-once effect over at-least-once delivery.
-5. [The snapshot store and run ledger](./snapshot-store-and-ledger.md) — the `SnapshotStore` seam, the ledger schema, retention and GC.
+5. [The snapshot store and run ledger](./snapshot-store-and-ledger.md) — the `SnapshotStore` seam, the ledger schema,
+   retention and GC.
 6. [Connector orchestration](./connector-orchestration.md) — adapter-driven ingest behind typed contracts.
 7. [Workflow composition](./workflow-composition.md) — composing engine and connector steps into governed workflows.
 8. [Scheduling and fairness](./scheduling-and-fairness.md) — timed and triggered work, queue classes, fairness.
@@ -22,7 +32,9 @@ Continuum is named for continuous, durable execution over time. It is where the 
 
 ## One-line responsibility
 
-Continuum owns local durable orchestration: scheduling, triggers, connector workflows, multi-step cross-engine composition, retries, and the durable run ledger. It composes the engines' capabilities into governed workflows; it does not own those engines, their semantics, or their storage.
+Continuum owns local durable orchestration: scheduling, triggers, connector workflows, multi-step cross-engine
+composition, retries, and the durable run ledger. It composes the engines' capabilities into governed workflows; it does
+not own those engines, their semantics, or their storage.
 
 ---
 
@@ -41,15 +53,23 @@ Continuum owns local durable orchestration: scheduling, triggers, connector work
 
 ## What Continuum owns / does not own
 
-Continuum **owns**: scheduling and triggers; connector orchestration; workflow execution with step-level progress; the durable run ledger; the snapshot store seam; provenance and replayability; the bounded retry model.
+Continuum **owns**: scheduling and triggers; connector orchestration; workflow execution with step-level progress; the
+durable run ledger; the snapshot store seam; provenance and replayability; the bounded retry model.
 
-Continuum **does not own**: semantic modelling rules ([Praxis](../praxis/README.md)); raw persistence internals ([Mneme](../mneme/README.md) — Continuum writes through Mneme's traits); user-facing accepted-work APIs and status surfaces ([Host](../host/README.md)); UI shell behaviour (renderer); investment _planning_ (Kairos, planned); discovery _scheduling policy_ (Skopos, planned — though Continuum executes the ingestion). The full list is in [boundaries](./boundaries.md).
+Continuum **does not own**: semantic modelling rules ([Praxis](../praxis/README.md)); raw persistence internals
+([Mneme](../mneme/README.md) — Continuum writes through Mneme's traits); user-facing accepted-work APIs and status
+surfaces ([Host](../host/README.md)); UI shell behaviour (renderer); investment _planning_ (Kairos, planned); discovery
+_scheduling policy_ (Skopos, planned — though Continuum executes the ingestion). The full list is in
+[boundaries](./boundaries.md).
 
 ---
 
 ## Accepted-work status language
 
-Continuum emits the shared accepted-work statuses for all automated work: `accepted`, `running`, `warning`, `failed`, `cancelled`, `completed`. The host owns the user-facing status surfaces and progress subscriptions; Continuum owns what the workflow _does_, which steps run, and what counts as success, retry, or failure. The full contract is [ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md).
+Continuum emits the shared accepted-work statuses for all automated work: `accepted`, `running`, `warning`, `failed`,
+`cancelled`, `completed`. The host owns the user-facing status surfaces and progress subscriptions; Continuum owns what
+the workflow _does_, which steps run, and what counts as success, retry, or failure. The full contract is
+[ACCEPTED-WORK-AND-EVENTS](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md).
 
 ---
 
@@ -60,7 +80,8 @@ Continuum emits the shared accepted-work statuses for all automated work: `accep
 | `crates/continuum/src/lib.rs` | The `SnapshotStore` trait and the `FileSnapshotStore` implementation. |
 | `crates/continuum/tests/`     | Integration tests.                                                    |
 
-The crate is a library: no Tauri bindings, no direct database coupling beyond Mneme traits. The scheduler is Tokio-driven; bespoke thread pools and external scheduling services are out of scope.
+The crate is a library: no Tauri bindings, no direct database coupling beyond Mneme traits. The scheduler is
+Tokio-driven; bespoke thread pools and external scheduling services are out of scope.
 
 ---
 
@@ -68,12 +89,15 @@ The crate is a library: no Tauri bindings, no direct database coupling beyond Mn
 
 _Normative:_
 
-- Garcia-Molina & Salem — _Sagas_, 1987. Compensation for multi-step cross-engine work ([workflow-composition](./workflow-composition.md)).
+- Garcia-Molina & Salem — _Sagas_, 1987. Compensation for multi-step cross-engine work
+  ([workflow-composition](./workflow-composition.md)).
 
 _Informative:_
 
-- Temporal.io — durable execution model. Deterministic replay, activity retries, workflow versioning ([durable-executor-model](./durable-executor-model.md)).
-- van der Aalst et al. — Workflow Patterns. The control-flow vocabulary ([workflow-composition](./workflow-composition.md)).
+- Temporal.io — durable execution model. Deterministic replay, activity retries, workflow versioning
+  ([durable-executor-model](./durable-executor-model.md)).
+- van der Aalst et al. — Workflow Patterns. The control-flow vocabulary
+  ([workflow-composition](./workflow-composition.md)).
 
 ## Related documents
 

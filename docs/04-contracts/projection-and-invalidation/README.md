@@ -1,14 +1,21 @@
 # Projection and Invalidation
 
-The contract for every derived read surface in Aideon Desktop: the `ProjectionDescriptor`, the freshness classes, the invalidation events that follow an op-append, the consistency guarantee a reader gets, and the rebuild-from-workspace oracle. The governing decision for the consistency guarantee is [ADR-0027](../../06-adrs/ADR-0027-projection-consistency-model.md).
+The contract for every derived read surface in Aideon Desktop: the `ProjectionDescriptor`, the freshness classes, the
+invalidation events that follow an op-append, the consistency guarantee a reader gets, and the rebuild-from-workspace
+oracle. The governing decision for the consistency guarantee is
+[ADR-0027](../../06-adrs/ADR-0027-projection-consistency-model.md).
 
 ---
 
 ## Core invariant
 
-Projections are derived artefacts. They are never canonical truth. The canonical authority is the workspace folder and its append-only op log ([ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md)). Every projection is rebuildable from the workspace at any time; a missing or corrupt projection is a performance cost, never data loss.
+Projections are derived artefacts. They are never canonical truth. The canonical authority is the workspace folder and
+its append-only op log ([ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md)). Every projection is
+rebuildable from the workspace at any time; a missing or corrupt projection is a performance cost, never data loss.
 
-The local derived database at `.aideon/runtime/` is the cache. There is no HTTP/CDN tier and no remote invalidation endpoint. Freshness, invalidation, and rebuild are all local operations coordinated by the Mneme runtime ([Mneme: runtime and engine](../../05-modules/mneme/RUNTIME-AND-ENGINE.md)).
+The local derived database at `.aideon/runtime/` is the cache. There is no HTTP/CDN tier and no remote invalidation
+endpoint. Freshness, invalidation, and rebuild are all local operations coordinated by the Mneme runtime
+([Mneme: runtime and engine](../../05-modules/mneme/RUNTIME-AND-ENGINE.md)).
 
 ---
 
@@ -29,7 +36,12 @@ The local derived database at `.aideon/runtime/` is the cache. There is no HTTP/
 
 ## The shape of the flow
 
-A write appends to the canonical op log, then emits an [invalidation event](./invalidation-events.md) before the transaction closes; the event's tags drive a [cascade](./consistency-model.md) to every derived projection; an `incremental` projection's delta-apply runs immediately after commit, giving the writer [read-your-writes](./consistency-model.md); a concurrent reader sees a [`stale` freshness state](./freshness-states.md) until it converges. Incremental maintenance must be provably equivalent to a [full rebuild](./rebuild-from-workspace.md), which is also the recovery path.
+A write appends to the canonical op log, then emits an [invalidation event](./invalidation-events.md) before the
+transaction closes; the event's tags drive a [cascade](./consistency-model.md) to every derived projection; an
+`incremental` projection's delta-apply runs immediately after commit, giving the writer
+[read-your-writes](./consistency-model.md); a concurrent reader sees a [`stale` freshness state](./freshness-states.md)
+until it converges. Incremental maintenance must be provably equivalent to a
+[full rebuild](./rebuild-from-workspace.md), which is also the recovery path.
 
 ## References & standards
 

@@ -1,6 +1,10 @@
 # Module Map
 
-How the product is decomposed into modules and how the renderer reaches them. This document gives the product-layer reading of the module pantheon; the authoritative taxonomy, boundary rules, and the acyclic engine graph are fixed by [ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md) and the [architecture boundary](../01-architecture/ARCHITECTURE-BOUNDARY.md). Module names and roles follow the [Documentation Standard §10](../02-standards/DOCUMENTATION-STANDARD.md) pantheon and are not redefined here.
+How the product is decomposed into modules and how the renderer reaches them. This document gives the product-layer
+reading of the module pantheon; the authoritative taxonomy, boundary rules, and the acyclic engine graph are fixed by
+[ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md) and the
+[architecture boundary](../01-architecture/ARCHITECTURE-BOUNDARY.md). Module names and roles follow the
+[Documentation Standard §10](../02-standards/DOCUMENTATION-STANDARD.md) pantheon and are not redefined here.
 
 ---
 
@@ -27,7 +31,8 @@ graph TD
     Continuum --> Mneme
 ```
 
-_The renderer crosses the trust boundary by typed IPC only; engines compose behind the host with no engine-to-engine cycles (axiom 6, [design-axioms.md](./design-axioms.md))._
+_The renderer crosses the trust boundary by typed IPC only; engines compose behind the host with no engine-to-engine
+cycles (axiom 6, [design-axioms.md](./design-axioms.md))._
 
 ## Implemented modules
 
@@ -45,7 +50,9 @@ These have crates today. Full per-module design lives under [05-modules/](../05-
 
 ## Planned modules
 
-Documented as design intent and labelled _planned_ until a crate exists ([Documentation Standard §10](../02-standards/DOCUMENTATION-STANDARD.md)). The product areas in this layer name these as the owners of work that is not yet built; each README states the boundary it will occupy and the ADR that introduces it.
+Documented as design intent and labelled _planned_ until a crate exists
+([Documentation Standard §10](../02-standards/DOCUMENTATION-STANDARD.md)). The product areas in this layer name these as
+the owners of work that is not yet built; each README states the boundary it will occupy and the ADR that introduces it.
 
 | Module     | Role (design intent)                                                                                                                                    | Introduced by                                                                    |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
@@ -59,7 +66,11 @@ Documented as design intent and labelled _planned_ until a crate exists ([Docume
 | **Themis** | Governance — identity, RBAC, approvals, retention, audit, capability policy. Underpins the Steward participation mode.                                  | [ADR-0030](../06-adrs/ADR-0030-governance-themis.md)                             |
 | **Aegis**  | Risk, controls, and compliance — a risk register and control library mapped onto the twin.                                                              | [ADR-0031](../06-adrs/ADR-0031-risk-controls-compliance-aegis.md)                |
 
-Some concerns are real but do not yet earn a module and are folded into an existing one with an explicit split-out trigger: **Oikos** (run-cost/FinOps, in Metis + Kairos), **Krisis** (validation and data-quality, in Praxis integrity scoring), **Topos** (auto-layout, in the renderer + Praxis), **Logos** (narrative and rationale, in Kerux + Mneme). See [Documentation Standard §10](../02-standards/DOCUMENTATION-STANDARD.md) and [ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md).
+Some concerns are real but do not yet earn a module and are folded into an existing one with an explicit split-out
+trigger: **Oikos** (run-cost/FinOps, in Metis + Kairos), **Krisis** (validation and data-quality, in Praxis integrity
+scoring), **Topos** (auto-layout, in the renderer + Praxis), **Logos** (narrative and rationale, in Kerux + Mneme). See
+[Documentation Standard §10](../02-standards/DOCUMENTATION-STANDARD.md) and
+[ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md).
 
 ## Where ownership lands in this layer
 

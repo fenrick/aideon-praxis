@@ -1,12 +1,17 @@
 # Security Constraints
 
-The desktop security baseline that the boundary enforces, the threat frame it sits in, and the single seam that carries it. This file is the architecture-layer summary; the full posture, controls, and verification live in [`../../02-standards/SECURITY.md`](../../02-standards/SECURITY.md).
+The desktop security baseline that the boundary enforces, the threat frame it sits in, and the single seam that carries
+it. This file is the architecture-layer summary; the full posture, controls, and verification live in
+[`../../02-standards/SECURITY.md`](../../02-standards/SECURITY.md).
 
 ---
 
 ## The single boundary
 
-The Tauri invoke bridge is the **sole** security boundary between the renderer and the host. The renderer is an untrusted, disposable WebView; it receives product-scoped capabilities, not host capabilities, and cannot reach the filesystem, the object store, sync endpoints, or engine APIs by any other path. This is fixed by **[ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)** (Tauri trust boundary and typed IPC).
+The Tauri invoke bridge is the **sole** security boundary between the renderer and the host. The renderer is an
+untrusted, disposable WebView; it receives product-scoped capabilities, not host capabilities, and cannot reach the
+filesystem, the object store, sync endpoints, or engine APIs by any other path. This is fixed by
+**[ADR-0006](../../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)** (Tauri trust boundary and typed IPC).
 
 | Layer            | Trust level       | Permitted actions                                                  |
 | ---------------- | ----------------- | ------------------------------------------------------------------ |
@@ -28,19 +33,29 @@ The Tauri invoke bridge is the **sole** security boundary between the renderer a
 | Blob sharing      | Content-addressed — a hash identifies content, not a path, per [ADR-0003](../../06-adrs/ADR-0003-content-addressed-object-store.md). |
 | Hosted auth       | Demoted to an adapter contract; the desktop default is a local single-user context.                                                  |
 
-The constraint that only Rust touches side effects is the same proposition 3 of the [boundary thesis](./boundary-thesis.md): the security baseline and the architecture's side-effect rule are one rule seen from two angles.
+The constraint that only Rust touches side effects is the same proposition 3 of the
+[boundary thesis](./boundary-thesis.md): the security baseline and the architecture's side-effect rule are one rule seen
+from two angles.
 
 ---
 
 ## The threat frame
 
-The trust boundary is threat-modelled with **STRIDE** _(Microsoft, STRIDE threat modelling)_ and verified against **OWASP ASVS 5.0** controls, recorded in **[ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)** (Threat model — STRIDE + OWASP ASVS 5.0). The frame treats the renderer as the adversarial surface: anything reachable only through a declared, typed, capability-gated command is in scope; anything the renderer could reach by another path would be a boundary breach. The mechanism — Tauri capabilities, permissions, CSP, isolation — is the normative control _(Tauri security model)_.
+The trust boundary is threat-modelled with **STRIDE** _(Microsoft, STRIDE threat modelling)_ and verified against
+**OWASP ASVS 5.0** controls, recorded in **[ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)** (Threat
+model — STRIDE + OWASP ASVS 5.0). The frame treats the renderer as the adversarial surface: anything reachable only
+through a declared, typed, capability-gated command is in scope; anything the renderer could reach by another path would
+be a boundary breach. The mechanism — Tauri capabilities, permissions, CSP, isolation — is the normative control _(Tauri
+security model)_.
 
 ---
 
 ## The trade-off named
 
-A single enforced boundary closes a door: there is no escape hatch for the renderer to do "just one" privileged thing directly. Every privileged action costs a declared command and a capability entry. The architecture accepts that overhead because a single boundary is the only one that can be audited completely — an escape hatch is exactly the surface a threat model cannot bound.
+A single enforced boundary closes a door: there is no escape hatch for the renderer to do "just one" privileged thing
+directly. Every privileged action costs a declared command and a capability entry. The architecture accepts that
+overhead because a single boundary is the only one that can be audited completely — an escape hatch is exactly the
+surface a threat model cannot bound.
 
 ---
 

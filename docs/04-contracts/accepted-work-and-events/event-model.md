@@ -1,6 +1,10 @@
 # Typed event model
 
-All run progress arrives via typed Tauri events on the `run:progress` channel, not by polling. Run/job events are **window-scoped by default** — emitted to the owning workspace window, not broadcast ([host event-bus](../../05-modules/host/event-bus.md)). The renderer subscribes once and filters by `runId` **within its own window's scoped event stream**; a window does not receive another window's job progress by default. Events are ordered and deduplicated by `eventId` ([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
+All run progress arrives via typed Tauri events on the `run:progress` channel, not by polling. Run/job events are
+**window-scoped by default** — emitted to the owning workspace window, not broadcast
+([host event-bus](../../05-modules/host/event-bus.md)). The renderer subscribes once and filters by `runId` **within its
+own window's scoped event stream**; a window does not receive another window's job progress by default. Events are
+ordered and deduplicated by `eventId` ([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
 
 ---
 
@@ -47,14 +51,22 @@ pub struct RunEvent {
 }
 ```
 
-The `correlationId` joins the event to the originating command's trace ([ipc/correlation-and-tracing.md](../ipc/correlation-and-tracing.md)); `occurredAt` is an [HLC timestamp](../temporal-and-scenario/hlc-encoding.md) inside the executor.
+The `correlationId` joins the event to the originating command's trace
+([ipc/correlation-and-tracing.md](../ipc/correlation-and-tracing.md)); `occurredAt` is an
+[HLC timestamp](../temporal-and-scenario/hlc-encoding.md) inside the executor.
 
 ## Ordering and dedup
 
-The Tauri event channel guarantees at-least-once delivery, not exactly-once and not strict order. The contract therefore makes the renderer robust to both:
+The Tauri event channel guarantees at-least-once delivery, not exactly-once and not strict order. The contract therefore
+makes the renderer robust to both:
 
-- **Dedup by `eventId`.** Every event carries a stable `eventId`. A consumer that has already processed an `eventId` ignores a re-delivery ([ipc/idempotency.md](../ipc/idempotency.md)). Handlers must be safe to invoke twice and converge.
-- **Order by `occurredAt` per run.** Within one `runId`, the `occurredAt` HLC gives a total order ([hlc-encoding.md](../temporal-and-scenario/hlc-encoding.md)), so a renderer that receives events out of delivery order reconstructs the true sequence. Terminal events (`run.succeeded`/`run.failed`/`run.cancelled`) are final; an event with an earlier `occurredAt` arriving after a terminal event is applied to history, never to the live status.
+- **Dedup by `eventId`.** Every event carries a stable `eventId`. A consumer that has already processed an `eventId`
+  ignores a re-delivery ([ipc/idempotency.md](../ipc/idempotency.md)). Handlers must be safe to invoke twice and
+  converge.
+- **Order by `occurredAt` per run.** Within one `runId`, the `occurredAt` HLC gives a total order
+  ([hlc-encoding.md](../temporal-and-scenario/hlc-encoding.md)), so a renderer that receives events out of delivery
+  order reconstructs the true sequence. Terminal events (`run.succeeded`/`run.failed`/`run.cancelled`) are final; an
+  event with an earlier `occurredAt` arriving after a terminal event is applied to history, never to the live status.
 
 ## Event taxonomy
 
@@ -95,11 +107,18 @@ interface ProgressPayload {
 }
 ```
 
-`phase` values are stable per [`WorkQueueClass`](./accepted-job-shape.md) family and must not change between runs without a contract version bump ([versioning-and-compatibility.md](../ipc/versioning-and-compatibility.md)).
+`phase` values are stable per [`WorkQueueClass`](./accepted-job-shape.md) family and must not change between runs
+without a contract version bump ([versioning-and-compatibility.md](../ipc/versioning-and-compatibility.md)).
 
 ### Acceptance is not durability
 
-The initial `AcceptedJob` response acknowledges **receipt only** — a bulk command is accepted before any operation is durable. The durability acknowledgement is a **committed-barrier event** or the **terminal successful completion** event, never `accepted` and never a mere `progress` snapshot ([storage-trait-and-engine](../../05-modules/mneme/storage-trait-and-engine.md), [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). A bulk import's progress therefore must **not** expose a single ambiguous `processed_count`; it distinguishes the stages, and **only `durably_committed` survives a host crash by contract**:
+The initial `AcceptedJob` response acknowledges **receipt only** — a bulk command is accepted before any operation is
+durable. The durability acknowledgement is a **committed-barrier event** or the **terminal successful completion**
+event, never `accepted` and never a mere `progress` snapshot
+([storage-trait-and-engine](../../05-modules/mneme/storage-trait-and-engine.md),
+[ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). A bulk import's progress
+therefore must **not** expose a single ambiguous `processed_count`; it distinguishes the stages, and **only
+`durably_committed` survives a host crash by contract**:
 
 ```typescript
 interface BulkImportProgress {
@@ -112,7 +131,16 @@ interface BulkImportProgress {
 }
 ```
 
-The renderer may show `appended` work as _in progress_, but must not describe it as **saved/committed** until it is `durablyCommitted`. `JobCompleted` for a bulk import means every accepted canonical operation is durably committed, the final segment state is valid, required synchronous projections have incorporated the committed operations, and the batch outcome (including the rejection report) is itself durable — nothing the outcome claims remains only in memory or page cache. Deferred derived work (integrity rebuild, schema-dependent artefacts) may still be outstanding **provided it is explicitly surfaced as `stale`/`rebuilding`** ([DOCUMENTATION-STANDARD §9](../../02-standards/DOCUMENTATION-STANDARD.md)); completion is not held open for it, and the workspace is not reported fully fresh while it runs. A bulk import is **checkpointed partial commitment, not atomic** ([run-and-step-lifecycle](./run-and-step-lifecycle.md), `partial`): a failure preserves the operations committed before the last barrier, so a failed bulk job never implies "nothing was imported".
+The renderer may show `appended` work as _in progress_, but must not describe it as **saved/committed** until it is
+`durablyCommitted`. `JobCompleted` for a bulk import means every accepted canonical operation is durably committed, the
+final segment state is valid, required synchronous projections have incorporated the committed operations, and the batch
+outcome (including the rejection report) is itself durable — nothing the outcome claims remains only in memory or page
+cache. Deferred derived work (integrity rebuild, schema-dependent artefacts) may still be outstanding **provided it is
+explicitly surfaced as `stale`/`rebuilding`**
+([DOCUMENTATION-STANDARD §9](../../02-standards/DOCUMENTATION-STANDARD.md)); completion is not held open for it, and the
+workspace is not reported fully fresh while it runs. A bulk import is **checkpointed partial commitment, not atomic**
+([run-and-step-lifecycle](./run-and-step-lifecycle.md), `partial`): a failure preserves the operations committed before
+the last barrier, so a failed bulk job never implies "nothing was imported".
 
 ## Worked example: rebuild job progress events
 
@@ -142,7 +170,9 @@ The accepted rebuild `run_abc` from [accepted-job-shape.md](./accepted-job-shape
   "message": "Rebuild complete", "severity": "info", "payload": { "durationMs": 17000 } }
 ```
 
-If `evt_03` is delivered twice, the renderer's dedup by `eventId` applies it once; if `evt_03` arrives after `evt_07` by delivery race, the `occurredAt` order places it before the terminal event in history and the live status remains `succeeded`.
+If `evt_03` is delivered twice, the renderer's dedup by `eventId` applies it once; if `evt_03` arrives after `evt_07` by
+delivery race, the `occurredAt` order places it before the terminal event in history and the live status remains
+`succeeded`.
 
 ## References & standards
 

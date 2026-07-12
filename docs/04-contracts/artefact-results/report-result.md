@@ -1,6 +1,9 @@
 # Report Result
 
-The output shape for the **report** form — a composed analytical output of sections of narrative, tables, and signals ([forms](../../03-design/artefacts/forms.md)). A report assembles heterogeneous content into an ordered document; each section carries its own classification and state, because a single report can mix Asserted tables with a Generated narrative. The common envelope is defined once in the [area README](./README.md); this file specifies the `body`.
+The output shape for the **report** form — a composed analytical output of sections of narrative, tables, and signals
+([forms](../../03-design/artefacts/forms.md)). A report assembles heterogeneous content into an ordered document; each
+section carries its own classification and state, because a single report can mix Asserted tables with a Generated
+narrative. The common envelope is defined once in the [area README](./README.md); this file specifies the `body`.
 
 ---
 
@@ -65,11 +68,19 @@ The output shape for the **report** form — a composed analytical output of sec
 
 ## Result state and partial results
 
-Each section inherits its freshness from its inputs: a table whose source facts changed reports `stale` at the envelope, and a `generated` narrative awaiting acceptance carries an `awaitingReview` result state ([Documentation Standard §9](../../02-standards/DOCUMENTATION-STANDARD.md)). A section that hit a traversal bound reports `partialBounded` with `coverage`; the report does not pretend a truncated table is complete.
+Each section inherits its freshness from its inputs: a table whose source facts changed reports `stale` at the envelope,
+and a `generated` narrative awaiting acceptance carries an `awaitingReview` result state
+([Documentation Standard §9](../../02-standards/DOCUMENTATION-STANDARD.md)). A section that hit a traversal bound
+reports `partialBounded` with `coverage`; the report does not pretend a truncated table is complete.
 
 ## Worked example
 
-A portfolio report over the [baseline](../../data/base/baseline.yaml) at `{valid: 2026-06-11, layer: actual, scenario: base}` returns three sections: a `narrative` summary drafted by [Sophia](../../05-modules/sophia/README.md) (planned) — `generated`, `confidence: medium`, `awaitingReview`; an `applications` table listing the three applications with `asserted` cells; and a `signals` section flagging `Automation Orchestrator`'s `Plan`-lifecycle data as ageing — `inferred`, `confidence: low`. The mix of classifications and states is the point: a tidy report that flattened these into one badge would mislead.
+A portfolio report over the [baseline](../../data/base/baseline.yaml) at
+`{valid: 2026-06-11, layer: actual, scenario: base}` returns three sections: a `narrative` summary drafted by
+[Sophia](../../05-modules/sophia/README.md) (planned) — `generated`, `confidence: medium`, `awaitingReview`; an
+`applications` table listing the three applications with `asserted` cells; and a `signals` section flagging
+`Automation Orchestrator`'s `Plan`-lifecycle data as ageing — `inferred`, `confidence: low`. The mix of classifications
+and states is the point: a tidy report that flattened these into one badge would mislead.
 
 ## Related documents
 

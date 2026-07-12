@@ -1,8 +1,14 @@
 # Artefact Families
 
-An **artefact family** is a named grouping of artefacts that corresponds to a recognisable business question or starting shape — business motivation, capability map, service blueprint, operating model, roadmap ([`CONTEXT.md`](../../../CONTEXT.md)). A family guides the initial structure and interpretation of an artefact; it is **not** a temporal, scenario, layer, or scope frame, and it is **not** a [Viewpoint](../vocabulary.md) (which in this project is the bitemporal query frame).
+An **artefact family** is a named grouping of artefacts that corresponds to a recognisable business question or starting
+shape — business motivation, capability map, service blueprint, operating model, roadmap
+([`CONTEXT.md`](../../../CONTEXT.md)). A family guides the initial structure and interpretation of an artefact; it is
+**not** a temporal, scenario, layer, or scope frame, and it is **not** a [Viewpoint](../vocabulary.md) (which in this
+project is the bitemporal query frame).
 
-Families are organised by the **question they answer**, not by the diagram they draw (Christensen; Ulwick, Jobs-to-be-Done). A user who recognises a family name already knows what question they are answering before they open the artefact — the family is the antidote to blank-canvas thinking.
+Families are organised by the **question they answer**, not by the diagram they draw (Christensen; Ulwick,
+Jobs-to-be-Done). A user who recognises a family name already knows what question they are answering before they open
+the artefact — the family is the antidote to blank-canvas thinking.
 
 ## The families
 
@@ -21,30 +27,43 @@ Families are organised by the **question they answer**, not by the diagram they 
 | **Technology portfolio**      | What technology underpins the applications and operations?               | ArchiMate Technology layer; Wardley Mapping for evolution.            |
 | **Transition roadmap**        | How does the estate move from today to the target, and when?             | ArchiMate Implementation & Migration (Plateau, Gap); TOGAF Phase E/F. |
 
-Families are reusable, comparable, and explainable. The product prefers them over one-off canvases. The Zachman six interrogatives (What/How/Where/Who/When/Why) are a useful coverage check across the set (Zachman Framework).
+Families are reusable, comparable, and explainable. The product prefers them over one-off canvases. The Zachman six
+interrogatives (What/How/Where/Who/When/Why) are a useful coverage check across the set (Zachman Framework).
 
 ## Families and the seed
 
 The seed metamodel ([`core-v1.json`](../../data/meta/core-v1.json)) realises the middle and lower families directly:
 
-- **Application portfolio** and **Technology portfolio** are fully expressible today: `Application` and `TechnologyComponent` entities, with `realises`, `accesses`, and `hosts` relationships.
-- **Value creation** maps to the `ValueStreamStage` entities (`Discover`, `Design`, `Deliver`) and the `serves` relationships from `Capability`.
-- **Transition roadmap** is expressible through `PlanEvent` entities and `plan_effect` relationships (the FY26 plan events in the seed).
-- **Business motivation** depends on Intent/Value roles that are **PLANNED**, not yet in the seed ([semantic-spine/spine-to-seed-types.md](../semantic-spine/spine-to-seed-types.md)). Until those types exist, the business-motivation family is design intent.
+- **Application portfolio** and **Technology portfolio** are fully expressible today: `Application` and
+  `TechnologyComponent` entities, with `realises`, `accesses`, and `hosts` relationships.
+- **Value creation** maps to the `ValueStreamStage` entities (`Discover`, `Design`, `Deliver`) and the `serves`
+  relationships from `Capability`.
+- **Transition roadmap** is expressible through `PlanEvent` entities and `plan_effect` relationships (the FY26 plan
+  events in the seed).
+- **Business motivation** depends on Intent/Value roles that are **PLANNED**, not yet in the seed
+  ([semantic-spine/spine-to-seed-types.md](../semantic-spine/spine-to-seed-types.md)). Until those types exist, the
+  business-motivation family is design intent.
 
 ## Families sit across abstraction levels
 
-The same family can be answered at different [abstraction levels](./abstraction-levels.md): an application-portfolio question can be conceptual (which capabilities are supported) or implementation-aware (which versions run on which technology). The family fixes the question; the level fixes how concrete the answer is.
+The same family can be answered at different [abstraction levels](./abstraction-levels.md): an application-portfolio
+question can be conceptual (which capabilities are supported) or implementation-aware (which versions run on which
+technology). The family fixes the question; the level fixes how concrete the answer is.
 
 ## Worked example
 
-The **Application portfolio** family, executed over the seed at `{valid: 2026-06-11, layer: actual, scope: type=Application}`, answers _what applications exist and how healthy they are_: `Insight Hub` (`disposition: Invest`, `lifecycle: Run`), `Journey Studio` (`Invest`, `Build`), `Automation Orchestrator` (`Migrate`, `Plan`). The family tells the user the question; the [form](./forms.md) (catalogue) and the viewpoint shape the answer.
+The **Application portfolio** family, executed over the seed at
+`{valid: 2026-06-11, layer: actual, scope: type=Application}`, answers _what applications exist and how healthy they
+are_: `Insight Hub` (`disposition: Invest`, `lifecycle: Run`), `Journey Studio` (`Invest`, `Build`),
+`Automation Orchestrator` (`Migrate`, `Plan`). The family tells the user the question; the [form](./forms.md)
+(catalogue) and the viewpoint shape the answer.
 
 ## References & standards
 
 _Normative:_
 
-- The Open Group — **TOGAF Standard, 10th Edition** and **ArchiMate 3.2 Specification**. The layer and deliverable alignment.
+- The Open Group — **TOGAF Standard, 10th Edition** and **ArchiMate 3.2 Specification**. The layer and deliverable
+  alignment.
 
 _Informative:_
 

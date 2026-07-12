@@ -1,6 +1,9 @@
 # The `Viewpoint` shape
 
-The `Viewpoint` is the complete frame every time-aware read and write carries. This file is its field-by-field reference; the resolution semantics that act on it are in [resolution-rules.md](./resolution-rules.md). The struct is defined in Rust and mirrored in generated TypeScript ([Rust owns the wire shape](../ipc/generated-schema-discipline.md)); both sides must stay in sync.
+The `Viewpoint` is the complete frame every time-aware read and write carries. This file is its field-by-field
+reference; the resolution semantics that act on it are in [resolution-rules.md](./resolution-rules.md). The struct is
+defined in Rust and mirrored in generated TypeScript
+([Rust owns the wire shape](../ipc/generated-schema-discipline.md)); both sides must stay in sync.
 
 ---
 
@@ -40,31 +43,44 @@ The `Viewpoint` is the complete frame every time-aware read and write carries. T
 
 ## Field rules
 
-**Mutual exclusion.** Exactly one of `as_of_valid_time.instant` or `as_of_valid_time.interval` must be provided. Providing both or neither is a `TEMPORAL_CONTEXT_INVALID` error ([error-codes.md](./error-codes.md)).
+**Mutual exclusion.** Exactly one of `as_of_valid_time.instant` or `as_of_valid_time.interval` must be provided.
+Providing both or neither is a `TEMPORAL_CONTEXT_INVALID` error ([error-codes.md](./error-codes.md)).
 
-**Asserted-time default.** On reads, omitting `as_of_asserted_at` resolves against the latest belief (current assertions). Pinning it replays the twin as the system believed it at that asserted instant — the basis for belief diffs ([diff.md](./diff.md)).
+**Asserted-time default.** On reads, omitting `as_of_asserted_at` resolves against the latest belief (current
+assertions). Pinning it replays the twin as the system believed it at that asserted instant — the basis for belief diffs
+([diff.md](./diff.md)).
 
-**Scenario default.** When `scenario_id` is present and `mode` is omitted it defaults to `"overlay"`. Omitting `scenario_id` entirely returns the baseline (canonical fact) view.
+**Scenario default.** When `scenario_id` is present and `mode` is omitted it defaults to `"overlay"`. Omitting
+`scenario_id` entirely returns the baseline (canonical fact) view.
 
-**`tenant_id`.** Optional on desktop. Single-user installs leave it `null`. It exists so the same contract can address multi-user workspaces without a schema break — an additive field, consistent with the forward-only evolution rule ([versioning and compatibility](../ipc/versioning-and-compatibility.md)).
+**`tenant_id`.** Optional on desktop. Single-user installs leave it `null`. It exists so the same contract can address
+multi-user workspaces without a schema break — an additive field, consistent with the forward-only evolution rule
+([versioning and compatibility](../ipc/versioning-and-compatibility.md)).
 
 ## Viewpoint identity
 
-Identity for a read is `workspace_id + as_of_valid_time + as_of_asserted_at + layer + scenario_id (or baseline) + scope`. Cache keys and projection identifiers must incorporate every viewpoint coordinate that can change the result — this is the precondition for the projection [consistency model](../projection-and-invalidation/consistency-model.md), which keys each projection instance by its context dimensions.
+Identity for a read is
+`workspace_id + as_of_valid_time + as_of_asserted_at + layer + scenario_id (or baseline) + scope`. Cache keys and
+projection identifiers must incorporate every viewpoint coordinate that can change the result — this is the precondition
+for the projection [consistency model](../projection-and-invalidation/consistency-model.md), which keys each projection
+instance by its context dimensions.
 
 ## How mutation payloads carry time
 
-Reads carry the `Viewpoint`; mutations carry the three explicit stamps a fact is written with, with no hidden defaults in handler code:
+Reads carry the `Viewpoint`; mutations carry the three explicit stamps a fact is written with, with no hidden defaults
+in handler code:
 
 - `assertedAt` — when the fact is being asserted (the append instant, an HLC).
 - `validFrom` — when the fact begins being true in the world (valid time).
 - `validTo` — when the fact ceases being true; absent means open-ended.
 
-These appear on every Mneme store write payload ([Mneme module](../../05-modules/mneme/README.md)). The matching read fields (`at`, `asOfAssertedAt`, `scenarioId`, `layer`) appear on every store read payload.
+These appear on every Mneme store write payload ([Mneme module](../../05-modules/mneme/README.md)). The matching read
+fields (`at`, `asOfAssertedAt`, `scenarioId`, `layer`) appear on every store read payload.
 
 ## References & standards
 
-- Snodgrass — _Developing Time-Oriented Database Applications in SQL_, 1999 _(normative: the valid-time/asserted-time pair)_.
+- Snodgrass — _Developing Time-Oriented Database Applications in SQL_, 1999 _(normative: the valid-time/asserted-time
+  pair)_.
 
 ## Related documents
 

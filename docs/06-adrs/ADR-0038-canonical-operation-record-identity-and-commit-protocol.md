@@ -7,52 +7,180 @@
 
 ## Context
 
-The portable workspace is the canonical authority and the runtime database is derived ([ADR-0001](./ADR-0001-workspace-is-canonical-authority.md), [ADR-0002](./ADR-0002-portable-workspace-format.md)) — but the **canonical on-disk operation record was never specified**: there is no defined byte-form, identity rule, commit ordering, or value algebra for it. Three things already depend on that missing definition: ADR-0007 promises a byte-identical deterministic export, the workspace-integrity rules call a same-identity-different-bytes record _corruption_, and the M0 rebuild oracle hashes "canonical serialisation." These are not independent choices, so this ADR fixes the operation record, its identity, how it commits, and how it replays as **one seam**, against which the M0 storage layer is built ([M0 build contract](../build-contracts/M0-foundation.md)). (An earlier inside-out prototype — SQLite-as-store, `Vec<u8>` payloads — is discarded and rebuilt to this spec, [#292](https://github.com/aideon-ai/aideon-desktop/issues/292); git preserves it.)
+The portable workspace is the canonical authority and the runtime database is derived
+([ADR-0001](./ADR-0001-workspace-is-canonical-authority.md), [ADR-0002](./ADR-0002-portable-workspace-format.md)) — but
+the **canonical on-disk operation record was never specified**: there is no defined byte-form, identity rule, commit
+ordering, or value algebra for it. Three things already depend on that missing definition: ADR-0007 promises a
+byte-identical deterministic export, the workspace-integrity rules call a same-identity-different-bytes record
+_corruption_, and the M0 rebuild oracle hashes "canonical serialisation." These are not independent choices, so this ADR
+fixes the operation record, its identity, how it commits, and how it replays as **one seam**, against which the M0
+storage layer is built ([M0 build contract](../build-contracts/M0-foundation.md)). (An earlier inside-out prototype —
+SQLite-as-store, `Vec<u8>` payloads — is discarded and rebuilt to this spec,
+[#292](https://github.com/aideon-ai/aideon-desktop/issues/292); git preserves it.)
 
 ## Governance Framing
 
-- **Decision type:** Invariant (operation identity, the commit point, replay behaviour) + stable seam (the canonical operation record and the kind registry).
-- **Known future pressure:** more operation kinds; payload migrations; sync introducing remote operations; larger logs raising replay/serialisation cost; non-Rust readers of the canonical files.
-- **What stays stable:** `(partition_id, op_id)` as permanent identity; canonical JSON record with a typed payload; canonical append as the commit point; projection applied after; replay preserves identity/time/provenance; the kind registry never reassigns a code or name.
-- **What is provisional:** the canonical-JSON profile _version_ (bumpable), the exact per-kind payload fields (additive within a format version), sealing thresholds.
-- **What is deferred:** cross-peer operation identity and convergence under sync ([ADR-0034](./ADR-0034-merge-correctness-and-convergence.md)); compression of segments/packages at the transport layer.
-- **Why hard to reverse:** the record byte-form, identity, and commit order are relied on by every write, the segment checksums, deterministic export, replay, and rebuild; changing them is a data migration of canonical history, not an edit.
+- **Decision type:** Invariant (operation identity, the commit point, replay behaviour) + stable seam (the canonical
+  operation record and the kind registry).
+- **Known future pressure:** more operation kinds; payload migrations; sync introducing remote operations; larger logs
+  raising replay/serialisation cost; non-Rust readers of the canonical files.
+- **What stays stable:** `(partition_id, op_id)` as permanent identity; canonical JSON record with a typed payload;
+  canonical append as the commit point; projection applied after; replay preserves identity/time/provenance; the kind
+  registry never reassigns a code or name.
+- **What is provisional:** the canonical-JSON profile _version_ (bumpable), the exact per-kind payload fields (additive
+  within a format version), sealing thresholds.
+- **What is deferred:** cross-peer operation identity and convergence under sync
+  ([ADR-0034](./ADR-0034-merge-correctness-and-convergence.md)); compression of segments/packages at the transport
+  layer.
+- **Why hard to reverse:** the record byte-form, identity, and commit order are relied on by every write, the segment
+  checksums, deterministic export, replay, and rebuild; changing them is a data migration of canonical history, not an
+  edit.
 
 ## Decision
 
-- **The canonical operation record is canonical JSON, one object per line (JSON Lines), UTF-8.** The exact byte rules — key ordering, scalar encodings, optional/empty handling, line framing — are the versioned **[canonical-JSON profile](../04-contracts/canonical-json.md)** (**Aideon Canonical JSON v1**); `serde_json::to_vec` is _not_ sufficient. Each record carries `format_version`.
-- **The profile imports RFC 8785's primitive serialisation, but is not full JCS.** Aideon Canonical JSON v1 adopts **RFC 8785 §3.2.2.2** (string escaping) and **§3.2.2.3** (finite IEEE-754 number serialisation) verbatim — fixed rules, not implementation choices — and rejects `NaN`/±infinity and invalid Unicode (lone surrogates). It **deliberately diverges** from JCS in two stated ways: object properties are ordered by ascending **UTF-8 byte sequence** (not UTF-16 code units), and full-range 64-bit coordinates (HLC, valid time) are **decimal strings** (not JSON numbers). Because of the ordering divergence the profile is **never** described as "RFC 8785 / JCS compliant"; the UTF-8 order is pinned with supplementary-plane test vectors so no implementation substitutes JCS's UTF-16 order.
-- **The per-operation digest is `blake3-256` over the exact canonical JSONL record.** `canonical_record_bytes = canonical_json_bytes(op) || 0x0A` (one trailing LF, no BOM); `canonical_record_digest = lowercase_hex(BLAKE3-256(canonical_record_bytes))` (64 hex chars). This is the same byte representation the sealed-segment and export checksums cover, so the format carries one record-byte definition. **SHA-256 remains the blob content-address algorithm** ([ADR-0003](./ADR-0003-content-addressed-object-store.md)) — a separate contract; operation-record digests are not forced onto the blob algorithm.
-- **The payload is typed per operation kind, not opaque bytes.** `OpEnvelope.payload: Vec<u8>` becomes a typed `OpPayload` (one variant per kind), serialised as a structured canonical-JSON object matching [`docs/contracts/operations/<kind>.schema.json`](../contracts/operations/README.md). Opaque bytes may persist only as a _cache_ of the validated canonical encoding (`StoredCanonicalOp { parsed, canonical_bytes }`) or as SQLite projection columns — never as the contract.
+- **The canonical operation record is canonical JSON, one object per line (JSON Lines), UTF-8.** The exact byte rules —
+  key ordering, scalar encodings, optional/empty handling, line framing — are the versioned
+  **[canonical-JSON profile](../04-contracts/canonical-json.md)** (**Aideon Canonical JSON v1**); `serde_json::to_vec`
+  is _not_ sufficient. Each record carries `format_version`.
+- **The profile imports RFC 8785's primitive serialisation, but is not full JCS.** Aideon Canonical JSON v1 adopts **RFC
+  8785 §3.2.2.2** (string escaping) and **§3.2.2.3** (finite IEEE-754 number serialisation) verbatim — fixed rules, not
+  implementation choices — and rejects `NaN`/±infinity and invalid Unicode (lone surrogates). It **deliberately
+  diverges** from JCS in two stated ways: object properties are ordered by ascending **UTF-8 byte sequence** (not UTF-16
+  code units), and full-range 64-bit coordinates (HLC, valid time) are **decimal strings** (not JSON numbers). Because
+  of the ordering divergence the profile is **never** described as "RFC 8785 / JCS compliant"; the UTF-8 order is pinned
+  with supplementary-plane test vectors so no implementation substitutes JCS's UTF-16 order.
+- **The per-operation digest is `blake3-256` over the exact canonical JSONL record.**
+  `canonical_record_bytes = canonical_json_bytes(op) || 0x0A` (one trailing LF, no BOM);
+  `canonical_record_digest = lowercase_hex(BLAKE3-256(canonical_record_bytes))` (64 hex chars). This is the same byte
+  representation the sealed-segment and export checksums cover, so the format carries one record-byte definition.
+  **SHA-256 remains the blob content-address algorithm** ([ADR-0003](./ADR-0003-content-addressed-object-store.md)) — a
+  separate contract; operation-record digests are not forced onto the blob algorithm.
+- **The payload is typed per operation kind, not opaque bytes.** `OpEnvelope.payload: Vec<u8>` becomes a typed
+  `OpPayload` (one variant per kind), serialised as a structured canonical-JSON object matching
+  [`docs/contracts/operations/<kind>.schema.json`](../contracts/operations/README.md). Opaque bytes may persist only as
+  a _cache_ of the validated canonical encoding (`StoredCanonicalOp { parsed, canonical_bytes }`) or as SQLite
+  projection columns — never as the contract.
 
-- **Canonical fact values are a controlled algebra, not arbitrary documents.** A twin-fact value is one of `str`, `i64`, `f64` (finite), `bool`, `time`, `ref` (entity/relationship), or `blob` (a typed `BlobRef`). **`Json` is not a valid twin-fact value** — an arbitrary nested document escapes the metamodel's typed slots and the typed, indexable fact tables, so an opaque document is stored as a `BlobRef` (`media_type: application/json`); JSON appears only in explicitly named metadata contracts, never as a model slot value. **Merge policies and CRDT operations are not M0**: the `lww`/`mv`/`or-set`/`counter`/`text` policies are declared by the metamodel at M1 and their convergence is M6 ([ADR-0034](./ADR-0034-merge-correctness-and-convergence.md)); the `or-set-update` and `counter-update` operation kinds are removed from the M0 schemas (codes 6/7 reserved, an M0 reader refuses a workspace requiring them) because fixing their convergence semantics — dedup, commutativity, reset, grow-only-vs-PN, observed-add tags — before ADR-0034 settles them would bake the wrong contract into canonical history.
+- **Canonical fact values are a controlled algebra, not arbitrary documents.** A twin-fact value is one of `str`, `i64`,
+  `f64` (finite), `bool`, `time`, `ref` (entity/relationship), or `blob` (a typed `BlobRef`). **`Json` is not a valid
+  twin-fact value** — an arbitrary nested document escapes the metamodel's typed slots and the typed, indexable fact
+  tables, so an opaque document is stored as a `BlobRef` (`media_type: application/json`); JSON appears only in
+  explicitly named metadata contracts, never as a model slot value. **Merge policies and CRDT operations are not M0**:
+  the `lww`/`mv`/`or-set`/`counter`/`text` policies are declared by the metamodel at M1 and their convergence is M6
+  ([ADR-0034](./ADR-0034-merge-correctness-and-convergence.md)); the `or-set-update` and `counter-update` operation
+  kinds are removed from the M0 schemas (codes 6/7 reserved, an M0 reader refuses a workspace requiring them) because
+  fixing their convergence semantics — dedup, commutativity, reset, grow-only-vs-PN, observed-add tags — before ADR-0034
+  settles them would bake the wrong contract into canonical history.
 
-- **Binary content is a typed content-addressed reference, never inline.** A binary value is a typed **`BlobRef`** (`{ algorithm, digest, length, media_type? }`) carried in an ordinary property operation; the bytes live in `objects/sha256/` and are **durably written before** the referencing operation is appended (object → operation → projection). No canonical record ever contains inline binary or Base64, regardless of size; there is **no inline `Value::Blob(Vec<u8>)`** in the persistable value set (raw bytes exist only on the host ingestion path and resolve to a `BlobRef` before serialisation) and **no `blob.attach` operation kind** ([ADR-0003](./ADR-0003-content-addressed-object-store.md), [content-addressed-blobs](../05-modules/mneme/content-addressed-blobs.md)).
-- **Identity is `(partition_id, op_id)`, permanent.** `op_id` is minted once on the authoring path and is immutable; every record, package, replay, and rebuild preserves it verbatim. The `partition_id` is the workspace's data-isolation namespace — **declared authoritatively in `manifest.json`**, not derived from the op log; every operation must carry exactly that partition, and an op bearing a foreign `partition_id` is rejected rather than silently admitted ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)). The three identity layers are distinct: command `idempotencyKey` (run-ledger windowed, [ADR-0018](./ADR-0018-idempotency-and-deduplication.md)), canonical `(partition_id, op_id)` (permanent), and event `eventId` (consumer-windowed).
+- **Binary content is a typed content-addressed reference, never inline.** A binary value is a typed **`BlobRef`**
+  (`{ algorithm, digest, length, media_type? }`) carried in an ordinary property operation; the bytes live in
+  `objects/sha256/` and are **durably written before** the referencing operation is appended (object → operation →
+  projection). No canonical record ever contains inline binary or Base64, regardless of size; there is **no inline
+  `Value::Blob(Vec<u8>)`** in the persistable value set (raw bytes exist only on the host ingestion path and resolve to
+  a `BlobRef` before serialisation) and **no `blob.attach` operation kind**
+  ([ADR-0003](./ADR-0003-content-addressed-object-store.md),
+  [content-addressed-blobs](../05-modules/mneme/content-addressed-blobs.md)).
+- **Identity is `(partition_id, op_id)`, permanent.** `op_id` is minted once on the authoring path and is immutable;
+  every record, package, replay, and rebuild preserves it verbatim. The `partition_id` is the workspace's data-isolation
+  namespace — **declared authoritatively in `manifest.json`**, not derived from the op log; every operation must carry
+  exactly that partition, and an op bearing a foreign `partition_id` is rejected rather than silently admitted
+  ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)). The three identity
+  layers are distinct: command `idempotencyKey` (run-ledger windowed,
+  [ADR-0018](./ADR-0018-idempotency-and-deduplication.md)), canonical `(partition_id, op_id)` (permanent), and event
+  `eventId` (consumer-windowed).
 
-- **Provenance is carried on the operation, and is broader than the actor.** Every record carries `actor_id` (who/what asserted it), `asserted_at` (when it entered canonical history), `op_id`/`deps` (which mutation, and what it depends on), and an **`origin`** object (through which process or source it arose: `{ "kind": "manual" }`, `{ "kind": "import", "import_batch_id": …, "source_digest": … }`, `{ "kind": "connector", "connector_run_id": … }`, `{ "kind": "generated", … }`). Origin lives on the operation, not only in mutable actor metadata, because one actor produces operations through many runs. Actor answers _who_; origin answers _through what_; `asserted_at` answers _when_.
+- **Provenance is carried on the operation, and is broader than the actor.** Every record carries `actor_id` (who/what
+  asserted it), `asserted_at` (when it entered canonical history), `op_id`/`deps` (which mutation, and what it depends
+  on), and an **`origin`** object (through which process or source it arose: `{ "kind": "manual" }`,
+  `{ "kind": "import", "import_batch_id": …, "source_digest": … }`, `{ "kind": "connector", "connector_run_id": … }`,
+  `{ "kind": "generated", … }`). Origin lives on the operation, not only in mutable actor metadata, because one actor
+  produces operations through many runs. Actor answers _who_; origin answers _through what_; `asserted_at` answers
+  _when_.
 
-- **The asserting identity is a logical actor, never a device.** `actor_id` is an opaque, stable, device-independent UUID resolving to a logical actor (a person, an import job, an AI process, a connector run). `device_id` is host-local and never appears in any canonical material — not in an envelope, payload, actor declaration, manifest, sealed segment, or export — and the HLC carries no device or node component ([ADR-0022](./ADR-0022-hlc-clock-model.md)). Canonical actor identity is scoped to the workspace: `(workspace_id, actor_id)`. Actor equivalence is never inferred from device, display name, or email.
+- **The asserting identity is a logical actor, never a device.** `actor_id` is an opaque, stable, device-independent
+  UUID resolving to a logical actor (a person, an import job, an AI process, a connector run). `device_id` is host-local
+  and never appears in any canonical material — not in an envelope, payload, actor declaration, manifest, sealed
+  segment, or export — and the HLC carries no device or node component ([ADR-0022](./ADR-0022-hlc-clock-model.md)).
+  Canonical actor identity is scoped to the workspace: `(workspace_id, actor_id)`. Actor equivalence is never inferred
+  from device, display name, or email.
 
-- **The actor registry is canonical, via op-log declarations.** An actor is introduced by an `actor-declare` operation (`payload: { declared_actor_id, actor_kind, display_name }`); later operations reference `declared_actor_id`. The runtime `aideon_actors` table is a projection rebuilt from those declarations, so deleting `.aideon/runtime/` and rebuilding restores enough to interpret every operation's provenance. At **M0** the workspace has one local person actor plus logical system/import actors as needed; the actor id and its declaration are canonical and travel with the workspace (survive copy, package, and rebuild). Cross-device authentication, global subject identity, issuer-qualified identities, and identity consolidation are **deferred to Themis/Koinon (M6)**; M0 must only keep the upgrade path open by making `actor_id` opaque, stable, device-independent, never reused, and never derived from a name/email/machine.
-- **The discriminator is a stable kebab `kind` name in the record** (`"kind": "set-property-interval"`); the `u16` code lives only in the registry and SQLite projection. Codes and names are never reassigned; removed kinds stay reserved. The record never stores both a code and a name (no contradictory state). Enum and value tags use stable schema-owned names, never Rust/serde debug names.
-- **Canonical append is the commit point; the SQLite projection is applied after.** Validate and serialise → append-and-`fsync` to the loose `model/ops/` segment (the commit) → apply to SQLite → on projection failure, rebuild from the log. A write that reached only SQLite **did not happen** and is never acknowledged. Projection application is therefore idempotent and replayable, and the **visible projection frontier never leads the canonical durable frontier**. A `bulk_mode` import may group `fsync`s behind durable barriers and defer derived work, but it changes only _granularity_, never this rule: **acceptance is not durability** — an `AcceptedJob` acknowledges receipt; the durability acknowledgement is a committed-barrier or terminal-success event, and every unit reported _committed_ is durably present ([storage-trait-and-engine](../05-modules/mneme/storage-trait-and-engine.md), [event-model](../04-contracts/accepted-work-and-events/event-model.md)).
-- **Duplicate vs collision.** Same `(partition_id, op_id)` with an equal `canonical_record_digest` (after parse → validate → normalise → canonicalise) is a replay **no-op**; same identity with a _different_ digest is **corruption/identity collision**, rejected — never silently keep the first. Invalid payload is rejected before comparison or append.
-- **Replay never mints.** The authoring path (`insert_op`) mints ids; the replay path (`ingest_ops`) preserves them. The create path is never used to rebuild or resume canonical history.
+- **The actor registry is canonical, via op-log declarations.** An actor is introduced by an `actor-declare` operation
+  (`payload: { declared_actor_id, actor_kind, display_name }`); later operations reference `declared_actor_id`. The
+  runtime `aideon_actors` table is a projection rebuilt from those declarations, so deleting `.aideon/runtime/` and
+  rebuilding restores enough to interpret every operation's provenance. At **M0** the workspace has one local person
+  actor plus logical system/import actors as needed; the actor id and its declaration are canonical and travel with the
+  workspace (survive copy, package, and rebuild). Cross-device authentication, global subject identity, issuer-qualified
+  identities, and identity consolidation are **deferred to Themis/Koinon (M6)**; M0 must only keep the upgrade path open
+  by making `actor_id` opaque, stable, device-independent, never reused, and never derived from a name/email/machine.
+- **The discriminator is a stable kebab `kind` name in the record** (`"kind": "set-property-interval"`); the `u16` code
+  lives only in the registry and SQLite projection. Codes and names are never reassigned; removed kinds stay reserved.
+  The record never stores both a code and a name (no contradictory state). Enum and value tags use stable schema-owned
+  names, never Rust/serde debug names.
+- **Canonical append is the commit point; the SQLite projection is applied after.** Validate and serialise →
+  append-and-`fsync` to the loose `model/ops/` segment (the commit) → apply to SQLite → on projection failure, rebuild
+  from the log. A write that reached only SQLite **did not happen** and is never acknowledged. Projection application is
+  therefore idempotent and replayable, and the **visible projection frontier never leads the canonical durable
+  frontier**. A `bulk_mode` import may group `fsync`s behind durable barriers and defer derived work, but it changes
+  only _granularity_, never this rule: **acceptance is not durability** — an `AcceptedJob` acknowledges receipt; the
+  durability acknowledgement is a committed-barrier or terminal-success event, and every unit reported _committed_ is
+  durably present ([storage-trait-and-engine](../05-modules/mneme/storage-trait-and-engine.md),
+  [event-model](../04-contracts/accepted-work-and-events/event-model.md)).
+- **Duplicate vs collision.** Same `(partition_id, op_id)` with an equal `canonical_record_digest` (after parse →
+  validate → normalise → canonicalise) is a replay **no-op**; same identity with a _different_ digest is
+  **corruption/identity collision**, rejected — never silently keep the first. Invalid payload is rejected before
+  comparison or append.
+- **Replay never mints.** The authoring path (`insert_op`) mints ids; the replay path (`ingest_ops`) preserves them. The
+  create path is never used to rebuild or resume canonical history.
 
-- **`deps` is empty at M0; M0 rebuild does not topologically sort.** In workspace format v1 as implemented by M0, locally authored operations carry an empty `deps` array. A single writer establishes causal order through durable **append order**, and rebuild processes operation segments sequentially (sealed in ascending sequence, then the loose segment, top-to-bottom) without sorting. The `deps` field is **reserved** for operation exchange across independently authored histories (import M4, sync M6, [ADR-0034](./ADR-0034-merge-correctness-and-convergence.md)); non-empty dependency handling is introduced by those contracts and **must never be silently ignored** — an M0 reader that meets a workspace whose `manifest.json` declares causal-dependency handling (a feature flag) **refuses read-write as unsupported** (forensic read-only is permitted, but it must not build projections while ignoring `deps`). `deps` carries only the `op_id`s of required causal predecessors — never scenario parentage, layer/endpoint references, model references, workflow steps, schema membership, "every prior op by this actor", or an actor-declaration reference merely because the op contains `actor_id`; those belong in typed payloads or validation rules. Three orders stay distinct: **physical log order** (M0 replay), **causal readiness** (`deps`, cross-source only), and **semantic resolution order** (`(asserted_at, op_id)`, fixed by the op set and resolution rules, not arrival order). HLC-monotonic-equals-append-order is an M0 _single-writer_ property, **not** a permanent format invariant — a synced peer may append an older remote operation after newer local ones; its `asserted_at` is retained verbatim and sealed history is never rewritten to preserve physical sort order.
-- **The canonical record is reused across surfaces, not re-derived.** The live segment holds the canonical record bytes directly; the segment BLAKE3 checksum covers those exact op-line bytes (including each terminating LF, excluding the checksum line). A package export seals and copies segment files **byte-for-byte** into the deterministic archive ([ADR-0007](./ADR-0007-deterministic-package-export.md)) rather than re-serialising. Streaming export wraps the canonical operation object (`{"record_type":"op","op":{…}}`) — no `payload_base64`, no second representation.
+- **`deps` is empty at M0; M0 rebuild does not topologically sort.** In workspace format v1 as implemented by M0,
+  locally authored operations carry an empty `deps` array. A single writer establishes causal order through durable
+  **append order**, and rebuild processes operation segments sequentially (sealed in ascending sequence, then the loose
+  segment, top-to-bottom) without sorting. The `deps` field is **reserved** for operation exchange across independently
+  authored histories (import M4, sync M6, [ADR-0034](./ADR-0034-merge-correctness-and-convergence.md)); non-empty
+  dependency handling is introduced by those contracts and **must never be silently ignored** — an M0 reader that meets
+  a workspace whose `manifest.json` declares causal-dependency handling (a feature flag) **refuses read-write as
+  unsupported** (forensic read-only is permitted, but it must not build projections while ignoring `deps`). `deps`
+  carries only the `op_id`s of required causal predecessors — never scenario parentage, layer/endpoint references, model
+  references, workflow steps, schema membership, "every prior op by this actor", or an actor-declaration reference
+  merely because the op contains `actor_id`; those belong in typed payloads or validation rules. Three orders stay
+  distinct: **physical log order** (M0 replay), **causal readiness** (`deps`, cross-source only), and **semantic
+  resolution order** (`(asserted_at, op_id)`, fixed by the op set and resolution rules, not arrival order).
+  HLC-monotonic-equals-append-order is an M0 _single-writer_ property, **not** a permanent format invariant — a synced
+  peer may append an older remote operation after newer local ones; its `asserted_at` is retained verbatim and sealed
+  history is never rewritten to preserve physical sort order.
+- **The canonical record is reused across surfaces, not re-derived.** The live segment holds the canonical record bytes
+  directly; the segment BLAKE3 checksum covers those exact op-line bytes (including each terminating LF, excluding the
+  checksum line). A package export seals and copies segment files **byte-for-byte** into the deterministic archive
+  ([ADR-0007](./ADR-0007-deterministic-package-export.md)) rather than re-serialising. Streaming export wraps the
+  canonical operation object (`{"record_type":"op","op":{…}}`) — no `payload_base64`, no second representation.
 
 ## Considered Options
 
-- **Deterministic binary codec (bincode/CBOR) — rejected.** Smaller and faster, but it forfeits the reason the canonical layer exists: portable, inspectable, diffable, tool-independent history. SQLite already provides the compact machine representation; canonical files are for humans, version control, and forensics. Compression can be applied at the transport layer without changing the logical format.
-- **Opaque `Vec<u8>` payload kept as the contract — rejected.** The writer could not check `op_type` matches payload, verification could not tell malformed from validly-unknown content, payload migration would have no governed boundary, canonicalisation would trust producer bytes, and diffability would be lost to Base64 — and the operation schemas would describe something other than the record.
-- **Both `op_type` integer and `kind` name in the record — rejected.** Creates an avoidable invalid state (which wins on disagreement?). The name is the portable contract; the integer is an internal compact discriminator.
-- **HLC as a JSON number — rejected.** The packed HLC exceeds JavaScript's exact-integer range; canonical files encode full-range 64-bit coordinates as **decimal strings** so common JSON tooling parses them safely ([canonical-JSON profile](../04-contracts/canonical-json.md), correcting the earlier `i64`-number convention in [hlc-encoding](../04-contracts/temporal-and-scenario/hlc-encoding.md)).
+- **Deterministic binary codec (bincode/CBOR) — rejected.** Smaller and faster, but it forfeits the reason the canonical
+  layer exists: portable, inspectable, diffable, tool-independent history. SQLite already provides the compact machine
+  representation; canonical files are for humans, version control, and forensics. Compression can be applied at the
+  transport layer without changing the logical format.
+- **Opaque `Vec<u8>` payload kept as the contract — rejected.** The writer could not check `op_type` matches payload,
+  verification could not tell malformed from validly-unknown content, payload migration would have no governed boundary,
+  canonicalisation would trust producer bytes, and diffability would be lost to Base64 — and the operation schemas would
+  describe something other than the record.
+- **Both `op_type` integer and `kind` name in the record — rejected.** Creates an avoidable invalid state (which wins on
+  disagreement?). The name is the portable contract; the integer is an internal compact discriminator.
+- **HLC as a JSON number — rejected.** The packed HLC exceeds JavaScript's exact-integer range; canonical files encode
+  full-range 64-bit coordinates as **decimal strings** so common JSON tooling parses them safely
+  ([canonical-JSON profile](../04-contracts/canonical-json.md), correcting the earlier `i64`-number convention in
+  [hlc-encoding](../04-contracts/temporal-and-scenario/hlc-encoding.md)).
 
 ## Consequences
 
-- M0 must restructure `OpEnvelope` (typed payload, `kind` name, `format_version`), implement the canonical-JSON profile, and write/read the live `model/ops/` segment. The [operation schemas](../contracts/operations/README.md) and [fixtures](../data/fixtures/operations/README.md) describe the real canonical record.
-- The rebuild-equivalence hash is **not** a hash of operation records. It uses the _same_ canonical-JSON profile but is applied to the resolved probe-result contract — semantic equivalence, not history bytes ([ADR-0027](./ADR-0027-projection-consistency-model.md)). Two surfaces, two shapes, one canonicaliser: segment/package checksums prove canonical-history integrity; the equivalence hash proves derived semantic correctness.
-- Streaming export's `payload_base64` representation is removed in favour of the canonical operation object ([export-import-replay](../05-modules/mneme/export-import-replay.md)).
-- A canonical-JSON profile bump is a `format_version` event, handled by the refuse-or-degrade rule ([ADR-0002](./ADR-0002-portable-workspace-format.md)); it is never a silent change.
+- M0 must restructure `OpEnvelope` (typed payload, `kind` name, `format_version`), implement the canonical-JSON profile,
+  and write/read the live `model/ops/` segment. The [operation schemas](../contracts/operations/README.md) and
+  [fixtures](../data/fixtures/operations/README.md) describe the real canonical record.
+- The rebuild-equivalence hash is **not** a hash of operation records. It uses the _same_ canonical-JSON profile but is
+  applied to the resolved probe-result contract — semantic equivalence, not history bytes
+  ([ADR-0027](./ADR-0027-projection-consistency-model.md)). Two surfaces, two shapes, one canonicaliser: segment/package
+  checksums prove canonical-history integrity; the equivalence hash proves derived semantic correctness.
+- Streaming export's `payload_base64` representation is removed in favour of the canonical operation object
+  ([export-import-replay](../05-modules/mneme/export-import-replay.md)).
+- A canonical-JSON profile bump is a `format_version` event, handled by the refuse-or-degrade rule
+  ([ADR-0002](./ADR-0002-portable-workspace-format.md)); it is never a silent change.

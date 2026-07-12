@@ -1,6 +1,7 @@
 # Test Layers
 
-The six test layers, their tooling and scope, and the commands that run them. Each layer aims at a seam, not just the interior. The [index](./README.md) gives the cross-cutting posture; this file is the layer reference.
+The six test layers, their tooling and scope, and the commands that run them. Each layer aims at a seam, not just the
+interior. The [index](./README.md) gives the cross-cutting posture; this file is the layer reference.
 
 ## The six layers
 
@@ -52,18 +53,23 @@ pnpm run webdriver:test:headless       # Linux headless via xvfb-run
 
 ### Contract / boundary tests
 
-The full discipline — IPC envelopes, DTO parity, trait surfaces, and the contract-coverage matrix against the IPC manifest — is in [boundary-and-contract-tests.md](./boundary-and-contract-tests.md).
+The full discipline — IPC envelopes, DTO parity, trait surfaces, and the contract-coverage matrix against the IPC
+manifest — is in [boundary-and-contract-tests.md](./boundary-and-contract-tests.md).
 
 ### Integration tests
 
 - Test engine-to-engine flows through typed traits, not through Tauri commands.
-- Test host ↔ engine wiring: verify that a `WorkerState` dispatch reaches the correct engine trait method and the response flows back correctly.
+- Test host ↔ engine wiring: verify that a `WorkerState` dispatch reaches the correct engine trait method and the
+  response flows back correctly.
 - Test storage round-trips: write an op, read it back, assert the canonical form matches.
 - Use the patterns in `src-tauri/src/temporal.rs` and `crates/praxis/tests/merge_flow.rs` as golden paths.
 
 ### Replay / rebuild tests
 
-The workspace splits into a **canonical portable folder** (op log, blobs, metadata) and a **derived runtime database** (`.aideon/runtime`). Rebuild tests verify the invariant: deleting the runtime and rebuilding from canonical files yields an equivalent effective graph ([blobs-and-integrity.md](../security/blobs-and-integrity.md), [ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md)).
+The workspace splits into a **canonical portable folder** (op log, blobs, metadata) and a **derived runtime database**
+(`.aideon/runtime`). Rebuild tests verify the invariant: deleting the runtime and rebuilding from canonical files yields
+an equivalent effective graph ([blobs-and-integrity.md](../security/blobs-and-integrity.md),
+[ADR-0001](../../06-adrs/ADR-0001-workspace-is-canonical-authority.md)).
 
 Each replay test must:
 
@@ -90,7 +96,8 @@ Replay tests run in the workspace integration suite (`cargo test -p aideon_deskt
 
 ### Crash recovery tests
 
-Crash recovery tests simulate an unclean shutdown at each critical write boundary and verify that a subsequent cold start leaves the system consistent with no data loss beyond the interrupted operation.
+Crash recovery tests simulate an unclean shutdown at each critical write boundary and verify that a subsequent cold
+start leaves the system consistent with no data loss beyond the interrupted operation.
 
 | Scenario                       | Injection point                                              | Expected post-recovery state                                               |
 | ------------------------------ | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
@@ -98,7 +105,8 @@ Crash recovery tests simulate an unclean shutdown at each critical write boundar
 | Kill during blob attach        | After blob write begins, before content-address index update | Blob indexed and retrievable or fully absent; no dangling reference        |
 | Kill during projection rebuild | After the runtime DB is partially written                    | Runtime discarded; next cold start triggers a clean rebuild from canonical |
 
-Each test uses a controllable fault-injection wrapper that panics (or signals) at the designated point, then relaunches a fresh host process against the same workspace directory.
+Each test uses a controllable fault-injection wrapper that panics (or signals) at the designated point, then relaunches
+a fresh host process against the same workspace directory.
 
 ```rust
 #[test]
@@ -115,7 +123,8 @@ fn crash_during_op_append_leaves_consistent_state() {
 
 ### E2E / smoke tests
 
-E2E tests run against the packaged Tauri binary via Tauri WebDriver. They cover critical user flows only; edge-case coverage belongs in lower layers.
+E2E tests run against the packaged Tauri binary via Tauri WebDriver. They cover critical user flows only; edge-case
+coverage belongs in lower layers.
 
 Required smoke flows:
 
@@ -125,7 +134,8 @@ Required smoke flows:
 - Open the properties panel for a selected entity.
 - Quit and relaunch, verify workspace state persists.
 
-E2E tests live under `tests/e2e/specs/`. Avoid timeout-based assertions; use deterministic waits (element visibility, network-idle equivalents via IPC event stubs).
+E2E tests live under `tests/e2e/specs/`. Avoid timeout-based assertions; use deterministic waits (element visibility,
+network-idle equivalents via IPC event stubs).
 
 ## Related documents
 

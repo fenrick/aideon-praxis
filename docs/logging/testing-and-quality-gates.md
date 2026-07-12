@@ -1,18 +1,31 @@
 # 13. Testing logging, and the release gates
 
-How logging is tested, and the gates a change must clear before it is complete. Part of the [logging standard](./README.md). Logging is a contract; like any contract, it is tested rather than assumed.
+How logging is tested, and the gates a change must clear before it is complete. Part of the
+[logging standard](./README.md). Logging is a contract; like any contract, it is tested rather than assumed.
 
 ---
 
 ## Testing logging
 
-- **Contract conformance.** A test asserts that emitted records carry the [required fields](./log-record-contract.md#31-required-fields) — `component`, `event_name`, `syslog.severity`, `correlation_id`, `session_id`, `source` — and that severity maps to the library level correctly ([§2.1](./README.md#21-mapping-to-logger-levels-mandatory)).
-- **Schema/parse.** A test parses produced lines as JSON and confirms they are valid NDJSON the [central collector](./where-logs-go.md) can ingest.
-- **Source attribution.** A test confirms Rust records resolve to the true file/line/module, not a helper ([source attribution](./log-record-contract.md#9-source-attribution)).
-- **Redaction.** A test asserts that any approved sensitive field is redacted on the written line, per the [redaction-review process](./privacy-and-redaction.md#103-the-redaction-review-process). Redaction is a gate, not a hope.
-- **Line size.** A test confirms an over-size record is truncated to the contract fields with `truncated: true`, never written whole ([§3.4](./log-record-contract.md#34-field-design-rules-and-line-size-enforcement)).
-- **Failure modes.** Rotation is tested for disk-full, permission-denied, and concurrent writes ([where logs go §5.3](./where-logs-go.md#53-retention-and-rotation)); the panic hook is tested to emit one safe record and fall back to stderr ([rust-host §7.5](./rust-host.md#75-the-panic-hook)).
-- **End-to-end correlation.** A test reconstructs one full workflow — renderer action → host command → engine work → events → result — by `correlation_id`, confirming the chain holds across the IPC seam ([correlation and tracing §4.4](./correlation-and-tracing.md#44-the-correlation-chain-renderer--host--engine--events--logs)).
+- **Contract conformance.** A test asserts that emitted records carry the
+  [required fields](./log-record-contract.md#31-required-fields) — `component`, `event_name`, `syslog.severity`,
+  `correlation_id`, `session_id`, `source` — and that severity maps to the library level correctly
+  ([§2.1](./README.md#21-mapping-to-logger-levels-mandatory)).
+- **Schema/parse.** A test parses produced lines as JSON and confirms they are valid NDJSON the
+  [central collector](./where-logs-go.md) can ingest.
+- **Source attribution.** A test confirms Rust records resolve to the true file/line/module, not a helper
+  ([source attribution](./log-record-contract.md#9-source-attribution)).
+- **Redaction.** A test asserts that any approved sensitive field is redacted on the written line, per the
+  [redaction-review process](./privacy-and-redaction.md#103-the-redaction-review-process). Redaction is a gate, not a
+  hope.
+- **Line size.** A test confirms an over-size record is truncated to the contract fields with `truncated: true`, never
+  written whole ([§3.4](./log-record-contract.md#34-field-design-rules-and-line-size-enforcement)).
+- **Failure modes.** Rotation is tested for disk-full, permission-denied, and concurrent writes
+  ([where logs go §5.3](./where-logs-go.md#53-retention-and-rotation)); the panic hook is tested to emit one safe record
+  and fall back to stderr ([rust-host §7.5](./rust-host.md#75-the-panic-hook)).
+- **End-to-end correlation.** A test reconstructs one full workflow — renderer action → host command → engine work →
+  events → result — by `correlation_id`, confirming the chain holds across the IPC seam
+  ([correlation and tracing §4.4](./correlation-and-tracing.md#44-the-correlation-chain-renderer--host--engine--events--logs)).
 
 ## Release gates
 
@@ -23,7 +36,8 @@ A change touching logging is not complete until:
 3. logs are NDJSON and can be ingested by the central collector;
 4. redaction rules are verified by test;
 5. line-size enforcement is verified;
-6. at least one end-to-end workflow can be reconstructed using `correlation_id` (the gate [ADR-0019](../06-adrs/ADR-0019-observability-and-trace-context.md) satisfies through W3C Trace Context propagation).
+6. at least one end-to-end workflow can be reconstructed using `correlation_id` (the gate
+   [ADR-0019](../06-adrs/ADR-0019-observability-and-trace-context.md) satisfies through W3C Trace Context propagation).
 
 ---
 
@@ -97,7 +111,8 @@ UI error shown (same `correlation_id`):
 }
 ```
 
-The two error records share `correlation_id=b4c3c2d1-…`, so the UI error and the host failure join into one reconstructable workflow.
+The two error records share `correlation_id=b4c3c2d1-…`, so the UI error and the host failure join into one
+reconstructable workflow.
 
 ---
 

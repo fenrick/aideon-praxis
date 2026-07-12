@@ -1,8 +1,11 @@
 # Vocabulary
 
-Where the product's words are defined. This layer does not own a glossary; the single source of truth for every domain term is the root glossary, [`CONTEXT.md`](../../CONTEXT.md). Every document here uses those terms exactly and avoids the terms the glossary marks `_Avoid_` ([Documentation Standard §3](../02-standards/DOCUMENTATION-STANDARD.md)).
+Where the product's words are defined. This layer does not own a glossary; the single source of truth for every domain
+term is the root glossary, [`CONTEXT.md`](../../CONTEXT.md). Every document here uses those terms exactly and avoids the
+terms the glossary marks `_Avoid_` ([Documentation Standard §3](../02-standards/DOCUMENTATION-STANDARD.md)).
 
-This file exists only to point a reader at the canonical definitions and to restate the conclusions of the distinctions that matter most for the product layer — not to fork them.
+This file exists only to point a reader at the canonical definitions and to restate the conclusions of the distinctions
+that matter most for the product layer — not to fork them.
 
 ## The distinctions that shape this layer
 
@@ -18,7 +21,9 @@ This file exists only to point a reader at the canonical definitions and to rest
 
 ## The rule
 
-Where a product document needs a term for flow, it restates the conclusion and links the definition; it never re-defines the term. If a surface or a module appears to need a new domain term, that term is added to [`CONTEXT.md`](../../CONTEXT.md) first, then used here.
+Where a product document needs a term for flow, it restates the conclusion and links the definition; it never re-defines
+the term. If a surface or a module appears to need a new domain term, that term is added to
+[`CONTEXT.md`](../../CONTEXT.md) first, then used here.
 
 ## Related documents
 

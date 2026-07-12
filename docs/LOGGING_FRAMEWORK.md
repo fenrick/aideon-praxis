@@ -1,12 +1,19 @@
 # Logging and telemetry framework
 
-The prescriptive standard for diagnostics and telemetry in this Tauri application — structured logs and traces across the renderer (WebView) and the Rust host, joined by correlation identifiers end to end. This standard is normative; follow it as written. It is decomposed into the [`logging/`](./logging/README.md) folder because it runs well past four screens ([DOCUMENTATION-STANDARD.md §4](./02-standards/DOCUMENTATION-STANDARD.md)); this file is the index.
+The prescriptive standard for diagnostics and telemetry in this Tauri application — structured logs and traces across
+the renderer (WebView) and the Rust host, joined by correlation identifiers end to end. This standard is normative;
+follow it as written. It is decomposed into the [`logging/`](./logging/README.md) folder because it runs well past four
+screens ([DOCUMENTATION-STANDARD.md §4](./02-standards/DOCUMENTATION-STANDARD.md)); this file is the index.
 
-Logging is for diagnostics and auditability; telemetry (traces and metrics) is for behaviour and performance analysis. Logs and telemetry **must** share correlation identifiers. The propagation standard — OpenTelemetry plus W3C Trace Context, correlating renderer → host → engine → events → logs — is set by **[ADR-0019](./06-adrs/ADR-0019-observability-and-trace-context.md)**.
+Logging is for diagnostics and auditability; telemetry (traces and metrics) is for behaviour and performance analysis.
+Logs and telemetry **must** share correlation identifiers. The propagation standard — OpenTelemetry plus W3C Trace
+Context, correlating renderer → host → engine → events → logs — is set by
+**[ADR-0019](./06-adrs/ADR-0019-observability-and-trace-context.md)**.
 
 ## The standard, by section
 
-The section numbers below are stable; incoming cross-links (including [ADR-0019](./06-adrs/ADR-0019-observability-and-trace-context.md)) target them.
+The section numbers below are stable; incoming cross-links (including
+[ADR-0019](./06-adrs/ADR-0019-observability-and-trace-context.md)) target them.
 
 | §   | Topic                                                                            | File                                                                                    |
 | --- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -24,7 +31,8 @@ The section numbers below are stable; incoming cross-links (including [ADR-0019]
 | 12  | Operational edge cases                                                           | [logging/operational-edge-cases.md](./logging/operational-edge-cases.md)                |
 | 13  | Quality gates; testing logging                                                   | [logging/testing-and-quality-gates.md](./logging/testing-and-quality-gates.md)          |
 
-Start at [logging/README.md](./logging/README.md), which carries the non-negotiables, the severity model, and the full Contents list.
+Start at [logging/README.md](./logging/README.md), which carries the non-negotiables, the severity model, and the full
+Contents list.
 
 ## Related documents
 

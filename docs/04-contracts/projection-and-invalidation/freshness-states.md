@@ -1,12 +1,16 @@
 # Freshness states
 
-The state a projection instance is in at the moment it is read, and how it is reported to the UI. These four states map onto the result-state axis of the honest-state vocabulary ([§9](../../02-standards/DOCUMENTATION-STANDARD.md)) — they are not redefined here, they are the projection-layer expression of it.
+The state a projection instance is in at the moment it is read, and how it is reported to the UI. These four states map
+onto the result-state axis of the honest-state vocabulary ([§9](../../02-standards/DOCUMENTATION-STANDARD.md)) — they
+are not redefined here, they are the projection-layer expression of it.
 
 ---
 
 ## The four states
 
-A projection instance at a given `(projection_id, projection_version, context_dimensions)` is in exactly one of four freshness states. The right column is the honest-state result state ([§9](../../02-standards/DOCUMENTATION-STANDARD.md)) it expresses:
+A projection instance at a given `(projection_id, projection_version, context_dimensions)` is in exactly one of four
+freshness states. The right column is the honest-state result state ([§9](../../02-standards/DOCUMENTATION-STANDARD.md))
+it expresses:
 
 | State        | Meaning                                                                          | UI indicator                          | Honest-state (§9) |
 | ------------ | -------------------------------------------------------------------------------- | ------------------------------------- | ----------------- |
@@ -37,15 +41,22 @@ pub enum ProjectionFreshnessState {
 }
 ```
 
-The renderer renders contextual indicators from `ProjectionFreshnessState`: `Fresh` renders nothing; `Stale` renders an age badge; `Rebuilding` renders a non-blocking spinner; `Failed` renders an error with a user-initiated retry control. Staleness age is `now - stale_since`; when it exceeds the descriptor's [`max_staleness_seconds`](./projection-descriptor.md), the [observability](./observability.md) layer emits `PROJECTION_STALE_THRESHOLD_EXCEEDED`.
+The renderer renders contextual indicators from `ProjectionFreshnessState`: `Fresh` renders nothing; `Stale` renders an
+age badge; `Rebuilding` renders a non-blocking spinner; `Failed` renders an error with a user-initiated retry control.
+Staleness age is `now - stale_since`; when it exceeds the descriptor's
+[`max_staleness_seconds`](./projection-descriptor.md), the [observability](./observability.md) layer emits
+`PROJECTION_STALE_THRESHOLD_EXCEEDED`.
 
 ## Why a `stale` read is still served
 
-A `stale` read is served, not blocked, but it is **labelled**. This is the honesty obligation of the [consistency model](./consistency-model.md): eventual convergence is acceptable only because the staleness is surfaced. A non-writer reader who sees `stale` knows the result is a prior snapshot converging, not a fresh truth.
+A `stale` read is served, not blocked, but it is **labelled**. This is the honesty obligation of the
+[consistency model](./consistency-model.md): eventual convergence is acceptable only because the staleness is surfaced.
+A non-writer reader who sees `stale` knows the result is a prior snapshot converging, not a fresh truth.
 
 ## References & standards
 
-- (System standard) [DOCUMENTATION-STANDARD.md §9](../../02-standards/DOCUMENTATION-STANDARD.md) — the result-state axis these map onto.
+- (System standard) [DOCUMENTATION-STANDARD.md §9](../../02-standards/DOCUMENTATION-STANDARD.md) — the result-state axis
+  these map onto.
 
 ## Related documents
 
