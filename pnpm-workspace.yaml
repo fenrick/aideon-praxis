@@ -1,6 +1,9 @@
 # Single Tauri app — no JS workspace. Settings only (read by pnpm).
 overrides:
   csstype: 3.2.1
+  # Force next's bundled postcss up off 8.4.31 (CVE-2026-41305 XSS). The rest of
+  # the tree already resolves 8.5.x; this lifts the last transitive copy.
+  postcss@<8.5.10: ^8.5.10
 allowBuilds:
   edgedriver: true
   geckodriver: true
