@@ -1,3 +1,5 @@
+# Aideon Desktop shell — build tasks
+
 ## Stage 0 – Baseline and assumptions
 
 Before starting, the agent should assume:

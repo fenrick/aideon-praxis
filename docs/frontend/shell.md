@@ -39,7 +39,7 @@ platform supplies each from `src/platform/`:
 | `content`    | The dominant content region that renders the **active surface instance**. Each surface composes platform- and engine-contributed widgets per its own fixed or user-editable composition contract.                                           | `PlatformContent`                   | `SidebarInset` + `Resizable` |
 | `inspector`  | Selection-driven contextual details and forms                                                                                                                                                                                               | `PlatformInspector`                 | `Resizable` + `Panel`        |
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Toolbar (global chrome + viewpoint + layout-preset/temporal)     │
 ├──────────────┬───────────────────────────┬─────────────────────┤

@@ -16,7 +16,7 @@ The path follows information foraging (Pirolli & Card, _Information Foraging_, 1
 **scent** — a cue that tells the user the evidence they want lies one step away, and in which direction — and
 **progressive disclosure** keeps the dense detail behind that step rather than crowding the summary.
 
-```
+```text
 Artefact result
   └─▶ Inspector: properties + explanation + provenance
         └─▶ Evidence: contributing entities, relationships, paths

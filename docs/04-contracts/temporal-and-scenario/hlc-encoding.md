@@ -10,7 +10,7 @@ robust to clock skew.
 
 ## The packing
 
-```
+```text
  63                    12 11          0
  ┌──────────────────────┬─────────────┐
  │  physical_micros     │   counter   │

@@ -26,7 +26,7 @@ where it lives as data.
 
 ## Layout
 
-```
+```text
 docs/data/
   README.md                 # this file — the operational note
   schema-governance.md       # how to add/deprecate a type or relationship
@@ -82,16 +82,21 @@ The metamodel's UUIDs are **minted by the compiler, never hand-authored** — se
    than rewriting an existing one, so the seed reads as a history. Bump the `version` field per the
    [version bump rules](#version-bump-rules) and record the change in [base/CHANGELOG.md](./base/CHANGELOG.md).
 3. **Dry-run the importer** against a scratch datastore to validate without writing:
+
    ```sh
    cargo aideon_xtask import-dataset --dataset docs/data/base/baseline.yaml \
        --datastore /tmp/praxis --dry-run
    ```
+
    The dry-run applies the dataset to an in-memory store, so validation mirrors runtime behaviour exactly.
+
 4. **Write it** once the dry-run is clean:
+
    ```sh
    cargo aideon_xtask import-dataset --dataset docs/data/base/baseline.yaml \
        --datastore /tmp/praxis
    ```
+
 5. **Run the dataset tests** to confirm the guardrail counts still hold (below). A change that shifts a count without
    updating the expectation is a failing test, by design.
 

@@ -26,7 +26,7 @@ order in the root [`CLAUDE.md`](../../CLAUDE.md). Documentation is authoritative
 
 ## Repository shape
 
-```
+```text
 /
 ├── CONTEXT.md                         ← domain glossary (exists; read first)
 ├── CLAUDE.md                          ← precedence order and agent guidance

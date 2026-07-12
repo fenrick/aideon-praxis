@@ -35,7 +35,7 @@ A run moves through a set of statuses; terminal statuses are final.
 
 ## Normal, retry, and failure flows
 
-```
+```text
 accepted → running → [step.pending → step.running → step.succeeded]+ → succeeded
 step.running → step.retrying → step.running → ... → step.succeeded | step.failed
 running → step.failed → failed

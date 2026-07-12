@@ -20,7 +20,7 @@ of library.
 A query key **must** identify the read fully, and the read is taken at a viewpoint, so the key includes the viewpoint
 ([state-architecture.md](./state-architecture.md)). The canonical key shape is:
 
-```
+```text
 [ <surface>, <resource>, <params>, viewpoint ]
 ```
 
