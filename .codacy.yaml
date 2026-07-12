@@ -8,3 +8,12 @@
 exclude_paths:
   - '.agents/**'
   - '.claude/**'
+  # Generated / non-authored content whose format inherently trips markdownlint:
+  # - CHANGELOG.md is produced by semantic-release (one h1 per release version →
+  #   MD025 multiple-h1 + MD001 heading-increment are intrinsic, not fixable).
+  # - memory/** are agent memory notes (frontmatter + `##` sections by design →
+  #   MD041 first-line-h1 does not apply).
+  # - the PR template is a body fragment; a leading h1 would render wrong in PRs.
+  - 'CHANGELOG.md'
+  - 'memory/**'
+  - '.github/pull_request_template.md'

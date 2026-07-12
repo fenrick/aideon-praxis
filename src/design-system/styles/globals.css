@@ -85,7 +85,7 @@
   .typography p:not(.not-typography p) {
     line-height: 1.75;
   }
-  .typography p:not(.not-typography p):not(:first-child) {
+  .typography p:not(.not-typography p, :first-child) {
     margin-top: calc(var(--spacing) * 6);
   }
   .typography li:not(.not-typography li) {
@@ -184,7 +184,7 @@
     line-height: var(--text-sm--line-height);
     overflow-y: auto;
   }
-  .typography code:not(pre code):not(.not-typography code) {
+  .typography code:not(pre code, .not-typography code) {
     position: relative;
     border-radius: var(--radius);
     background-color: var(--color-muted);

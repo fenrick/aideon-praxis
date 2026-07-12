@@ -90,8 +90,13 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
+  // Injects a <style> block of CSS custom properties derived entirely from the
+  // developer-supplied ChartConfig (theme keys + colour tokens), never user
+  // input — the canonical shadcn chart pattern, no XSS surface.
   return (
+    // nosemgrep: rule-dangerouslysetinnerhtml
     <style
+      // nosemgrep: react-dangerouslysetinnerhtml
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(

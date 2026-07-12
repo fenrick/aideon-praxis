@@ -21,15 +21,30 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+// Deterministic PRNG (mulberry32) so the story renders identical demo data on
+// every run — stable Storybook visual snapshots, and no Math.random() (which
+// Opengrep flags as a weak RNG even for non-security demo data).
+const createRng = (seed: number) => {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
 const generateActivities = (year: number) => {
   const activities = [];
   const start = new Date(`${year}-01-01`);
   const end = new Date(`${year}-12-31`);
+  const rng = createRng(year);
 
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const rand = Math.random();
+    const rand = rng();
     const level = rand < 0.5 ? 0 : rand < 0.7 ? 1 : rand < 0.85 ? 2 : rand < 0.95 ? 3 : 4;
-    const count = level * Math.floor(Math.random() * 5 + 1);
+    const count = level * Math.floor(rng() * 5 + 1);
     activities.push({
       date: d.toISOString().slice(0, 10),
       count,
