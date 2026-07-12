@@ -45,6 +45,8 @@ fn registry(allow_duplicate: Option<bool>) -> MetaModelRegistry {
             to: vec!["B".into()],
             directed: Some(true),
             multiplicity: None,
+            allow_self: None,
+            allow_duplicate: None,
             attributes: vec![],
         }],
         validation: Some(MetaValidationRules {

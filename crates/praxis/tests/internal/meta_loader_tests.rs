@@ -47,6 +47,7 @@ fn merge_documents_overrides_types_and_relationships_by_id() {
             value_type: MetaAttributeKind::String,
             required: true,
             enum_values: vec![],
+            cardinality: None,
         }],
         effect_types: None,
     };
@@ -62,6 +63,7 @@ fn merge_documents_overrides_types_and_relationships_by_id() {
             value_type: MetaAttributeKind::String,
             required: false,
             enum_values: vec![],
+            cardinality: None,
         }],
         effect_types: None,
     };
@@ -73,6 +75,8 @@ fn merge_documents_overrides_types_and_relationships_by_id() {
         to: vec!["Capability".into()],
         directed: Some(true),
         multiplicity: None,
+        allow_self: None,
+        allow_duplicate: None,
         attributes: vec![],
     };
     let overlay_rel = MetaRelationship {
@@ -83,6 +87,8 @@ fn merge_documents_overrides_types_and_relationships_by_id() {
         to: vec!["Capability".into()],
         directed: Some(false),
         multiplicity: None,
+        allow_self: None,
+        allow_duplicate: None,
         attributes: vec![],
     };
 

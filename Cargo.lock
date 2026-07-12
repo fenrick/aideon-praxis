@@ -131,6 +131,7 @@ dependencies = [
 name = "aideon_praxis"
 version = "0.2.0"
 dependencies = [
+ "aideon_mneme_core",
  "async-recursion",
  "async-trait",
  "blake3",
