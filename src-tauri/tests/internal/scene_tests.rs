@@ -65,6 +65,7 @@ async fn canvas_scene_returns_shapes() {
 #[tokio::test]
 async fn canvas_layout_roundtrips() {
     let _guard = env_lock().lock().await;
+    // nosemgrep: rust.lang.security.temp-dir.temp-dir -- test-only scratch dir, not a security path
     let base = std::env::temp_dir().join(format!(
         "aideon-test-{}",
         SystemTime::now()
@@ -72,6 +73,7 @@ async fn canvas_layout_roundtrips() {
             .unwrap()
             .as_millis()
     ));
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::set_var("AIDEON_TEST_DATA_DIR", base.to_string_lossy().to_string());
     }
@@ -110,6 +112,7 @@ async fn canvas_layout_roundtrips() {
     assert_eq!(loaded, Some(payload));
 
     let _ = fs::remove_dir_all(base);
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::remove_var("AIDEON_TEST_DATA_DIR");
     }
@@ -118,8 +121,10 @@ async fn canvas_layout_roundtrips() {
 #[tokio::test]
 async fn canvas_get_layout_returns_none_when_missing() {
     let _guard = env_lock().lock().await;
+    // nosemgrep: rust.lang.security.temp-dir.temp-dir -- test-only scratch dir, not a security path
     let base = std::env::temp_dir().join("aideon-missing-snapshot");
     let _ = fs::remove_dir_all(&base);
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::set_var("AIDEON_TEST_DATA_DIR", base.to_string_lossy().to_string());
     }
@@ -136,6 +141,7 @@ async fn canvas_get_layout_returns_none_when_missing() {
     assert!(response.is_none());
 
     let _ = fs::remove_dir_all(base);
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::remove_var("AIDEON_TEST_DATA_DIR");
     }
@@ -144,6 +150,7 @@ async fn canvas_get_layout_returns_none_when_missing() {
 #[tokio::test]
 async fn graph_layout_roundtrips() {
     let _guard = env_lock().lock().await;
+    // nosemgrep: rust.lang.security.temp-dir.temp-dir -- test-only scratch dir, not a security path
     let base = std::env::temp_dir().join(format!(
         "aideon-graph-{}",
         SystemTime::now()
@@ -151,6 +158,7 @@ async fn graph_layout_roundtrips() {
             .unwrap()
             .as_millis()
     ));
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::set_var("AIDEON_TEST_DATA_DIR", base.to_string_lossy().to_string());
     }
@@ -183,6 +191,7 @@ async fn graph_layout_roundtrips() {
     assert_eq!(loaded, Some(payload));
 
     let _ = fs::remove_dir_all(base);
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::remove_var("AIDEON_TEST_DATA_DIR");
     }
@@ -193,6 +202,7 @@ async fn praxis_scene_wrappers_cover_ipc_surface() {
     let _guard = env_lock().lock().await;
     let dir = tempfile::tempdir().expect("tempdir");
     let base = dir.path().to_path_buf();
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::set_var("AIDEON_TEST_DATA_DIR", base.to_string_lossy().to_string());
     }
@@ -269,6 +279,7 @@ async fn praxis_scene_wrappers_cover_ipc_surface() {
     assert_eq!(response.status, "ok");
     assert!(!response.result.unwrap_or_default().is_empty());
 
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage -- env::set_var/remove_var are unsafe in Rust 2024; serialized by env_lock() in tests
     unsafe {
         std::env::remove_var("AIDEON_TEST_DATA_DIR");
     }

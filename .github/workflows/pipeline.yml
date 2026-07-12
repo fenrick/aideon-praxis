@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - uses: actions/setup-node@v5
         with:
@@ -70,7 +70,7 @@ jobs:
             pkg-config libglib2.0-dev libgtk-3-dev libayatana-appindicator3-dev \
             librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
 
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
         with:
           components: rustfmt, clippy
 
@@ -104,7 +104,7 @@ jobs:
             pkg-config libglib2.0-dev libgtk-3-dev libayatana-appindicator3-dev \
             librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - uses: actions/setup-node@v5
         with:
@@ -115,7 +115,7 @@ jobs:
       # (keyed on Cargo.lock + rustc, caches the workspace target at repo root).
       # The previous manual cache pointed at src-tauri/target — the wrong dir,
       # since src-tauri is a workspace member and builds go to the root /target.
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
 
       - run: pnpm install --frozen-lockfile
 
@@ -129,7 +129,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - uses: actions/setup-node@v5
         with:
@@ -144,7 +144,7 @@ jobs:
             librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev \
             webkit2gtk-driver xvfb
 
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
 
       - name: Cache tauri-driver install
         id: cache-tauri-driver-webdriver
@@ -180,7 +180,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - uses: actions/setup-node@v5
         with:
@@ -195,7 +195,7 @@ jobs:
             librsvg2-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev \
             webkit2gtk-driver xvfb
 
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
 
       - name: Cache tauri-driver install
         id: cache-tauri-driver-tier2
@@ -225,14 +225,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
 
       - run: pnpm install --frozen-lockfile
 
