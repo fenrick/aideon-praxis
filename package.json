@@ -94,7 +94,7 @@
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-log": "^2.8.0",
     "@uidotdev/usehooks": "^2.4.1",
-    "@xyflow/react": "^12.11.0",
+    "@xyflow/react": "^12.11.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
