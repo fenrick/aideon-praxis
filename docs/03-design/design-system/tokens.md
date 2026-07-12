@@ -1,6 +1,9 @@
 # Tokens
 
-The lowest, most stable layer of the design system: the named values every surface inherits. This file is for anyone authoring a token, adding a theme, or wiring a primitive to the token contract. It is the spec behind [ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md); the ADR records the decision, this file enumerates the families.
+The lowest, most stable layer of the design system: the named values every surface inherits. This file is for anyone
+authoring a token, adding a theme, or wiring a primitive to the token contract. It is the spec behind
+[ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md); the ADR records the decision, this file enumerates the
+families.
 
 ---
 
@@ -20,14 +23,21 @@ The lowest, most stable layer of the design system: the named values every surfa
 
 ## 1. The format and the tiers
 
-Tokens are authored in the **W3C Design Tokens Community Group format** _(W3C Design Tokens Community Group format)_: each token is a `$type`/`$value` pair, so the source is portable to design tooling and not locked to one build pipeline ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)). CSS custom properties are generated from the DTCG source; primitives and blocks consume the generated variables, never the source directly.
+Tokens are authored in the **W3C Design Tokens Community Group format** _(W3C Design Tokens Community Group format)_:
+each token is a `$type`/`$value` pair, so the source is portable to design tooling and not locked to one build pipeline
+([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)). CSS custom properties are generated from the DTCG
+source; primitives and blocks consume the generated variables, never the source directly.
 
 Tokens are tiered, and the tier separation is an invariant:
 
-- A **reference** token is a raw value with no meaning — `teal.500`, `space.4`, `radius.md`, `red.600`. It answers "what value", never "what for".
-- A **semantic** token gives a reference value a role — `color.action.primary`, `surface.raised`, `motion.transition.standard`, `size.target.min`. It answers "what for".
+- A **reference** token is a raw value with no meaning — `teal.500`, `space.4`, `radius.md`, `red.600`. It answers "what
+  value", never "what for".
+- A **semantic** token gives a reference value a role — `color.action.primary`, `surface.raised`,
+  `motion.transition.standard`, `size.target.min`. It answers "what for".
 
-Product code and proxy components **must** consume semantic tokens only; they **must not** reference a raw value directly. This is what makes a theme a rebinding of semantic→reference, not a hunt through components. Light and dark are exactly this: the same semantic names rebound to different reference values, components unchanged.
+Product code and proxy components **must** consume semantic tokens only; they **must not** reference a raw value
+directly. This is what makes a theme a rebinding of semantic→reference, not a hunt through components. Light and dark
+are exactly this: the same semantic names rebound to different reference values, components unchanged.
 
 ```jsonc
 // reference tier — a raw value, no meaning
@@ -41,13 +51,20 @@ Product code and proxy components **must** consume semantic tokens only; they **
 }
 ```
 
-The reference palette is teal-anchored oklch ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)); oklch is used because perceptually uniform lightness makes contrast-safe ramps and a high-contrast theme tractable as a remap. The specific values are provisional ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)); the _families and tiering below_ are the stable contract.
+The reference palette is teal-anchored oklch
+([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)); oklch is used because
+perceptually uniform lightness makes contrast-safe ramps and a high-contrast theme tractable as a remap. The specific
+values are provisional ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)); the _families and tiering
+below_ are the stable contract.
 
 ## 2. Colour
 
-The colour families are complete ramps, not single values, so a theme has every step it needs without inventing one in a component. Each ramp runs the same fixed steps.
+The colour families are complete ramps, not single values, so a theme has every step it needs without inventing one in a
+component. Each ramp runs the same fixed steps.
 
-**Reference ramps** — neutral and each hue carry steps `50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950`. A ramp this complete is required so that surface layering, borders, hover/active tones, and disabled tones all draw from named steps rather than ad-hoc `opacity` tweaks.
+**Reference ramps** — neutral and each hue carry steps `50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950`. A ramp
+this complete is required so that surface layering, borders, hover/active tones, and disabled tones all draw from named
+steps rather than ad-hoc `opacity` tweaks.
 
 | Reference ramp | Anchors                                                                                                         |
 | -------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -71,11 +88,15 @@ The colour families are complete ramps, not single values, so a theme has every 
 | `color.chart.*`      | Stable, contrast-checked series colours `1…8`                                                        | distinguishable in greyscale and for common colour-vision deficiencies               |
 | `color.sidebar.*`    | Sidebar-specific surface/foreground/border                                                           | subdued per [density-and-calm.md](./density-and-calm.md)                             |
 
-The provenance and status families must satisfy the colour-independence rule ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md)): colour is never the sole carrier of meaning; the treatment pairs it with icon, shape, or label. That rule and the greyscale obligation are specified in [honest-state-treatments.md](./honest-state-treatments.md).
+The provenance and status families must satisfy the colour-independence rule
+([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md)): colour is never the sole carrier of meaning; the
+treatment pairs it with icon, shape, or label. That rule and the greyscale obligation are specified in
+[honest-state-treatments.md](./honest-state-treatments.md).
 
 ## 3. Typography
 
-Type supports three reading modes at once — narrative reading, rapid scanning, precise comparison — so prose, metadata, identifiers, and measures do not all look alike.
+Type supports three reading modes at once — narrative reading, rapid scanning, precise comparison — so prose, metadata,
+identifiers, and measures do not all look alike.
 
 | Family                 | Tokens                                                        | Purpose                                                                                                                                                             |
 | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -85,27 +106,37 @@ Type supports three reading modes at once — narrative reading, rapid scanning,
 | `font.lineHeight.*`    | `tight, snug, normal, relaxed`                                | dense display vs reading variants                                                                                                                                   |
 | `font.letterSpacing.*` | `tight, normal, wide`                                         | caption and label tracking                                                                                                                                          |
 
-Semantic text roles (`text.body`, `text.label`, `text.caption`, `text.code`, `text.heading.*`, `text.display`) bind size/weight/line-height/family together, so a surface picks a role rather than three separate tokens.
+Semantic text roles (`text.body`, `text.label`, `text.caption`, `text.code`, `text.heading.*`, `text.display`) bind
+size/weight/line-height/family together, so a surface picks a role rather than three separate tokens.
 
 ## 4. Spacing
 
-A single spacing scale drives padding, gap, and margin. Dense surfaces draw from the small end; breathing room is earned ([density-and-calm.md](./density-and-calm.md)).
+A single spacing scale drives padding, gap, and margin. Dense surfaces draw from the small end; breathing room is earned
+([density-and-calm.md](./density-and-calm.md)).
 
 `space.0 (0) · space.px (1px) · space.0_5 (2px) · space.1 (4px) · space.2 (8px) · space.3 (12px) · space.4 (16px) · space.5 (20px) · space.6 (24px) · space.8 (32px) · space.10 (40px) · space.12 (48px) · space.16 (64px)`
 
-These are reference tokens. Semantic spacing roles (`space.inset.dense`, `space.inset.comfortable`, `space.stack.*`, `space.inline.*`) bind density intent to a step, so a density mode is a rebinding, not a per-component change.
+These are reference tokens. Semantic spacing roles (`space.inset.dense`, `space.inset.comfortable`, `space.stack.*`,
+`space.inline.*`) bind density intent to a step, so a density mode is a rebinding, not a per-component change.
 
-> **Implementation note.** The TypeScript token contracts in `src/design-system/foundations/tokens.ts` use T-shirt-size semantic names (`2xs · xs · sm · md · lg · xl · 2xl · 3xl`) that correspond to the small-to-large steps of the spacing scale above. Components and density mode definitions consume these semantic keys; the numeric DTCG reference names above are the long-form spec.
+> **Implementation note.** The TypeScript token contracts in `src/design-system/foundations/tokens.ts` use T-shirt-size
+> semantic names (`2xs · xs · sm · md · lg · xl · 2xl · 3xl`) that correspond to the small-to-large steps of the spacing
+> scale above. Components and density mode definitions consume these semantic keys; the numeric DTCG reference names
+> above are the long-form spec.
 
 ## 5. Radius
 
-`radius.none (0) · radius.sm (2px) · radius.md (4px) · radius.lg (8px) · radius.xl (12px) · radius.full (9999px)`. Semantic roles: `radius.control` (inputs, buttons), `radius.surface` (cards, panels), `radius.pill` (badges).
+`radius.none (0) · radius.sm (2px) · radius.md (4px) · radius.lg (8px) · radius.xl (12px) · radius.full (9999px)`.
+Semantic roles: `radius.control` (inputs, buttons), `radius.surface` (cards, panels), `radius.pill` (badges).
 
-> **Implementation note.** `src/design-system/foundations/tokens.ts` exposes `radiusScale` with keys `sm · md · lg · xl · frame`, mapped to CSS variable references. The `frame` key covers canvas node borders; it corresponds to a large-radius semantic role.
+> **Implementation note.** `src/design-system/foundations/tokens.ts` exposes `radiusScale` with keys
+> `sm · md · lg · xl · frame`, mapped to CSS variable references. The `frame` key covers canvas node borders; it
+> corresponds to a large-radius semantic role.
 
 ## 6. Shadow and elevation
 
-Depth is built from layered surfaces first and shadow second ([density-and-calm.md](./density-and-calm.md)); shadow tokens stay restrained.
+Depth is built from layered surfaces first and shadow second ([density-and-calm.md](./density-and-calm.md)); shadow
+tokens stay restrained.
 
 | Token         | Use                                 |
 | ------------- | ----------------------------------- |
@@ -114,11 +145,14 @@ Depth is built from layered surfaces first and shadow second ([density-and-calm.
 | `elevation.2` | Overlay — popovers, dropdowns.      |
 | `elevation.3` | Modal — dialogs, command palette.   |
 
-Each `elevation.*` binds a `shadow` `$type` token; a high-contrast theme may rebind elevation to a border treatment rather than a shadow, since the tier separation allows it.
+Each `elevation.*` binds a `shadow` `$type` token; a high-contrast theme may rebind elevation to a border treatment
+rather than a shadow, since the tier separation allows it.
 
 ## 7. Motion
 
-Motion tokens carry the accessibility default in the token layer, so a component inherits reduced motion by consuming the token ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md), [ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)).
+Motion tokens carry the accessibility default in the token layer, so a component inherits reduced motion by consuming
+the token ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md),
+[ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)).
 
 | Family                | Tokens                                                      | Notes                                                            |
 | --------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -130,14 +164,19 @@ The reduced-motion fallback and the compositor-friendly property rule are specif
 
 ## 8. Target size
 
-`size.target.min` defaults to **24 px** — the WCAG 2.2 2.5.8 AA minimum _(WCAG 2.2)_ — and `size.target.comfortable` to 40 px for primary controls ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md)). Target size is a token-backed default at the proxy boundary, not a per-surface choice; the detail is in [interaction-states.md](./interaction-states.md) and [accessibility.md](./accessibility.md).
+`size.target.min` defaults to **24 px** — the WCAG 2.2 2.5.8 AA minimum _(WCAG 2.2)_ — and `size.target.comfortable` to
+40 px for primary controls ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md)). Target size is a
+token-backed default at the proxy boundary, not a per-surface choice; the detail is in
+[interaction-states.md](./interaction-states.md) and [accessibility.md](./accessibility.md).
 
 ## 9. References & standards
 
 _Normative:_
 
-- W3C — **Design Tokens Community Group format**. The token source format ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)).
-- **WCAG 2.2** (W3C). Contrast (1.4.3), target size (2.5.8), colour independence (1.4.1) ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md)).
+- W3C — **Design Tokens Community Group format**. The token source format
+  ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)).
+- **WCAG 2.2** (W3C). Contrast (1.4.3), target size (2.5.8), colour independence (1.4.1)
+  ([ADR-0024](../../06-adrs/ADR-0024-accessibility-baseline-wcag22.md)).
 
 _Informative:_
 

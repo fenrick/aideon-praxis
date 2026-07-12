@@ -1,43 +1,94 @@
 # MVP command registry
 
-The subset of the IPC and event surface the [golden journey](./golden-journey.md) (M0–M3) actually uses, derived from the authoritative manifests in [`docs/contracts/`](../contracts/ipc-manifest.json). The full surface is 84 commands and 7 events; the MVP needs a fraction of that. This file names the MVP commands, says which module owns each, references the request/success shape and error codes (it does not re-invent them — the shapes are governed by the generated schema and the [IPC contracts](../04-contracts/ipc/command-surface.md)), and states for each whether it runs synchronously or returns an [`AcceptedJob`](../04-contracts/accepted-work-and-events/accepted-job-shape.md). It then defines the **threshold** that decides sync versus accepted-work, lists the MVP events, and records the workspace-event manifest gap as a tracked follow-up.
+The subset of the IPC and event surface the [golden journey](./golden-journey.md) (M0–M3) actually uses, derived from
+the authoritative manifests in [`docs/contracts/`](../contracts/ipc-manifest.json). The full surface is 84 commands and
+7 events; the MVP needs a fraction of that. This file names the MVP commands, says which module owns each, references
+the request/success shape and error codes (it does not re-invent them — the shapes are governed by the generated schema
+and the [IPC contracts](../04-contracts/ipc/command-surface.md)), and states for each whether it runs synchronously or
+returns an [`AcceptedJob`](../04-contracts/accepted-work-and-events/accepted-job-shape.md). It then defines the
+**threshold** that decides sync versus accepted-work, lists the MVP events, and records the workspace-event manifest gap
+as a tracked follow-up.
 
-The manifests are tier 2 of the [contract precedence](./README.md#contract-precedence) and the single source of truth for their surface; this registry is a reading of them for the MVP, not a second copy. Where a request/response DTO is not yet pinned in the generated schema, it is marked design-intent ([generated-schema-discipline](../04-contracts/ipc/generated-schema-discipline.md)).
+The manifests are tier 2 of the [contract precedence](./README.md#contract-precedence) and the single source of truth
+for their surface; this registry is a reading of them for the MVP, not a second copy. Where a request/response DTO is
+not yet pinned in the generated schema, it is marked design-intent
+([generated-schema-discipline](../04-contracts/ipc/generated-schema-discipline.md)).
 
 ---
 
 ## The sync-versus-accepted-work threshold
 
-Every IPC command returns either a synchronous typed result or an [`AcceptedJob`](../04-contracts/accepted-work-and-events/accepted-job-shape.md). The threshold is not "slow versus fast" guessed per command; it is a structural rule:
+Every IPC command returns either a synchronous typed result or an
+[`AcceptedJob`](../04-contracts/accepted-work-and-events/accepted-job-shape.md). The threshold is not "slow versus fast"
+guessed per command; it is a structural rule:
 
-> **A command returns an `AcceptedJob` if and only if its work is one of the durable [`WorkQueueClass`](../04-contracts/accepted-work-and-events/accepted-job-shape.md) kinds** — `Rebuild`, `Import`, `Export`, `BlobIngestion`, `AnalyticsRefresh`, `Reindex`, `ConnectorIngest`, `Retention`, `Compaction`, `SyncApply`. These are operations that (a) are recorded in the [run ledger](../04-contracts/accepted-work-and-events/run-ledger.md), (b) emit progress as [typed events](../04-contracts/accepted-work-and-events/event-model.md) rather than blocking, and (c) survive a restart with idempotent replay. **Every other command runs synchronously** and returns a typed `IpcResponse<T>` in the [standard envelope](../04-contracts/ipc/envelope.md).
+> **A command returns an `AcceptedJob` if and only if its work is one of the durable
+> [`WorkQueueClass`](../04-contracts/accepted-work-and-events/accepted-job-shape.md) kinds** — `Rebuild`, `Import`,
+> `Export`, `BlobIngestion`, `AnalyticsRefresh`, `Reindex`, `ConnectorIngest`, `Retention`, `Compaction`, `SyncApply`.
+> These are operations that (a) are recorded in the
+> [run ledger](../04-contracts/accepted-work-and-events/run-ledger.md), (b) emit progress as
+> [typed events](../04-contracts/accepted-work-and-events/event-model.md) rather than blocking, and (c) survive a
+> restart with idempotent replay. **Every other command runs synchronously** and returns a typed `IpcResponse<T>` in the
+> [standard envelope](../04-contracts/ipc/envelope.md).
 
 The corollaries that make this unambiguous:
 
-- A **read** is always synchronous — no read is a `WorkQueueClass`. `state-at`, `diff`, `read_entity_at_time`, `get_*`, `list_*`, `praxis_metamodel_get`, and **`praxis_artefact_execute_catalogue`** all return their result directly. Artefact execution is a read-only projection ([ADR-0033](../06-adrs/ADR-0033-artefact-execution-model.md)); it is bounded (the catalogue caps at 200 rows and a time budget), so it returns synchronously and reports `partialBounded` if a bound was hit, rather than becoming a job.
-- A **small, single-op write** is synchronous — appending one operation (`create_node`, `create_edge`, `set_property_interval`, `apply_operations`) is not a queue class; it returns the typed result, and if the write queue is saturated it returns `BACKPRESSURE` (`transient`/`retry`) so the renderer shows a **queued** state rather than pretending the write landed ([backpressure](../04-contracts/accepted-work-and-events/backpressure.md)).
-- A **`trigger_*` command** is the canonical accepted-work case — `mneme_store_trigger_rebuild_effective_schema`, `_refresh_analytics_projections`, `_refresh_integrity`, `_compaction`, `_retention` map directly onto `Rebuild`/`AnalyticsRefresh`/`Compaction`/`Retention` and return an `AcceptedJob`.
-- **Import/export streams** (`*_ops_stream`, `*_snapshot_stream`) are `Import`/`Export` work and are accepted-work; they are out of the MVP path (M4) and listed here only for completeness of the threshold rule.
+- A **read** is always synchronous — no read is a `WorkQueueClass`. `state-at`, `diff`, `read_entity_at_time`, `get_*`,
+  `list_*`, `praxis_metamodel_get`, and **`praxis_artefact_execute_catalogue`** all return their result directly.
+  Artefact execution is a read-only projection ([ADR-0033](../06-adrs/ADR-0033-artefact-execution-model.md)); it is
+  bounded (the catalogue caps at 200 rows and a time budget), so it returns synchronously and reports `partialBounded`
+  if a bound was hit, rather than becoming a job.
+- A **small, single-op write** is synchronous — appending one operation (`create_node`, `create_edge`,
+  `set_property_interval`, `apply_operations`) is not a queue class; it returns the typed result, and if the write queue
+  is saturated it returns `BACKPRESSURE` (`transient`/`retry`) so the renderer shows a **queued** state rather than
+  pretending the write landed ([backpressure](../04-contracts/accepted-work-and-events/backpressure.md)).
+- A **`trigger_*` command** is the canonical accepted-work case — `mneme_store_trigger_rebuild_effective_schema`,
+  `_refresh_analytics_projections`, `_refresh_integrity`, `_compaction`, `_retention` map directly onto
+  `Rebuild`/`AnalyticsRefresh`/`Compaction`/`Retention` and return an `AcceptedJob`.
+- **Import/export streams** (`*_ops_stream`, `*_snapshot_stream`) are `Import`/`Export` work and are accepted-work; they
+  are out of the MVP path (M4) and listed here only for completeness of the threshold rule.
 
-So the MVP golden journey is almost entirely synchronous: the **only** accepted-work command on the path is the rebuild in step 10 (`mneme_store_trigger_rebuild_effective_schema` and the analytics/integrity refresh triggers that participate in the runtime rebuild).
+So the MVP golden journey is almost entirely synchronous: the **only** accepted-work command on the path is the rebuild
+in step 10 (`mneme_store_trigger_rebuild_effective_schema` and the analytics/integrity refresh triggers that participate
+in the runtime rebuild).
 
 ---
 
 ## Declared vs callable: the generated manifest is a superset
 
-The generated [`ipc-manifest.json`](../contracts/ipc-manifest.json) is the **declared** typed command surface — the full set as code grows across milestones — not the set callable in any given build or window. Three sets compose:
+The generated [`ipc-manifest.json`](../contracts/ipc-manifest.json) is the **declared** typed command surface — the full
+set as code grows across milestones — not the set callable in any given build or window. Three sets compose:
 
 > `declared ∩ build-enabled ∩ window-granted = callable`
 
-The manifest is drift-checked against code regardless of milestone; the build contract pins the **M0 build-enabled** subset; and Tauri capabilities narrow that per window. A command's mere presence in the manifest does **not** make it an active M0 contract.
+The manifest is drift-checked against code regardless of milestone; the build contract pins the **M0 build-enabled**
+subset; and Tauri capabilities narrow that per window. A command's mere presence in the manifest does **not** make it an
+active M0 contract.
 
-- **Deferred-feature commands are omitted from every M0 capability bundle — not registered-then-`UNSUPPORTED`.** `mneme_store_create_scenario` / `_delete_scenario` (scenarios → M2) and `mneme_store_or_set_update` / `_counter_update` (CRDT → M6) may exist in code and the manifest, but are in **no** M0 window's capability set, so an attempt is a **capability denial before engine dispatch** — the correct default-deny posture ([ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)); a command the product cannot safely execute is not reachable merely to explain that it cannot. `UNSUPPORTED_FEATURE` is for the _different_ case where a command is authorised and registered but the opened workspace or engine version cannot satisfy it ([required_features](../05-modules/mneme/workspace-integrity-and-recovery.md)). These are distinct failures with distinct codes — see [error codes](#error-codes) below.
-- **`ingest_ops` is high-privilege, not a general renderer write.** It accepts already-minted canonical envelopes and preserves their identity, asserted time, and provenance — so a compromised main renderer with it could inject arbitrary historical operations. It is therefore **not** granted to ordinary authoring components; it is restricted to internal rebuild, controlled package/import pathways, migration/recovery tools, and tests, behind a separate high-privilege capability available only to a dedicated recovery/import window or internal path. Normal authoring constructs intents the host validates into _new_ operations.
-- **The rebuild trigger is tightly controlled.** The main workspace window may request it, but the host verifies the caller owns the writable session, no incompatible job is running, the canonical store is healthy enough to rebuild, and the command cannot touch another open workspace's runtime; it runs as accepted work. A rebuild is not a generic filesystem-delete.
+- **Deferred-feature commands are omitted from every M0 capability bundle — not registered-then-`UNSUPPORTED`.**
+  `mneme_store_create_scenario` / `_delete_scenario` (scenarios → M2) and `mneme_store_or_set_update` /
+  `_counter_update` (CRDT → M6) may exist in code and the manifest, but are in **no** M0 window's capability set, so an
+  attempt is a **capability denial before engine dispatch** — the correct default-deny posture
+  ([ADR-0006](../06-adrs/ADR-0006-tauri-trust-boundary-and-typed-ipc.md)); a command the product cannot safely execute
+  is not reachable merely to explain that it cannot. `UNSUPPORTED_FEATURE` is for the _different_ case where a command
+  is authorised and registered but the opened workspace or engine version cannot satisfy it
+  ([required_features](../05-modules/mneme/workspace-integrity-and-recovery.md)). These are distinct failures with
+  distinct codes — see [error codes](#error-codes) below.
+- **`ingest_ops` is high-privilege, not a general renderer write.** It accepts already-minted canonical envelopes and
+  preserves their identity, asserted time, and provenance — so a compromised main renderer with it could inject
+  arbitrary historical operations. It is therefore **not** granted to ordinary authoring components; it is restricted to
+  internal rebuild, controlled package/import pathways, migration/recovery tools, and tests, behind a separate
+  high-privilege capability available only to a dedicated recovery/import window or internal path. Normal authoring
+  constructs intents the host validates into _new_ operations.
+- **The rebuild trigger is tightly controlled.** The main workspace window may request it, but the host verifies the
+  caller owns the writable session, no incompatible job is running, the canonical store is healthy enough to rebuild,
+  and the command cannot touch another open workspace's runtime; it runs as accepted work. A rebuild is not a generic
+  filesystem-delete.
 
 ## Error codes
 
-These failures are **not** collapsed into one `UNSUPPORTED` — they have different security and recovery implications, and in production an unauthorised window gets a stable denial code, not an exhaustive account of hidden capabilities:
+These failures are **not** collapsed into one `UNSUPPORTED` — they have different security and recovery implications,
+and in production an unauthorised window gets a stable denial code, not an exhaustive account of hidden capabilities:
 
 | Condition                                 | Meaning                                                                |
 | ----------------------------------------- | ---------------------------------------------------------------------- |
@@ -50,7 +101,15 @@ These failures are **not** collapsed into one `UNSUPPORTED` — they have differ
 
 ## MVP commands
 
-Ordered by golden-journey step. **Module** is read off the command prefix ([command-surface](../04-contracts/ipc/command-surface.md)). **Mode** is `sync` or `AcceptedJob` per the threshold above. **Request / success** references the governing contract; the DTO shapes are owned by the generated schema ([generated-schema-discipline](../04-contracts/ipc/generated-schema-discipline.md)) and are design-intent where not yet pinned. **Errors** are stable codes from the [error envelope](../04-contracts/ipc/error-envelope.md) and [accepted-work error codes](../04-contracts/accepted-work-and-events/error-codes.md). All commands require the `appcommands` capability ([capabilities-and-csp](../05-modules/host/capabilities-and-csp.md)); the column notes the **idempotency** posture (mutating commands carry an `idempotencyKey`, [idempotency](../04-contracts/ipc/idempotency.md)).
+Ordered by golden-journey step. **Module** is read off the command prefix
+([command-surface](../04-contracts/ipc/command-surface.md)). **Mode** is `sync` or `AcceptedJob` per the threshold
+above. **Request / success** references the governing contract; the DTO shapes are owned by the generated schema
+([generated-schema-discipline](../04-contracts/ipc/generated-schema-discipline.md)) and are design-intent where not yet
+pinned. **Errors** are stable codes from the [error envelope](../04-contracts/ipc/error-envelope.md) and
+[accepted-work error codes](../04-contracts/accepted-work-and-events/error-codes.md). All commands require the
+`appcommands` capability ([capabilities-and-csp](../05-modules/host/capabilities-and-csp.md)); the column notes the
+**idempotency** posture (mutating commands carry an `idempotencyKey`,
+[idempotency](../04-contracts/ipc/idempotency.md)).
 
 | Step | Command                                                                                                  | Module | Mode                                     | Request / success shape                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Error codes                                                                             | Idempotency  |
 | ---- | -------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------ |
@@ -76,13 +135,19 @@ Ordered by golden-journey step. **Module** is read off the command prefix ([comm
 | 10   | `mneme_store_trigger_refresh_analytics_projections`                                                      | Mneme  | **AcceptedJob**                          | Refresh analytics projections (`WorkQueueClass: AnalyticsRefresh`)                                                                                                                                                                                                                                                                                                                                                                                                                              | `BACKPRESSURE`, `IDEMPOTENCY_CONFLICT`                                                  | mutating key |
 | 10   | `mneme_store_trigger_refresh_integrity`                                                                  | Mneme  | **AcceptedJob**                          | Refresh integrity projection (`WorkQueueClass: AnalyticsRefresh`)                                                                                                                                                                                                                                                                                                                                                                                                                               | `BACKPRESSURE`, `IDEMPOTENCY_CONFLICT`                                                  | mutating key |
 
-Supporting commands the MVP shell uses outside the numbered path (all `sync`, all `appcommands`): `praxis_scenario_list` (scenario picker), `praxis_canvas_get_scene` / `praxis_canvas_get_layout` (content surface), `system_worker_health` / `system_metrics_snapshot` (status footer), `system_logging_context` (correlation), `system_window_open` (multi-window). `workspace_templates_list` / `workspace_templates_save` back the workspace-family chooser.
+Supporting commands the MVP shell uses outside the numbered path (all `sync`, all `appcommands`): `praxis_scenario_list`
+(scenario picker), `praxis_canvas_get_scene` / `praxis_canvas_get_layout` (content surface), `system_worker_health` /
+`system_metrics_snapshot` (status footer), `system_logging_context` (correlation), `system_window_open` (multi-window).
+`workspace_templates_list` / `workspace_templates_save` back the workspace-family chooser.
 
 ---
 
 ## MVP events
 
-The renderer subscribes to events rather than polling. The MVP path uses the setup handshake events and the change-event stream; accepted-work progress (step 10's rebuild) arrives on the run-progress channel ([event-model](../04-contracts/accepted-work-and-events/event-model.md)). The seven manifest events ([`event-manifest.json`](../contracts/event-manifest.json)):
+The renderer subscribes to events rather than polling. The MVP path uses the setup handshake events and the change-event
+stream; accepted-work progress (step 10's rebuild) arrives on the run-progress channel
+([event-model](../04-contracts/accepted-work-and-events/event-model.md)). The seven manifest events
+([`event-manifest.json`](../contracts/event-manifest.json)):
 
 | Event                      | Payload keys                                                                           | Used in the MVP for                                                                                                  |
 | -------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -94,23 +159,44 @@ The renderer subscribes to events rather than polling. The MVP path uses the set
 | `mneme_change_event`       | `partition`, `sequence`, `op_id`, `asserted_at`, `entity_id`, `change_kind`, `payload` | Invalidate viewpoint-keyed caches after a write (steps 3–4)                                                          |
 | `shell_command`            | `command`, `payload`                                                                   | Native-menu/shortcut commands into the renderer ([shell-command-manifest](../contracts/shell-command-manifest.json)) |
 
-`mneme_change_event` is the cache-invalidation signal: a write on the path emits it, and the renderer drops the affected viewpoint-keyed server-state and refetches ([data-fetching](../frontend/data-fetching.md), [state-architecture](../frontend/state-architecture.md)). Accepted-work progress for step 10's rebuild is a `RunEvent` on the run-progress channel, deduplicated by `eventId` and ordered by `occurredAt` ([event-model](../04-contracts/accepted-work-and-events/event-model.md)) — it is the typed-event model, not one of the seven manifest events.
+`mneme_change_event` is the cache-invalidation signal: a write on the path emits it, and the renderer drops the affected
+viewpoint-keyed server-state and refetches ([data-fetching](../frontend/data-fetching.md),
+[state-architecture](../frontend/state-architecture.md)). Accepted-work progress for step 10's rebuild is a `RunEvent`
+on the run-progress channel, deduplicated by `eventId` and ordered by `occurredAt`
+([event-model](../04-contracts/accepted-work-and-events/event-model.md)) — it is the typed-event model, not one of the
+seven manifest events.
 
 ---
 
 ## Tracked follow-up — the workspace-event manifest gap
 
-The host workspace lifecycle ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md)) and the event-bus docs reference events that are **not yet in [`event-manifest.json`](../contracts/event-manifest.json)**:
+The host workspace lifecycle ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md)) and the event-bus docs
+reference events that are **not yet in [`event-manifest.json`](../contracts/event-manifest.json)**:
 
-- `workspace.lifecycle.changed` — the **single typed lifecycle event** (`{ workspace_id, state, job_id?, error_code?, canonical_tail, replay_head?, mode }`) announcing transitions (`opening`/`validating`/`replaying`/`rebuilding`/`ready_read_write`/`ready_read_only`/`recovery_read_only`/`failed`/`closed`). It **supersedes** the prose-only `workspace_opened`/`workspace_closed`, decided in the M0 spec grill ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md) §Lifecycle state).
+- `workspace.lifecycle.changed` — the **single typed lifecycle event**
+  (`{ workspace_id, state, job_id?, error_code?, canonical_tail, replay_head?, mode }`) announcing transitions
+  (`opening`/`validating`/`replaying`/`rebuilding`/`ready_read_write`/`ready_read_only`/`recovery_read_only`/`failed`/`closed`).
+  It **supersedes** the prose-only `workspace_opened`/`workspace_closed`, decided in the M0 spec grill
+  ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md) §Lifecycle state).
 - `job.updated` — referenced by the event-bus/lifecycle docs as the accepted-work progress signal.
 
-The manifest is the single source of truth for the event surface ([contract precedence](./README.md#contract-precedence)) and is generated from Rust (`cargo run -p aideon_xtask -- ipc-manifest`); the **shape** is now decided, and **generating it into the manifest is the remaining build follow-up**:
+The manifest is the single source of truth for the event surface
+([contract precedence](./README.md#contract-precedence)) and is generated from Rust
+(`cargo run -p aideon_xtask -- ipc-manifest`); the **shape** is now decided, and **generating it into the manifest is
+the remaining build follow-up**:
 
-- `job.updated` is **superseded** by the typed `RunEvent` model on the run-progress channel ([event-model](../04-contracts/accepted-work-and-events/event-model.md)), which is richer (per-step, deduplicated, ordered); the lifecycle/event-bus prose drops `job.updated` in favour of `RunEvent`.
-- `workspace.lifecycle.changed` is defined as **one** typed Rust event struct and generated into the manifest; readiness and write-enable are driven by its terminal `ready_read_write` state, with retained host state retrievable via `workspace.status` so a renderer that missed the event reconciles without polling.
+- `job.updated` is **superseded** by the typed `RunEvent` model on the run-progress channel
+  ([event-model](../04-contracts/accepted-work-and-events/event-model.md)), which is richer (per-step, deduplicated,
+  ordered); the lifecycle/event-bus prose drops `job.updated` in favour of `RunEvent`.
+- `workspace.lifecycle.changed` is defined as **one** typed Rust event struct and generated into the manifest; readiness
+  and write-enable are driven by its terminal `ready_read_write` state, with retained host state retrievable via
+  `workspace.status` so a renderer that missed the event reconciles without polling.
 
-**Follow-up (do not perform here):** define the `workspace.lifecycle.changed` Rust event struct and regenerate `event-manifest.json`. Until that lands, the renderer learns readiness from the synchronous open/close return plus `workspace.status`, and uses `RunEvent` for job progress — honest about what the manifest guarantees today ([ADR-0037](../06-adrs/ADR-0037-contract-precedence-and-source-of-truth.md): the generated contract is authoritative for the surface).
+**Follow-up (do not perform here):** define the `workspace.lifecycle.changed` Rust event struct and regenerate
+`event-manifest.json`. Until that lands, the renderer learns readiness from the synchronous open/close return plus
+`workspace.status`, and uses `RunEvent` for job progress — honest about what the manifest guarantees today
+([ADR-0037](../06-adrs/ADR-0037-contract-precedence-and-source-of-truth.md): the generated contract is authoritative for
+the surface).
 
 ---
 

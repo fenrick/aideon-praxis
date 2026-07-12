@@ -1,8 +1,14 @@
 # Human Interface Guidelines
 
-The desktop HIG handbook for Aideon Desktop: the recurring interaction and visual patterns every surface inherits. This folder is for anyone designing, building, or reviewing a renderer surface and needing pattern guidance detailed enough to act on. It is the _behaviour and visual_ counterpart to the [design system](../design-system/README.md): the HIG says how surfaces should behave; the design system supplies the tokens, primitives, and blocks that make that behaviour cheap.
+The desktop HIG handbook for Aideon Desktop: the recurring interaction and visual patterns every surface inherits. This
+folder is for anyone designing, building, or reviewing a renderer surface and needing pattern guidance detailed enough
+to act on. It is the _behaviour and visual_ counterpart to the [design system](../design-system/README.md): the HIG says
+how surfaces should behave; the design system supplies the tokens, primitives, and blocks that make that behaviour
+cheap.
 
-These guidelines are adapted from a prior, shelved web version of the platform HIG. The durable interaction and visual thinking is kept; runtime-specific guidance is updated to the desktop-first, local-first, offline Tauri posture ([DESIGN.md](../DESIGN.md), [the-shell.md](../the-shell.md)).
+These guidelines are adapted from a prior, shelved web version of the platform HIG. The durable interaction and visual
+thinking is kept; runtime-specific guidance is updated to the desktop-first, local-first, offline Tauri posture
+([DESIGN.md](../DESIGN.md), [the-shell.md](../the-shell.md)).
 
 ---
 
@@ -22,11 +28,16 @@ These guidelines are adapted from a prior, shelved web version of the platform H
 
 ## Reading order
 
-Read foundations first because it applies everywhere. Read shell-and-navigation and interaction-model next because they shape the frame and the operating model. The remaining pages cover the trust-sensitive work patterns that most determine whether Aideon feels coherent or improvised.
+Read foundations first because it applies everywhere. Read shell-and-navigation and interaction-model next because they
+shape the frame and the operating model. The remaining pages cover the trust-sensitive work patterns that most determine
+whether Aideon feels coherent or improvised.
 
 ## How the HIG sits in the corpus
 
-The HIG is the _explanation_ of behaviour ([Procida, Diátaxis](../../02-standards/STANDARDS-REGISTER.md)). It does not decide what a workflow may do — that belongs to the modules and contracts. It does not make architecture decisions — those are [ADRs](../../06-adrs/ADRS.md). It tells the product how to present itself and how to behave under the load of serious analytical work. Each page links the module it faces and the ADR or standard it rests on.
+The HIG is the _explanation_ of behaviour ([Procida, Diátaxis](../../02-standards/STANDARDS-REGISTER.md)). It does not
+decide what a workflow may do — that belongs to the modules and contracts. It does not make architecture decisions —
+those are [ADRs](../../06-adrs/ADRS.md). It tells the product how to present itself and how to behave under the load of
+serious analytical work. Each page links the module it faces and the ADR or standard it rests on.
 
 ## References & standards
 

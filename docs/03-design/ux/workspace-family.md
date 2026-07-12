@@ -1,10 +1,18 @@
 # Workspace Family
 
-The set of surfaces the product opens onto, and the role of each. Aideon is not a generic admin surface with diagrams dropped into it; it opens on a useful artefact, not on empty chrome. Each surface in the family renders inside the one shared shell ([the-shell.md](../the-shell.md)) and plays one role for one audience.
+The set of surfaces the product opens onto, and the role of each. Aideon is not a generic admin surface with diagrams
+dropped into it; it opens on a useful artefact, not on empty chrome. Each surface in the family renders inside the one
+shared shell ([the-shell.md](../the-shell.md)) and plays one role for one audience.
 
 ## The principle
 
-The product serves several audiences — experts authoring the model, contributors confirming facts they own, decision-makers reading briefings — and one surface cannot serve all of them well. The workspace family gives each its own surface while keeping the shell, the selection model, and the honest-state rules common, so the surfaces read as one product rather than several. The cross-cutting surfaces close to the shell (workspace home, executive briefing, administration) are detailed in [host-surfaces/README.md](../host-surfaces/README.md); the human operating model behind who uses which surface is in [participation-and-trust/participation-modes.md](../participation-and-trust/participation-modes.md).
+The product serves several audiences — experts authoring the model, contributors confirming facts they own,
+decision-makers reading briefings — and one surface cannot serve all of them well. The workspace family gives each its
+own surface while keeping the shell, the selection model, and the honest-state rules common, so the surfaces read as one
+product rather than several. The cross-cutting surfaces close to the shell (workspace home, executive briefing,
+administration) are detailed in [host-surfaces/README.md](../host-surfaces/README.md); the human operating model behind
+who uses which surface is in
+[participation-and-trust/participation-modes.md](../participation-and-trust/participation-modes.md).
 
 ## The surfaces
 
@@ -21,9 +29,16 @@ The product serves several audiences — experts authoring the model, contributo
 
 ## Surface vs widget, and composability
 
-A **surface** is a platform-owned, **navigable work destination** — one of the eight above. A **widget** is a content component rendered _within_ a surface. Navigation moves between surfaces (the [navigation rail](../the-shell.md) lists them as primary destinations); composition happens with widgets _inside_ a surface. The content region renders the **active surface instance** — its composition and layout — never one undifferentiated workspace-wide widget canvas. Scenarios, saved structures, artefacts, and review items are **secondary destinations** reached _within_ a surface, not top-level entries.
+A **surface** is a platform-owned, **navigable work destination** — one of the eight above. A **widget** is a content
+component rendered _within_ a surface. Navigation moves between surfaces (the [navigation rail](../the-shell.md) lists
+them as primary destinations); composition happens with widgets _inside_ a surface. The content region renders the
+**active surface instance** — its composition and layout — never one undifferentiated workspace-wide widget canvas.
+Scenarios, saved structures, artefacts, and review items are **secondary destinations** reached _within_ a surface, not
+top-level entries.
 
-**Composability is per-surface — widgets are a primitive, not a promise that every surface is an editable dashboard.** Each surface declares a `composition_policy` of `fixed` | `bounded` | `free`; only `free`/`bounded` surfaces expose **Add widget** and an explicit compose mode (renderer mechanics in [../../frontend/shell.md](../../frontend/shell.md)):
+**Composability is per-surface — widgets are a primitive, not a promise that every surface is an editable dashboard.**
+Each surface declares a `composition_policy` of `fixed` | `bounded` | `free`; only `free`/`bounded` surfaces expose
+**Add widget** and an explicit compose mode (renderer mechanics in [../../frontend/shell.md](../../frontend/shell.md)):
 
 | Surface                     | `composition_policy`   | Posture                                                |
 | --------------------------- | ---------------------- | ------------------------------------------------------ |
@@ -36,17 +51,28 @@ A **surface** is a platform-owned, **navigable work destination** — one of the
 | Import and mapping          | `fixed`                | Staged workflow.                                       |
 | Administration and controls | `fixed`                | Structured settings and policy forms.                  |
 
-Each surface owns a **viewpoint policy** rather than a hard default: moving between surfaces preserves the active viewpoint; only an explicitly-opened saved destination (a saved artefact or structure carrying a recorded viewpoint, or a selected scenario) changes it, and visibly ([hig/shell-and-navigation.md](../hig/shell-and-navigation.md)). The renderer realisation of the surface (the surface definition fields, `PlatformContent`) is in [../../frontend/shell.md](../../frontend/shell.md). **Engines are never a surface or a navigation destination** — they contribute capabilities and widgets that compose inside platform-owned surfaces.
+Each surface owns a **viewpoint policy** rather than a hard default: moving between surfaces preserves the active
+viewpoint; only an explicitly-opened saved destination (a saved artefact or structure carrying a recorded viewpoint, or
+a selected scenario) changes it, and visibly ([hig/shell-and-navigation.md](../hig/shell-and-navigation.md)). The
+renderer realisation of the surface (the surface definition fields, `PlatformContent`) is in
+[../../frontend/shell.md](../../frontend/shell.md). **Engines are never a surface or a navigation destination** — they
+contribute capabilities and widgets that compose inside platform-owned surfaces.
 
 ## Worked example
 
-A consultant authoring the FY26 plan works in the **modelling studio**, editing `Insight Hub` and authoring the **FY26 Insight Modernization** Plan Event. They move to the **scenario studio** to compare that scenario's plan layer against the base case's actual layer for `Insight Hub`. A capability owner confirming the `realises → Customer Insight` relationship works in **review and contribution**, in plain language, without seeing the whole model. A portfolio lead reads the result in an **executive briefing** surface. Each used a different surface for its role; all shared the same shell, selection model, and honest-state cues.
+A consultant authoring the FY26 plan works in the **modelling studio**, editing `Insight Hub` and authoring the **FY26
+Insight Modernization** Plan Event. They move to the **scenario studio** to compare that scenario's plan layer against
+the base case's actual layer for `Insight Hub`. A capability owner confirming the `realises → Customer Insight`
+relationship works in **review and contribution**, in plain language, without seeing the whole model. A portfolio lead
+reads the result in an **executive briefing** surface. Each used a different surface for its role; all shared the same
+shell, selection model, and honest-state cues.
 
 ## References & standards
 
 _Informative:_
 
-- Nielsen — **10 Usability Heuristics**, 1994. Match between system and the real world; flexibility and efficiency of use across audiences.
+- Nielsen — **10 Usability Heuristics**, 1994. Match between system and the real world; flexibility and efficiency of
+  use across audiences.
 
 Recorded in the [standards register](../../02-standards/STANDARDS-REGISTER.md).
 

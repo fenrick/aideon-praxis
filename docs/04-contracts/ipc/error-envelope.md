@@ -1,12 +1,16 @@
 # Error envelope — RFC 9457 Problem Details
 
-Every IPC error is a typed Problem Detail (RFC 9457, obsoleting RFC 7807), carrying a stable code, a category from a fixed taxonomy, and a machine-readable recovery hint. This is the decision of [ADR-0016](../../06-adrs/ADR-0016-error-envelope-rfc9457.md); RFC 9457 supplies the shape, transported over IPC rather than HTTP.
+Every IPC error is a typed Problem Detail (RFC 9457, obsoleting RFC 7807), carrying a stable code, a category from a
+fixed taxonomy, and a machine-readable recovery hint. This is the decision of
+[ADR-0016](../../06-adrs/ADR-0016-error-envelope-rfc9457.md); RFC 9457 supplies the shape, transported over IPC rather
+than HTTP.
 
 ---
 
 ## The shape
 
-`HostError` maps to `IpcError` at the boundary. The wire object adopts the RFC 9457 members and keeps the existing structured `details` as an extension:
+`HostError` maps to `IpcError` at the boundary. The wire object adopts the RFC 9457 members and keeps the existing
+structured `details` as an extension:
 
 ```json
 {
@@ -66,11 +70,18 @@ The codes carried over from the prior envelope, with their category and recovery
 
 ## Stability and evolution
 
-Codes are version-stable. Adding a code, or refining a recovery hint, is additive (MINOR). Renaming a code is a breaking change (MAJOR) — see [versioning-and-compatibility.md](./versioning-and-compatibility.md). `detail` and `details` must not leak secrets or stack traces ([LOGGING_FRAMEWORK.md §10](../../LOGGING_FRAMEWORK.md)). Idempotency must not mask a real conflict: a suppressed duplicate is silent, but a genuine conflict is `CONFLICT_RECORDED` ([idempotency.md](./idempotency.md)).
+Codes are version-stable. Adding a code, or refining a recovery hint, is additive (MINOR). Renaming a code is a breaking
+change (MAJOR) — see [versioning-and-compatibility.md](./versioning-and-compatibility.md). `detail` and `details` must
+not leak secrets or stack traces ([LOGGING_FRAMEWORK.md §10](../../LOGGING_FRAMEWORK.md)). Idempotency must not mask a
+real conflict: a suppressed duplicate is silent, but a genuine conflict is `CONFLICT_RECORDED`
+([idempotency.md](./idempotency.md)).
 
 ## Worked example: `CONFLICT_RECORDED` on a scenario rebase
 
-The renderer rebases `scn_plan_q3` after canonical facts moved under it. A slot the overlay changed (`app_ledger.disposition`) also changed in canonical facts. The host records the conflict and returns the envelope shown at the top of this file: `category: "conflict"`, `recovery: "reconcile"`. The renderer surfaces a reconcile affordance rather than retrying, and the `correlationId` joins the UI error to the host log line and span.
+The renderer rebases `scn_plan_q3` after canonical facts moved under it. A slot the overlay changed
+(`app_ledger.disposition`) also changed in canonical facts. The host records the conflict and returns the envelope shown
+at the top of this file: `category: "conflict"`, `recovery: "reconcile"`. The renderer surfaces a reconcile affordance
+rather than retrying, and the `correlationId` joins the UI error to the host log line and span.
 
 ## References & standards
 

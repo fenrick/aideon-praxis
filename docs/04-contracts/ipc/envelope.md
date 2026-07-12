@@ -1,6 +1,8 @@
 # IPC envelope
 
-The request and response wire shape every IPC command uses. Defined in `src-tauri/src/ipc.rs`; the renderer consumes the generated TypeScript ([generated-schema-discipline.md](./generated-schema-discipline.md)). The error half of the response is in [error-envelope.md](./error-envelope.md).
+The request and response wire shape every IPC command uses. Defined in `src-tauri/src/ipc.rs`; the renderer consumes the
+generated TypeScript ([generated-schema-discipline.md](./generated-schema-discipline.md)). The error half of the
+response is in [error-envelope.md](./error-envelope.md).
 
 ---
 
@@ -24,7 +26,11 @@ JSON on the wire:
 }
 ```
 
-The envelope additionally carries, by contract, the cross-cutting fields documented in their own files: a `traceparent` for [correlation and tracing](./correlation-and-tracing.md), and — on mutating commands — an `idempotencyKey` for [idempotency](./idempotency.md). Their exact placement in the request is being finalised ([ADR-0019](../../06-adrs/ADR-0019-observability-and-trace-context.md) open questions); they are recorded here as design intent until the field positions are fixed in the generated manifest.
+The envelope additionally carries, by contract, the cross-cutting fields documented in their own files: a `traceparent`
+for [correlation and tracing](./correlation-and-tracing.md), and — on mutating commands — an `idempotencyKey` for
+[idempotency](./idempotency.md). Their exact placement in the request is being finalised
+([ADR-0019](../../06-adrs/ADR-0019-observability-and-trace-context.md) open questions); they are recorded here as design
+intent until the field positions are fixed in the generated manifest.
 
 ## IpcResponse
 
@@ -39,11 +45,13 @@ pub struct IpcResponse<T> {
 }
 ```
 
-`status` is either `"ok"` or `"error"`. On success, `result` is present and `error` is absent. On error, `error` is present and `result` is absent. The `requestId` echoes the request so the renderer can pair a response to its call.
+`status` is either `"ok"` or `"error"`. On success, `result` is present and `error` is absent. On error, `error` is
+present and `result` is absent. The `requestId` echoes the request so the renderer can pair a response to its call.
 
 ## Worked example: a graph slice at a viewpoint
 
-A renderer requests the effective graph for the seed `Application` `app_ledger` and its one-hop neighbours, resolved at a viewpoint. Request:
+A renderer requests the effective graph for the seed `Application` `app_ledger` and its one-hop neighbours, resolved at
+a viewpoint. Request:
 
 ```json
 {
@@ -83,7 +91,10 @@ Response (success):
 }
 ```
 
-The result carries a [`ProjectionFreshnessStatus`](../projection-and-invalidation/freshness-states.md) because it is projection-backed, and the temporal coordinates of the [viewpoint](../temporal-and-scenario/viewpoint-shape.md) it resolved against. The types (`Application`, `DataEntity`, `accesses`) are real seed identifiers ([`core-v1.json`](../../data/meta/core-v1.json)).
+The result carries a [`ProjectionFreshnessStatus`](../projection-and-invalidation/freshness-states.md) because it is
+projection-backed, and the temporal coordinates of the [viewpoint](../temporal-and-scenario/viewpoint-shape.md) it
+resolved against. The types (`Application`, `DataEntity`, `accesses`) are real seed identifiers
+([`core-v1.json`](../../data/meta/core-v1.json)).
 
 ## References & standards
 

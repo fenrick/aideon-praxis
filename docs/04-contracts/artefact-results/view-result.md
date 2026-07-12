@@ -1,6 +1,10 @@
 # View Result
 
-The output shape for the **view** form — a focused graph or diagram over a bounded slice, laid out for direct inspection ([forms](../../03-design/artefacts/forms.md)). The renderer draws the nodes and edges this body describes; it does not traverse or resolve anything ([artefact execution boundary](../../01-architecture/boundary/artefact-execution-boundary.md)). The common envelope is defined once in the [area README](./README.md); this file specifies the `body`.
+The output shape for the **view** form — a focused graph or diagram over a bounded slice, laid out for direct inspection
+([forms](../../03-design/artefacts/forms.md)). The renderer draws the nodes and edges this body describes; it does not
+traverse or resolve anything
+([artefact execution boundary](../../01-architecture/boundary/artefact-execution-boundary.md)). The common envelope is
+defined once in the [area README](./README.md); this file specifies the `body`.
 
 ---
 
@@ -47,11 +51,19 @@ The output shape for the **view** form — a focused graph or diagram over a bou
 
 ## Bounds and partial results
 
-A view is capped at **5,000 nodes and 10,000 edges** ([artefact execution](../../05-modules/praxis/artefact-execution.md)). A traversal that hits that size cap, or the declared depth or fanout, returns the envelope with `resultState` including `partialBounded` and a `coverage` block naming the bound; the `nodes`/`edges` present are the reached slice, never a silent truncation.
+A view is capped at **5,000 nodes and 10,000 edges**
+([artefact execution](../../05-modules/praxis/artefact-execution.md)). A traversal that hits that size cap, or the
+declared depth or fanout, returns the envelope with `resultState` including `partialBounded` and a `coverage` block
+naming the bound; the `nodes`/`edges` present are the reached slice, never a silent truncation.
 
 ## Worked example
 
-A view artefact seeded at `n:capability:customer-insight` over the [baseline](../../data/base/baseline.yaml) at `{valid: 2026-06-11, layer: actual, scenario: base, scope: reachable within 3 hops}` returns five nodes (`Customer Insight`, `Discover`, `Insight Hub`, `Customer Profile`, `Stream Processor`) and four edges (`serves`, `realises`, `accesses`, `hosts`). All are `asserted` (seeded by the baseline commit), `resultState` is `["fresh"]`, and `coverage` is `null` — the slice is well inside the 5,000-node bound. Had `Customer Insight` been realised by thousands of applications, the body would carry the reached subset and the envelope would report `partialBounded`.
+A view artefact seeded at `n:capability:customer-insight` over the [baseline](../../data/base/baseline.yaml) at
+`{valid: 2026-06-11, layer: actual, scenario: base, scope: reachable within 3 hops}` returns five nodes
+(`Customer Insight`, `Discover`, `Insight Hub`, `Customer Profile`, `Stream Processor`) and four edges (`serves`,
+`realises`, `accesses`, `hosts`). All are `asserted` (seeded by the baseline commit), `resultState` is `["fresh"]`, and
+`coverage` is `null` — the slice is well inside the 5,000-node bound. Had `Customer Insight` been realised by thousands
+of applications, the body would carry the reached subset and the envelope would report `partialBounded`.
 
 ## Related documents
 

@@ -1,6 +1,8 @@
 # Signal Surfaces — moved
 
-This document has been decomposed into the [`signal-surfaces/`](./signal-surfaces/README.md) folder of small single-topic files, per the [Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md). This stub remains so existing cross-links resolve.
+This document has been decomposed into the [`signal-surfaces/`](./signal-surfaces/README.md) folder of small
+single-topic files, per the [Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md). This stub remains so
+existing cross-links resolve.
 
 Start at **[`signal-surfaces/README.md`](./signal-surfaces/README.md)**. Direct entry points:
 

@@ -1,14 +1,23 @@
 # UX overview — the map
 
-The single entry point to Aideon Desktop's user experience: **what the product is, the surfaces it opens onto, the rules every surface obeys, and where each of those is specified**. It is a map, not a re-specification — it states each conclusion in a sentence and links the canonical document. If this page and a linked document disagree, the linked document governs.
+The single entry point to Aideon Desktop's user experience: **what the product is, the surfaces it opens onto, the rules
+every surface obeys, and where each of those is specified**. It is a map, not a re-specification — it states each
+conclusion in a sentence and links the canonical document. If this page and a linked document disagree, the linked
+document governs.
 
-The UX is documented across several folders by design (small single-topic files, per [Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md)); this page is the spine that ties them into one navigable whole.
+The UX is documented across several folders by design (small single-topic files, per
+[Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md)); this page is the spine that ties them into one
+navigable whole.
 
 ---
 
 ## 1. One shell
 
-The product runs in **one platform-owned shell** with four stable regions — a navigation rail, a toolbar carrying the always-visible time + scenario viewpoint, a dominant content surface, and a selection-driven inspector. Every surface renders **inside** this shell and brings **no chrome of its own**. Engines (Praxis, Chrona, Metis, …) contribute **licensed widgets** to the content surface; a user never moves between a "Praxis workspace" and a "Metis workspace" — they see one unified landscape. An unlicensed engine contributes nothing and simply does not appear.
+The product runs in **one platform-owned shell** with four stable regions — a navigation rail, a toolbar carrying the
+always-visible time + scenario viewpoint, a dominant content surface, and a selection-driven inspector. Every surface
+renders **inside** this shell and brings **no chrome of its own**. Engines (Praxis, Chrona, Metis, …) contribute
+**licensed widgets** to the content surface; a user never moves between a "Praxis workspace" and a "Metis workspace" —
+they see one unified landscape. An unlicensed engine contributes nothing and simply does not appear.
 
 | Concern                                                                              | Canonical document                                           |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -19,9 +28,14 @@ The product runs in **one platform-owned shell** with four stable regions — a 
 
 ## 2. The surfaces
 
-The product opens onto a **family of surfaces**, each playing one role for one audience, all sharing the shell, the selection model, and the honest-state rules. The role of each is fixed in [ux/workspace-family.md](./ux/workspace-family.md); the cross-cutting surfaces closest to the shell are detailed under [host-surfaces/](./host-surfaces/README.md).
+The product opens onto a **family of surfaces**, each playing one role for one audience, all sharing the shell, the
+selection model, and the honest-state rules. The role of each is fixed in
+[ux/workspace-family.md](./ux/workspace-family.md); the cross-cutting surfaces closest to the shell are detailed under
+[host-surfaces/](./host-surfaces/README.md).
 
-The **primary milestone** below is derived from the engine ownership in the [ROADMAP](../00-index/ROADMAP.md) (the MVP is M0–M3); it is a guide, not a separately-ratified UX roadmap. The shell and every cross-cutting behaviour in §3 exist from M0.
+The **primary milestone** below is derived from the engine ownership in the [ROADMAP](../00-index/ROADMAP.md) (the MVP
+is M0–M3); it is a guide, not a separately-ratified UX roadmap. The shell and every cross-cutting behaviour in §3 exist
+from M0.
 
 | Surface                         | Role (one line)                                                                                                        | Primary milestone       | Canonical doc                                                                                                                                                                                                          |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -36,7 +50,8 @@ The **primary milestone** below is derived from the engine ownership in the [ROA
 
 ## 3. How it works — the cross-cutting behaviour
 
-These rules hold on **every** surface; they are the behavioural contract in [ux/](./ux/README.md) (the visual counterpart is the [design system](./design-system/README.md)).
+These rules hold on **every** surface; they are the behavioural contract in [ux/](./ux/README.md) (the visual
+counterpart is the [design system](./design-system/README.md)).
 
 | Rule                                                                  | Canonical document                                                                                                                                     |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -71,23 +86,49 @@ For the M0–M3 build, the UX is pinned to executable contracts:
 
 ## 6. Reading paths
 
-- **New to the product:** §1 here → [the-shell.md](./the-shell.md) → [ux/selection-model.md](./ux/selection-model.md) → [ux/workspace-family.md](./ux/workspace-family.md).
-- **Building a renderer feature:** [../frontend/README.md](../frontend/README.md) → [../frontend/shell.md](../frontend/shell.md) → the [ux/](./ux/README.md) file for the behaviour → [../build-contracts/mvp-ui-state-machines.md](../build-contracts/mvp-ui-state-machines.md).
-- **Auditing honesty obligations:** [ux/honest-state-treatment.md](./ux/honest-state-treatment.md) → [trust-and-honesty.md](./trust-and-honesty.md) → [design-system/honest-state-treatments.md](./design-system/honest-state-treatments.md).
+- **New to the product:** §1 here → [the-shell.md](./the-shell.md) → [ux/selection-model.md](./ux/selection-model.md) →
+  [ux/workspace-family.md](./ux/workspace-family.md).
+- **Building a renderer feature:** [../frontend/README.md](../frontend/README.md) →
+  [../frontend/shell.md](../frontend/shell.md) → the [ux/](./ux/README.md) file for the behaviour →
+  [../build-contracts/mvp-ui-state-machines.md](../build-contracts/mvp-ui-state-machines.md).
+- **Auditing honesty obligations:** [ux/honest-state-treatment.md](./ux/honest-state-treatment.md) →
+  [trust-and-honesty.md](./trust-and-honesty.md) →
+  [design-system/honest-state-treatments.md](./design-system/honest-state-treatments.md).
 
 ## 7. Open information-architecture decisions
 
-The shell model, the per-surface behaviour, and the MVP state machines are settled and mutually consistent. What is **not yet decided** is a cluster of concrete IA arrangements — deliberately deferred, not contradictory, but a designer/implementer would otherwise invent them. These are the candidates for a follow-up decision pass:
+The shell model, the per-surface behaviour, and the MVP state machines are settled and mutually consistent. What is
+**not yet decided** is a cluster of concrete IA arrangements — deliberately deferred, not contradictory, but a
+designer/implementer would otherwise invent them. These are the candidates for a follow-up decision pass:
 
-- **Navigation model — _resolved_.** The rail is organised by **user-goal surfaces, never engines**; the eight workspace-family surfaces are the primary destinations, with scenarios/artefacts/saved-structures/review as secondary destinations within them (the **Workspace structure** section); widgets compose _within_ a surface (extensively only in the modelling studio); surface changes preserve the active viewpoint unless an opened saved destination carries another. Pinned in [hig/shell-and-navigation.md](./hig/shell-and-navigation.md), [the-shell.md](./the-shell.md), [ux/workspace-family.md](./ux/workspace-family.md), [../frontend/shell.md](../frontend/shell.md).
-- **Composition & launch mechanics — _resolved_.** Add widget is one canonical action (toolbar + on-canvas `+` + command-palette shortcut) opening the widget-library dialog filtered by `allowed ∩ build-enabled ∩ licensed ∩ workspace-supported`; user composition happens only in an explicit **draft-based compose mode** (Done/Cancel/Reset); a `composition_policy` of `fixed`/`bounded`/`free` gates which surfaces expose it; surfaces open on a default composition (widgets render guided empty states when the twin is empty — never bare chrome); secondary destinations open as surface instances in the shell; **layout is not keyed by the viewpoint**. Pinned in [../frontend/shell.md](../frontend/shell.md), [ux/workspace-family.md](./ux/workspace-family.md), [../frontend/state-architecture.md](../frontend/state-architecture.md), [../frontend/praxis-contributions/DESIGN.md](../frontend/praxis-contributions/DESIGN.md).
+- **Navigation model — _resolved_.** The rail is organised by **user-goal surfaces, never engines**; the eight
+  workspace-family surfaces are the primary destinations, with scenarios/artefacts/saved-structures/review as secondary
+  destinations within them (the **Workspace structure** section); widgets compose _within_ a surface (extensively only
+  in the modelling studio); surface changes preserve the active viewpoint unless an opened saved destination carries
+  another. Pinned in [hig/shell-and-navigation.md](./hig/shell-and-navigation.md), [the-shell.md](./the-shell.md),
+  [ux/workspace-family.md](./ux/workspace-family.md), [../frontend/shell.md](../frontend/shell.md).
+- **Composition & launch mechanics — _resolved_.** Add widget is one canonical action (toolbar + on-canvas `+` +
+  command-palette shortcut) opening the widget-library dialog filtered by
+  `allowed ∩ build-enabled ∩ licensed ∩ workspace-supported`; user composition happens only in an explicit **draft-based
+  compose mode** (Done/Cancel/Reset); a `composition_policy` of `fixed`/`bounded`/`free` gates which surfaces expose it;
+  surfaces open on a default composition (widgets render guided empty states when the twin is empty — never bare
+  chrome); secondary destinations open as surface instances in the shell; **layout is not keyed by the viewpoint**.
+  Pinned in [../frontend/shell.md](../frontend/shell.md), [ux/workspace-family.md](./ux/workspace-family.md),
+  [../frontend/state-architecture.md](../frontend/state-architecture.md),
+  [../frontend/praxis-contributions/DESIGN.md](../frontend/praxis-contributions/DESIGN.md).
 
-The remaining items are **deliberately paused** — UX-Q1 and UX-Q2 settle the shell's load-bearing interaction model; these are lower-stakes and partly post-MVP:
+The remaining items are **deliberately paused** — UX-Q1 and UX-Q2 settle the shell's load-bearing interaction model;
+these are lower-stakes and partly post-MVP:
 
-- **Search-results presentation** — belongs primarily to [Lexis](../05-modules/lexis/README.md) (planned); resolve when its result contract and MVP timing are clearer. The rules exist ([hig/shell-and-navigation.md](./hig/shell-and-navigation.md)); the result-card format does not.
-- **Settings IA** — personal / workspace / org scopes are named "visibly separate"; the concrete arrangement is open (Administration surface, M6).
-- **Canvas keyboard / accessibility** — design intent, pending an APG-grid-style design ([../frontend/praxis-contributions/DESIGN.md](../frontend/praxis-contributions/DESIGN.md)).
-- **Multi-engine orchestration** — cross-engine selection/inspector when more than Praxis is licensed; M4+ design intent.
+- **Search-results presentation** — belongs primarily to [Lexis](../05-modules/lexis/README.md) (planned); resolve when
+  its result contract and MVP timing are clearer. The rules exist
+  ([hig/shell-and-navigation.md](./hig/shell-and-navigation.md)); the result-card format does not.
+- **Settings IA** — personal / workspace / org scopes are named "visibly separate"; the concrete arrangement is open
+  (Administration surface, M6).
+- **Canvas keyboard / accessibility** — design intent, pending an APG-grid-style design
+  ([../frontend/praxis-contributions/DESIGN.md](../frontend/praxis-contributions/DESIGN.md)).
+- **Multi-engine orchestration** — cross-engine selection/inspector when more than Praxis is licensed; M4+ design
+  intent.
 
 ## Related documents
 

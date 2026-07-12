@@ -1,10 +1,20 @@
 # Aideon Desktop — Documentation
 
-Aideon Desktop is a **desktop-first, local-first, time-first digital twin** of an organisation. It runs as a Tauri v2 application — a WebView renderer over a Rust core — and separates **meaning** (Praxis), **memory/storage** (Mneme), **time** (Chrona), **analytics** (Metis), and **orchestration** (Continuum) behind typed boundaries, so the interface stays stable while the engines evolve.
+Aideon Desktop is a **desktop-first, local-first, time-first digital twin** of an organisation. It runs as a Tauri v2
+application — a WebView renderer over a Rust core — and separates **meaning** (Praxis), **memory/storage** (Mneme),
+**time** (Chrona), **analytics** (Metis), and **orchestration** (Continuum) behind typed boundaries, so the interface
+stays stable while the engines evolve.
 
-This is the documentation map. New here? Read in this order: the glossary, then the design spine, then the layer you need.
+This is the documentation map. New here? Read in this order: the glossary, then the design spine, then the layer you
+need.
 
-> **The one idea everything rests on.** The canonical project is a **portable workspace folder** — append-only operations (`model/ops/`), schema-as-data (`model/schema/`), and immutable content-addressed blobs (`objects/sha256/`). The runtime database under `.aideon/runtime/` is a **derived, rebuildable cache**: delete it and rebuild it from the canonical files with no data loss. Operations and schema-as-data are canonical; temporal facts, effective graphs, indexes, and projections are derived (a fact is resolved from operations on read). See [`03-design/desktop-first-workspace/`](../03-design/desktop-first-workspace/README.md) and [`ADR-0001`](../06-adrs/ADR-0001-workspace-is-canonical-authority.md).
+> **The one idea everything rests on.** The canonical project is a **portable workspace folder** — append-only
+> operations (`model/ops/`), schema-as-data (`model/schema/`), and immutable content-addressed blobs
+> (`objects/sha256/`). The runtime database under `.aideon/runtime/` is a **derived, rebuildable cache**: delete it and
+> rebuild it from the canonical files with no data loss. Operations and schema-as-data are canonical; temporal facts,
+> effective graphs, indexes, and projections are derived (a fact is resolved from operations on read). See
+> [`03-design/desktop-first-workspace/`](../03-design/desktop-first-workspace/README.md) and
+> [`ADR-0001`](../06-adrs/ADR-0001-workspace-is-canonical-authority.md).
 
 ---
 
@@ -34,7 +44,8 @@ This is the documentation map. New here? Read in this order: the glossary, then 
 
 ## The module pantheon
 
-Modules carry conceptual names from Greek and Latin roots; the name evokes the role, never the technology. The full taxonomy and boundary rules are fixed by [ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md).
+Modules carry conceptual names from Greek and Latin roots; the name evokes the role, never the technology. The full
+taxonomy and boundary rules are fixed by [ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md).
 
 **Engines (implemented or in progress)**
 
@@ -62,22 +73,37 @@ Modules carry conceptual names from Greek and Latin roots; the name evokes the r
 | [Themis](../05-modules/themis/README.md) | Governance — identity, RBAC, approvals, retention, audit, capability policy.                                                                                                     |
 | [Aegis](../05-modules/aegis/README.md)   | Risk, controls, and compliance — risk register and control library mapped onto the twin.                                                                                         |
 
-**Folded concerns** — named capabilities that live inside an existing module, each with a split-out trigger recorded in [ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md): **Oikos** (run-cost/FinOps, in Metis + Kairos), **Krisis** (validation & data-quality, in Praxis), **Topos** (cartography & auto-layout, in the renderer + Praxis), **Logos** (narrative & rationale, in Kerux + Mneme).
+**Folded concerns** — named capabilities that live inside an existing module, each with a split-out trigger recorded in
+[ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md): **Oikos** (run-cost/FinOps, in Metis + Kairos),
+**Krisis** (validation & data-quality, in Praxis), **Topos** (cartography & auto-layout, in the renderer + Praxis),
+**Logos** (narrative & rationale, in Kerux + Mneme).
 
 ---
 
 ## Common entry points
 
-- **Architecture & boundaries** → [`01-architecture/README.md`](../01-architecture/README.md), then [`boundary/`](../01-architecture/boundary/README.md) and the [module dependency map](../01-architecture/module-dependency-map.md).
-- **The product design spine** → [`03-design/README.md`](../03-design/README.md), then [`artefacts/`](../03-design/artefacts/README.md), [`ux/`](../03-design/ux/README.md), and the [semantic spine](../03-design/semantic-spine/README.md).
-- **Planning the spend** → [`03-design/forces-of-change/`](../03-design/forces-of-change/README.md) (entropy and action) and [Kairos](../05-modules/kairos/README.md).
-- **The metamodel** → [`03-design/metamodel/`](../03-design/metamodel/README.md) and the [Praxis edge catalogue](../05-modules/praxis/edge-catalogue/README.md).
-- **Storage & the temporal model** → [`05-modules/mneme/`](../05-modules/mneme/README.md), [`04-contracts/temporal-and-scenario/`](../04-contracts/temporal-and-scenario/README.md).
-- **The IPC boundary** → [`04-contracts/ipc/`](../04-contracts/ipc/README.md), [`05-modules/host/`](../05-modules/host/README.md).
-- **Look and behaviour** → [`03-design/design-system/`](../03-design/design-system/README.md), [`03-design/hig/`](../03-design/hig/README.md), [`frontend/`](../frontend/README.md).
-- **What to build first** → [`ROADMAP.md`](./ROADMAP.md) (the MVP, the milestone exit criteria, and the build sequence) and [`03-design/module-delivery-order.md`](../03-design/module-delivery-order.md) (the dependency rationale).
-- **Building it as executable contracts** → [`build-contracts/`](../build-contracts/README.md) — the golden journey, the contract precedence, and the agent-ready issue template that turn the design into work an agent can complete.
-- **Making a durable decision** → [`02-standards/DESIGN-GOVERNANCE.md`](../02-standards/DESIGN-GOVERNANCE.md), then write an ADR per [`02-standards/ADR-FORMAT.md`](../02-standards/ADR-FORMAT.md).
+- **Architecture & boundaries** → [`01-architecture/README.md`](../01-architecture/README.md), then
+  [`boundary/`](../01-architecture/boundary/README.md) and the
+  [module dependency map](../01-architecture/module-dependency-map.md).
+- **The product design spine** → [`03-design/README.md`](../03-design/README.md), then
+  [`artefacts/`](../03-design/artefacts/README.md), [`ux/`](../03-design/ux/README.md), and the
+  [semantic spine](../03-design/semantic-spine/README.md).
+- **Planning the spend** → [`03-design/forces-of-change/`](../03-design/forces-of-change/README.md) (entropy and action)
+  and [Kairos](../05-modules/kairos/README.md).
+- **The metamodel** → [`03-design/metamodel/`](../03-design/metamodel/README.md) and the
+  [Praxis edge catalogue](../05-modules/praxis/edge-catalogue/README.md).
+- **Storage & the temporal model** → [`05-modules/mneme/`](../05-modules/mneme/README.md),
+  [`04-contracts/temporal-and-scenario/`](../04-contracts/temporal-and-scenario/README.md).
+- **The IPC boundary** → [`04-contracts/ipc/`](../04-contracts/ipc/README.md),
+  [`05-modules/host/`](../05-modules/host/README.md).
+- **Look and behaviour** → [`03-design/design-system/`](../03-design/design-system/README.md),
+  [`03-design/hig/`](../03-design/hig/README.md), [`frontend/`](../frontend/README.md).
+- **What to build first** → [`ROADMAP.md`](./ROADMAP.md) (the MVP, the milestone exit criteria, and the build sequence)
+  and [`03-design/module-delivery-order.md`](../03-design/module-delivery-order.md) (the dependency rationale).
+- **Building it as executable contracts** → [`build-contracts/`](../build-contracts/README.md) — the golden journey, the
+  contract precedence, and the agent-ready issue template that turn the design into work an agent can complete.
+- **Making a durable decision** → [`02-standards/DESIGN-GOVERNANCE.md`](../02-standards/DESIGN-GOVERNANCE.md), then
+  write an ADR per [`02-standards/ADR-FORMAT.md`](../02-standards/ADR-FORMAT.md).
 
 ---
 
@@ -95,4 +121,6 @@ CONTEXT.md       →  the shared vocabulary every layer uses
 06-adrs          →  the decisions that fix the invariants
 ```
 
-Documentation is authoritative: code is updated to match it, and documentation changes to match code only when the intended architecture has genuinely changed (see [Architecture Boundary](../01-architecture/boundary/README.md), _Documentation Precedence_).
+Documentation is authoritative: code is updated to match it, and documentation changes to match code only when the
+intended architecture has genuinely changed (see [Architecture Boundary](../01-architecture/boundary/README.md),
+_Documentation Precedence_).

@@ -9,7 +9,8 @@ The Mneme workspace provides operator-facing surfaces for storage and processing
 - integrity head / schema head summaries
 - schema manifest visibility (read-only)
 
-This workspace is not a general modelling surface; it exists to make the system observable and recoverable without leaving the desktop app.
+This workspace is not a general modelling surface; it exists to make the system observable and recoverable without
+leaving the desktop app.
 
 ## Explicit intent (non-negotiable)
 
@@ -34,7 +35,11 @@ This workspace is not a general modelling surface; it exists to make the system 
 
 ## Widgets contributed
 
-This is **design intent**: Mneme is not yet registered in the platform's `ENGINES` — the seed ships a Mneme engine API scaffold backing contract tests, not a widget-contributing engine ([package-layout.md](../package-layout.md)). When the Mneme engine is licensed it contributes operator widgets to the one shared shell; the platform owns navigation, toolbar, content, and inspector, and Mneme ships no chrome of its own ([shell.md](../shell.md)). The widgets it intends to contribute (minimum):
+This is **design intent**: Mneme is not yet registered in the platform's `ENGINES` — the seed ships a Mneme engine API
+scaffold backing contract tests, not a widget-contributing engine ([package-layout.md](../package-layout.md)). When the
+Mneme engine is licensed it contributes operator widgets to the one shared shell; the platform owns navigation, toolbar,
+content, and inspector, and Mneme ships no chrome of its own ([shell.md](../shell.md)). The widgets it intends to
+contribute (minimum):
 
 1. Health
    - engine health summary
@@ -58,8 +63,10 @@ This is **design intent**: Mneme is not yet registered in the platform's `ENGINE
 How the shared shell hosts these widgets:
 
 - **Navigation** (platform-owned) surfaces the operator areas: health overview, jobs, integrity, schema, maintenance.
-- **Toolbar** (platform-owned) carries the actions Mneme registers — explicit refresh, copy diagnostics, open Status window, export audit pack (capability-gated).
-- **Inspector** (platform-owned) shows selection-driven details for a job, an integrity finding, or a schema type/field/rule; inspector actions are capability-gated and must explain the impact before execution.
+- **Toolbar** (platform-owned) carries the actions Mneme registers — explicit refresh, copy diagnostics, open Status
+  window, export audit pack (capability-gated).
+- **Inspector** (platform-owned) shows selection-driven details for a job, an integrity finding, or a schema
+  type/field/rule; inspector actions are capability-gated and must explain the impact before execution.
 - **Footer / status** (platform-owned) carries the job tray entrypoint and a compact health indicator.
 
 ## Data model and APIs

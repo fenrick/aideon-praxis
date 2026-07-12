@@ -1,8 +1,13 @@
 # Design System
 
-The shared, domain-free UI layer that makes Aideon Desktop's calm, dense, explainable, workspace-first posture the cheapest path to build. This folder is for anyone designing, building, or reviewing a renderer surface; it is the rulebook for the reusable visual and interaction vocabulary every product surface composes from.
+The shared, domain-free UI layer that makes Aideon Desktop's calm, dense, explainable, workspace-first posture the
+cheapest path to build. This folder is for anyone designing, building, or reviewing a renderer surface; it is the
+rulebook for the reusable visual and interaction vocabulary every product surface composes from.
 
-The design system is owned by `src/design-system` and sits behind the proxy boundary fixed by [ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md): shadcn/ui + Tailwind v4 are the building material, but product code never imports them directly. This folder is the spec; the ADR records the decision.
+The design system is owned by `src/design-system` and sits behind the proxy boundary fixed by
+[ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md): shadcn/ui + Tailwind v4 are
+the building material, but product code never imports them directly. This folder is the spec; the ADR records the
+decision.
 
 ---
 
@@ -19,7 +24,9 @@ The design system is owned by `src/design-system` and sits behind the proxy boun
 
 ## 1. The layer model
 
-The design system is layered: each layer depends only on the layers below it, and a change at one layer does not ripple upward. This is Atomic Design's atoms→molecules→organisms progression _(Frost, Atomic Design, 2016)_, adapted to four named layers the corpus uses consistently.
+The design system is layered: each layer depends only on the layers below it, and a change at one layer does not ripple
+upward. This is Atomic Design's atoms→molecules→organisms progression _(Frost, Atomic Design, 2016)_, adapted to four
+named layers the corpus uses consistently.
 
 | Layer          | What it is                                                                                              | Where it lives                        | File                             |
 | -------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------- | -------------------------------- |
@@ -28,30 +35,48 @@ The design system is layered: each layer depends only on the layers below it, an
 | **Blocks**     | Aideon-specific compositions (shell regions, inspector stack, artefact frames, honest-state treatments) | `src/design-system/blocks`            | [blocks.md](./blocks.md)         |
 | **Surfaces**   | Product feature UI and host-shell composition — where work _means_ something                            | feature modules + app shell           | [surfaces.md](./surfaces.md)     |
 
-The progression is strict. A token never depends on a primitive; a primitive never reaches into a block; a block never imports a surface. The dependency arrow points only downward, which is what lets the team retheme (a token remap, [ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)) or swap a primitive's substrate at one seam without product-code churn.
+The progression is strict. A token never depends on a primitive; a primitive never reaches into a block; a block never
+imports a surface. The dependency arrow points only downward, which is what lets the team retheme (a token remap,
+[ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)) or swap a primitive's substrate at one seam without
+product-code churn.
 
-Tokens are the source of styling truth ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)); product code and proxy components consume **semantic** tokens, never raw values. The full token architecture is in [tokens.md](./tokens.md).
+Tokens are the source of styling truth
+([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)); product code and proxy
+components consume **semantic** tokens, never raw values. The full token architecture is in [tokens.md](./tokens.md).
 
 ## 2. The domain-free boundary
 
-The design system carries **no domain semantics**. It must not know about an entity type, a layer, a scenario, an artefact family, or any term from the [glossary](../../../CONTEXT.md). It provides structural, visual, and interaction vocabulary; feature code decides what the work means.
+The design system carries **no domain semantics**. It must not know about an entity type, a layer, a scenario, an
+artefact family, or any term from the [glossary](../../../CONTEXT.md). It provides structural, visual, and interaction
+vocabulary; feature code decides what the work means.
 
 The rule is a two-way test:
 
-- If a component only makes sense inside one domain feature and has no reusable pattern behind it, it **must** live in that feature module, not here.
-- If two feature modules need the same pattern, it **should** be promoted into the design system — but stripped of domain meaning, exposing the domain part through slots and props.
+- If a component only makes sense inside one domain feature and has no reusable pattern behind it, it **must** live in
+  that feature module, not here.
+- If two feature modules need the same pattern, it **should** be promoted into the design system — but stripped of
+  domain meaning, exposing the domain part through slots and props.
 
-**How it is enforced.** The boundary is the same proxy boundary [ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md) draws and is enforced three ways:
+**How it is enforced.** The boundary is the same proxy boundary
+[ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md) draws and is enforced three
+ways:
 
-1. **Architecturally** — the domain-free rule is owned by [ARCHITECTURE-BOUNDARY.md](../../01-architecture/ARCHITECTURE-BOUNDARY.md); the design system is a leaf with no dependency on feature modules.
-2. **By lint** — the ESLint proxy-boundary rule (`no-restricted-imports`) blocks these patterns in all product code outside `src/design-system/` ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)):
+1. **Architecturally** — the domain-free rule is owned by
+   [ARCHITECTURE-BOUNDARY.md](../../01-architecture/ARCHITECTURE-BOUNDARY.md); the design system is a leaf with no
+   dependency on feature modules.
+2. **By lint** — the ESLint proxy-boundary rule (`no-restricted-imports`) blocks these patterns in all product code
+   outside `src/design-system/`
+   ([ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)):
    - `lucide-react` → use `import { … } from 'design-system/icons'`
    - `@radix-ui/*` → use the proxied shadcn component from `'design-system'`
    - `design-system/components/**` → use `'design-system'` or `'design-system/reactflow/*'`
    - `design-system/blocks/**` → use `'design-system'`
-3. **By review** — a block that names a domain type, hard-codes a status string, or branches on a layer/scenario is rejected at review and the domain part is lifted into a slot.
+3. **By review** — a block that names a domain type, hard-codes a status string, or branches on a layer/scenario is
+   rejected at review and the domain part is lifted into a slot.
 
-A worked check: a `ProvenanceBadge` block is in-bounds because it takes a classification token (`asserted` / `inferred` / `generated`) and renders the agreed treatment; it does _not_ know what a `Capability` is. A component that renders "Capability tier" labels is a surface, not a block.
+A worked check: a `ProvenanceBadge` block is in-bounds because it takes a classification token (`asserted` / `inferred`
+/ `generated`) and renders the agreed treatment; it does _not_ know what a `Capability` is. A component that renders
+"Capability tier" labels is a surface, not a block.
 
 ## 3. The files in this folder
 
@@ -71,9 +96,15 @@ A worked check: a `ProvenanceBadge` block is in-bounds because it takes a classi
 
 ## 4. What the design system must make easy, and prevent
 
-It must make easy: opening a workspace that feels calm and dense; keeping the viewpoint visible when time, scenario, layer, or freshness changes meaning; moving from artefact to explanation to action inside the one shell; rendering honest loading, empty, partial, stale, rebuilding, generated, and error states from a shared vocabulary; and distinguishing Asserted, Inferred, and Generated content at a glance.
+It must make easy: opening a workspace that feels calm and dense; keeping the viewpoint visible when time, scenario,
+layer, or freshness changes meaning; moving from artefact to explanation to action inside the one shell; rendering
+honest loading, empty, partial, stale, rebuilding, generated, and error states from a shared vocabulary; and
+distinguishing Asserted, Inferred, and Generated content at a glance.
 
-It must prevent: raw third-party primitives leaking into surfaces; module-specific chrome invented in feature code; hidden viewpoint context; custom status colours and one-off loaders; decorative layouts that waste dense space; and any domain semantics encoded in shared components. A design system that only enables and never forbids is a polite suggestion, not a system.
+It must prevent: raw third-party primitives leaking into surfaces; module-specific chrome invented in feature code;
+hidden viewpoint context; custom status colours and one-off loaders; decorative layouts that waste dense space; and any
+domain semantics encoded in shared components. A design system that only enables and never forbids is a polite
+suggestion, not a system.
 
 ## 5. References & standards
 
@@ -81,7 +112,8 @@ _Informative — recorded in the [standards register](../../02-standards/STANDAR
 
 - Frost — **Atomic Design**, 2016. The token → primitive → block → surface layering.
 - Google — **Material Design 3** token architecture. Reference vs semantic token separation.
-- W3C — **Design Tokens Community Group format**. The token source format ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)).
+- W3C — **Design Tokens Community Group format**. The token source format
+  ([ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)).
 
 ## 6. Related documents
 

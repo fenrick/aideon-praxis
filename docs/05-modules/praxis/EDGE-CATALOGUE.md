@@ -1,8 +1,12 @@
 # Praxis edge catalogue
 
-This document has been decomposed into a folder of focused files. Its content now lives in [`edge-catalogue/`](./edge-catalogue/README.md), per the [Documentation Standard §4](../../02-standards/DOCUMENTATION-STANDARD.md) granularity rule.
+This document has been decomposed into a folder of focused files. Its content now lives in
+[`edge-catalogue/`](./edge-catalogue/README.md), per the
+[Documentation Standard §4](../../02-standards/DOCUMENTATION-STANDARD.md) granularity rule.
 
-The catalogue now adopts the seed metamodel's ArchiMate-aligned relationship names and directions — `serves`, `realises`, `accesses`, `hosts`, `plan_effect` — replacing the earlier `contributes_to` / `delivers` / `uses_data` / `deployed_on` / `change_affects` set ([Documentation Standard §12](../../02-standards/DOCUMENTATION-STANDARD.md)).
+The catalogue now adopts the seed metamodel's ArchiMate-aligned relationship names and directions — `serves`,
+`realises`, `accesses`, `hosts`, `plan_effect` — replacing the earlier `contributes_to` / `delivers` / `uses_data` /
+`deployed_on` / `change_affects` set ([Documentation Standard §12](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 Start at the [edge catalogue index](./edge-catalogue/README.md). Likely targets for an incoming link:
 

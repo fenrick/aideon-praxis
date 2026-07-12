@@ -4,7 +4,9 @@ This document has moved. The security standard is now a folder of focused files,
 
 **→ [security/README.md](./security/README.md)**
 
-The folder covers the trust boundary, the threat model (STRIDE), the OWASP ASVS 5.0 control mapping, capability scoping, blob integrity, secrets and keys, PII and export redaction, supply chain, code signing, audit and logging, and vulnerability reporting.
+The folder covers the trust boundary, the threat model (STRIDE), the OWASP ASVS 5.0 control mapping, capability scoping,
+blob integrity, secrets and keys, PII and export redaction, supply chain, code signing, audit and logging, and
+vulnerability reporting.
 
 For the repository-root public reporting policy, see [SECURITY.md](../../SECURITY.md) at the project root.
 

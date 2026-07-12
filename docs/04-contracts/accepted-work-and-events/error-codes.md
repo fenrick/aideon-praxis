@@ -1,6 +1,8 @@
 # Accepted-work error codes
 
-The error codes raised by the accepted-work and event contract. Each is carried in the standard [RFC 9457 error envelope](../ipc/error-envelope.md) with a category and recovery hint; this file records each code's trigger and its envelope category.
+The error codes raised by the accepted-work and event contract. Each is carried in the standard
+[RFC 9457 error envelope](../ipc/error-envelope.md) with a category and recovery hint; this file records each code's
+trigger and its envelope category.
 
 ---
 
@@ -12,7 +14,9 @@ The error codes raised by the accepted-work and event contract. Each is carried 
 | `IDEMPOTENCY_CONFLICT` | conflict   | reconcile | A run with the given key exists in an incompatible state ([idempotency-rules.md](./idempotency-rules.md)). |
 | `STEP_NOT_FOUND`       | validation | none      | A `fromStepId` in a retry request does not exist in the run.                                               |
 
-`BACKPRESSURE` is the only `transient` code here — the queued-state retry. The two `conflict` codes signal a state the caller must resolve (refresh the run, or reconcile the key) rather than blindly retry; the two `validation` codes signal a malformed request a retry will not fix.
+`BACKPRESSURE` is the only `transient` code here — the queued-state retry. The two `conflict` codes signal a state the
+caller must resolve (refresh the run, or reconcile the key) rather than blindly retry; the two `validation` codes signal
+a malformed request a retry will not fix.
 
 ## Related documents
 

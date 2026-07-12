@@ -7,24 +7,40 @@
 
 ## Context
 
-The IPC boundary already carries a stable error envelope: `IpcError { code, message, details }` with machine-readable `code` values ([CONTRACTS-AND-SCHEMAS.md](../04-contracts/CONTRACTS-AND-SCHEMAS.md)). The codes (`WORKSPACE_NOT_FOUND`, `WORKSPACE_LOCKED`, `SCHEMA_TOO_NEW`, `CONFLICT_RECORDED`, `BACKPRESSURE`, `TEMPORAL_CONTEXT_INVALID`, …) are stable contract identifiers, but the envelope has no shared shape vocabulary, no category taxonomy, and no machine-readable recovery hint. The renderer cannot tell, from the envelope alone, whether an error is worth retrying (`BACKPRESSURE`) or terminal (`SCHEMA_TOO_NEW`) without hard-coding knowledge of each code.
+The IPC boundary already carries a stable error envelope: `IpcError { code, message, details }` with machine-readable
+`code` values ([CONTRACTS-AND-SCHEMAS.md](../04-contracts/CONTRACTS-AND-SCHEMAS.md)). The codes (`WORKSPACE_NOT_FOUND`,
+`WORKSPACE_LOCKED`, `SCHEMA_TOO_NEW`, `CONFLICT_RECORDED`, `BACKPRESSURE`, `TEMPORAL_CONTEXT_INVALID`, …) are stable
+contract identifiers, but the envelope has no shared shape vocabulary, no category taxonomy, and no machine-readable
+recovery hint. The renderer cannot tell, from the envelope alone, whether an error is worth retrying (`BACKPRESSURE`) or
+terminal (`SCHEMA_TOO_NEW`) without hard-coding knowledge of each code.
 
-RFC 9457 (Problem Details for HTTP APIs, obsoleting RFC 7807) defines exactly this: a typed, extensible problem object with a stable `type`, a human `title`, `detail`, and member extensions. Adopting its shape — not its HTTP transport — gives the envelope a recognised structure and room for categories and hints without inventing a bespoke format.
+RFC 9457 (Problem Details for HTTP APIs, obsoleting RFC 7807) defines exactly this: a typed, extensible problem object
+with a stable `type`, a human `title`, `detail`, and member extensions. Adopting its shape — not its HTTP transport —
+gives the envelope a recognised structure and room for categories and hints without inventing a bespoke format.
 
 ## Governance Framing
 
-- **Decision type:** Stable seam (the error envelope is a public IPC contract) + invariant (every IPC error is a typed Problem Detail with a category).
-- **Known future pressure:** more error codes; richer recovery guidance; localisation of messages; mapping engine errors uniformly.
-- **What stays stable:** the existing stable codes; the RFC 9457 member shape; the five-category taxonomy; the recovery-hint field.
+- **Decision type:** Stable seam (the error envelope is a public IPC contract) + invariant (every IPC error is a typed
+  Problem Detail with a category).
+- **Known future pressure:** more error codes; richer recovery guidance; localisation of messages; mapping engine errors
+  uniformly.
+- **What stays stable:** the existing stable codes; the RFC 9457 member shape; the five-category taxonomy; the
+  recovery-hint field.
 - **What is provisional:** the exact set of recovery-hint values and the URI scheme used for `type`.
 - **What is deferred:** localised `title`/`detail`; per-locale message catalogues.
-- **Why hard to reverse:** the envelope is consumed across the Rust↔TS boundary and stored in logs; changing the shape or a code is a breaking contract change ([ADR-0017](./ADR-0017-contract-and-dto-versioning.md)).
+- **Why hard to reverse:** the envelope is consumed across the Rust↔TS boundary and stored in logs; changing the shape
+  or a code is a breaking contract change ([ADR-0017](./ADR-0017-contract-and-dto-versioning.md)).
 
 ## Decision
 
-- **The IPC error envelope adopts RFC 9457 Problem Details** (RFC 9457). The wire object carries `type` (a stable URI reference identifying the problem kind), `title` (a short human summary, safe for UI), `detail` (a human-readable explanation of this occurrence), and member extensions, transported over IPC rather than HTTP. The existing `code`, `message`, and `details` map onto this shape: `code` becomes the stable identifier behind `type`, `message` becomes `title`/`detail`, and `details` remains a structured extension.
+- **The IPC error envelope adopts RFC 9457 Problem Details** (RFC 9457). The wire object carries `type` (a stable URI
+  reference identifying the problem kind), `title` (a short human summary, safe for UI), `detail` (a human-readable
+  explanation of this occurrence), and member extensions, transported over IPC rather than HTTP. The existing `code`,
+  `message`, and `details` map onto this shape: `code` becomes the stable identifier behind `type`, `message` becomes
+  `title`/`detail`, and `details` remains a structured extension.
 
-- **Every error carries a category from a fixed taxonomy.** Each stable code maps to exactly one category, so the renderer can react generically:
+- **Every error carries a category from a fixed taxonomy.** Each stable code maps to exactly one category, so the
+  renderer can react generically:
 
   | Category       | Meaning                                                         | Renderer default reaction                    | Example codes                                                                                        |
   | -------------- | --------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -34,24 +50,39 @@ RFC 9457 (Problem Details for HTTP APIs, obsoleting RFC 7807) defines exactly th
   | **transient**  | A temporary condition; the same request may succeed later       | Retry with backoff                           | `BACKPRESSURE`                                                                                       |
   | **internal**   | An unexpected host-side failure                                 | Surface generically; capture for diagnostics | `INTERNAL_ERROR`, `SCHEMA_TOO_NEW` (compatibility-fatal)                                             |
 
-- **Every error carries a recovery hint.** A machine-readable `recovery` member tells the renderer what to do without hard-coding per-code logic: `retry` (with a suggested backoff for transient), `reconcile`, `refresh`, `none`, or `report`. `BACKPRESSURE` carries `retry`; `SCHEMA_TOO_NEW` carries `report`; `TEMPORAL_CONTEXT_INVALID` carries `none`.
+- **Every error carries a recovery hint.** A machine-readable `recovery` member tells the renderer what to do without
+  hard-coding per-code logic: `retry` (with a suggested backoff for transient), `reconcile`, `refresh`, `none`, or
+  `report`. `BACKPRESSURE` carries `retry`; `SCHEMA_TOO_NEW` carries `report`; `TEMPORAL_CONTEXT_INVALID` carries
+  `none`.
 
-- **Codes remain stable; categories and hints are additive.** Changing a code is a breaking change ([ADR-0017](./ADR-0017-contract-and-dto-versioning.md)). Adding a code, or refining a hint, is additive. `detail` and the `details` extension must not leak secrets or stack traces, consistent with the privacy rules of [LOGGING_FRAMEWORK.md §10](../LOGGING_FRAMEWORK.md).
+- **Codes remain stable; categories and hints are additive.** Changing a code is a breaking change
+  ([ADR-0017](./ADR-0017-contract-and-dto-versioning.md)). Adding a code, or refining a hint, is additive. `detail` and
+  the `details` extension must not leak secrets or stack traces, consistent with the privacy rules of
+  [LOGGING_FRAMEWORK.md §10](../LOGGING_FRAMEWORK.md).
 
-- **The `type` URI and `correlation_id` join errors to traces.** The error carries the `correlation_id` of the failing command so an error surfaced in the UI joins to the host logs and trace ([ADR-0019](./ADR-0019-observability-and-trace-context.md)).
+- **The `type` URI and `correlation_id` join errors to traces.** The error carries the `correlation_id` of the failing
+  command so an error surfaced in the UI joins to the host logs and trace
+  ([ADR-0019](./ADR-0019-observability-and-trace-context.md)).
 
 ## Considered Options
 
-- **A bespoke envelope (rejected):** the current shape works, but reinvents a solved problem and lacks a recognised category/hint vocabulary; RFC 9457 supplies both and is understood by tooling.
-- **gRPC/status-code taxonomy (rejected):** a reasonable category set, but tied to a transport the product does not use and less expressive than Problem Details extensions.
-- **Categories inferred by the renderer from codes (rejected):** forces the renderer to hard-code per-code knowledge; carrying the category and hint on the envelope keeps the renderer generic.
+- **A bespoke envelope (rejected):** the current shape works, but reinvents a solved problem and lacks a recognised
+  category/hint vocabulary; RFC 9457 supplies both and is understood by tooling.
+- **gRPC/status-code taxonomy (rejected):** a reasonable category set, but tied to a transport the product does not use
+  and less expressive than Problem Details extensions.
+- **Categories inferred by the renderer from codes (rejected):** forces the renderer to hard-code per-code knowledge;
+  carrying the category and hint on the envelope keeps the renderer generic.
 
 ## Consequences
 
-- The renderer reacts by category and hint: `transient`+`retry` shows a queued state and retries with backoff (the existing `BACKPRESSURE` behaviour, now generalised); `validation` shows the problem inline; `internal` shows a generic failure and captures diagnostics.
+- The renderer reacts by category and hint: `transient`+`retry` shows a queued state and retries with backoff (the
+  existing `BACKPRESSURE` behaviour, now generalised); `validation` shows the problem inline; `internal` shows a generic
+  failure and captures diagnostics.
 - The existing stable codes are preserved; this ADR adds structure around them, it does not rename them.
 - Errors are joinable to traces and logs through `correlation_id`, closing the loop from UI error to host diagnostics.
-- A worked example: a saturated write queue returns `{ "type": ".../backpressure", "title": "Host busy", "detail": "The write queue is saturated.", "category": "transient", "recovery": "retry", "correlationId": "…" }`; the renderer retries with backoff and shows a queued indicator.
+- A worked example: a saturated write queue returns
+  `{ "type": ".../backpressure", "title": "Host busy", "detail": "The write queue is saturated.", "category": "transient", "recovery": "retry", "correlationId": "…" }`;
+  the renderer retries with backoff and shows a queued indicator.
 
 ## Follow-ups / Open Questions
 

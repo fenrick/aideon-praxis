@@ -1,11 +1,14 @@
 # Contributing to Aideon Desktop
 
-Thanks for your interest in contributing! This guide explains how we work, how to set up your environment, and what we expect in issues and pull requests.
+Thanks for your interest in contributing! This guide explains how we work, how to set up your environment, and what we
+expect in issues and pull requests.
 
 ## Values
 
 - **Time-first, graph-native:** keep the meta-model and `state_at()` semantics authoritative.
-- **Commits define time:** follow the standards in `docs/01-architecture/ARCHITECTURE-BOUNDARY.md#time-&-commit-model-—-authoring-standards` when modelling change history.
+- **Commits define time:** follow the standards in
+  `docs/01-architecture/ARCHITECTURE-BOUNDARY.md#time-&-commit-model-—-authoring-standards` when modelling change
+  history.
 - **Local-first, cloud-ready:** do not break desktop mode; design for a clean switch to server.
 - **Security by default:** safe IPC, PII redaction, least privilege.
 - **Evidence & tests:** measurable SLOs; PRs come with tests/docs.
@@ -17,7 +20,8 @@ Thanks for your interest in contributing! This guide explains how we work, how t
 - **Docs:** fix typos, improve examples, add diagrams/captions.
 - **Code:** pick a labeled issue, discuss approach, then open a PR.
 
-Labels to look for: `good first issue`, `priority/P1`, `area/*`, `module/*`. Milestones (M0–M6) track staged delivery (see `ROADMAP.md`).
+Labels to look for: `good first issue`, `priority/P1`, `area/*`, `module/*`. Milestones (M0–M6) track staged delivery
+(see `ROADMAP.md`).
 
 ## Development setup
 
@@ -72,20 +76,23 @@ Quality gates
 
 - Legacy Svelte renderer has been removed; React + Tauri desktop is now the only renderer.
 - `src-tauri` — Rust desktop host (Tauri) and IPC surface.
-- `crates/{engine, chrona, metis, continuum, mneme, aideon_praxis}` — domain crates for graph/time/analytics, orchestration, persistence, and the facade.
+- `crates/{engine, chrona, metis, continuum, mneme, aideon_praxis}` — domain crates for graph/time/analytics,
+  orchestration, persistence, and the facade.
 - `app/ + src/` — React/Tauri renderer (canvas, design system, adapters, DTOs).
 - `docs/` — Architecture content, design docs, C4 diagrams.
 - `scripts/` — Minimal tooling entrypoints (version injection, coverage).
 
 - **Adapters are contracts.** Do not leak backend specifics into the renderer.
-- **Worker traits stay typed.** No open TCP ports in desktop mode; remote adapters must preserve the same command surface.
+- **Worker traits stay typed.** No open TCP ports in desktop mode; remote adapters must preserve the same command
+  surface.
 
 ## Branching, commits, PRs
 
 ### Branching
 
 - `main`: protected, always releasable.
-- Feature branches: `feat/<short-name>`; fixes: `fix/<short-name>`; chores/docs: `chore/<short-name>`, `docs/<short-name>`.
+- Feature branches: `feat/<short-name>`; fixes: `fix/<short-name>`; chores/docs: `chore/<short-name>`,
+  `docs/<short-name>`.
 
 ### Conventional Commits
 
@@ -138,13 +145,17 @@ Use labels (`type/*`, `area/*`, `module/*`, `priority/*`) and assign the **miles
 - Never open worker TCP ports in desktop mode.
 - Renderer calls Host via Tauri invoke (typed adapters). Desktop mode runs engines in-process. No sockets.
 - Redact PII on exports by default.
-- “No renderer HTTP” means no renderer-initiated backend/network calls in desktop mode; the dev toolchain may use a loopback dev server for HMR.
+- “No renderer HTTP” means no renderer-initiated backend/network calls in desktop mode; the dev toolchain may use a
+  loopback dev server for HMR.
 - Report vulnerabilities privately: <security@yourdomain.tld> (replace with project address).
 
 ## Releases
 
 - Conventional Commits in PR title and commits (e.g., `feat(time): add plateau diff endpoint`).
-- **release-please** runs on merges to `main` and maintains a `chore(release): X.Y.Z` **release PR** (CHANGELOG + version bumps across `package.json`, `Cargo.toml`, `src-tauri/tauri.conf.json`, `src/version.ts`). That PR goes through the normal checks like any other change; **merging it** tags `vX.Y.Z` and cuts the GitHub Release. Releases are never committed directly to `main`.
+- **release-please** runs on merges to `main` and maintains a `chore(release): X.Y.Z` **release PR** (CHANGELOG +
+  version bumps across `package.json`, `Cargo.toml`, `src-tauri/tauri.conf.json`, `src/version.ts`). That PR goes
+  through the normal checks like any other change; **merging it** tags `vX.Y.Z` and cuts the GitHub Release. Releases
+  are never committed directly to `main`.
 - Package installers are built and uploaded on the GitHub Release (`release.yml`) once it is published.
 
 ## License and CLA

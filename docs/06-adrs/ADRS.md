@@ -1,12 +1,17 @@
 # Architecture Decision Records (ADRs)
 
-ADRs capture significant, lasting decisions about architecture, contracts, persistence identity, the workspace format, and operational posture. Write them using [`../02-standards/ADR-FORMAT.md`](../02-standards/ADR-FORMAT.md) and review them against [`../02-standards/DESIGN-GOVERNANCE.md`](../02-standards/DESIGN-GOVERNANCE.md).
+ADRs capture significant, lasting decisions about architecture, contracts, persistence identity, the workspace format,
+and operational posture. Write them using [`../02-standards/ADR-FORMAT.md`](../02-standards/ADR-FORMAT.md) and review
+them against [`../02-standards/DESIGN-GOVERNANCE.md`](../02-standards/DESIGN-GOVERNANCE.md).
 
 > **Status changes are PR-reviewed, never edited ad hoc on `main`.**
 
 ## The desktop-first thesis
 
-These ADRs establish a single cross-runtime authority: **the portable workspace is canonical; the runtime database is derived.** Operations and temporal facts are the durable truth; indexes, projections, and search sidecars are rebuildable from them. Hosted PostgreSQL, where it appears at all, is an optional adapter behind the persistence interface — never the definition of truth.
+These ADRs establish a single cross-runtime authority: **the portable workspace is canonical; the runtime database is
+derived.** Operations and temporal facts are the durable truth; indexes, projections, and search sidecars are
+rebuildable from them. Hosted PostgreSQL, where it appears at all, is an optional adapter behind the persistence
+interface — never the definition of truth.
 
 ## ADR set
 

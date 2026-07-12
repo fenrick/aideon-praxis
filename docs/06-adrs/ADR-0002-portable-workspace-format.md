@@ -6,18 +6,25 @@
 
 ## Context
 
-[ADR-0001](./ADR-0001-workspace-is-canonical-authority.md) makes the workspace canonical. This ADR specifies what the workspace _is_ on disk. The requirement is a folder layout that is portable (copy, zip, or sync without a server), auditable (append-only, replayable), forward-tolerant (readable by newer software), and cleanly separated into canonical data and disposable derived state.
+[ADR-0001](./ADR-0001-workspace-is-canonical-authority.md) makes the workspace canonical. This ADR specifies what the
+workspace _is_ on disk. The requirement is a folder layout that is portable (copy, zip, or sync without a server),
+auditable (append-only, replayable), forward-tolerant (readable by newer software), and cleanly separated into canonical
+data and disposable derived state.
 
-The two key design pressures are portability and rebuild correctness: a recipient with only the canonical portion must be able to reconstruct the full runtime state with no other inputs.
+The two key design pressures are portability and rebuild correctness: a recipient with only the canonical portion must
+be able to reconstruct the full runtime state with no other inputs.
 
 ## Governance Framing
 
 - **Decision type:** Invariant (the canonical/derived split) + stable seam (the exact layout).
 - **Known future pressure:** sync, deterministic export, binary growth, schema evolution.
-- **What stays stable:** the split between canonical `model/` + `objects/` and disposable `.aideon/runtime/`; append-only op segments; schema-as-data.
-- **What is provisional:** JSONL wire format for op segments (a compact binary segment format may replace it later with identical semantics); the exact sidecar directory names.
+- **What stays stable:** the split between canonical `model/` + `objects/` and disposable `.aideon/runtime/`;
+  append-only op segments; schema-as-data.
+- **What is provisional:** JSONL wire format for op segments (a compact binary segment format may replace it later with
+  identical semantics); the exact sidecar directory names.
 - **What is deferred:** encryption envelopes; the on-wire sync format (ADR-0005).
-- **Why hard to reverse:** the layout is what users copy, zip, and sync; readers must stay forward-tolerant. Migration needs explicit format versioning.
+- **Why hard to reverse:** the layout is what users copy, zip, and sync; readers must stay forward-tolerant. Migration
+  needs explicit format versioning.
 
 ## Decision
 
@@ -47,45 +54,118 @@ my-project.aideon/
       tuple_index/  graph/  search/  vector/
 ```
 
-Everything under `model/` and `objects/` is canonical. Everything under `.aideon/runtime/` is derived: it may be deleted and rebuilt from the canonical files with no data loss.
+Everything under `model/` and `objects/` is canonical. Everything under `.aideon/runtime/` is derived: it may be deleted
+and rebuilt from the canonical files with no data loss.
 
-**Operation envelope** (canonical record; JSON Lines). The exact record shape — `op_id`, `actor_id`, `asserted_at`, the stable kebab `kind`, `format_version`, `deps`, the on-operation `origin`, and the typed `payload` — and its byte-exact serialisation are fixed by **[ADR-0038](./ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)** and the [canonical-JSON profile](../04-contracts/canonical-json.md); this ADR does not maintain a second example. The asserting identity is the logical **`actor_id`** alone — never a device identity; `device_id` is host-local and never enters a canonical record ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)).
+**Operation envelope** (canonical record; JSON Lines). The exact record shape — `op_id`, `actor_id`, `asserted_at`, the
+stable kebab `kind`, `format_version`, `deps`, the on-operation `origin`, and the typed `payload` — and its byte-exact
+serialisation are fixed by **[ADR-0038](./ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)** and the
+[canonical-JSON profile](../04-contracts/canonical-json.md); this ADR does not maintain a second example. The asserting
+identity is the logical **`actor_id`** alone — never a device identity; `device_id` is host-local and never enters a
+canonical record ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)).
 
 Rules:
 
 - **Append-only, auditable, replayable.** New facts are new ops; nothing is mutated in place.
-- **Schema lives in the op stream** (`schema.upsert` / `UpsertMetamodelBatch`, carrying **authored, unflattened** definitions) and is projected to `model/schema/`, never buried in code enums. **The op stream is authoritative; `model/schema/` is derived and reconstructible** — `authored/` (the authored source documents, present from M0) and, from M1, `effective/` (the compiler's flattened effective schema), never overwriting `authored/`. On disagreement the authored cache is **rebuilt** from the op log (and the effective cache **recompiled**, M1); a hand-edited cache is never trusted over the operations that define the schema's history ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md), authority rule).
+- **Schema lives in the op stream** (`schema.upsert` / `UpsertMetamodelBatch`, carrying **authored, unflattened**
+  definitions) and is projected to `model/schema/`, never buried in code enums. **The op stream is authoritative;
+  `model/schema/` is derived and reconstructible** — `authored/` (the authored source documents, present from M0) and,
+  from M1, `effective/` (the compiler's flattened effective schema), never overwriting `authored/`. On disagreement the
+  authored cache is **rebuilt** from the op log (and the effective cache **recompiled**, M1); a hand-edited cache is
+  never trusted over the operations that define the schema's history
+  ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md), authority rule).
 - **Canonical writes use temp-file-plus-rename**; op segments are sealed before export.
-- `manifest.json` carries `workspace_format_version` and `metamodel_package_version`; readers are forward-tolerant where sensible and reject formats newer than they understand with a clear error.
+- `manifest.json` carries `workspace_format_version` and `metamodel_package_version`; readers are forward-tolerant where
+  sensible and reject formats newer than they understand with a clear error.
 
 ### `manifest.json` fields (format v1)
 
-The root descriptor. Required: `workspace_format_version` (integer), `metamodel_package_version` (integer — the **authored** schema-as-data package version in force, not a compiled-schema version; M0 has no compiler), `workspace_id` (UUID string, minted once and never regenerated), `partition_id` (UUID string, a **separate** mint from `workspace_id` — the sole permitted data-isolation namespace for the twin; the manifest is **authoritative** for it, the op log for its history; every operation must carry exactly this partition and `aideon_partitions` is a derived projection initialised from it — see [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)), `created_at` (RFC 3339 UTC). Optional with defaults: `created_by_actor_id` (the logical [actor](../05-modules/mneme/identifier-generation-and-provenance.md) that created the workspace; never a device identifier), `hash_algorithm` (default `"sha256"`), `segment_seal_max_bytes` (default `8388608`), `segment_seal_max_age_secs` (default `86400`), `feature_flags` (object, default `{}`, safely ignorable), `required_features` (array, default `[]` — features the reader **must** support to open read-write; an unrecognised entry refuses read-write, the gate by which later milestones such as Themis access policy prevent an older build silently misinterpreting their workspaces). Unknown top-level keys are ignored, not rejected, so a newer minor format stays readable. The complete field table, the workspace/actor identifier formats, and the maximum supported versions (`MAX_WORKSPACE_FORMAT_VERSION = 1`, `MAX_METAMODEL_PACKAGE_VERSION = 1` at the v1 baseline) are specified in [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md). `workspace_id` is canonical and travels with the workspace; `device_id` is host-local derived state, never recorded in the manifest or any canonical file.
+The root descriptor. Required: `workspace_format_version` (integer), `metamodel_package_version` (integer — the
+**authored** schema-as-data package version in force, not a compiled-schema version; M0 has no compiler), `workspace_id`
+(UUID string, minted once and never regenerated), `partition_id` (UUID string, a **separate** mint from `workspace_id` —
+the sole permitted data-isolation namespace for the twin; the manifest is **authoritative** for it, the op log for its
+history; every operation must carry exactly this partition and `aideon_partitions` is a derived projection initialised
+from it — see [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)), `created_at`
+(RFC 3339 UTC). Optional with defaults: `created_by_actor_id` (the logical
+[actor](../05-modules/mneme/identifier-generation-and-provenance.md) that created the workspace; never a device
+identifier), `hash_algorithm` (default `"sha256"`), `segment_seal_max_bytes` (default `8388608`),
+`segment_seal_max_age_secs` (default `86400`), `feature_flags` (object, default `{}`, safely ignorable),
+`required_features` (array, default `[]` — features the reader **must** support to open read-write; an unrecognised
+entry refuses read-write, the gate by which later milestones such as Themis access policy prevent an older build
+silently misinterpreting their workspaces). Unknown top-level keys are ignored, not rejected, so a newer minor format
+stays readable. The complete field table, the workspace/actor identifier formats, and the maximum supported versions
+(`MAX_WORKSPACE_FORMAT_VERSION = 1`, `MAX_METAMODEL_PACKAGE_VERSION = 1` at the v1 baseline) are specified in
+[workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md). `workspace_id` is canonical
+and travels with the workspace; `device_id` is host-local derived state, never recorded in the manifest or any canonical
+file.
 
 ### Durability rules
 
-The portability rules above leave four durability concerns implicit. They are fixed here because they govern what users copy, zip, and sync, and a reader on an older build must behave predictably against a newer-format workspace.
+The portability rules above leave four durability concerns implicit. They are fixed here because they govern what users
+copy, zip, and sync, and a reader on an older build must behave predictably against a newer-format workspace.
 
-- **Single-writer concurrent access.** A workspace is opened for writing by **at most one process at a time**, enforced by a **non-blocking exclusive operating-system advisory lock held on an open file handle** at `.aideon/runtime/locks/workspace.lock`, taken before the single-writer actor starts ([storage-trait-and-engine](../05-modules/mneme/storage-trait-and-engine.md)). Acquisition itself is the liveness test: the OS releases the lock automatically when the holder exits (crash included), so a second opener that acquires it proves no cooperating writer remains, and one that cannot acquire it opens **read-only** or refuses — there is no PID/identity liveness probe. The lock-file contents are best-effort diagnostics only, never the liveness test, and the file is not deleted on close. The lock lives under `.aideon/runtime/` (host-local, never copied/zipped/synced). Where a filesystem's locking or atomic-write semantics cannot be trusted, the workspace opens **read-only** — there is **no ordinary force-write bypass**; the supported path is to copy the workspace to a supported local filesystem. This makes the single-writer constraint of [ADR-0004](./ADR-0004-storage-engine-abstraction.md) a property of the **workspace on disk**, not only of the in-process queue. The mechanism is specified in [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md).
+- **Single-writer concurrent access.** A workspace is opened for writing by **at most one process at a time**, enforced
+  by a **non-blocking exclusive operating-system advisory lock held on an open file handle** at
+  `.aideon/runtime/locks/workspace.lock`, taken before the single-writer actor starts
+  ([storage-trait-and-engine](../05-modules/mneme/storage-trait-and-engine.md)). Acquisition itself is the liveness
+  test: the OS releases the lock automatically when the holder exits (crash included), so a second opener that acquires
+  it proves no cooperating writer remains, and one that cannot acquire it opens **read-only** or refuses — there is no
+  PID/identity liveness probe. The lock-file contents are best-effort diagnostics only, never the liveness test, and the
+  file is not deleted on close. The lock lives under `.aideon/runtime/` (host-local, never copied/zipped/synced). Where
+  a filesystem's locking or atomic-write semantics cannot be trusted, the workspace opens **read-only** — there is **no
+  ordinary force-write bypass**; the supported path is to copy the workspace to a supported local filesystem. This makes
+  the single-writer constraint of [ADR-0004](./ADR-0004-storage-engine-abstraction.md) a property of the **workspace on
+  disk**, not only of the in-process queue. The mechanism is specified in
+  [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md).
 
-- **Op-segment sealing.** Operations are appended to the loose segment `current.ops.jsonl`. A segment is **sealed** — closed, fsync'd, and renamed to a monotonic numbered name (`000001.ops.jsonl`) — when it reaches a size or age threshold, or on an explicit checkpoint or export. A sealed segment is **immutable**: it is never appended to or rewritten, only superseded by the next loose segment. Only the trailing loose segment can ever be incomplete after a crash; every sealed segment is whole, which is what lets a reader trust all-but-the-tail without re-validating the whole log on every open. The exact sealing thresholds are provisional configuration; that a sealed segment is immutable and only the loose tail is mutable is the invariant.
+- **Op-segment sealing.** Operations are appended to the loose segment `current.ops.jsonl`. A segment is **sealed** —
+  closed, fsync'd, and renamed to a monotonic numbered name (`000001.ops.jsonl`) — when it reaches a size or age
+  threshold, or on an explicit checkpoint or export. A sealed segment is **immutable**: it is never appended to or
+  rewritten, only superseded by the next loose segment. Only the trailing loose segment can ever be incomplete after a
+  crash; every sealed segment is whole, which is what lets a reader trust all-but-the-tail without re-validating the
+  whole log on every open. The exact sealing thresholds are provisional configuration; that a sealed segment is
+  immutable and only the loose tail is mutable is the invariant.
 
-- **Format forward-compatibility.** `manifest.json` carries `workspace_format_version` as an integer. The rule a reader follows on open is **refuse-or-degrade**, never silently misinterpret:
+- **Format forward-compatibility.** `manifest.json` carries `workspace_format_version` as an integer. The rule a reader
+  follows on open is **refuse-or-degrade**, never silently misinterpret:
   - **Equal version** — open normally.
-  - **Older workspace, newer reader** — open and, where a one-way migration is needed, perform it (forward-only; [ADR-0017](./ADR-0017-contract-and-dto-versioning.md)).
-  - **Newer workspace, older reader** — if the format major version exceeds what the build understands, refuse the open with a clear `WORKSPACE_FORMAT_TOO_NEW` diagnostic ([ADR-0016](./ADR-0016-error-envelope-rfc9457.md)), mirroring the `SCHEMA_TOO_NEW` rule for schema versions ([failure-modes](../05-modules/mneme/failure-modes.md)). A reader degrades — opens read-only and ignores fields it does not recognise — only when the newer format declares itself backward-compatible at that major version. A reader never partially interprets a structure it does not fully understand and then writes to it.
+  - **Older workspace, newer reader** — open and, where a one-way migration is needed, perform it (forward-only;
+    [ADR-0017](./ADR-0017-contract-and-dto-versioning.md)).
+  - **Newer workspace, older reader** — if the format major version exceeds what the build understands, refuse the open
+    with a clear `WORKSPACE_FORMAT_TOO_NEW` diagnostic ([ADR-0016](./ADR-0016-error-envelope-rfc9457.md)), mirroring the
+    `SCHEMA_TOO_NEW` rule for schema versions ([failure-modes](../05-modules/mneme/failure-modes.md)). A reader degrades
+    — opens read-only and ignores fields it does not recognise — only when the newer format declares itself
+    backward-compatible at that major version. A reader never partially interprets a structure it does not fully
+    understand and then writes to it.
 
 - **Integrity checks on canonical files.** Canonical files are integrity-checkable without a side database:
-  - **Blobs are self-checksumming** — the `objects/sha256/<hash>` path _is_ the checksum; re-hashing the bytes detects corruption with no separate digest to keep in sync ([ADR-0003](./ADR-0003-content-addressed-object-store.md)).
-  - **A sealed op segment carries a trailing checksum** (BLAKE3 over the segment's complete records, in file order, excluding the checksum line itself) so a sealed segment can be verified whole on open; the loose segment carries no trailing checksum and is validated by record framing up to the last complete record. A sealed segment that fails its checksum is detected loss — the workspace refuses a read-write open and the operations are recovered from a redundant copy (export package, sync peer) or reported with their exact extent, never silently skipped ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)).
-  - **An export package carries a footer checksum** (BLAKE3 over the op records) so a transferred package is verified before ingest ([export-import-replay](../05-modules/mneme/export-import-replay.md)). The hash family is versioned by directory (`objects/sha256/`) so a second algorithm can coexist later ([ADR-0003](./ADR-0003-content-addressed-object-store.md)).
+  - **Blobs are self-checksumming** — the `objects/sha256/<hash>` path _is_ the checksum; re-hashing the bytes detects
+    corruption with no separate digest to keep in sync ([ADR-0003](./ADR-0003-content-addressed-object-store.md)).
+  - **A sealed op segment carries a trailing checksum** (BLAKE3 over the segment's complete records, in file order,
+    excluding the checksum line itself) so a sealed segment can be verified whole on open; the loose segment carries no
+    trailing checksum and is validated by record framing up to the last complete record. A sealed segment that fails its
+    checksum is detected loss — the workspace refuses a read-write open and the operations are recovered from a
+    redundant copy (export package, sync peer) or reported with their exact extent, never silently skipped
+    ([workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)).
+  - **An export package carries a footer checksum** (BLAKE3 over the op records) so a transferred package is verified
+    before ingest ([export-import-replay](../05-modules/mneme/export-import-replay.md)). The hash family is versioned by
+    directory (`objects/sha256/`) so a second algorithm can coexist later
+    ([ADR-0003](./ADR-0003-content-addressed-object-store.md)).
 
 ## Consequences
 
 - A workspace opens locally with no server and no pre-existing runtime cache.
-- Deleting `.aideon/runtime/` is always safe; "rebuild runtime from workspace" is a first-class operation ([ADR-0004](./ADR-0004-storage-engine-abstraction.md)).
+- Deleting `.aideon/runtime/` is always safe; "rebuild runtime from workspace" is a first-class operation
+  ([ADR-0004](./ADR-0004-storage-engine-abstraction.md)).
 - `.aideon/runtime/` must be excluded from Git, sync tools, and package export.
-- The HLC in each op gives stable causal ordering for offline edits and later merge ([ADR-0005](./ADR-0005-sync-and-conflict-model.md)).
-- The op envelope schema is published under [`../04-contracts/CONTRACTS-AND-SCHEMAS.md`](../04-contracts/CONTRACTS-AND-SCHEMAS.md).
-- Segment-sealing policy (size/age/explicit) is documented in [`../05-modules/mneme/RUNTIME-AND-ENGINE.md`](../05-modules/mneme/RUNTIME-AND-ENGINE.md).
-- The mechanisms behind the durability rules — locking under concurrent open, append safety on the loose segment, the verify routine, orphaned-blob garbage collection, and recovery from a torn write — are documented operationally in [`../05-modules/mneme/workspace-integrity-and-recovery.md`](../05-modules/mneme/workspace-integrity-and-recovery.md); the failure _taxonomy_ those mechanisms serve is [`../05-modules/mneme/failure-modes.md`](../05-modules/mneme/failure-modes.md).
+- The HLC in each op gives stable causal ordering for offline edits and later merge
+  ([ADR-0005](./ADR-0005-sync-and-conflict-model.md)).
+- The op envelope schema is published under
+  [`../04-contracts/CONTRACTS-AND-SCHEMAS.md`](../04-contracts/CONTRACTS-AND-SCHEMAS.md).
+- Segment-sealing policy (size/age/explicit) is documented in
+  [`../05-modules/mneme/RUNTIME-AND-ENGINE.md`](../05-modules/mneme/RUNTIME-AND-ENGINE.md).
+- The mechanisms behind the durability rules — locking under concurrent open, append safety on the loose segment, the
+  verify routine, orphaned-blob garbage collection, and recovery from a torn write — are documented operationally in
+  [`../05-modules/mneme/workspace-integrity-and-recovery.md`](../05-modules/mneme/workspace-integrity-and-recovery.md);
+  the failure _taxonomy_ those mechanisms serve is
+  [`../05-modules/mneme/failure-modes.md`](../05-modules/mneme/failure-modes.md).

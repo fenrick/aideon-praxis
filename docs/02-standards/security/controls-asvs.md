@@ -1,8 +1,13 @@
 # Controls — OWASP ASVS 5.0 Mapping
 
-The verification controls for each security concern, mapped to **OWASP ASVS 5.0** chapters. ASVS is the checklist a release is verified against ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)); this file is where the [threat model](./threat-model.md) mitigations become testable commitments. The specific control selections are provisional and refined per release ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md) follow-up).
+The verification controls for each security concern, mapped to **OWASP ASVS 5.0** chapters. ASVS is the checklist a
+release is verified against ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)); this file is where the
+[threat model](./threat-model.md) mitigations become testable commitments. The specific control selections are
+provisional and refined per release ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md) follow-up).
 
-ASVS organises requirements by chapter (V1 Architecture, V2 Authentication, … V8 Authorization, and so on). The product adopts the controls relevant to a desktop application with a single enforced IPC boundary; chapters that assume a web session or server tier apply only in the deferred hosted mode.
+ASVS organises requirements by chapter (V1 Architecture, V2 Authentication, … V8 Authorization, and so on). The product
+adopts the controls relevant to a desktop application with a single enforced IPC boundary; chapters that assume a web
+session or server tier apply only in the deferred hosted mode.
 
 ## Mapping by concern
 
@@ -22,17 +27,23 @@ ASVS organises requirements by chapter (V1 Architecture, V2 Authentication, … 
 
 ## How this is used
 
-- A release is verified against the rows above; a concern with no passing verification is a release blocker, not a known gap.
-- A new public interface or boundary change adds or updates the relevant row and its verification before merge ([CODING-STANDARDS.md §15](../CODING-STANDARDS.md#15-secure-coding)).
-- ASVS chapters that presuppose a hosted web tier (session management, browser CSRF) apply only when the hosted deployment lands ([ADR-0030](../../06-adrs/ADR-0030-governance-themis.md)); until then they are marked not-applicable to the desktop default, not silently skipped.
+- A release is verified against the rows above; a concern with no passing verification is a release blocker, not a known
+  gap.
+- A new public interface or boundary change adds or updates the relevant row and its verification before merge
+  ([CODING-STANDARDS.md §15](../CODING-STANDARDS.md#15-secure-coding)).
+- ASVS chapters that presuppose a hosted web tier (session management, browser CSRF) apply only when the hosted
+  deployment lands ([ADR-0030](../../06-adrs/ADR-0030-governance-themis.md)); until then they are marked not-applicable
+  to the desktop default, not silently skipped.
 
-OWASP Top 10 is retained as an informative risk lens behind these controls; ASVS supplies the testable requirements ([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)).
+OWASP Top 10 is retained as an informative risk lens behind these controls; ASVS supplies the testable requirements
+([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md)).
 
 ## References & standards
 
 _Normative:_
 
-- **OWASP ASVS 5.0** — Application Security Verification Standard. _([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md))_
+- **OWASP ASVS 5.0** — Application Security Verification Standard.
+  _([ADR-0023](../../06-adrs/ADR-0023-threat-model-stride-asvs.md))_
 
 _Informative:_
 

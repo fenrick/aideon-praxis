@@ -1,24 +1,40 @@
 # SQLite specification
 
-The schema of Mneme's default derived-runtime engine: the table families, WAL configuration, and the constraints that hold it together. SQLite is the **current default** derived-runtime cache behind Mneme's storage trait — not the datastore. The workspace folder is the datastore ([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)); this database is a rebuildable cache of it.
+The schema of Mneme's default derived-runtime engine: the table families, WAL configuration, and the constraints that
+hold it together. SQLite is the **current default** derived-runtime cache behind Mneme's storage trait — not the
+datastore. The workspace folder is the datastore
+([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)); this database is a rebuildable cache
+of it.
 
-> **Filename note.** This file is referenced as `SQLITE.md` (uppercase) because the repository host's filesystem is case-insensitive: a lowercase `sqlite.md` would collide with this name. Incoming cross-links point here, and this file carries the full content.
+> **Filename note.** This file is referenced as `SQLITE.md` (uppercase) because the repository host's filesystem is
+> case-insensitive: a lowercase `sqlite.md` would collide with this name. Incoming cross-links point here, and this file
+> carries the full content.
 >
-> **Scope.** Sections marked **(M0)** describe the schema as built ([#314](https://github.com/aideon-ai/aideon-desktop/pull/314)). Sections marked **(M1–M4)** are design intent for future milestones — not built, retained to guide schema evolution.
+> **Scope.** Sections marked **(M0)** describe the schema as built
+> ([#314](https://github.com/aideon-ai/aideon-desktop/pull/314)). Sections marked **(M1–M4)** are design intent for
+> future milestones — not built, retained to guide schema evolution.
 
 ---
 
 ## Position in the architecture
 
-The SQLite database is a **derived, same-host-only cache**. It is never synced, never committed to a workspace VCS repository, and is fully rebuildable from the canonical op log ([derived-runtime-and-projections](./derived-runtime-and-projections.md)). WAL files (`-wal`, `-shm`) and the engine state directory live under `.aideon/runtime/` on the host machine. Content-addressed binary objects live in `objects/sha256/` and are referenced by hash, never stored in the database ([content-addressed-blobs](./content-addressed-blobs.md)).
+The SQLite database is a **derived, same-host-only cache**. It is never synced, never committed to a workspace VCS
+repository, and is fully rebuildable from the canonical op log
+([derived-runtime-and-projections](./derived-runtime-and-projections.md)). WAL files (`-wal`, `-shm`) and the engine
+state directory live under `.aideon/runtime/` on the host machine. Content-addressed binary objects live in
+`objects/sha256/` and are referenced by hash, never stored in the database
+([content-addressed-blobs](./content-addressed-blobs.md)).
 
-The schema follows SQLite's official guidance for WAL mode and pragmas (SQLite official documentation), the normative reference for this engine's configuration.
+The schema follows SQLite's official guidance for WAL mode and pragmas (SQLite official documentation), the normative
+reference for this engine's configuration.
 
 ---
 
 ## Portability invariants
 
-The schema is written to be portable across the candidate engines and the optional hosted PostgreSQL adapter ([RUNTIME-AND-ENGINE](./RUNTIME-AND-ENGINE.md), [ADR-0004](../../06-adrs/ADR-0004-storage-engine-abstraction.md)). The rules (M0-relevant rows first; future-milestone rows noted):
+The schema is written to be portable across the candidate engines and the optional hosted PostgreSQL adapter
+([RUNTIME-AND-ENGINE](./RUNTIME-AND-ENGINE.md), [ADR-0004](../../06-adrs/ADR-0004-storage-engine-abstraction.md)). The
+rules (M0-relevant rows first; future-milestone rows noted):
 
 | Rule              | Detail                                                                                                          |
 | ----------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -35,24 +51,33 @@ The schema is written to be portable across the candidate engines and the option
 ## ID and time encoding
 
 - **IDs** are TEXT UUID strings (36 chars).
-- **HLC asserted time** is `INTEGER` — the packed `i64` from `Hlc::as_i64()` — on `asserted_at` (applied ops) and `last_hlc` (HLC state).
-- **(M1+) Valid time** is `INTEGER` microseconds since the Unix epoch on every column ending `_valid_from`, `_valid_to`, or `_as_of_valid_time`.
-- **(M1+) Scenario overlay** is a nullable `scenario_id` column on every table that participates in scenario reads. Baseline rows carry `scenario_id = NULL`; overlay rows carry the scenario UUID ([scenarios-and-layers](./scenarios-and-layers.md)).
-- **(M0)** M0 is single-partition per workspace. `partition_id` appears in `aideon_applied_ops` and `aideon_replay_head` (scoping op ingest and replay); the actor, object, meta, and partition tables use single-column PKs because the partition identity is established at the workspace level.
+- **HLC asserted time** is `INTEGER` — the packed `i64` from `Hlc::as_i64()` — on `asserted_at` (applied ops) and
+  `last_hlc` (HLC state).
+- **(M1+) Valid time** is `INTEGER` microseconds since the Unix epoch on every column ending `_valid_from`, `_valid_to`,
+  or `_as_of_valid_time`.
+- **(M1+) Scenario overlay** is a nullable `scenario_id` column on every table that participates in scenario reads.
+  Baseline rows carry `scenario_id = NULL`; overlay rows carry the scenario UUID
+  ([scenarios-and-layers](./scenarios-and-layers.md)).
+- **(M0)** M0 is single-partition per workspace. `partition_id` appears in `aideon_applied_ops` and `aideon_replay_head`
+  (scoping op ingest and replay); the actor, object, meta, and partition tables use single-column PKs because the
+  partition identity is established at the workspace level.
 
 ---
 
 ## Schema version **(M0)**
 
-`RUNTIME_SCHEMA_VERSION = 1` (declared in `crates/mneme_store/src/projection.rs`). The store checks this on open; a mismatch forces a full rebuild rather than an incremental tail replay.
+`RUNTIME_SCHEMA_VERSION = 1` (declared in `crates/mneme_store/src/projection.rs`). The store checks this on open; a
+mismatch forces a full rebuild rather than an incremental tail replay.
 
-The schema is created by `init_schema()` via eight `CREATE TABLE IF NOT EXISTS` statements on every `open_runtime()` call. There are no migration files — the derived runtime is a rebuildable cache wiped and recreated on demand.
+The schema is created by `init_schema()` via eight `CREATE TABLE IF NOT EXISTS` statements on every `open_runtime()`
+call. There are no migration files — the derived runtime is a rebuildable cache wiped and recreated on demand.
 
 ---
 
 ## M0 foundation tables
 
-All eight tables are **M0-owned**. Deleting `.aideon/runtime/` and reopening the workspace recreates all rows from `model/ops/`, `model/schema/authored/`, and the content-addressed object store.
+All eight tables are **M0-owned**. Deleting `.aideon/runtime/` and reopening the workspace recreates all rows from
+`model/ops/`, `model/schema/authored/`, and the content-addressed object store.
 
 ### `aideon_meta`
 
@@ -83,7 +108,8 @@ CREATE TABLE IF NOT EXISTS aideon_partitions (
 
 ### `aideon_actors`
 
-Actor registry. Single-column PK because M0 is single-partition per workspace; partition identity is established at the manifest level.
+Actor registry. Single-column PK because M0 is single-partition per workspace; partition identity is established at the
+manifest level.
 
 ```sql
 CREATE TABLE IF NOT EXISTS aideon_actors (
@@ -96,7 +122,8 @@ CREATE TABLE IF NOT EXISTS aideon_actors (
 
 ### `aideon_applied_ops`
 
-Applied-operation log projection — one row per operation applied from `model/ops/`. The canonical source of truth is the segment files; this table is derived.
+Applied-operation log projection — one row per operation applied from `model/ops/`. The canonical source of truth is the
+segment files; this table is derived.
 
 ```sql
 CREATE TABLE IF NOT EXISTS aideon_applied_ops (
@@ -108,11 +135,13 @@ CREATE TABLE IF NOT EXISTS aideon_applied_ops (
 );
 ```
 
-Replay idempotency: the upsert uses `ON CONFLICT DO NOTHING` so replaying the same `(partition_id, op_id)` with identical digest is a no-op (`DuplicateNoop`). A digest mismatch is a `DuplicateDigestConflict` error.
+Replay idempotency: the upsert uses `ON CONFLICT DO NOTHING` so replaying the same `(partition_id, op_id)` with
+identical digest is a no-op (`DuplicateNoop`). A digest mismatch is a `DuplicateDigestConflict` error.
 
 ### `aideon_schema_docs`
 
-Authored schema-document registry — one row per `(package_id, version)` pair materialised to `model/schema/authored/`. The op log is authoritative; on rebuild this table is populated before the file system is written.
+Authored schema-document registry — one row per `(package_id, version)` pair materialised to `model/schema/authored/`.
+The op log is authoritative; on rebuild this table is populated before the file system is written.
 
 ```sql
 CREATE TABLE IF NOT EXISTS aideon_schema_docs (
@@ -126,7 +155,8 @@ CREATE TABLE IF NOT EXISTS aideon_schema_docs (
 
 ### `aideon_objects`
 
-Object index for the content-addressed blob store (`objects/sha256/`). A row here means the object exists durably on disk; the blob itself is never stored in the database.
+Object index for the content-addressed blob store (`objects/sha256/`). A row here means the object exists durably on
+disk; the blob itself is never stored in the database.
 
 ```sql
 CREATE TABLE IF NOT EXISTS aideon_objects (
@@ -149,11 +179,15 @@ CREATE TABLE IF NOT EXISTS aideon_replay_head (
 );
 ```
 
-The empty-log frontier is `(segment_seqno = 1, byte_offset = 0)`. An incremental tail replay resumes from this cursor without re-reading the full log.
+The empty-log frontier is `(segment_seqno = 1, byte_offset = 0)`. An incremental tail replay resumes from this cursor
+without re-reading the full log.
 
 ### `aideon_hlc_state`
 
-Per-partition HLC watermark — the monotonicity anchor for `Hlc::now()`. Updated after each applied operation. On rebuild, restored to `max(asserted_at)` across all canonical operations in the partition before write-enable. Never authoritative over the op log ([bitemporal-and-hlc](./bitemporal-and-hlc.md), [ADR-0022](../../06-adrs/ADR-0022-hlc-clock-model.md)).
+Per-partition HLC watermark — the monotonicity anchor for `Hlc::now()`. Updated after each applied operation. On
+rebuild, restored to `max(asserted_at)` across all canonical operations in the partition before write-enable. Never
+authoritative over the op log ([bitemporal-and-hlc](./bitemporal-and-hlc.md),
+[ADR-0022](../../06-adrs/ADR-0022-hlc-clock-model.md)).
 
 ```sql
 CREATE TABLE IF NOT EXISTS aideon_hlc_state (
@@ -174,19 +208,24 @@ PRAGMA synchronous  = NORMAL;
 PRAGMA foreign_keys = ON;
 ```
 
-WAL files (`praxis.sqlite-wal`, `praxis.sqlite-shm`) are co-located with the database file under `.aideon/runtime/`. They are same-host transient state — never synced, versioned, or exported ([derived-runtime-and-projections](./derived-runtime-and-projections.md)).
+WAL files (`praxis.sqlite-wal`, `praxis.sqlite-shm`) are co-located with the database file under `.aideon/runtime/`.
+They are same-host transient state — never synced, versioned, or exported
+([derived-runtime-and-projections](./derived-runtime-and-projections.md)).
 
 ---
 
 ## Secondary indexes **(M0)**
 
-None at M0. The eight foundation tables carry only their declared primary keys. Secondary indexes will be added as read-path access patterns are confirmed at M1 and beyond.
+None at M0. The eight foundation tables carry only their declared primary keys. Secondary indexes will be added as
+read-path access patterns are confirmed at M1 and beyond.
 
 ---
 
 ## `FoundationProjectionSnapshot` and the rebuild hash **(M0)**
 
-`crates/mneme_store/src/rebuild.rs` computes a `foundation_rebuild_hash` (BLAKE3-256, hex-encoded) over a `FoundationProjectionSnapshot` — a deterministic, canonical-JSON-ordered logical view of the eight M0 tables. The snapshot contains:
+`crates/mneme_store/src/rebuild.rs` computes a `foundation_rebuild_hash` (BLAKE3-256, hex-encoded) over a
+`FoundationProjectionSnapshot` — a deterministic, canonical-JSON-ordered logical view of the eight M0 tables. The
+snapshot contains:
 
 - `workspace_id` (String)
 - `partitions` (Vec\<PartitionSnapshot\>) — each carrying `applied_ops` (Vec of digest strings) and `replay_head`
@@ -194,13 +233,17 @@ None at M0. The eight foundation tables carry only their declared primary keys. 
 - `actors` (Vec\<ActorSnapshot\>)
 - `objects` (Vec\<ObjectSnapshot\>)
 
-This hash is the proof carried in the `ready_read_write` lifecycle event ([ADR-0040](../../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)): the readiness signal cannot be faked because it must carry the hash computed over the actual projection state, not emitted speculatively before the projection runs.
+This hash is the proof carried in the `ready_read_write` lifecycle event
+([ADR-0040](../../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)): the readiness signal
+cannot be faked because it must carry the hash computed over the actual projection state, not emitted speculatively
+before the projection runs.
 
 ---
 
 ## Forward-looking schema **(M1–M4)**
 
-The following table families are design intent for future milestones — not built at M0, retained to guide schema evolution deliberately.
+The following table families are design intent for future milestones — not built at M0, retained to guide schema
+evolution deliberately.
 
 ### M1 — fact resolution + semantic validation
 
@@ -213,7 +256,10 @@ The following table families are design intent for future milestones — not bui
 | `aideon_metamodel_versions`                                     | Applied metamodel-version log                                                                                           |
 | `aideon_edge_type_rules`                                        | Endpoint allow-lists per edge type                                                                                      |
 
-Typed property-fact tables share this bitemporal PK pattern (`partition_id`, `entity_id`, `field_id`, `valid_from`, `asserted_at_hlc`, `op_id`) and common columns (`scenario_id` nullable, `valid_to` nullable, `valid_bucket`, `layer`, `is_tombstone`, `<value_col>`). The PK covers both time axes plus `op_id` for deterministic resolution ([bitemporal-and-hlc](./bitemporal-and-hlc.md)).
+Typed property-fact tables share this bitemporal PK pattern (`partition_id`, `entity_id`, `field_id`, `valid_from`,
+`asserted_at_hlc`, `op_id`) and common columns (`scenario_id` nullable, `valid_to` nullable, `valid_bucket`, `layer`,
+`is_tombstone`, `<value_col>`). The PK covers both time axes plus `op_id` for deterministic resolution
+([bitemporal-and-hlc](./bitemporal-and-hlc.md)).
 
 ### M2–M3 — resolution, integrity, analytics
 
@@ -232,7 +278,8 @@ Typed property-fact tables share this bitemporal PK pattern (`partition_id`, `en
 | `aideon_jobs`       | Persistent job queue; lease, attempts, dedupe, backoff |
 | `aideon_job_events` | Per-job event log                                      |
 
-The job-queue shape mirrors the durable run-ledger discipline [Continuum](../continuum/README.md) owns; M4 supersedes the M0 in-process job runner without changing the `AcceptedJob`/`RunEvent` contract.
+The job-queue shape mirrors the durable run-ledger discipline [Continuum](../continuum/README.md) owns; M4 supersedes
+the M0 in-process job runner without changing the `AcceptedJob`/`RunEvent` contract.
 
 ---
 

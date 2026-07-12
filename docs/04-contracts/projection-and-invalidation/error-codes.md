@@ -1,6 +1,8 @@
 # Projection error codes
 
-The error codes raised by the projection and invalidation contract. Each is carried in the standard [RFC 9457 error envelope](../ipc/error-envelope.md) with a category and recovery hint; this file records each code's trigger and its envelope category.
+The error codes raised by the projection and invalidation contract. Each is carried in the standard
+[RFC 9457 error envelope](../ipc/error-envelope.md) with a category and recovery hint; this file records each code's
+trigger and its envelope category.
 
 ---
 
@@ -12,7 +14,10 @@ The error codes raised by the projection and invalidation contract. Each is carr
 | `PROJECTION_CONTEXT_MISMATCH`         | validation | none     | Read context is outside the projection's declared [context dimensions](./projection-descriptor.md).                                       |
 | `INVALIDATION_EMIT_FAILED`            | internal   | report   | Invalidation event could not be recorded; the write is not acknowledged as complete ([invalidation-events.md](./invalidation-events.md)). |
 
-`PROJECTION_STALE_THRESHOLD_EXCEEDED` is `transient` because the lagging projection is expected to converge; the renderer may retry the read once the staleness budget recovers. The two `internal` codes are genuine faults captured for diagnostics. The two `validation` codes signal a malformed descriptor or a mis-keyed read, neither of which a blind retry fixes.
+`PROJECTION_STALE_THRESHOLD_EXCEEDED` is `transient` because the lagging projection is expected to converge; the
+renderer may retry the read once the staleness budget recovers. The two `internal` codes are genuine faults captured for
+diagnostics. The two `validation` codes signal a malformed descriptor or a mis-keyed read, neither of which a blind
+retry fixes.
 
 ## Related documents
 

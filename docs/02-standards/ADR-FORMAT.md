@@ -1,8 +1,10 @@
 # ADR Format
 
-Architecture Decision Records capture significant, lasting decisions about architecture, structure, contracts, persistence identity, and operational posture. They record the context, the decision, and the downstream consequences.
+Architecture Decision Records capture significant, lasting decisions about architecture, structure, contracts,
+persistence identity, and operational posture. They record the context, the decision, and the downstream consequences.
 
-Every ADR that affects architecture, contracts, workflow semantics, persistence identities, the workspace format, module boundaries, or security posture must be reviewed against [`DESIGN-GOVERNANCE.md`](./DESIGN-GOVERNANCE.md).
+Every ADR that affects architecture, contracts, workflow semantics, persistence identities, the workspace format, module
+boundaries, or security posture must be reviewed against [`DESIGN-GOVERNANCE.md`](./DESIGN-GOVERNANCE.md).
 
 ## Naming
 
@@ -42,4 +44,5 @@ The **Governance Framing** section must state:
 
 > If an ADR makes a durable decision without classifying the seam or naming the future pressure, it is not finished.
 
-Status changes are PR-reviewed, never edited ad hoc on `main`. Track status on the board in [`../06-adrs/ADRS.md`](../06-adrs/ADRS.md).
+Status changes are PR-reviewed, never edited ad hoc on `main`. Track status on the board in
+[`../06-adrs/ADRS.md`](../06-adrs/ADRS.md).

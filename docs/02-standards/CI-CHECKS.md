@@ -1,12 +1,18 @@
 # CI checks
 
-The single list of gates a change must pass before it merges: what each gate asserts, the command that runs it, and where the rule it enforces is defined. This is the doc to open to answer "what does CI actually check, and how do I run that check locally?" It aggregates the gates the existing scripts and workflow already run ([`package.json`](../../package.json) scripts; [`.github/workflows/pipeline.yml`](../../.github/workflows/pipeline.yml)); it does not invent new policy. The rules themselves live in [CODING-STANDARDS.md](./CODING-STANDARDS.md) and [TESTING-STRATEGY.md](./testing/README.md).
+The single list of gates a change must pass before it merges: what each gate asserts, the command that runs it, and
+where the rule it enforces is defined. This is the doc to open to answer "what does CI actually check, and how do I run
+that check locally?" It aggregates the gates the existing scripts and workflow already run
+([`package.json`](../../package.json) scripts;
+[`.github/workflows/pipeline.yml`](../../.github/workflows/pipeline.yml)); it does not invent new policy. The rules
+themselves live in [CODING-STANDARDS.md](./CODING-STANDARDS.md) and [TESTING-STRATEGY.md](./testing/README.md).
 
 ---
 
 ## The aggregate gate
 
-`pnpm run ci` runs the whole renderer-plus-host gate set in fail-fast order and is the one command to run before pushing ([CODING-STANDARDS.md §17](./CODING-STANDARDS.md#17-commit-hygiene-and-ci)). It composes two halves:
+`pnpm run ci` runs the whole renderer-plus-host gate set in fail-fast order and is the one command to run before pushing
+([CODING-STANDARDS.md §17](./CODING-STANDARDS.md#17-commit-hygiene-and-ci)). It composes two halves:
 
 ```sh
 pnpm run ci          # = node:ci && host:ci
@@ -14,18 +20,29 @@ pnpm run node:ci     # design:guard, node:lint, node:typecheck, node:test, node:
 pnpm run host:ci     # host:format:check, host:lint, host:check, host:test
 ```
 
-CI runs the renderer and Rust halves as parallel jobs, with lint and typecheck ahead of the heavier test and build jobs so a quick failure fails fast ([`.github/workflows/pipeline.yml`](../../.github/workflows/pipeline.yml); [CODING-STANDARDS.md §17](./CODING-STANDARDS.md#17-commit-hygiene-and-ci)). A pre-commit hook (Husky + lint-staged) runs format and lint on changed files locally so the same rules are met before the commit lands; a pre-push hook runs the full `pnpm run ci`.
+CI runs the renderer and Rust halves as parallel jobs, with lint and typecheck ahead of the heavier test and build jobs
+so a quick failure fails fast ([`.github/workflows/pipeline.yml`](../../.github/workflows/pipeline.yml);
+[CODING-STANDARDS.md §17](./CODING-STANDARDS.md#17-commit-hygiene-and-ci)). A pre-commit hook (Husky + lint-staged) runs
+format and lint on changed files locally so the same rules are met before the commit lands; a pre-push hook runs the
+full `pnpm run ci`.
 
 ---
 
 ## Pre-validation before you push
 
-`pnpm run ci` is the required local gate before pushing — do not rely on CI to catch what a local run would. Two gate families are **not** in the `ci` chain and must be run (or reasoned about) explicitly when a change touches their surface:
+`pnpm run ci` is the required local gate before pushing — do not rely on CI to catch what a local run would. Two gate
+families are **not** in the `ci` chain and must be run (or reasoned about) explicitly when a change touches their
+surface:
 
-- **In-window e2e (Tier-1/Tier-2)** — the WebKitGTK/Tauri gates below run only in CI (they need a display + `tauri-driver`). They are **not** in `pnpm run ci`, so a change to the IPC surface, capabilities, or shell regions can pass `ci` locally and still fail the e2e gate. Reason about them before pushing, or accept the CI round-trip.
-- **Coverage / Storybook story tests** — run `node:test:coverage`, `host:coverage`, `test:stories` when the change warrants.
+- **In-window e2e (Tier-1/Tier-2)** — the WebKitGTK/Tauri gates below run only in CI (they need a display +
+  `tauri-driver`). They are **not** in `pnpm run ci`, so a change to the IPC surface, capabilities, or shell regions can
+  pass `ci` locally and still fail the e2e gate. Reason about them before pushing, or accept the CI round-trip.
+- **Coverage / Storybook story tests** — run `node:test:coverage`, `host:coverage`, `test:stories` when the change
+  warrants.
 
-**Keep enumerated gates in sync — this is the rule that most often bites.** Several gates assert a _live artefact matches an enumeration_; adding to the artefact without adding to the enumeration is a latent failure that only surfaces when that (often non-required) gate next runs:
+**Keep enumerated gates in sync — this is the rule that most often bites.** Several gates assert a _live artefact
+matches an enumeration_; adding to the artefact without adding to the enumeration is a latent failure that only surfaces
+when that (often non-required) gate next runs:
 
 | When you add…                        | Also update                                                                                                                                                         | Enforced by                                           |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
@@ -80,12 +97,28 @@ If a gate enumerates a surface, treat "extend the surface" and "extend the gate"
 
 ## Schema and contract breaking-change detection (design intent)
 
-The corpus has one versioning policy — SemVer 2.0.0 across DTOs, contracts, crates, and metamodel packages ([ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md)) — and one drift check that catches _accidental_ change to the IPC manifest shape. It does **not** yet have a gate that decides, from the diff, whether an _intentional_ contract or metamodel change is breaking and therefore demands a major-version bump. That gate is recorded here as **design intent** (it is not built; [DOCUMENTATION-STANDARD §12](./DOCUMENTATION-STANDARD.md)):
+The corpus has one versioning policy — SemVer 2.0.0 across DTOs, contracts, crates, and metamodel packages
+([ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md)) — and one drift check that catches _accidental_ change
+to the IPC manifest shape. It does **not** yet have a gate that decides, from the diff, whether an _intentional_
+contract or metamodel change is breaking and therefore demands a major-version bump. That gate is recorded here as
+**design intent** (it is not built; [DOCUMENTATION-STANDARD §12](./DOCUMENTATION-STANDARD.md)):
 
-- **DTO / IPC breaking-change detection.** Compare the IPC manifest and DTO schemas on a branch against `main`; classify each change as additive (minor — new optional field, new command, new enum variant behind explicit handling) or incompatible (major — removed/renamed field, removed enum variant, changed type or meaning, renamed stable error code). An incompatible change with no major-version bump fails the gate. This makes the existing drift check ([boundary-and-contract-tests.md](./testing/boundary-and-contract-tests.md)) the _trigger_ to consider a version bump into an _enforced_ one ([ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md), consequences).
-- **Metamodel breaking-change detection.** Compare the metamodel package (`metamodel_version` and the declared types, slots, and rules) against the prior committed version; classify the diff by the migration op-types ([schema-migration-patterns.md](../05-modules/mneme/schema-migration-patterns.md)): add type / add optional slot / widen / deprecate are minor; add required slot / narrow / rename / remove are major and must carry a version bump and a documented data migration. A major change without the bump, or a narrow with no accompanying migration, fails the gate.
+- **DTO / IPC breaking-change detection.** Compare the IPC manifest and DTO schemas on a branch against `main`; classify
+  each change as additive (minor — new optional field, new command, new enum variant behind explicit handling) or
+  incompatible (major — removed/renamed field, removed enum variant, changed type or meaning, renamed stable error
+  code). An incompatible change with no major-version bump fails the gate. This makes the existing drift check
+  ([boundary-and-contract-tests.md](./testing/boundary-and-contract-tests.md)) the _trigger_ to consider a version bump
+  into an _enforced_ one ([ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md), consequences).
+- **Metamodel breaking-change detection.** Compare the metamodel package (`metamodel_version` and the declared types,
+  slots, and rules) against the prior committed version; classify the diff by the migration op-types
+  ([schema-migration-patterns.md](../05-modules/mneme/schema-migration-patterns.md)): add type / add optional slot /
+  widen / deprecate are minor; add required slot / narrow / rename / remove are major and must carry a version bump and
+  a documented data migration. A major change without the bump, or a narrow with no accompanying migration, fails the
+  gate.
 
-Both checks share one principle: CI can detect that a change _is_ breaking, but the policy for _how_ to version it remains SemVer, set by [ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md) and applied to schema by [ADR-0035](../06-adrs/ADR-0035-schema-migration-and-evolution.md). The gate enforces the policy; it does not replace it.
+Both checks share one principle: CI can detect that a change _is_ breaking, but the policy for _how_ to version it
+remains SemVer, set by [ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md) and applied to schema by
+[ADR-0035](../06-adrs/ADR-0035-schema-migration-and-evolution.md). The gate enforces the policy; it does not replace it.
 
 ---
 
@@ -93,11 +126,13 @@ Both checks share one principle: CI can detect that a change _is_ breaking, but 
 
 _Normative:_
 
-- **Semantic Versioning 2.0.0** — the breaking-change classification the detection gates enforce ([ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md)).
+- **Semantic Versioning 2.0.0** — the breaking-change classification the detection gates enforce
+  ([ADR-0017](../06-adrs/ADR-0017-contract-and-dto-versioning.md)).
 
 _Informative:_
 
-- Pact — **consumer-driven contracts**. The contract-test discipline the IPC drift check supports ([boundary-and-contract-tests.md](./testing/boundary-and-contract-tests.md)).
+- Pact — **consumer-driven contracts**. The contract-test discipline the IPC drift check supports
+  ([boundary-and-contract-tests.md](./testing/boundary-and-contract-tests.md)).
 
 ## Related documents
 

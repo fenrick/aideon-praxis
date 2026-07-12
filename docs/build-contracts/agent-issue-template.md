@@ -1,8 +1,12 @@
 # Agent-ready issue template
 
-The contract every `ready-for-agent` issue meets. An issue earns the [`ready-for-agent`](../agents/triage-labels.md) triage label only when an agent can complete it **from the issue alone** — clear acceptance criteria, named files, exact contracts, and no unresolved design question. "Implement according to the design docs" is not an agent-ready issue; it is a design task wearing an issue's clothes.
+The contract every `ready-for-agent` issue meets. An issue earns the [`ready-for-agent`](../agents/triage-labels.md)
+triage label only when an agent can complete it **from the issue alone** — clear acceptance criteria, named files, exact
+contracts, and no unresolved design question. "Implement according to the design docs" is not an agent-ready issue; it
+is a design task wearing an issue's clothes.
 
-This template is how a milestone build contract ([README](./README.md)) is decomposed into work an agent can take. Anything that requires a decision, a credential, or a judgement call is `ready-for-human`, not `ready-for-agent`.
+This template is how a milestone build contract ([README](./README.md)) is decomposed into work an agent can take.
+Anything that requires a decision, a credential, or a judgement call is `ready-for-human`, not `ready-for-agent`.
 
 ---
 
@@ -13,8 +17,8 @@ Copy this into the issue body. Every heading is required; "none" is a valid answ
 ```markdown
 ## Outcome
 
-The observable behaviour that must exist when this is done — one or two sentences,
-phrased as what a user or caller can now do.
+The observable behaviour that must exist when this is done — one or two sentences, phrased as what a user or caller can
+now do.
 
 ## Authoritative sources
 
@@ -33,13 +37,13 @@ The crates, modules, and files that may change. Name them. Anything not listed i
 
 ## Required contract changes
 
-Exact request/response/event/schema changes, or "none". A shape change is a versioned
-event (ADR-0017), never a silent edit.
+Exact request/response/event/schema changes, or "none". A shape change is a versioned event (ADR-0017), never a silent
+edit.
 
 ## Acceptance scenarios
 
-Given / when / then, with concrete values from the seed data (core-v1.json / baseline.yaml).
-Each scenario maps to a test.
+Given / when / then, with concrete values from the seed data (core-v1.json / baseline.yaml). Each scenario maps to a
+test.
 
 ## Tests to add
 
@@ -55,13 +59,13 @@ Behaviour the agent must NOT add — the common over-reach for this area.
 
 ## Constraints
 
-Security, dependency, performance, and boundary rules that apply
-(e.g. no renderer HTTP; no new ports; renderer reaches host only via typed IPC).
+Security, dependency, performance, and boundary rules that apply (e.g. no renderer HTTP; no new ports; renderer reaches
+host only via typed IPC).
 
 ## Dependencies
 
-Blocking issues or decisions. If a design question is open, this issue is not
-ready-for-agent — move it to ready-for-human with the question named.
+Blocking issues or decisions. If a design question is open, this issue is not ready-for-agent — move it to
+ready-for-human with the question named.
 
 ## Evidence required in the PR
 
@@ -72,7 +76,8 @@ Test output, fixture diff, and the doc/contract update that accompanies the chan
 
 ## Canonical commands
 
-One command list, referenced by every issue's "Commands proving completion" so they do not drift. CI runs the same gates ([CI-CHECKS](../02-standards/CI-CHECKS.md)).
+One command list, referenced by every issue's "Commands proving completion" so they do not drift. CI runs the same gates
+([CI-CHECKS](../02-standards/CI-CHECKS.md)).
 
 ```sh
 # Everything CI runs, in one shot:
@@ -95,7 +100,11 @@ pnpm run host:test
 pnpm run docs:corpus          # regenerate the consolidated corpus
 ```
 
-**Crate package name vs directory name.** Scoped Rust commands take the **package** name, which is not always the directory. The host crate lives in the `src-tauri/` directory but its package is `aideon_desktop` — so `cargo test -p aideon_desktop`. Engine crates match their directory: `cargo test -p mneme_store`, `-p praxis`, `-p chrona`, `-p metis`, `-p continuum`. Prefer the `pnpm run host:*` scripts above over raw `cargo` so the whole workspace is covered consistently; use `-p <package>` only to scope a single crate while iterating.
+**Crate package name vs directory name.** Scoped Rust commands take the **package** name, which is not always the
+directory. The host crate lives in the `src-tauri/` directory but its package is `aideon_desktop` — so
+`cargo test -p aideon_desktop`. Engine crates match their directory: `cargo test -p mneme_store`, `-p praxis`,
+`-p chrona`, `-p metis`, `-p continuum`. Prefer the `pnpm run host:*` scripts above over raw `cargo` so the whole
+workspace is covered consistently; use `-p <package>` only to scope a single crate while iterating.
 
 ---
 

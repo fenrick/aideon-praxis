@@ -1,6 +1,7 @@
 # ProjectionDescriptor
 
-Every projection-backed read surface carries a `ProjectionDescriptor` — the executable contract between the writer that maintains the projection and the reader that consumes it.
+Every projection-backed read surface carries a `ProjectionDescriptor` — the executable contract between the writer that
+maintains the projection and the reader that consumes it.
 
 ---
 
@@ -30,11 +31,13 @@ Every projection-backed read surface carries a `ProjectionDescriptor` — the ex
 | `owner`                 | string   | Module responsible for maintaining this projection.                                                                       |
 | `failure_mode`          | enum     | One of `serve_stale_with_indicator`, `block_on_stale`, `fail_open`.                                                       |
 
-A descriptor with missing required fields is rejected with `PROJECTION_DESCRIPTOR_INVALID` ([error-codes.md](./error-codes.md)).
+A descriptor with missing required fields is rejected with `PROJECTION_DESCRIPTOR_INVALID`
+([error-codes.md](./error-codes.md)).
 
 ## Context dimensions and correctness
 
-A projection instance is only correct for the context dimensions it was built against. Cache correctness depends on three axes:
+A projection instance is only correct for the context dimensions it was built against. Cache correctness depends on
+three axes:
 
 | Axis               | Description                                                                                                                                                                        |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -42,7 +45,10 @@ A projection instance is only correct for the context dimensions it was built ag
 | Scenario context   | A projection built for `scenario_id = null` (workspace baseline) is not correct for a scenario-scoped read. Scenario projections are keyed separately.                             |
 | Projection version | A stored projection at `pv_N` is not served for a descriptor at `pv_N+1`. A version increment triggers a [rebuild](./rebuild-from-workspace.md) before serving.                    |
 
-These axes are the same [viewpoint coordinates](../temporal-and-scenario/viewpoint-shape.md) that key a read. Serving a projection for a context outside its declared dimensions is an error (`PROJECTION_CONTEXT_MISMATCH`). The renderer keys its cache by the same coordinates ([ADR-0026](../../06-adrs/ADR-0026-frontend-state-architecture.md)), so consistency is per-context, not global ([consistency-model.md](./consistency-model.md)).
+These axes are the same [viewpoint coordinates](../temporal-and-scenario/viewpoint-shape.md) that key a read. Serving a
+projection for a context outside its declared dimensions is an error (`PROJECTION_CONTEXT_MISMATCH`). The renderer keys
+its cache by the same coordinates ([ADR-0026](../../06-adrs/ADR-0026-frontend-state-architecture.md)), so consistency is
+per-context, not global ([consistency-model.md](./consistency-model.md)).
 
 ## References & standards
 

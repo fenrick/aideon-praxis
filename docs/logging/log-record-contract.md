@@ -1,6 +1,7 @@
 # 3. The log-record contract
 
-The fields every log record must carry, the fields required on specific conditions, the size limit on a line, and the rule that source attribution must point to the true call site. Part of the [logging standard](./README.md).
+The fields every log record must carry, the fields required on specific conditions, the size limit on a line, and the
+rule that source attribution must point to the true call site. Part of the [logging standard](./README.md).
 
 ---
 
@@ -23,7 +24,8 @@ Every log record emitted by any layer **must** include:
 
 On errors (severity 0–3):
 
-- `error.kind` (a stable category), `error.message`, `error.stack` (WebView only, if safe), `error.cause` (Rust cause chain, summarised)
+- `error.kind` (a stable category), `error.message`, `error.stack` (WebView only, if safe), `error.cause` (Rust cause
+  chain, summarised)
 
 On user-visible errors:
 
@@ -39,16 +41,21 @@ On data-changing operations:
 
 - `build.version`, `build.commit`, `platform.os`, `platform.arch`
 
-When tracing is enabled, records also carry `trace_id` and `span_id` ([correlation and tracing](./correlation-and-tracing.md)).
+When tracing is enabled, records also carry `trace_id` and `span_id`
+([correlation and tracing](./correlation-and-tracing.md)).
 
 ## 3.4 Field-design rules and line-size enforcement
 
 - Fields **must** be stable across releases.
 - Prefer short snake_case keys.
 - Do not invent deeply nested structures unless the structure is repeated and meaningful.
-- **A log record must stay small. The hard ceiling is 16 KB per line; the target is under 8 KB.** A record over the ceiling is truncated to the contract fields plus a `truncated: true` marker rather than dropped, and the over-size condition is itself a defect to fix — almost always it means a payload or a stack is being logged that should not be. Enforce the ceiling at the sink, before the line is written.
+- **A log record must stay small. The hard ceiling is 16 KB per line; the target is under 8 KB.** A record over the
+  ceiling is truncated to the contract fields plus a `truncated: true` marker rather than dropped, and the over-size
+  condition is itself a defect to fix — almost always it means a payload or a stack is being logged that should not be.
+  Enforce the ceiling at the sink, before the line is written.
 
-Do not log full request/response bodies, large payloads, or UI-state snapshots ([anti-patterns](./event-catalogue.md#69-anti-patterns-must-not)).
+Do not log full request/response bodies, large payloads, or UI-state snapshots
+([anti-patterns](./event-catalogue.md#69-anti-patterns-must-not)).
 
 ---
 
@@ -56,12 +63,15 @@ Do not log full request/response bodies, large payloads, or UI-state snapshots (
 
 The origin of a log line **must** be recoverable. The system preserves, at minimum:
 
-- **Rust:** module path and file/line, via the standard `log` macros and the configured logger ([how to log in Rust](./rust-host.md)).
-- **WebView:** the `component` and `event_name` must be sufficient to locate the source ([how to log in the WebView](./webview-renderer.md)).
+- **Rust:** module path and file/line, via the standard `log` macros and the configured logger
+  ([how to log in Rust](./rust-host.md)).
+- **WebView:** the `component` and `event_name` must be sufficient to locate the source
+  ([how to log in the WebView](./webview-renderer.md)).
 
 Rules:
 
-- Rust standardised-field helpers **must** be macros (`macro_rules!`), not functions, so file/line/module resolve to the call site, not the helper.
+- Rust standardised-field helpers **must** be macros (`macro_rules!`), not functions, so file/line/module resolve to the
+  call site, not the helper.
 - JS helpers **must** be shallow and **must not** be mandatory for all logging.
 - If a helper makes the origin worse — if most lines appear to come from it — it is a defect and is removed.
 

@@ -1,6 +1,10 @@
 # Failure modes and recovery
 
-How Mneme behaves when something goes wrong: what each failure is, how it is detected, the designed response, and the honest-state result a user sees. The unifying property is that a failure in any derived structure is recoverable by rebuild, and a failure never reaches the canonical files ([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)). Result states follow the honest-state vocabulary ([DOCUMENTATION-STANDARD §9](../../02-standards/DOCUMENTATION-STANDARD.md)).
+How Mneme behaves when something goes wrong: what each failure is, how it is detected, the designed response, and the
+honest-state result a user sees. The unifying property is that a failure in any derived structure is recoverable by
+rebuild, and a failure never reaches the canonical files
+([canonical-vs-derived](../../01-architecture/boundary/canonical-vs-derived.md)). Result states follow the honest-state
+vocabulary ([DOCUMENTATION-STANDARD §9](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 ---
 
@@ -8,10 +12,13 @@ How Mneme behaves when something goes wrong: what each failure is, how it is det
 
 Because the op log is canonical and the runtime is derived, every failure falls into one of two classes:
 
-- **A failure in derived state** (a corrupt index, a wrong projection, an engine that will not open) is recoverable by rebuilding from canonical files. No user data is at stake.
-- **A failure in canonical state** (a truncated op segment, a tampered blob) is genuine, but it is _detected_ — surfaced with explicit coverage, never silently served as if healthy.
+- **A failure in derived state** (a corrupt index, a wrong projection, an engine that will not open) is recoverable by
+  rebuilding from canonical files. No user data is at stake.
+- **A failure in canonical state** (a truncated op segment, a tampered blob) is genuine, but it is _detected_ — surfaced
+  with explicit coverage, never silently served as if healthy.
 
-A failure in the host or renderer never reaches the canonical files, because only Mneme writes them, through one serialised path ([storage-trait-and-engine](./storage-trait-and-engine.md)).
+A failure in the host or renderer never reaches the canonical files, because only Mneme writes them, through one
+serialised path ([storage-trait-and-engine](./storage-trait-and-engine.md)).
 
 ---
 
@@ -32,9 +39,16 @@ A failure in the host or renderer never reaches the canonical files, because onl
 
 ## Recovery is rebuild
 
-The single most important recovery path is the runtime rebuild ([derived-runtime-and-projections](./derived-runtime-and-projections.md), worked example). Any derived corruption — a wrong index, an inconsistent projection, an engine that will not open — is resolved by deleting `.aideon/runtime/` and replaying the canonical op log. The rebuild is checked against the op log as oracle, so the recovered state is provably the state that existed before the fault, not an approximation.
+The single most important recovery path is the runtime rebuild
+([derived-runtime-and-projections](./derived-runtime-and-projections.md), worked example). Any derived corruption — a
+wrong index, an inconsistent projection, an engine that will not open — is resolved by deleting `.aideon/runtime/` and
+replaying the canonical op log. The rebuild is checked against the op log as oracle, so the recovered state is provably
+the state that existed before the fault, not an approximation.
 
-The crash-safety of the write path supports this: the commit path is an explicit state machine ([storage-trait-and-engine](./storage-trait-and-engine.md)), and a crash mid-commit leaves the workspace at the last committed operation, never half-applied. A blob written via temp-file-plus-rename is either fully present at its hash address or absent, never partial ([content-addressed-blobs](./content-addressed-blobs.md)).
+The crash-safety of the write path supports this: the commit path is an explicit state machine
+([storage-trait-and-engine](./storage-trait-and-engine.md)), and a crash mid-commit leaves the workspace at the last
+committed operation, never half-applied. A blob written via temp-file-plus-rename is either fully present at its hash
+address or absent, never partial ([content-addressed-blobs](./content-addressed-blobs.md)).
 
 ---
 
@@ -42,12 +56,20 @@ The crash-safety of the write path supports this: the commit path is an explicit
 
 A power loss interrupts a bulk import of the seed workspace mid-write:
 
-1. On the next open, the host validates the canonical roots. The trailing op segment is truncated; Mneme reads the op log up to the last valid operation and reports the truncated tail — the partially-written operations after it are not yet part of the log, so no fact derives from them.
-2. The runtime database is internally inconsistent (a half-built index). The host does not present a half-initialised twin; it deletes `.aideon/runtime/` and rebuilds from the validated operations as an [accepted job](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md).
-3. The rebuilt twin resolves every seed slot — `Automation Orchestrator`'s `disposition`, the FY26 plan events — to the same facts as before the crash, because they derive from canonical operations, not the corrupted index.
-4. The import is re-run; idempotent ingest means the operations that already landed before the crash are no-ops, and only the missing tail is applied ([export-import-replay](./export-import-replay.md), [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
+1. On the next open, the host validates the canonical roots. The trailing op segment is truncated; Mneme reads the op
+   log up to the last valid operation and reports the truncated tail — the partially-written operations after it are not
+   yet part of the log, so no fact derives from them.
+2. The runtime database is internally inconsistent (a half-built index). The host does not present a half-initialised
+   twin; it deletes `.aideon/runtime/` and rebuilds from the validated operations as an
+   [accepted job](../../04-contracts/ACCEPTED-WORK-AND-EVENTS.md).
+3. The rebuilt twin resolves every seed slot — `Automation Orchestrator`'s `disposition`, the FY26 plan events — to the
+   same facts as before the crash, because they derive from canonical operations, not the corrupted index.
+4. The import is re-run; idempotent ingest means the operations that already landed before the crash are no-ops, and
+   only the missing tail is applied ([export-import-replay](./export-import-replay.md),
+   [ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md)).
 
-No user data is lost. The crash damaged only derived state and the unwritten tail; the canonical log is intact, and the rebuild reproduces the twin.
+No user data is lost. The crash damaged only derived state and the unwritten tail; the canonical log is intact, and the
+rebuild reproduces the twin.
 
 ---
 
@@ -55,7 +77,8 @@ No user data is lost. The crash damaged only derived state and the unwritten tai
 
 _Informative:_
 
-- RFC 9457, Problem Details — the error-envelope shape these failures surface through ([ADR-0016](../../06-adrs/ADR-0016-error-envelope-rfc9457.md)).
+- RFC 9457, Problem Details — the error-envelope shape these failures surface through
+  ([ADR-0016](../../06-adrs/ADR-0016-error-envelope-rfc9457.md)).
 
 ## Related documents
 

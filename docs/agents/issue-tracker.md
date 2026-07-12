@@ -1,10 +1,13 @@
 # Issue tracker: GitHub
 
-Issues and PRDs for this repo live as GitHub issues in `aideon-ai/aideon-desktop`, tracked on the **GitHub Project** at `https://github.com/orgs/aideon-ai/projects/1`. Use the `gh` CLI for all operations; it infers the repo from `git remote -v` when run inside a clone.
+Issues and PRDs for this repo live as GitHub issues in `aideon-ai/aideon-desktop`, tracked on the **GitHub Project** at
+`https://github.com/orgs/aideon-ai/projects/1`. Use the `gh` CLI for all operations; it infers the repo from
+`git remote -v` when run inside a clone.
 
 ## The project is the source of truth for workflow state
 
-The project carries structured fields that replace several labels. **Do not apply the replaced labels** — set the project field instead.
+The project carries structured fields that replace several labels. **Do not apply the replaced labels** — set the
+project field instead.
 
 | Axis              | Project field | Replaces label                              |
 | ----------------- | ------------- | ------------------------------------------- |
@@ -17,7 +20,8 @@ The project carries structured fields that replace several labels. **Do not appl
 
 Labels still applied to issues (not replaced by project fields):
 
-- **Triage labels** (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) — keep on issues; agents and humans filter by label, not by project field. See [triage-labels.md](./triage-labels.md).
+- **Triage labels** (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) — keep on issues;
+  agents and humans filter by label, not by project field. See [triage-labels.md](./triage-labels.md).
 - **`area/*`** — apply all relevant areas as labels; the project Area field holds only the primary one.
 - **`released`** — release marker; not a project field.
 
@@ -38,7 +42,8 @@ Labels still applied to issues (not replaced by project fields):
 
 **Module:** `praxis` · `mneme` · `chrona` · `metis` · `continuum` · `host` · `renderer`
 
-**Area:** `ui` · `api` · `time` · `analytics` · `ci` · `security` · `rpc` · `adapters` · `integration` · `worker` · `automation` · `server` · `finance` · `cloud` · `docs` · `extensibility` · `governance` · `perf` · `platform`
+**Area:** `ui` · `api` · `time` · `analytics` · `ci` · `security` · `rpc` · `adapters` · `integration` · `worker` ·
+`automation` · `server` · `finance` · `cloud` · `docs` · `extensibility` · `governance` · `perf` · `platform`
 
 **Priority:** `P0` · `P1` · `P2` · `P3`
 
@@ -61,7 +66,9 @@ Labels still applied to issues (not replaced by project fields):
 
 - **Create an issue:** `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
 - **Read an issue:** `gh issue view <number> --comments`.
-- **List issues:** `gh issue list --state open --json number,title,body,labels --jq '[.[] | {number, title, labels: [.labels[].name]}]'` with `--label` and `--state` filters as needed.
+- **List issues:**
+  `gh issue list --state open --json number,title,body,labels --jq '[.[] | {number, title, labels: [.labels[].name]}]'`
+  with `--label` and `--state` filters as needed.
 - **Find agent-ready work:** `gh issue list --label ready-for-agent --state open`
 - **Comment:** `gh issue comment <number> --body "..."`
 - **Apply / remove labels:** `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
@@ -73,9 +80,11 @@ Labels still applied to issues (not replaced by project fields):
 New issues created through the GitHub UI use the forms in `.github/ISSUE_TEMPLATE/`:
 
 - `bug_report.yml` — auto-applies `type/bug`; fields: what happened, app version, steps, logs.
-- `feature_request.yml` — auto-applies `type/feature`; fields: problem statement, proposed solution, rationale/trade-offs.
+- `feature_request.yml` — auto-applies `type/feature`; fields: problem statement, proposed solution,
+  rationale/trade-offs.
 
-When creating issues via `gh`, mirror these shapes and apply the triage label plus `area/*` labels; the project fields (Kind, Priority, Module, Area, Status) are set separately or via automation.
+When creating issues via `gh`, mirror these shapes and apply the triage label plus `area/*` labels; the project fields
+(Kind, Priority, Module, Area, Status) are set separately or via automation.
 
 ## Label guidance (what still goes on issues)
 
@@ -99,8 +108,10 @@ gh issue edit 530 \
 
 - **Close-on-merge:** put `Closes #NNN` in a PR body so merging closes the issue.
 - **Reference without closing:** mention `#NNN` in a body or comment for "related to" / "follow-up of".
-- **Parent / sub-issues:** keep a checklist of `- [ ] #NNN` in the parent issue body; GitHub renders it as sub-issue progress.
-- **Blocked-by:** state `Blocked by #NNN` in the body; the automation sets Status to Blocked when a review requests changes; set it manually for issue-level blockers.
+- **Parent / sub-issues:** keep a checklist of `- [ ] #NNN` in the parent issue body; GitHub renders it as sub-issue
+  progress.
+- **Blocked-by:** state `Blocked by #NNN` in the body; the automation sets Status to Blocked when a review requests
+  changes; set it manually for issue-level blockers.
 - **Duplicates:** comment `Duplicate of #NNN`, close the newer issue.
 
 Always reference by `#NNN`, not a pasted URL.

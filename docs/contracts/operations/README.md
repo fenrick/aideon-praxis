@@ -1,12 +1,28 @@
 # Operation schemas
 
-The machine-readable shape of every Mneme operation kind: the shared append-only `OpEnvelope` and one JSON Schema per op kind for the **typed payload object** it carries. These are **tier-2 contracts** in the [contract precedence](../../build-contracts/README.md#contract-precedence) — versioned, machine-readable shapes that are the single source of truth for an operation's structure. The _meaning_ of these shapes is owned by the Mneme module docs ([op-fact-schema-model](../../05-modules/mneme/op-fact-schema-model.md)); the _shape_ is owned here. The byte-exact serialisation of a record is fixed by the [canonical-JSON profile](../../04-contracts/canonical-json.md) and the record/identity/commit decision by [ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md).
+The machine-readable shape of every Mneme operation kind: the shared append-only `OpEnvelope` and one JSON Schema per op
+kind for the **typed payload object** it carries. These are **tier-2 contracts** in the
+[contract precedence](../../build-contracts/README.md#contract-precedence) — versioned, machine-readable shapes that are
+the single source of truth for an operation's structure. The _meaning_ of these shapes is owned by the Mneme module docs
+([op-fact-schema-model](../../05-modules/mneme/op-fact-schema-model.md)); the _shape_ is owned here. The byte-exact
+serialisation of a record is fixed by the [canonical-JSON profile](../../04-contracts/canonical-json.md) and the
+record/identity/commit decision by
+[ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md).
 
-Every schema is JSON Schema 2020-12 with an `$id`. These schemas are the **canonical contract** for the operation surface ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)); the Rust types (rebuilt under `crates/mneme_core` to the M0 spec, [#292](https://github.com/aideon-ai/aideon-desktop/issues/292)) are built to conform to them, and a drift-check keeps the two in step (a shape change is a versioned event, [generated-schema-discipline](../../04-contracts/ipc/generated-schema-discipline.md)) — **the schema leads, the code follows**.
+Every schema is JSON Schema 2020-12 with an `$id`. These schemas are the **canonical contract** for the operation
+surface ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)); the Rust types
+(rebuilt under `crates/mneme_core` to the M0 spec, [#292](https://github.com/aideon-ai/aideon-desktop/issues/292)) are
+built to conform to them, and a drift-check keeps the two in step (a shape change is a versioned event,
+[generated-schema-discipline](../../04-contracts/ipc/generated-schema-discipline.md)) — **the schema leads, the code
+follows**.
 
 ## The canonical operation record
 
-A `model/ops/` record is one canonical-JSON object: a shared **envelope** wrapping a **typed payload object** for its kind. The payload is a structured object per the matching `<kind>.schema.json` — **not opaque `Vec<u8>`, not base64**. Opaque bytes may persist only as a _validated cache_ of the canonical encoding (`StoredCanonicalOp { parsed, canonical_bytes }`) or as SQLite projection columns; they are never the contract ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)).
+A `model/ops/` record is one canonical-JSON object: a shared **envelope** wrapping a **typed payload object** for its
+kind. The payload is a structured object per the matching `<kind>.schema.json` — **not opaque `Vec<u8>`, not base64**.
+Opaque bytes may persist only as a _validated cache_ of the canonical encoding
+(`StoredCanonicalOp { parsed, canonical_bytes }`) or as SQLite projection columns; they are never the contract
+([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)).
 
 The envelope fields, all present in every record:
 
@@ -23,7 +39,10 @@ The envelope fields, all present in every record:
 
 ### The discriminator and the kind registry
 
-The record stores **only** the stable kebab-case `kind` name — never an integer `op_type`, and never both (a record carrying both would be a contradictory state). The `u16` code is an internal compact discriminator that lives **only** in the kind registry and the SQLite projection; it never reaches the canonical bytes. Codes and names are never reassigned, and removed kinds stay reserved.
+The record stores **only** the stable kebab-case `kind` name — never an integer `op_type`, and never both (a record
+carrying both would be a contradictory state). The `u16` code is an internal compact discriminator that lives **only**
+in the kind registry and the SQLite projection; it never reaches the canonical bytes. Codes and names are never
+reassigned, and removed kinds stay reserved.
 
 | Code | Kind                          | Schema / status                                                                                   |
 | ---- | ----------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -40,22 +59,46 @@ The record stores **only** the stable kebab-case `kind` name — never an intege
 | 11   | `set-edge-existence-interval` | [set-edge-existence-interval.schema.json](./set-edge-existence-interval.schema.json)              |
 | 12   | `actor-declare`               | [actor-declare.schema.json](./actor-declare.schema.json) — **M0-valid kind** (see below).         |
 
-The `u16` code is the stable registry discriminant the rebuilt `OpType` (`crates/mneme_core`, [#292](https://github.com/aideon-ai/aideon-desktop/issues/292)) conforms to; the kebab `kind` names are the portable contract. The schema leads, the code follows. Codes are never reassigned; a removed or deferred kind keeps its code reserved.
+The `u16` code is the stable registry discriminant the rebuilt `OpType` (`crates/mneme_core`,
+[#292](https://github.com/aideon-ai/aideon-desktop/issues/292)) conforms to; the kebab `kind` names are the portable
+contract. The schema leads, the code follows. Codes are never reassigned; a removed or deferred kind keeps its code
+reserved.
 
-> **Not drift-checked yet.** These schemas are authored ahead of the CI assertion that pins them to the Rust DTOs. Adding `operations/` to the contract drift check (alongside the existing `*-manifest.json` checks under `tests/contracts/`) is a follow-up, tracked by the M0 build contract. Until then they are authoritative-by-review, not authoritative-by-test.
+> **Not drift-checked yet.** These schemas are authored ahead of the CI assertion that pins them to the Rust DTOs.
+> Adding `operations/` to the contract drift check (alongside the existing `*-manifest.json` checks under
+> `tests/contracts/`) is a follow-up, tracked by the M0 build contract. Until then they are authoritative-by-review, not
+> authoritative-by-test.
 
 ## Canonical conventions these schemas encode
 
-These are the canonical contract names, not the Rust/serde debug names — the writer normalises parsed input into the one canonical form before append ([canonical-JSON profile](../../04-contracts/canonical-json.md)).
+These are the canonical contract names, not the Rust/serde debug names — the writer normalises parsed input into the one
+canonical form before append ([canonical-JSON profile](../../04-contracts/canonical-json.md)).
 
-- **`Id`** (and its wrappers `PartitionId`, `ActorId`, `OpId`, `ScenarioId`) is a lower-case hyphenated UUID string. A ULID string is accepted on parse but normalised to UUID before append.
-- **`Hlc`**, **`ValidTime`**, any full-range 64-bit coordinate (the `i64`/`time` value tags), and `BlobRef.length` (full-range `u64`) are **decimal strings**, never JSON numbers. `Hlc` packs physical microseconds in the upper bits and a 12-bit counter in the lower bits; `ValidTime` is epoch microseconds UTC.
-- **Enum and value tags use stable schema-owned lower/kebab names**, never Rust variant spellings. `Layer` → `plan` | `actual`; `EntityKind` → `node` | `edge`. The M0 canonical fact-value tags are `str | i64 | f64 | bool | time | ref | blob`; `blob` is the typed `BlobRef` object (`{ algorithm, digest, length, media_type? }`), and **`json` is not a valid twin-fact value** (an opaque document is a `BlobRef`; the discriminator is reserved only) ([op-fact-schema-model](../../05-modules/mneme/op-fact-schema-model.md)). The `Value` tag is an object with exactly one lower variant key, e.g. `{ "str": "Migrate" }`, `{ "i64": "7" }`, `{ "ref": "<uuid>" }`. (The _value inside_ — an authored string like `"Migrate"` — is preserved verbatim, not lower-cased.) There is **no** `merge_policy` / convergence axis in the M0 metamodel operation contract: a field declares `cardinality_multi` (its single- vs multi-valued resolved shape) and nothing about multi-writer convergence. Convergence/CRDT policies (`or-set | counter | text`) are a multi-writer concern added **additively at M6**; their absence is the contract — it means the MVP single-writer temporal resolver ([ADR-0034](../../06-adrs/ADR-0034-merge-correctness-and-convergence.md)).
-- **All fields are present.** An absent optional value is explicit `null` (e.g. `BlobRef.media_type`), an empty collection is `[]`/`{}`, and any Rust `#[serde(default)]` field is materialised explicitly — never omitted.
+- **`Id`** (and its wrappers `PartitionId`, `ActorId`, `OpId`, `ScenarioId`) is a lower-case hyphenated UUID string. A
+  ULID string is accepted on parse but normalised to UUID before append.
+- **`Hlc`**, **`ValidTime`**, any full-range 64-bit coordinate (the `i64`/`time` value tags), and `BlobRef.length`
+  (full-range `u64`) are **decimal strings**, never JSON numbers. `Hlc` packs physical microseconds in the upper bits
+  and a 12-bit counter in the lower bits; `ValidTime` is epoch microseconds UTC.
+- **Enum and value tags use stable schema-owned lower/kebab names**, never Rust variant spellings. `Layer` → `plan` |
+  `actual`; `EntityKind` → `node` | `edge`. The M0 canonical fact-value tags are
+  `str | i64 | f64 | bool | time | ref | blob`; `blob` is the typed `BlobRef` object
+  (`{ algorithm, digest, length, media_type? }`), and **`json` is not a valid twin-fact value** (an opaque document is a
+  `BlobRef`; the discriminator is reserved only)
+  ([op-fact-schema-model](../../05-modules/mneme/op-fact-schema-model.md)). The `Value` tag is an object with exactly
+  one lower variant key, e.g. `{ "str": "Migrate" }`, `{ "i64": "7" }`, `{ "ref": "<uuid>" }`. (The _value inside_ — an
+  authored string like `"Migrate"` — is preserved verbatim, not lower-cased.) There is **no** `merge_policy` /
+  convergence axis in the M0 metamodel operation contract: a field declares `cardinality_multi` (its single- vs
+  multi-valued resolved shape) and nothing about multi-writer convergence. Convergence/CRDT policies
+  (`or-set | counter | text`) are a multi-writer concern added **additively at M6**; their absence is the contract — it
+  means the MVP single-writer temporal resolver
+  ([ADR-0034](../../06-adrs/ADR-0034-merge-correctness-and-convergence.md)).
+- **All fields are present.** An absent optional value is explicit `null` (e.g. `BlobRef.media_type`), an empty
+  collection is `[]`/`{}`, and any Rust `#[serde(default)]` field is materialised explicitly — never omitted.
 
 ## The schemas
 
-The envelope schema is [op-envelope.schema.json](./op-envelope.schema.json); the per-kind payload schemas pin the typed `payload` object a record of that `kind` carries.
+The envelope schema is [op-envelope.schema.json](./op-envelope.schema.json); the per-kind payload schemas pin the typed
+`payload` object a record of that `kind` carries.
 
 | Payload schema                                                                       | Kind (code)                        | What it pins                                                                               |
 | ------------------------------------------------------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -68,17 +111,38 @@ The envelope schema is [op-envelope.schema.json](./op-envelope.schema.json); the
 | [set-edge-existence-interval.schema.json](./set-edge-existence-interval.schema.json) | `set-edge-existence-interval` (11) | An edge existence-interval change, optionally a tombstone.                                 |
 | [actor-declare.schema.json](./actor-declare.schema.json)                             | `actor-declare` (12)               | A canonical actor-registry declaration: `declared_actor_id`, `actor_kind`, `display_name`. |
 
-The two CRDT kinds — `or-set-update` (6) and `counter-update` (7) — are **deferred to M6**: their convergence semantics (dedup, commutativity, reset, grow-only-vs-PN for the counter; observed-add tags for the OR-set) must be settled by [ADR-0034](../../06-adrs/ADR-0034-merge-correctness-and-convergence.md)/Koinon before they enter canonical history, so M0 neither schemas nor accepts them. Their codes 6 and 7 are reserved and never reassigned; a workspace carrying one requires a future feature, and an M0 reader refuses read-write rather than misapplying it.
+The two CRDT kinds — `or-set-update` (6) and `counter-update` (7) — are **deferred to M6**: their convergence semantics
+(dedup, commutativity, reset, grow-only-vs-PN for the counter; observed-add tags for the OR-set) must be settled by
+[ADR-0034](../../06-adrs/ADR-0034-merge-correctness-and-convergence.md)/Koinon before they enter canonical history, so
+M0 neither schemas nor accepts them. Their codes 6 and 7 are reserved and never reassigned; a workspace carrying one
+requires a future feature, and an M0 reader refuses read-write rather than misapplying it.
 
-The two scenario-lifecycle kinds — `create-scenario` (9) and `delete-scenario` (10) — are **deferred to a later increment** and not schema'd here; their registry codes 9 and 10 are reserved and never reassigned. (Scenarios are an M2 concern; M0 carries only the base case, `scenario_id: null`.)
+The two scenario-lifecycle kinds — `create-scenario` (9) and `delete-scenario` (10) — are **deferred to a later
+increment** and not schema'd here; their registry codes 9 and 10 are reserved and never reassigned. (Scenarios are an M2
+concern; M0 carries only the base case, `scenario_id: null`.)
 
-`actor-declare` (12) **is an M0 operation kind** — in the envelope `kind` enum, schema'd here ([actor-declare.schema.json](./actor-declare.schema.json)), and fixtured. An actor is introduced by an `actor-declare` operation; later operations reference its `declared_actor_id` as their `actor_id`, and the runtime `aideon_actors` table is a projection rebuilt from these declarations ([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). The M0 rebuild oracle's `FoundationProjectionSnapshot` carries an `actors[]` registry derived from them, so an operation referencing an undeclared `actor_id` is a replay error, not a silent bootstrap. (Code 12 is the rebuilt `OpType` discriminant per the registry above.)
+`actor-declare` (12) **is an M0 operation kind** — in the envelope `kind` enum, schema'd here
+([actor-declare.schema.json](./actor-declare.schema.json)), and fixtured. An actor is introduced by an `actor-declare`
+operation; later operations reference its `declared_actor_id` as their `actor_id`, and the runtime `aideon_actors` table
+is a projection rebuilt from these declarations
+([ADR-0038](../../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). The M0 rebuild oracle's
+`FoundationProjectionSnapshot` carries an `actors[]` registry derived from them, so an operation referencing an
+undeclared `actor_id` is a replay error, not a silent bootstrap. (Code 12 is the rebuilt `OpType` discriminant per the
+registry above.)
 
-**Record-level access control is omitted at M0.** `create-node` and `create-edge` carry **no** `owner_actor_id` / `acl_group_id` / `visibility` — M0 is one principal with full authority and no record-level RBAC, and a meaningless access-control commitment is not baked into canonical history as reserved nulls. Governance policy is owned by Themis (M6, [ADR-0030](../../06-adrs/ADR-0030-governance-themis.md)) and arrives as explicit versioned policy operations, gated by `manifest.required_features` so an M0-era build refuses read-write rather than silently ignoring a policy it cannot enforce. (`owner` is a future governance assignment, not provenance — `actor_id` already records who asserted.)
+**Record-level access control is omitted at M0.** `create-node` and `create-edge` carry **no** `owner_actor_id` /
+`acl_group_id` / `visibility` — M0 is one principal with full authority and no record-level RBAC, and a meaningless
+access-control commitment is not baked into canonical history as reserved nulls. Governance policy is owned by Themis
+(M6, [ADR-0030](../../06-adrs/ADR-0030-governance-themis.md)) and arrives as explicit versioned policy operations, gated
+by `manifest.required_features` so an M0-era build refuses read-write rather than silently ignoring a policy it cannot
+enforce. (`owner` is a future governance assignment, not provenance — `actor_id` already records who asserted.)
 
 ## Fixtures
 
-Validating example payloads — one `*.valid.json` and one `*.invalid.json` per op kind — live under [`docs/data/fixtures/operations/`](../../data/fixtures/operations/README.md) and use the seed identifiers from [`core-v1.json`](../../data/meta/core-v1.json) and [`baseline.yaml`](../../data/base/baseline.yaml). Each valid fixture validates against its schema; each invalid fixture fails for the reason its sibling README records.
+Validating example payloads — one `*.valid.json` and one `*.invalid.json` per op kind — live under
+[`docs/data/fixtures/operations/`](../../data/fixtures/operations/README.md) and use the seed identifiers from
+[`core-v1.json`](../../data/meta/core-v1.json) and [`baseline.yaml`](../../data/base/baseline.yaml). Each valid fixture
+validates against its schema; each invalid fixture fails for the reason its sibling README records.
 
 ## Related documents
 

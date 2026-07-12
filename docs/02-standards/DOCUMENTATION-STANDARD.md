@@ -1,8 +1,12 @@
 # Documentation Standard
 
-How every design document in this repository is written, structured, and held to standard. This document is normative for all authors — human and agent. It exists so that a reader moving between the architecture, design, contract, and module layers meets one voice, one vocabulary, and one set of scales, and never has to reconcile drift between documents by hand.
+How every design document in this repository is written, structured, and held to standard. This document is normative
+for all authors — human and agent. It exists so that a reader moving between the architecture, design, contract, and
+module layers meets one voice, one vocabulary, and one set of scales, and never has to reconcile drift between documents
+by hand.
 
-It governs form and consistency. It does not make architecture decisions; those live in [ADRs](../06-adrs/ADRS.md) and are framed by [DESIGN-GOVERNANCE.md](./DESIGN-GOVERNANCE.md).
+It governs form and consistency. It does not make architecture decisions; those live in [ADRs](../06-adrs/ADRS.md) and
+are framed by [DESIGN-GOVERNANCE.md](./DESIGN-GOVERNANCE.md).
 
 ---
 
@@ -26,32 +30,48 @@ It governs form and consistency. It does not make architecture decisions; those 
 
 ## 1. Audience and posture
 
-These documents are written for a practitioner who is expert in their own field — enterprise architecture, service design, solution architecture, strategy, consulting — but new to this system. They are not marketing. They are not tutorials. They are the durable design record a competent engineer or architect would need to rebuild, extend, or audit the product without access to its authors.
+These documents are written for a practitioner who is expert in their own field — enterprise architecture, service
+design, solution architecture, strategy, consulting — but new to this system. They are not marketing. They are not
+tutorials. They are the durable design record a competent engineer or architect would need to rebuild, extend, or audit
+the product without access to its authors.
 
 Three obligations follow:
 
-- **Fast to read.** A reader finds the answer to a specific question without reading the whole document. Structure, headings, and tables carry the load; prose connects them.
-- **Accurate.** Every claim is either traceable to canonical material in this repository (code, schema, contract, prior decision) or to a named external standard. Nothing is asserted on authority alone.
-- **Transparent.** Where a design is provisional, aspirational, or not yet realised in code, the document says so in place. A confident sentence about something that does not exist is the most expensive kind of error.
+- **Fast to read.** A reader finds the answer to a specific question without reading the whole document. Structure,
+  headings, and tables carry the load; prose connects them.
+- **Accurate.** Every claim is either traceable to canonical material in this repository (code, schema, contract, prior
+  decision) or to a named external standard. Nothing is asserted on authority alone.
+- **Transparent.** Where a design is provisional, aspirational, or not yet realised in code, the document says so in
+  place. A confident sentence about something that does not exist is the most expensive kind of error.
 
-These three — fast, accurate, transparent — are the same obligations the product itself carries to its users. The documentation holds itself to the standard it describes.
+These three — fast, accurate, transparent — are the same obligations the product itself carries to its users. The
+documentation holds itself to the standard it describes.
 
 ---
 
 ## 2. Voice and register
 
-- **British English.** `behaviour`, `realise`, `catalogue`, `organisation`, `analyse`, `prioritise`. This matches the existing corpus and the [glossary](../../CONTEXT.md).
-- **Present tense, indicative mood.** "The host owns all side effects," not "The host will own" or "The host should own." Design documents describe the system as designed, in force now.
-- **Normative verbs are deliberate.** Use **must** for an invariant or contract obligation, **should** for a strong default that may be overridden with rationale, **may** for a genuine option. Do not use "must" for preferences or "should" for invariants. These words are load-bearing; reviewers check them.
-- **Declarative, not promotional.** State what is true and why it is true. Cut "powerful", "seamless", "simply", "just", "robust", "world-class", and every other word that asserts quality instead of demonstrating it.
-- **One idea per paragraph.** Lead with the claim; follow with the reason. A reader who stops after the first sentence of each paragraph still has the argument.
-- **Name the trade-off.** A design that has no cost has not been understood. When a choice closes a door, say which door.
+- **British English.** `behaviour`, `realise`, `catalogue`, `organisation`, `analyse`, `prioritise`. This matches the
+  existing corpus and the [glossary](../../CONTEXT.md).
+- **Present tense, indicative mood.** "The host owns all side effects," not "The host will own" or "The host should
+  own." Design documents describe the system as designed, in force now.
+- **Normative verbs are deliberate.** Use **must** for an invariant or contract obligation, **should** for a strong
+  default that may be overridden with rationale, **may** for a genuine option. Do not use "must" for preferences or
+  "should" for invariants. These words are load-bearing; reviewers check them.
+- **Declarative, not promotional.** State what is true and why it is true. Cut "powerful", "seamless", "simply", "just",
+  "robust", "world-class", and every other word that asserts quality instead of demonstrating it.
+- **One idea per paragraph.** Lead with the claim; follow with the reason. A reader who stops after the first sentence
+  of each paragraph still has the argument.
+- **Name the trade-off.** A design that has no cost has not been understood. When a choice closes a door, say which
+  door.
 
 ---
 
 ## 3. Canonical vocabulary
 
-The single source of truth for domain terms is the root glossary, [`CONTEXT.md`](../../CONTEXT.md). Every document uses those terms exactly as defined and avoids the terms the glossary marks `_Avoid_`. The most consequential distinctions, restated here so authors do not have to leave the page:
+The single source of truth for domain terms is the root glossary, [`CONTEXT.md`](../../CONTEXT.md). Every document uses
+those terms exactly as defined and avoids the terms the glossary marks `_Avoid_`. The most consequential distinctions,
+restated here so authors do not have to leave the page:
 
 | Use this                                                            | Not this                                     | Because                                                                                                                                                                              |
 | ------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -73,7 +93,9 @@ The single source of truth for domain terms is the root glossary, [`CONTEXT.md`]
 | **Artefact** / **Artefact result** / **Artefact family** / **Form** | report, diagram, viewpoint, lens             | An Artefact is a reusable definition; a result is one execution; a family is a question-shaped grouping; a form is the presentation shape. `Artefact + Viewpoint → Artefact result`. |
 | **content classification** — Asserted / Inferred / Generated        | provenance, confidence                       | The "what kind of claim" axis. Distinct from provenance (origin) and confidence (quality).                                                                                           |
 
-**Reserved name collision.** In this project **Viewpoint** means the bitemporal query frame, _not_ the ISO/IEC/IEEE 42010 architecture viewpoint. When citing 42010, write "architecture viewpoint (42010)" to disambiguate, and never use "viewpoint" alone for the 42010 sense. The product-layer grouping is an **Artefact family**.
+**Reserved name collision.** In this project **Viewpoint** means the bitemporal query frame, _not_ the ISO/IEC/IEEE
+42010 architecture viewpoint. When citing 42010, write "architecture viewpoint (42010)" to disambiguate, and never use
+"viewpoint" alone for the 42010 sense. The product-layer grouping is an **Artefact family**.
 
 ---
 
@@ -81,13 +103,23 @@ The single source of truth for domain terms is the root glossary, [`CONTEXT.md`]
 
 ### Granularity — prefer small, single-topic files
 
-One document answers one question. When a topic grows past roughly four screens, or starts to carry two distinct concerns, it is split into separate files in a folder with an `index.md` (or `README.md`) that orients the reader and links the parts. A reader should be able to open the one file that answers their question without scrolling past three others.
+One document answers one question. When a topic grows past roughly four screens, or starts to carry two distinct
+concerns, it is split into separate files in a folder with an `index.md` (or `README.md`) that orients the reader and
+links the parts. A reader should be able to open the one file that answers their question without scrolling past three
+others.
 
-This means a layer is a **folder of focused files**, not one long document. For example, the artefact design is a folder — `what-is-an-artefact.md`, `the-contract.md`, `families.md`, `explanation-surfaces.md`, `intelligence-and-automation.md` — indexed by a short README, rather than a single `ARTEFACTS-AND-FAMILIES.md`. Splitting is preferred over length. The index README is the entry point and the only place that carries the cross-cutting narrative.
+This means a layer is a **folder of focused files**, not one long document. For example, the artefact design is a folder
+— `what-is-an-artefact.md`, `the-contract.md`, `families.md`, `explanation-surfaces.md`,
+`intelligence-and-automation.md` — indexed by a short README, rather than a single `ARTEFACTS-AND-FAMILIES.md`.
+Splitting is preferred over length. The index README is the entry point and the only place that carries the
+cross-cutting narrative.
 
-When splitting an existing large document, preserve its anchors by leaving its incoming cross-links pointing at the new index, and update them to the specific sub-file where a more precise target exists.
+When splitting an existing large document, preserve its anchors by leaving its incoming cross-links pointing at the new
+index, and update them to the specific sub-file where a more precise target exists.
 
-Every document opens with a one-or-two-sentence **purpose statement** (no heading) that says what the document is and who needs it. Multi-part folders carry a numbered **Contents** list in the index; individual files stay short enough not to need one.
+Every document opens with a one-or-two-sentence **purpose statement** (no heading) that says what the document is and
+who needs it. Multi-part folders carry a numbered **Contents** list in the index; individual files stay short enough not
+to need one.
 
 ### Repository structure
 
@@ -103,9 +135,16 @@ The top-level layout follows established practice and is kept stable so cross-li
 | `05-modules/`      | Per-component design                                  | One folder per module.                                     |
 | `06-adrs/`         | MADR / Nygard ADRs                                    | The decisions that fix the invariants.                     |
 
-Within a layer, decompose into small single-topic files (above). The numbered top-level folders do not change without an ADR, because their paths are public cross-link targets across the corpus.
+Within a layer, decompose into small single-topic files (above). The numbered top-level folders do not change without an
+ADR, because their paths are public cross-link targets across the corpus.
 
-**All documentation lives under `docs/`.** Design, architecture, contract, and module documentation belongs in the tree above and nowhere else — never in `crates/`, `src/`, or `src-tauri/`. A module's design record is its `05-modules/<module>/` folder, not a `README.md` or `DESIGN.md` beside its code. The only Markdown that lives outside `docs/` is the small set of repository-root files that tooling and hosting conventions require at the root: `README.md`, `CONTEXT.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE-OF-CONDUCT.md`, and the agent guide (`CLAUDE.md`/`AGENTS.md`). This keeps one discoverable doc tree, lets the corpus generator ([`tools/docs-corpus.mjs`](../../tools/docs-corpus.mjs)) source only root entry points plus `docs/`, and removes the drift that two homes for the same design invites.
+**All documentation lives under `docs/`.** Design, architecture, contract, and module documentation belongs in the tree
+above and nowhere else — never in `crates/`, `src/`, or `src-tauri/`. A module's design record is its
+`05-modules/<module>/` folder, not a `README.md` or `DESIGN.md` beside its code. The only Markdown that lives outside
+`docs/` is the small set of repository-root files that tooling and hosting conventions require at the root: `README.md`,
+`CONTEXT.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE-OF-CONDUCT.md`, and the agent guide (`CLAUDE.md`/`AGENTS.md`).
+This keeps one discoverable doc tree, lets the corpus generator ([`tools/docs-corpus.mjs`](../../tools/docs-corpus.mjs))
+source only root entry points plus `docs/`, and removes the drift that two homes for the same design invites.
 
 Recommended skeletons by document kind:
 
@@ -143,9 +182,11 @@ Recommended skeletons by document kind:
 6. Worked request/response examples
 7. References & standards
 
-**ADR** — exactly the sections in [ADR-FORMAT.md](./ADR-FORMAT.md): Context, Governance Framing, Decision, Consequences, Follow-ups / Open Questions. No deviation.
+**ADR** — exactly the sections in [ADR-FORMAT.md](./ADR-FORMAT.md): Context, Governance Framing, Decision, Consequences,
+Follow-ups / Open Questions. No deviation.
 
-Every non-trivial document ends with two sections: **References & standards** (external) and **Related documents** (internal, as a table with a "what it covers" column).
+Every non-trivial document ends with two sections: **References & standards** (external) and **Related documents**
+(internal, as a table with a "what it covers" column).
 
 ---
 
@@ -153,46 +194,72 @@ Every non-trivial document ends with two sections: **References & standards** (e
 
 "Deep researched, evidence based" is a structural requirement, not a tone. Two kinds of claim, two kinds of evidence:
 
-- **System claims** — assertions about how Aideon is built or behaves. These are backed by a link to the canonical artefact: a contract document, a schema file, an ADR, or a source path (`crates/mneme_core/...`). If no such artefact exists, the claim is design intent and is marked as such (§12 / honest-state).
-- **Best-practice claims** — assertions that a design follows or departs from an established practice. These cite a named external standard or primary source, inline, in the form _(Author/Body, Title, year)_ or _(Standard ID)_. Examples: _(Snodgrass, Developing Time-Oriented Database Applications in SQL, 1999)_, _(ISO/IEC/IEEE 42010:2022)_, _(RFC 9457)_, _(OWASP ASVS 5.0)_, _(WCAG 2.2)_, _(The Open Group, ArchiMate 3.2)_.
+- **System claims** — assertions about how Aideon is built or behaves. These are backed by a link to the canonical
+  artefact: a contract document, a schema file, an ADR, or a source path (`crates/mneme_core/...`). If no such artefact
+  exists, the claim is design intent and is marked as such (§12 / honest-state).
+- **Best-practice claims** — assertions that a design follows or departs from an established practice. These cite a
+  named external standard or primary source, inline, in the form _(Author/Body, Title, year)_ or _(Standard ID)_.
+  Examples: _(Snodgrass, Developing Time-Oriented Database Applications in SQL, 1999)_, _(ISO/IEC/IEEE 42010:2022)_,
+  _(RFC 9457)_, _(OWASP ASVS 5.0)_, _(WCAG 2.2)_, _(The Open Group, ArchiMate 3.2)_.
 
 Rules:
 
 - **Cite the primary source, not a blog.** Standards bodies, the original paper, the canonical book.
-- **Do not invent URLs.** Cite by author/standard/title/year — these are verifiable and stable. A bare unsourced "best practice" is not acceptable; either name the source or drop the claim.
-- **Distinguish normative from informative references.** A normative reference defines an obligation the design adopts (e.g. "errors follow RFC 9457"). An informative reference explains or justifies (e.g. "this mirrors event sourcing, see Fowler"). Mark which is which in the References section.
+- **Do not invent URLs.** Cite by author/standard/title/year — these are verifiable and stable. A bare unsourced "best
+  practice" is not acceptable; either name the source or drop the claim.
+- **Distinguish normative from informative references.** A normative reference defines an obligation the design adopts
+  (e.g. "errors follow RFC 9457"). An informative reference explains or justifies (e.g. "this mirrors event sourcing,
+  see Fowler"). Mark which is which in the References section.
 - **Cite to strengthen, not to decorate.** A citation earns its place by changing what a reader should do or believe.
 
-A canonical **standards register** — the external sources this corpus leans on, with the modules that use each — lives in [`02-standards/STANDARDS-REGISTER.md`](./STANDARDS-REGISTER.md). New citations are added there so the corpus shares one bibliography.
+A canonical **standards register** — the external sources this corpus leans on, with the modules that use each — lives
+in [`02-standards/STANDARDS-REGISTER.md`](./STANDARDS-REGISTER.md). New citations are added there so the corpus shares
+one bibliography.
 
 ---
 
 ## 6. Worked examples
 
-Every design or contract document that defines a non-obvious behaviour carries at least one worked example: concrete entities, a concrete viewpoint, concrete values, walked end to end. Examples use the seed metamodel ([`docs/data/meta/core-v1.json`](../data/meta/core-v1.json)) and seed dataset ([`docs/data/base/baseline.yaml`](../data/base/baseline.yaml)) so they stay consistent across documents and runnable against the real product.
+Every design or contract document that defines a non-obvious behaviour carries at least one worked example: concrete
+entities, a concrete viewpoint, concrete values, walked end to end. Examples use the seed metamodel
+([`docs/data/meta/core-v1.json`](../data/meta/core-v1.json)) and seed dataset
+([`docs/data/base/baseline.yaml`](../data/base/baseline.yaml)) so they stay consistent across documents and runnable
+against the real product.
 
-Worked examples must use **real type and relationship identifiers** from the seed metamodel — `Capability`, `Application`, `serves`, `realises`, `accesses` — not invented ones. An example built on a type that does not exist teaches the reader something false.
+Worked examples must use **real type and relationship identifiers** from the seed metamodel — `Capability`,
+`Application`, `serves`, `realises`, `accesses` — not invented ones. An example built on a type that does not exist
+teaches the reader something false.
 
-A good worked example states: the starting facts, the viewpoint, the resolution or computation step by step, and the result including its honest-state flags. Resolution examples follow the form used in the glossary's _effective interval_ definition.
+A good worked example states: the starting facts, the viewpoint, the resolution or computation step by step, and the
+result including its honest-state flags. Resolution examples follow the form used in the glossary's _effective interval_
+definition.
 
 ---
 
 ## 7. Diagrams
 
-- **Mermaid** for flowcharts, sequence, state, and class/ER diagrams embedded in Markdown. It renders in the repository host and stays diffable.
-- **Structurizr DSL** (`01-architecture/c4/`) for C4 model views _(Brown, The C4 Model for Visualising Software Architecture)_. Architecture documents reference the C4 views rather than redrawing them.
-- Every diagram has a one-line caption stating what it shows and is referenced from the prose. A diagram that the text never mentions is removed.
-- ASCII layout sketches are acceptable for shell/region layout where pixel intent matters and Mermaid would over-formalise.
+- **Mermaid** for flowcharts, sequence, state, and class/ER diagrams embedded in Markdown. It renders in the repository
+  host and stays diffable.
+- **Structurizr DSL** (`01-architecture/c4/`) for C4 model views _(Brown, The C4 Model for Visualising Software
+  Architecture)_. Architecture documents reference the C4 views rather than redrawing them.
+- Every diagram has a one-line caption stating what it shows and is referenced from the prose. A diagram that the text
+  never mentions is removed.
+- ASCII layout sketches are acceptable for shell/region layout where pixel intent matters and Mermaid would
+  over-formalise.
 
 ---
 
 ## 8. The unified scales
 
-Several documents independently referred to "confidence", "integrity", and "strength" without a shared definition. There is now one definition of each, set by ADR and used everywhere. Documents reference these; they do not redefine them.
+Several documents independently referred to "confidence", "integrity", and "strength" without a shared definition. There
+is now one definition of each, set by ADR and used everywhere. Documents reference these; they do not redefine them.
 
 ### 8.1 Integrity score
 
-An **integrity score** is a number in `[0.0, 1.0]` that Praxis computes for an entity, relationship, artefact result, or subgraph, expressing how well-founded the modelled content is. It is **Inferred** content (it is derived, traceable, and recomputed when inputs change), never Asserted. It is defined by **[ADR-0020](../06-adrs/ADR-0020-integrity-scoring-model.md)** across five dimensions:
+An **integrity score** is a number in `[0.0, 1.0]` that Praxis computes for an entity, relationship, artefact result, or
+subgraph, expressing how well-founded the modelled content is. It is **Inferred** content (it is derived, traceable, and
+recomputed when inputs change), never Asserted. It is defined by
+**[ADR-0020](../06-adrs/ADR-0020-integrity-scoring-model.md)** across five dimensions:
 
 | Dimension         | Question it scores                                                                                 |
 | ----------------- | -------------------------------------------------------------------------------------------------- |
@@ -202,11 +269,15 @@ An **integrity score** is a number in `[0.0, 1.0]` that Praxis computes for an e
 | **Consistency**   | Does the content violate any effective-schema validation rule or cardinality constraint?           |
 | **Corroboration** | Is there evidence — a source, an import lineage, an accepted Change Event — behind the claims?     |
 
-The composite is a weighted mean with documented default weights and a default **gate threshold** below which dependent analytics declare themselves bounded. A score is never shown without the ability to drill into its five dimensions; an opaque number is not explainable.
+The composite is a weighted mean with documented default weights and a default **gate threshold** below which dependent
+analytics declare themselves bounded. A score is never shown without the ability to drill into its five dimensions; an
+opaque number is not explainable.
 
 ### 8.2 Confidence
 
-**Confidence** is a quality signal attached to a result, signal, or generated suggestion, expressing how much it should be relied upon. It is presented as an ordinal label with a defined score band, optionally accompanied by the underlying number, and is defined by **[ADR-0021](../06-adrs/ADR-0021-confidence-and-trust-scale.md)**:
+**Confidence** is a quality signal attached to a result, signal, or generated suggestion, expressing how much it should
+be relied upon. It is presented as an ordinal label with a defined score band, optionally accompanied by the underlying
+number, and is defined by **[ADR-0021](../06-adrs/ADR-0021-confidence-and-trust-scale.md)**:
 
 | Label          | Band        | Meaning                                                |
 | -------------- | ----------- | ------------------------------------------------------ |
@@ -215,17 +286,22 @@ The composite is a weighted mean with documented default weights and a default *
 | **Low**        | `0.30–0.60` | Indicative only; verify before acting.                 |
 | **Indicative** | `< 0.30`    | A prompt to look, not a basis to decide.               |
 
-Confidence and integrity are distinct: integrity scores _the model content_; confidence qualifies _a result derived from it_. A high-integrity subgraph can still yield a low-confidence analytical result if the analysis was bounded or approximated.
+Confidence and integrity are distinct: integrity scores _the model content_; confidence qualifies _a result derived from
+it_. A high-integrity subgraph can still yield a low-confidence analytical result if the analysis was bounded or
+approximated.
 
 ### 8.3 Criticality and other domain enums
 
-Domain-level ordinal attributes (Capability `tier`, BusinessProcess `criticality`, Application `disposition` and `lifecycle`, DataEntity `sensitivity`) are defined by the metamodel, not by this standard. Documents use the seed enum values verbatim and never invent new bands.
+Domain-level ordinal attributes (Capability `tier`, BusinessProcess `criticality`, Application `disposition` and
+`lifecycle`, DataEntity `sensitivity`) are defined by the metamodel, not by this standard. Documents use the seed enum
+values verbatim and never invent new bands.
 
 ---
 
 ## 9. Honest-state vocabulary
 
-The product's honesty obligations rest on a fixed set of states. Earlier drafts used overlapping, slightly different lists across documents; this is the single set. Two orthogonal axes:
+The product's honesty obligations rest on a fixed set of states. Earlier drafts used overlapping, slightly different
+lists across documents; this is the single set. Two orthogonal axes:
 
 **Axis A — Content classification** (what _kind_ of claim a fact is; from the glossary):
 
@@ -247,13 +323,15 @@ The product's honesty obligations rest on a fixed set of states. Earlier drafts 
 | **Awaiting review**   | Content is queued for human confirmation (e.g. an import exception or steward task).      |
 | **Failed**            | Execution errored; partial results, if any, are shown with explicit coverage.             |
 
-A surface may carry one content classification per element and any number of result states. The two axes never collapse into one badge: "Generated" (a claim kind) is not the same as "Stale" (a freshness condition), and a result can be both.
+A surface may carry one content classification per element and any number of result states. The two axes never collapse
+into one badge: "Generated" (a claim kind) is not the same as "Stale" (a freshness condition), and a result can be both.
 
 ---
 
 ## 10. Module and crate naming
 
-Modules carry short, conceptual names from Greek and Latin roots; the name evokes the module's role and never the technology it currently uses. The full set after this revision:
+Modules carry short, conceptual names from Greek and Latin roots; the name evokes the module's role and never the
+technology it currently uses. The full set after this revision:
 
 | Module        | Crate(s)                             | Role                                                                                                                                                                                                            |
 | ------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -274,33 +352,68 @@ Modules carry short, conceptual names from Greek and Latin roots; the name evoke
 | **Themis**    | _(planned)_                          | Governance: identity, RBAC, approvals, retention, audit, and capability policy. Underpins hosted mode and the Steward participation mode.                                                                       |
 | **Aegis**     | _(planned)_                          | Risk, controls, and compliance: a risk register and control library mapped onto the twin; regulatory obligations over capabilities and data.                                                                    |
 
-Planned modules are documented as design intent and labelled _planned_ until a crate exists. Their READMEs state the boundary they will occupy and the ADR that introduces them. The governing decision for the taxonomy, boundary rules, the acyclic engine graph, and the "earns its own module" test is **[ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)**.
+Planned modules are documented as design intent and labelled _planned_ until a crate exists. Their READMEs state the
+boundary they will occupy and the ADR that introduces them. The governing decision for the taxonomy, boundary rules, the
+acyclic engine graph, and the "earns its own module" test is
+**[ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)**.
 
-**Folded concerns.** Some concerns are real but do not yet earn a module; they are documented as capabilities _within_ an existing module, each with the explicit trigger that would split it out later: **Oikos** (run-cost / FinOps — ongoing opex/TCO, in [Metis](../05-modules/metis/README.md) + Kairos), **Krisis** (validation, rules, and data-quality — in [Praxis](../05-modules/praxis/README.md) integrity scoring), **Topos** (cartography and auto-layout/ELK — in the renderer + Praxis), **Logos** (narrative and decision rationale — in [Kerux](#10-module-and-crate-naming) + [Mneme](../05-modules/mneme/README.md)). ADR-0011 records each split-out trigger.
+**Folded concerns.** Some concerns are real but do not yet earn a module; they are documented as capabilities _within_
+an existing module, each with the explicit trigger that would split it out later: **Oikos** (run-cost / FinOps — ongoing
+opex/TCO, in [Metis](../05-modules/metis/README.md) + Kairos), **Krisis** (validation, rules, and data-quality — in
+[Praxis](../05-modules/praxis/README.md) integrity scoring), **Topos** (cartography and auto-layout/ELK — in the
+renderer + Praxis), **Logos** (narrative and decision rationale — in [Kerux](#10-module-and-crate-naming) +
+[Mneme](../05-modules/mneme/README.md)). ADR-0011 records each split-out trigger.
 
-Frontend feature packages mirror the modules they face (`src/engines/<module>`), per [frontend/DESIGN.md](../frontend/DESIGN.md).
+Frontend feature packages mirror the modules they face (`src/engines/<module>`), per
+[frontend/DESIGN.md](../frontend/DESIGN.md).
 
 ---
 
 ## 11. Cross-linking
 
 - Link the **first** mention of another module, contract, or decision in a document; do not re-link every mention.
-- Use **relative paths** that resolve on the repository host. Verify they resolve — a broken cross-link is a correctness defect.
-- Reference **ADRs by number and title** on first mention (e.g. "[ADR-0009](../06-adrs/ADR-0009-temporal-model-valid-interval-layer-policy-viewpoint.md)").
-- Each layer's `README` is the entry point for that layer; deep documents link up to it, and the top-level [`00-index/README.md`](../00-index/README.md) links down to each layer.
-- Prefer linking the canonical definition over restating it. If a concept needs restating for flow, restate the conclusion and link the definition — do not fork the definition.
+- Use **relative paths** that resolve on the repository host. Verify they resolve — a broken cross-link is a correctness
+  defect.
+- Reference **ADRs by number and title** on first mention (e.g.
+  "[ADR-0009](../06-adrs/ADR-0009-temporal-model-valid-interval-layer-policy-viewpoint.md)").
+- Each layer's `README` is the entry point for that layer; deep documents link up to it, and the top-level
+  [`00-index/README.md`](../00-index/README.md) links down to each layer.
+- Prefer linking the canonical definition over restating it. If a concept needs restating for flow, restate the
+  conclusion and link the definition — do not fork the definition.
 
 ---
 
 ## 12. Known reconciliations
 
-Surfacing inconsistencies is part of being transparent. The following are known divergences between documents and the implemented seed at the time of this revision. The glossary ([`CONTEXT.md`](../../CONTEXT.md)) and the seed metamodel ([`core-v1.json`](../data/meta/core-v1.json)) are **extended as part of this work** to remove these divergences at the source — documentation is authoritative and code is brought to match it ([ARCHITECTURE-BOUNDARY.md](../01-architecture/ARCHITECTURE-BOUNDARY.md), _Documentation Precedence_). Where a reconciliation has not yet landed, documents describe the **code-backed** reality and flag the intended direction; they never describe an aspiration as if it were already implemented.
+Surfacing inconsistencies is part of being transparent. The following are known divergences between documents and the
+implemented seed at the time of this revision. The glossary ([`CONTEXT.md`](../../CONTEXT.md)) and the seed metamodel
+([`core-v1.json`](../data/meta/core-v1.json)) are **extended as part of this work** to remove these divergences at the
+source — documentation is authoritative and code is brought to match it
+([ARCHITECTURE-BOUNDARY.md](../01-architecture/ARCHITECTURE-BOUNDARY.md), _Documentation Precedence_). Where a
+reconciliation has not yet landed, documents describe the **code-backed** reality and flag the intended direction; they
+never describe an aspiration as if it were already implemented.
 
-1. **Relationship vocabulary.** `core-v1.json` ships the relationship set `serves`, `realises`, `accesses`, `hosts`, `plan_effect` — these are ArchiMate-aligned (Serving, Realization, Access, …) and are the implemented truth. The prior `EDGE-CATALOGUE.md` used a divergent set (`contributes_to`, `delivers`, `uses_data`, `deployed_on`, `change_affects`, plus `depends_on`/`belongs_to` which the seed does not define), and `deployed_on` was the _reverse_ direction of the seed's `hosts`. **Reconciliation:** the canonical catalogue adopts the seed's ArchiMate-aligned names and directions; any additional generic relationships (a fallback dependency, a containment) are introduced explicitly as extensions with rationale, per the catalogue's own extension rule. See [ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md) and the rewritten [EDGE-CATALOGUE.md](../05-modules/praxis/EDGE-CATALOGUE.md).
+1. **Relationship vocabulary.** `core-v1.json` ships the relationship set `serves`, `realises`, `accesses`, `hosts`,
+   `plan_effect` — these are ArchiMate-aligned (Serving, Realization, Access, …) and are the implemented truth. The
+   prior `EDGE-CATALOGUE.md` used a divergent set (`contributes_to`, `delivers`, `uses_data`, `deployed_on`,
+   `change_affects`, plus `depends_on`/`belongs_to` which the seed does not define), and `deployed_on` was the _reverse_
+   direction of the seed's `hosts`. **Reconciliation:** the canonical catalogue adopts the seed's ArchiMate-aligned
+   names and directions; any additional generic relationships (a fallback dependency, a containment) are introduced
+   explicitly as extensions with rationale, per the catalogue's own extension rule. See
+   [ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md) and the rewritten
+   [EDGE-CATALOGUE.md](../05-modules/praxis/EDGE-CATALOGUE.md).
 
-2. **Master types and the semantic spine.** `DESIGN.md` describes a semantic spine of _master types_ (Actor → Intent → Value → Capability → Execution → Technology → Change). The seed metamodel implements concrete _entity types_ (`ValueStreamStage`, `Capability`, `BusinessProcess`, `Application`, `DataEntity`, `TechnologyComponent`, `PlanEvent`, `MetaModelEntry`) and does not yet define Actor/Intent/Value as types. **Reconciliation:** the semantic spine is documented as a _normative design model_ — the lineage along which integrity and explainability reason — and its mapping to implemented types is made explicit. Spine roles not yet present as types are labelled _planned_, not described as if they exist.
+2. **Master types and the semantic spine.** `DESIGN.md` describes a semantic spine of _master types_ (Actor → Intent →
+   Value → Capability → Execution → Technology → Change). The seed metamodel implements concrete _entity types_
+   (`ValueStreamStage`, `Capability`, `BusinessProcess`, `Application`, `DataEntity`, `TechnologyComponent`,
+   `PlanEvent`, `MetaModelEntry`) and does not yet define Actor/Intent/Value as types. **Reconciliation:** the semantic
+   spine is documented as a _normative design model_ — the lineage along which integrity and explainability reason — and
+   its mapping to implemented types is made explicit. Spine roles not yet present as types are labelled _planned_, not
+   described as if they exist.
 
-3. **Glossary authority.** The root [`CONTEXT.md`](../../CONTEXT.md) is the canonical glossary and is more precise than several older documents (entity/relationship vs node/edge; Change Event vs Operation; Artefact vs Artefact result). All documents conform to it; where an older document used an `_Avoid_` term, the rewrite corrects it.
+3. **Glossary authority.** The root [`CONTEXT.md`](../../CONTEXT.md) is the canonical glossary and is more precise than
+   several older documents (entity/relationship vs node/edge; Change Event vs Operation; Artefact vs Artefact result).
+   All documents conform to it; where an older document used an `_Avoid_` term, the rewrite corrects it.
 
 ---
 
@@ -312,7 +425,8 @@ A document is not finished until every box holds:
 - [ ] Uses [`CONTEXT.md`](../../CONTEXT.md) vocabulary exactly; no `_Avoid_` terms.
 - [ ] British English; present tense; deliberate must/should/may.
 - [ ] Every system claim links to canonical material or is marked design intent.
-- [ ] Every best-practice claim cites a named primary source, recorded in the [standards register](./STANDARDS-REGISTER.md).
+- [ ] Every best-practice claim cites a named primary source, recorded in the
+      [standards register](./STANDARDS-REGISTER.md).
 - [ ] At least one worked example using real seed identifiers, where behaviour is non-obvious.
 - [ ] Uses the unified integrity/confidence scales (§8) and honest-state vocabulary (§9) without redefining them.
 - [ ] Diagrams captioned and referenced; cross-links resolve.
@@ -328,9 +442,11 @@ _Normative for documentation form:_
 
 - The C4 Model for Visualising Software Architecture — Simon Brown. _(diagram convention for architecture views)_
 - RFC 9457, Problem Details for HTTP APIs (and predecessor RFC 7807). _(error-envelope citation form)_
-- Markdown Architecture Decision Records (MADR) and Nygard's original ADR pattern. _(ADR shape — see [ADR-FORMAT.md](./ADR-FORMAT.md))_
+- Markdown Architecture Decision Records (MADR) and Nygard's original ADR pattern. _(ADR shape — see
+  [ADR-FORMAT.md](./ADR-FORMAT.md))_
 
-_Informative — house references reused across the corpus (full list in the [standards register](./STANDARDS-REGISTER.md)):_
+_Informative — house references reused across the corpus (full list in the
+[standards register](./STANDARDS-REGISTER.md)):_
 
 - ISO/IEC/IEEE 42010:2022, Architecture description.
 - The Open Group, ArchiMate 3.2 Specification, and TOGAF Standard 10th Edition.

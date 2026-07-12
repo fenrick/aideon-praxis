@@ -34,7 +34,11 @@ This UX is job-driven and capability-gated. The renderer never performs network 
 
 ## Surface placement (shell)
 
-This is **design intent**: Continuum is not yet registered in the platform's `ENGINES` ([package-layout.md](../package-layout.md)). When the Continuum engine is licensed it contributes automation widgets to the one shared shell; the platform owns navigation, toolbar, content, and inspector, and Continuum ships no chrome of its own ([shell.md](../shell.md)). There is no separate “Automation” workspace to switch into — its widgets join the shared content surface like any other licensed engine's.
+This is **design intent**: Continuum is not yet registered in the platform's `ENGINES`
+([package-layout.md](../package-layout.md)). When the Continuum engine is licensed it contributes automation widgets to
+the one shared shell; the platform owns navigation, toolbar, content, and inspector, and Continuum ships no chrome of
+its own ([shell.md](../shell.md)). There is no separate “Automation” workspace to switch into — its widgets join the
+shared content surface like any other licensed engine's.
 
 ## Vocabulary and identifiers
 
@@ -46,7 +50,8 @@ This is **design intent**: Continuum is not yet registered in the platform's `EN
 
 ## Widgets contributed
 
-The widgets Continuum intends to contribute to the shared content surface (design intent — see [Surface placement](#surface-placement-shell)):
+The widgets Continuum intends to contribute to the shared content surface (design intent — see
+[Surface placement](#surface-placement-shell)):
 
 1. **Schedule detail**: configuration + next runs + history.
 2. **Connector detail**: configuration + auth status + schema mapping summary.
@@ -54,9 +59,15 @@ The widgets Continuum intends to contribute to the shared content surface (desig
 
 How the shared shell hosts these widgets:
 
-- **Navigation** (platform-owned) surfaces the schedules list (grouped: enabled, paused, failing, disabled), the connectors list (healthy, needs-auth, failing, disabled), run history (filterable by schedule, connector, status, time window), and failures (failed runs and the retry queue).
-- **Toolbar** (platform-owned) carries the actions Continuum registers — “Run now” (contextual; capability-gated, with a clear reason such as “requires automation_run” when blocked), “Create schedule”, “Add connector”, reversible “Pause all”/“Resume all” (no queued runs dropped without confirmation), and a status summary chip (running count, last failure) that opens the run list filtered to active/failing runs.
-- **Inspector** (platform-owned) shows selection-driven details for a schedule, run, or connector, with capability-gated actions (pause/resume, retry failed run, open diagnostics, export audit pack).
+- **Navigation** (platform-owned) surfaces the schedules list (grouped: enabled, paused, failing, disabled), the
+  connectors list (healthy, needs-auth, failing, disabled), run history (filterable by schedule, connector, status, time
+  window), and failures (failed runs and the retry queue).
+- **Toolbar** (platform-owned) carries the actions Continuum registers — “Run now” (contextual; capability-gated, with a
+  clear reason such as “requires automation_run” when blocked), “Create schedule”, “Add connector”, reversible “Pause
+  all”/“Resume all” (no queued runs dropped without confirmation), and a status summary chip (running count, last
+  failure) that opens the run list filtered to active/failing runs.
+- **Inspector** (platform-owned) shows selection-driven details for a schedule, run, or connector, with capability-gated
+  actions (pause/resume, retry failed run, open diagnostics, export audit pack).
 - **Footer / status** (platform-owned) carries the job tray entrypoint and an automation health badge.
 
 Schedule detail (required sections)

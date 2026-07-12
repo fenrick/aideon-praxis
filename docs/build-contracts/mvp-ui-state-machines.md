@@ -1,14 +1,23 @@
 # MVP UI state machines
 
-The state contract for each MVP renderer surface: every state it can be in, what puts it there, what it shows, and how it announces the change for keyboard and screen-reader users. The MVP surfaces are the shell **content/canvas**, the **catalogue view**, the **inspector**, and the **viewpoint/temporal control**. The honest-state vocabulary is fixed by [DOCUMENTATION-STANDARD §9](../02-standards/DOCUMENTATION-STANDARD.md); the state architecture is fixed by [ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md). This file does not invent UI states — it maps the contract's states onto each surface so an implementation cannot decide per-surface what "loading" or "stale" means.
+The state contract for each MVP renderer surface: every state it can be in, what puts it there, what it shows, and how
+it announces the change for keyboard and screen-reader users. The MVP surfaces are the shell **content/canvas**, the
+**catalogue view**, the **inspector**, and the **viewpoint/temporal control**. The honest-state vocabulary is fixed by
+[DOCUMENTATION-STANDARD §9](../02-standards/DOCUMENTATION-STANDARD.md); the state architecture is fixed by
+[ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md). This file does not invent UI states — it maps the
+contract's states onto each surface so an implementation cannot decide per-surface what "loading" or "stale" means.
 
-It also **settles the provisional single-user-MVP frontend choices** that ADR-0026 left open, so an agent can build a surface without making an architectural decision. Each settlement is bounded to the MVP and names the ADR it defers to.
+It also **settles the provisional single-user-MVP frontend choices** that ADR-0026 left open, so an agent can build a
+surface without making an architectural decision. Each settlement is bounded to the MVP and names the ADR it defers to.
 
 ---
 
 ## Settled MVP frontend choices
 
-ADR-0026 fixes the three-state separation (server-state / UI-state / persistent UI state), viewpoint-keying, and honest-state, and leaves the specific libraries and the persistence store as open questions. For the **single-user MVP**, this contract settles them as follows. These are MVP build decisions, not new invariants; the architecture (ADR-0026) is unchanged.
+ADR-0026 fixes the three-state separation (server-state / UI-state / persistent UI state), viewpoint-keying, and
+honest-state, and leaves the specific libraries and the persistence store as open questions. For the **single-user
+MVP**, this contract settles them as follows. These are MVP build decisions, not new invariants; the architecture
+(ADR-0026) is unchanged.
 
 | Concern                                                                 | MVP choice                                                                                                                                                                                                                                                                                                                                                                         | Grounding                                                                                                                                |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -21,24 +30,35 @@ ADR-0026 fixes the three-state separation (server-state / UI-state / persistent 
 | **Cross-window state sync**                                             | **Deferred.** Each window holds its own server-state cache and Zustand store; persistent UI-state is read from the shared store file on mount but not live-synced between windows.                                                                                                                                                                                                 | [ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md) ("what is deferred: cross-window state sharing")                          |
 | **State-change announcement**                                           | An `aria-live` polite region for non-focus-driven changes (viewpoint change, analysis complete, stale→fresh); honest-state badges carry text or shape, never colour alone.                                                                                                                                                                                                         | [ADR-0024](../06-adrs/ADR-0024-accessibility-baseline-wcag22.md), [accessibility](../frontend/accessibility.md)                          |
 
-A formal library decision (TanStack Query / Zustand / `tauri-plugin-store`) is design-intent until ratified into ADR-0026; this table is the MVP build choice the surfaces below assume.
+A formal library decision (TanStack Query / Zustand / `tauri-plugin-store`) is design-intent until ratified into
+ADR-0026; this table is the MVP build choice the surfaces below assume.
 
 ---
 
 ## The shared state vocabulary
 
-Every surface draws its states from the two honest-state axes ([DOCUMENTATION-STANDARD §9](../02-standards/DOCUMENTATION-STANDARD.md)). A surface carries **one** content classification per element and **any number** of result states; the axes never collapse into one badge.
+Every surface draws its states from the two honest-state axes
+([DOCUMENTATION-STANDARD §9](../02-standards/DOCUMENTATION-STANDARD.md)). A surface carries **one** content
+classification per element and **any number** of result states; the axes never collapse into one badge.
 
-- **Result state** (condition of the shown result): `loading` / `empty` / `validationError` / `hostFailure` / `backpressure` (queued) / `partialBounded` / `stale` / `rebuilding` / `recovery`. These map to §9's _Fresh / Stale / Rebuilding / Partial-or-Bounded / In progress / Awaiting review / Failed_ plus the input states (`loading`, `empty`, `validationError`) and the transport states (`backpressure`, `hostFailure`) the renderer adds at the IPC boundary ([error-loading-empty](../frontend/error-loading-empty.md)).
-- **Content classification** (kind of claim): `asserted` / `inferred` / `generated` — set by Praxis, displayed by the renderer, never decided by it ([content-classification](../03-design/artefacts/content-classification.md)).
+- **Result state** (condition of the shown result): `loading` / `empty` / `validationError` / `hostFailure` /
+  `backpressure` (queued) / `partialBounded` / `stale` / `rebuilding` / `recovery`. These map to §9's _Fresh / Stale /
+  Rebuilding / Partial-or-Bounded / In progress / Awaiting review / Failed_ plus the input states (`loading`, `empty`,
+  `validationError`) and the transport states (`backpressure`, `hostFailure`) the renderer adds at the IPC boundary
+  ([error-loading-empty](../frontend/error-loading-empty.md)).
+- **Content classification** (kind of claim): `asserted` / `inferred` / `generated` — set by Praxis, displayed by the
+  renderer, never decided by it ([content-classification](../03-design/artefacts/content-classification.md)).
 
-The error states map to the [error envelope](../04-contracts/ipc/error-envelope.md) categories: `validation` → `validationError`, `permission`/`internal` → `hostFailure`, `conflict` → a reconcile/refresh prompt, `transient`/`BACKPRESSURE` → `backpressure`.
+The error states map to the [error envelope](../04-contracts/ipc/error-envelope.md) categories: `validation` →
+`validationError`, `permission`/`internal` → `hostFailure`, `conflict` → a reconcile/refresh prompt,
+`transient`/`BACKPRESSURE` → `backpressure`.
 
 ---
 
 ## Surface: shell content / canvas
 
-The shared surface that renders the licensed engines' widgets ([shell](../frontend/shell.md), `PlatformContent`). In the MVP it hosts the catalogue view.
+The shared surface that renders the licensed engines' widgets ([shell](../frontend/shell.md), `PlatformContent`). In the
+MVP it hosts the catalogue view.
 
 | State            | Entered when                                                        | Shows                                                                                           | Keyboard / a11y                                              |
 | ---------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
@@ -50,13 +70,19 @@ The shared surface that renders the licensed engines' widgets ([shell](../fronte
 | `rebuilding`     | An `AcceptedJob` rebuild is in flight (step 10)                     | Prior content with a `Rebuilding` badge and progress from `RunEvent`                            | Progress announced at coarse intervals, not per event        |
 | `recovery`       | After reopen/rebuild; content re-resolves                           | Restored content; equivalence to pre-wipe state ([golden-journey](./golden-journey.md) step 10) | "Workspace restored" announced once                          |
 
-**Persistence:** the content region's split sizes (`Resizable`) are persistent UI-state in the store file; the selected artefact is shared UI-state in the Zustand store. **Across reload:** layout restores from the store; the artefact result is refetched (server-state is a cache, not truth). **Across renderer restart:** identical to reload — layout from the store file, results refetched after the setup handshake ([shell](../frontend/shell.md)).
+**Persistence:** the content region's split sizes (`Resizable`) are persistent UI-state in the store file; the selected
+artefact is shared UI-state in the Zustand store. **Across reload:** layout restores from the store; the artefact result
+is refetched (server-state is a cache, not truth). **Across renderer restart:** identical to reload — layout from the
+store file, results refetched after the setup handshake ([shell](../frontend/shell.md)).
 
 ---
 
 ## Surface: catalogue view
 
-Renders the [catalogue result](../04-contracts/artefact-results/catalogue-result.md) from `praxis_artefact_execute_catalogue` ([M3-artefacts](./M3-artefacts.md)). The renderer **reflects** Praxis's filter/sort/page; it never re-slices ([catalogue-result](../04-contracts/artefact-results/catalogue-result.md)). Built on TanStack Table over the TanStack Query result.
+Renders the [catalogue result](../04-contracts/artefact-results/catalogue-result.md) from
+`praxis_artefact_execute_catalogue` ([M3-artefacts](./M3-artefacts.md)). The renderer **reflects** Praxis's
+filter/sort/page; it never re-slices ([catalogue-result](../04-contracts/artefact-results/catalogue-result.md)). Built
+on TanStack Table over the TanStack Query result.
 
 | State                               | Entered when                                                   | Shows                                                                                                                                     | Keyboard / a11y                                                  |
 | ----------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -69,13 +95,18 @@ Renders the [catalogue result](../04-contracts/artefact-results/catalogue-result
 | `stale`                             | `mneme_change_event` invalidated the key                       | Rows dimmed with a `Stale` badge; auto-refetch                                                                                            | "Catalogue out of date, refreshing" announced                    |
 | `cell classification` (per element) | Always                                                         | Each cell shows its `asserted`/`inferred` badge; `inferred` (e.g. `health`) is visibly distinct by text/shape                             | Each cell's classification is in its accessible name             |
 
-**Sort/page changes** re-key the server-state query (a new viewpoint+sort+page key), producing a `loading`→result transition; the renderer issues a new execute command, it does not sort client-side. **Persistence:** column widths are persistent UI-state (store file); the current sort/page is shared UI-state (Zustand), restored on reload but the result itself is refetched. **Across renderer restart:** sort/page restore from the store, the catalogue is re-executed against the host.
+**Sort/page changes** re-key the server-state query (a new viewpoint+sort+page key), producing a `loading`→result
+transition; the renderer issues a new execute command, it does not sort client-side. **Persistence:** column widths are
+persistent UI-state (store file); the current sort/page is shared UI-state (Zustand), restored on reload but the result
+itself is refetched. **Across renderer restart:** sort/page restore from the store, the catalogue is re-executed against
+the host.
 
 ---
 
 ## Surface: inspector
 
-Selection-driven contextual details and the MVP's editing forms ([shell](../frontend/shell.md), `PlatformInspector`; [selection-model](../03-design/ux/selection-model.md)).
+Selection-driven contextual details and the MVP's editing forms ([shell](../frontend/shell.md), `PlatformInspector`;
+[selection-model](../03-design/ux/selection-model.md)).
 
 | State                   | Entered when                                                    | Shows                                                                                      | Keyboard / a11y                                                                                                  |
 | ----------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
@@ -90,13 +121,21 @@ Selection-driven contextual details and the MVP's editing forms ([shell](../fron
 | `hostFailure`           | `internal` error on the write                                   | Alert; the form keeps the user's input for retry                                           | `role="alert"`; focus to it                                                                                      |
 | `stale`                 | The viewed entity's viewpoint key was invalidated               | Fields dimmed with `Stale`; re-read                                                        | "Details out of date, refreshing" announced                                                                      |
 
-**No optimistic write:** the inspector never shows a value as saved before the host confirms; it shows `saving` → result, or `backpressure`/`conflict`/`hostFailure` ([ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md) open question). **Persistence:** the inspector's open/closed state and width are persistent UI-state (store file); the current selection is shared UI-state (Zustand). **Across reload/restart:** the panel geometry restores; the selection restores from the store, and the selected entity is re-read from the host.
+**No optimistic write:** the inspector never shows a value as saved before the host confirms; it shows `saving` →
+result, or `backpressure`/`conflict`/`hostFailure` ([ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md) open
+question). **Persistence:** the inspector's open/closed state and width are persistent UI-state (store file); the
+current selection is shared UI-state (Zustand). **Across reload/restart:** the panel geometry restores; the selection
+restores from the store, and the selected entity is re-read from the host.
 
 ---
 
 ## Surface: viewpoint / temporal control
 
-The always-visible control in the toolbar for as-of valid time, layer, and scenario ([shell](../frontend/shell.md), [time-and-scenario-ux](../03-design/ux/time-and-scenario-ux.md)). Time is the coordinate system, never ambient: this control names which version of the twin every other surface is showing, and changing it **re-keys all server-state** ([state-architecture](../frontend/state-architecture.md), [ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md)).
+The always-visible control in the toolbar for as-of valid time, layer, and scenario ([shell](../frontend/shell.md),
+[time-and-scenario-ux](../03-design/ux/time-and-scenario-ux.md)). Time is the coordinate system, never ambient: this
+control names which version of the twin every other surface is showing, and changing it **re-keys all server-state**
+([state-architecture](../frontend/state-architecture.md),
+[ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md)).
 
 | State             | Entered when                                    | Shows                                                         | Keyboard / a11y                                         |
 | ----------------- | ----------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------- |
@@ -106,7 +145,12 @@ The always-visible control in the toolbar for as-of valid time, layer, and scena
 | `applying`        | A new viewpoint is committed                    | All dependent surfaces enter `loading` as their keys change   | "Time context updated" announced via `aria-live` polite |
 | `scenarioLoading` | Scenario list fetching (`praxis_scenario_list`) | The scenario picker shows a loading affordance                | `aria-busy` on the picker                               |
 
-**The viewpoint is shared UI-state** (Zustand), the single coordinate every cache key carries. Changing it does **not** mutate the twin — it is a read coordinate, never written to the op log. **Persistence:** the **MVP persists the last-used viewpoint** as persistent UI-state (store file), so reopening a workspace restores the user's last as-of/layer/scenario rather than snapping to a default — whether this should instead be workspace-scoped is design-intent. **Across reload/restart:** the viewpoint restores from the store file on mount; every surface then refetches at that viewpoint. A scenario that no longer exists falls back to `base` with an announced notice.
+**The viewpoint is shared UI-state** (Zustand), the single coordinate every cache key carries. Changing it does **not**
+mutate the twin — it is a read coordinate, never written to the op log. **Persistence:** the **MVP persists the
+last-used viewpoint** as persistent UI-state (store file), so reopening a workspace restores the user's last
+as-of/layer/scenario rather than snapping to a default — whether this should instead be workspace-scoped is
+design-intent. **Across reload/restart:** the viewpoint restores from the store file on mount; every surface then
+refetches at that viewpoint. A scenario that no longer exists falls back to `base` with an announced notice.
 
 ---
 
@@ -121,7 +165,10 @@ The always-visible control in the toolbar for as-of valid time, layer, and scena
 | Hover / drag / transient                   | UI-state            | Local component           | No                                    | No                        | No                    |
 | Artefact results / projections             | Server-state        | TanStack Query cache      | No (refetched)                        | No (refetched)            | No                    |
 
-Server-state is a cache of host truth, never canonical; on reload or restart the renderer is a blank cache that refetches at the restored viewpoint after the setup handshake ([ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md), [shell](../frontend/shell.md)). The split is the rule: conflating server-state with persistent UI-state is the source of stale reads and lost layout.
+Server-state is a cache of host truth, never canonical; on reload or restart the renderer is a blank cache that
+refetches at the restored viewpoint after the setup handshake
+([ADR-0026](../06-adrs/ADR-0026-frontend-state-architecture.md), [shell](../frontend/shell.md)). The split is the rule:
+conflating server-state with persistent UI-state is the source of stale reads and lost layout.
 
 ---
 

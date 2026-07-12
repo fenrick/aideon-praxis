@@ -1,6 +1,9 @@
 # Matrix Result
 
-The output shape for the **matrix** form — a relationship or comparison grid of rows × columns between two populations, with cells carrying the relationship or a metric ([forms](../../03-design/artefacts/forms.md)). The body is stored **sparsely**: only populated cells are present. The common envelope is defined once in the [area README](./README.md); this file specifies the `body`.
+The output shape for the **matrix** form — a relationship or comparison grid of rows × columns between two populations,
+with cells carrying the relationship or a metric ([forms](../../03-design/artefacts/forms.md)). The body is stored
+**sparsely**: only populated cells are present. The common envelope is defined once in the [area README](./README.md);
+this file specifies the `body`.
 
 ---
 
@@ -45,11 +48,20 @@ The output shape for the **matrix** form — a relationship or comparison grid o
 
 ## Bounds and partial results
 
-A matrix is capped at **1,000 × 1,000 cells with sparse storage** ([artefact execution](../../05-modules/praxis/artefact-execution.md)). Exceeding the row or column population, or a populated-cell count past the bound, returns `resultState` including `partialBounded` and a `coverage` block stating which axis was capped; the returned axes and cells are the reached slice. Sparse storage means the absence of a cell is a positive statement — no relationship — not a Bounded gap.
+A matrix is capped at **1,000 × 1,000 cells with sparse storage**
+([artefact execution](../../05-modules/praxis/artefact-execution.md)). Exceeding the row or column population, or a
+populated-cell count past the bound, returns `resultState` including `partialBounded` and a `coverage` block stating
+which axis was capped; the returned axes and cells are the reached slice. Sparse storage means the absence of a cell is
+a positive statement — no relationship — not a Bounded gap.
 
 ## Worked example
 
-Render the `Application` × `Capability` `realises` relationship from the [baseline](../../data/base/baseline.yaml) at `{valid: 2026-06-11, layer: actual, scenario: base}`. Rows are `Insight Hub`, `Journey Studio`, `Automation Orchestrator`; columns are `Customer Insight`, `Journey Orchestration`, `Automation Fabric`. Three populated cells appear — `(Insight Hub, Customer Insight)` and `(Journey Studio, Journey Orchestration)` with `criticality: High`, `(Automation Orchestrator, Automation Fabric)` with `criticality: Medium` — each `asserted`. The six unpopulated pairs are simply absent. `resultState` is `["fresh"]`, well inside the 1,000 × 1,000 bound.
+Render the `Application` × `Capability` `realises` relationship from the [baseline](../../data/base/baseline.yaml) at
+`{valid: 2026-06-11, layer: actual, scenario: base}`. Rows are `Insight Hub`, `Journey Studio`,
+`Automation Orchestrator`; columns are `Customer Insight`, `Journey Orchestration`, `Automation Fabric`. Three populated
+cells appear — `(Insight Hub, Customer Insight)` and `(Journey Studio, Journey Orchestration)` with `criticality: High`,
+`(Automation Orchestrator, Automation Fabric)` with `criticality: Medium` — each `asserted`. The six unpopulated pairs
+are simply absent. `resultState` is `["fresh"]`, well inside the 1,000 × 1,000 bound.
 
 ## Related documents
 

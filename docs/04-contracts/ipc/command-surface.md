@@ -1,12 +1,15 @@
 # Command surface
 
-How IPC commands are namespaced into families, and where each family's command table is documented. The executable snapshot of every command name is the [IPC manifest](../../contracts/ipc-manifest.json), generated and drift-checked ([generated-schema-discipline.md](./generated-schema-discipline.md)).
+How IPC commands are namespaced into families, and where each family's command table is documented. The executable
+snapshot of every command name is the [IPC manifest](../../contracts/ipc-manifest.json), generated and drift-checked
+([generated-schema-discipline.md](./generated-schema-discipline.md)).
 
 ---
 
 ## Namespacing
 
-Every command name is `<module>_<area>_<verb>` in `snake_case`, so the owning module is read off the prefix. The prefix is the contract boundary: a command is owned by exactly one module, and its payload struct lives in that module's crate.
+Every command name is `<module>_<area>_<verb>` in `snake_case`, so the owning module is read off the prefix. The prefix
+is the contract boundary: a command is owned by exactly one module, and its payload struct lives in that module's crate.
 
 | Prefix                                                              | Owner         | Examples                                                        |
 | ------------------------------------------------------------------- | ------------- | --------------------------------------------------------------- |
@@ -19,7 +22,8 @@ Every command name is `<module>_<area>_<verb>` in `snake_case`, so the owning mo
 
 ## The contract families
 
-The surface groups into six families, all sharing the one [envelope](./envelope.md) and the one [error envelope](./error-envelope.md):
+The surface groups into six families, all sharing the one [envelope](./envelope.md) and the one
+[error envelope](./error-envelope.md):
 
 | #   | Family                        | Owner            | Where the command table lives                                          |
 | --- | ----------------------------- | ---------------- | ---------------------------------------------------------------------- |
@@ -30,7 +34,10 @@ The surface groups into six families, all sharing the one [envelope](./envelope.
 | 5   | Praxis artefact and workspace | Praxis           | [Praxis module](../../05-modules/praxis/README.md)                     |
 | 6   | Accepted work and events      | Continuum / Host | [accepted-work-and-events/](../accepted-work-and-events/README.md)     |
 
-The per-engine command tables (the full list of `mneme_store_*`, `chrona_temporal_*`, and `praxis_*` commands with their payloads) live with their modules rather than being duplicated here — the module is the single source of truth for what it exposes. The host wires them all behind the trust boundary ([Host: IPC command surface](../../05-modules/host/ipc-command-surface.md)).
+The per-engine command tables (the full list of `mneme_store_*`, `chrona_temporal_*`, and `praxis_*` commands with their
+payloads) live with their modules rather than being duplicated here — the module is the single source of truth for what
+it exposes. The host wires them all behind the trust boundary
+([Host: IPC command surface](../../05-modules/host/ipc-command-surface.md)).
 
 ## System commands
 

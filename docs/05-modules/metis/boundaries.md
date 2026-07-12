@@ -1,10 +1,14 @@
 # Boundaries
 
-What Metis depends on, what depends on it, and the acyclic rule. For a reader checking whether a proposed dependency is allowed.
+What Metis depends on, what depends on it, and the acyclic rule. For a reader checking whether a proposed dependency is
+allowed.
 
-The full crate graph is the [module dependency map](../../01-architecture/module-dependency-map.md); the directions and the acyclic invariant in prose are [dependency rules](../../01-architecture/boundary/dependency-rules.md). This file is the Metis-facing view.
+The full crate graph is the [module dependency map](../../01-architecture/module-dependency-map.md); the directions and
+the acyclic invariant in prose are [dependency rules](../../01-architecture/boundary/dependency-rules.md). This file is
+the Metis-facing view.
 
-> The `metis` crate is currently a placeholder ([README](./README.md)); the boundary rules below are normative and constrain the implementation when it lands.
+> The `metis` crate is currently a placeholder ([README](./README.md)); the boundary rules below are normative and
+> constrain the implementation when it lands.
 
 ---
 
@@ -21,11 +25,16 @@ Metis never accesses persistence internals directly and never imports a Praxis o
 
 ## What Metis does _not_ depend on
 
-- **Not Praxis or Mneme internals.** Contract types only; no coupling to the rule engine, metamodel publisher, or storage adapters ([module dependency map](../../01-architecture/module-dependency-map.md)).
-- **Not Chrona or Continuum.** No lateral engine dependency. A job that runs as accepted work is composed by Continuum _through the host_, not by a Metis→Continuum import ([accepted-work execution](./accepted-work-execution.md)).
-- **Not the host (`aideon_desktop`), the renderer, the `engine` harness, or any Tauri/WebView API.** Modules never depend on the host or the harness; the renderer has no Rust crate access ([dependency rules](../../01-architecture/boundary/dependency-rules.md)).
+- **Not Praxis or Mneme internals.** Contract types only; no coupling to the rule engine, metamodel publisher, or
+  storage adapters ([module dependency map](../../01-architecture/module-dependency-map.md)).
+- **Not Chrona or Continuum.** No lateral engine dependency. A job that runs as accepted work is composed by Continuum
+  _through the host_, not by a Metis→Continuum import ([accepted-work execution](./accepted-work-execution.md)).
+- **Not the host (`aideon_desktop`), the renderer, the `engine` harness, or any Tauri/WebView API.** Modules never
+  depend on the host or the harness; the renderer has no Rust crate access
+  ([dependency rules](../../01-architecture/boundary/dependency-rules.md)).
 
-The crate exposes only traits, typed structs, and deterministic helpers; all algorithm implementations are testable without I/O.
+The crate exposes only traits, typed structs, and deterministic helpers; all algorithm implementations are testable
+without I/O.
 
 ---
 
@@ -41,17 +50,26 @@ Metis
   └─ no Tauri, no UI, no direct DB access
 ```
 
-The host composes Metis behind its trait via the [engine harness](../engine/README.md); Continuum (contracts only) enqueues Metis jobs; Praxis frames the questions Metis answers and presents the results, but does so through host composition, not a direct import. Kairos (planned) consumes the change-magnitude vector Metis computes ([impact and change magnitude](./impact-and-change-magnitude.md)).
+The host composes Metis behind its trait via the [engine harness](../engine/README.md); Continuum (contracts only)
+enqueues Metis jobs; Praxis frames the questions Metis answers and presents the results, but does so through host
+composition, not a direct import. Kairos (planned) consumes the change-magnitude vector Metis computes
+([impact and change magnitude](./impact-and-change-magnitude.md)).
 
 ---
 
 ## The acyclic rule
 
-> No engine depends on another engine, and the graph is acyclic ([ADR-0011](../../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)).
+> No engine depends on another engine, and the graph is acyclic
+> ([ADR-0011](../../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)).
 
-Forbidden cycles involving Metis include `praxis → metis → praxis` and `metis → chrona → metis` ([module dependency map](../../01-architecture/module-dependency-map.md)). When Metis and another engine need a shared type, it drops to a lower neutral contract crate rather than creating a lateral import. Cargo rejects a dependency cycle at build time, so the rule is enforced mechanically.
+Forbidden cycles involving Metis include `praxis → metis → praxis` and `metis → chrona → metis`
+([module dependency map](../../01-architecture/module-dependency-map.md)). When Metis and another engine need a shared
+type, it drops to a lower neutral contract crate rather than creating a lateral import. Cargo rejects a dependency cycle
+at build time, so the rule is enforced mechanically.
 
-The trade-off: Metis cannot call Praxis to re-resolve the twin mid-computation — it works from the projection it was given. The architecture accepts that constraint in exchange for an engine that is independently testable and a graph that stays acyclic by construction.
+The trade-off: Metis cannot call Praxis to re-resolve the twin mid-computation — it works from the projection it was
+given. The architecture accepts that constraint in exchange for an engine that is independently testable and a graph
+that stays acyclic by construction.
 
 ---
 

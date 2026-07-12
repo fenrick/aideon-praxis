@@ -1,6 +1,8 @@
 # Analytics — moved
 
-This document has been decomposed into the [`analytics/`](./analytics/README.md) folder of small single-topic files, per the [Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md). This stub remains so existing cross-links resolve.
+This document has been decomposed into the [`analytics/`](./analytics/README.md) folder of small single-topic files, per
+the [Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md). This stub remains so existing cross-links
+resolve.
 
 Start at **[`analytics/README.md`](./analytics/README.md)**. Direct entry points:
 

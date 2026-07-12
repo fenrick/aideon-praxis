@@ -1,6 +1,8 @@
 # Local durable run ledger
 
-The run ledger is persisted in the workspace, not in a hosted service. It is the source of truth for run history, step lineage, and artefact provenance — and the store whose lifetime bounds the [idempotency](./idempotency-rules.md) dedup window. It is owned by [Continuum](../../05-modules/continuum/snapshot-store-and-ledger.md).
+The run ledger is persisted in the workspace, not in a hosted service. It is the source of truth for run history, step
+lineage, and artefact provenance — and the store whose lifetime bounds the [idempotency](./idempotency-rules.md) dedup
+window. It is owned by [Continuum](../../05-modules/continuum/snapshot-store-and-ledger.md).
 
 ---
 
@@ -22,7 +24,8 @@ The run ledger is persisted in the workspace, not in a hosted service. It is the
             └── ...
 ```
 
-The `AcceptedJob.ledgerRef` is a workspace-relative path to the `run.json` for that run (e.g. `ops/runs/run_abc/run.json`).
+The `AcceptedJob.ledgerRef` is a workspace-relative path to the `run.json` for that run (e.g.
+`ops/runs/run_abc/run.json`).
 
 ## RunRecord
 
@@ -42,7 +45,8 @@ pub struct RunRecord {
 }
 ```
 
-A retry creates a new `RunRecord` linked to the original via a `retriedFromRunId` field ([control-operations.md](./control-operations.md)); the original record is never mutated.
+A retry creates a new `RunRecord` linked to the original via a `retriedFromRunId` field
+([control-operations.md](./control-operations.md)); the original record is never mutated.
 
 ## StepRecord
 
@@ -63,7 +67,8 @@ interface StepRecord {
 }
 ```
 
-`attemptCount` is the realised count against the step's [max-retry budget](./run-and-step-lifecycle.md); `dependsOn` records the [DAG edges](./run-and-step-lifecycle.md) (design intent where the DAG is not yet realised).
+`attemptCount` is the realised count against the step's [max-retry budget](./run-and-step-lifecycle.md); `dependsOn`
+records the [DAG edges](./run-and-step-lifecycle.md) (design intent where the DAG is not yet realised).
 
 ## RunError
 
@@ -77,11 +82,15 @@ interface RunError {
 }
 ```
 
-`RunError.code` is the same stable code vocabulary as the [IPC error envelope](../ipc/error-envelope.md), so a failed run's recorded error carries the same category and recovery semantics; `details` must not leak secrets ([LOGGING_FRAMEWORK.md §10](../../LOGGING_FRAMEWORK.md)).
+`RunError.code` is the same stable code vocabulary as the [IPC error envelope](../ipc/error-envelope.md), so a failed
+run's recorded error carries the same category and recovery semantics; `details` must not leak secrets
+([LOGGING_FRAMEWORK.md §10](../../LOGGING_FRAMEWORK.md)).
 
 ## Retention and garbage collection
 
-The ledger does not grow without bound. A retention policy retires run entries, and retiring a run's entry is also what closes its [idempotency window](./idempotency-rules.md). Retention is applied by the `mneme_trigger_retention` command with a `RetentionPolicy`:
+The ledger does not grow without bound. A retention policy retires run entries, and retiring a run's entry is also what
+closes its [idempotency window](./idempotency-rules.md). Retention is applied by the `mneme_trigger_retention` command
+with a `RetentionPolicy`:
 
 ```typescript
 interface RetentionPolicy {
@@ -92,7 +101,13 @@ interface RetentionPolicy {
 }
 ```
 
-Garbage collection is the `retention` [work queue class](./accepted-job-shape.md) itself: an accepted run that, in turn, prunes retired ledger entries, their step files, and their event files. A run is eligible for collection only once it is terminal and older than its class's retention window; failed runs are kept longer (`keepFailedJobsDays`) so a failure remains auditable. The exact default windows are provisional ([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md), open questions) and are design intent until configured. Continuum owns the ledger and its GC ([Continuum: snapshot store and ledger](../../05-modules/continuum/snapshot-store-and-ledger.md)).
+Garbage collection is the `retention` [work queue class](./accepted-job-shape.md) itself: an accepted run that, in turn,
+prunes retired ledger entries, their step files, and their event files. A run is eligible for collection only once it is
+terminal and older than its class's retention window; failed runs are kept longer (`keepFailedJobsDays`) so a failure
+remains auditable. The exact default windows are provisional
+([ADR-0018](../../06-adrs/ADR-0018-idempotency-and-deduplication.md), open questions) and are design intent until
+configured. Continuum owns the ledger and its GC
+([Continuum: snapshot store and ledger](../../05-modules/continuum/snapshot-store-and-ledger.md)).
 
 ## References & standards
 

@@ -4,7 +4,9 @@ This document has moved. The testing strategy is now a folder of focused files, 
 
 **→ [testing/README.md](./testing/README.md)**
 
-The folder covers the six test layers, coverage and the flakiness SLA, boundary and contract testing (tracked against the IPC manifest), property-based and fuzz testing, per-module obligations, the cross-platform matrix, and documentation-example testing.
+The folder covers the six test layers, coverage and the flakiness SLA, boundary and contract testing (tracked against
+the IPC manifest), property-based and fuzz testing, per-module obligations, the cross-platform matrix, and
+documentation-example testing.
 
 | Topic                                     | File                                                                               |
 | ----------------------------------------- | ---------------------------------------------------------------------------------- |

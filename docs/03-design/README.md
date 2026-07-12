@@ -1,14 +1,22 @@
 # Product Design
 
-What Aideon Desktop is and how it behaves — the durable design record for the product layer. This folder is the _explanation_ layer of the corpus (Procida, Diátaxis): it sits below the architecture and standards, above the contracts and modules, and explains the reasoning a competent engineer or architect would need to rebuild, extend, or audit the product. It does not make architecture decisions; those live in the [ADR set](../06-adrs/ADRS.md).
+What Aideon Desktop is and how it behaves — the durable design record for the product layer. This folder is the
+_explanation_ layer of the corpus (Procida, Diátaxis): it sits below the architecture and standards, above the contracts
+and modules, and explains the reasoning a competent engineer or architect would need to rebuild, extend, or audit the
+product. It does not make architecture decisions; those live in the [ADR set](../06-adrs/ADRS.md).
 
-Aideon Desktop is a **desktop-first, local-first, time-first digital-twin modelling application**: a Tauri v2 shell (an untrusted WebView renderer over a Rust core) that separates **meaning** ([Praxis](../05-modules/praxis/README.md)) from **storage** ([Mneme](../05-modules/mneme/README.md)) so the surface stays stable while engines evolve behind typed boundaries. The vocabulary it uses is fixed by the root glossary, [`CONTEXT.md`](../../CONTEXT.md); the form it is written in is fixed by the [Documentation Standard](../02-standards/DOCUMENTATION-STANDARD.md).
+Aideon Desktop is a **desktop-first, local-first, time-first digital-twin modelling application**: a Tauri v2 shell (an
+untrusted WebView renderer over a Rust core) that separates **meaning** ([Praxis](../05-modules/praxis/README.md)) from
+**storage** ([Mneme](../05-modules/mneme/README.md)) so the surface stays stable while engines evolve behind typed
+boundaries. The vocabulary it uses is fixed by the root glossary, [`CONTEXT.md`](../../CONTEXT.md); the form it is
+written in is fixed by the [Documentation Standard](../02-standards/DOCUMENTATION-STANDARD.md).
 
 ---
 
 ## How to read this layer
 
-Start with the design spine, then follow the area that answers your question. Each area below is a folder of small single-topic files indexed by its own README (Documentation Standard §4).
+Start with the design spine, then follow the area that answers your question. Each area below is a folder of small
+single-topic files indexed by its own README (Documentation Standard §4).
 
 ```
 overview & axioms  →  design/ (this README + the spine files)
@@ -55,7 +63,8 @@ The five files that carry the cross-cutting design narrative. Read these first.
 
 ## The modelling language and its movement
 
-These areas are authored separately and are linked here as the foundation the product layer rests on. **Treat them as canonical** — the product areas above defer to them on the metamodel, the spine, and the planning thesis.
+These areas are authored separately and are linked here as the foundation the product layer rests on. **Treat them as
+canonical** — the product areas above defer to them on the metamodel, the spine, and the planning thesis.
 
 | Area                                              | What it covers                                                                                                                                               |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -77,11 +86,14 @@ Owned by the design-system author; linked here so the product design resolves do
 
 ## References & standards
 
-_Informative — the references this whole layer leans on (full list in the [standards register](../02-standards/STANDARDS-REGISTER.md)):_
+_Informative — the references this whole layer leans on (full list in the
+[standards register](../02-standards/STANDARDS-REGISTER.md)):_
 
 - Procida — **Diátaxis**. The explanation/reference/how-to separation that places this layer.
-- The Open Group — **TOGAF Standard, 10th Edition** and **ArchiMate 3.2 Specification**. The enterprise-architecture alignment behind artefact families and the metamodel.
-- Nielsen — **10 Usability Heuristics**, 1994; Pirolli & Card — **Information Foraging**, 1999. The UX and explanation-surface basis.
+- The Open Group — **TOGAF Standard, 10th Edition** and **ArchiMate 3.2 Specification**. The enterprise-architecture
+  alignment behind artefact families and the metamodel.
+- Nielsen — **10 Usability Heuristics**, 1994; Pirolli & Card — **Information Foraging**, 1999. The UX and
+  explanation-surface basis.
 
 ## Related documents
 

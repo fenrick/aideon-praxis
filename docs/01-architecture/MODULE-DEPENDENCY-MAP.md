@@ -1,6 +1,10 @@
 # Module Dependency Map
 
-The allowed dependency graph for Aideon Desktop's Rust crates and the renderer, the role of the `engine` harness crate, where the four planned modules attach, and how the acyclic invariant is enforced. This document is the building-block view (arc42) at crate granularity; the rules it draws are stated in [`boundary/dependency-rules.md`](./boundary/dependency-rules.md), and the same structure is drawn at C4 component level in [`c4/`](./c4/).
+The allowed dependency graph for Aideon Desktop's Rust crates and the renderer, the role of the `engine` harness crate,
+where the four planned modules attach, and how the acyclic invariant is enforced. This document is the building-block
+view (arc42) at crate granularity; the rules it draws are stated in
+[`boundary/dependency-rules.md`](./boundary/dependency-rules.md), and the same structure is drawn at C4 component level
+in [`c4/`](./c4/).
 
 ---
 
@@ -8,11 +12,16 @@ The allowed dependency graph for Aideon Desktop's Rust crates and the renderer, 
 
 Five rules govern the whole graph, regardless of how crates are later split or merged:
 
-1. **The host depends on modules; modules do not depend on the host.** `src-tauri` composes the engine crates. No engine crate imports `aideon_desktop`.
-2. **Engine-to-engine cycles are architecture violations.** If removing a crate from the graph would leave a cycle in what remains, the graph is already wrong.
-3. **Shared contracts sit below their consumers.** A type shared across module boundaries belongs in a lower neutral crate, never inside a module that then forces an upward import.
-4. **The design system stays domain-free.** The renderer's design-system components carry no engine logic, no IPC calls, and no business rules.
-5. **The renderer depends only on the host IPC surface.** The React app calls Tauri commands and events; it never reaches an engine crate directly and never makes local HTTP calls.
+1. **The host depends on modules; modules do not depend on the host.** `src-tauri` composes the engine crates. No engine
+   crate imports `aideon_desktop`.
+2. **Engine-to-engine cycles are architecture violations.** If removing a crate from the graph would leave a cycle in
+   what remains, the graph is already wrong.
+3. **Shared contracts sit below their consumers.** A type shared across module boundaries belongs in a lower neutral
+   crate, never inside a module that then forces an upward import.
+4. **The design system stays domain-free.** The renderer's design-system components carry no engine logic, no IPC calls,
+   and no business rules.
+5. **The renderer depends only on the host IPC surface.** The React app calls Tauri commands and events; it never
+   reaches an engine crate directly and never makes local HTTP calls.
 
 ---
 
@@ -35,21 +44,30 @@ Five rules govern the whole graph, regardless of how crates are later split or m
 | _planned_            | `aideon_sophia`      | AI assistance — LLM-assisted authoring behind guardrails; all output Generated.                                                                                                                                                                                                                                                                                                                                                                                                          |
 | _planned_            | `aideon_kerux`       | Reporting and publishing — deterministic briefings and packaged outputs.                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
-The planned crates are documented as design intent under **[ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)** (Module taxonomy and boundaries); they do not yet exist as crates.
+The planned crates are documented as design intent under
+**[ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)** (Module taxonomy and boundaries); they do not yet
+exist as crates.
 
 ---
 
 ## The `engine` crate's role
 
-The `engine` crate is the **wiring seam**, not a domain engine. It holds the trait definitions the host programmes against and the assembly logic that binds each concrete engine (Praxis, Mneme, Metis, Chrona, Continuum, and later the planned engines) to its trait, producing the set of trait objects the host's IPC handlers route to. This is what lets the host be the composition root without depending on any engine's concrete type: the host depends on `engine`'s traits, `engine` depends on the concrete crates, and a handler never names a concrete engine.
+The `engine` crate is the **wiring seam**, not a domain engine. It holds the trait definitions the host programmes
+against and the assembly logic that binds each concrete engine (Praxis, Mneme, Metis, Chrona, Continuum, and later the
+planned engines) to its trait, producing the set of trait objects the host's IPC handlers route to. This is what lets
+the host be the composition root without depending on any engine's concrete type: the host depends on `engine`'s traits,
+`engine` depends on the concrete crates, and a handler never names a concrete engine.
 
-Because `engine` sits between the host and the domain crates in the wiring direction, it must not become a back-channel for engine-to-engine coupling: it composes engines, it does not let them import one another. A shared type that two engines need still drops to a lower neutral crate (`mneme_core` or a dedicated contracts crate), not into `engine`.
+Because `engine` sits between the host and the domain crates in the wiring direction, it must not become a back-channel
+for engine-to-engine coupling: it composes engines, it does not let them import one another. A shared type that two
+engines need still drops to a lower neutral crate (`mneme_core` or a dedicated contracts crate), not into `engine`.
 
 ---
 
 ## Allowed dependency graph
 
-The graph below shows the current crates as solid implementation dependencies and contract-only edges as dashed; the planned engines are shown attaching at their boundary.
+The graph below shows the current crates as solid implementation dependencies and contract-only edges as dashed; the
+planned engines are shown attaching at their boundary.
 
 ```mermaid
 graph TD
@@ -113,7 +131,9 @@ graph TD
     MNEME_STORE --> MNEME_CORE
 ```
 
-_Figure 1 — The allowed crate dependency graph. Solid arrows are implementation dependencies; dashed arrows are contract-only edges or planned attachments. The planned engines attach via the `engine` harness and read through Mneme, introducing no cycle._
+_Figure 1 — The allowed crate dependency graph. Solid arrows are implementation dependencies; dashed arrows are
+contract-only edges or planned attachments. The planned engines attach via the `engine` harness and read through Mneme,
+introducing no cycle._
 
 ---
 
@@ -165,7 +185,8 @@ These cycles are violations regardless of how they arise:
 - `mneme_core → mneme_store → mneme_core`
 - any `engine → renderer → desktop → engine` shortcut
 
-If two modules need each other's types, the shared type belongs in a lower neutral contract crate — not inside either module.
+If two modules need each other's types, the shared type belongs in a lower neutral contract crate — not inside either
+module.
 
 ---
 
@@ -173,11 +194,19 @@ If two modules need each other's types, the shared type belongs in a lower neutr
 
 The invariant is enforced by three mechanisms, strongest first:
 
-1. **The build rejects cycles.** Cargo's resolver does not permit a dependency cycle between crates; any cycle introduced through `Cargo.toml` fails the build. This is the hard backstop — a cyclic graph cannot compile.
-2. **The crate split removes the temptation.** Contracts that would otherwise force a lateral or upward import live in lower neutral crates: storage-adjacent contracts in `aideon_mneme_core`, and cross-engine contracts in a dedicated `aideon_contracts` crate when they span multiple engines. Because the shared type already lives below both consumers, no engine needs to import another to reach it.
-3. **The taxonomy fixes ownership.** Each capability belongs to exactly one engine, per **[ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)**. Two engines do not grow a mutual dependency by drifting into one another's responsibility, because the responsibility has a single owner.
+1. **The build rejects cycles.** Cargo's resolver does not permit a dependency cycle between crates; any cycle
+   introduced through `Cargo.toml` fails the build. This is the hard backstop — a cyclic graph cannot compile.
+2. **The crate split removes the temptation.** Contracts that would otherwise force a lateral or upward import live in
+   lower neutral crates: storage-adjacent contracts in `aideon_mneme_core`, and cross-engine contracts in a dedicated
+   `aideon_contracts` crate when they span multiple engines. Because the shared type already lives below both consumers,
+   no engine needs to import another to reach it.
+3. **The taxonomy fixes ownership.** Each capability belongs to exactly one engine, per
+   **[ADR-0011](../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)**. Two engines do not grow a mutual dependency by
+   drifting into one another's responsibility, because the responsibility has a single owner.
 
-Candidate types for the neutral contract surfaces include temporal request/response DTOs (valid-time range, asserted-time range, scenario key), analytics result DTOs, workflow run and event DTOs, metamodel key and edge-catalogue types, and artefact identity types shared across engines.
+Candidate types for the neutral contract surfaces include temporal request/response DTOs (valid-time range,
+asserted-time range, scenario key), analytics result DTOs, workflow run and event DTOs, metamodel key and edge-catalogue
+types, and artefact identity types shared across engines.
 
 ---
 

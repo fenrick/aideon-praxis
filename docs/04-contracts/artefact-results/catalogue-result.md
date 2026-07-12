@@ -1,6 +1,10 @@
 # Catalogue Result
 
-The output shape for the **catalogue** form — a structured inventory of entities of one or more types, with their slots, filtered by scope ([forms](../../03-design/artefacts/forms.md)). A catalogue is the canonical list-shaped result: it is paginated, filtered, and sorted by Praxis, never re-sliced in the renderer ([artefact execution boundary](../../01-architecture/boundary/artefact-execution-boundary.md)). The common envelope is defined once in the [area README](./README.md); this file specifies the `body`.
+The output shape for the **catalogue** form — a structured inventory of entities of one or more types, with their slots,
+filtered by scope ([forms](../../03-design/artefacts/forms.md)). A catalogue is the canonical list-shaped result: it is
+paginated, filtered, and sorted by Praxis, never re-sliced in the renderer
+([artefact execution boundary](../../01-architecture/boundary/artefact-execution-boundary.md)). The common envelope is
+defined once in the [area README](./README.md); this file specifies the `body`.
 
 ---
 
@@ -44,13 +48,23 @@ The output shape for the **catalogue** form — a structured inventory of entiti
 
 ## Filter, sort, and pagination semantics
 
-- **Filter** narrows which resolved entities appear; it is evaluated by Praxis over read slots and does not change a cell's classification. The applied filter is part of the cache key with the viewpoint.
-- **Sort** orders rows by a named slot with a deterministic tie-break by stable identifier, so equal-keyed rows keep a reproducible order across pages ([artefact execution](../../05-modules/praxis/artefact-execution.md)).
-- **Pagination** returns one page; `pageSize` is capped at the catalogue ceiling of **200** ([artefact execution](../../05-modules/praxis/artefact-execution.md)). A paged result is complete-in-pages; it carries no `partialBounded` state for being paged. `partialBounded` appears only when a depth, fanout, size, or time bound capped coverage.
+- **Filter** narrows which resolved entities appear; it is evaluated by Praxis over read slots and does not change a
+  cell's classification. The applied filter is part of the cache key with the viewpoint.
+- **Sort** orders rows by a named slot with a deterministic tie-break by stable identifier, so equal-keyed rows keep a
+  reproducible order across pages ([artefact execution](../../05-modules/praxis/artefact-execution.md)).
+- **Pagination** returns one page; `pageSize` is capped at the catalogue ceiling of **200**
+  ([artefact execution](../../05-modules/praxis/artefact-execution.md)). A paged result is complete-in-pages; it carries
+  no `partialBounded` state for being paged. `partialBounded` appears only when a depth, fanout, size, or time bound
+  capped coverage.
 
 ## Worked example
 
-The "Application Portfolio Health" catalogue over the [baseline](../../data/base/baseline.yaml) at `{valid: 2026-06-11, layer: actual, scenario: base, scope: type=Application}`, sorted by `name` ascending with `pageSize: 2`, returns page one: `Automation Orchestrator` and `Insight Hub`. Each row's `disposition` and `lifecycle` cells are `asserted`; a `health` cell rolling up `realises` `criticality` is `inferred`. The `page` block reads `{ offset: 0, pageSize: 2, total: 3, hasMore: true }`; `Journey Studio` is on page two — absent here but not missing, so `resultState` is `["fresh"]` and `coverage` is `null`.
+The "Application Portfolio Health" catalogue over the [baseline](../../data/base/baseline.yaml) at
+`{valid: 2026-06-11, layer: actual, scenario: base, scope: type=Application}`, sorted by `name` ascending with
+`pageSize: 2`, returns page one: `Automation Orchestrator` and `Insight Hub`. Each row's `disposition` and `lifecycle`
+cells are `asserted`; a `health` cell rolling up `realises` `criticality` is `inferred`. The `page` block reads
+`{ offset: 0, pageSize: 2, total: 3, hasMore: true }`; `Journey Studio` is on page two — absent here but not missing, so
+`resultState` is `["fresh"]` and `coverage` is `null`.
 
 ## Related documents
 

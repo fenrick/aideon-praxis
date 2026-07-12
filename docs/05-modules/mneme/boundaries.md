@@ -1,20 +1,28 @@
 # Boundaries
 
-What Mneme owns, what it explicitly does not own, and the seams it shares with the modules around it. The forbidden list is the load-bearing half: a clear statement of what Mneme does _not_ do is what keeps the module graph acyclic and the responsibilities un-blurred ([dependency-rules](../../01-architecture/boundary/dependency-rules.md), [ADR-0011](../../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)).
+What Mneme owns, what it explicitly does not own, and the seams it shares with the modules around it. The forbidden list
+is the load-bearing half: a clear statement of what Mneme does _not_ do is what keeps the module graph acyclic and the
+responsibilities un-blurred ([dependency-rules](../../01-architecture/boundary/dependency-rules.md),
+[ADR-0011](../../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md)).
 
 ---
 
 ## What Mneme owns
 
-Mneme is the **only module that touches canonical storage** ([layers-and-responsibilities](../../01-architecture/boundary/layers-and-responsibilities.md)). It owns:
+Mneme is the **only module that touches canonical storage**
+([layers-and-responsibilities](../../01-architecture/boundary/layers-and-responsibilities.md)). It owns:
 
 - The append-only operation log — the canonical primitive ([op-fact-schema-model](./op-fact-schema-model.md)).
-- Bitemporal fact resolution: the mechanical precedence chain over valid time and asserted time ([bitemporal-and-hlc](./bitemporal-and-hlc.md)).
+- Bitemporal fact resolution: the mechanical precedence chain over valid time and asserted time
+  ([bitemporal-and-hlc](./bitemporal-and-hlc.md)).
 - The HLC asserted-time clock ([ADR-0022](../../06-adrs/ADR-0022-hlc-clock-model.md)).
-- Schema-as-data persistence and the compiled effective-schema cache ([op-fact-schema-model](./op-fact-schema-model.md)).
+- Schema-as-data persistence and the compiled effective-schema cache
+  ([op-fact-schema-model](./op-fact-schema-model.md)).
 - The content-addressed blob store ([content-addressed-blobs](./content-addressed-blobs.md)).
-- The derived runtime database, its projections, and the three consistency tiers ([derived-runtime-and-projections](./derived-runtime-and-projections.md)).
-- The storage trait that fixes the seam, and the single-writer queue ([storage-trait-and-engine](./storage-trait-and-engine.md)).
+- The derived runtime database, its projections, and the three consistency tiers
+  ([derived-runtime-and-projections](./derived-runtime-and-projections.md)).
+- The storage trait that fixes the seam, and the single-writer queue
+  ([storage-trait-and-engine](./storage-trait-and-engine.md)).
 - Export, import, and replay of the canonical package ([export-import-replay](./export-import-replay.md)).
 
 ---
@@ -36,22 +44,38 @@ Mneme is the **only module that touches canonical storage** ([layers-and-respons
 
 This is the seam most likely to blur, so it is stated explicitly. The temporal model is split:
 
-- **Mneme implements the mechanical resolution** — containment, specificity, latest asserted time, op-id tie-break, and the per-layer-then-policy combination — exactly as the [temporal and scenario contract](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) fixes it. This is storage-layer logic: given a viewpoint and a slot, which fact wins.
-- **Chrona owns the product-level interpretation** built on that resolution: how a viewpoint is presented and re-resolved, how a diff's delta kind is classified, how a scenario composition is shaped into a UX payload, plateau and transition semantics ([Chrona README](../chrona/README.md)).
+- **Mneme implements the mechanical resolution** — containment, specificity, latest asserted time, op-id tie-break, and
+  the per-layer-then-policy combination — exactly as the
+  [temporal and scenario contract](../../04-contracts/TEMPORAL-AND-SCENARIO-CONTEXT.md) fixes it. This is storage-layer
+  logic: given a viewpoint and a slot, which fact wins.
+- **Chrona owns the product-level interpretation** built on that resolution: how a viewpoint is presented and
+  re-resolved, how a diff's delta kind is classified, how a scenario composition is shaped into a UX payload, plateau
+  and transition semantics ([Chrona README](../chrona/README.md)).
 
-Chrona reads through Mneme's trait; it never reaches into the runtime database. The contract both implement against is the same document, which is why they cannot drift: where this boundary and the contract could disagree, the contract governs.
+Chrona reads through Mneme's trait; it never reaches into the runtime database. The contract both implement against is
+the same document, which is why they cannot drift: where this boundary and the contract could disagree, the contract
+governs.
 
 ---
 
 ## Folded concern: Logos
 
-A note for completeness. **Logos** — narrative and decision rationale — is a folded concern, not yet its own module ([DOCUMENTATION-STANDARD §10](../../02-standards/DOCUMENTATION-STANDARD.md)). Its storage aspect (the durable record of _why_ a change was made — rationale carried on a Change Event, lineage on a fact) lives within Mneme's op log and Kerux's reporting; the split-out trigger is recorded in [ADR-0011](../../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md). Mneme stores the rationale as canonical material; it does not _compose_ the narrative — that is Kerux's concern when it earns a module.
+A note for completeness. **Logos** — narrative and decision rationale — is a folded concern, not yet its own module
+([DOCUMENTATION-STANDARD §10](../../02-standards/DOCUMENTATION-STANDARD.md)). Its storage aspect (the durable record of
+_why_ a change was made — rationale carried on a Change Event, lineage on a fact) lives within Mneme's op log and
+Kerux's reporting; the split-out trigger is recorded in
+[ADR-0011](../../06-adrs/ADR-0011-module-taxonomy-and-boundaries.md). Mneme stores the rationale as canonical material;
+it does not _compose_ the narrative — that is Kerux's concern when it earns a module.
 
 ---
 
 ## The acyclic invariant
 
-Mneme sits at the base of the engine graph: every other engine depends on Mneme's trait, and Mneme depends on no other engine ([dependency-rules](../../01-architecture/boundary/dependency-rules.md)). Its own internal split — `mneme_core` (types and traits) below `mneme_store` (implementation) below the `mneme` façade — is the structural enforcement that even Mneme's internals cannot form a cycle. A shared type that two consumers need drops into `mneme_core`, never into a lateral import.
+Mneme sits at the base of the engine graph: every other engine depends on Mneme's trait, and Mneme depends on no other
+engine ([dependency-rules](../../01-architecture/boundary/dependency-rules.md)). Its own internal split — `mneme_core`
+(types and traits) below `mneme_store` (implementation) below the `mneme` façade — is the structural enforcement that
+even Mneme's internals cannot form a cycle. A shared type that two consumers need drops into `mneme_core`, never into a
+lateral import.
 
 ---
 

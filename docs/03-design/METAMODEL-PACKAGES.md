@@ -1,6 +1,8 @@
 # Metamodel packages and registry
 
-This document has been decomposed into a folder of focused files. Its content now lives in [`metamodel/`](./metamodel/README.md), per the [Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md) granularity rule (small, single-topic files indexed by a README).
+This document has been decomposed into a folder of focused files. Its content now lives in
+[`metamodel/`](./metamodel/README.md), per the [Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md)
+granularity rule (small, single-topic files indexed by a README).
 
 Start at the [metamodel index](./metamodel/README.md). The most likely targets for an incoming link:
 

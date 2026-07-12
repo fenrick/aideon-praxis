@@ -1,6 +1,8 @@
 # Desktop-First Portable Workspace — moved
 
-This document has been decomposed into the [`desktop-first-workspace/`](./desktop-first-workspace/README.md) folder of small single-topic files, per the [Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md). This stub remains so existing cross-links resolve.
+This document has been decomposed into the [`desktop-first-workspace/`](./desktop-first-workspace/README.md) folder of
+small single-topic files, per the [Documentation Standard §4](../02-standards/DOCUMENTATION-STANDARD.md). This stub
+remains so existing cross-links resolve.
 
 Start at **[`desktop-first-workspace/README.md`](./desktop-first-workspace/README.md)**. Direct entry points:
 

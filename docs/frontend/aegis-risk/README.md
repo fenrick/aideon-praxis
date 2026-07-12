@@ -1,8 +1,12 @@
 # Aegis Risk — design intent (PLANNED)
 
-> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/engines/aegis` when the [Aegis](../../05-modules/aegis/README.md) crate exists ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
+> **Status: PLANNED.** This is design intent for a surface that does not yet exist. It will land at `src/engines/aegis`
+> when the [Aegis](../../05-modules/aegis/README.md) crate exists
+> ([DOCUMENTATION-STANDARD.md §10](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
-The risk, controls, and compliance surface, facing [Aegis](../../05-modules/aegis/README.md) (introduced by ADR-0031). It renders inside the one shell ([shell.md](../shell.md)) and presents a risk register and a control library mapped onto the twin, with regulatory obligations over capabilities and data.
+The risk, controls, and compliance surface, facing [Aegis](../../05-modules/aegis/README.md) (introduced by ADR-0031).
+It renders inside the one shell ([shell.md](../shell.md)) and presents a risk register and a control library mapped onto
+the twin, with regulatory obligations over capabilities and data.
 
 ## Surface it provides
 
@@ -11,12 +15,15 @@ The risk, controls, and compliance surface, facing [Aegis](../../05-modules/aegi
 
 ## Module it faces
 
-[Aegis](../../05-modules/aegis/README.md) — risk register, control library, and regulatory-obligation tracking, stored as facts in [Mneme](../../05-modules/mneme/README.md) and resolved through [Chrona](../../05-modules/chrona/README.md).
+[Aegis](../../05-modules/aegis/README.md) — risk register, control library, and regulatory-obligation tracking, stored
+as facts in [Mneme](../../05-modules/mneme/README.md) and resolved through [Chrona](../../05-modules/chrona/README.md).
 
 ## Key interactions
 
-- Read risk and control entities at a viewpoint; author changes as commands ([editing-flow.md](../../03-design/ux/editing-flow.md)).
-- Integrity and confidence on mapped content follow the unified scales ([DOCUMENTATION-STANDARD.md §8](../../02-standards/DOCUMENTATION-STANDARD.md)).
+- Read risk and control entities at a viewpoint; author changes as commands
+  ([editing-flow.md](../../03-design/ux/editing-flow.md)).
+- Integrity and confidence on mapped content follow the unified scales
+  ([DOCUMENTATION-STANDARD.md §8](../../02-standards/DOCUMENTATION-STANDARD.md)).
 
 ## Related documents
 

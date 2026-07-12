@@ -1,12 +1,35 @@
 # M0 build contract — Foundation
 
-The M0 milestone delivers the **foundation capability**: a portable workspace that opens, round-trips a session, and rebuilds losslessly. Its exit gate is that the canonical workspace format is closed enough to build against, every operation has a pinned shape and a validating fixture, and deleting the derived runtime then rebuilding it from canonical files yields a semantically equivalent twin — with typed IPC and capabilities enforced and no open ports ([ROADMAP](../00-index/ROADMAP.md), M0 row). This contract turns that gate into named files, ordered work, and exit tests an agent can complete without making an architectural choice.
+The M0 milestone delivers the **foundation capability**: a portable workspace that opens, round-trips a session, and
+rebuilds losslessly. Its exit gate is that the canonical workspace format is closed enough to build against, every
+operation has a pinned shape and a validating fixture, and deleting the derived runtime then rebuilding it from
+canonical files yields a semantically equivalent twin — with typed IPC and capabilities enforced and no open ports
+([ROADMAP](../00-index/ROADMAP.md), M0 row). This contract turns that gate into named files, ordered work, and exit
+tests an agent can complete without making an architectural choice.
 
-> **Implemented to this spec.** The foundation is built as three crates: `crates/mneme_core` (the I/O-free canonical types — Aideon Canonical JSON v1, the typed operation record, the value algebra, schema-as-data, and the packed-`i64` HLC), `crates/mneme_store` (the on-disk format — `manifest.json`, the `model/ops/` segment writer/reader with sealing and checksums, the writer lock, the content-addressed blob store, the derived SQLite projection, and the rebuild pipeline with its `foundation_rebuild_hash` oracle), and `crates/engine` (the in-process seam the host calls). The earlier inside-out prototype (SQLite-as-store, `Vec<u8>` payloads, untyped value variants, no `model/ops/` writer) did **not** satisfy [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md)/[ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md), so the old `crates/mneme*` crates were **deleted** (git history preserves them) and the storage layer was **recreated to this spec** ([#292](https://github.com/aideon-ai/aideon-desktop/issues/292)). The Rust workspace builds and the M0 exit tests pass. SQLite is the **derived** runtime cache ([ADR-0004](../06-adrs/ADR-0004-storage-engine-abstraction.md), [SQLITE](../05-modules/mneme/SQLITE.md)), a projection of the canonical op log, never the authoritative store. The host's typed workspace-lifecycle IPC commands (create/open/close/rebuild-trigger over the engine seam) are wired to this canonical file path and driven from the renderer's OS-native workspace-folder picker (`tauri-plugin-dialog`); the host enforces the typed-IPC boundary with no open ports. **M0 is complete**: every row below is built + tested (the one ☐ is the `baseline.yaml`→ops oracle, owned by Praxis/M1).
+> **Implemented to this spec.** The foundation is built as three crates: `crates/mneme_core` (the I/O-free canonical
+> types — Aideon Canonical JSON v1, the typed operation record, the value algebra, schema-as-data, and the packed-`i64`
+> HLC), `crates/mneme_store` (the on-disk format — `manifest.json`, the `model/ops/` segment writer/reader with sealing
+> and checksums, the writer lock, the content-addressed blob store, the derived SQLite projection, and the rebuild
+> pipeline with its `foundation_rebuild_hash` oracle), and `crates/engine` (the in-process seam the host calls). The
+> earlier inside-out prototype (SQLite-as-store, `Vec<u8>` payloads, untyped value variants, no `model/ops/` writer) did
+> **not** satisfy
+> [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md)/[ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md),
+> so the old `crates/mneme*` crates were **deleted** (git history preserves them) and the storage layer was **recreated
+> to this spec** ([#292](https://github.com/aideon-ai/aideon-desktop/issues/292)). The Rust workspace builds and the M0
+> exit tests pass. SQLite is the **derived** runtime cache
+> ([ADR-0004](../06-adrs/ADR-0004-storage-engine-abstraction.md), [SQLITE](../05-modules/mneme/SQLITE.md)), a projection
+> of the canonical op log, never the authoritative store. The host's typed workspace-lifecycle IPC commands
+> (create/open/close/rebuild-trigger over the engine seam) are wired to this canonical file path and driven from the
+> renderer's OS-native workspace-folder picker (`tauri-plugin-dialog`); the host enforces the typed-IPC boundary with no
+> open ports. **M0 is complete**: every row below is built + tested (the one ☐ is the `baseline.yaml`→ops oracle, owned
+> by Praxis/M1).
 
 ## Build status (traceability)
 
-What is actually built against this spec, where it lives, and the test that proves it. Status: ✅ built + tested · ◐ partial · ☐ not started. This table is the single record of M0 build-out; it is updated as items land. Landed in [#314](https://github.com/aideon-ai/aideon-desktop/pull/314).
+What is actually built against this spec, where it lives, and the test that proves it. Status: ✅ built + tested · ◐
+partial · ☐ not started. This table is the single record of M0 build-out; it is updated as items land. Landed in
+[#314](https://github.com/aideon-ai/aideon-desktop/pull/314).
 
 | Spec area                                                         | Where (crate · module)                                                                       | Proving test                                                                                                                                                                                                                                                                                                                                                                                                                            | Status |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
@@ -37,32 +60,95 @@ What is actually built against this spec, where it lives, and the test that prov
 
 ## Outcome
 
-A workspace folder ([ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)) can be created, opened for writing under a single-writer lock, written to via the typed operation surface, closed, and reopened. Deleting `.aideon/runtime/` and reopening rebuilds all M0-owned derived state from `model/ops/`, `model/schema/`, and canonical object material. The rebuilt runtime contains exactly the same **logical applied-operation set, canonical schema-document registry, actor registry, object index, and replay checkpoints** as before the wipe — proven by a deterministic **`foundation_rebuild_hash`** over a stable logical snapshot ([ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md), [rebuild oracle](../data/fixtures/rebuild/README.md)). Temporal and artefact _semantic_ equivalence are added as M2/M3 probes under ADR-0027, not M0. Every operation kind has a tier-2 JSON Schema and a validating fixture pair.
+A workspace folder ([ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md)) can be created, opened for writing
+under a single-writer lock, written to via the typed operation surface, closed, and reopened. Deleting
+`.aideon/runtime/` and reopening rebuilds all M0-owned derived state from `model/ops/`, `model/schema/`, and canonical
+object material. The rebuilt runtime contains exactly the same **logical applied-operation set, canonical
+schema-document registry, actor registry, object index, and replay checkpoints** as before the wipe — proven by a
+deterministic **`foundation_rebuild_hash`** over a stable logical snapshot
+([ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md), [rebuild oracle](../data/fixtures/rebuild/README.md)).
+Temporal and artefact _semantic_ equivalence are added as M2/M3 probes under ADR-0027, not M0. Every operation kind has
+a tier-2 JSON Schema and a validating fixture pair.
 
 ## In scope
 
-- Workspace format v1: complete `manifest.json` field schema, identifier formats, segment ordering and sealing, the atomic-write/fsync sequence, integrity checksums and their coverage, truncation and sealed-segment-corruption behaviour, version maxima, and the `model/schema/` authored-vs-effective authority rule (M0 materialises `authored/` only).
-- **`UpsertMetamodelBatch` at M0**: the op carries authored, unflattened definitions and is recorded canonically after **structural** validation only (envelope/payload shape, field types, identifier/version syntax, supported kinds, package identity, canonical serialisation, same-identity-conflicting-bytes). M0 deterministically materialises the authored source documents to `model/schema/authored/` (+ `index.json`); it does **not** compile or semantically validate them (no cycle/endpoint/cardinality/enum-narrowing checks). A structurally valid but semantically invalid metamodel may land at M0 and is caught at M1 ([op-fact-schema-model](../05-modules/mneme/op-fact-schema-model.md), [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)).
-- Per-operation JSON Schemas (2020-12) for the shared envelope and every op kind, plus a validating valid/invalid fixture pair per kind over the seed identifiers.
-- The **canonical operation record**: the versioned [canonical-JSON profile](../04-contracts/canonical-json.md), the typed per-kind payload (replacing the opaque `Vec<u8>`), the kebab `kind` discriminator + code registry, full-range coordinates as decimal strings, and `format_version` ([ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). The fact-value algebra is `str | i64 | f64 | bool | time | ref | blob` (a typed `BlobRef`); **`json` is not a valid twin-fact value** (opaque documents are `BlobRef`s). The CRDT op kinds `or-set-update`/`counter-update` and the merge policies (`lww`/`mv`/`or-set`/`counter`/`text`) are **out of scope** — deferred to M6, codes reserved, an M0 reader refuses a workspace requiring them ([ADR-0034](../06-adrs/ADR-0034-merge-correctness-and-convergence.md)).
-- The structural **foundation-rebuild gate**: `foundation_rebuild_hash` over a stable logical `FoundationProjectionSnapshot` (applied-op set, **authored** schema-document digests under `model/schema/authored/`, actor registry, object index, replay checkpoints — **not** a compiled effective schema, which is M1, and **not** a SQLite table dump). The semantic `equivalence_hash` is deferred to M2/M3.
-- The **canonical write path**: canonical-append-is-the-commit-point, with SQLite as a derived projection applied after the append (see below).
-- The **canonical blob contract** only: a typed `BlobRef` value (`{ algorithm, digest, length, media_type? }`) carried in ordinary property operations, hash-addressed write/read under `objects/sha256/`, **object durably committed before the referencing op is appended**, read-time hash + length verification, and **no inline binary / no `blob.attach` op kind**. M0 blob GC is conservative orphan-only (objects never referenced by any canonical op; temp-file cleanup + dry-run report); historical reclamation is deferred to op-log retention/compaction. Enough to establish the boundary, not a full attachment feature.
-- The **partition model**: one manifest-declared `partition_id` per workspace (a separate mint from `workspace_id`), every operation carrying it, foreign-partition rejection, and `aideon_partitions` as a derived projection initialised from the manifest. Multiple partitions per workspace are deferred.
-- The **minimal accepted-work core** (defect D1 resolution): a host-local job runner that executes long/unbounded foundation work — chiefly **workspace rebuild** — off the IPC call, returns an `AcceptedJob` acknowledgement, emits the typed `workspace.lifecycle.changed` readiness event and `RunEvent`-style progress, withholds `ready_read_write` until the foundation projections complete, and exposes a `BACKPRESSURE` signal path. **Readiness is proof-carrying** ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)): the `ready_read_write` event carries the `foundation_rebuild_hash` it became ready against, so the readiness signal cannot be faked by a stub that emits it before the projection runs. This is the smallest in-process subset that makes M0 rebuild accepted-work and readiness honest. It is **not** Continuum: durable run-ledger across restart, retries/scheduling, multiple queue classes, and connector orchestration are **M4** ([accepted-work-and-events](../04-contracts/accepted-work-and-events/README.md), [ROADMAP](../00-index/ROADMAP.md)). The M0 core and the M4 orchestration are the explicit two-tier split (see Module ownership).
+- Workspace format v1: complete `manifest.json` field schema, identifier formats, segment ordering and sealing, the
+  atomic-write/fsync sequence, integrity checksums and their coverage, truncation and sealed-segment-corruption
+  behaviour, version maxima, and the `model/schema/` authored-vs-effective authority rule (M0 materialises `authored/`
+  only).
+- **`UpsertMetamodelBatch` at M0**: the op carries authored, unflattened definitions and is recorded canonically after
+  **structural** validation only (envelope/payload shape, field types, identifier/version syntax, supported kinds,
+  package identity, canonical serialisation, same-identity-conflicting-bytes). M0 deterministically materialises the
+  authored source documents to `model/schema/authored/` (+ `index.json`); it does **not** compile or semantically
+  validate them (no cycle/endpoint/cardinality/enum-narrowing checks). A structurally valid but semantically invalid
+  metamodel may land at M0 and is caught at M1 ([op-fact-schema-model](../05-modules/mneme/op-fact-schema-model.md),
+  [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)).
+- Per-operation JSON Schemas (2020-12) for the shared envelope and every op kind, plus a validating valid/invalid
+  fixture pair per kind over the seed identifiers.
+- The **canonical operation record**: the versioned [canonical-JSON profile](../04-contracts/canonical-json.md), the
+  typed per-kind payload (replacing the opaque `Vec<u8>`), the kebab `kind` discriminator + code registry, full-range
+  coordinates as decimal strings, and `format_version`
+  ([ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)). The fact-value algebra
+  is `str | i64 | f64 | bool | time | ref | blob` (a typed `BlobRef`); **`json` is not a valid twin-fact value** (opaque
+  documents are `BlobRef`s). The CRDT op kinds `or-set-update`/`counter-update` and the merge policies
+  (`lww`/`mv`/`or-set`/`counter`/`text`) are **out of scope** — deferred to M6, codes reserved, an M0 reader refuses a
+  workspace requiring them ([ADR-0034](../06-adrs/ADR-0034-merge-correctness-and-convergence.md)).
+- The structural **foundation-rebuild gate**: `foundation_rebuild_hash` over a stable logical
+  `FoundationProjectionSnapshot` (applied-op set, **authored** schema-document digests under `model/schema/authored/`,
+  actor registry, object index, replay checkpoints — **not** a compiled effective schema, which is M1, and **not** a
+  SQLite table dump). The semantic `equivalence_hash` is deferred to M2/M3.
+- The **canonical write path**: canonical-append-is-the-commit-point, with SQLite as a derived projection applied after
+  the append (see below).
+- The **canonical blob contract** only: a typed `BlobRef` value (`{ algorithm, digest, length, media_type? }`) carried
+  in ordinary property operations, hash-addressed write/read under `objects/sha256/`, **object durably committed before
+  the referencing op is appended**, read-time hash + length verification, and **no inline binary / no `blob.attach` op
+  kind**. M0 blob GC is conservative orphan-only (objects never referenced by any canonical op; temp-file cleanup +
+  dry-run report); historical reclamation is deferred to op-log retention/compaction. Enough to establish the boundary,
+  not a full attachment feature.
+- The **partition model**: one manifest-declared `partition_id` per workspace (a separate mint from `workspace_id`),
+  every operation carrying it, foreign-partition rejection, and `aideon_partitions` as a derived projection initialised
+  from the manifest. Multiple partitions per workspace are deferred.
+- The **minimal accepted-work core** (defect D1 resolution): a host-local job runner that executes long/unbounded
+  foundation work — chiefly **workspace rebuild** — off the IPC call, returns an `AcceptedJob` acknowledgement, emits
+  the typed `workspace.lifecycle.changed` readiness event and `RunEvent`-style progress, withholds `ready_read_write`
+  until the foundation projections complete, and exposes a `BACKPRESSURE` signal path. **Readiness is proof-carrying**
+  ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)): the `ready_read_write`
+  event carries the `foundation_rebuild_hash` it became ready against, so the readiness signal cannot be faked by a stub
+  that emits it before the projection runs. This is the smallest in-process subset that makes M0 rebuild accepted-work
+  and readiness honest. It is **not** Continuum: durable run-ledger across restart, retries/scheduling, multiple queue
+  classes, and connector orchestration are **M4**
+  ([accepted-work-and-events](../04-contracts/accepted-work-and-events/README.md), [ROADMAP](../00-index/ROADMAP.md)).
+  The M0 core and the M4 orchestration are the explicit two-tier split (see Module ownership).
 
 ## Out of scope
 
-- The metamodel **semantic** validation and effective-schema compilation path, and invalid-write rejection (M1; [op-fact-schema-model](../05-modules/mneme/op-fact-schema-model.md)). M0 records structurally-valid authored batches and materialises `model/schema/authored/`; M1 compiles `model/schema/effective/` and refuses read-write on a batch that fails compilation.
-- Temporal resolution, viewpoints, and diff (M2; [temporal-and-scenario](../04-contracts/temporal-and-scenario/README.md)).
+- The metamodel **semantic** validation and effective-schema compilation path, and invalid-write rejection (M1;
+  [op-fact-schema-model](../05-modules/mneme/op-fact-schema-model.md)). M0 records structurally-valid authored batches
+  and materialises `model/schema/authored/`; M1 compiles `model/schema/effective/` and refuses read-write on a batch
+  that fails compilation.
+- Temporal resolution, viewpoints, and diff (M2;
+  [temporal-and-scenario](../04-contracts/temporal-and-scenario/README.md)).
 - Artefact execution and the catalogue result shape (M3).
-- A user-facing attachment/blob experience (upload UX, previews, large-object streaming) — only the canonical blob _contract_ is in scope; the UX is later.
-- **Record-level access control / RBAC.** M0 is one principal with full authority; `owner_actor_id` / `acl_group_id` / `visibility` are **omitted** from the canonical `create-node`/`create-edge` payloads and public authoring inputs (not carried as reserved nulls). Policy is owned by Themis (M6, [ADR-0030](../06-adrs/ADR-0030-governance-themis.md)) and arrives as explicit versioned policy operations; a workspace whose `manifest.required_features` demands access-policy support is refused read-write at M0. (Ownership ≠ provenance: `actor_id` records who asserted; an owner is a future governance assignment, not the historical author.)
-- **Scenario authoring and overlays.** `scenario_id` stays in the op envelope as an explicit nullable time-first coordinate, but at M0 its **only valid value is `null` (the base case)**: M0 does not create/delete scenarios, validate membership beyond requiring `null`, compose overlays, or resolve precedence — those are Chrona/M2. A non-null `scenario_id` (or a `required_features` scenario declaration) is refused read-write rather than stored as if meaningful ([scenarios-and-layers](../05-modules/mneme/scenarios-and-layers.md)).
+- A user-facing attachment/blob experience (upload UX, previews, large-object streaming) — only the canonical blob
+  _contract_ is in scope; the UX is later.
+- **Record-level access control / RBAC.** M0 is one principal with full authority; `owner_actor_id` / `acl_group_id` /
+  `visibility` are **omitted** from the canonical `create-node`/`create-edge` payloads and public authoring inputs (not
+  carried as reserved nulls). Policy is owned by Themis (M6, [ADR-0030](../06-adrs/ADR-0030-governance-themis.md)) and
+  arrives as explicit versioned policy operations; a workspace whose `manifest.required_features` demands access-policy
+  support is refused read-write at M0. (Ownership ≠ provenance: `actor_id` records who asserted; an owner is a future
+  governance assignment, not the historical author.)
+- **Scenario authoring and overlays.** `scenario_id` stays in the op envelope as an explicit nullable time-first
+  coordinate, but at M0 its **only valid value is `null` (the base case)**: M0 does not create/delete scenarios,
+  validate membership beyond requiring `null`, compose overlays, or resolve precedence — those are Chrona/M2. A non-null
+  `scenario_id` (or a `required_features` scenario declaration) is refused read-write rather than stored as if
+  meaningful ([scenarios-and-layers](../05-modules/mneme/scenarios-and-layers.md)).
 
 ## M0 decisions index
 
-The load-bearing M0 decisions resolved in the design review, each pointing to its governing ADR/contract and the test or oracle that proves it. The tightly-coupled storage decisions are governed by **[ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)**; milestone feature-activation (access control, scenarios, CRDT) lives in the owning module/milestone docs, not the ADR.
+The load-bearing M0 decisions resolved in the design review, each pointing to its governing ADR/contract and the test or
+oracle that proves it. The tightly-coupled storage decisions are governed by
+**[ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md)**; milestone
+feature-activation (access control, scenarios, CRDT) lives in the owning module/milestone docs, not the ADR.
 
 | Area                | M0 decision                                                                                                                                                                                                                                                                                                                                               | Later owner              | Source / test                                                                                                                                                                      |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -85,25 +171,46 @@ The load-bearing M0 decisions resolved in the design review, each pointing to it
 | Scenarios           | `scenario_id: null` (base case) only                                                                                                                                                                                                                                                                                                                      | Chrona/M2                | scenarios-and-layers; this contract                                                                                                                                                |
 | IPC surface         | `declared ∩ build-enabled ∩ window-granted = callable`; deferred commands omitted from M0 bundles; mutating/job commands scoped to `main`; `ingest_ops` internal/recovery-only; lifecycle is a typed command surface                                                                                                                                      | Continuum/host           | [mvp-command-registry](./mvp-command-registry.md); [capabilities-and-csp](../05-modules/host/capabilities-and-csp.md)                                                              |
 
-Cross-cutting refusal seam: a workspace whose canonical operations or `manifest.required_features` demand a capability M0 does not implement (scenarios, access policy, CRDT, causal-dependency handling) is **refused read-write** — never silently reinterpreted ([workspace-integrity](../05-modules/mneme/workspace-integrity-and-recovery.md), `required_features`).
+Cross-cutting refusal seam: a workspace whose canonical operations or `manifest.required_features` demand a capability
+M0 does not implement (scenarios, access policy, CRDT, causal-dependency handling) is **refused read-write** — never
+silently reinterpreted ([workspace-integrity](../05-modules/mneme/workspace-integrity-and-recovery.md),
+`required_features`).
 
 ## The canonical write path
 
-Calling the files canonical has a direct consequence for how a write commits. SQLite and the JSONL op log cannot share one atomic transaction, so the **canonical append is the commit point** and SQLite is downstream of it. Every write follows this order:
+Calling the files canonical has a direct consequence for how a write commits. SQLite and the JSONL op log cannot share
+one atomic transaction, so the **canonical append is the commit point** and SQLite is downstream of it. Every write
+follows this order:
 
 1. Validate and serialise the canonical operation.
-2. **Durably append it to the loose `model/ops/` segment** (write + `fsync`, per [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)). This is the commit.
+2. **Durably append it to the loose `model/ops/` segment** (write + `fsync`, per
+   [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md)). This is the commit.
 3. Only after the append succeeds, **apply it to the SQLite projection**.
-4. Treat a projection failure as a recoverable _derived-state_ failure — rebuild from the op log; never lose the committed operation.
-5. **Never acknowledge a write that exists only in SQLite.** An operation that did not reach the canonical segment did not happen.
+4. Treat a projection failure as a recoverable _derived-state_ failure — rebuild from the op log; never lose the
+   committed operation.
+5. **Never acknowledge a write that exists only in SQLite.** An operation that did not reach the canonical segment did
+   not happen.
 
-This makes projection application necessarily **idempotent and replayable** ([ADR-0018](../06-adrs/ADR-0018-idempotency-and-deduplication.md), [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md)): a rebuild re-applies the same operations and must reach the same projection. Do not build two unrelated persistence paths and reconcile them later — the append is the single source, the projection is a pure function of it.
+This makes projection application necessarily **idempotent and replayable**
+([ADR-0018](../06-adrs/ADR-0018-idempotency-and-deduplication.md),
+[ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md)): a rebuild re-applies the same operations and must
+reach the same projection. Do not build two unrelated persistence paths and reconcile them later — the append is the
+single source, the projection is a pure function of it.
 
-An **interactive** write is per-op (append + `fsync` + ack means that op is durable). A **bulk import** (`WriteOptions { bulk_mode }`) is an accepted job that may group `fsync`s behind durable barriers and defer derived work — but **acceptance is not durability**: the `AcceptedJob` acknowledges receipt, the durability acknowledgement is a committed-barrier or terminal-success event, only a `durablyCommitted` count survives a crash, and the visible projection frontier never leads the canonical durable frontier. Barriers are mandatory at segment seal, job end, committed-checkpoint events, and clean pause/cancellation; intra-segment cadence is implementation-tunable within `max_uncommitted_bytes`/`max_uncommitted_duration` bounds (no fixed per-`N`). A bulk import is checkpointed partial commitment, not atomic ([storage-trait-and-engine](../05-modules/mneme/storage-trait-and-engine.md), [event-model](../04-contracts/accepted-work-and-events/event-model.md)).
+An **interactive** write is per-op (append + `fsync` + ack means that op is durable). A **bulk import**
+(`WriteOptions { bulk_mode }`) is an accepted job that may group `fsync`s behind durable barriers and defer derived work
+— but **acceptance is not durability**: the `AcceptedJob` acknowledges receipt, the durability acknowledgement is a
+committed-barrier or terminal-success event, only a `durablyCommitted` count survives a crash, and the visible
+projection frontier never leads the canonical durable frontier. Barriers are mandatory at segment seal, job end,
+committed-checkpoint events, and clean pause/cancellation; intra-segment cadence is implementation-tunable within
+`max_uncommitted_bytes`/`max_uncommitted_duration` bounds (no fixed per-`N`). A bulk import is checkpointed partial
+commitment, not atomic ([storage-trait-and-engine](../05-modules/mneme/storage-trait-and-engine.md),
+[event-model](../04-contracts/accepted-work-and-events/event-model.md)).
 
 ## Operation identity and idempotency
 
-Rebuild, replay, import, and torn-write recovery all rest on a single permanent identity for a canonical operation. Three distinct identities exist and must not be conflated:
+Rebuild, replay, import, and torn-write recovery all rest on a single permanent identity for a canonical operation.
+Three distinct identities exist and must not be conflated:
 
 | Layer                   | Identity                    | Purpose                                                                   | Lifetime                  |
 | ----------------------- | --------------------------- | ------------------------------------------------------------------------- | ------------------------- |
@@ -113,24 +220,49 @@ Rebuild, replay, import, and torn-write recovery all rest on a single permanent 
 
 M0 pins these invariants:
 
-1. **`(partition_id, op_id)` is the permanent canonical operation key.** `op_id` is minted once for a new operation and is thereafter immutable; every canonical record, package, replay, and rebuild preserves it verbatim.
-2. **Replay preserves all identity, temporal, and provenance fields** — `op_id`, `asserted_at` (HLC), actor, and source provenance are carried, never regenerated.
-3. **Duplicate identity with identical canonical content is a no-op** (`ingest_ops` recognises it by `(partition_id, op_id)` and skips it — `store.rs`).
-4. **Duplicate identity with _different_ canonical content is corruption** — the reader rejects it and names the workspace corrupt; it never silently takes the first record.
-5. **The authoring path (`insert_op`) mints IDs; the replay path (`ingest_ops`) never does.** The create path must never be used to rebuild or resume canonical history — re-authoring the same semantic content is a new assertion, not replay.
-6. **ADR-0018 idempotency is not a rebuild mechanism.** Its dedup window is the run-ledger lifetime, which the runtime wipe destroys; recovery rides on `(partition_id, op_id)` carried in the canonical record, never on the caller key.
-7. **Import retry identity is scoped to an accepted import batch, not to a source file** (see [Pylon import identity](../05-modules/pylon/deterministic-reviewable-import.md)): a retry of the same accepted batch preserves `import_batch_id` and produces the same `(partition_id, op_id)` set; a newly accepted import gets a new batch identity even when its source digest matches an earlier one.
+1. **`(partition_id, op_id)` is the permanent canonical operation key.** `op_id` is minted once for a new operation and
+   is thereafter immutable; every canonical record, package, replay, and rebuild preserves it verbatim.
+2. **Replay preserves all identity, temporal, and provenance fields** — `op_id`, `asserted_at` (HLC), actor, and source
+   provenance are carried, never regenerated.
+3. **Duplicate identity with identical canonical content is a no-op** (`ingest_ops` recognises it by
+   `(partition_id, op_id)` and skips it — `store.rs`).
+4. **Duplicate identity with _different_ canonical content is corruption** — the reader rejects it and names the
+   workspace corrupt; it never silently takes the first record.
+5. **The authoring path (`insert_op`) mints IDs; the replay path (`ingest_ops`) never does.** The create path must never
+   be used to rebuild or resume canonical history — re-authoring the same semantic content is a new assertion, not
+   replay.
+6. **ADR-0018 idempotency is not a rebuild mechanism.** Its dedup window is the run-ledger lifetime, which the runtime
+   wipe destroys; recovery rides on `(partition_id, op_id)` carried in the canonical record, never on the caller key.
+7. **Import retry identity is scoped to an accepted import batch, not to a source file** (see
+   [Pylon import identity](../05-modules/pylon/deterministic-reviewable-import.md)): a retry of the same accepted batch
+   preserves `import_batch_id` and produces the same `(partition_id, op_id)` set; a newly accepted import gets a new
+   batch identity even when its source digest matches an earlier one.
 
-The recovery narrative therefore reads: **recovery re-ingests the same canonical operation envelopes; it does not recreate operations through the authoring path. Existing operations are recognised by `(partition_id, op_id)` and become no-ops; missing operations are applied with their original identity, asserted time, and provenance.**
+The recovery narrative therefore reads: **recovery re-ingests the same canonical operation envelopes; it does not
+recreate operations through the authoring path. Existing operations are recognised by `(partition_id, op_id)` and become
+no-ops; missing operations are applied with their original identity, asserted time, and provenance.**
 
 ## Authoritative sources
 
 In precedence order ([contract precedence](./README.md#contract-precedence)):
 
-1. **ADRs** — [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md) (workspace is canonical), [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md) (portable format), [ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md) (canonical operation record, identity, commit protocol), [ADR-0003](../06-adrs/ADR-0003-content-addressed-object-store.md) (content-addressed blobs), [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md) (projection consistency + rebuild equivalence), [ADR-0016](../06-adrs/ADR-0016-error-envelope-rfc9457.md) (error envelope), [ADR-0018](../06-adrs/ADR-0018-idempotency-and-deduplication.md) (idempotent ingest).
-2. **Schemas** — the [canonical-JSON profile](../04-contracts/canonical-json.md), [`docs/contracts/operations/`](../contracts/operations/README.md) (envelope + per-op-kind), and the command surface in [`ipc-manifest.json`](../contracts/ipc-manifest.json).
-3. **Contract docs** — [op-fact-schema-model](../05-modules/mneme/op-fact-schema-model.md), [identifier-generation-and-provenance](../05-modules/mneme/identifier-generation-and-provenance.md), [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md), [export-import-replay](../05-modules/mneme/export-import-replay.md).
-4. **Fixtures** — [`docs/data/fixtures/operations/`](../data/fixtures/operations/README.md), [`docs/data/fixtures/rebuild/`](../data/fixtures/rebuild/README.md), seeded from [`core-v1.json`](../data/meta/core-v1.json) and [`baseline.yaml`](../data/base/baseline.yaml).
+1. **ADRs** — [ADR-0001](../06-adrs/ADR-0001-workspace-is-canonical-authority.md) (workspace is canonical),
+   [ADR-0002](../06-adrs/ADR-0002-portable-workspace-format.md) (portable format),
+   [ADR-0038](../06-adrs/ADR-0038-canonical-operation-record-identity-and-commit-protocol.md) (canonical operation
+   record, identity, commit protocol), [ADR-0003](../06-adrs/ADR-0003-content-addressed-object-store.md)
+   (content-addressed blobs), [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md) (projection consistency +
+   rebuild equivalence), [ADR-0016](../06-adrs/ADR-0016-error-envelope-rfc9457.md) (error envelope),
+   [ADR-0018](../06-adrs/ADR-0018-idempotency-and-deduplication.md) (idempotent ingest).
+2. **Schemas** — the [canonical-JSON profile](../04-contracts/canonical-json.md),
+   [`docs/contracts/operations/`](../contracts/operations/README.md) (envelope + per-op-kind), and the command surface
+   in [`ipc-manifest.json`](../contracts/ipc-manifest.json).
+3. **Contract docs** — [op-fact-schema-model](../05-modules/mneme/op-fact-schema-model.md),
+   [identifier-generation-and-provenance](../05-modules/mneme/identifier-generation-and-provenance.md),
+   [workspace-integrity-and-recovery](../05-modules/mneme/workspace-integrity-and-recovery.md),
+   [export-import-replay](../05-modules/mneme/export-import-replay.md).
+4. **Fixtures** — [`docs/data/fixtures/operations/`](../data/fixtures/operations/README.md),
+   [`docs/data/fixtures/rebuild/`](../data/fixtures/rebuild/README.md), seeded from
+   [`core-v1.json`](../data/meta/core-v1.json) and [`baseline.yaml`](../data/base/baseline.yaml).
 
 ## Contracts and fixtures this milestone produces
 
@@ -148,26 +280,56 @@ In precedence order ([contract precedence](./README.md#contract-precedence)):
 
 ## Module ownership
 
-- **Mneme** ([`crates/mneme_core`](../../crates/mneme_core), [`crates/mneme_store`](../../crates/mneme_store)) — the op envelope, op kinds, schema-as-data, the canonical files, sealing, checksums, and rebuild.
-- **Host** ([`src-tauri`](../../src-tauri)) — workspace lifecycle (open/close/lock), the typed IPC surface, capability enforcement, the rebuild trigger, and the **minimal accepted-work core** (host-local job runner + readiness/`RunEvent` events + backpressure) that the rebuild runs on ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md)). _Status: IPC surface and capability scoping built — `src-tauri` registers `workspace_create/open/status/close/rebuild` on the generated codegen seam ([#303]); rebuild runs as proof-carrying accepted work (`jobs.rs`, [#316], [ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)); per-window capability scoping delivered ([#318]). **Remaining (M0 blocker):** host must wire lifecycle through the canonical file path, replacing `PraxisEngine::with_sqlite()` ([#254](https://github.com/aideon-ai/aideon-desktop/issues/254))._
+- **Mneme** ([`crates/mneme_core`](../../crates/mneme_core), [`crates/mneme_store`](../../crates/mneme_store)) — the op
+  envelope, op kinds, schema-as-data, the canonical files, sealing, checksums, and rebuild.
+- **Host** ([`src-tauri`](../../src-tauri)) — workspace lifecycle (open/close/lock), the typed IPC surface, capability
+  enforcement, the rebuild trigger, and the **minimal accepted-work core** (host-local job runner + readiness/`RunEvent`
+  events + backpressure) that the rebuild runs on ([workspace-lifecycle](../05-modules/host/workspace-lifecycle.md)).
+  _Status: IPC surface and capability scoping built — `src-tauri` registers `workspace_create/open/status/close/rebuild`
+  on the generated codegen seam ([#303]); rebuild runs as proof-carrying accepted work (`jobs.rs`, [#316],
+  [ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)); per-window capability
+  scoping delivered ([#318]). **Remaining (M0 blocker):** host must wire lifecycle through the canonical file path,
+  replacing `PraxisEngine::with_sqlite()` ([#254](https://github.com/aideon-ai/aideon-desktop/issues/254))._
 - **Engine** ([`crates/engine`](../../crates/engine)) — the in-process execution seam the host calls.
-- **Aideon Desktop shell** (`src/`) — the desktop chrome, workspace picker, the `praxisApi` IPC wrapper, and the design-system proxy components (Sidebar, Resizable, Menubar, Toolbar). No raw `shadcn` or `react-resizable-panels` primitives; the proxies enforce this invariant as the only permitted import surface ([DESIGN.md](../03-design/DESIGN.md), [CLAUDE.md](../../CLAUDE.md)). _Status: built — shell renders workspace picker and canvas surface; stories cover light/dark rendering._
-- **Continuum (M4, not M0)** — the full accepted-work orchestration (durable run-ledger across restart, retries, scheduling, queue classes, connectors). M0 builds only the in-process core above; Continuum supersedes it at M4 without changing the `AcceptedJob`/`RunEvent` contract (defect D1 resolution).
+- **Aideon Desktop shell** (`src/`) — the desktop chrome, workspace picker, the `praxisApi` IPC wrapper, and the
+  design-system proxy components (Sidebar, Resizable, Menubar, Toolbar). No raw `shadcn` or `react-resizable-panels`
+  primitives; the proxies enforce this invariant as the only permitted import surface
+  ([DESIGN.md](../03-design/DESIGN.md), [CLAUDE.md](../../CLAUDE.md)). _Status: built — shell renders workspace picker
+  and canvas surface; stories cover light/dark rendering._
+- **Continuum (M4, not M0)** — the full accepted-work orchestration (durable run-ledger across restart, retries,
+  scheduling, queue classes, connectors). M0 builds only the in-process core above; Continuum supersedes it at M4
+  without changing the `AcceptedJob`/`RunEvent` contract (defect D1 resolution).
 
 ## Implementation sequence
 
 Dependency-ordered:
 
-1. **Workspace format v1 closure** — manifest schema, identifiers, sealing/ordering, atomic-write sequence, checksums, recovery rules, version maxima, schema-authority rule. Everything else assumes a settled on-disk format.
-2. **Operation schemas + fixtures** — envelope first, then per-op-kind schemas, then the valid/invalid fixture pairs (validated against the schemas, `tests/contracts/operation-fixtures.contract.test.ts`).
-3. **Rebuild-equivalence relation + oracle** — the hash definition and the single invariant test, which depends on both the format and the op shapes being fixed.
-4. **Typed IPC codegen first** ([ADR-0039](../06-adrs/ADR-0039-typed-ipc-codegen-over-hand-maintained-manifests.md), [#303]) — **before** any new host command. The Rust command/event DTOs become the source; generated TS bindings are the renderer's surface; the hand-maintained `*_IPC_COMMANDS` arrays + manifests are retired or made derived; CI fails on generated drift. **Bounded:** migrate enough existing commands to prove the seam, not every future command — do not redesign IPC semantics. The M0 host layer is the largest new command surface the project adds at once; building it on the seam ADR-0039 retires would double the integration and is forbidden by the evergreen rule. This step also makes [ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md) Tier-1's registration↔generated-binding parity assertion valid.
-5. **Host lifecycle + IPC enforcement on the generated seam** ([#290]/[#318]) — open/lock/close/reopen and the rebuild-on-missing-runtime path, exercising the format and the equivalence oracle, with per-window capability scoping.
-6. **Minimal accepted-work core on the generated seam** ([#316]) — rebuild runs as an `AcceptedJob`; readiness/status/`RunEvent`/`BACKPRESSURE` travel the same generated contract path; readiness is proof-carrying ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)).
+1. **Workspace format v1 closure** — manifest schema, identifiers, sealing/ordering, atomic-write sequence, checksums,
+   recovery rules, version maxima, schema-authority rule. Everything else assumes a settled on-disk format.
+2. **Operation schemas + fixtures** — envelope first, then per-op-kind schemas, then the valid/invalid fixture pairs
+   (validated against the schemas, `tests/contracts/operation-fixtures.contract.test.ts`).
+3. **Rebuild-equivalence relation + oracle** — the hash definition and the single invariant test, which depends on both
+   the format and the op shapes being fixed.
+4. **Typed IPC codegen first** ([ADR-0039](../06-adrs/ADR-0039-typed-ipc-codegen-over-hand-maintained-manifests.md),
+   [#303]) — **before** any new host command. The Rust command/event DTOs become the source; generated TS bindings are
+   the renderer's surface; the hand-maintained `*_IPC_COMMANDS` arrays + manifests are retired or made derived; CI fails
+   on generated drift. **Bounded:** migrate enough existing commands to prove the seam, not every future command — do
+   not redesign IPC semantics. The M0 host layer is the largest new command surface the project adds at once; building
+   it on the seam ADR-0039 retires would double the integration and is forbidden by the evergreen rule. This step also
+   makes [ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md) Tier-1's
+   registration↔generated-binding parity assertion valid.
+5. **Host lifecycle + IPC enforcement on the generated seam** ([#290]/[#318]) — open/lock/close/reopen and the
+   rebuild-on-missing-runtime path, exercising the format and the equivalence oracle, with per-window capability
+   scoping.
+6. **Minimal accepted-work core on the generated seam** ([#316]) — rebuild runs as an `AcceptedJob`;
+   readiness/status/`RunEvent`/`BACKPRESSURE` travel the same generated contract path; readiness is proof-carrying
+   ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)).
 
 ## Golden-journey segment
 
-This milestone covers golden-journey steps **1, 8, 9, 10** ([golden-journey](./golden-journey.md)): create and open a workspace, close and reopen it, delete `.aideon/runtime/`, and rebuild with proven equivalence. (Steps 2–3 are M1, 4–6 are M2, 7 is M3.)
+This milestone covers golden-journey steps **1, 8, 9, 10** ([golden-journey](./golden-journey.md)): create and open a
+workspace, close and reopen it, delete `.aideon/runtime/`, and rebuild with proven equivalence. (Steps 2–3 are M1, 4–6
+are M2, 7 is M3.)
 
 ## Exit tests
 
@@ -192,27 +354,75 @@ Each assertion maps to its oracle fixture:
 
 ## Host-validation gate (two-tier)
 
-The exit tests above all map to **crate/fixture oracles** — they prove the engine, not the assembled host. M0 also gates the **boundary** in two tiers ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md)); crate oracles alone do **not** satisfy M0 exit.
+The exit tests above all map to **crate/fixture oracles** — they prove the engine, not the assembled host. M0 also gates
+the **boundary** in two tiers ([ADR-0040](../06-adrs/ADR-0040-m0-host-validation-gate-and-proof-carrying-readiness.md));
+crate oracles alone do **not** satisfy M0 exit.
 
-- **Tier 1 — hard, merge-blocking, OS-portable real-host boundary test** (macOS + Windows + Linux). Drives the actual Tauri command registrations / handlers — never jsdom, mocked IPC, or renderer-only adapters. Asserts: `workspace.create`/`open`/`close`/`rebuild` + readiness event **registered**; registration ↔ generated TS bindings ↔ capability manifest **parity**; per-window/context **capability denial**; RFC-9457 envelope with **no Rust-internal leakage**; `correlation_id` propagation; long-running rebuild returns an **`AcceptedJob`, not a blocking response**; `BACKPRESSURE` code+shape; unknown/malformed/denied commands fail predictably. **Proof-carrying readiness:** open → read hash via host status → delete `.aideon/runtime/` → `workspace_rebuild` → assert `AcceptedJob` (non-blocking) → read-write withheld until `ready_read_write` → assert the event's carried `foundation_rebuild_hash` **equals the pre-wipe hash**. (`crates/mneme_store/tests/m0_exit.rs` stays the engine-isolation oracle; it does **not** satisfy this gate. [#319])
-  - **Tier-1 proof mechanism — split by what each assertion can prove** (each assertion runs at the lowest layer that can actually prove it; weaker is theatre, heavier is waste):
-    - **Direct handler / `mock_app` path** (the existing `src-tauri/tests/internal/` harness) for: handler logic; success + error envelope shape for **known** commands; accepted-job response shape; proof-carrying readiness round-trip; `foundation_rebuild_hash` equivalence through the host-facing rebuild path. The assertion is host command _behaviour_, not routing.
-    - **Real IPC dispatch path** (`tauri::test::get_ipc_response` against the built app) for: **unknown** command, **malformed** command, dispatch-level error conversion, and routing failures — a handler test cannot prove what happens when no handler exists.
-    - **Set parity (after #303 codegen)** for: registered Rust commands/events ↔ generated TypeScript bindings ↔ capability-manifest entries. Set equality is cheaper and more exact than dispatching every command.
-    - **Per-window capability denial — one runtime proof + static parity; macOS needs no duplicate.** Tier-1 must prove capability-manifest parity and, **where the test runtime exercises Tauri's real authority** ([#329] decides this), per-window command denial via dispatch. If the test runtime bypasses the authority, **Tier-2** proves **one** real-WebView denial on a supported WebDriver target (Windows/Linux). **macOS is not required to run an interactive denial test** — the denied/allowed decision is **platform-independent Rust** (`RuntimeAuthority`), covered by the shared runtime proof plus static parity; macOS still requires packaging, launch-smoke, and screenshot artefacts. The proof covers **ACL semantics** (does dispatch reject a command when the invoking window lacks the permission?), **not** how a platform loads the capability file or registers a window — that is static parity + launch/config smoke. **Static parity must be strict** (extending `security_posture.rs`): every registered command has a declared permission; every permission maps to a real command; every window's capability set is explicit; deny-by-default holds; no broad wildcard capability reaches `main` unless deliberately justified. The runtime proof confirms the machinery works; static parity confirms the policy fed to it is complete.
-- **Tier 2 — supplementary in-window UI smoke**, asymmetric by toolchain reality (`tauri-driver` has no macOS support). **Windows WebView2 + Linux WebKitGTK:** launch the real app; assert the shell composes the required regions (not just a title + one node); ≥1 interaction per implemented surface crossing the real adapter/host seam. **macOS:** build DMG/ZIP; launch; capture screenshot artefacts; assert shell render + stable test IDs; **log loudly** that interactive WebDriver is unavailable — **never silently `exit 0`**. macOS interactive automation is **out of scope for M0** unless the toolchain changes. [#317]
+- **Tier 1 — hard, merge-blocking, OS-portable real-host boundary test** (macOS + Windows + Linux). Drives the actual
+  Tauri command registrations / handlers — never jsdom, mocked IPC, or renderer-only adapters. Asserts:
+  `workspace.create`/`open`/`close`/`rebuild` + readiness event **registered**; registration ↔ generated TS bindings ↔
+  capability manifest **parity**; per-window/context **capability denial**; RFC-9457 envelope with **no Rust-internal
+  leakage**; `correlation_id` propagation; long-running rebuild returns an **`AcceptedJob`, not a blocking response**;
+  `BACKPRESSURE` code+shape; unknown/malformed/denied commands fail predictably. **Proof-carrying readiness:** open →
+  read hash via host status → delete `.aideon/runtime/` → `workspace_rebuild` → assert `AcceptedJob` (non-blocking) →
+  read-write withheld until `ready_read_write` → assert the event's carried `foundation_rebuild_hash` **equals the
+  pre-wipe hash**. (`crates/mneme_store/tests/m0_exit.rs` stays the engine-isolation oracle; it does **not** satisfy
+  this gate. [#319])
+  - **Tier-1 proof mechanism — split by what each assertion can prove** (each assertion runs at the lowest layer that
+    can actually prove it; weaker is theatre, heavier is waste):
+    - **Direct handler / `mock_app` path** (the existing `src-tauri/tests/internal/` harness) for: handler logic;
+      success + error envelope shape for **known** commands; accepted-job response shape; proof-carrying readiness
+      round-trip; `foundation_rebuild_hash` equivalence through the host-facing rebuild path. The assertion is host
+      command _behaviour_, not routing.
+    - **Real IPC dispatch path** (`tauri::test::get_ipc_response` against the built app) for: **unknown** command,
+      **malformed** command, dispatch-level error conversion, and routing failures — a handler test cannot prove what
+      happens when no handler exists.
+    - **Set parity (after #303 codegen)** for: registered Rust commands/events ↔ generated TypeScript bindings ↔
+      capability-manifest entries. Set equality is cheaper and more exact than dispatching every command.
+    - **Per-window capability denial — one runtime proof + static parity; macOS needs no duplicate.** Tier-1 must prove
+      capability-manifest parity and, **where the test runtime exercises Tauri's real authority** ([#329] decides this),
+      per-window command denial via dispatch. If the test runtime bypasses the authority, **Tier-2** proves **one**
+      real-WebView denial on a supported WebDriver target (Windows/Linux). **macOS is not required to run an interactive
+      denial test** — the denied/allowed decision is **platform-independent Rust** (`RuntimeAuthority`), covered by the
+      shared runtime proof plus static parity; macOS still requires packaging, launch-smoke, and screenshot artefacts.
+      The proof covers **ACL semantics** (does dispatch reject a command when the invoking window lacks the
+      permission?), **not** how a platform loads the capability file or registers a window — that is static parity +
+      launch/config smoke. **Static parity must be strict** (extending `security_posture.rs`): every registered command
+      has a declared permission; every permission maps to a real command; every window's capability set is explicit;
+      deny-by-default holds; no broad wildcard capability reaches `main` unless deliberately justified. The runtime
+      proof confirms the machinery works; static parity confirms the policy fed to it is complete.
+- **Tier 2 — supplementary in-window UI smoke**, asymmetric by toolchain reality (`tauri-driver` has no macOS support).
+  **Windows WebView2 + Linux WebKitGTK:** launch the real app; assert the shell composes the required regions (not just
+  a title + one node); ≥1 interaction per implemented surface crossing the real adapter/host seam. **macOS:** build
+  DMG/ZIP; launch; capture screenshot artefacts; assert shell render + stable test IDs; **log loudly** that interactive
+  WebDriver is unavailable — **never silently `exit 0`**. macOS interactive automation is **out of scope for M0** unless
+  the toolchain changes. [#317]
 
-Golden-journey steps 8–10 reuse the Tier-1 proof-carrying-readiness assertion — one determinism proof, not a second implementation.
+Golden-journey steps 8–10 reuse the Tier-1 proof-carrying-readiness assertion — one determinism proof, not a second
+implementation.
 
 ## Open questions
 
 Design-intent items not yet pinned in code, to resolve before or during build:
 
-- **The exact `feature_flags` keys are unspecified.** (The canonical persistence layer itself — `manifest.json`, segment writer, locking, blob boundary — is **built** in `crates/mneme_store` as of [#314](https://github.com/aideon-ai/aideon-desktop/pull/314); this bullet previously claimed it was unbuilt and is corrected per defect D6.)
+- **The exact `feature_flags` keys are unspecified.** (The canonical persistence layer itself — `manifest.json`, segment
+  writer, locking, blob boundary — is **built** in `crates/mneme_store` as of
+  [#314](https://github.com/aideon-ai/aideon-desktop/pull/314); this bullet previously claimed it was unbuilt and is
+  corrected per defect D6.)
 - **Sealing thresholds are provisional configuration**, not invariants; the 8 MiB / 24 h defaults are placeholders.
-- **The M0 gate is the structural `foundation_rebuild_hash`, not the semantic `equivalence_hash`.** The foundation hash is computable at M0 once the segment writer and rebuild pipeline exist (its value lands then); the semantic equivalence hash has no probes until M2/M3 and is deferred wholesale ([rebuild oracle](../data/fixtures/rebuild/README.md), [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md)). M0 does **not** pull a temporary resolver forward to fabricate a semantic probe. `FoundationProjectionSnapshot` and `foundation_rebuild_hash` are **implemented** in `crates/mneme_store/src/rebuild.rs` ([#314](https://github.com/aideon-ai/aideon-desktop/pull/314)); the concrete hash value over the seed op-set lands when `baseline.yaml`→ops compilation exists (defect D6 correction; the prior "not yet implemented" was stale).
-- **Scenario-lifecycle op kinds** (`CreateScenario`/`DeleteScenario`) are inline `OpPayload` variants without dedicated input structs and are not schema'd in this increment.
-- **Operation-schema drift-checking** — the schemas are authoritative; a CI check that pins them to the Rust DTOs is tracked in [#371](https://github.com/aideon-ai/aideon-desktop/issues/371).
+- **The M0 gate is the structural `foundation_rebuild_hash`, not the semantic `equivalence_hash`.** The foundation hash
+  is computable at M0 once the segment writer and rebuild pipeline exist (its value lands then); the semantic
+  equivalence hash has no probes until M2/M3 and is deferred wholesale
+  ([rebuild oracle](../data/fixtures/rebuild/README.md),
+  [ADR-0027](../06-adrs/ADR-0027-projection-consistency-model.md)). M0 does **not** pull a temporary resolver forward to
+  fabricate a semantic probe. `FoundationProjectionSnapshot` and `foundation_rebuild_hash` are **implemented** in
+  `crates/mneme_store/src/rebuild.rs` ([#314](https://github.com/aideon-ai/aideon-desktop/pull/314)); the concrete hash
+  value over the seed op-set lands when `baseline.yaml`→ops compilation exists (defect D6 correction; the prior "not yet
+  implemented" was stale).
+- **Scenario-lifecycle op kinds** (`CreateScenario`/`DeleteScenario`) are inline `OpPayload` variants without dedicated
+  input structs and are not schema'd in this increment.
+- **Operation-schema drift-checking** — the schemas are authoritative; a CI check that pins them to the Rust DTOs is
+  tracked in [#371](https://github.com/aideon-ai/aideon-desktop/issues/371).
 
 ## Related documents
 
