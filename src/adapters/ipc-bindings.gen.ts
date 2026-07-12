@@ -570,7 +570,11 @@ export type MatrixViewModel = { metadata: ViewMetadata; rows: MatrixAxis[]; colu
 export type MergeConflict = { reference: string; kind: string; message: string }
 export type MergeRequest = { source: string; target: string }
 export type MergeResponse = { result: string | null; conflicts: MergeConflict[] | null }
-export type MetaAttribute = { name: string; uuid?: string | null; type: MetaAttributeKind; required?: boolean; enum?: string[] }
+export type MetaAttribute = { name: string; uuid?: string | null; type: MetaAttributeKind; required?: boolean; enum?: string[]; 
+/**
+ * `single` (default) or `multi`; declared explicitly in the seed.
+ */
+cardinality?: string | null }
 /**
  * A host-facing metamodel attribute descriptor for an entity type.
  */
@@ -592,7 +596,15 @@ export type MetaAttributeRules = { string: MetaStringRule | null; text: MetaStri
 export type MetaEnumRule = { caseSensitive: boolean | null }
 export type MetaModelDocument = { version: string; description: string | null; types: MetaType[]; relationships: MetaRelationship[]; validation: MetaValidationRules | null }
 export type MetaMultiplicity = { from: string; to: string }
-export type MetaRelationship = { id: string; uuid?: string | null; label: string | null; from: string[]; to: string[]; directed: boolean | null; multiplicity: MetaMultiplicity | null; attributes?: MetaAttribute[] }
+export type MetaRelationship = { id: string; uuid?: string | null; label: string | null; from: string[]; to: string[]; directed: boolean | null; multiplicity: MetaMultiplicity | null; 
+/**
+ * Whether a self-referential edge is permitted (declared inline in the seed).
+ */
+allowSelf?: boolean | null; 
+/**
+ * Whether duplicate edges between the same pair are permitted.
+ */
+allowDuplicate?: boolean | null; attributes?: MetaAttribute[] }
 export type MetaRelationshipValidation = { allowSelf: boolean | null; allowDuplicate: boolean | null }
 export type MetaStringRule = { maxLength: number | null }
 export type MetaType = { id: string; uuid?: string | null; label: string | null; category: string | null; extends: string | null; attributes?: MetaAttribute[]; effectTypes?: string[] | null }
