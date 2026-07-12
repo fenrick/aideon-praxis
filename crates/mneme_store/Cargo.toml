@@ -21,7 +21,7 @@ uuid = { version = "1.23.3", features = ["v4", "v5", "serde"] }
 # `bundled` compiles SQLite from source so there is no dependency on a system
 # `sqlite3.lib`/`libsqlite3` (the Windows runner has none — LNK1181 — and it
 # keeps macOS/Linux builds reproducible).
-rusqlite = { version = "0.32.1", features = ["bundled"] }
+rusqlite = { version = "0.40.1", features = ["bundled"] }
 
 [dev-dependencies]
 tempfile = "3.27"
