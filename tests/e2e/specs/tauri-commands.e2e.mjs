@@ -522,6 +522,16 @@ describe('tauri e2e command coverage', () => {
       await invokeIpc('workspace_author_typed_node', { typeId: 'Capability', props: {} }),
       'workspace_author_typed_node',
     );
+    assertOkOrError(await invokeIpc('workspace_edges', {}), 'workspace_edges');
+    assertOkOrError(
+      await invokeIpc('workspace_author_typed_edge', {
+        relType: 'realises',
+        srcId: '00000000-0000-4000-8000-000000000000',
+        dstId: '00000000-0000-4000-8000-000000000001',
+        props: {},
+      }),
+      'workspace_author_typed_edge',
+    );
     assertOkOrError(
       await invokeIpc('workspace_set_claim', {
         entityId: '00000000-0000-4000-8000-000000000000',
