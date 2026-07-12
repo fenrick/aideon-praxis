@@ -493,8 +493,8 @@ pub fn set_replay_head(conn: &Connection, partition_id: Id, head: &ReplayHead) -
         params![
             partition_id.to_canonical_string(),
             head.segment_seqno,
-            head.byte_offset,
-            head.applied_record_count,
+            head.byte_offset as i64,
+            head.applied_record_count as i64,
             head.last_record_digest
         ],
     )?;
@@ -511,8 +511,10 @@ pub fn replay_head(conn: &Connection, partition_id: Id) -> Result<Option<ReplayH
             |row| {
                 Ok(ReplayHead {
                     segment_seqno: row.get(0)?,
-                    byte_offset: row.get(1)?,
-                    applied_record_count: row.get(2)?,
+                    // SQLite stores integers as i64; rusqlite 0.40 dropped the
+                    // u64 ToSql/FromSql impls, so cross the boundary as i64.
+                    byte_offset: row.get::<_, i64>(1)? as u64,
+                    applied_record_count: row.get::<_, i64>(2)? as u64,
                     last_record_digest: row.get(3)?,
                 })
             },
