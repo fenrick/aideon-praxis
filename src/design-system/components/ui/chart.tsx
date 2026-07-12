@@ -90,21 +90,23 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  // A <style> block of CSS custom properties derived entirely from the
-  // developer-supplied ChartConfig (theme keys + colour tokens), never user
-  // input. Passed as a plain text child rather than dangerouslySetInnerHTML —
-  // React renders it verbatim into the <style> element (the browser parses it
-  // as CSS), so there is no innerHTML sink.
+  // Emitted as a plain <style> text child rather than dangerouslySetInnerHTML.
+  // Every interpolated value (chart id, config key, colour token) is stripped of
+  // `<` and `>` first, so even a hostile ChartConfig cannot inject a `</style>`
+  // breakout when React serialises this verbatim during SSR — defence in depth
+  // on top of these values normally being developer-authored.
+  const cssSafe = (value: string) => value.replace(/[<>]/g, "")
+  const safeId = cssSafe(id)
   const css = Object.entries(THEMES)
     .map(
       ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+${prefix} [data-chart=${safeId}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ??
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    return color ? `  --color-${cssSafe(key)}: ${cssSafe(color)};` : null
   })
   .join("\n")}
 }
