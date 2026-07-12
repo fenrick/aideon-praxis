@@ -12,7 +12,7 @@ blake3 = "1.8.5"
 # `bundled` compiles SQLite from source so we don't depend on a system
 # `sqlite3.lib`/`libsqlite3` — the Windows runner has none (LNK1181) and it
 # keeps macOS/Linux builds reproducible too.
-rusqlite = { version = "0.32.1", features = ["bundled"] }
+rusqlite = { version = "0.40.1", features = ["bundled"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 specta = { version = "=2.0.0-rc.22", features = ["derive", "serde_json"] }
