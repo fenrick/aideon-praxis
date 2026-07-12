@@ -93,11 +93,33 @@
     "typeDef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type_id", "applies_to", "label", "is_abstract", "parent_type_id"],
+      "required": [
+        "type_id",
+        "key",
+        "applies_to",
+        "label",
+        "category",
+        "effect_types",
+        "is_abstract",
+        "parent_type_id"
+      ],
       "properties": {
         "type_id": { "$ref": "#/$defs/id" },
+        "key": {
+          "type": "string",
+          "description": "Stable domain string id (never changes); the effective-schema/registry key."
+        },
         "applies_to": { "$ref": "#/$defs/entityKind" },
         "label": { "type": "string" },
+        "category": {
+          "type": ["string", "null"],
+          "description": "Authored classification, e.g. Business/Application."
+        },
+        "effect_types": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Plan-effect verbs the type declares (PlanEvent only in the seed)."
+        },
         "is_abstract": { "type": "boolean" },
         "parent_type_id": {
           "$ref": "#/$defs/idOrNull",
@@ -110,6 +132,7 @@
       "additionalProperties": false,
       "required": [
         "field_id",
+        "key",
         "label",
         "value_type",
         "semantic_kind",
@@ -119,6 +142,10 @@
       ],
       "properties": {
         "field_id": { "$ref": "#/$defs/id" },
+        "key": {
+          "type": "string",
+          "description": "Stable domain string id (the attribute name); the effective-schema slot key."
+        },
         "label": { "type": "string" },
         "value_type": { "$ref": "#/$defs/valueType" },
         "semantic_kind": { "$ref": "#/$defs/fieldKind" },

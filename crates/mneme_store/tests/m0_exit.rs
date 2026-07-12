@@ -65,13 +65,17 @@ fn author_seed(ws: &mut Workspace) {
         OpPayload::UpsertMetamodelBatch(AuthoredMetamodelBatch {
             types: vec![TypeDef {
                 type_id: id(TYPE_APP),
+                key: "Application".into(),
                 applies_to: EntityKind::Node,
                 label: "Application".into(),
+                category: Some("Application".into()),
+                effect_types: vec![],
                 is_abstract: false,
                 parent_type_id: None,
             }],
             fields: vec![FieldDef {
                 field_id: id(FIELD_DISPOSITION),
+                key: "disposition".into(),
                 label: "disposition".into(),
                 value_type: ValueType::Str,
                 semantic_kind: FieldKind::Enum,

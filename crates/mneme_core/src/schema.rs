@@ -56,10 +56,18 @@ pub enum ValueType {
 pub struct TypeDef {
     /// Metamodel symbol UUID (UUIDv5).
     pub type_id: Id,
+    /// Stable domain key (the never-changing string id, e.g. `Capability`);
+    /// distinct from `label`, which is a display string. The effective schema
+    /// and registry are keyed by this, so it must live in the op log.
+    pub key: String,
     /// Whether the type applies to nodes or edges.
     pub applies_to: EntityKind,
     /// Human-readable label.
     pub label: String,
+    /// Authored classification (e.g. `Business`, `Application`); `null` if none.
+    pub category: Option<String>,
+    /// Plan-effect verbs a type declares (only `PlanEvent` in the seed); `[]` otherwise.
+    pub effect_types: Vec<String>,
     /// Whether the type is abstract (not directly instantiable).
     pub is_abstract: bool,
     /// Single-inheritance parent; cycles are an M1 rejection, not M0.
@@ -95,6 +103,9 @@ pub enum FieldKind {
 pub struct FieldDef {
     /// Attribute symbol UUID (UUIDv5).
     pub field_id: Id,
+    /// Stable domain key (the attribute name, e.g. `tier` or `source.priority`);
+    /// the effective-schema slot key. Distinct from `label` (display string).
+    pub key: String,
     /// Human-readable label.
     pub label: String,
     /// The field's storage value type.
