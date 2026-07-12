@@ -12,6 +12,7 @@ fn ipc_request<T>(payload: T) -> IpcRequest<T> {
     let id = COUNTER.fetch_add(1, Ordering::Relaxed);
     IpcRequest {
         request_id: format!("req-{id}"),
+        traceparent: None,
         payload,
     }
 }

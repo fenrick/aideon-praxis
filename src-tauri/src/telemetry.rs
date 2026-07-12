@@ -10,8 +10,11 @@ use std::future::Future;
 use std::time::{Duration, Instant};
 
 pub fn command_invoked(command: &str, correlation_id: &str) {
+    // Per-command lifecycle is DEBUG: routine and high-volume (every IPC call
+    // emits invoked+completed on both the host and the webview mirror). Failures
+    // stay at ERROR. Raise the log filter to see these during triage.
     crate::log_event!(
-        severity = 6,
+        severity = 7,
         component = "core",
         event = "command_invoked",
         message = "Command invocation received",
@@ -24,7 +27,7 @@ pub fn command_invoked(command: &str, correlation_id: &str) {
 
 pub fn command_completed(command: &str, correlation_id: &str, duration: Duration) {
     crate::log_event!(
-        severity = 6,
+        severity = 7,
         component = "core",
         event = "command_completed",
         message = "Command completed successfully",
@@ -145,6 +148,11 @@ where
     Fut: Future<Output = Result<Res, HostError>>,
 {
     let correlation_id = request.request_id.clone();
+    // Validate traceparent before the handler runs (ADR-0019). Invalid values
+    // return an envelope error; the raw value is not echoed back.
+    if let Err(err) = request.validate_traceparent() {
+        return IpcResponse::err(correlation_id, err);
+    }
     match record_command(command, &correlation_id, handler(request.payload)).await {
         Ok(payload) => IpcResponse::ok(correlation_id, payload),
         // `record_command` has already logged the raw error; redact before it
@@ -208,16 +216,21 @@ pub fn system_metrics_snapshot() -> MetricsSnapshot {
 }
 
 #[cfg(test)]
+#[path = "../tests/internal/logging_bridge_e2e.rs"]
+mod logging_bridge_e2e;
+
+#[cfg(test)]
 mod telemetry_tests {
     use super::*;
     use crate::ipc::IpcRequest;
-    use logtest::Logger;
     use serde_json::Value;
+    use serial_test::serial;
 
     #[tokio::test]
     async fn respond_with_request_wraps_success() {
         let request = IpcRequest {
             request_id: "req-ok".to_string(),
+            traceparent: None,
             payload: "payload".to_string(),
         };
 
@@ -237,6 +250,7 @@ mod telemetry_tests {
     async fn command_envelope_wraps_success_and_echoes_request_id() {
         let request = IpcRequest {
             request_id: "req-1".to_string(),
+            traceparent: None,
             payload: "payload".to_string(),
         };
 
@@ -255,6 +269,7 @@ mod telemetry_tests {
     async fn command_envelope_preserves_known_domain_error() {
         let request = IpcRequest {
             request_id: "req-e".to_string(),
+            traceparent: None,
             payload: (),
         };
 
@@ -275,6 +290,7 @@ mod telemetry_tests {
     async fn command_envelope_redacts_internal_error_message() {
         let request = IpcRequest {
             request_id: "req-i".to_string(),
+            traceparent: None,
             payload: (),
         };
 
@@ -308,6 +324,7 @@ mod telemetry_tests {
     async fn respond_with_request_wraps_failure() {
         let request = IpcRequest {
             request_id: "req-err".to_string(),
+            traceparent: None,
             payload: (),
         };
 
@@ -346,8 +363,9 @@ mod telemetry_tests {
     }
 
     #[test]
+    #[serial(logtest)]
     fn telemetry_logging_records_milestones() {
-        let mut logger = Logger::start();
+        let mut logger = super::logging_bridge_e2e::start_logger_once();
         command_invoked("setup:init", "corr-id");
         command_completed("setup:init", "corr-id", Duration::from_millis(312));
         let error = HostError::internal("failing to migrate");

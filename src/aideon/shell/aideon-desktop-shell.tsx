@@ -134,11 +134,19 @@ export function AideonDesktopShell({
 
           <SidebarInset className="min-w-0">
             {contentLayout === 'full-bleed' ? (
-              <div className="h-full overflow-hidden" data-testid="aideon-shell-content">
+              <div
+                aria-label="Main content"
+                className="h-full overflow-hidden"
+                data-testid="aideon-shell-content"
+              >
                 {content}
               </div>
             ) : (
-              <ScrollArea className="h-full" data-testid="aideon-shell-content">
+              <ScrollArea
+                aria-label="Main content"
+                className="h-full"
+                data-testid="aideon-shell-content"
+              >
                 <div className="min-h-full p-4 md:p-6">{content}</div>
               </ScrollArea>
             )}
@@ -154,7 +162,12 @@ export function AideonDesktopShell({
             className="!min-h-0 w-auto"
             style={headerStyle}
           >
-            <Sidebar side="right" collapsible="offcanvas" data-testid="aideon-shell-inspector">
+            <Sidebar
+              aria-label="Inspector"
+              side="right"
+              collapsible="offcanvas"
+              data-testid="aideon-shell-inspector"
+            >
               <SidebarContent className="p-0">{inspector}</SidebarContent>
             </Sidebar>
           </SidebarProvider>

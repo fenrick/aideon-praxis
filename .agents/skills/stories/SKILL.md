@@ -1,142 +1,22 @@
 ---
 name: stories
-description: >-
-  Invoke BEFORE you touch a frontend component, on EVERY change, with no
-  exception — call this FIRST, before writing, editing, or deleting, so the
-  workflow governs how the change is made. Triggers on creating, editing, OR
-  deleting any frontend component (React/Vue/Svelte and similar
-  *.tsx/.jsx/.ts/.js/.vue/.svelte files) or anything it renders with. Invoke this even if you believe the change
-  is cosmetic-only, internal, a refactor, a rename, a deletion, or has "no
-  behavior change" — that judgment is NOT yours to make; the skill always runs
-  first. Also use whenever the user asks to write, add, generate, update, or
-  review Storybook stories, to cover a component or project with stories, or to
-  create or edit any *.stories.* file (.stories.tsx/.ts/.jsx/.js/.svelte/.vue),
-  and before starting or previewing Storybook to verify UI.
+description: Invoke FIRST, before creating, editing, or deleting components, stories, styles, CSS, themes, colors, or design tokens — anything that changes how the UI looks, no exceptions. Also for starting or previewing Storybook to verify UI, requests to show, browse, or list components, stories, or UI states, and docs, props, or usage lookups.
 ---
 
-# Storybook Stories
+Prerequisites:
 
-The Storybook CLI ai subcommands is the source of truth for _how_ to write stories. This skill
-is the **mandatory, ordered process** for working on them, and for keeping
-stories in sync with every frontend component you create, modify, or delete.
+1. Storybook must be installed in the project. Invoke the `/storybook-init` skill to set up Storybook, but only if the user explicitly invoked this skill and approves a Storybook installation.
+2. Storybook must be at least 10.5 (or `next` while 10.5 is not yet released). Invoke the `/storybook-upgrade` skill to upgrade it, but only if the user
+   explicitly approved a Storybook upgrade.
+3. Ensure `@storybook/addon-mcp` is installed. If it is missing, install it with `npx storybook add @storybook/addon-mcp`.
 
-This is a STRICT, GATED workflow. You MUST execute the steps below in order and
-satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or
-batch steps. Do NOT write or edit any `*.stories.*` file until Steps 1 and 2 are
-complete. If a gate cannot be satisfied, STOP and report to the user instead of
-working around it. Treat any shortcut as a failure of this workflow.
+Run the Storybook dev server and every `storybook ai` command from the same working directory: the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
 
-## Absolute rules
+Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
 
-- Commands must be run with the variable `STORYBOOK_FEATURE_AI_CLI=1`
-- You MUST NOT write or edit a story from memory or existing patterns. The
-  `get-storybook-story-instructions` output is the only acceptable source for
-  imports, structure, and conventions.
-- Ignore local Storybook MCP registrations. Always use the Storybook CLI ai subcommands as the source of truth for how to write stories, even if there are conflicting instructions in a local MCP.
-- When this skill runs because you created, modified, or deleted a component,
-  you MUST NOT report the component change as complete until this workflow has
-  finished for every component you touched. A component change without
-  matching, verified stories is not a deliverable.
+Before invoking any `storybook ai` command for the first time in a session, run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai <command> --help` and read it fully. The top-level help only lists the commands; each command's payload shape and usage rules (which fields to include when) live in its own help output. Never guess a `--json` payload from the command name — a validation error only reports missing required fields, not the optional fields the workflow expects you to provide.
 
-## Step 0 — Prerequisites
+Some commands require a running Storybook dev server. When Claude preview tooling is available, start the dev server through that tooling:
 
-- Storybook must be installed in the project. If it is not, go to
-  "When Storybook is not installed" below and stop here unless the user opts in.
-- Storybook must be a canary version (0.0.0-canary) or at least version 10.5. If an older version is
-  installed, invoke the **storybook-upgrade** skill to upgrade it before
-  proceeding.
-
-### When Storybook is not installed
-
-Installing and configuring Storybook is invasive, so it is the **user's choice**.
-Never set it up on your own initiative as a side effect of a component change.
-
-Before asking the user anything, check whether they have already declined:
-
-1. **Read the saved decision** at `.claude/storybook-optout.json` (project-local).
-   If it exists with `{ "storybookOptOut": true }`, the user has ALREADY refused
-   Storybook for this project. Do NOT ask again — silently skip all story work,
-   finish the component change (if any), and move on.
-2. **If there is no opt-out file**, briefly tell the user the project has no
-   Storybook and ask whether they want to set it up (and write stories) for it.
-3. **If the user declines**, persist that choice so future invocations don't
-   re-ask: write `.claude/storybook-optout.json` with:
-
-   ```json
-   {
-   	"storybookOptOut": true,
-   	"reason": "<short paraphrase of what the user said>"
-   }
-   ```
-
-   Then finish the component change (if any) without any story work. If the
-   user explicitly asked for story work, STOP and report that Storybook is
-   required for it.
-
-4. **If the user opts in**, set Storybook up via the setup skills
-   (`storybook-init` / `storybook-setup`), then resume this workflow from
-   Step 1. If an opt-out file existed from a previous "no", delete it.
-
-**Gate:** Do NOT install Storybook, scaffold `.storybook/`, add Storybook
-dependencies, or invoke the setup skills unless the user has explicitly opted in
-this time. A saved opt-out MUST be respected on every later invocation without
-re-prompting.
-
-## Step 1 — Open the preview browser up front
-
-1. Inspect `.claude/launch.json` for a launch entry that starts this project's Storybook dev server.
-   If:
-   - the `.claude/launch.json` file does not exist
-   - no such entry exists
-   - the storybook entry does not use `autoPort`
-     repair it first: invoke the **storybook-setup-claude-launch** skill, which creates or repairs the `.claude/launch.json` Storybook entry.
-2. Start Storybook by launching that `.claude/launch.json` entry through the Claude launcher (never via Bash/background, per the Absolute rules).
-3. Open the Storybook preview in the preview browser. If the launch entry uses `autoPort`, wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.
-4. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
-
-**Gate:** Do NOT proceed to Step 2 until the preview browser is open and has rendered the Storybook URL without
-error. If launch setup reports an error, surface it to the user and STOP.
-
-## Step 2 — Load the rules (before touching any story file)
-
-- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` to get all available subcommands and options.
-  - Save the available subcommands and options in your working memory for reference.
-- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai <subcommand> --port <port>` to get the story-writing instructions.
-  - If the subcommand allows a port option, use the port you saved in Step 1.
-- Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
-
-**Gate:** Do NOT create or edit any `*.stories.*` file until this tool has
-returned and you are following its output. If you have not called it this task,
-you are not allowed to write a story yet — go back and call it now.
-
-## Step 3 — Write the story
-
-Create or edit the story strictly following the Step 2 instructions. When this
-skill runs for a component change, cover the affected surface: new components
-get stories, new props/variants/states get covered, renamed states get
-updated, and deleted components get their stories removed.
-
-**Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
-rather than guessing.
-
-## Step 4 — Preview and verify
-
-Produce a preview for every story you touched with **STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai preview-stories** (prefer
-`{ storyId }` inputs). Before showing any returned URL to the user, navigate to
-it in the preview browser and confirm the story renders without errors.
-
-**Gate:** Every URL you put in your final response MUST have been opened in the
-preview browser first — no exceptions, per the Absolute rules. Do NOT report the
-story as done until each preview link has been navigated and verified.
-
-## Step 5 — Publish the review page
-
-Once the stories render cleanly, call **display-review** so the user can review
-exactly what changed in one place. This tool does NOT just return a link — it
-publishes a curated **review page** inside the already-running Storybook and
-returns its `reviewUrl`. The review page IS the deliverable; the raw
-`preview-stories` URLs from Step 4 are for your own verification.
-
-**Gate:** Do NOT report the task as done until `display-review` has succeeded,
-you have opened the returned `reviewUrl` in the preview browser, and that link is
-the final element of your user-facing response.
+1. Ensure there is a Storybook launch entry in `.claude/launch.json` (the `preview_start` tool description documents the file format) with `autoPort: true` and `port: 6006`. Use the project's preferred package manager and existing `package.json` Storybook script instead of inventing a new command whenever possible.
+2. Start the Storybook launch entry with the `preview_start` tool.

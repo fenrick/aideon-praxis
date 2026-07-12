@@ -32,7 +32,14 @@ fn lifecycle_app() -> (App<MockRuntime>, WebviewWindow<MockRuntime>) {
             super::workspace_close,
             // The runtime-generic inner is what dispatches under MockRuntime; the
             // concrete `workspace_rebuild` wrapper is the registered codegen seam.
-            super::workspace_rebuild_inner
+            super::workspace_rebuild_inner,
+            super::workspace_author_node,
+            super::workspace_nodes,
+            super::workspace_metamodel_types,
+            super::workspace_author_typed_node,
+            super::workspace_set_claim,
+            super::workspace_state_at,
+            super::workspace_diff
         ])
         .manage(WorkspaceManager::default())
         .build(mock_context(noop_assets()))
@@ -326,4 +333,204 @@ async fn concurrent_rebuild_is_refused_with_backpressure() {
     if second["status"] == "error" {
         assert_eq!(second["error"]["code"], "BACKPRESSURE");
     }
+}
+
+/// The MVP end-to-end authoring slice ([golden-journey] steps 1 + 3 + 8–10):
+/// create → author nodes over the boundary → list the derived twin → close →
+/// reopen → the twin re-derives and the foundation hash is unchanged.
+#[tokio::test]
+async fn author_node_then_list_survives_reopen_with_hash_equality() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    // Author two nodes through the real dispatch seam.
+    let first =
+        dispatch(&webview, "workspace_author_node", json!({ "typeId": null })).expect("author ok");
+    assert_eq!(first["status"], "ok");
+    let first_id = first["result"]["nodeId"]
+        .as_str()
+        .expect("nodeId")
+        .to_string();
+    assert_eq!(first["result"]["tombstoned"], false);
+
+    let second =
+        dispatch(&webview, "workspace_author_node", json!({ "typeId": null })).expect("author ok");
+    assert_ne!(second["result"]["nodeId"], first_id.as_str());
+
+    // The derived twin lists both.
+    let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
+    assert_eq!(nodes["status"], "ok");
+    assert_eq!(nodes["result"].as_array().map(Vec::len), Some(2));
+
+    // Op count: 1 session actor-declare + 2 create-node.
+    let status = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(status["result"]["appliedOpCount"], 3);
+    let hash = status["result"]["foundationRebuildHash"]
+        .as_str()
+        .expect("hash")
+        .to_string();
+
+    // Close, reopen: the twin re-derives from canonical material, hash equal.
+    dispatch(&webview, "workspace_close", json!({})).expect("close ok");
+    let reopened = dispatch(
+        &webview,
+        "workspace_open",
+        json!({ "root": dir.path().to_string_lossy() }),
+    )
+    .expect("open ok");
+    assert_eq!(reopened["result"]["foundationRebuildHash"], hash.as_str());
+    let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
+    assert_eq!(nodes["result"].as_array().map(Vec::len), Some(2));
+    assert!(
+        nodes["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|n| n["nodeId"] == first_id.as_str()),
+        "the first authored node survives reopen"
+    );
+}
+
+#[tokio::test]
+async fn author_node_with_no_open_workspace_is_an_honest_error() {
+    let (_app, webview) = lifecycle_app();
+    let authored = dispatch(&webview, "workspace_author_node", json!({ "typeId": null }))
+        .expect("envelope returned");
+    assert_eq!(authored["status"], "error");
+    assert_eq!(authored["error"]["code"], "WORKSPACE_NOT_OPEN");
+}
+
+#[tokio::test]
+async fn metamodel_types_are_listed_without_an_open_workspace() {
+    let (_app, webview) = lifecycle_app();
+    let types = dispatch(&webview, "workspace_metamodel_types", json!({})).expect("types ok");
+    assert_eq!(types["status"], "ok");
+    assert!(
+        types["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|t| t["id"] == "Capability"),
+        "the seed metamodel palette is available before opening a workspace"
+    );
+}
+
+#[tokio::test]
+async fn plan_actual_claims_resolve_and_diff_over_dispatch() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    // Author an Application, then a plan claim and an actual claim on lifecycle.
+    let app = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Application", "props": { "name": "Billing" } }),
+    )
+    .expect("author ok");
+    let id = app["result"]["nodeId"].as_str().unwrap().to_string();
+
+    dispatch(
+        &webview,
+        "workspace_set_claim",
+        json!({ "entityId": id, "typeId": "Application", "attribute": "lifecycle",
+                "value": "Build", "layer": "plan", "validFrom": 0, "validTo": 100 }),
+    )
+    .expect("plan claim ok");
+    dispatch(
+        &webview,
+        "workspace_set_claim",
+        json!({ "entityId": id, "typeId": "Application", "attribute": "lifecycle",
+                "value": "Run", "layer": "actual", "validFrom": 50, "validTo": null }),
+    )
+    .expect("actual claim ok");
+
+    let vp_early = json!({ "asOf": 10, "layers": ["actual", "plan"] });
+    let vp_late = json!({ "asOf": 60, "layers": ["actual", "plan"] });
+
+    // Resolve at as_of=60: the actual layer wins.
+    let late = dispatch(&webview, "workspace_state_at", vp_late.clone()).expect("state ok");
+    let entity = late["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["nodeId"] == id.as_str())
+        .unwrap();
+    let life = entity["properties"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["field"] == "lifecycle")
+        .unwrap();
+    assert_eq!(life["value"], "Run");
+    assert_eq!(life["layer"], "actual");
+
+    // Diff the two viewpoints: lifecycle changes Build -> Run.
+    let diff = dispatch(
+        &webview,
+        "workspace_diff",
+        json!({ "before": vp_early, "after": vp_late }),
+    )
+    .expect("diff ok");
+    let delta = diff["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|d| d["field"] == "lifecycle")
+        .unwrap();
+    assert_eq!(delta["before"], "Build");
+    assert_eq!(delta["after"], "Run");
+
+    // A claim with an out-of-range enum is refused at the boundary.
+    let bad = dispatch(
+        &webview,
+        "workspace_set_claim",
+        json!({ "entityId": id, "typeId": "Application", "attribute": "lifecycle",
+                "value": "Nonsense", "layer": "plan", "validFrom": 0, "validTo": null }),
+    )
+    .expect("envelope returned");
+    assert_eq!(bad["status"], "error");
+    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
+}
+
+#[tokio::test]
+async fn typed_authoring_validates_and_a_rejected_write_never_enters_the_op_log() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    // A valid Capability lands through the dispatch seam.
+    let ok = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Capability", "props": { "name": "Customer Insight", "tier": "Strategic" } }),
+    )
+    .expect("author ok");
+    assert_eq!(ok["status"], "ok");
+    assert_eq!(ok["result"]["typeLabel"], "Capability");
+
+    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    let op_count = before["result"]["appliedOpCount"].clone();
+
+    // A structurally-fine but metamodel-invalid write is refused …
+    let bad = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Capability", "props": { "name": "Bad", "tier": "Tactical" } }),
+    )
+    .expect("envelope returned");
+    assert_eq!(bad["status"], "error");
+    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
+
+    // … and the canonical op log is unchanged (the M1 oracle assertion).
+    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(
+        after["result"]["appliedOpCount"], op_count,
+        "a rejected write never enters model/ops/"
+    );
 }

@@ -194,7 +194,9 @@ function resolveResultFromRecord(
   const status = record.status;
   if (status === 'ok') {
     emitLog(shouldLog, {
-      severity: 'notice',
+      // DEBUG: routine per-command chatter mirrored from the host. Failures below
+      // stay ERROR. Raise the log filter to trace individual calls.
+      severity: 'debug',
       component: 'ui',
       eventName: 'command_completed',
       message: 'Command completed',
@@ -251,7 +253,7 @@ export async function invokeIpc<Result>(
   const requestId = nextRequestId();
   const shouldLog = options?.log ?? true;
   emitLog(shouldLog, {
-    severity: 'notice',
+    severity: 'debug',
     component: 'ui',
     eventName: 'command_invoked',
     message: `Invoking ${command}`,
