@@ -269,6 +269,24 @@ impl Workspace {
         projection::list_nodes(&self.conn)
     }
 
+    /// The projected edge listing — the derived twin view of `create-edge` /
+    /// `tombstone-entity` effects, re-derived on every rebuild.
+    pub fn list_edges(&self) -> Result<Vec<projection::EdgeRow>> {
+        projection::list_edges(&self.conn)
+    }
+
+    /// Whether a live edge of `type_id` already connects `src_id → dst_id`
+    /// (the M1 duplicate-edge check).
+    pub fn edge_exists(&self, type_id: &str, src_id: &str, dst_id: &str) -> Result<bool> {
+        projection::edge_exists(
+            &self.conn,
+            &self.partition_id().to_canonical_string(),
+            type_id,
+            src_id,
+            dst_id,
+        )
+    }
+
     /// The projected actor registry.
     pub fn list_actors(&self) -> Result<Vec<projection::ActorRow>> {
         projection::list_actors(&self.conn)

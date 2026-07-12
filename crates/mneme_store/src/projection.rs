@@ -17,7 +17,7 @@ use crate::paths::Paths;
 /// The derived-runtime schema version; a mismatch forces a full rebuild.
 /// v2 added the `aideon_nodes` foundation projection.
 /// v3 added the `aideon_facts` property-fact projection (M2 resolution input).
-pub const RUNTIME_SCHEMA_VERSION: i64 = 3;
+pub const RUNTIME_SCHEMA_VERSION: i64 = 4;
 
 /// The replay frontier persisted per partition ([workspace-integrity-and-recovery],
 /// "The replay frontier (`ReplayHead`)").
@@ -142,6 +142,19 @@ pub fn init_schema(conn: &Connection) -> Result<()> {
         );
         CREATE INDEX IF NOT EXISTS aideon_facts_slot
             ON aideon_facts (partition_id, entity_id, field_id);
+        -- One row per relationship instance (create-edge), tombstoned on delete.
+        -- Keyed for the M1 duplicate-edge check: (partition, type, src, dst).
+        CREATE TABLE IF NOT EXISTS aideon_edges (
+            partition_id TEXT NOT NULL,
+            edge_id TEXT NOT NULL,
+            type_id TEXT,
+            src_id TEXT NOT NULL,
+            dst_id TEXT NOT NULL,
+            tombstoned INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (partition_id, edge_id)
+        );
+        CREATE INDEX IF NOT EXISTS aideon_edges_pair
+            ON aideon_edges (partition_id, type_id, src_id, dst_id);
         ",
     )?;
     set_meta(
@@ -270,11 +283,36 @@ pub fn apply_kind_effect(conn: &Connection, env: &OpEnvelope) -> Result<()> {
                 ],
             )?;
         }
+        OpPayload::CreateEdge(edge) => {
+            conn.execute(
+                "INSERT INTO aideon_edges(partition_id, edge_id, type_id, src_id, dst_id, tombstoned)
+                 VALUES (?1, ?2, ?3, ?4, ?5, 0)
+                 ON CONFLICT(partition_id, edge_id) DO UPDATE SET
+                    type_id = excluded.type_id,
+                    src_id = excluded.src_id,
+                    dst_id = excluded.dst_id",
+                params![
+                    edge.partition.to_canonical_string(),
+                    edge.edge_id.to_canonical_string(),
+                    edge.type_id.map(|t| t.to_canonical_string()),
+                    edge.src_id.to_canonical_string(),
+                    edge.dst_id.to_canonical_string(),
+                ],
+            )?;
+        }
         OpPayload::TombstoneEntity(tomb) => {
-            // A no-op when the entity is not a node (e.g. an edge).
+            // Tombstone whichever entity it is — node or edge (one of these is a no-op).
             conn.execute(
                 "UPDATE aideon_nodes SET tombstoned = 1
                  WHERE partition_id = ?1 AND node_id = ?2",
+                params![
+                    tomb.partition.to_canonical_string(),
+                    tomb.entity_id.to_canonical_string(),
+                ],
+            )?;
+            conn.execute(
+                "UPDATE aideon_edges SET tombstoned = 1
+                 WHERE partition_id = ?1 AND edge_id = ?2",
                 params![
                     tomb.partition.to_canonical_string(),
                     tomb.entity_id.to_canonical_string(),
@@ -435,6 +473,62 @@ pub fn list_nodes(conn: &Connection) -> Result<Vec<NodeRow>> {
         })
     })?;
     Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+}
+
+/// One projected edge row: the derived listing of `create-edge` /
+/// `tombstone-entity` effects.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EdgeRow {
+    /// The edge id.
+    pub edge_id: String,
+    /// The declared relationship type, if any.
+    pub type_id: Option<String>,
+    /// Source entity id.
+    pub src_id: String,
+    /// Destination entity id.
+    pub dst_id: String,
+    /// Whether a tombstone has retired the edge.
+    pub tombstoned: bool,
+}
+
+/// List every projected edge, ordered by edge id.
+pub fn list_edges(conn: &Connection) -> Result<Vec<EdgeRow>> {
+    let mut stmt = conn.prepare(
+        "SELECT edge_id, type_id, src_id, dst_id, tombstoned FROM aideon_edges ORDER BY edge_id",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok(EdgeRow {
+            edge_id: row.get(0)?,
+            type_id: row.get(1)?,
+            src_id: row.get(2)?,
+            dst_id: row.get(3)?,
+            tombstoned: row.get::<_, i64>(4)? != 0,
+        })
+    })?;
+    Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+}
+
+/// Whether a live (non-tombstoned) edge of `type_id` already connects the
+/// ordered pair `src_id → dst_id` — the M1 duplicate-edge check.
+pub fn edge_exists(
+    conn: &Connection,
+    partition_id: &str,
+    type_id: &str,
+    src_id: &str,
+    dst_id: &str,
+) -> Result<bool> {
+    use rusqlite::OptionalExtension;
+    Ok(conn
+        .query_row(
+            "SELECT 1 FROM aideon_edges
+             WHERE partition_id = ?1 AND type_id = ?2 AND src_id = ?3 AND dst_id = ?4
+               AND tombstoned = 0
+             LIMIT 1",
+            params![partition_id, type_id, src_id, dst_id],
+            |_| Ok(()),
+        )
+        .optional()?
+        .is_some())
 }
 
 /// List every declared actor, ordered by actor id.

@@ -163,6 +163,14 @@ pub fn validate_edge(
     ctx: &EdgeContext<'_>,
     props: &Json,
 ) -> Result<(), ValidationError> {
+    // Self-link is a structural violation independent of endpoint typing, so it
+    // is reported first — a self-edge on a relationship whose endpoint types
+    // differ would otherwise surface as an endpoint error.
+    if ctx.is_self && !rule.allow_self {
+        return Err(ValidationError::SelfLinkNotAllowed {
+            key: rule.key.clone(),
+        });
+    }
     if !rule.allowed_src.iter().any(|t| t == ctx.src_type) {
         return Err(ValidationError::EndpointTypeNotAllowed {
             key: rule.key.clone(),
@@ -175,11 +183,6 @@ pub fn validate_edge(
             key: rule.key.clone(),
             endpoint: "dst",
             entity_type: ctx.dst_type.to_owned(),
-        });
-    }
-    if ctx.is_self && !rule.allow_self {
-        return Err(ValidationError::SelfLinkNotAllowed {
-            key: rule.key.clone(),
         });
     }
     if ctx.duplicate_exists && !rule.allow_duplicate {

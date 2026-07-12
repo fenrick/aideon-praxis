@@ -11,15 +11,16 @@ use serde::Serialize;
 use specta::Type;
 
 use aideon_praxis::meta::MetaModelRegistry;
-use aideon_praxis::temporal::NodeVersion;
 
 pub use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 pub use mneme_core::{Id, Value};
 pub use mneme_store::error::{Result, StoreError};
 pub use mneme_store::{AppliedFrontier, FoundationProjectionSnapshot, Manifest, Workspace};
 
-use mneme_core::ops::{CreateNode, Layer, SetPropertyInterval};
+use mneme_core::effective::{EffectiveEdgeRule, EffectiveSchema};
+use mneme_core::ops::{CreateEdge, CreateNode, Layer, SetPropertyInterval};
 use mneme_core::time::ValidTime;
+use mneme_core::validate::{EdgeContext, validate_edge, validate_node};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::str::FromStr;
@@ -52,6 +53,24 @@ pub struct NodeRecord {
     /// symbol UUID via the registry; `None` for an untyped or unknown-symbol node.
     pub type_label: Option<String>,
     /// Whether a tombstone has retired the node.
+    pub tombstoned: bool,
+}
+
+/// A host-facing projected relationship — the derived twin edge listing entry.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct EdgeRecord {
+    /// The edge id.
+    pub edge_id: String,
+    /// The relationship type's storage symbol UUID, if any.
+    pub type_id: Option<String>,
+    /// The metamodel relationship key (e.g. `realises`), resolved from the symbol.
+    pub type_label: Option<String>,
+    /// Source entity id.
+    pub src_id: String,
+    /// Destination entity id.
+    pub dst_id: String,
+    /// Whether a tombstone has retired the edge.
     pub tombstoned: bool,
 }
 
@@ -146,6 +165,11 @@ pub struct Engine {
     type_labels: BTreeMap<String, String>,
     /// Reverse map from an attribute's symbol UUID to its metamodel name.
     attribute_labels: BTreeMap<String, String>,
+    /// The compiled effective schema per type (node + edge), from the published
+    /// seed batch — the M1 write gate.
+    schemas: Vec<EffectiveSchema>,
+    /// The compiled relationship endpoint/self/duplicate rules, keyed by verb.
+    edge_rules: Vec<EffectiveEdgeRule>,
 }
 
 impl Engine {
@@ -165,6 +189,15 @@ impl Engine {
         let registry = MetaModelRegistry::embedded().map_err(|e| {
             StoreError::Corruption(format!("seed metamodel failed to compile: {e}"))
         })?;
+        // Publish the seed to the canonical batch and compile the M1 effective
+        // schema + edge rules — the write gate all authoring validates against.
+        let batch = aideon_praxis::meta::publish_embedded_core().map_err(|e| {
+            StoreError::Corruption(format!("seed metamodel failed to publish: {e}"))
+        })?;
+        let schemas = mneme_core::effective::compile(&batch)
+            .map_err(|e| StoreError::Corruption(format!("effective-schema compile failed: {e}")))?;
+        let edge_rules = mneme_core::effective::compile_edge_rules(&batch)
+            .map_err(|e| StoreError::Corruption(format!("edge-rule compile failed: {e}")))?;
         let document = registry.document();
         let mut type_labels = BTreeMap::new();
         let mut attribute_labels = BTreeMap::new();
@@ -183,6 +216,8 @@ impl Engine {
             registry,
             type_labels,
             attribute_labels,
+            schemas,
+            edge_rules,
         })
     }
 
@@ -269,17 +304,18 @@ impl Engine {
         props: serde_json::Value,
     ) -> Result<NodeRecord> {
         let node_id = Id::new_v4();
-        // Validate the intended write against the compiled effective schema.
-        let candidate = NodeVersion {
-            id: node_id.to_canonical_string(),
-            r#type: Some(type_id.to_string()),
-            props: Some(props.clone()),
-        };
-        self.registry
-            .validate_node(&candidate)
-            .map_err(|e| StoreError::Validation {
-                message: e.to_string(),
+        // Validate the intended write against the compiled effective schema
+        // (the same gate edge authoring uses) before any op is appended.
+        let schema = self
+            .schemas
+            .iter()
+            .find(|s| s.type_id == type_id)
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("unknown type `{type_id}`"),
             })?;
+        validate_node(schema, &props).map_err(|e| StoreError::Validation {
+            message: e.to_string(),
+        })?;
 
         let type_symbol = self.type_symbol(type_id)?;
         let actor = self.session_actor()?;
@@ -328,6 +364,188 @@ impl Engine {
             node_id.to_canonical_string(),
             Some(type_symbol.to_canonical_string()),
         ))
+    }
+
+    /// Author a typed relationship, **validated against the compiled effective
+    /// schema before any operation is appended** ([M1 build contract]). A write
+    /// naming an unknown relationship, a disallowed endpoint type, a self-link
+    /// where `allow_self` is false, a duplicate where `allow_duplicate` is false,
+    /// or a bad/missing attribute is rejected with [`StoreError::Validation`] and
+    /// **never enters the op log**.
+    ///
+    /// On success it appends a `create-edge` (carrying the relationship symbol)
+    /// followed by one `set-property-interval` per supplied attribute on the
+    /// `plan` layer over the open interval.
+    pub fn author_typed_edge(
+        &mut self,
+        rel_type: &str,
+        src_id: &str,
+        dst_id: &str,
+        props: serde_json::Value,
+    ) -> Result<EdgeRecord> {
+        let rule = self
+            .edge_rules
+            .iter()
+            .find(|r| r.key == rel_type)
+            .cloned()
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("unknown relationship type `{rel_type}`"),
+            })?;
+        let schema = self
+            .schemas
+            .iter()
+            .find(|s| s.type_id == rel_type)
+            .cloned()
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("relationship type `{rel_type}` has no effective schema"),
+            })?;
+
+        // Resolve both endpoints' domain type keys from the projected twin.
+        let nodes = self.workspace.list_nodes()?;
+        let src_type = self.node_type_key(&nodes, src_id)?;
+        let dst_type = self.node_type_key(&nodes, dst_id)?;
+
+        let rel_symbol = self.relationship_symbol(rel_type)?;
+        let duplicate_exists =
+            self.workspace
+                .edge_exists(&rel_symbol.to_canonical_string(), src_id, dst_id)?;
+
+        // Validate the intended write; on failure nothing is appended.
+        validate_edge(
+            &rule,
+            &schema,
+            &EdgeContext {
+                src_type: &src_type,
+                dst_type: &dst_type,
+                is_self: src_id == dst_id,
+                duplicate_exists,
+            },
+            &props,
+        )
+        .map_err(|e| StoreError::Validation {
+            message: e.to_string(),
+        })?;
+
+        let edge_id = Id::new_v4();
+        let actor = self.session_actor()?;
+        let partition = self.workspace.partition_id();
+        let src = Id::from_str(src_id).map_err(|_| StoreError::Validation {
+            message: "source id is not a UUID".into(),
+        })?;
+        let dst = Id::from_str(dst_id).map_err(|_| StoreError::Validation {
+            message: "destination id is not a UUID".into(),
+        })?;
+
+        self.workspace.author(
+            actor,
+            Origin::manual(),
+            OpPayload::CreateEdge(CreateEdge {
+                partition,
+                scenario_id: None,
+                actor,
+                asserted_at: mneme_core::Hlc(0),
+                edge_id,
+                type_id: Some(rel_symbol),
+                src_id: src,
+                dst_id: dst,
+                exists_valid_from: ValidTime(0),
+                exists_valid_to: None,
+                layer: Layer::Plan,
+                weight: None,
+                write_options: None,
+            }),
+        )?;
+
+        // Persist each supplied relationship attribute as a plan-layer fact,
+        // resolving its field symbol from the compiled slot descriptors.
+        if let Some(map) = props.as_object() {
+            for (name, json) in map {
+                let Some(slot) = schema.slots.iter().find(|s| &s.key == name) else {
+                    continue;
+                };
+                let field_id = Id::from_str(&slot.uuid).map_err(|_| StoreError::Validation {
+                    message: format!("slot `{name}` has an invalid uuid"),
+                })?;
+                self.workspace.author(
+                    actor,
+                    Origin::manual(),
+                    OpPayload::SetPropertyInterval(SetPropertyInterval {
+                        partition,
+                        scenario_id: None,
+                        actor,
+                        asserted_at: mneme_core::Hlc(0),
+                        entity_id: edge_id,
+                        field_id,
+                        value: to_value(json)?,
+                        valid_from: ValidTime(0),
+                        valid_to: None,
+                        layer: Layer::Plan,
+                        write_options: None,
+                    }),
+                )?;
+            }
+        }
+
+        Ok(EdgeRecord {
+            edge_id: edge_id.to_canonical_string(),
+            type_id: Some(rel_symbol.to_canonical_string()),
+            type_label: Some(rel_type.to_owned()),
+            src_id: src_id.to_owned(),
+            dst_id: dst_id.to_owned(),
+            tombstoned: false,
+        })
+    }
+
+    /// The projected edge listing — the derived twin view, re-derived on rebuild.
+    pub fn edges(&self) -> Result<Vec<EdgeRecord>> {
+        Ok(self
+            .workspace
+            .list_edges()?
+            .into_iter()
+            .map(|e| EdgeRecord {
+                type_label: e
+                    .type_id
+                    .as_ref()
+                    .and_then(|u| self.type_labels.get(u).cloned()),
+                edge_id: e.edge_id,
+                type_id: e.type_id,
+                src_id: e.src_id,
+                dst_id: e.dst_id,
+                tombstoned: e.tombstoned,
+            })
+            .collect())
+    }
+
+    /// The domain type key of a projected node, for endpoint validation.
+    fn node_type_key(
+        &self,
+        nodes: &[mneme_store::projection::NodeRow],
+        id: &str,
+    ) -> Result<String> {
+        let node =
+            nodes
+                .iter()
+                .find(|n| n.node_id == id)
+                .ok_or_else(|| StoreError::Validation {
+                    message: format!("endpoint entity `{id}` does not exist"),
+                })?;
+        node.type_id
+            .as_ref()
+            .and_then(|u| self.type_labels.get(u).cloned())
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("endpoint entity `{id}` has no known type"),
+            })
+    }
+
+    /// Resolve a relationship key to its storage symbol UUID.
+    fn relationship_symbol(&self, rel_type: &str) -> Result<Id> {
+        let raw =
+            self.registry
+                .relationship_uuid(rel_type)
+                .ok_or_else(|| StoreError::Validation {
+                    message: format!("unknown relationship type `{rel_type}`"),
+                })?;
+        Id::from_str(raw).map_err(|_| StoreError::Corruption("relationship uuid invalid".into()))
     }
 
     /// The projected node listing — the derived twin view, re-derived on
@@ -690,6 +908,139 @@ mod tests {
         // Reopen through the seam and confirm the state survives.
         let reopened = Engine::open(dir.path()).unwrap();
         assert_eq!(reopened.status().unwrap().applied_op_count, 1);
+    }
+
+    /// Author one node of each seed type used by the edge tests.
+    fn seed_nodes(engine: &mut Engine) -> (String, String, String, String) {
+        let app = engine
+            .author_typed_node("Application", serde_json::json!({ "name": "Insight Hub" }))
+            .unwrap()
+            .node_id;
+        let cap = engine
+            .author_typed_node(
+                "Capability",
+                serde_json::json!({ "name": "Customer Insight" }),
+            )
+            .unwrap()
+            .node_id;
+        let data = engine
+            .author_typed_node(
+                "DataEntity",
+                serde_json::json!({ "name": "Customer Profile" }),
+            )
+            .unwrap()
+            .node_id;
+        let cap2 = engine
+            .author_typed_node("Capability", serde_json::json!({ "name": "Journey" }))
+            .unwrap()
+            .node_id;
+        (app, cap, data, cap2)
+    }
+
+    #[test]
+    fn author_typed_edge_validates_and_lands() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+        let (app, cap, _data, _) = seed_nodes(&mut engine);
+
+        // Application realises Capability — a valid seed relationship.
+        let edge = engine
+            .author_typed_edge("realises", &app, &cap, serde_json::json!({}))
+            .unwrap();
+        assert_eq!(edge.type_label.as_deref(), Some("realises"));
+        assert!(!edge.tombstoned);
+
+        let edges = engine.edges().unwrap();
+        assert_eq!(edges.len(), 1);
+        assert_eq!(edges[0].src_id, app);
+        assert_eq!(edges[0].dst_id, cap);
+    }
+
+    #[test]
+    fn accesses_with_mode_lands_and_a_duplicate_is_rejected() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+        let (app, _cap, data, _) = seed_nodes(&mut engine);
+
+        engine
+            .author_typed_edge(
+                "accesses",
+                &app,
+                &data,
+                serde_json::json!({ "mode": "readwrite" }),
+            )
+            .unwrap();
+        let after_first = engine.status().unwrap().applied_op_count;
+
+        // A second accesses between the same pair is rejected (allowDuplicate=false).
+        let err = engine
+            .author_typed_edge(
+                "accesses",
+                &app,
+                &data,
+                serde_json::json!({ "mode": "read" }),
+            )
+            .unwrap_err();
+        assert!(matches!(err, StoreError::Validation { .. }));
+        assert_eq!(
+            engine.status().unwrap().applied_op_count,
+            after_first,
+            "a rejected duplicate edge appends no op"
+        );
+    }
+
+    #[test]
+    fn accesses_without_mode_is_rejected_and_appends_nothing() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+        let (app, _cap, data, _) = seed_nodes(&mut engine);
+        let before = engine.status().unwrap().applied_op_count;
+
+        let err = engine
+            .author_typed_edge("accesses", &app, &data, serde_json::json!({}))
+            .unwrap_err();
+        assert!(matches!(err, StoreError::Validation { .. }));
+        assert_eq!(engine.status().unwrap().applied_op_count, before);
+    }
+
+    #[test]
+    fn wrong_endpoint_edge_is_rejected_and_appends_nothing() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+        let (app, cap, _data, _) = seed_nodes(&mut engine);
+        let before = engine.status().unwrap().applied_op_count;
+
+        // realises.from is [Application, TechnologyComponent]; a Capability source is invalid.
+        let err = engine
+            .author_typed_edge("realises", &cap, &app, serde_json::json!({}))
+            .unwrap_err();
+        assert!(matches!(err, StoreError::Validation { .. }));
+        assert_eq!(engine.status().unwrap().applied_op_count, before);
+    }
+
+    #[test]
+    fn serves_self_link_is_rejected_and_appends_nothing() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+        let (_app, cap, _data, _) = seed_nodes(&mut engine);
+        let before = engine.status().unwrap().applied_op_count;
+
+        let err = engine
+            .author_typed_edge("serves", &cap, &cap, serde_json::json!({}))
+            .unwrap_err();
+        assert!(matches!(err, StoreError::Validation { .. }));
+        assert_eq!(engine.status().unwrap().applied_op_count, before);
+    }
+
+    #[test]
+    fn unknown_relationship_type_is_rejected() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+        let (app, cap, _data, _) = seed_nodes(&mut engine);
+        let err = engine
+            .author_typed_edge("bogus", &app, &cap, serde_json::json!({}))
+            .unwrap_err();
+        assert!(matches!(err, StoreError::Validation { .. }));
     }
 
     #[test]
