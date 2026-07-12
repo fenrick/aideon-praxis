@@ -1,11 +1,5 @@
 export type MetaAttributeKind =
-  | 'string'
-  | 'text'
-  | 'number'
-  | 'datetime'
-  | 'enum'
-  | 'boolean'
-  | 'blob';
+  'string' | 'text' | 'number' | 'datetime' | 'enum' | 'boolean' | 'blob';
 
 export interface MetaModelAttribute {
   name: string;

@@ -36,9 +36,7 @@ Every artefact result, regardless of form, carries the same envelope. The per-fo
   "resultState": ["fresh"],
   "coverage": null,
   "integrity": { "score": 0.82, "gateThreshold": 0.6, "bounded": false },
-  "body": {
-    /* form-specific — see the per-form files */
-  }
+  "body": {/* form-specific — see the per-form files */}
 }
 ```
 

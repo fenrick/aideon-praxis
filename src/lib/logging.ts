@@ -12,14 +12,7 @@ export type Severity =
   | 'debug';
 
 type NormalizedSeverity =
-  | 'emergency'
-  | 'alert'
-  | 'critical'
-  | 'error'
-  | 'warning'
-  | 'notice'
-  | 'informational'
-  | 'debug';
+  'emergency' | 'alert' | 'critical' | 'error' | 'warning' | 'notice' | 'informational' | 'debug';
 
 interface SeverityAttributes {
   readonly level: 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
