@@ -9,11 +9,14 @@ import type { Metadata } from 'next';
 // Storybook's Vite. See docs/frontend for the Tauri dev pipeline.
 import '../design-system/styles/globals.css';
 import '../styles.css';
+
+import en from '../../locales/en.json';
+import { AppLocaleProvider } from '../i18n/locale-provider';
 import { AppProviders } from './providers';
 
 export const metadata: Metadata = {
-  title: 'Aideon',
-  description: 'Aideon Desktop shell hosting Praxis workspaces.',
+  title: en.app.metadata.title,
+  description: en.app.metadata.description,
 };
 
 /**
@@ -35,7 +38,9 @@ export default function RootLayout({ children }: { readonly children: React.Reac
       suppressHydrationWarning
     >
       <body>
-        <AppProviders>{children}</AppProviders>
+        <AppLocaleProvider>
+          <AppProviders>{children}</AppProviders>
+        </AppLocaleProvider>
       </body>
     </html>
   );

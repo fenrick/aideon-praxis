@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { AlertCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { getSemanticStateContract } from '../foundations/semantic-states';
 import { cn } from '../lib/utilities';
 
@@ -31,6 +32,7 @@ export function ErrorFrame({
   children,
 }: ErrorFrameProperties) {
   const contract = getSemanticStateContract('error');
+  const t = useTranslations('designSystem.errorFrame');
   return (
     <div
       className={cn(
@@ -43,7 +45,7 @@ export function ErrorFrame({
       <div className="flex items-start gap-2">
         <AlertCircle aria-hidden className="text-status-error mt-0.5 h-4 w-4 shrink-0" />
         <div className="flex flex-col gap-0.5">
-          <span className="text-status-error text-sm font-medium">Error</span>
+          <span className="text-status-error text-sm font-medium">{t('label')}</span>
           <span className="text-sm">{message}</span>
           {detail && <span className="text-muted-foreground text-xs">{detail}</span>}
         </div>
@@ -55,7 +57,7 @@ export function ErrorFrame({
           onClick={onRetry}
           type="button"
         >
-          Retry
+          {t('retry')}
         </button>
       )}
     </div>

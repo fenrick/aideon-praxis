@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { getSemanticStateContract } from '../foundations/semantic-states';
 import { cn } from '../lib/utilities';
@@ -19,6 +20,7 @@ export interface WarningBannerProperties {
  */
 export function WarningBanner({ message, detail, className }: WarningBannerProperties) {
   const contract = getSemanticStateContract('warning');
+  const t = useTranslations('designSystem.warningBanner');
   return (
     <output
       className={cn(
@@ -29,7 +31,7 @@ export function WarningBanner({ message, detail, className }: WarningBannerPrope
     >
       <AlertTriangle aria-hidden className="text-status-warning mt-0.5 h-4 w-4 shrink-0" />
       <div className="flex flex-col gap-0.5">
-        <span className="text-status-warning font-medium">Warning</span>
+        <span className="text-status-warning font-medium">{t('label')}</span>
         <span>{message}</span>
         {detail && <span className="text-muted-foreground text-xs">{detail}</span>}
       </div>

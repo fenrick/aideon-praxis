@@ -1,0 +1,404 @@
+{
+  "app": {
+    "metadata": {
+      "title": "Aideon",
+      "description": "Shell de Aideon Desktop que aloja espacios de trabajo de Praxis."
+    },
+    "shell": {
+      "heading": "Aideon",
+      "tagline": "Shell de escritorio para espacios de trabajo y herramientas de Praxis.",
+      "modeDesktop": "Escritorio"
+    },
+    "splash": {
+      "bootstrapping": "Iniciando el espacio de trabajo...",
+      "starting": "Iniciando...",
+      "title": "Aideon Praxis",
+      "lines": {
+        "reticulatingSplines": "Reticulando splines...",
+        "weavingTwinOrbits": "Tejiendo órbitas gemelas...",
+        "replayingFutureStates": "Reproduciendo estados futuros...",
+        "coolingHotPaths": "Enfriando rutas calientes...",
+        "aligningDecisionMatrices": "Alineando matrices de decisión...",
+        "seedingKnowledgeGraph": "Sembrando el grafo de conocimiento...",
+        "collapsingBranchesToPresent": "Contracción de ramas para presentar...",
+        "normalisingCapabilityModels": "Normalizando modelos de capacidad...",
+        "hardeningIsolationLayer": "Endureciendo la capa de aislamiento...",
+        "bootstrappingSidecar": "Iniciando el sidecar...",
+        "calibratingMaturityPlateaus": "Calibrando las mesetas de madurez...",
+        "schedulingTimeDimensionRenders": "Programando renderizados de dimensión temporal..."
+      }
+    },
+    "hostStatus": {
+      "setupFailedBanner": "Error de configuración: consulte Estado para obtener más detalles.",
+      "backendReady": "Backend listo...",
+      "migrating": "Migrando...",
+      "setupFailedTitle": "Error en la configuración",
+      "setupFailedDescription": "No se ha podido inicializar el host. Abra Estado para ver los diagnósticos y las acciones de recuperación.",
+      "openStatus": "Abrir Estado",
+      "title": "Estado del host",
+      "allServicesInitialising": "Inicializando todos los servicios...",
+      "baselineDataset": "Conjunto de datos de referencia:",
+      "schemaVersion": "Versión del esquema:"
+    },
+    "settings": {
+      "title": "Ajustes",
+      "description": "Personalice la experiencia de escritorio.",
+      "colorTheme": {
+        "title": "Tema de color",
+        "description": "Elija la paleta de colores principal para la interfaz de usuario. Los cambios se mantienen automáticamente.",
+        "defaultBadge": "Predeterminado"
+      }
+    },
+    "styleguide": {
+      "title": "Guía de estilo",
+      "description": "Documentación del sistema de diseño pendiente."
+    },
+    "errorBoundary": {
+      "title": "Algo ha salido mal",
+      "description": "Se ha producido un error inesperado al renderizar Aideon. Vuelve a cargar la aplicación para recuperarla.",
+      "renderError": "Error de renderización",
+      "devDetails": "Se muestran los detalles porque se trata de una compilación de desarrollo.",
+      "fatalError": "La aplicación ha encontrado un error fatal de la interfaz de usuario.",
+      "reload": "Volver a cargar",
+      "copyDetails": "Copiar detalles"
+    }
+  },
+  "shell": {
+    "commandPalette": {
+      "title": "Paleta de comandos",
+      "searchPlaceholder": "Buscar comandos...",
+      "noResults": "No se han encontrado resultados.",
+      "defaultGroup": "Comandos"
+    },
+    "toolbar": {
+      "toggleNavigation": "Alternar navegación",
+      "toggleInspector": "Alternar inspector",
+      "theme": "Tema",
+      "useSystemTheme": "Usar tema del sistema",
+      "lightTheme": "Tema claro",
+      "darkTheme": "Tema oscuro",
+      "themeSystem": "Sistema",
+      "themeLight": "Claro",
+      "themeDark": "Oscuro",
+      "openCommandPalette": "Abrir paleta de comandos",
+      "keyboardShortcuts": "Atajos de teclado...",
+      "uiStyleGuide": "Guía de estilo de la interfaz de usuario",
+      "preferences": "Preferencias...",
+      "checkForUpdates": "Buscar actualizaciones...",
+      "aboutAideon": "Acerca de Aideon",
+      "menuApp": "Aplicación",
+      "menuView": "Vista",
+      "menuHelp": "Ayuda"
+    },
+    "keyboardShortcutsDialog": {
+      "title": "Atajos de teclado",
+      "description": "Atajos comunes en Aideon Desktop.",
+      "columnCategory": "Categoría",
+      "columnAction": "Acción",
+      "columnShortcut": "Atajo",
+      "categoryFile": "Archivo",
+      "categoryShell": "Shell",
+      "actions": {
+        "open": "Abrir...",
+        "saveAs": "Guardar como...",
+        "print": "Imprimir...",
+        "commandPalette": "Paleta de comandos",
+        "toggleNavigation": "Alternar navegación",
+        "toggleInspector": "Alternar inspector"
+      }
+    },
+    "canvasRuntime": {
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "resetView": "Restablecer vista",
+      "panHint": "Clic con el botón central o Mayús+Arrastrar para desplazarse · Desplazarse para hacer zoom"
+    },
+    "selection": {
+      "count": "{count, plural, =0 {No selection} one {# item selected} other {# items selected}}"
+    }
+  },
+  "workspace": {
+    "foundation": {
+      "title": "Base del espacio de trabajo",
+      "description": "Abra un espacio de trabajo existente o cree uno nuevo.",
+      "pathPlaceholder": "/ruta/a/espacio de trabajo",
+      "folderAriaLabel": "Carpeta del espacio de trabajo",
+      "browse": "Examinar…",
+      "create": "Crear",
+      "open": "Abrir",
+      "operationFailed": "Error en la operación del espacio de trabajo",
+      "status": {
+        "title": "Estado de la base",
+        "description": "Operaciones aplicadas y hash de reconstrucción de tiempo de ejecución derivado actual.",
+        "workspace": "Espacio de trabajo",
+        "appliedOperations": "Operaciones aplicadas",
+        "rebuildHash": "Hash de reconstrucción",
+        "rebuildDerivedRuntime": "Reconstruir el tiempo de ejecución derivado"
+      }
+    },
+    "entities": {
+      "title": "Entidades",
+      "description": "Entidades creadas según el esquema efectivo compilado.",
+      "entityType": "Tipo de entidad",
+      "chooseTypePlaceholder": "Elija un tipo...",
+      "createLabel": "Crear {label}",
+      "empty": "Todavía no hay entidades. Cree una: primero llega al registro canónico y luego aparece aquí desde la proyección derivada."
+    },
+    "relationships": {
+      "title": "Relaciones",
+      "description": "Cree relaciones entre entidades. Los tipos de punto final, los autovínculos, los duplicados y los atributos se validan con el metamodelo antes de que la escritura entre en el registro; el inspector de abajo vuelve a derivar del registro de operaciones en cada reconstrucción.",
+      "relationship": "Relación",
+      "source": "Origen",
+      "destination": "Destino",
+      "mode": "modo",
+      "chooseRelationshipPlaceholder": "Elija una relación...",
+      "chooseSourcePlaceholder": "Elija una entidad de origen...",
+      "chooseDestinationPlaceholder": "Elija una entidad de destino...",
+      "create": "Crear relación",
+      "empty": "Todavía no hay relaciones. Cree una: un punto final no válido, un enlace propio o un duplicado se rechaza en el límite y nunca llega."
+    },
+    "claims": {
+      "assertTitle": "Presentar una reclamación planificada / real",
+      "entity": "Entidad",
+      "attribute": "Atributo",
+      "value": "Valor",
+      "layer": "Capa",
+      "validFrom": "Válido desde",
+      "validTo": "Válido hasta (en blanco = abierto)",
+      "assert": "Hacer afirmación",
+      "chooseEntityPlaceholder": "Elija una entidad...",
+      "chooseAttributePlaceholder": "Elegir un atributo...",
+      "chooseValuePlaceholder": "Elija un valor..."
+    },
+    "catalogue": {
+      "title": "Catálogo en un punto de vista",
+      "description": "Resolver entidades a partir de un tiempo válido elegido, bajo una política de capa.",
+      "asOfValidTime": "A partir de (tiempo válido)",
+      "layerPolicy": "Política de capas",
+      "actualOverPlan": "Real sobre plan",
+      "planOnly": "Solo plan",
+      "emptyAtViewpoint": "No se resuelven entidades en este punto de vista.",
+      "emptySlot": "no hay ranuras resueltas aquí"
+    },
+    "diff": {
+      "title": "Diferenciar dos puntos de vista",
+      "description": "Comparar entidades resueltas entre dos puntos de vista de tiempo válido.",
+      "before": "Antes (a partir de)",
+      "after": "Después (a partir de)",
+      "compare": "Comparar",
+      "empty": "No hay diferencias entre estos puntos de vista."
+    }
+  },
+  "platform": {
+    "widgetLibraryDialog": {
+      "title": "Añadir widget",
+      "description": "Elija un tipo de widget para añadir a este diseño.",
+      "empty": "No hay tipos de widgets disponibles.",
+      "close": "Cerrar"
+    },
+    "commandStack": {
+      "selectionChange": "Cambio de selección",
+      "templateChange": "Cambio de plantilla",
+      "templateName": "Plantilla {number}",
+      "savedFromRuntime": "Guardado desde el tiempo de ejecución",
+      "scenarioChange": "Cambio de escenario",
+      "operationRejected": "Operación rechazada."
+    }
+  },
+  "adapters": {
+    "dialog": {
+      "chooseWorkspaceFolder": "Elija una carpeta de espacio de trabajo"
+    }
+  },
+  "engines": {
+    "praxis": {
+      "label": "Praxis",
+      "widgets": {
+        "graph": {
+          "label": "Gráfico",
+          "description": "Gráfico de entidades por franjas de tiempo con selección + metaenfoque."
+        },
+        "catalogue": {
+          "label": "Catálogo",
+          "description": "Segmento tabular de entidades con selección rápida.",
+          "columnName": "Nombre",
+          "columnOwner": "Propietario",
+          "columnState": "Estado",
+          "loading": "Cargando catálogo...",
+          "empty": "Ninguna entidad coincide con esta vista",
+          "boolYes": "Sí",
+          "boolNo": "No"
+        },
+        "matrix": {
+          "label": "Matriz",
+          "description": "Cuadrícula de cobertura para dos tipos de entidades y sus relaciones.",
+          "loading": "Cargando matriz...",
+          "empty": "Añada filas y columnas para visualizar las relaciones",
+          "rowsColumns": "Filas / Columnas",
+          "legendConnected": "Conectado",
+          "legendMissing": "Faltante",
+          "legendSelectionOverlap": "Superposición de selección"
+        },
+        "chart": {
+          "label": "Gráfico",
+          "description": "KPI o líneas de tendencia para el escenario activo.",
+          "loading": "Cargando gráfico..."
+        },
+        "toolbar": {
+          "awaitingTwinData": "Esperando datos del gemelo",
+          "asOf": "A partir de {timestamp}",
+          "eyebrow": "Widget",
+          "refresh": "Actualizar"
+        },
+        "graphWidget": {
+          "backgroundDots": "Puntos",
+          "backgroundLines": "Líneas",
+          "backgroundCross": "Cruz",
+          "backgroundDotsAria": "Fondo de puntos",
+          "backgroundLinesAria": "Fondo de líneas",
+          "backgroundCrossAria": "Fondo de cruces",
+          "miniMap": "Minimapa",
+          "controls": "Controles",
+          "autoLayout": "Diseño automático",
+          "metaActionsHint": "Utilice la búsqueda de nodos o la selección con el botón derecho para las metaacciones.",
+          "openNodeSearch": "Abrir búsqueda de nodos",
+          "loadingGraph": "Cargando gráfico",
+          "errorBadge": "Error",
+          "viewMetaModelEntry": "Ver entrada de metamodelo"
+        }
+      },
+      "layouts": {
+        "executiveOverview": {
+          "seedName": "Resumen ejecutivo",
+          "title": "Resumen ejecutivo",
+          "description": "Gráfico + KPI + instantánea del catálogo para revisiones de liderazgo.",
+          "twinOverviewGraph": "Gráfico de resumen del gemelo",
+          "criticalServicesKpi": "KPI de servicios críticos",
+          "capabilityCatalogue": "Catálogo de capacidades"
+        },
+        "explorerWorkspace": {
+          "title": "Espacio de trabajo del explorador",
+          "description": "Gráfico, matriz y tabla comparativa para un análisis más profundo.",
+          "explorerGraph": "Gráfico del explorador",
+          "capabilityServiceCoverage": "Capacidad ↔ Cobertura del servicio",
+          "capabilityMaturity": "Madurez de la capacidad",
+          "capabilityRollup": "Acumulación de capacidades"
+        },
+        "seedNames": {
+          "capabilityCatalogue": "Catálogo de capacidades",
+          "capabilityServiceMatrix": "Capacidad ↔ Matriz de servicios",
+          "operationalKpis": "KPI operativos",
+          "velocityTrend": "Tendencia de la velocidad",
+          "capabilityMaturity": "Madurez de la capacidad"
+        },
+        "columnName": "Nombre",
+        "columnOwner": "Propietario",
+        "columnState": "Estado",
+        "measureOperationalReadiness": "Preparación operativa"
+      },
+      "templateScreen": {
+        "template": "Plantilla",
+        "scenario": "Escenario",
+        "intro": "Empareje un escenario con una plantilla para explorar cronogramas, momentos y widgets.",
+        "chooseTemplate": "Elegir plantilla",
+        "saveTemplate": "Guardar plantilla",
+        "createWidget": "Crear widget",
+        "searchPlaceholder": "Buscar líneas de tiempo, nodos, catálogos",
+        "tabOverview": "Resumen",
+        "tabTimeline": "Cronología",
+        "tabActivity": "Actividad",
+        "snapshotOverviewTitle": "Resumen de la instantánea",
+        "snapshotOverviewDescription": "Métricas de solo lectura para el punto en el tiempo del escenario actual.",
+        "timeCursor": {
+          "title": "Cursor de tiempo",
+          "description": "Desplace la línea de tiempo activa hasta un momento específico y actualice la instantánea.",
+          "timeline": "Línea de tiempo",
+          "moment": "Momento",
+          "timelineSlider": "Control deslizante de la línea de tiempo",
+          "snapshotTimestamp": "Marca de tiempo de la instantánea",
+          "refreshTimelines": "Actualizar líneas de tiempo",
+          "reloadSnapshot": "Volver a cargar la instantánea",
+          "applyToPrimary": "Aplicar al primario"
+        },
+        "properties": {
+          "title": "Propiedades",
+          "emptyHint": "Seleccione un widget, nodo o borde para editar sus propiedades.",
+          "widgetProperties": "Propiedades del widget",
+          "nodeProperties": "Propiedades del nodo",
+          "edgeProperties": "Propiedades del borde",
+          "name": "Nombre",
+          "dataSource": "Fuente de datos",
+          "layout": "Diseño"
+        }
+      },
+      "temporalPanel": {
+        "layerPlan": "Plan",
+        "mergeRequiresResolution": "La fusión requiere resolución manual."
+      }
+    }
+  },
+  "designSystem": {
+    "errorFrame": {
+      "label": "Error",
+      "retry": "Reintentar"
+    },
+    "warningBanner": {
+      "label": "Advertencia"
+    },
+    "partialBanner": {
+      "label": "Resultado parcial"
+    },
+    "rebuildingIndicator": {
+      "label": "Reconstruyendo..."
+    },
+    "staleBadge": {
+      "label": "Obsoleto"
+    },
+    "confidenceLabel": {
+      "high": "Alto",
+      "indicative": "Indicativo",
+      "low": "Baja",
+      "medium": "Media",
+      "highAria": "Confianza alta",
+      "indicativeAria": "Indicativo: tratar solo como orientativo",
+      "lowAria": "Confianza baja",
+      "mediumAria": "Confianza media"
+    },
+    "provenanceBadge": {
+      "asserted": "Afirmado",
+      "generated": "Generado",
+      "inferred": "Inferido"
+    },
+    "filterBar": {
+      "placeholder": "Filtrar..."
+    },
+    "nodeSearch": {
+      "placeholder": "Buscar nodos...",
+      "noResults": "No se han encontrado resultados.",
+      "headingNodes": "Nodos",
+      "defaultTitle": "Búsqueda de nodos"
+    },
+    "colorTheme": {
+      "corpBlue": {
+        "label": "Azul corporativo",
+        "description": "Paleta predeterminada de Aideon."
+      },
+      "violet": {
+        "label": "Violeta",
+        "description": "Toques de violeta brillante con neutros nítidos."
+      },
+      "green": {
+        "label": "Verde",
+        "description": "Toques frescos de esmeralda con neutros fríos."
+      },
+      "claude": {
+        "label": "Claude",
+        "description": "Tonos cálidos de arcilla con un ámbar primario."
+      },
+      "graphite": {
+        "label": "Grafito",
+        "description": "Detalles en grafito de baja saturación."
+      }
+    }
+  }
+}

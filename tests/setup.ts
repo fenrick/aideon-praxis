@@ -1,6 +1,51 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterAll, afterEach } from 'vitest';
+import { afterAll, afterEach, vi } from 'vitest';
+
+import en from '../locales/en.json';
+
+// Component tests render widgets/dialogs directly (no <AppLocaleProvider> in the
+// tree), but many now call next-intl's useTranslations(). Rather than wrapping
+// every render() call in NextIntlClientProvider, resolve real English copy
+// straight out of locales/en.json so existing text assertions keep working.
+vi.mock('next-intl', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next-intl')>();
+
+  const readPath = (source: unknown, path: string): unknown =>
+    path
+      .split('.')
+      .reduce<unknown>(
+        (accumulator, segment) =>
+          accumulator && typeof accumulator === 'object'
+            ? (accumulator as Record<string, unknown>)[segment]
+            : undefined,
+        source,
+      );
+
+  const translate = (
+    namespace: string | undefined,
+    key: string,
+    values?: Record<string, unknown>,
+  ) => {
+    const fullPath = namespace ? `${namespace}.${key}` : key;
+    const raw = readPath(en, fullPath);
+    if (typeof raw !== 'string') {
+      return fullPath;
+    }
+    if (!values) {
+      return raw;
+    }
+    return raw.replace(/\{(\w+)\}/g, (match, token: string) =>
+      token in values ? String(values[token]) : match,
+    );
+  };
+
+  return {
+    ...actual,
+    useTranslations: (namespace?: string) => (key: string, values?: Record<string, unknown>) =>
+      translate(namespace, key, values),
+  };
+});
 
 // The config runs with `globals: false`, so Testing Library never registers its
 // automatic `afterEach(cleanup)`. Without it, React trees stay mounted past the

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import { AlertTriangle } from 'design-system/icons';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'design-system';
@@ -34,6 +36,7 @@ export function CatalogueWidget({
   selection,
   onSelectionChange,
 }: CatalogueWidgetProperties) {
+  const t = useTranslations('engines.praxis.widgets.catalogue');
   const [model, setModel] = useState<CatalogueViewModel | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
@@ -70,7 +73,7 @@ export function CatalogueWidget({
   const selectedNodes = selection?.nodeIds ?? [];
   const activeRowIds = new Set(selectedNodes);
 
-  let body: React.ReactNode = <Placeholder message="Loading catalogue..." />;
+  let body: React.ReactNode = <Placeholder message={t('loading')} />;
   if (error) {
     body = <ErrorMessage message={error} />;
   } else if (model) {
@@ -81,6 +84,10 @@ export function CatalogueWidget({
         loading={loading}
         activeRowIds={activeRowIds}
         onRowActivate={handleRowActivate}
+        loadingMessage={t('loading')}
+        emptyMessage={t('empty')}
+        boolYes={t('boolYes')}
+        boolNo={t('boolNo')}
       />
     );
   }
@@ -108,6 +115,10 @@ interface CatalogueTableProperties {
   readonly activeRowIds: Set<string>;
   readonly loading: boolean;
   readonly onRowActivate: (row: CatalogueRow) => void;
+  readonly loadingMessage: string;
+  readonly emptyMessage: string;
+  readonly boolYes: string;
+  readonly boolNo: string;
 }
 
 /**
@@ -118,6 +129,10 @@ interface CatalogueTableProperties {
  * @param root0.activeRowIds
  * @param root0.loading
  * @param root0.onRowActivate
+ * @param root0.loadingMessage
+ * @param root0.emptyMessage
+ * @param root0.boolYes
+ * @param root0.boolNo
  */
 function CatalogueTable({
   rows,
@@ -125,11 +140,13 @@ function CatalogueTable({
   activeRowIds,
   loading,
   onRowActivate,
+  loadingMessage,
+  emptyMessage,
+  boolYes,
+  boolNo,
 }: CatalogueTableProperties) {
   if (rows.length === 0) {
-    return (
-      <Placeholder message={loading ? 'Loading catalogue...' : 'No entities match this view'} />
-    );
+    return <Placeholder message={loading ? loadingMessage : emptyMessage} />;
   }
   return (
     <Table>
@@ -163,7 +180,7 @@ function CatalogueTable({
                       onRowActivate(row);
                     }}
                   >
-                    {formatValue(row.values[column.id])}
+                    {formatValue(row.values[column.id], boolYes, boolNo)}
                   </button>
                 </TableCell>
               ))}
@@ -178,10 +195,16 @@ function CatalogueTable({
 /**
  *
  * @param value
+ * @param boolYes
+ * @param boolNo
  */
-function formatValue(value: string | number | boolean | null | undefined): string {
+function formatValue(
+  value: string | number | boolean | null | undefined,
+  boolYes: string,
+  boolNo: string,
+): string {
   if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
+    return value ? boolYes : boolNo;
   }
   if (value === null || value === undefined) {
     return '—';

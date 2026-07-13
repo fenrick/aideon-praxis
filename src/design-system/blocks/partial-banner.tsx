@@ -1,4 +1,5 @@
 import { CircleDashed } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { getSemanticStateContract } from '../foundations/semantic-states';
 import { cn } from '../lib/utilities';
@@ -17,6 +18,7 @@ export interface PartialBannerProperties {
  */
 export function PartialBanner({ message, className }: PartialBannerProperties) {
   const contract = getSemanticStateContract('partial');
+  const t = useTranslations('designSystem.partialBanner');
   return (
     <output
       className={cn(
@@ -27,7 +29,7 @@ export function PartialBanner({ message, className }: PartialBannerProperties) {
     >
       <CircleDashed aria-hidden className="text-status-partial mt-0.5 h-4 w-4 shrink-0" />
       <div className="flex flex-col gap-0.5">
-        <span className="text-status-partial font-medium">Partial result</span>
+        <span className="text-status-partial font-medium">{t('label')}</span>
         <span>{message}</span>
       </div>
     </output>

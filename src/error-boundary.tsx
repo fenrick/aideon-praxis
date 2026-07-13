@@ -52,18 +52,42 @@ function buildErrorDetails({
   return { hasDetails: details.trim().length > 0, details };
 }
 
+/** Translated labels for the error boundary fallback UI. */
+export interface ErrorBoundaryLabels {
+  readonly title: string;
+  readonly description: string;
+  readonly renderError: string;
+  readonly devDetails: string;
+  readonly fatalError: string;
+  readonly reload: string;
+  readonly copyDetails: string;
+}
+
+const DEFAULT_LABELS: ErrorBoundaryLabels = {
+  title: 'Something went wrong',
+  description: 'An unexpected error occurred while rendering Aideon. Reload the app to recover.',
+  renderError: 'Render error',
+  devDetails: 'Details are shown because this is a development build.',
+  fatalError: 'The application encountered a fatal UI error.',
+  reload: 'Reload',
+  copyDetails: 'Copy details',
+};
+
 /**
  * Fallback UI rendered when a descendant throws during render.
  * @param root0
  * @param root0.error
  * @param root0.componentStack
+ * @param root0.labels
  */
 function ErrorBoundaryFallback({
   error,
   componentStack,
+  labels = DEFAULT_LABELS,
 }: {
   readonly error?: Error;
   readonly componentStack?: string;
+  readonly labels?: ErrorBoundaryLabels;
 }): ReactElement {
   const showDetails = shouldShowErrorDetails();
   const { hasDetails, details } = buildErrorDetails({ error, componentStack });
@@ -74,21 +98,17 @@ function ErrorBoundaryFallback({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangleIcon className="text-destructive size-5" />
-            Something went wrong
+            {labels.title}
           </CardTitle>
-          <CardDescription>
-            An unexpected error occurred while rendering Aideon. Reload the app to recover.
-          </CardDescription>
+          <CardDescription>{labels.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Alert variant="destructive">
             <AlertTriangleIcon />
-            <AlertTitle>Render error</AlertTitle>
+            <AlertTitle>{labels.renderError}</AlertTitle>
             <AlertDescription>
-              {showDetails &&
-                hasDetails &&
-                'Details are shown because this is a development build.'}
-              {(!showDetails || !hasDetails) && 'The application encountered a fatal UI error.'}
+              {showDetails && hasDetails && labels.devDetails}
+              {(!showDetails || !hasDetails) && labels.fatalError}
             </AlertDescription>
           </Alert>
 
@@ -105,7 +125,7 @@ function ErrorBoundaryFallback({
                 globalThis.location.reload();
               }}
             >
-              Reload
+              {labels.reload}
             </Button>
             {showDetails && hasDetails ? (
               <Button
@@ -115,7 +135,7 @@ function ErrorBoundaryFallback({
                   void navigator.clipboard.writeText(details).catch(() => false);
                 }}
               >
-                Copy details
+                {labels.copyDetails}
               </Button>
             ) : undefined}
           </div>
@@ -133,6 +153,13 @@ interface ErrorBoundaryState {
 
 interface ErrorBoundaryProperties {
   readonly children: ReactNode;
+  /**
+   * Translated labels for the fallback UI. React error boundaries must be
+   * class components, which cannot call hooks (e.g. `useTranslations`), so
+   * callers resolve the labels in a functional parent and pass them down.
+   * Falls back to English defaults when omitted.
+   */
+  readonly labels?: ErrorBoundaryLabels;
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProperties, ErrorBoundaryState> {
@@ -155,6 +182,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProperties, ErrorBound
         <ErrorBoundaryFallback
           error={this.state.error}
           componentStack={this.state.componentStack}
+          labels={this.props.labels}
         />
       );
     }

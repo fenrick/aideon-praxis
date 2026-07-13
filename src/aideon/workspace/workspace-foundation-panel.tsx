@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import {
   Alert,
   AlertDescription,
@@ -58,9 +60,10 @@ function TypedAuthoringForm({
   readonly types: readonly MetaTypeInfo[];
   readonly onAuthor: (typeId: string, properties: Record<string, string>) => void;
 }) {
+  const t = useTranslations('workspace');
   const [typeId, setTypeId] = useState('');
   const [values, setValues] = useState<Record<string, string>>({});
-  const selected = types.find((t) => t.id === typeId);
+  const selected = types.find((entry) => entry.id === typeId);
 
   const setValue = (name: string, value: string) => {
     setValues((previous) => ({ ...previous, [name]: value }));
@@ -69,7 +72,7 @@ function TypedAuthoringForm({
   return (
     <div className="flex flex-col gap-3 rounded-md border p-3">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="entity-type">Entity type</Label>
+        <Label htmlFor="entity-type">{t('entities.entityType')}</Label>
         <Select
           value={typeId}
           onValueChange={(next) => {
@@ -77,8 +80,8 @@ function TypedAuthoringForm({
             setValues({});
           }}
         >
-          <SelectTrigger id="entity-type" aria-label="Entity type">
-            <SelectValue placeholder="Choose a type…" />
+          <SelectTrigger id="entity-type" aria-label={t('entities.entityType')}>
+            <SelectValue placeholder={t('entities.chooseTypePlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {types.map((type) => (
@@ -138,7 +141,7 @@ function TypedAuthoringForm({
             onAuthor(typeId, properties);
           }}
         >
-          Create {selected?.label ?? 'entity'}
+          {t('entities.createLabel', { label: selected?.label ?? 'entity' })}
         </Button>
       </div>
     </div>
@@ -168,6 +171,7 @@ function EdgeAuthoringForm({
     properties: Record<string, string>,
   ) => void;
 }) {
+  const t = useTranslations('workspace');
   const [relationshipType, setRelationshipType] = useState('');
   const [sourceId, setSourceId] = useState('');
   const [destinationId, setDestinationId] = useState('');
@@ -179,10 +183,10 @@ function EdgeAuthoringForm({
   return (
     <div className="flex flex-col gap-3 rounded-md border p-3">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="rel-type">Relationship</Label>
+        <Label htmlFor="rel-type">{t('relationships.relationship')}</Label>
         <Select value={relationshipType} onValueChange={setRelationshipType}>
-          <SelectTrigger id="rel-type" aria-label="Relationship">
-            <SelectValue placeholder="Choose a relationship…" />
+          <SelectTrigger id="rel-type" aria-label={t('relationships.relationship')}>
+            <SelectValue placeholder={t('relationships.chooseRelationshipPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {SEED_RELATIONSHIPS.map((verb) => (
@@ -195,10 +199,10 @@ function EdgeAuthoringForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="edge-src">Source</Label>
+        <Label htmlFor="edge-src">{t('relationships.source')}</Label>
         <Select value={sourceId} onValueChange={setSourceId}>
-          <SelectTrigger id="edge-src" aria-label="Source">
-            <SelectValue placeholder="Choose a source entity…" />
+          <SelectTrigger id="edge-src" aria-label={t('relationships.source')}>
+            <SelectValue placeholder={t('relationships.chooseSourcePlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {nodes.map((node) => (
@@ -211,10 +215,10 @@ function EdgeAuthoringForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="edge-dst">Destination</Label>
+        <Label htmlFor="edge-dst">{t('relationships.destination')}</Label>
         <Select value={destinationId} onValueChange={setDestinationId}>
-          <SelectTrigger id="edge-dst" aria-label="Destination">
-            <SelectValue placeholder="Choose a destination entity…" />
+          <SelectTrigger id="edge-dst" aria-label={t('relationships.destination')}>
+            <SelectValue placeholder={t('relationships.chooseDestinationPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {nodes.map((node) => (
@@ -229,11 +233,12 @@ function EdgeAuthoringForm({
       {relationshipType === 'accesses' ? (
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="edge-mode">
-            mode<span className="text-destructive"> *</span>
+            {t('relationships.mode')}
+            <span className="text-destructive"> *</span>
           </Label>
           <Input
             id="edge-mode"
-            aria-label="mode"
+            aria-label={t('relationships.mode')}
             value={mode}
             onChange={(event) => {
               setMode(event.target.value);
@@ -252,7 +257,7 @@ function EdgeAuthoringForm({
             onAuthor(relationshipType, sourceId, destinationId, properties);
           }}
         >
-          Create relationship
+          {t('relationships.create')}
         </Button>
       </div>
     </div>
@@ -280,23 +285,17 @@ function RelationshipsCard({
     properties: Record<string, string>,
   ) => void;
 }) {
+  const t = useTranslations('workspace');
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Relationships</CardTitle>
-        <CardDescription>
-          Author relationships between entities. Endpoint types, self-links, duplicates, and
-          attributes are validated against the metamodel before the write enters the log; the
-          inspector below re-derives from the op log on every rebuild.
-        </CardDescription>
+        <CardTitle>{t('relationships.title')}</CardTitle>
+        <CardDescription>{t('relationships.description')}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <EdgeAuthoringForm nodes={nodes} onAuthor={onAuthor} />
         {edges.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            No relationships yet. Author one — an invalid endpoint, self-link, or duplicate is
-            refused at the boundary and never lands.
-          </p>
+          <p className="text-muted-foreground text-sm">{t('relationships.empty')}</p>
         ) : (
           <ul className="flex flex-col gap-1" aria-label="Edge list">
             {edges.map((edge) => (
@@ -338,6 +337,7 @@ function ClaimForm({
   readonly types: readonly MetaTypeInfo[];
   readonly onClaim: (claim: ClaimInput) => void;
 }) {
+  const t = useTranslations('workspace');
   const [entityId, setEntityId] = useState('');
   const [attribute, setAttribute] = useState('');
   const [value, setValue] = useState('');
@@ -346,7 +346,7 @@ function ClaimForm({
   const [validTo, setValidTo] = useState('');
 
   const entity = nodes.find((n) => n.nodeId === entityId);
-  const type = types.find((t) => t.id === entity?.typeLabel);
+  const type = types.find((entry) => entry.id === entity?.typeLabel);
   const attribute_ = type?.attributes.find((a) => a.name === attribute);
 
   const submit = () => {
@@ -367,10 +367,10 @@ function ClaimForm({
 
   return (
     <div className="flex flex-col gap-3 rounded-md border p-3">
-      <p className="text-sm font-medium">Assert a plan / actual claim</p>
+      <p className="text-sm font-medium">{t('claims.assertTitle')}</p>
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="claim-entity">Entity</Label>
+          <Label htmlFor="claim-entity">{t('claims.entity')}</Label>
           <Select
             value={entityId}
             onValueChange={(next) => {
@@ -379,8 +379,8 @@ function ClaimForm({
               setValue('');
             }}
           >
-            <SelectTrigger id="claim-entity" aria-label="Claim entity">
-              <SelectValue placeholder="Choose an entity…" />
+            <SelectTrigger id="claim-entity" aria-label={t('claims.entity')}>
+              <SelectValue placeholder={t('claims.chooseEntityPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {nodes.map((node) => (
@@ -392,7 +392,7 @@ function ClaimForm({
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="claim-attr">Attribute</Label>
+          <Label htmlFor="claim-attr">{t('claims.attribute')}</Label>
           <Select
             value={attribute}
             onValueChange={(next) => {
@@ -400,8 +400,8 @@ function ClaimForm({
               setValue('');
             }}
           >
-            <SelectTrigger id="claim-attr" aria-label="Claim attribute">
-              <SelectValue placeholder="Choose an attribute…" />
+            <SelectTrigger id="claim-attr" aria-label={t('claims.attribute')}>
+              <SelectValue placeholder={t('claims.chooseAttributePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {(type?.attributes ?? []).map((a) => (
@@ -413,11 +413,11 @@ function ClaimForm({
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="claim-value">Value</Label>
+          <Label htmlFor="claim-value">{t('claims.value')}</Label>
           {attribute_ && attribute_.enumValues.length > 0 ? (
             <Select value={value} onValueChange={setValue}>
-              <SelectTrigger id="claim-value" aria-label="Claim value">
-                <SelectValue placeholder="Choose value…" />
+              <SelectTrigger id="claim-value" aria-label={t('claims.value')}>
+                <SelectValue placeholder={t('claims.chooseValuePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {attribute_.enumValues.map((choice) => (
@@ -430,7 +430,7 @@ function ClaimForm({
           ) : (
             <Input
               id="claim-value"
-              aria-label="Claim value"
+              aria-label={t('claims.value')}
               value={value}
               onChange={(event) => {
                 setValue(event.target.value);
@@ -439,9 +439,9 @@ function ClaimForm({
           )}
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="claim-layer">Layer</Label>
+          <Label htmlFor="claim-layer">{t('claims.layer')}</Label>
           <Select value={layer} onValueChange={setLayer}>
-            <SelectTrigger id="claim-layer" aria-label="Claim layer">
+            <SelectTrigger id="claim-layer" aria-label={t('claims.layer')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -451,10 +451,10 @@ function ClaimForm({
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="claim-from">Valid from</Label>
+          <Label htmlFor="claim-from">{t('claims.validFrom')}</Label>
           <Input
             id="claim-from"
-            aria-label="Valid from"
+            aria-label={t('claims.validFrom')}
             type="number"
             value={validFrom}
             onChange={(event) => {
@@ -463,10 +463,10 @@ function ClaimForm({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="claim-to">Valid to (blank = open)</Label>
+          <Label htmlFor="claim-to">{t('claims.validTo')}</Label>
           <Input
             id="claim-to"
-            aria-label="Valid to"
+            aria-label={t('claims.validTo')}
             type="number"
             value={validTo}
             onChange={(event) => {
@@ -477,7 +477,7 @@ function ClaimForm({
       </div>
       <div>
         <Button size="sm" disabled={entityId === '' || attribute === ''} onClick={submit}>
-          Assert claim
+          {t('claims.assert')}
         </Button>
       </div>
     </div>
@@ -512,24 +512,22 @@ function CatalogueCard({
   readonly onViewpoint: (next: Viewpoint) => void;
   readonly onClaim: (claim: ClaimInput) => void;
 }) {
+  const t = useTranslations('workspace');
   const preset = viewpoint.layers.length === 1 ? 'plan-only' : 'actual-first';
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Catalogue at a viewpoint</CardTitle>
-        <CardDescription>
-          The twin resolved at an as-of valid time and layer policy. Each value shows the layer it
-          was resolved from — the same query at another viewpoint returns another effective state.
-        </CardDescription>
+        <CardTitle>{t('catalogue.title')}</CardTitle>
+        <CardDescription>{t('catalogue.description')}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="vp-asof">As of (valid time)</Label>
+            <Label htmlFor="vp-asof">{t('catalogue.asOfValidTime')}</Label>
             <Input
               id="vp-asof"
-              aria-label="As of"
+              aria-label={t('catalogue.asOfValidTime')}
               type="number"
               className="w-40"
               value={String(viewpoint.asOf)}
@@ -539,7 +537,7 @@ function CatalogueCard({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="vp-layers">Layer policy</Label>
+            <Label htmlFor="vp-layers">{t('catalogue.layerPolicy')}</Label>
             <Select
               value={preset}
               onValueChange={(next) => {
@@ -549,19 +547,23 @@ function CatalogueCard({
                 });
               }}
             >
-              <SelectTrigger id="vp-layers" aria-label="Layer policy" className="w-48">
+              <SelectTrigger
+                id="vp-layers"
+                aria-label={t('catalogue.layerPolicy')}
+                className="w-48"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="actual-first">Actual over plan</SelectItem>
-                <SelectItem value="plan-only">Plan only</SelectItem>
+                <SelectItem value="actual-first">{t('catalogue.actualOverPlan')}</SelectItem>
+                <SelectItem value="plan-only">{t('catalogue.planOnly')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         {entities.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No entities resolve at this viewpoint.</p>
+          <p className="text-muted-foreground text-sm">{t('catalogue.emptyAtViewpoint')}</p>
         ) : (
           <ul className="flex flex-col gap-2" aria-label="Catalogue rows">
             {entities.map((entity) => (
@@ -583,7 +585,7 @@ function CatalogueCard({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground mt-1 text-xs">no resolved slots here</p>
+                  <p className="text-muted-foreground mt-1 text-xs">{t('catalogue.emptySlot')}</p>
                 )}
               </li>
             ))}
@@ -610,6 +612,7 @@ function DiffCard({
   readonly layers: readonly string[];
   readonly onDiff: (before: Viewpoint, after: Viewpoint) => Promise<PropertyDelta[]>;
 }) {
+  const t = useTranslations('workspace');
   const [before, setBefore] = useState('0');
   const [after, setAfter] = useState('100');
   const [deltas, setDeltas] = useState<PropertyDelta[] | undefined>();
@@ -625,19 +628,16 @@ function DiffCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Diff two viewpoints</CardTitle>
-        <CardDescription>
-          Compare the same layer policy at two as-of times. A delta is data-driven: a fact that
-          resolves differently, not a rendering artefact.
-        </CardDescription>
+        <CardTitle>{t('diff.title')}</CardTitle>
+        <CardDescription>{t('diff.description')}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="diff-before">Before (as of)</Label>
+            <Label htmlFor="diff-before">{t('diff.before')}</Label>
             <Input
               id="diff-before"
-              aria-label="Diff before"
+              aria-label={t('diff.before')}
               type="number"
               className="w-32"
               value={before}
@@ -647,10 +647,10 @@ function DiffCard({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="diff-after">After (as of)</Label>
+            <Label htmlFor="diff-after">{t('diff.after')}</Label>
             <Input
               id="diff-after"
-              aria-label="Diff after"
+              aria-label={t('diff.after')}
               type="number"
               className="w-32"
               value={after}
@@ -666,11 +666,11 @@ function DiffCard({
               void compare();
             }}
           >
-            Compare
+            {t('diff.compare')}
           </Button>
         </div>
         {deltas?.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No differences between these viewpoints.</p>
+          <p className="text-muted-foreground text-sm">{t('diff.empty')}</p>
         ) : undefined}
         {deltas !== undefined && deltas.length > 0 ? (
           <ul className="flex flex-col gap-1" aria-label="Diff deltas">
@@ -709,6 +709,7 @@ function DiffCard({
  * `model/ops/*.jsonl` on disk, never from renderer state.
  */
 export function WorkspaceFoundationPanel() {
+  const t = useTranslations('workspace');
   const [
     { phase, status, nodes, edges, metamodelTypes, viewpoint, resolved, errorMessage },
     actions,
@@ -719,17 +720,14 @@ export function WorkspaceFoundationPanel() {
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 md:p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Workspace foundation</CardTitle>
-          <CardDescription>
-            Create or open a portable workspace folder. Everything below derives from its canonical
-            op log.
-          </CardDescription>
+          <CardTitle>{t('foundation.title')}</CardTitle>
+          <CardDescription>{t('foundation.description')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="flex gap-2">
             <Input
-              aria-label="Workspace folder"
-              placeholder="/path/to/workspace"
+              aria-label={t('foundation.folderAriaLabel')}
+              placeholder={t('foundation.pathPlaceholder')}
               value={root}
               onChange={(event) => {
                 setRoot(event.target.value);
@@ -747,7 +745,7 @@ export function WorkspaceFoundationPanel() {
                 })();
               }}
             >
-              Browse…
+              {t('foundation.browse')}
             </Button>
             <Button
               disabled={root.trim() === '' || phase === 'busy'}
@@ -755,7 +753,7 @@ export function WorkspaceFoundationPanel() {
                 void actions.createWorkspace(root.trim());
               }}
             >
-              Create
+              {t('foundation.create')}
             </Button>
             <Button
               variant="secondary"
@@ -764,12 +762,12 @@ export function WorkspaceFoundationPanel() {
                 void actions.openWorkspace(root.trim());
               }}
             >
-              Open
+              {t('foundation.open')}
             </Button>
           </div>
           {phase === 'error' && errorMessage !== undefined ? (
             <Alert variant="destructive">
-              <AlertTitle>Workspace operation failed</AlertTitle>
+              <AlertTitle>{t('foundation.operationFailed')}</AlertTitle>
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           ) : undefined}
@@ -789,23 +787,22 @@ export function WorkspaceFoundationPanel() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Foundation status</CardTitle>
-              <CardDescription>
-                Applied operations and the structural rebuild hash — the proof the derived runtime
-                matches the canonical log.
-              </CardDescription>
+              <CardTitle>{t('foundation.status.title')}</CardTitle>
+              <CardDescription>{t('foundation.status.description')}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2 text-sm">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Workspace</span>
+                <span className="text-muted-foreground">{t('foundation.status.workspace')}</span>
                 <code className="truncate">{status.workspaceId}</code>
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Applied operations</span>
+                <span className="text-muted-foreground">
+                  {t('foundation.status.appliedOperations')}
+                </span>
                 <Badge variant="secondary">{status.appliedOpCount}</Badge>
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Rebuild hash</span>
+                <span className="text-muted-foreground">{t('foundation.status.rebuildHash')}</span>
                 <code className="truncate" title={status.foundationRebuildHash}>
                   {status.foundationRebuildHash.slice(0, 16)}…
                 </code>
@@ -818,7 +815,7 @@ export function WorkspaceFoundationPanel() {
                     void actions.rebuild();
                   }}
                 >
-                  Rebuild derived runtime
+                  {t('foundation.status.rebuildDerivedRuntime')}
                 </Button>
               </div>
             </CardContent>
@@ -826,11 +823,8 @@ export function WorkspaceFoundationPanel() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Entities</CardTitle>
-              <CardDescription>
-                Author entities against the seed metamodel. A write is validated before it enters
-                the canonical log; the listing below is re-derived from the op log on every rebuild.
-              </CardDescription>
+              <CardTitle>{t('entities.title')}</CardTitle>
+              <CardDescription>{t('entities.description')}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <TypedAuthoringForm
@@ -840,10 +834,7 @@ export function WorkspaceFoundationPanel() {
                 }}
               />
               {nodes.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  No entities yet. Create one — it lands in the canonical log first, then appears
-                  here from the derived projection.
-                </p>
+                <p className="text-muted-foreground text-sm">{t('entities.empty')}</p>
               ) : (
                 <ul className="flex flex-col gap-1" aria-label="Node list">
                   {nodes.map((node) => (

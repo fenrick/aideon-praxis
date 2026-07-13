@@ -9,6 +9,7 @@ import {
   CommandList,
   CommandShortcut,
 } from 'design-system';
+import { useTranslations } from 'next-intl';
 
 export interface AideonCommandItem {
   readonly id: string;
@@ -28,12 +29,13 @@ export interface AideonCommandPaletteProperties {
 /**
  * Group commands into named buckets for rendering.
  * @param commands - Flat list of command items.
+ * @param defaultGroup - Bucket name for commands with no explicit group.
  * @returns Grouped command buckets.
  */
-function groupCommands(commands: readonly AideonCommandItem[]) {
+function groupCommands(commands: readonly AideonCommandItem[], defaultGroup: string) {
   const grouped = new Map<string, AideonCommandItem[]>();
   for (const command of commands) {
-    const group = command.group ?? 'Commands';
+    const group = command.group ?? defaultGroup;
     const bucket = grouped.get(group) ?? [];
     bucket.push(command);
     grouped.set(group, bucket);
@@ -58,13 +60,15 @@ export function AideonCommandPalette({
   onOpenChange,
   commands,
 }: AideonCommandPaletteProperties): ReactElement {
-  const grouped = useMemo(() => groupCommands(commands), [commands]);
+  const t = useTranslations('shell.commandPalette');
+  const defaultGroup = t('defaultGroup');
+  const grouped = useMemo(() => groupCommands(commands, defaultGroup), [commands, defaultGroup]);
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} title="Command palette">
-      <CommandInput placeholder="Search commands…" />
+    <CommandDialog open={open} onOpenChange={onOpenChange} title={t('title')}>
+      <CommandInput placeholder={t('searchPlaceholder')} />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>{t('noResults')}</CommandEmpty>
         {grouped.map(({ group, items }) => (
           <CommandGroup key={group} heading={group}>
             {items.map((command) => (

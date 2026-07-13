@@ -13,6 +13,9 @@ The docs are authoritative; code is updated to match them.
 - [`CONTEXT.md`](CONTEXT.md) — the canonical domain glossary (twin, workspace, viewpoint, fact, layer, scenario). Use
   these terms exactly.
 - [`docs/agents/domain.md`](docs/agents/domain.md) — how to orient before changing anything.
+- [`docs/agents/multi-agent-orchestration.md`](docs/agents/multi-agent-orchestration.md) — running a multi-agent team
+  (Maestri or otherwise) against this repo: route consequential decisions through the lead, verify artefacts directly
+  rather than trusting recruit narration.
 - [`docs/03-design/DESIGN.md`](docs/03-design/DESIGN.md) and
   [`docs/03-design/desktop-first-workspace/`](docs/03-design/desktop-first-workspace/README.md) — the product design
   spine and the canonical-authority thesis.

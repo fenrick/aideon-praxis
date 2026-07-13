@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
@@ -55,6 +56,7 @@ const INITIAL_STATE: TemporalPanelState = {
  * @returns {[TemporalPanelState, TemporalPanelActions]} current state and actions
  */
 export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
+  const t = useTranslations('engines.praxis.temporalPanel');
   const [state, setState] = useState<TemporalPanelState>(INITIAL_STATE);
   const layerReference = useRef<Layer>(INITIAL_STATE.layer);
   const loadDiff = useCallback(async (commits: TemporalCommitSummary[]) => {
@@ -264,7 +266,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
           ...previous,
           merging: false,
           mergeConflicts: result.conflicts,
-          error: 'Merge requires manual resolution.',
+          error: t('mergeRequiresResolution'),
         }));
         return;
       }
@@ -282,7 +284,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         error: toErrorMessage(unknownError),
       }));
     }
-  }, [loadBranches, state.branch]);
+  }, [loadBranches, state.branch, t]);
 
   useEffect(() => {
     loadBranches().catch((_ignoredError: unknown) => {

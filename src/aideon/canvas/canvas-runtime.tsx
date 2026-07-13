@@ -2,6 +2,7 @@ import { Button } from 'design-system';
 import { Maximize, MousePointer2, ZoomIn, ZoomOut } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
 import { isBrowserRuntime } from 'lib/runtime';
+import { useTranslations } from 'next-intl';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { DraggableWidgetWrapper } from './draggable-widget-wrapper';
@@ -126,6 +127,7 @@ function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({
   layoutKey,
   layoutPersistence,
 }: AideonCanvasRuntimeProperties<TWidget>) {
+  const t = useTranslations('shell.canvasRuntime');
   const { viewport, setViewport, containerReference, events } = useInfiniteCanvas({
     minScale: 0.1,
     maxScale: 3,
@@ -346,17 +348,17 @@ function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({
 
       {/* Floating Canvas Controls */}
       <div className="border-border/50 bg-background/80 absolute right-6 bottom-6 flex flex-col gap-2 rounded-lg border p-1.5 opacity-60 shadow-lg backdrop-blur-md transition-opacity hover:opacity-100">
-        <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} title="Zoom In">
+        <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} title={t('zoomIn')}>
           <ZoomIn className="h-4 w-4" />
         </Button>
         <div className="text-muted-foreground text-center font-mono text-[10px] select-none">
           {Math.round(viewport.scale * 100)}%
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={handleZoomOut} title="Zoom Out">
+        <Button variant="ghost" size="icon-sm" onClick={handleZoomOut} title={t('zoomOut')}>
           <ZoomOut className="h-4 w-4" />
         </Button>
         <div className="bg-border/50 my-0.5 h-px" />
-        <Button variant="ghost" size="icon-sm" onClick={handleResetView} title="Reset View">
+        <Button variant="ghost" size="icon-sm" onClick={handleResetView} title={t('resetView')}>
           <Maximize className="h-4 w-4" />
         </Button>
       </div>
@@ -365,7 +367,7 @@ function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({
       <div className="pointer-events-none absolute bottom-6 left-6 opacity-0 transition-opacity group-hover/canvas:opacity-40">
         <div className="text-muted-foreground bg-background/50 flex items-center gap-2 rounded-md px-2 py-1 text-xs font-medium backdrop-blur-sm">
           <MousePointer2 className="h-3 w-3" />
-          <span>Middle Click or Shift+Drag to Pan · Scroll to Zoom</span>
+          <span>{t('panHint')}</span>
         </div>
       </div>
     </div>

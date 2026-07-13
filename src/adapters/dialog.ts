@@ -9,8 +9,17 @@ import { isTauriRuntime } from '@/lib/runtime';
  *
  * The plugin module is imported dynamically so a non-Tauri bundle never pulls a
  * runtime that expects `window.__TAURI__`.
+ *
+ * This module is a plain adapter (no React context, so no `useTranslations`
+ * hook is available here). `title` defaults to the English copy but callers
+ * that can resolve a translation — e.g. via
+ * `useTranslations('adapters.dialog')` and `t('chooseWorkspaceFolder')` —
+ * should pass the localized string in explicitly.
+ * @param title - Native dialog title. Defaults to the English fallback.
  */
-export async function pickWorkspaceFolder(): Promise<string | undefined> {
+export async function pickWorkspaceFolder(
+  title = 'Choose a workspace folder',
+): Promise<string | undefined> {
   if (!isTauriRuntime()) {
     return undefined;
   }
@@ -18,7 +27,7 @@ export async function pickWorkspaceFolder(): Promise<string | undefined> {
   const selected = await open({
     directory: true,
     multiple: false,
-    title: 'Choose a workspace folder',
+    title,
   });
   return typeof selected === 'string' ? selected : undefined;
 }

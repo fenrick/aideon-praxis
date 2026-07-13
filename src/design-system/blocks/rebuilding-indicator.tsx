@@ -1,4 +1,5 @@
 import { RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { getSemanticStateContract } from '../foundations/semantic-states';
 import { cn } from '../lib/utilities';
@@ -16,14 +17,13 @@ export interface RebuildingIndicatorProperties {
  * @param root0.label
  * @param root0.className
  */
-export function RebuildingIndicator({
-  label = 'Rebuilding…',
-  className,
-}: RebuildingIndicatorProperties) {
+export function RebuildingIndicator({ label, className }: RebuildingIndicatorProperties) {
   const contract = getSemanticStateContract('info');
+  const t = useTranslations('designSystem.rebuildingIndicator');
+  const resolvedLabel = label ?? t('label');
   return (
     <output
-      aria-label={label}
+      aria-label={resolvedLabel}
       aria-live="polite"
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs',
@@ -32,7 +32,7 @@ export function RebuildingIndicator({
       )}
     >
       <RefreshCw aria-hidden className="h-3 w-3 shrink-0 motion-safe:animate-spin" />
-      <span>{label}</span>
+      <span>{resolvedLabel}</span>
     </output>
   );
 }

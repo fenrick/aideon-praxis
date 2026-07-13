@@ -14,6 +14,10 @@ export interface ColorThemeOption {
   id: ColorThemeId;
   label: string;
   description: string;
+  /** Full dot-path message key resolving to the translated label. */
+  labelKey: string;
+  /** Full dot-path message key resolving to the translated description. */
+  descriptionKey: string;
   source?: string;
 }
 
@@ -25,30 +29,40 @@ const THEME_OPTIONS: ColorThemeOption[] = [
     id: 'corp-blue',
     label: 'Corporate Blue',
     description: 'Default Aideon palette.',
+    labelKey: 'designSystem.colorTheme.corpBlue.label',
+    descriptionKey: 'designSystem.colorTheme.corpBlue.description',
     source: 'Aideon',
   },
   {
     id: 'violet',
     label: 'Violet',
     description: 'Bright violet accents with crisp neutrals.',
+    labelKey: 'designSystem.colorTheme.violet.label',
+    descriptionKey: 'designSystem.colorTheme.violet.description',
     source: 'shadcn examples',
   },
   {
     id: 'green',
     label: 'Green',
     description: 'Fresh emerald accents with cool neutrals.',
+    labelKey: 'designSystem.colorTheme.green.label',
+    descriptionKey: 'designSystem.colorTheme.green.description',
     source: 'shadcn examples',
   },
   {
     id: 'claude',
     label: 'Claude',
     description: 'Warm clay tones with an amber primary.',
+    labelKey: 'designSystem.colorTheme.claude.label',
+    descriptionKey: 'designSystem.colorTheme.claude.description',
     source: 'shadcn examples',
   },
   {
     id: 'graphite',
     label: 'Graphite',
     description: 'Low-saturation graphite accents.',
+    labelKey: 'designSystem.colorTheme.graphite.label',
+    descriptionKey: 'designSystem.colorTheme.graphite.description',
     source: 'shadcn examples',
   },
 ];

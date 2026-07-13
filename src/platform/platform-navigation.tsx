@@ -1,5 +1,7 @@
 import type { ComponentType } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import { TooltipProvider } from 'design-system';
 import {
   Sidebar,
@@ -36,6 +38,7 @@ interface PlatformNavigationProperties {
  * @param root0.className - Optional wrapper class.
  */
 export function PlatformNavigation({ className }: PlatformNavigationProperties) {
+  const t = useTranslations();
   const { licensed } = useLicensing();
   const engines = ENGINES.filter((engine) => licensed(engine.id));
 
@@ -57,15 +60,16 @@ export function PlatformNavigation({ className }: PlatformNavigationProperties) 
                 <SidebarMenu>
                   {engines.map((engine) => {
                     const Icon = ENGINE_ICONS[engine.id] ?? LayoutGrid;
+                    const engineLabel = t(engine.label);
                     return (
                       <SidebarMenuItem key={engine.id}>
                         <SidebarMenuButton
-                          tooltip={{ children: engine.label, hidden: false }}
+                          tooltip={{ children: engineLabel, hidden: false }}
                           isActive={engine.id === 'praxis'}
                           className="px-2.5 md:px-2"
                         >
                           <Icon />
-                          <span className="sr-only">{engine.label}</span>
+                          <span className="sr-only">{engineLabel}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );

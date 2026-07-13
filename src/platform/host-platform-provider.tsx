@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import {
   useCallback,
   useEffect,
@@ -89,6 +90,7 @@ function HostPlatformStateProvider({
   readonly onSelectionChange?: (selection: SelectionState) => void;
   readonly children: ReactNode;
 }) {
+  const t = useTranslations('platform.commandStack');
   const {
     state: selectionState,
     setFromWidget,
@@ -300,7 +302,7 @@ function HostPlatformStateProvider({
       };
       setSelection(normalised);
       commandStack.record({
-        label: 'Selection change',
+        label: t('selectionChange'),
         redo: () => {
           setSelection(normalised);
         },
@@ -315,7 +317,7 @@ function HostPlatformStateProvider({
         edgeCount: normalised.edgeIds.length,
       });
     },
-    [commandStack, selectionState.selection, setSelection],
+    [commandStack, selectionState.selection, setSelection, t],
   );
 
   const handleTemplateChange = useCallback(
@@ -324,7 +326,7 @@ function HostPlatformStateProvider({
       setActiveTemplateId(templateId);
       clear();
       commandStack.record({
-        label: 'Template change',
+        label: t('templateChange'),
         redo: () => {
           setActiveTemplateId(templateId);
         },
@@ -334,7 +336,7 @@ function HostPlatformStateProvider({
       });
       track('template.change', { templateId, scenarioId: activeScenario?.id });
     },
-    [activeScenario?.id, activeTemplateId, clear, commandStack],
+    [activeScenario?.id, activeTemplateId, clear, commandStack, t],
   );
 
   const commitTemplate = useCallback(
@@ -354,14 +356,14 @@ function HostPlatformStateProvider({
       return;
     }
     const nextIndexLabel = (templatesState.data.length + 1).toString();
-    const name = `Template ${nextIndexLabel}`;
-    const snapshot = captureLayoutFromWidgets(name, 'Saved from runtime', widgets);
+    const name = t('templateName', { number: nextIndexLabel });
+    const snapshot = captureLayoutFromWidgets(name, t('savedFromRuntime'), widgets);
     const saveTemplate = async () => {
       const saved = await saveLayoutToHost(snapshot);
       commitTemplate(saved);
     };
     void saveTemplate();
-  }, [commitTemplate, templatesState.data.length, widgets]);
+  }, [commitTemplate, t, templatesState.data.length, widgets]);
 
   const handleScenarioSelect = useCallback(
     (scenarioId: string) => {
@@ -369,7 +371,7 @@ function HostPlatformStateProvider({
       setActiveScenarioId(scenarioId);
       clear();
       commandStack.record({
-        label: 'Scenario change',
+        label: t('scenarioChange'),
         redo: () => {
           setActiveScenarioId(scenarioId);
         },
@@ -378,7 +380,7 @@ function HostPlatformStateProvider({
         },
       });
     },
-    [activeScenarioId, clear, commandStack],
+    [activeScenarioId, clear, commandStack, t],
   );
 
   const handleWidgetCreate = useCallback(
@@ -438,7 +440,7 @@ function HostPlatformStateProvider({
             return;
           }
           if (!result.accepted) {
-            throw new Error(result.message ?? 'Operation rejected.');
+            throw new Error(result.message ?? t('operationRejected'));
           }
           if (result.commitId) {
             if (branch) {
@@ -461,6 +463,7 @@ function HostPlatformStateProvider({
       selectionId,
       selectionKind,
       selectedProperties,
+      t,
       temporalActions,
       temporalState.branch,
       updateProperties,

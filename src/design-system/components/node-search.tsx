@@ -6,6 +6,7 @@ import {
   type Node,
   type PanelProps,
 } from "@xyflow/react";
+import { useTranslations } from "next-intl";
 
 import {
   Command,
@@ -39,6 +40,7 @@ export function NodeSearchInternal({
   const [searchResults, setSearchResults] = useState<Node[]>([]);
   const [searchString, setSearchString] = useState<string>("");
   const { getNodes, fitView, setNodes } = useReactFlow<Node, BuiltInEdge>();
+  const t = useTranslations("designSystem.nodeSearch");
 
   const defaultOnSearch = useCallback(
     (searchString: string) => {
@@ -86,7 +88,7 @@ export function NodeSearchInternal({
   return (
     <>
       <CommandInput
-        placeholder="Search nodes..."
+        placeholder={t("placeholder")}
         onValueChange={onChange}
         value={searchString}
         onFocus={() => onOpenChange?.(true)}
@@ -95,9 +97,11 @@ export function NodeSearchInternal({
       {open && (
         <CommandList>
           {searchResults.length === 0 ? (
-            <CommandEmpty>No results found. {searchString}</CommandEmpty>
+            <CommandEmpty>
+              {t("noResults")} {searchString}
+            </CommandEmpty>
           ) : (
-            <CommandGroup heading="Nodes">
+            <CommandGroup heading={t("headingNodes")}>
               {searchResults.map((node) => {
                 return (
                   <CommandItem key={node.id} onSelect={() => onSelect(node)}>
@@ -147,11 +151,13 @@ export function NodeSearchDialog({
   onSelectNode,
   open,
   onOpenChange,
-  title = "Node Search",
+  title,
   ...props
 }: NodeSearchDialogProps) {
+  const t = useTranslations("designSystem.nodeSearch");
+  const resolvedTitle = title ?? t("defaultTitle");
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog open={open} onOpenChange={onOpenChange} title={resolvedTitle}>
       <NodeSearchInternal
         className={className}
         onSearch={onSearch}
