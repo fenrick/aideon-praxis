@@ -40,11 +40,14 @@ behaviour is the compiler default unless an overlay package adds a rule.
 
 **Node (entity) validation:**
 
-1. the `type` must match a known type descriptor;
-2. every value is type-checked against its attribute kind ([entity types](./entity-types.md));
-3. required attributes must be present and non-null;
-4. string and text lengths are checked against the global rules;
-5. enum values are matched against the declared variant list under the case-insensitivity rule.
+1. the attribute set must be a JSON object (a non-object write is rejected as `MALFORMED_PROPS`);
+2. the `type` must match a known type descriptor;
+3. every value is type-checked against its attribute kind ([entity types](./entity-types.md)); a `number` or `boolean`
+   value supplied as a string is coerced to its JSON kind before the kind check (a string that does not parse is left
+   as-is and rejected as `WRONG_ATTRIBUTE_KIND`);
+4. required attributes must be present and non-null;
+5. string and text lengths are checked against the global rules;
+6. enum values are matched against the declared variant list under the case-insensitivity rule.
 
 **Edge (relationship) validation:**
 
@@ -52,8 +55,11 @@ behaviour is the compiler default unless an overlay package adds a rule.
 2. the source entity's type must appear in the relationship's `from` set;
 3. the target entity's type must appear in the relationship's `to` set;
 4. `allowSelf` and `allowDuplicate` are applied where declared;
-5. relationship attributes (e.g. `accesses.mode`, `plan_effect.op` and `target_ref`) undergo the same
-   kind/length/enum/required checks as entity attributes.
+5. multiplicity is enforced as a count-against-bounds check: a `one`-bounded endpoint is rejected once the endpoint
+   already carries an edge of this type (`MULTIPLICITY_EXCEEDED`); a `many` bound is unbounded. The current seed is all
+   `many-many`, so the check is trivially satisfied;
+6. relationship attributes (e.g. `accesses.mode`, `plan_effect.op` and `target_ref`) undergo the same
+   kind/length/enum/required checks as entity attributes (including the same `number`/`boolean` string coercion).
 
 A failure is a typed `ValidationFailed` error with a human-readable message, surfaced directly to the UI without
 exposing internals.

@@ -158,9 +158,10 @@ what lets a workspace carry its own modelling language portably.
 // The canonical operation payload — authored, unflattened definitions.
 pub struct AuthoredMetamodelBatch {
     pub types:             Vec<TypeDef>,
-    pub fields:            Vec<FieldDef>,      // value_type, cardinality, is_indexed
+    pub fields:            Vec<FieldDef>,      // value_type + authored semantic_kind, enum_values, cardinality, is_indexed
     pub type_fields:       Vec<TypeFieldDef>,  // per-type field attachments + defaults
     pub edge_type_rules:   Vec<EdgeTypeRule>,  // endpoint constraints + semantic direction
+    pub validation:        AuthoredValidationRules, // global length caps + enum case-sensitivity
     pub metamodel_version: Option<String>,
     pub metamodel_source:  Option<String>,
 }
@@ -168,7 +169,12 @@ pub struct AuthoredMetamodelBatch {
 
 The batch holds **only** authored source: it does **not** carry inherited fields copied into child types, resolved
 defaults, flattened endpoint rules, compiled validation programs, or per-type effective schemas — those are derived M1
-outputs.
+outputs. It does carry the full authored **description** of each slot, though: a field's `semantic_kind`
+(`string`/`text`/`number`/`enum`/`datetime`/`boolean`/`blob` — richer than the storage `value_type`, which collapses
+`string`/`text`/`enum` to `str`), its `enum_values` when the kind is `enum`, and the batch-level `validation` rules
+(string/text length caps, enum case-sensitivity). Carrying the authored kind and constraints is what lets M1 rebuild the
+effective-schema slot descriptors (kind, `max_length`, enum variants, datetime `format`) purely from the op log; the
+lossy `value_type` alone cannot.
 
 **M0 vs M1 split.** At M0 Mneme performs **structural** validation of the operation and payload only — canonical-JSON
 and envelope shape; required fields and field types; UUID, identifier and version-string syntax; supported M0 value and

@@ -86,7 +86,7 @@ function renderPraxisWidget(
 
 export const PRAXIS_ENGINE: EngineDefinition = {
   id: 'praxis',
-  label: 'Praxis',
+  label: 'engines.praxis.label',
   widgets,
   renderWidget: renderPraxisWidget,
 };

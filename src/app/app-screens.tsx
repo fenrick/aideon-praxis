@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import { AideonDesktopRoot } from '@/root';
 import { HOST_EVENT_NAMES } from '../adapters/host-events';
 import { getSetupState, openStatusWindow, setSetupComplete } from '../adapters/system-ipc';
@@ -35,23 +37,24 @@ export function MainScreen() {
  * Splash screen displayed while the host initializes.
  */
 export function SplashScreenRoute() {
+  const t = useTranslations('app');
   const shouldSignalFrontendReady = true;
   const loadLines = useMemo(
     () => [
-      'Reticulating splines…',
-      'Weaving twin orbits…',
-      'Replaying future states…',
-      'Cooling hot paths…',
-      'Aligning decision matrices…',
-      'Seeding knowledge graph…',
-      'Collapsing branches to present…',
-      'Normalising capability models…',
-      'Hardening isolation layer…',
-      'Bootstrapping sidecar…',
-      'Calibrating maturity plateaus…',
-      'Scheduling time-dimension renders…',
+      t('splash.lines.reticulatingSplines'),
+      t('splash.lines.weavingTwinOrbits'),
+      t('splash.lines.replayingFutureStates'),
+      t('splash.lines.coolingHotPaths'),
+      t('splash.lines.aligningDecisionMatrices'),
+      t('splash.lines.seedingKnowledgeGraph'),
+      t('splash.lines.collapsingBranchesToPresent'),
+      t('splash.lines.normalisingCapabilityModels'),
+      t('splash.lines.hardeningIsolationLayer'),
+      t('splash.lines.bootstrappingSidecar'),
+      t('splash.lines.calibratingMaturityPlateaus'),
+      t('splash.lines.schedulingTimeDimensionRenders'),
     ],
-    [],
+    [t],
   );
 
   const [currentLine, setCurrentLine] = useState<string>(loadLines[0] ?? '');
@@ -129,15 +132,15 @@ export function SplashScreenRoute() {
     let ix = 0;
     const interval = setInterval(() => {
       if (setupError) {
-        setCurrentLine('Setup failed — see Status for details.');
+        setCurrentLine(t('hostStatus.setupFailedBanner'));
         return;
       }
       if (backendReady) {
-        setCurrentLine('Backend ready…');
+        setCurrentLine(t('hostStatus.backendReady'));
         return;
       }
       if (setupPhase === 'migrating') {
-        setCurrentLine('Migrating…');
+        setCurrentLine(t('hostStatus.migrating'));
         return;
       }
       setCurrentLine(loadLines[ix % loadLines.length] ?? '');
@@ -146,7 +149,7 @@ export function SplashScreenRoute() {
     return () => {
       clearInterval(interval);
     };
-  }, [backendReady, loadLines, setupError, setupPhase]);
+  }, [backendReady, loadLines, setupError, setupPhase, t]);
 
   return (
     <FrontendReady enabled={shouldSignalFrontendReady}>
@@ -155,9 +158,9 @@ export function SplashScreenRoute() {
         <div className="fixed inset-0 flex items-end justify-end p-6">
           <Card className="border-destructive/50 bg-card/90 w-full max-w-md shadow-lg">
             <CardHeader>
-              <CardTitle className="text-destructive">Setup failed</CardTitle>
+              <CardTitle className="text-destructive">{t('hostStatus.setupFailedTitle')}</CardTitle>
               <CardDescription className="text-muted-foreground">
-                The host failed to initialize. Open Status to view diagnostics and recovery actions.
+                {t('hostStatus.setupFailedDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -174,7 +177,7 @@ export function SplashScreenRoute() {
                     openStatusWindow().catch(() => false);
                   }}
                 >
-                  Open Status
+                  {t('hostStatus.openStatus')}
                 </Button>
               </div>
             </CardContent>
@@ -189,6 +192,7 @@ export function SplashScreenRoute() {
  * Minimal host status window.
  */
 export function StatusScreen() {
+  const t = useTranslations('app');
   const [seedSummary, setSeedSummary] = useState<
     | {
         readonly datasetVersion?: string;
@@ -239,12 +243,16 @@ export function StatusScreen() {
   return (
     <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
       <div className="border-border/70 bg-card/90 rounded-lg border px-6 py-4 shadow-md">
-        <p className="text-sm font-medium">Host status</p>
-        <p className="text-muted-foreground text-xs">All services initialising…</p>
+        <p className="text-sm font-medium">{t('hostStatus.title')}</p>
+        <p className="text-muted-foreground text-xs">{t('hostStatus.allServicesInitialising')}</p>
         {seedSummary && (
           <div className="border-border/40 bg-muted/30 text-muted-foreground mt-2 space-y-1 rounded border px-3 py-2 text-xs">
-            <p>Baseline dataset: {seedSummary.datasetVersion ?? 'unknown'}</p>
-            <p>Schema version: {seedSummary.metamodelVersion ?? 'unknown'}</p>
+            <p>
+              {t('hostStatus.baselineDataset')} {seedSummary.datasetVersion ?? 'unknown'}
+            </p>
+            <p>
+              {t('hostStatus.schemaVersion')} {seedSummary.metamodelVersion ?? 'unknown'}
+            </p>
           </div>
         )}
       </div>
@@ -256,15 +264,16 @@ export function StatusScreen() {
  * About dialog content for the desktop shell.
  */
 export function AboutScreen() {
+  const t = useTranslations('app');
   return (
     <div className="bg-shell-background text-foreground flex min-h-screen items-center justify-center">
       <div className="border-border/60 bg-card/90 flex flex-col items-center gap-5 rounded-xl border px-8 py-8 text-center shadow-[var(--aideon-elevation-panel)]">
         <Logo variant="vertical" priority plate className="h-28 w-auto" />
         <div className="space-y-1">
-          <h1 className="font-editorial text-2xl/[1.12] font-medium tracking-[-0.01em]">Aideon</h1>
-          <p className="text-muted-foreground text-sm">
-            Desktop shell for Praxis workspaces and tools.
-          </p>
+          <h1 className="font-editorial text-2xl/[1.12] font-medium tracking-[-0.01em]">
+            {t('shell.heading')}
+          </h1>
+          <p className="text-muted-foreground text-sm">{t('shell.tagline')}</p>
         </div>
       </div>
     </div>
@@ -276,6 +285,7 @@ export function AboutScreen() {
  */
 export function SettingsScreen() {
   const { colorTheme, options, preloadThemes, setColorTheme } = useColorTheme();
+  const t = useTranslations();
 
   useEffect(() => {
     preloadThemes().catch(() => false);
@@ -285,15 +295,15 @@ export function SettingsScreen() {
     <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle>Settings</CardTitle>
-          <CardDescription>Personalize the desktop experience.</CardDescription>
+          <CardTitle>{t('app.settings.title')}</CardTitle>
+          <CardDescription>{t('app.settings.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-3">
             <div>
-              <p className="text-sm font-semibold">Color theme</p>
+              <p className="text-sm font-semibold">{t('app.settings.colorTheme.title')}</p>
               <p className="text-muted-foreground text-xs">
-                Choose the primary color palette for the UI. Changes persist automatically.
+                {t('app.settings.colorTheme.description')}
               </p>
             </div>
             <RadioGroup
@@ -312,11 +322,15 @@ export function SettingsScreen() {
                   <RadioGroupItem value={option.id} id={`color-theme-${option.id}`} />
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{option.label}</span>
-                      {option.id === 'corp-blue' && <Badge variant="secondary">Default</Badge>}
+                      <span className="text-sm font-medium">{t(option.labelKey)}</span>
+                      {option.id === 'corp-blue' && (
+                        <Badge variant="secondary">
+                          {t('app.settings.colorTheme.defaultBadge')}
+                        </Badge>
+                      )}
                       {option.source && <Badge variant="outline">{option.source}</Badge>}
                     </div>
-                    <p className="text-muted-foreground text-xs">{option.description}</p>
+                    <p className="text-muted-foreground text-xs">{t(option.descriptionKey)}</p>
                   </div>
                   <ThemePreview themeId={option.id} />
                 </label>
@@ -333,11 +347,12 @@ export function SettingsScreen() {
  * Placeholder UI styleguide window.
  */
 export function StyleguideScreen() {
+  const t = useTranslations('app');
   return (
     <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
       <div className="border-border/60 bg-card/90 space-y-3 rounded-lg border px-6 py-5 shadow">
-        <h1 className="text-lg font-semibold">Styleguide</h1>
-        <p className="text-muted-foreground text-sm">Design system documentation pending.</p>
+        <h1 className="text-lg font-semibold">{t('styleguide.title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('styleguide.description')}</p>
       </div>
     </div>
   );

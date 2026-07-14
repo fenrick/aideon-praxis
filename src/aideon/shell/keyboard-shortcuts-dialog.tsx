@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
 import {
@@ -28,16 +29,33 @@ export interface KeyboardShortcutsDialogProperties {
 
 /**
  * Default shortcut set for the shell. Keep in sync with Tauri menu accelerators.
+ * @param t - Translation function scoped to the keyboard shortcuts dialog.
+ * @param tActions - Translation function scoped to the shortcut action names.
  * @returns Shortcut rows.
  */
-function defaultShortcuts(): ShortcutRow[] {
+function defaultShortcuts(
+  t: ReturnType<typeof useTranslations>,
+  tActions: ReturnType<typeof useTranslations>,
+): ShortcutRow[] {
   return [
-    { category: 'File', name: 'Open…', keys: ['CmdOrCtrl', 'O'] },
-    { category: 'File', name: 'Save As…', keys: ['CmdOrCtrl', 'Shift', 'S'] },
-    { category: 'File', name: 'Print…', keys: ['CmdOrCtrl', 'P'] },
-    { category: 'Shell', name: 'Command palette', keys: ['CmdOrCtrl', 'K'] },
-    { category: 'Shell', name: 'Toggle navigation', keys: ['CmdOrCtrl', 'B'] },
-    { category: 'Shell', name: 'Toggle inspector', keys: ['CmdOrCtrl', 'I'] },
+    { category: t('categoryFile'), name: tActions('open'), keys: ['CmdOrCtrl', 'O'] },
+    { category: t('categoryFile'), name: tActions('saveAs'), keys: ['CmdOrCtrl', 'Shift', 'S'] },
+    { category: t('categoryFile'), name: tActions('print'), keys: ['CmdOrCtrl', 'P'] },
+    {
+      category: t('categoryShell'),
+      name: tActions('commandPalette'),
+      keys: ['CmdOrCtrl', 'K'],
+    },
+    {
+      category: t('categoryShell'),
+      name: tActions('toggleNavigation'),
+      keys: ['CmdOrCtrl', 'B'],
+    },
+    {
+      category: t('categoryShell'),
+      name: tActions('toggleInspector'),
+      keys: ['CmdOrCtrl', 'I'],
+    },
   ];
 }
 
@@ -52,21 +70,23 @@ export function KeyboardShortcutsDialog({
   open,
   onOpenChange,
 }: KeyboardShortcutsDialogProperties): ReactElement {
-  const shortcuts = defaultShortcuts();
+  const t = useTranslations('shell.keyboardShortcutsDialog');
+  const tActions = useTranslations('shell.keyboardShortcutsDialog.actions');
+  const shortcuts = defaultShortcuts(t, tActions);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[680px]">
         <DialogHeader>
-          <DialogTitle>Keyboard shortcuts</DialogTitle>
-          <DialogDescription>Common shortcuts in Aideon Desktop.</DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
         <div className="border-border/70 rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[140px]">Category</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead className="w-[220px] text-right">Shortcut</TableHead>
+                <TableHead className="w-[140px]">{t('columnCategory')}</TableHead>
+                <TableHead>{t('columnAction')}</TableHead>
+                <TableHead className="w-[220px] text-right">{t('columnShortcut')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

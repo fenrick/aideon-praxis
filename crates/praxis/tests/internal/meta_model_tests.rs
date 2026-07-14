@@ -15,6 +15,7 @@ fn build_type_descriptors_inherits_parent_attributes() {
             value_type: MetaAttributeKind::String,
             required: true,
             enum_values: vec![],
+            cardinality: None,
         }],
         effect_types: None,
     };
@@ -30,6 +31,7 @@ fn build_type_descriptors_inherits_parent_attributes() {
             value_type: MetaAttributeKind::String,
             required: false,
             enum_values: vec![],
+            cardinality: None,
         }],
         effect_types: None,
     };

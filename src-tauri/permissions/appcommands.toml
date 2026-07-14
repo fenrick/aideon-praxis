@@ -28,6 +28,7 @@ commands.allow = [
   "system_window_open",
   "system_worker_health",
   "workspace_diff",
+  "workspace_edges",
   "workspace_metamodel_types",
   "workspace_nodes",
   "workspace_projects_list",

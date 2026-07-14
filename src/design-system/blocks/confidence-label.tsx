@@ -1,25 +1,27 @@
+import { useTranslations } from 'next-intl';
+
 import { cn } from '../lib/utilities';
 
 export type ConfidenceTier = 'high' | 'indicative' | 'low' | 'medium';
 
 interface ConfidenceSpec {
-  readonly label: string;
+  readonly labelKey: string;
   readonly className: string;
-  readonly ariaLabel: string;
+  readonly ariaLabelKey: string;
 }
 
 const confidenceSpecs = new Map<ConfidenceTier, ConfidenceSpec>([
-  ['high', { ariaLabel: 'High confidence', className: 'text-status-success', label: 'High' }],
+  ['high', { ariaLabelKey: 'highAria', className: 'text-status-success', labelKey: 'high' }],
   [
     'indicative',
     {
-      ariaLabel: 'Indicative — treat as directional only',
+      ariaLabelKey: 'indicativeAria',
       className: 'text-muted-foreground',
-      label: 'Indicative',
+      labelKey: 'indicative',
     },
   ],
-  ['low', { ariaLabel: 'Low confidence', className: 'text-status-warning', label: 'Low' }],
-  ['medium', { ariaLabel: 'Medium confidence', className: 'text-foreground', label: 'Medium' }],
+  ['low', { ariaLabelKey: 'lowAria', className: 'text-status-warning', labelKey: 'low' }],
+  ['medium', { ariaLabelKey: 'mediumAria', className: 'text-foreground', labelKey: 'medium' }],
 ]);
 
 export interface ConfidenceLabelProperties {
@@ -36,12 +38,13 @@ export interface ConfidenceLabelProperties {
  */
 export function ConfidenceLabel({ tier, className }: ConfidenceLabelProperties) {
   const spec = confidenceSpecs.get(tier);
+  const t = useTranslations('designSystem.confidenceLabel');
   return (
     <span
-      aria-label={spec?.ariaLabel}
+      aria-label={spec ? t(spec.ariaLabelKey) : undefined}
       className={cn('text-xs font-medium', spec?.className, className)}
     >
-      {spec?.label}
+      {spec ? t(spec.labelKey) : undefined}
     </span>
   );
 }

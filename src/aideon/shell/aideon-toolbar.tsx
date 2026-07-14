@@ -5,7 +5,9 @@ import {
   useState,
   useSyncExternalStore,
   type ComponentPropsWithoutRef,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from 'react';
 
 import {
@@ -35,6 +37,7 @@ import {
 } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
 import { isDevelopmentBuild, isTauriRuntime } from 'lib/runtime';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useAideonShellControls } from './shell-controls';
 
@@ -150,6 +153,7 @@ function useOptionalTheme() {
  * @param root0.theme - Theme controls when available.
  * @param root0.workspaceCommands - Workspace-provided commands.
  * @param root0.shortcutLabelFor - Formatter for shortcut labels.
+ * @param root0.t - Translator scoped to `shell.toolbar`.
  * @returns Palette-ready command items.
  */
 function buildShellCommands({
@@ -158,12 +162,14 @@ function buildShellCommands({
   theme,
   workspaceCommands,
   shortcutLabelFor,
+  t = (key: string) => key,
 }: {
   readonly sidebar: ReturnType<typeof useOptionalSidebar>;
   readonly shell: ReturnType<typeof useAideonShellControls>;
   readonly theme: ReturnType<typeof useOptionalTheme>;
   readonly workspaceCommands: readonly AideonCommandItem[];
   readonly shortcutLabelFor: (letter: string) => string;
+  readonly t?: (key: string) => string;
 }): AideonCommandItem[] {
   const viewCommands: AideonCommandItem[] = [
     ...(sidebar
@@ -171,7 +177,7 @@ function buildShellCommands({
           {
             id: HOST_SHELL_COMMAND_IDS.toggleNavigation,
             group: 'View',
-            label: 'Toggle navigation',
+            label: t('toggleNavigation'),
             shortcut: shortcutLabelFor('B'),
             onSelect: () => {
               sidebar.toggleSidebar();
@@ -184,7 +190,7 @@ function buildShellCommands({
           {
             id: HOST_SHELL_COMMAND_IDS.toggleInspector,
             group: 'View',
-            label: 'Toggle inspector',
+            label: t('toggleInspector'),
             shortcut: shortcutLabelFor('I'),
             onSelect: () => {
               shell.toggleInspector();
@@ -199,7 +205,7 @@ function buildShellCommands({
         {
           id: 'theme.system',
           group: 'Theme',
-          label: 'Use system theme',
+          label: t('useSystemTheme'),
           onSelect: () => {
             theme.setTheme('system');
           },
@@ -207,7 +213,7 @@ function buildShellCommands({
         {
           id: 'theme.light',
           group: 'Theme',
-          label: 'Light theme',
+          label: t('lightTheme'),
           onSelect: () => {
             theme.setTheme('light');
           },
@@ -215,7 +221,7 @@ function buildShellCommands({
         {
           id: 'theme.dark',
           group: 'Theme',
-          label: 'Dark theme',
+          label: t('darkTheme'),
           onSelect: () => {
             theme.setTheme('dark');
           },
@@ -406,6 +412,7 @@ function ThemeMenu({
 }: {
   readonly theme: NonNullable<ReturnType<typeof useOptionalTheme>>;
 }) {
+  const t = useTranslations('shell.toolbar');
   const currentTheme = theme.theme ?? 'system';
   const icon = (() => {
     if (currentTheme === 'dark') {
@@ -420,7 +427,13 @@ function ThemeMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" className="size-7" aria-label="Theme">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          aria-label={t('theme')}
+        >
           {icon}
         </Button>
       </DropdownMenuTrigger>
@@ -430,21 +443,21 @@ function ThemeMenu({
             theme.setTheme('system');
           }}
         >
-          System
+          {t('themeSystem')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => {
             theme.setTheme('light');
           }}
         >
-          Light
+          {t('themeLight')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => {
             theme.setTheme('dark');
           }}
         >
-          Dark
+          {t('themeDark')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -501,6 +514,8 @@ function ToolbarStartSection({
   readonly onOpenCommandPalette: () => void;
   readonly onOpenShortcuts: () => void;
 }) {
+  const t = useTranslations('shell.toolbar');
+  const tPalette = useTranslations('shell.commandPalette');
   return (
     <ToolbarSection className="min-w-0 gap-2">
       {sidebar ? <SidebarTrigger className="size-7" /> : undefined}
@@ -510,7 +525,7 @@ function ToolbarStartSection({
           variant="ghost"
           size="icon"
           className="size-7"
-          aria-label="Toggle inspector"
+          aria-label={t('toggleInspector')}
           onClick={() => {
             shell.toggleInspector();
           }}
@@ -537,8 +552,8 @@ function ToolbarStartSection({
         variant="ghost"
         size="sm"
         className="text-muted-foreground hidden h-7 gap-1.5 px-2 md:inline-flex"
-        aria-label="Open command palette"
-        title="Command palette"
+        aria-label={t('openCommandPalette')}
+        title={tPalette('title')}
         onClick={onOpenCommandPalette}
       >
         <CommandIcon className="size-4" />
@@ -616,6 +631,105 @@ function ToolbarStatusMessage({ statusMessage }: { readonly statusMessage?: stri
 }
 
 /**
+ * Assemble the full command-palette list from shell, workspace, help, and debug sources.
+ * @param root0 - Inputs for the memoised command list.
+ * @param root0.sidebar - Sidebar controls when available.
+ * @param root0.shell - Shell controls when available.
+ * @param root0.theme - Theme controls when available.
+ * @param root0.workspaceCommands - Workspace-provided commands.
+ * @param root0.shortcutLabelFor - Formatter for shortcut labels.
+ * @param root0.isDevelopment - Whether debug-only commands should be included.
+ * @param root0.openStyleguide - Opens the styleguide window.
+ * @param root0.setShortcutsOpen - Toggles the keyboard-shortcuts dialog.
+ * @param root0.t - Translator scoped to `shell.toolbar`.
+ * @returns Palette-ready command items.
+ */
+function useShellCommandList({
+  sidebar,
+  shell,
+  theme,
+  workspaceCommands,
+  shortcutLabelFor,
+  isDevelopment,
+  openStyleguide,
+  setShortcutsOpen,
+  t,
+}: {
+  readonly sidebar: ReturnType<typeof useOptionalSidebar>;
+  readonly shell: ReturnType<typeof useAideonShellControls>;
+  readonly theme: ReturnType<typeof useOptionalTheme>;
+  readonly workspaceCommands: readonly AideonCommandItem[];
+  readonly shortcutLabelFor: (letter: string) => string;
+  readonly isDevelopment: boolean;
+  readonly openStyleguide: () => void;
+  readonly setShortcutsOpen: Dispatch<SetStateAction<boolean>>;
+  readonly t: (key: string) => string;
+}): AideonCommandItem[] {
+  return useMemo(() => {
+    const shellCommands = buildShellCommands({
+      sidebar,
+      shell,
+      theme,
+      workspaceCommands,
+      shortcutLabelFor,
+      t,
+    });
+    return [
+      ...shellCommands,
+      {
+        id: 'help.shortcuts',
+        group: 'Help',
+        label: t('keyboardShortcuts'),
+        onSelect: () => {
+          setShortcutsOpen(true);
+        },
+      },
+      ...(isDevelopment
+        ? ([
+            {
+              id: 'debug.styleguide',
+              group: 'Debug',
+              label: t('uiStyleGuide'),
+              onSelect: () => {
+                openStyleguide();
+              },
+            },
+          ] satisfies AideonCommandItem[])
+        : []),
+    ] satisfies AideonCommandItem[];
+  }, [
+    isDevelopment,
+    openStyleguide,
+    setShortcutsOpen,
+    shell,
+    sidebar,
+    theme,
+    workspaceCommands,
+    shortcutLabelFor,
+    t,
+  ]);
+}
+
+/**
+ * Open the command palette in response to the workspace-dispatched global event.
+ * @param setCommandPaletteOpen - Toggles the command-palette dialog.
+ */
+function useWorkspaceCommandPaletteEvent(setCommandPaletteOpen: Dispatch<SetStateAction<boolean>>) {
+  useEffect(() => {
+    if (typeof globalThis === 'undefined') {
+      return;
+    }
+    const handleCommandPalette = () => {
+      setCommandPaletteOpen(true);
+    };
+    globalThis.addEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
+    return () => {
+      globalThis.removeEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
+    };
+  }, [setCommandPaletteOpen]);
+}
+
+/**
  * Application-level toolbar shell for Aideon Desktop.
  * Workspace modules provide `center` (search) and `end` (actions) content.
  * @param root0
@@ -645,6 +759,7 @@ export function AideonToolbar({
   className,
   ...properties
 }: Readonly<AideonToolbarProperties>) {
+  const t = useTranslations('shell.toolbar');
   const isMac = useIsMacPlatform();
   const shortcutLabelFor = useCallback(
     (letter: string) => (isMac ? `⌘${letter}` : `Ctrl+${letter}`),
@@ -668,38 +783,17 @@ export function AideonToolbar({
     globalThis.location.assign('/styleguide');
   }, [isTauri]);
 
-  const commands = useMemo(() => {
-    const shellCommands = buildShellCommands({
-      sidebar,
-      shell,
-      theme,
-      workspaceCommands,
-      shortcutLabelFor,
-    });
-    return [
-      ...shellCommands,
-      {
-        id: 'help.shortcuts',
-        group: 'Help',
-        label: 'Keyboard shortcuts…',
-        onSelect: () => {
-          setShortcutsOpen(true);
-        },
-      },
-      ...(isDevelopment
-        ? ([
-            {
-              id: 'debug.styleguide',
-              group: 'Debug',
-              label: 'UI Style Guide',
-              onSelect: () => {
-                openStyleguide();
-              },
-            },
-          ] satisfies AideonCommandItem[])
-        : []),
-    ] satisfies AideonCommandItem[];
-  }, [isDevelopment, openStyleguide, shell, sidebar, theme, workspaceCommands, shortcutLabelFor]);
+  const commands = useShellCommandList({
+    sidebar,
+    shell,
+    theme,
+    workspaceCommands,
+    shortcutLabelFor,
+    isDevelopment,
+    openStyleguide,
+    setShortcutsOpen,
+    t,
+  });
 
   useBrowserShortcutHandler({
     isTauri,
@@ -720,18 +814,7 @@ export function AideonToolbar({
     },
   });
 
-  useEffect(() => {
-    if (typeof globalThis === 'undefined') {
-      return;
-    }
-    const handleCommandPalette = () => {
-      setCommandPaletteOpen(true);
-    };
-    globalThis.addEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
-    return () => {
-      globalThis.removeEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
-    };
-  }, []);
+  useWorkspaceCommandPaletteEvent(setCommandPaletteOpen);
 
   // macOS overlay titlebar: the traffic lights occupy the top-left ~70px, so
   // the first row's content is inset to clear them. Other platforms get none.
@@ -815,25 +898,27 @@ function AppMenu({
 }) {
   const sidebar = useOptionalSidebar();
   const shell = useAideonShellControls();
+  const t = useTranslations('shell.toolbar');
+  const tPalette = useTranslations('shell.commandPalette');
 
   return (
     <Menubar className="border-none bg-transparent p-0 shadow-none">
       <MenubarMenu>
-        <MenubarTrigger className="px-2 py-1 text-sm font-medium">App</MenubarTrigger>
+        <MenubarTrigger className="px-2 py-1 text-sm font-medium">{t('menuApp')}</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem disabled>Preferences…</MenubarItem>
-          <MenubarItem disabled>Check for updates…</MenubarItem>
+          <MenubarItem disabled>{t('preferences')}</MenubarItem>
+          <MenubarItem disabled>{t('checkForUpdates')}</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
       <MenubarMenu>
-        <MenubarTrigger className="px-2 py-1 text-sm font-medium">View</MenubarTrigger>
+        <MenubarTrigger className="px-2 py-1 text-sm font-medium">{t('menuView')}</MenubarTrigger>
         <MenubarContent>
           <MenubarItem
             onSelect={() => {
               onOpenCommandPalette();
             }}
           >
-            Command palette{' '}
+            {tPalette('title')}{' '}
             <span className="text-muted-foreground ml-auto text-xs">{shortcutLabelFor('K')}</span>
           </MenubarItem>
           <MenubarItem
@@ -842,7 +927,7 @@ function AppMenu({
               sidebar?.toggleSidebar();
             }}
           >
-            Toggle navigation
+            {t('toggleNavigation')}
           </MenubarItem>
           <MenubarItem
             disabled={!shell}
@@ -850,19 +935,19 @@ function AppMenu({
               shell?.toggleInspector();
             }}
           >
-            Toggle inspector
+            {t('toggleInspector')}
           </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
       <MenubarMenu>
-        <MenubarTrigger className="px-2 py-1 text-sm font-medium">Help</MenubarTrigger>
+        <MenubarTrigger className="px-2 py-1 text-sm font-medium">{t('menuHelp')}</MenubarTrigger>
         <MenubarContent>
           <MenubarItem
             onSelect={() => {
               onOpenShortcuts();
             }}
           >
-            Keyboard shortcuts…
+            {t('keyboardShortcuts')}
           </MenubarItem>
           {showDebugItems ? (
             <MenubarItem
@@ -870,10 +955,10 @@ function AppMenu({
                 onOpenStyleguide();
               }}
             >
-              UI Style Guide
+              {t('uiStyleGuide')}
             </MenubarItem>
           ) : undefined}
-          <MenubarItem disabled>About Aideon</MenubarItem>
+          <MenubarItem disabled>{t('aboutAideon')}</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
     </Menubar>

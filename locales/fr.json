@@ -1,0 +1,404 @@
+{
+  "app": {
+    "metadata": {
+      "title": "Aideon",
+      "description": "Aideon Desktop shell hosting Praxis workspaces."
+    },
+    "shell": {
+      "heading": "Aideon",
+      "tagline": "Desktop shell for Praxis workspaces and tools.",
+      "modeDesktop": "Desktop"
+    },
+    "splash": {
+      "bootstrapping": "Bootstrapping workspace...",
+      "starting": "Starting…",
+      "title": "Aideon Praxis",
+      "lines": {
+        "reticulatingSplines": "Reticulating splines…",
+        "weavingTwinOrbits": "Weaving twin orbits…",
+        "replayingFutureStates": "Replaying future states…",
+        "coolingHotPaths": "Cooling hot paths…",
+        "aligningDecisionMatrices": "Aligning decision matrices…",
+        "seedingKnowledgeGraph": "Seeding knowledge graph…",
+        "collapsingBranchesToPresent": "Collapsing branches to present…",
+        "normalisingCapabilityModels": "Normalising capability models…",
+        "hardeningIsolationLayer": "Hardening isolation layer…",
+        "bootstrappingSidecar": "Bootstrapping sidecar…",
+        "calibratingMaturityPlateaus": "Calibrating maturity plateaus…",
+        "schedulingTimeDimensionRenders": "Scheduling time-dimension renders…"
+      }
+    },
+    "hostStatus": {
+      "setupFailedBanner": "Setup failed — see Status for details.",
+      "backendReady": "Backend ready…",
+      "migrating": "Migrating…",
+      "setupFailedTitle": "Setup failed",
+      "setupFailedDescription": "The host failed to initialize. Open Status to view diagnostics and recovery actions.",
+      "openStatus": "Open Status",
+      "title": "Host status",
+      "allServicesInitialising": "All services initialising…",
+      "baselineDataset": "Baseline dataset:",
+      "schemaVersion": "Schema version:"
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Personalize the desktop experience.",
+      "colorTheme": {
+        "title": "Color theme",
+        "description": "Choose the primary color palette for the UI. Changes persist automatically.",
+        "defaultBadge": "Default"
+      }
+    },
+    "styleguide": {
+      "title": "Styleguide",
+      "description": "Design system documentation pending."
+    },
+    "errorBoundary": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred while rendering Aideon. Reload the app to recover.",
+      "renderError": "Render error",
+      "devDetails": "Details are shown because this is a development build.",
+      "fatalError": "The application encountered a fatal UI error.",
+      "reload": "Reload",
+      "copyDetails": "Copy details"
+    }
+  },
+  "shell": {
+    "commandPalette": {
+      "title": "Command palette",
+      "searchPlaceholder": "Search commands…",
+      "noResults": "No results found.",
+      "defaultGroup": "Commands"
+    },
+    "toolbar": {
+      "toggleNavigation": "Toggle navigation",
+      "toggleInspector": "Toggle inspector",
+      "theme": "Theme",
+      "useSystemTheme": "Use system theme",
+      "lightTheme": "Light theme",
+      "darkTheme": "Dark theme",
+      "themeSystem": "System",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "openCommandPalette": "Open command palette",
+      "keyboardShortcuts": "Keyboard shortcuts…",
+      "uiStyleGuide": "UI Style Guide",
+      "preferences": "Preferences…",
+      "checkForUpdates": "Check for updates…",
+      "aboutAideon": "About Aideon",
+      "menuApp": "App",
+      "menuView": "View",
+      "menuHelp": "Help"
+    },
+    "keyboardShortcutsDialog": {
+      "title": "Keyboard shortcuts",
+      "description": "Common shortcuts in Aideon Desktop.",
+      "columnCategory": "Category",
+      "columnAction": "Action",
+      "columnShortcut": "Shortcut",
+      "categoryFile": "File",
+      "categoryShell": "Shell",
+      "actions": {
+        "open": "Open…",
+        "saveAs": "Save As…",
+        "print": "Print…",
+        "commandPalette": "Command palette",
+        "toggleNavigation": "Toggle navigation",
+        "toggleInspector": "Toggle inspector"
+      }
+    },
+    "canvasRuntime": {
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "resetView": "Reset View",
+      "panHint": "Middle Click or Shift+Drag to Pan · Scroll to Zoom"
+    },
+    "selection": {
+      "count": "{count, plural, =0 {No selection} one {# item selected} other {# items selected}}"
+    }
+  },
+  "workspace": {
+    "foundation": {
+      "title": "Workspace foundation",
+      "description": "Open an existing workspace or create a new one.",
+      "pathPlaceholder": "/path/to/workspace",
+      "folderAriaLabel": "Workspace folder",
+      "browse": "Browse…",
+      "create": "Create",
+      "open": "Open",
+      "operationFailed": "Workspace operation failed",
+      "status": {
+        "title": "Foundation status",
+        "description": "Applied operations and current derived-runtime rebuild hash.",
+        "workspace": "Workspace",
+        "appliedOperations": "Applied operations",
+        "rebuildHash": "Rebuild hash",
+        "rebuildDerivedRuntime": "Rebuild derived runtime"
+      }
+    },
+    "entities": {
+      "title": "Entities",
+      "description": "Entities authored against the compiled effective schema.",
+      "entityType": "Entity type",
+      "chooseTypePlaceholder": "Choose a type…",
+      "createLabel": "Create {label}",
+      "empty": "No entities yet. Create one — it lands in the canonical log first, then appears here from the derived projection."
+    },
+    "relationships": {
+      "title": "Relationships",
+      "description": "Author relationships between entities. Endpoint types, self-links, duplicates, and attributes are validated against the metamodel before the write enters the log; the inspector below re-derives from the op log on every rebuild.",
+      "relationship": "Relationship",
+      "source": "Source",
+      "destination": "Destination",
+      "mode": "mode",
+      "chooseRelationshipPlaceholder": "Choose a relationship…",
+      "chooseSourcePlaceholder": "Choose a source entity…",
+      "chooseDestinationPlaceholder": "Choose a destination entity…",
+      "create": "Create relationship",
+      "empty": "No relationships yet. Author one — an invalid endpoint, self-link, or duplicate is refused at the boundary and never lands."
+    },
+    "claims": {
+      "assertTitle": "Assert a plan / actual claim",
+      "entity": "Entity",
+      "attribute": "Attribute",
+      "value": "Value",
+      "layer": "Layer",
+      "validFrom": "Valid from",
+      "validTo": "Valid to (blank = open)",
+      "assert": "Assert claim",
+      "chooseEntityPlaceholder": "Choose an entity…",
+      "chooseAttributePlaceholder": "Choose an attribute…",
+      "chooseValuePlaceholder": "Choose value…"
+    },
+    "catalogue": {
+      "title": "Catalogue at a viewpoint",
+      "description": "Resolve entities as of a chosen valid time, under a layer policy.",
+      "asOfValidTime": "As of (valid time)",
+      "layerPolicy": "Layer policy",
+      "actualOverPlan": "Actual over plan",
+      "planOnly": "Plan only",
+      "emptyAtViewpoint": "No entities resolve at this viewpoint.",
+      "emptySlot": "no resolved slots here"
+    },
+    "diff": {
+      "title": "Diff two viewpoints",
+      "description": "Compare resolved entities between two valid-time viewpoints.",
+      "before": "Before (as of)",
+      "after": "After (as of)",
+      "compare": "Compare",
+      "empty": "No differences between these viewpoints."
+    }
+  },
+  "platform": {
+    "widgetLibraryDialog": {
+      "title": "Add widget",
+      "description": "Choose a widget type to add to this layout.",
+      "empty": "No widget types available.",
+      "close": "Close"
+    },
+    "commandStack": {
+      "selectionChange": "Selection change",
+      "templateChange": "Template change",
+      "templateName": "Template {number}",
+      "savedFromRuntime": "Saved from runtime",
+      "scenarioChange": "Scenario change",
+      "operationRejected": "Operation rejected."
+    }
+  },
+  "adapters": {
+    "dialog": {
+      "chooseWorkspaceFolder": "Choose a workspace folder"
+    }
+  },
+  "engines": {
+    "praxis": {
+      "label": "Praxis",
+      "widgets": {
+        "graph": {
+          "label": "Graph",
+          "description": "Time-sliced entity graph with selection + meta focus."
+        },
+        "catalogue": {
+          "label": "Catalogue",
+          "description": "Tabular slice of entities with quick selection.",
+          "columnName": "Name",
+          "columnOwner": "Owner",
+          "columnState": "State",
+          "loading": "Loading catalogue...",
+          "empty": "No entities match this view",
+          "boolYes": "Yes",
+          "boolNo": "No"
+        },
+        "matrix": {
+          "label": "Matrix",
+          "description": "Coverage grid for two entity types and their relationships.",
+          "loading": "Loading matrix...",
+          "empty": "Add rows and columns to visualise relationships",
+          "rowsColumns": "Rows / Columns",
+          "legendConnected": "Connected",
+          "legendMissing": "Missing",
+          "legendSelectionOverlap": "Selection overlap"
+        },
+        "chart": {
+          "label": "Chart",
+          "description": "KPIs or trend lines for the active scenario.",
+          "loading": "Loading chart…"
+        },
+        "toolbar": {
+          "awaitingTwinData": "Awaiting twin data",
+          "asOf": "As of {timestamp}",
+          "eyebrow": "Widget",
+          "refresh": "Refresh"
+        },
+        "graphWidget": {
+          "backgroundDots": "Dots",
+          "backgroundLines": "Lines",
+          "backgroundCross": "Cross",
+          "backgroundDotsAria": "Dots background",
+          "backgroundLinesAria": "Lines background",
+          "backgroundCrossAria": "Cross background",
+          "miniMap": "Mini map",
+          "controls": "Controls",
+          "autoLayout": "Auto layout",
+          "metaActionsHint": "Use node search or right-click selection for meta actions.",
+          "openNodeSearch": "Open node search",
+          "errorBadge": "Error",
+          "viewMetaModelEntry": "View meta-model entry",
+          "loadingGraph": "Loading graph"
+        }
+      },
+      "layouts": {
+        "executiveOverview": {
+          "seedName": "Executive Overview",
+          "title": "Executive overview",
+          "description": "Graph + KPI + catalogue snapshot for leadership reviews.",
+          "twinOverviewGraph": "Twin overview graph",
+          "criticalServicesKpi": "Critical services KPI",
+          "capabilityCatalogue": "Capability catalogue"
+        },
+        "explorerWorkspace": {
+          "title": "Explorer workspace",
+          "description": "Graph, matrix, and comparative chart for deeper analysis.",
+          "explorerGraph": "Explorer graph",
+          "capabilityServiceCoverage": "Capability ↔ Service coverage",
+          "capabilityMaturity": "Capability maturity",
+          "capabilityRollup": "Capability rollup"
+        },
+        "seedNames": {
+          "capabilityCatalogue": "Capability Catalogue",
+          "capabilityServiceMatrix": "Capability ↔ Service Matrix",
+          "operationalKpis": "Operational KPIs",
+          "velocityTrend": "Velocity trend",
+          "capabilityMaturity": "Capability maturity"
+        },
+        "columnName": "Name",
+        "columnOwner": "Owner",
+        "columnState": "State",
+        "measureOperationalReadiness": "Operational readiness"
+      },
+      "templateScreen": {
+        "template": "Template",
+        "scenario": "Scenario",
+        "intro": "Pair a scenario with a template to explore timelines, moments, and widgets.",
+        "chooseTemplate": "Choose template",
+        "saveTemplate": "Save template",
+        "createWidget": "Create widget",
+        "searchPlaceholder": "Search timelines, nodes, catalogues",
+        "tabOverview": "Overview",
+        "tabTimeline": "Timeline",
+        "tabActivity": "Activity",
+        "snapshotOverviewTitle": "Snapshot overview",
+        "snapshotOverviewDescription": "Read-only metrics for the current scenario point-in-time.",
+        "timeCursor": {
+          "title": "Time cursor",
+          "description": "Scrub the active timeline to a specific moment and refresh the snapshot.",
+          "timeline": "Timeline",
+          "moment": "Moment",
+          "timelineSlider": "Timeline slider",
+          "snapshotTimestamp": "Snapshot timestamp",
+          "refreshTimelines": "Refresh timelines",
+          "reloadSnapshot": "Reload snapshot",
+          "applyToPrimary": "Apply to primary"
+        },
+        "properties": {
+          "title": "Properties",
+          "emptyHint": "Select a widget, node or edge to edit its properties.",
+          "widgetProperties": "Widget properties",
+          "nodeProperties": "Node properties",
+          "edgeProperties": "Edge properties",
+          "name": "Name",
+          "dataSource": "Data source",
+          "layout": "Layout"
+        }
+      },
+      "temporalPanel": {
+        "layerPlan": "Plan",
+        "mergeRequiresResolution": "Merge requires manual resolution."
+      }
+    }
+  },
+  "designSystem": {
+    "errorFrame": {
+      "label": "Error",
+      "retry": "Retry"
+    },
+    "warningBanner": {
+      "label": "Warning"
+    },
+    "partialBanner": {
+      "label": "Partial result"
+    },
+    "rebuildingIndicator": {
+      "label": "Rebuilding…"
+    },
+    "staleBadge": {
+      "label": "Stale"
+    },
+    "confidenceLabel": {
+      "high": "High",
+      "indicative": "Indicative",
+      "low": "Low",
+      "medium": "Medium",
+      "highAria": "High confidence",
+      "indicativeAria": "Indicative — treat as directional only",
+      "lowAria": "Low confidence",
+      "mediumAria": "Medium confidence"
+    },
+    "provenanceBadge": {
+      "asserted": "Asserted",
+      "generated": "Generated",
+      "inferred": "Inferred"
+    },
+    "filterBar": {
+      "placeholder": "Filter…"
+    },
+    "nodeSearch": {
+      "placeholder": "Search nodes...",
+      "noResults": "No results found.",
+      "headingNodes": "Nodes",
+      "defaultTitle": "Node Search"
+    },
+    "colorTheme": {
+      "corpBlue": {
+        "label": "Corporate Blue",
+        "description": "Default Aideon palette."
+      },
+      "violet": {
+        "label": "Violet",
+        "description": "Bright violet accents with crisp neutrals."
+      },
+      "green": {
+        "label": "Green",
+        "description": "Fresh emerald accents with cool neutrals."
+      },
+      "claude": {
+        "label": "Claude",
+        "description": "Warm clay tones with an amber primary."
+      },
+      "graphite": {
+        "label": "Graphite",
+        "description": "Low-saturation graphite accents."
+      }
+    }
+  }
+}

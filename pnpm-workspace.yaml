@@ -11,6 +11,8 @@ allowBuilds:
   esbuild: false
   msw: false
   sharp: false
+  '@parcel/watcher': true
+  '@swc/core': true
 minimumReleaseAgeExclude:
   - '@storybook/addon-a11y@0.0.0-pr-35110-sha-d663f060'
   - '@storybook/addon-themes@0.0.0-pr-35110-sha-d663f060'

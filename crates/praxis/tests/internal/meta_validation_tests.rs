@@ -18,6 +18,7 @@ fn string_attr(name: &str, required: bool) -> MetaAttribute {
         value_type: MetaAttributeKind::String,
         required,
         enum_values: vec![],
+        cardinality: None,
     }
 }
 
@@ -28,6 +29,7 @@ fn enum_attr(name: &str, variants: &[&str]) -> MetaAttribute {
         value_type: MetaAttributeKind::Enum,
         required: true,
         enum_values: variants.iter().map(|v| (*v).to_string()).collect(),
+        cardinality: None,
     }
 }
 

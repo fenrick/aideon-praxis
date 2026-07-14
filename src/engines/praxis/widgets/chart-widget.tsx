@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import { AlertTriangle, ArrowDownRight, ArrowUpRight } from 'design-system/icons';
 
 import { toErrorMessage } from 'praxis/lib/errors';
@@ -20,6 +22,7 @@ interface ChartWidgetProperties {
  * @param root0.reloadVersion
  */
 export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
+  const t = useTranslations('engines.praxis.widgets.chart');
   const [model, setModel] = useState<ChartViewModel | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
@@ -46,7 +49,7 @@ export function ChartWidget({ widget, reloadVersion }: ChartWidgetProperties) {
     });
   }, [loadView, reloadVersion]);
 
-  let body: ReactNode = <p className="text-muted-foreground text-sm">Loading chart…</p>;
+  let body: ReactNode = <p className="text-muted-foreground text-sm">{t('loading')}</p>;
   if (error) {
     body = <ChartError message={error} />;
   } else if (model) {

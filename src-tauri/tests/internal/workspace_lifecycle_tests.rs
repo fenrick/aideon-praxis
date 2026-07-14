@@ -37,6 +37,8 @@ fn lifecycle_app() -> (App<MockRuntime>, WebviewWindow<MockRuntime>) {
             super::workspace_nodes,
             super::workspace_metamodel_types,
             super::workspace_author_typed_node,
+            super::workspace_author_typed_edge,
+            super::workspace_edges,
             super::workspace_set_claim,
             super::workspace_state_at,
             super::workspace_diff
@@ -532,5 +534,78 @@ async fn typed_authoring_validates_and_a_rejected_write_never_enters_the_op_log(
     assert_eq!(
         after["result"]["appliedOpCount"], op_count,
         "a rejected write never enters model/ops/"
+    );
+}
+
+/// Golden-journey step 3 at the host boundary: a valid entity + relationship
+/// land through the typed commands, and a metamodel-invalid relationship is
+/// refused with the canonical op log left unchanged.
+#[tokio::test]
+async fn author_typed_edge_round_trips_and_rejects_at_the_boundary() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    // Author an Application and a Capability (both valid).
+    let app = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Application", "props": { "name": "Insight Hub" } }),
+    )
+    .expect("app envelope");
+    assert_eq!(app["status"], "ok");
+    let app_id = app["result"]["nodeId"]
+        .as_str()
+        .expect("app node id")
+        .to_string();
+
+    let cap = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Capability", "props": { "name": "Customer Insight" } }),
+    )
+    .expect("cap envelope");
+    assert_eq!(cap["status"], "ok");
+    let cap_id = cap["result"]["nodeId"]
+        .as_str()
+        .expect("cap node id")
+        .to_string();
+
+    // Application realises Capability — a valid seed relationship; it lands.
+    let edge = dispatch(
+        &webview,
+        "workspace_author_typed_edge",
+        json!({ "relType": "realises", "srcId": app_id, "dstId": cap_id, "props": {} }),
+    )
+    .expect("edge envelope");
+    assert_eq!(edge["status"], "ok", "valid relationship lands: {edge:?}");
+
+    let edges = dispatch(&webview, "workspace_edges", json!({})).expect("edges ok");
+    assert_eq!(edges["result"].as_array().expect("edge array").len(), 1);
+
+    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    let op_count = before["result"]["appliedOpCount"].clone();
+
+    // A wrong-endpoint relationship (Capability cannot be a `realises` source) is refused …
+    let bad = dispatch(
+        &webview,
+        "workspace_author_typed_edge",
+        json!({ "relType": "realises", "srcId": cap_id, "dstId": app_id, "props": {} }),
+    )
+    .expect("bad envelope returned");
+    assert_eq!(bad["status"], "error");
+    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
+
+    // … and the canonical op log is unchanged (the M1 oracle assertion).
+    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(
+        after["result"]["appliedOpCount"], op_count,
+        "a rejected relationship never enters model/ops/"
+    );
+    let edges_after = dispatch(&webview, "workspace_edges", json!({})).expect("edges ok");
+    assert_eq!(
+        edges_after["result"].as_array().expect("edge array").len(),
+        1
     );
 }

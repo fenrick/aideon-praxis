@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
 import { invokeIpc } from '@/adapters/ipc';
 import type {
+  EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
   PropertyDelta,
@@ -56,6 +57,17 @@ const NODES: NodeRecord[] = [
   },
 ];
 
+const EDGES: EdgeRecord[] = [
+  {
+    edgeId: '22222222-0000-4000-8000-000000000009',
+    typeId: NONE,
+    typeLabel: 'realises',
+    srcId: '11111111-0000-4000-8000-000000000003',
+    dstId: '11111111-0000-4000-8000-000000000004',
+    tombstoned: false,
+  },
+];
+
 const RESOLVED: ResolvedEntity[] = [
   {
     nodeId: '11111111-0000-4000-8000-000000000003',
@@ -74,42 +86,41 @@ const DELTAS: PropertyDelta[] = [
   },
 ];
 
+/** Resolve the workspace status (shared by the create/open/status commands). */
+const resolveStatus = () => Promise.resolve(STATUS);
+
+/**
+ * Build the per-command IPC response map for a given node listing.
+ * @param nodes - Node listing the host returns.
+ */
+function hostResponses(nodes: NodeRecord[]): Map<string, () => Promise<unknown>> {
+  const authoredNode = () => Promise.resolve(nodes[0]);
+  return new Map<string, () => Promise<unknown>>([
+    ['workspace_create', resolveStatus],
+    ['workspace_open', resolveStatus],
+    ['workspace_status', resolveStatus],
+    ['workspace_nodes', () => Promise.resolve(nodes)],
+    ['workspace_edges', () => Promise.resolve(EDGES)],
+    ['workspace_author_typed_edge', () => Promise.resolve(EDGES[0])],
+    ['workspace_metamodel_types', () => Promise.resolve(TYPES)],
+    ['workspace_state_at', () => Promise.resolve(RESOLVED)],
+    ['workspace_diff', () => Promise.resolve(DELTAS)],
+    ['workspace_set_claim', () => Promise.resolve()],
+    ['workspace_author_node', authoredNode],
+    ['workspace_author_typed_node', authoredNode],
+  ]);
+}
+
 /**
  * Route the mocked IPC boundary per command.
  * @param nodes - Node listing the host returns.
  */
 function mockHost(nodes: NodeRecord[]) {
-  invokeMock.mockImplementation((command: string) => {
-    switch (command) {
-      case 'workspace_create':
-      case 'workspace_open':
-      case 'workspace_status': {
-        return Promise.resolve(STATUS);
-      }
-      case 'workspace_nodes': {
-        return Promise.resolve(nodes);
-      }
-      case 'workspace_metamodel_types': {
-        return Promise.resolve(TYPES);
-      }
-      case 'workspace_state_at': {
-        return Promise.resolve(RESOLVED);
-      }
-      case 'workspace_diff': {
-        return Promise.resolve(DELTAS);
-      }
-      case 'workspace_set_claim': {
-        return Promise.resolve();
-      }
-      case 'workspace_author_node':
-      case 'workspace_author_typed_node': {
-        return Promise.resolve(nodes[0]);
-      }
-      default: {
-        return Promise.reject(new Error(`unmocked command ${command}`));
-      }
-    }
-  });
+  const responses = hostResponses(nodes);
+  invokeMock.mockImplementation(
+    (command: string) =>
+      responses.get(command)?.() ?? Promise.reject(new Error(`unmocked command ${command}`)),
+  );
 }
 
 /**
@@ -164,6 +175,52 @@ describe('WorkspaceFoundationPanel', () => {
     expect(screen.getByLabelText('Entity type')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create entity' })).toBeDisabled();
     expect(invokeMock).toHaveBeenCalledWith('workspace_metamodel_types', {});
+  });
+
+  it('lists relationships and gates the edge-authoring form', async () => {
+    mockHost(NODES);
+    render(<WorkspaceFoundationPanel />);
+    await openWorkspace('Open');
+
+    await waitFor(() => {
+      expect(screen.getByText('Relationships')).toBeInTheDocument();
+    });
+    // The derived edge inspector re-derives from the op log.
+    const edges = screen.getByRole('list', { name: 'Edge list' });
+    expect(edges.children).toHaveLength(1);
+    expect(screen.getByText('realises')).toBeInTheDocument();
+    expect(invokeMock).toHaveBeenCalledWith('workspace_edges', {});
+    // The create action is gated until a verb + both endpoints are chosen.
+    // (The pick-and-author interaction is exercised in the Storybook play test.)
+    expect(screen.getByLabelText('Relationship')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create relationship' })).toBeDisabled();
+  });
+
+  it('shows an empty relationships state before any edge is authored', async () => {
+    invokeMock.mockImplementation((command: string) => {
+      switch (command) {
+        case 'workspace_create':
+        case 'workspace_status': {
+          return Promise.resolve(STATUS);
+        }
+        case 'workspace_metamodel_types': {
+          return Promise.resolve(TYPES);
+        }
+        case 'workspace_state_at': {
+          return Promise.resolve([]);
+        }
+        // No nodes, no edges yet.
+        default: {
+          return Promise.resolve([]);
+        }
+      }
+    });
+    render(<WorkspaceFoundationPanel />);
+    await openWorkspace('Create');
+
+    await waitFor(() => {
+      expect(screen.getByText(/No relationships yet/)).toBeInTheDocument();
+    });
   });
 
   it('renders the catalogue resolved at a viewpoint with layer provenance', async () => {

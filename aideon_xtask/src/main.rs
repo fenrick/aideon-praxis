@@ -12,6 +12,8 @@ use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 
+mod translation_sync;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -22,6 +24,7 @@ async fn main() -> Result<()> {
         Command::EventManifest(args) => export_event_manifest(args).await,
         Command::ShellCommandManifest(args) => export_shell_command_manifest(args).await,
         Command::CheckCrateBoundaries => check_crate_boundaries(),
+        Command::TranslationSync(args) => translation_sync::run(args).await,
     }
 }
 
@@ -50,6 +53,8 @@ enum Command {
     ShellCommandManifest(ShellCommandManifestArgs),
     /// Check Rust crate dependency direction (engines never import Tauri/host; no Praxis↔Metis edge).
     CheckCrateBoundaries,
+    /// Translate locales/en.json into target locales via the Lara translation API.
+    TranslationSync(translation_sync::TranslationSyncArgs),
 }
 
 #[derive(Parser)]

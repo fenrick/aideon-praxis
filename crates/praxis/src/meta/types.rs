@@ -38,9 +38,12 @@ pub struct MetaAttribute {
     pub required: bool,
     #[serde(rename = "enum", default)]
     pub enum_values: Vec<String>,
+    /// `single` (default) or `multi`; declared explicitly in the seed.
+    #[serde(default)]
+    pub cardinality: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Type)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum MetaAttributeKind {
     String,
@@ -62,6 +65,12 @@ pub struct MetaRelationship {
     pub to: Vec<String>,
     pub directed: Option<bool>,
     pub multiplicity: Option<MetaMultiplicity>,
+    /// Whether a self-referential edge is permitted (declared inline in the seed).
+    #[serde(rename = "allowSelf", default)]
+    pub allow_self: Option<bool>,
+    /// Whether duplicate edges between the same pair are permitted.
+    #[serde(rename = "allowDuplicate", default)]
+    pub allow_duplicate: Option<bool>,
     #[serde(default)]
     pub attributes: Vec<MetaAttribute>,
 }

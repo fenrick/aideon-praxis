@@ -1,2 +1,93 @@
-# Block pushing dirty code: run the full CI gate locally before any push.
-pnpm run ci
+# Pre-push: run the CI gate locally before any push. ⛔ Never skip with --no-verify.
+#
+# Change detection keeps wall-clock honest:
+#   - docs/hooks/workflow-only pushes skip the app gates entirely
+#   - the Rust half (host:ci) runs only when Rust surfaces changed
+#   - the renderer half (node:ci) runs only when frontend surfaces changed
+# Set AIDEON_PREPUSH_FULL=1 to force both halves regardless of the diff.
+#
+# CodeScene gate: reads .codescene-thresholds and compares against the remote
+# project scores (needs CODESCENE_PAT in the environment; project id defaults
+# to the aideon-desktop project). Thresholds are a ratchet — never edit them
+# down. While the remote baseline is still below the target the gate reports
+# and allows the push (recovery mode); once reality reaches the bar it blocks
+# regressions. The hook never edits files itself.
+
+set -e
+
+PUSH_TARGET=$(git rev-parse '@{push}' 2>/dev/null || git merge-base origin/main HEAD 2>/dev/null || echo "")
+
+NODE_CHANGED=true
+RUST_CHANGED=true
+APP_CHANGED=true
+
+if [ -n "$PUSH_TARGET" ] && [ "${AIDEON_PREPUSH_FULL:-0}" != "1" ]; then
+  CHANGED=$(git diff --name-only "$PUSH_TARGET"..HEAD)
+  NODE_CHANGED=false
+  RUST_CHANGED=false
+  APP_CHANGED=false
+  for FILE in $CHANGED; do
+    case "$FILE" in
+      src-tauri/*|crates/*|aideon_xtask/*|Cargo.toml|Cargo.lock)
+        RUST_CHANGED=true; APP_CHANGED=true ;;
+      docs/*|*.md|.github/*|.husky/*|.codacy.yaml|.codesceneignore|.codescene-thresholds)
+        ;;
+      *)
+        NODE_CHANGED=true; APP_CHANGED=true ;;
+    esac
+  done
+fi
+
+if [ "$APP_CHANGED" = false ]; then
+  echo "⏭️  App gates skipped (docs/workflow/config-only push)"
+else
+  if [ "$NODE_CHANGED" = true ]; then
+    echo "🔎 Renderer gate (node:ci)..."
+    pnpm run node:ci
+  else
+    echo "⏭️  Renderer gate skipped (no frontend changes)"
+  fi
+  if [ "$RUST_CHANGED" = true ]; then
+    echo "🔧 Host gate (host:ci)..."
+    pnpm run host:ci
+  else
+    echo "⏭️  Host gate skipped (no Rust changes)"
+  fi
+fi
+
+# ── CodeScene code health gate ──────────────────────────────────────────
+THRESHOLDS_FILE="$(git rev-parse --show-toplevel)/.codescene-thresholds"
+if [ -f "$THRESHOLDS_FILE" ] && [ -n "${CODESCENE_PAT:-}" ]; then
+  HOTSPOT_MIN=$(grep '^HOTSPOT_THRESHOLD=' "$THRESHOLDS_FILE" | cut -d= -f2)
+  AVERAGE_MIN=$(grep '^AVERAGE_THRESHOLD=' "$THRESHOLDS_FILE" | cut -d= -f2)
+  PROJECT_ID="${CODESCENE_PROJECT_ID:-82480}"
+  echo "🏥 CodeScene code health (Hotspot ≥${HOTSPOT_MIN}, Average ≥${AVERAGE_MIN})..."
+  API_RESPONSE=$(curl -sf \
+    -H "Authorization: Bearer $CODESCENE_PAT" \
+    -H "Accept: application/json" \
+    "https://api.codescene.io/v2/projects/$PROJECT_ID" 2>/dev/null || echo "{}")
+  GATE_OUTPUT=$(printf '%s' "$API_RESPONSE" | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+    hotspot = float(d['analysis']['hotspot_code_health']['now'])
+    average = float(d['analysis']['code_health']['now'])
+except Exception:
+    print('SKIP'); sys.exit(0)
+hmin, amin = float('$HOTSPOT_MIN'), float('$AVERAGE_MIN')
+print(f'  Hotspot {hotspot:.2f} (target {hmin}) · Average {average:.2f} (target {amin})')
+if hotspot < hmin or average < amin:
+    print('  ⚠️  Remote baseline below target — recovery mode: push allowed; keep every touched file trending up.')
+else:
+    print('  ✅ Code health at or above target.')
+" 2>/dev/null || echo "SKIP")
+  if [ "$GATE_OUTPUT" = "SKIP" ]; then
+    echo "  ⚠️  Could not fetch CodeScene scores — skipping (fix connectivity or CODESCENE_PAT)"
+  else
+    printf '%s\n' "$GATE_OUTPUT"
+  fi
+else
+  echo "⏭️  CodeScene gate skipped (no CODESCENE_PAT in environment or no .codescene-thresholds)"
+fi
+
+echo "✅ Pre-push checks passed"

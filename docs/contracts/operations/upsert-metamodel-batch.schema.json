@@ -10,6 +10,7 @@
     "fields",
     "type_fields",
     "edge_type_rules",
+    "validation",
     "metamodel_version",
     "metamodel_source"
   ],
@@ -18,6 +19,7 @@
     "fields": { "type": "array", "items": { "$ref": "#/$defs/fieldDef" } },
     "type_fields": { "type": "array", "items": { "$ref": "#/$defs/typeFieldDef" } },
     "edge_type_rules": { "type": "array", "items": { "$ref": "#/$defs/edgeTypeRule" } },
+    "validation": { "$ref": "#/$defs/validationRules" },
     "metamodel_version": { "type": ["string", "null"] },
     "metamodel_source": { "type": ["string", "null"] }
   },
@@ -39,6 +41,22 @@
       "type": "string",
       "enum": ["str", "i64", "f64", "bool", "time", "ref", "blob"],
       "description": "ValueType value tag as a stable schema-owned lower name. `json` is not a declarable field type (ADR-0038); an opaque document is a `blob` BlobRef."
+    },
+    "fieldKind": {
+      "type": "string",
+      "enum": ["string", "text", "number", "enum", "datetime", "boolean", "blob"],
+      "description": "Authored semantic kind. Richer than valueType: string/text/enum all store as `str` but validate and compile differently. Drives the M1 effective-schema slot descriptor (max_length, enum variants, datetime format)."
+    },
+    "validationRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["string_max_length", "text_max_length", "enum_case_sensitive"],
+      "description": "Global attribute validation rules, carried so the effective schema is op-log-rebuildable. Length caps are character counts (small integers, JSON numbers); null = uncapped.",
+      "properties": {
+        "string_max_length": { "type": ["integer", "null"], "minimum": 0 },
+        "text_max_length": { "type": ["integer", "null"], "minimum": 0 },
+        "enum_case_sensitive": { "type": "boolean" }
+      }
     },
     "value": {
       "type": "object",
@@ -75,11 +93,33 @@
     "typeDef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type_id", "applies_to", "label", "is_abstract", "parent_type_id"],
+      "required": [
+        "type_id",
+        "key",
+        "applies_to",
+        "label",
+        "category",
+        "effect_types",
+        "is_abstract",
+        "parent_type_id"
+      ],
       "properties": {
         "type_id": { "$ref": "#/$defs/id" },
+        "key": {
+          "type": "string",
+          "description": "Stable domain string id (never changes); the effective-schema/registry key."
+        },
         "applies_to": { "$ref": "#/$defs/entityKind" },
         "label": { "type": "string" },
+        "category": {
+          "type": ["string", "null"],
+          "description": "Authored classification, e.g. Business/Application."
+        },
+        "effect_types": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Plan-effect verbs the type declares (PlanEvent only in the seed)."
+        },
         "is_abstract": { "type": "boolean" },
         "parent_type_id": {
           "$ref": "#/$defs/idOrNull",
@@ -90,11 +130,26 @@
     "fieldDef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["field_id", "label", "value_type", "cardinality_multi", "is_indexed"],
+      "required": [
+        "field_id",
+        "key",
+        "label",
+        "value_type",
+        "semantic_kind",
+        "enum_values",
+        "cardinality_multi",
+        "is_indexed"
+      ],
       "properties": {
         "field_id": { "$ref": "#/$defs/id" },
+        "key": {
+          "type": "string",
+          "description": "Stable domain string id (the attribute name); the effective-schema slot key."
+        },
         "label": { "type": "string" },
         "value_type": { "$ref": "#/$defs/valueType" },
+        "semantic_kind": { "$ref": "#/$defs/fieldKind" },
+        "enum_values": { "type": "array", "items": { "type": "string" } },
         "cardinality_multi": { "type": "boolean" },
         "is_indexed": { "type": "boolean" }
       }
@@ -126,12 +181,32 @@
         "edge_type_id",
         "allowed_src_type_ids",
         "allowed_dst_type_ids",
+        "allow_self",
+        "allow_duplicate",
+        "multiplicity_src",
+        "multiplicity_dst",
         "semantic_direction"
       ],
       "properties": {
         "edge_type_id": { "$ref": "#/$defs/id" },
         "allowed_src_type_ids": { "type": "array", "items": { "$ref": "#/$defs/id" } },
         "allowed_dst_type_ids": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "allow_self": {
+          "type": "boolean",
+          "description": "Whether a self-referential edge is permitted."
+        },
+        "allow_duplicate": {
+          "type": "boolean",
+          "description": "Whether more than one edge between the same ordered endpoint pair is permitted."
+        },
+        "multiplicity_src": {
+          "type": "string",
+          "description": "Source-side multiplicity bound (e.g. one, many)."
+        },
+        "multiplicity_dst": {
+          "type": "string",
+          "description": "Destination-side multiplicity bound (e.g. one, many)."
+        },
         "semantic_direction": { "type": ["string", "null"] }
       }
     }

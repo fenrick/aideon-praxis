@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import { Input } from '../components/ui/input';
 import { cn } from '../lib/utilities';
 
@@ -22,18 +24,20 @@ export interface FilterBarProperties {
  * @param root0.className
  */
 export function FilterBar({
-  placeholder = 'Filter…',
+  placeholder,
   value,
   onValueChange,
   actionsSlot,
   className,
 }: FilterBarProperties) {
+  const t = useTranslations('designSystem.filterBar');
+  const resolvedPlaceholder = placeholder ?? t('placeholder');
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <Input
         className="flex-1"
         onChange={(event) => onValueChange?.(event.target.value)}
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         type="search"
         value={value}
       />

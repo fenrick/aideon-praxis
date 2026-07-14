@@ -1,6 +1,8 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import {
   Background,
   BackgroundVariant,
@@ -31,6 +33,7 @@ import { Button, ToggleGroup, ToggleGroupItem } from 'design-system';
 import { NodeSearchDialog } from 'design-system/reactflow/node-search';
 import { PraxisNode } from 'design-system/reactflow/praxis-node';
 import { TimelineEdge, type TimelineEdgeData } from 'design-system/reactflow/timeline-edge';
+import type { GraphLayoutNode } from 'dtos';
 import type {
   GraphLayoutContext,
   PraxisGraphWidgetConfig as GraphWidgetConfig,
@@ -75,12 +78,13 @@ export function GraphWidget({
   onError,
   onRequestMetaModelFocus,
 }: GraphWidgetProperties) {
+  const t = useTranslations('engines.praxis.widgets.graphWidget');
   const [nodes, setNodes] = useNodesState<Node<GraphNodeData>>([]);
   const [edges, setEdges, handleEdgesChange] = useEdgesState<Edge<TimelineEdgeData>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const [metadata, setMetadata] = useState<GraphViewModel['metadata'] | undefined>();
-  const [background, setBackground] = useState<'dots' | 'lines' | 'cross'>('dots');
+  const [background, setBackground] = useState<BackgroundKind>('dots');
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [layoutHydrated, setLayoutHydrated] = useState(true);
@@ -180,18 +184,7 @@ export function GraphWidget({
           scenario: graphLayoutContext.scenario,
           layer: graphLayoutContext.layer,
         });
-        const layoutPositions = new Map((layout?.nodes ?? []).map((node) => [node.id, node]));
-        const mergedNodes = flowNodes.map((node) => {
-          const position = layoutPositions.get(node.id);
-          if (!position) {
-            return node;
-          }
-          return {
-            ...node,
-            position: { x: position.x, y: position.y },
-          };
-        });
-        setNodes(mergedNodes);
+        setNodes(mergeLayoutPositions(flowNodes, layout?.nodes ?? []));
       } else {
         setNodes(flowNodes);
       }
@@ -218,51 +211,16 @@ export function GraphWidget({
   }, [attachInspectHandlers, setNodes]);
 
   useEffect(() => {
-    const selectedNodeIds = selection?.nodeIds ?? [];
-    const selectedEdgeIds = selection?.edgeIds ?? [];
-    const selectedNodeIdSet = new Set(selectedNodeIds);
-    const selectedEdgeIdSet = new Set(selectedEdgeIds);
-
-    setNodes((current) => {
-      let didChange = false;
-      const next: typeof current = [];
-      for (const node of current) {
-        const isSelected = selectedNodeIdSet.has(node.id);
-        if (node.selected === isSelected) {
-          next.push(node);
-        } else {
-          didChange = true;
-          next.push({ ...node, selected: isSelected });
-        }
-      }
-      return didChange ? next : current;
-    });
-
-    setEdges((current) => {
-      let didChange = false;
-      const next: typeof current = [];
-      for (const edge of current) {
-        const isSelected = selectedEdgeIdSet.has(edge.id);
-        if (edge.selected === isSelected) {
-          next.push(edge);
-        } else {
-          didChange = true;
-          next.push({ ...edge, selected: isSelected });
-        }
-      }
-      return didChange ? next : current;
-    });
+    const selectedNodeIdSet = new Set(selection?.nodeIds);
+    const selectedEdgeIdSet = new Set(selection?.edgeIds);
+    setNodes((current) => applySelectedFlags(current, selectedNodeIdSet));
+    setEdges((current) => applySelectedFlags(current, selectedEdgeIdSet));
   }, [selection, setEdges, setNodes]);
 
   const handleSelection = useCallback(
     (nextSelection: { nodes?: Node[]; edges?: Edge[] }) => {
       const snapshot = selectionFromEvent(nextSelection);
-      if (
-        selection &&
-        areStringSetsEqual(selection.nodeIds, snapshot.nodeIds) &&
-        areStringSetsEqual(selection.edgeIds, snapshot.edgeIds) &&
-        areStringSetsEqual(selection.cellIds, snapshot.cellIds)
-      ) {
+      if (selectionMatchesSnapshot(selection, snapshot)) {
         return;
       }
 
@@ -385,20 +343,32 @@ export function GraphWidget({
                   type="single"
                   value={background}
                   onValueChange={(value) => {
-                    if (value === 'dots' || value === 'lines' || value === 'cross') {
+                    if (isBackgroundKind(value)) {
                       setBackground(value);
                     }
                   }}
                   className="gap-1"
                 >
-                  <ToggleGroupItem value="dots" aria-label="Dots background" className="h-7 px-2">
-                    Dots
+                  <ToggleGroupItem
+                    value="dots"
+                    aria-label={t('backgroundDotsAria')}
+                    className="h-7 px-2"
+                  >
+                    {t('backgroundDots')}
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="lines" aria-label="Lines background" className="h-7 px-2">
-                    Lines
+                  <ToggleGroupItem
+                    value="lines"
+                    aria-label={t('backgroundLinesAria')}
+                    className="h-7 px-2"
+                  >
+                    {t('backgroundLines')}
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="cross" aria-label="Cross background" className="h-7 px-2">
-                    Cross
+                  <ToggleGroupItem
+                    value="cross"
+                    aria-label={t('backgroundCrossAria')}
+                    className="h-7 px-2"
+                  >
+                    {t('backgroundCross')}
                   </ToggleGroupItem>
                 </ToggleGroup>
                 <Button
@@ -409,7 +379,7 @@ export function GraphWidget({
                     setShowMiniMap((previous) => !previous);
                   }}
                 >
-                  Mini map
+                  {t('miniMap')}
                 </Button>
                 <Button
                   variant={showControls ? 'secondary' : 'ghost'}
@@ -419,7 +389,7 @@ export function GraphWidget({
                     setShowControls((previous) => !previous);
                   }}
                 >
-                  Controls
+                  {t('controls')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -427,12 +397,10 @@ export function GraphWidget({
                   className="h-7 px-2 text-xs"
                   onClick={handleAutoLayout}
                 >
-                  Auto layout
+                  {t('autoLayout')}
                 </Button>
               </div>
-              <p className="text-muted-foreground/90 mt-2 text-[11px]">
-                Use node search or right-click selection for meta actions.
-              </p>
+              <p className="text-muted-foreground/90 mt-2 text-[11px]">{t('metaActionsHint')}</p>
               <Button
                 variant="ghost"
                 size="sm"
@@ -441,17 +409,20 @@ export function GraphWidget({
                   setNodeSearchOpen(true);
                 }}
               >
-                Open node search
+                {t('openNodeSearch')}
               </Button>
             </Panel>
           </ReactFlow>
         </ReactFlowProvider>
-        {loading ? <GraphWidgetOverlay message="Loading graph" /> : undefined}
-        {error ? <GraphWidgetOverlay isError message={error} /> : undefined}
+        {loading ? <GraphWidgetOverlay message={t('loadingGraph')} /> : undefined}
+        {error ? (
+          <GraphWidgetOverlay isError message={error} errorBadgeLabel={t('errorBadge')} />
+        ) : undefined}
         {contextMenu ? (
           <GraphContextMenu
             x={contextMenu.x}
             y={contextMenu.y}
+            label={t('viewMetaModelEntry')}
             onFocus={() => {
               onRequestMetaModelFocus?.(contextMenu.types);
               setContextMenu(undefined);
@@ -493,6 +464,81 @@ function resolveNodeType(node: Node<GraphNodeData>): string {
 interface GraphWidgetOverlayProperties {
   readonly message: string;
   readonly isError?: boolean;
+  readonly errorBadgeLabel?: string;
+}
+
+type BackgroundKind = 'dots' | 'lines' | 'cross';
+
+/**
+ * Narrow a raw toggle-group value to a supported background kind.
+ * @param value - Raw toggle-group value.
+ * @returns True when the value is a known background kind.
+ */
+function isBackgroundKind(value: string): value is BackgroundKind {
+  return value === 'dots' || value === 'lines' || value === 'cross';
+}
+
+/**
+ * Reconcile the `selected` flag on flow nodes or edges against an id set,
+ * preserving referential identity when nothing changed.
+ * @param items - Current flow nodes or edges.
+ * @param selectedIds - Ids that should be marked selected.
+ * @returns The reconciled array, or the original reference when unchanged.
+ */
+function applySelectedFlags<T extends { id: string; selected?: boolean }>(
+  items: T[],
+  selectedIds: Set<string>,
+): T[] {
+  let didChange = false;
+  const next: T[] = [];
+  for (const item of items) {
+    const isSelected = selectedIds.has(item.id);
+    if (item.selected === isSelected) {
+      next.push(item);
+    } else {
+      didChange = true;
+      next.push({ ...item, selected: isSelected });
+    }
+  }
+  return didChange ? next : items;
+}
+
+/**
+ * Overlay persisted layout coordinates onto freshly built flow nodes.
+ * @param flowNodes - Nodes produced from the current view.
+ * @param layoutNodes - Persisted positions keyed by node id.
+ * @returns Flow nodes with saved positions applied where available.
+ */
+function mergeLayoutPositions(
+  flowNodes: Node<GraphNodeData>[],
+  layoutNodes: readonly GraphLayoutNode[],
+): Node<GraphNodeData>[] {
+  const positions = new Map(layoutNodes.map((node) => [node.id, node]));
+  return flowNodes.map((node) => {
+    const position = positions.get(node.id);
+    if (!position) {
+      return node;
+    }
+    return { ...node, position: { x: position.x, y: position.y } };
+  });
+}
+
+/**
+ * Whether the current selection already equals the snapshot from a flow event.
+ * @param selection - Current selection state, if any.
+ * @param snapshot - Selection derived from the latest flow event.
+ * @returns True when node, edge, and cell id sets all match.
+ */
+function selectionMatchesSnapshot(
+  selection: SelectionState | undefined,
+  snapshot: ReturnType<typeof selectionFromEvent>,
+): boolean {
+  return (
+    selection !== undefined &&
+    areStringSetsEqual(selection.nodeIds, snapshot.nodeIds) &&
+    areStringSetsEqual(selection.edgeIds, snapshot.edgeIds) &&
+    areStringSetsEqual(selection.cellIds, snapshot.cellIds)
+  );
 }
 
 /**
@@ -500,7 +546,7 @@ interface GraphWidgetOverlayProperties {
  * @param background - Selected background type.
  * @returns Background variant.
  */
-function resolveBackgroundVariant(background: 'dots' | 'lines' | 'cross'): BackgroundVariant {
+function resolveBackgroundVariant(background: BackgroundKind): BackgroundVariant {
   switch (background) {
     case 'dots': {
       return BackgroundVariant.Dots;
@@ -519,8 +565,9 @@ function resolveBackgroundVariant(background: 'dots' | 'lines' | 'cross'): Backg
  * @param root0
  * @param root0.message
  * @param root0.isError
+ * @param root0.errorBadgeLabel
  */
-function GraphWidgetOverlay({ message, isError }: GraphWidgetOverlayProperties) {
+function GraphWidgetOverlay({ message, isError, errorBadgeLabel }: GraphWidgetOverlayProperties) {
   return (
     <div
       className={cn(
@@ -528,7 +575,7 @@ function GraphWidgetOverlay({ message, isError }: GraphWidgetOverlayProperties) 
         isError ? 'bg-destructive/10 text-destructive' : 'bg-background/70 text-muted-foreground',
       )}
     >
-      {isError ? <AlertBadge /> : undefined}
+      {isError ? <AlertBadge label={errorBadgeLabel ?? 'Error'} /> : undefined}
       {message}
     </div>
   );
@@ -536,11 +583,13 @@ function GraphWidgetOverlay({ message, isError }: GraphWidgetOverlayProperties) 
 
 /**
  *
+ * @param root0
+ * @param root0.label
  */
-function AlertBadge() {
+function AlertBadge({ label }: { readonly label: string }) {
   return (
     <span className="text-destructive mr-2 text-xs font-semibold tracking-wide uppercase">
-      Error
+      {label}
     </span>
   );
 }
@@ -550,15 +599,18 @@ function AlertBadge() {
  * @param root0
  * @param root0.x
  * @param root0.y
+ * @param root0.label
  * @param root0.onFocus
  */
 function GraphContextMenu({
   x,
   y,
+  label,
   onFocus,
 }: {
   readonly x: number;
   readonly y: number;
+  readonly label: string;
   readonly onFocus: () => void;
 }) {
   return (
@@ -571,7 +623,7 @@ function GraphContextMenu({
         className="hover:bg-muted block w-full px-4 py-2 text-left"
         onClick={onFocus}
       >
-        View meta-model entry
+        {label}
       </button>
     </div>
   );

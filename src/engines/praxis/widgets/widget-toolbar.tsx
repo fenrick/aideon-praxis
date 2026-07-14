@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+
 import { Loader2, RefreshCcw } from 'design-system/icons';
 
 import { Button } from 'design-system';
@@ -25,13 +27,16 @@ export function WidgetToolbar({
   loading,
   onRefresh,
 }: WidgetToolbarProperties) {
+  const t = useTranslations('engines.praxis.widgets.toolbar');
   const title = metadata?.name ?? fallbackTitle;
-  const subtitle = metadata ? `As of ${formatAsOf(metadata.asOf)}` : 'Awaiting twin data';
+  const subtitle = metadata
+    ? t('asOf', { timestamp: formatAsOf(metadata.asOf) })
+    : t('awaitingTwinData');
 
   return (
     <div className="mb-3 flex items-center justify-between">
       <div>
-        <p className="text-muted-foreground text-xs tracking-[0.35em] uppercase">Widget</p>
+        <p className="text-muted-foreground text-xs tracking-[0.35em] uppercase">{t('eyebrow')}</p>
         <p className="text-foreground text-sm font-medium">{title}</p>
         <p className="text-muted-foreground text-xs">{subtitle}</p>
       </div>
@@ -41,7 +46,7 @@ export function WidgetToolbar({
         ) : (
           <RefreshCcw className="mr-2 h-4 w-4" />
         )}
-        Refresh
+        {t('refresh')}
       </Button>
     </div>
   );

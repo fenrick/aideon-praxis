@@ -7,8 +7,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use aideon_engine::{
-    Engine, MetaTypeInfo, NodeRecord, PropertyDelta, ResolvedEntity, StoreError, Viewpoint,
-    WorkspaceStatus,
+    EdgeRecord, Engine, MetaTypeInfo, NodeRecord, PropertyDelta, ResolvedEntity, StoreError,
+    Viewpoint, WorkspaceStatus,
 };
 use serde::Deserialize;
 use specta::Type;
@@ -315,6 +315,71 @@ pub async fn workspace_author_typed_node(
         },
     )
     .await)
+}
+
+/// Payload for authoring one typed relationship: the relationship key, the two
+/// endpoint entity ids, and a flat string-valued attribute map.
+#[derive(Debug, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthorTypedEdgePayload {
+    pub rel_type: String,
+    pub src_id: String,
+    pub dst_id: String,
+    #[serde(default)]
+    pub props: std::collections::HashMap<String, String>,
+}
+
+/// Author one **metamodel-validated** relationship into the open workspace's
+/// canonical log ([golden-journey] step 3). Endpoints, self-link, duplicate, and
+/// attribute rules are checked against the compiled effective schema before any
+/// operation is appended; an invalid write returns `VALIDATION_FAILED` and never
+/// enters the op log.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_author_typed_edge(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<AuthorTypedEdgePayload>,
+) -> Result<IpcResponse<EdgeRecord>, HostError> {
+    Ok(command_envelope(
+        "workspace_author_typed_edge",
+        request,
+        |payload| async move {
+            let props = serde_json::Value::Object(
+                payload
+                    .props
+                    .into_iter()
+                    .map(|(k, v)| (k, serde_json::Value::String(v)))
+                    .collect(),
+            );
+            let mut guard = manager.open.lock().await;
+            let engine = guard
+                .as_mut()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine
+                .author_typed_edge(&payload.rel_type, &payload.src_id, &payload.dst_id, props)
+                .map_err(map_store_error)
+        },
+    )
+    .await)
+}
+
+/// The projected relationship listing — the derived twin edge view.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_edges(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<EmptyPayload>,
+) -> Result<IpcResponse<Vec<EdgeRecord>>, HostError> {
+    Ok(
+        command_envelope("workspace_edges", request, |_payload| async move {
+            let guard = manager.open.lock().await;
+            let engine = guard
+                .as_ref()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine.edges().map_err(map_store_error)
+        })
+        .await,
+    )
 }
 
 /// Payload for asserting one plan/actual claim at a valid time ([golden-journey]

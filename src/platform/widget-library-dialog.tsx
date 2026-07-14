@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+
 import {
   Badge,
   Button,
@@ -32,12 +34,13 @@ export function WidgetLibraryDialog({
   widgets,
   onCreate,
 }: WidgetLibraryDialogProperties) {
+  const t = useTranslations('platform.widgetLibraryDialog');
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add widget</DialogTitle>
-          <DialogDescription>Choose a widget type to add to this layout.</DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
           {widgets.map((entry) => (
@@ -57,7 +60,7 @@ export function WidgetLibraryDialog({
             </button>
           ))}
           {widgets.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No widget types available.</p>
+            <p className="text-muted-foreground text-sm">{t('empty')}</p>
           ) : undefined}
         </div>
         <DialogFooter>
@@ -67,7 +70,7 @@ export function WidgetLibraryDialog({
               onOpenChange(false);
             }}
           >
-            Close
+            {t('close')}
           </Button>
         </DialogFooter>
       </DialogContent>

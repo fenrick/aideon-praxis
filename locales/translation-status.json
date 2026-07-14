@@ -1,0 +1,22 @@
+{
+  "sourceFile": "locales/en.json",
+  "sourceSha256": "16cecbb9bb1a191a2221f9678db5ff73632253ecda35bf00b3e17d7bb03fb137",
+  "locales": {
+    "de": {
+      "status": "placeholder",
+      "note": "Identical to en.json — not yet translated. Never attempted (quota exhausted before this locale's turn). Re-run `cargo run -p aideon_xtask -- translation-sync --targets de` once quota resets."
+    },
+    "es": {
+      "status": "translated",
+      "translatedAtSourceSha256": "16cecbb9bb1a191a2221f9678db5ff73632253ecda35bf00b3e17d7bb03fb137"
+    },
+    "fr": {
+      "status": "placeholder",
+      "note": "Identical to en.json — translation failed: translate batch to 'fr'"
+    },
+    "ja": {
+      "status": "placeholder",
+      "note": "Identical to en.json — not yet translated. Never attempted (quota exhausted before this locale's turn). Re-run `cargo run -p aideon_xtask -- translation-sync --targets ja` once quota resets."
+    }
+  }
+}

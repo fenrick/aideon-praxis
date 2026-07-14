@@ -11,7 +11,10 @@ use mneme_core::ops::{
     ActorDeclare, ActorKind, ClearPropertyInterval, CreateEdge, CreateNode, Layer, OpPayload,
     Origin, SetEdgeExistenceInterval, SetPropertyInterval, TombstoneEntity,
 };
-use mneme_core::schema::{AuthoredMetamodelBatch, EntityKind, FieldDef, TypeDef, ValueType};
+use mneme_core::schema::{
+    AuthoredMetamodelBatch, AuthoredValidationRules, EntityKind, FieldDef, FieldKind, TypeDef,
+    ValueType,
+};
 use mneme_core::value::Value;
 use mneme_core::{Hlc, Id, ValidTime};
 
@@ -40,73 +43,120 @@ fn placeholder() -> (Id, Id, Hlc) {
     (Id::new_v4(), Id::new_v4(), Hlc(0))
 }
 
+/// The shared identity + placeholder addressing every seeded op carries: the
+/// authoring actor, plus the placeholder partition / actor / HLC that M0 stamps
+/// uniformly across the seed.
+struct SeedCtx {
+    actor: Id,
+    p: Id,
+    a: Id,
+    h: Hlc,
+}
+
 /// Author one operation of every M0 kind, exercising the full surface.
 fn author_seed(ws: &mut Workspace) {
-    let actor = id(ACTOR);
     let (p, a, h) = placeholder();
+    let ctx = SeedCtx {
+        actor: id(ACTOR),
+        p,
+        a,
+        h,
+    };
 
-    ws.author(
-        actor,
-        Origin::manual(),
+    seed_actor(ws, &ctx);
+    seed_metamodel(ws, &ctx);
+    seed_nodes(ws, &ctx);
+    seed_temporal_facts(ws, &ctx);
+    seed_tombstone(ws, &ctx);
+}
+
+/// Author one op via the shared seed identity, unwrapping the result.
+fn author_seed_op(ws: &mut Workspace, ctx: &SeedCtx, payload: OpPayload) {
+    ws.author(ctx.actor, Origin::manual(), payload).unwrap();
+}
+
+fn seed_actor(ws: &mut Workspace, ctx: &SeedCtx) {
+    author_seed_op(
+        ws,
+        ctx,
         OpPayload::ActorDeclare(ActorDeclare {
-            declared_actor_id: actor,
+            declared_actor_id: ctx.actor,
             actor_kind: ActorKind::Person,
             display_name: "Seed Architect".into(),
         }),
-    )
-    .unwrap();
+    );
+}
 
-    ws.author(
-        actor,
-        Origin::manual(),
+fn seed_metamodel(ws: &mut Workspace, ctx: &SeedCtx) {
+    author_seed_op(
+        ws,
+        ctx,
         OpPayload::UpsertMetamodelBatch(AuthoredMetamodelBatch {
             types: vec![TypeDef {
                 type_id: id(TYPE_APP),
+                key: "Application".into(),
                 applies_to: EntityKind::Node,
                 label: "Application".into(),
+                category: Some("Application".into()),
+                effect_types: vec![],
                 is_abstract: false,
                 parent_type_id: None,
             }],
             fields: vec![FieldDef {
                 field_id: id(FIELD_DISPOSITION),
+                key: "disposition".into(),
                 label: "disposition".into(),
                 value_type: ValueType::Str,
+                semantic_kind: FieldKind::Enum,
+                enum_values: vec![
+                    "Invest".into(),
+                    "Tolerate".into(),
+                    "Migrate".into(),
+                    "Eliminate".into(),
+                ],
                 cardinality_multi: false,
                 is_indexed: true,
             }],
             type_fields: vec![],
             edge_type_rules: vec![],
+            validation: AuthoredValidationRules {
+                string_max_length: Some(256),
+                text_max_length: Some(4096),
+                enum_case_sensitive: false,
+            },
             metamodel_version: Some("1.0.0".into()),
             metamodel_source: Some("core".into()),
         }),
-    )
-    .unwrap();
+    );
+}
 
+fn seed_nodes(ws: &mut Workspace, ctx: &SeedCtx) {
     for node in [N1, N2] {
-        ws.author(
-            actor,
-            Origin::manual(),
+        author_seed_op(
+            ws,
+            ctx,
             OpPayload::CreateNode(CreateNode {
-                partition: p,
+                partition: ctx.p,
                 scenario_id: None,
-                actor: a,
-                asserted_at: h,
+                actor: ctx.a,
+                asserted_at: ctx.h,
                 node_id: id(node),
                 type_id: Some(id(TYPE_APP)),
                 write_options: None,
             }),
-        )
-        .unwrap();
+        );
     }
+}
 
-    ws.author(
-        actor,
-        Origin::manual(),
+/// Author the edge, its property/existence intervals, and the property clear —
+/// the temporal-fact surface asserted over N1 and the realises edge, in order.
+fn seed_temporal_facts(ws: &mut Workspace, ctx: &SeedCtx) {
+    for payload in [
         OpPayload::CreateEdge(CreateEdge {
-            partition: p,
+            partition: ctx.p,
             scenario_id: None,
-            actor: a,
-            asserted_at: h,
+            actor: ctx.a,
+            asserted_at: ctx.h,
             edge_id: id(EDGE),
             type_id: Some(id(REL_REALISES)),
             src_id: id(N1),
@@ -117,17 +167,11 @@ fn author_seed(ws: &mut Workspace) {
             weight: None,
             write_options: None,
         }),
-    )
-    .unwrap();
-
-    ws.author(
-        actor,
-        Origin::manual(),
         OpPayload::SetPropertyInterval(SetPropertyInterval {
-            partition: p,
+            partition: ctx.p,
             scenario_id: None,
-            actor: a,
-            asserted_at: h,
+            actor: ctx.a,
+            asserted_at: ctx.h,
             entity_id: id(N1),
             field_id: id(FIELD_DISPOSITION),
             value: Value::Str("Migrate".into()),
@@ -136,17 +180,11 @@ fn author_seed(ws: &mut Workspace) {
             layer: Layer::Actual,
             write_options: None,
         }),
-    )
-    .unwrap();
-
-    ws.author(
-        actor,
-        Origin::manual(),
         OpPayload::SetEdgeExistenceInterval(SetEdgeExistenceInterval {
-            partition: p,
+            partition: ctx.p,
             scenario_id: None,
-            actor: a,
-            asserted_at: h,
+            actor: ctx.a,
+            asserted_at: ctx.h,
             edge_id: id(EDGE),
             valid_from: ValidTime(1_767_225_600_000_000),
             valid_to: Some(ValidTime(1_798_761_600_000_000)),
@@ -154,17 +192,11 @@ fn author_seed(ws: &mut Workspace) {
             is_tombstone: false,
             write_options: None,
         }),
-    )
-    .unwrap();
-
-    ws.author(
-        actor,
-        Origin::manual(),
         OpPayload::ClearPropertyInterval(ClearPropertyInterval {
-            partition: p,
+            partition: ctx.p,
             scenario_id: None,
-            actor: a,
-            asserted_at: h,
+            actor: ctx.a,
+            asserted_at: ctx.h,
             entity_id: id(N1),
             field_id: id(FIELD_DISPOSITION),
             valid_from: ValidTime(1_798_761_600_000_000),
@@ -172,21 +204,23 @@ fn author_seed(ws: &mut Workspace) {
             layer: Layer::Actual,
             write_options: None,
         }),
-    )
-    .unwrap();
+    ] {
+        author_seed_op(ws, ctx, payload);
+    }
+}
 
-    ws.author(
-        actor,
-        Origin::manual(),
+fn seed_tombstone(ws: &mut Workspace, ctx: &SeedCtx) {
+    author_seed_op(
+        ws,
+        ctx,
         OpPayload::TombstoneEntity(TombstoneEntity {
-            partition: p,
+            partition: ctx.p,
             scenario_id: None,
-            actor: a,
-            asserted_at: h,
+            actor: ctx.a,
+            asserted_at: ctx.h,
             entity_id: id(N2),
         }),
-    )
-    .unwrap();
+    );
 }
 
 /// A stable fingerprint of all canonical material under the workspace root.

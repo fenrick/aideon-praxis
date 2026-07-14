@@ -11,15 +11,17 @@ use serde::Serialize;
 use specta::Type;
 
 use aideon_praxis::meta::MetaModelRegistry;
-use aideon_praxis::temporal::NodeVersion;
 
 pub use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 pub use mneme_core::{Id, Value};
 pub use mneme_store::error::{Result, StoreError};
 pub use mneme_store::{AppliedFrontier, FoundationProjectionSnapshot, Manifest, Workspace};
 
-use mneme_core::ops::{CreateNode, Layer, SetPropertyInterval};
+use mneme_core::effective::{EffectiveEdgeRule, EffectiveSchema};
+use mneme_core::ops::{CreateEdge, CreateNode, Layer, SetPropertyInterval};
+use mneme_core::schema::FieldKind;
 use mneme_core::time::ValidTime;
+use mneme_core::validate::{EdgeContext, validate_edge, validate_node};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::str::FromStr;
@@ -52,6 +54,24 @@ pub struct NodeRecord {
     /// symbol UUID via the registry; `None` for an untyped or unknown-symbol node.
     pub type_label: Option<String>,
     /// Whether a tombstone has retired the node.
+    pub tombstoned: bool,
+}
+
+/// A host-facing projected relationship — the derived twin edge listing entry.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct EdgeRecord {
+    /// The edge id.
+    pub edge_id: String,
+    /// The relationship type's storage symbol UUID, if any.
+    pub type_id: Option<String>,
+    /// The metamodel relationship key (e.g. `realises`), resolved from the symbol.
+    pub type_label: Option<String>,
+    /// Source entity id.
+    pub src_id: String,
+    /// Destination entity id.
+    pub dst_id: String,
+    /// Whether a tombstone has retired the edge.
     pub tombstoned: bool,
 }
 
@@ -146,6 +166,11 @@ pub struct Engine {
     type_labels: BTreeMap<String, String>,
     /// Reverse map from an attribute's symbol UUID to its metamodel name.
     attribute_labels: BTreeMap<String, String>,
+    /// The compiled effective schema per type (node + edge), from the published
+    /// seed batch — the M1 write gate.
+    schemas: Vec<EffectiveSchema>,
+    /// The compiled relationship endpoint/self/duplicate rules, keyed by verb.
+    edge_rules: Vec<EffectiveEdgeRule>,
 }
 
 impl Engine {
@@ -165,6 +190,15 @@ impl Engine {
         let registry = MetaModelRegistry::embedded().map_err(|e| {
             StoreError::Corruption(format!("seed metamodel failed to compile: {e}"))
         })?;
+        // Publish the seed to the canonical batch and compile the M1 effective
+        // schema + edge rules — the write gate all authoring validates against.
+        let batch = aideon_praxis::meta::publish_embedded_core().map_err(|e| {
+            StoreError::Corruption(format!("seed metamodel failed to publish: {e}"))
+        })?;
+        let schemas = mneme_core::effective::compile(&batch)
+            .map_err(|e| StoreError::Corruption(format!("effective-schema compile failed: {e}")))?;
+        let edge_rules = mneme_core::effective::compile_edge_rules(&batch)
+            .map_err(|e| StoreError::Corruption(format!("edge-rule compile failed: {e}")))?;
         let document = registry.document();
         let mut type_labels = BTreeMap::new();
         let mut attribute_labels = BTreeMap::new();
@@ -183,6 +217,8 @@ impl Engine {
             registry,
             type_labels,
             attribute_labels,
+            schemas,
+            edge_rules,
         })
     }
 
@@ -269,17 +305,21 @@ impl Engine {
         props: serde_json::Value,
     ) -> Result<NodeRecord> {
         let node_id = Id::new_v4();
-        // Validate the intended write against the compiled effective schema.
-        let candidate = NodeVersion {
-            id: node_id.to_canonical_string(),
-            r#type: Some(type_id.to_string()),
-            props: Some(props.clone()),
-        };
-        self.registry
-            .validate_node(&candidate)
-            .map_err(|e| StoreError::Validation {
-                message: e.to_string(),
+        // Validate the intended write against the compiled effective schema
+        // (the same gate edge authoring uses) before any op is appended.
+        let schema = self
+            .schemas
+            .iter()
+            .find(|s| s.type_id == type_id)
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("unknown type `{type_id}`"),
             })?;
+        // The host stringifies every prop value; coerce number/boolean slots to
+        // their typed JSON per the schema before validating and storing.
+        let props = coerce_props(schema, props);
+        validate_node(schema, &props).map_err(|e| StoreError::Validation {
+            message: e.to_string(),
+        })?;
 
         let type_symbol = self.type_symbol(type_id)?;
         let actor = self.session_actor()?;
@@ -328,6 +368,233 @@ impl Engine {
             node_id.to_canonical_string(),
             Some(type_symbol.to_canonical_string()),
         ))
+    }
+
+    /// Author a typed relationship, **validated against the compiled effective
+    /// schema before any operation is appended** ([M1 build contract]). A write
+    /// naming an unknown relationship, a disallowed endpoint type, a self-link
+    /// where `allow_self` is false, a duplicate where `allow_duplicate` is false,
+    /// or a bad/missing attribute is rejected with [`StoreError::Validation`] and
+    /// **never enters the op log**.
+    ///
+    /// On success it appends a `create-edge` (carrying the relationship symbol)
+    /// followed by one `set-property-interval` per supplied attribute on the
+    /// `plan` layer over the open interval.
+    pub fn author_typed_edge(
+        &mut self,
+        rel_type: &str,
+        src_id: &str,
+        dst_id: &str,
+        props: serde_json::Value,
+    ) -> Result<EdgeRecord> {
+        // Resolve the compiled rule, effective schema, and storage symbol; an
+        // unknown relationship key is rejected before any op is appended.
+        let (rule, schema, rel_symbol) = self.resolve_edge_rules(rel_type)?;
+        // The host stringifies every prop value; coerce number/boolean slots to
+        // their typed JSON per the schema before validating and storing.
+        let props = coerce_props(&schema, props);
+
+        // Resolve both endpoints' domain type keys from the projected twin, then
+        // validate the intended write; on failure nothing is appended.
+        let nodes = self.workspace.list_nodes()?;
+        let src_type = self.node_type_key(&nodes, src_id)?;
+        let dst_type = self.node_type_key(&nodes, dst_id)?;
+        let rel_symbol_str = rel_symbol.to_canonical_string();
+        let duplicate_exists = self
+            .workspace
+            .edge_exists(&rel_symbol_str, src_id, dst_id)?;
+        // Existing per-type degree at each endpoint feeds the multiplicity check.
+        let (src_out_degree, dst_in_degree) =
+            self.workspace
+                .edge_degree(&rel_symbol_str, src_id, dst_id)?;
+        validate_edge(
+            &rule,
+            &schema,
+            &EdgeContext {
+                src_type: &src_type,
+                dst_type: &dst_type,
+                is_self: src_id == dst_id,
+                duplicate_exists,
+                src_out_degree,
+                dst_in_degree,
+            },
+            &props,
+        )
+        .map_err(|e| StoreError::Validation {
+            message: e.to_string(),
+        })?;
+
+        let edge_id = Id::new_v4();
+        let src = Id::from_str(src_id).map_err(|_| StoreError::Validation {
+            message: "source id is not a UUID".into(),
+        })?;
+        let dst = Id::from_str(dst_id).map_err(|_| StoreError::Validation {
+            message: "destination id is not a UUID".into(),
+        })?;
+        self.append_create_edge(edge_id, rel_symbol, (src, dst))?;
+        self.append_edge_props(edge_id, &schema, &props)?;
+
+        Ok(EdgeRecord {
+            edge_id: edge_id.to_canonical_string(),
+            type_id: Some(rel_symbol.to_canonical_string()),
+            type_label: Some(rel_type.to_owned()),
+            src_id: src_id.to_owned(),
+            dst_id: dst_id.to_owned(),
+            tombstoned: false,
+        })
+    }
+
+    /// Resolve a relationship key to its compiled validation rule, effective
+    /// schema, and storage symbol, rejecting an unknown key with a validation
+    /// error before any op is appended.
+    fn resolve_edge_rules(
+        &self,
+        rel_type: &str,
+    ) -> Result<(EffectiveEdgeRule, EffectiveSchema, Id)> {
+        let rule = self
+            .edge_rules
+            .iter()
+            .find(|r| r.key == rel_type)
+            .cloned()
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("unknown relationship type `{rel_type}`"),
+            })?;
+        let schema = self
+            .schemas
+            .iter()
+            .find(|s| s.type_id == rel_type)
+            .cloned()
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("relationship type `{rel_type}` has no effective schema"),
+            })?;
+        let rel_symbol = self.relationship_symbol(rel_type)?;
+        Ok((rule, schema, rel_symbol))
+    }
+
+    /// Append the `create-edge` op for a validated relationship, carrying its
+    /// storage symbol, on the plan layer over the open-ended interval.
+    fn append_create_edge(
+        &mut self,
+        edge_id: Id,
+        rel_symbol: Id,
+        endpoints: (Id, Id),
+    ) -> Result<()> {
+        let actor = self.session_actor()?;
+        let partition = self.workspace.partition_id();
+        self.workspace.author(
+            actor,
+            Origin::manual(),
+            OpPayload::CreateEdge(CreateEdge {
+                partition,
+                scenario_id: None,
+                actor,
+                asserted_at: mneme_core::Hlc(0),
+                edge_id,
+                type_id: Some(rel_symbol),
+                src_id: endpoints.0,
+                dst_id: endpoints.1,
+                exists_valid_from: ValidTime(0),
+                exists_valid_to: None,
+                layer: Layer::Plan,
+                weight: None,
+                write_options: None,
+            }),
+        )?;
+        Ok(())
+    }
+
+    /// Persist each supplied relationship attribute as a plan-layer fact over
+    /// the open interval, resolving its field symbol from the compiled slot
+    /// descriptors. An attribute with no matching slot is skipped.
+    fn append_edge_props(
+        &mut self,
+        edge_id: Id,
+        schema: &EffectiveSchema,
+        props: &serde_json::Value,
+    ) -> Result<()> {
+        let Some(map) = props.as_object() else {
+            return Ok(());
+        };
+        let actor = self.session_actor()?;
+        let partition = self.workspace.partition_id();
+        for (name, json) in map {
+            let Some(slot) = schema.slots.iter().find(|s| &s.key == name) else {
+                continue;
+            };
+            let field_id = Id::from_str(&slot.uuid).map_err(|_| StoreError::Validation {
+                message: format!("slot `{name}` has an invalid uuid"),
+            })?;
+            self.workspace.author(
+                actor,
+                Origin::manual(),
+                OpPayload::SetPropertyInterval(SetPropertyInterval {
+                    partition,
+                    scenario_id: None,
+                    actor,
+                    asserted_at: mneme_core::Hlc(0),
+                    entity_id: edge_id,
+                    field_id,
+                    value: to_value(json)?,
+                    valid_from: ValidTime(0),
+                    valid_to: None,
+                    layer: Layer::Plan,
+                    write_options: None,
+                }),
+            )?;
+        }
+        Ok(())
+    }
+
+    /// The projected edge listing — the derived twin view, re-derived on rebuild.
+    pub fn edges(&self) -> Result<Vec<EdgeRecord>> {
+        Ok(self
+            .workspace
+            .list_edges()?
+            .into_iter()
+            .map(|e| EdgeRecord {
+                type_label: e
+                    .type_id
+                    .as_ref()
+                    .and_then(|u| self.type_labels.get(u).cloned()),
+                edge_id: e.edge_id,
+                type_id: e.type_id,
+                src_id: e.src_id,
+                dst_id: e.dst_id,
+                tombstoned: e.tombstoned,
+            })
+            .collect())
+    }
+
+    /// The domain type key of a projected node, for endpoint validation.
+    fn node_type_key(
+        &self,
+        nodes: &[mneme_store::projection::NodeRow],
+        id: &str,
+    ) -> Result<String> {
+        let node =
+            nodes
+                .iter()
+                .find(|n| n.node_id == id)
+                .ok_or_else(|| StoreError::Validation {
+                    message: format!("endpoint entity `{id}` does not exist"),
+                })?;
+        node.type_id
+            .as_ref()
+            .and_then(|u| self.type_labels.get(u).cloned())
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("endpoint entity `{id}` has no known type"),
+            })
+    }
+
+    /// Resolve a relationship key to its storage symbol UUID.
+    fn relationship_symbol(&self, rel_type: &str) -> Result<Id> {
+        let raw =
+            self.registry
+                .relationship_uuid(rel_type)
+                .ok_or_else(|| StoreError::Validation {
+                    message: format!("unknown relationship type `{rel_type}`"),
+                })?;
+        Id::from_str(raw).map_err(|_| StoreError::Corruption("relationship uuid invalid".into()))
     }
 
     /// The projected node listing — the derived twin view, re-derived on
@@ -642,6 +909,49 @@ fn meta_types(registry: &MetaModelRegistry) -> Vec<MetaTypeInfo> {
         .collect()
 }
 
+/// Coerce string-encoded prop values to their typed JSON per the effective
+/// schema. The host stringifies every value, so `number` and `boolean` slots
+/// arrive as strings; this restores their JSON kind before validation and
+/// storage. Only keys matching a known slot are touched; a value that does not
+/// parse is left unchanged so the validator rejects it (never swallowed).
+/// String/text/enum/datetime/blob values pass through verbatim.
+fn coerce_props(schema: &EffectiveSchema, props: serde_json::Value) -> serde_json::Value {
+    let serde_json::Value::Object(mut map) = props else {
+        return props;
+    };
+    for slot in &schema.slots {
+        if let Some(value) = map.get_mut(&slot.key) {
+            coerce_value(slot.kind, value);
+        }
+    }
+    serde_json::Value::Object(map)
+}
+
+/// Coerce a single string value to the JSON kind its slot expects. A non-string
+/// value, or a string that does not parse to the target kind, is left as-is.
+fn coerce_value(kind: FieldKind, value: &mut serde_json::Value) {
+    let serde_json::Value::String(s) = value else {
+        return;
+    };
+    match kind {
+        FieldKind::Number => {
+            if let Ok(number) = s.parse::<serde_json::Number>() {
+                *value = serde_json::Value::Number(number);
+            }
+        }
+        FieldKind::Boolean => match s.as_str() {
+            "true" => *value = serde_json::Value::Bool(true),
+            "false" => *value = serde_json::Value::Bool(false),
+            _ => {}
+        },
+        FieldKind::String
+        | FieldKind::Text
+        | FieldKind::Enum
+        | FieldKind::Datetime
+        | FieldKind::Blob => {}
+    }
+}
+
 /// Convert a JSON attribute value into the canonical [`Value`] algebra. The M1
 /// slice authors string and enum (string) and boolean attributes; an integer is
 /// carried as `i64`. A non-integral number or a composite value is refused —
@@ -690,6 +1000,126 @@ mod tests {
         // Reopen through the seam and confirm the state survives.
         let reopened = Engine::open(dir.path()).unwrap();
         assert_eq!(reopened.status().unwrap().applied_op_count, 1);
+    }
+
+    /// Author one node of each seed type used by the edge tests.
+    fn seed_nodes(engine: &mut Engine) -> (String, String, String, String) {
+        let app = engine
+            .author_typed_node("Application", serde_json::json!({ "name": "Insight Hub" }))
+            .unwrap()
+            .node_id;
+        let cap = engine
+            .author_typed_node(
+                "Capability",
+                serde_json::json!({ "name": "Customer Insight" }),
+            )
+            .unwrap()
+            .node_id;
+        let data = engine
+            .author_typed_node(
+                "DataEntity",
+                serde_json::json!({ "name": "Customer Profile" }),
+            )
+            .unwrap()
+            .node_id;
+        let cap2 = engine
+            .author_typed_node("Capability", serde_json::json!({ "name": "Journey" }))
+            .unwrap()
+            .node_id;
+        (app, cap, data, cap2)
+    }
+
+    #[test]
+    fn author_typed_edge_validates_and_lands() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+        let (app, cap, _data, _) = seed_nodes(&mut engine);
+
+        // Application realises Capability — a valid seed relationship.
+        let edge = engine
+            .author_typed_edge("realises", &app, &cap, serde_json::json!({}))
+            .unwrap();
+        assert_eq!(edge.type_label.as_deref(), Some("realises"));
+        assert!(!edge.tombstoned);
+
+        let edges = engine.edges().unwrap();
+        assert_eq!(edges.len(), 1);
+        assert_eq!(edges[0].src_id, app);
+        assert_eq!(edges[0].dst_id, cap);
+    }
+
+    #[test]
+    fn accesses_with_mode_lands_and_a_duplicate_is_rejected() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+        let (app, _cap, data, _) = seed_nodes(&mut engine);
+
+        engine
+            .author_typed_edge(
+                "accesses",
+                &app,
+                &data,
+                serde_json::json!({ "mode": "readwrite" }),
+            )
+            .unwrap();
+        let after_first = engine.status().unwrap().applied_op_count;
+
+        // A second accesses between the same pair is rejected (allowDuplicate=false).
+        let err = engine
+            .author_typed_edge(
+                "accesses",
+                &app,
+                &data,
+                serde_json::json!({ "mode": "read" }),
+            )
+            .unwrap_err();
+        assert!(matches!(err, StoreError::Validation { .. }));
+        assert_eq!(
+            engine.status().unwrap().applied_op_count,
+            after_first,
+            "a rejected duplicate edge appends no op"
+        );
+    }
+
+    #[test]
+    fn invalid_typed_edges_are_rejected_and_append_nothing() {
+        // Each case names the relationship and the endpoint pick from the seeded
+        // (app, cap, data, cap2) tuple that makes the write invalid. In every
+        // case the write must be refused and append no op to the canonical log.
+        type EndpointPick = fn(&(String, String, String, String)) -> (String, String);
+        let cases: &[(&str, EndpointPick)] = &[
+            // accesses requires a mode; omitting it is rejected. Application → DataEntity.
+            ("accesses", |(app, _c, data, _)| (app.clone(), data.clone())),
+            // realises.from is [Application, TechnologyComponent]; a Capability source is invalid.
+            ("realises", |(app, cap, _d, _)| (cap.clone(), app.clone())),
+            // serves disallows a self-link (allowSelf=false).
+            ("serves", |(_a, cap, _d, _)| (cap.clone(), cap.clone())),
+        ];
+
+        for (rel_type, pick) in cases {
+            let dir = TempDir::new().unwrap();
+            let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+            let seeded = seed_nodes(&mut engine);
+            let (src, dst) = pick(&seeded);
+            let before = engine.status().unwrap().applied_op_count;
+
+            let err = engine
+                .author_typed_edge(rel_type, &src, &dst, serde_json::json!({}))
+                .unwrap_err();
+            assert!(matches!(err, StoreError::Validation { .. }));
+            assert_eq!(engine.status().unwrap().applied_op_count, before);
+        }
+    }
+
+    #[test]
+    fn unknown_relationship_type_is_rejected() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+        let (app, cap, _data, _) = seed_nodes(&mut engine);
+        let err = engine
+            .author_typed_edge("bogus", &app, &cap, serde_json::json!({}))
+            .unwrap_err();
+        assert!(matches!(err, StoreError::Validation { .. }));
     }
 
     #[test]
@@ -947,6 +1377,73 @@ mod tests {
                 .iter()
                 .any(|p| p.field == "lifecycle" && p.value == "Run" && p.layer == "actual")
         );
+    }
+
+    #[test]
+    fn coerce_props_restores_number_json_kind() {
+        use mneme_core::effective::{Cardinality, EffectiveSlot, SlotSource};
+        let schema = EffectiveSchema {
+            type_id: "T".into(),
+            label: "T".into(),
+            category: None,
+            uuid: "u".into(),
+            extends: None,
+            inheritance_chain: vec!["T".into()],
+            slots: vec![EffectiveSlot {
+                key: "confidence".into(),
+                kind: FieldKind::Number,
+                required: false,
+                cardinality: Cardinality::Single,
+                max_length: None,
+                enum_variants: None,
+                case_sensitive: None,
+                format: None,
+                uuid: "s".into(),
+                source: SlotSource::SelfDeclared,
+            }],
+            effect_types: Vec::new(),
+        };
+        // A numeric string is restored to a JSON number.
+        let out = coerce_props(&schema, serde_json::json!({ "confidence": "42" }));
+        assert_eq!(out["confidence"], serde_json::json!(42));
+        assert!(out["confidence"].is_number());
+        // A non-numeric string is left unchanged (so the validator can reject it).
+        let bad = coerce_props(&schema, serde_json::json!({ "confidence": "x" }));
+        assert_eq!(bad["confidence"], serde_json::json!("x"));
+    }
+
+    #[test]
+    fn number_attribute_is_coerced_from_string_and_bad_value_rejected() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), None).unwrap();
+
+        // PlanEvent.confidence is a `number`; authored as the string "42" it
+        // coerces to a JSON number, validates, and lands in the op log.
+        let node = engine
+            .author_typed_node(
+                "PlanEvent",
+                serde_json::json!({
+                    "name": "Launch",
+                    "effective_at": "2026-01-01T00:00:00Z",
+                    "confidence": "42"
+                }),
+            )
+            .unwrap();
+        assert_eq!(node.type_label.as_deref(), Some("PlanEvent"));
+
+        // A non-numeric string is left unchanged and rejected as a wrong kind,
+        // appending nothing to the canonical log.
+        let before = engine.status().unwrap().applied_op_count;
+        let bad = engine.author_typed_node(
+            "PlanEvent",
+            serde_json::json!({
+                "name": "Bad",
+                "effective_at": "2026-01-01T00:00:00Z",
+                "confidence": "notanumber"
+            }),
+        );
+        assert!(matches!(bad, Err(StoreError::Validation { .. })));
+        assert_eq!(engine.status().unwrap().applied_op_count, before);
     }
 
     #[test]

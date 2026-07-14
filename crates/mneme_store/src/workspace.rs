@@ -14,6 +14,7 @@ use rusqlite::Connection;
 use uuid::Uuid;
 
 use mneme_core::canonical::{blake3_hex, canonical_json_document};
+use mneme_core::effective::{EffectiveSchema, compile};
 use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 use mneme_core::schema::AuthoredMetamodelBatch;
 use mneme_core::value::BlobRef;
@@ -268,9 +269,90 @@ impl Workspace {
         projection::list_nodes(&self.conn)
     }
 
+    /// The projected edge listing — the derived twin view of `create-edge` /
+    /// `tombstone-entity` effects, re-derived on every rebuild.
+    pub fn list_edges(&self) -> Result<Vec<projection::EdgeRow>> {
+        projection::list_edges(&self.conn)
+    }
+
+    /// Whether a live edge of `type_id` already connects `src_id → dst_id`
+    /// (the M1 duplicate-edge check).
+    pub fn edge_exists(&self, type_id: &str, src_id: &str, dst_id: &str) -> Result<bool> {
+        let partition = self.partition_id().to_canonical_string();
+        projection::edge_exists(
+            &self.conn,
+            &projection::EdgeQuery {
+                partition_id: &partition,
+                type_id,
+                src_id,
+                dst_id,
+            },
+        )
+    }
+
+    /// The source out-degree and destination in-degree for a relationship type
+    /// (the M1 multiplicity check input), counted over live edges.
+    pub fn edge_degree(&self, type_id: &str, src_id: &str, dst_id: &str) -> Result<(u32, u32)> {
+        let partition = self.partition_id().to_canonical_string();
+        projection::edge_degree(
+            &self.conn,
+            &projection::EdgeQuery {
+                partition_id: &partition,
+                type_id,
+                src_id,
+                dst_id,
+            },
+        )
+    }
+
     /// The projected actor registry.
     pub fn list_actors(&self) -> Result<Vec<projection::ActorRow>> {
         projection::list_actors(&self.conn)
+    }
+
+    /// Compile the M1 effective schema for every authored type — the derived
+    /// projection of the metamodel batches on the op log. Rebuilt from the log
+    /// (via the materialised authored documents), so it survives a runtime wipe.
+    /// Later batch versions win per type key.
+    ///
+    /// # Errors
+    /// Returns [`StoreError::Validation`] if a batch fails to compile (inheritance
+    /// cycle, unresolved parent, dangling field), plus IO/JSON errors reading the
+    /// authored documents.
+    pub fn compile_effective_schema(&self) -> Result<Vec<EffectiveSchema>> {
+        let snapshot = self.snapshot()?;
+        let mut out: Vec<EffectiveSchema> = Vec::new();
+        for doc in &snapshot.schema_documents {
+            let path = self
+                .paths
+                .root()
+                .join("model")
+                .join("schema")
+                .join(&doc.relative_path);
+            let bytes = fs::read(&path)?;
+            let batch: AuthoredMetamodelBatch = serde_json::from_slice(&bytes)?;
+            let schemas = compile(&batch).map_err(|e| StoreError::Validation {
+                message: e.to_string(),
+            })?;
+            for schema in schemas {
+                match out.iter_mut().find(|s| s.type_id == schema.type_id) {
+                    Some(existing) => *existing = schema,
+                    None => out.push(schema),
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    /// The compiled effective schema for a single type key, if authored.
+    ///
+    /// # Errors
+    /// See [`Self::compile_effective_schema`].
+    pub fn get_effective_schema(&self, type_key: &str) -> Result<Option<EffectiveSchema>> {
+        Ok(self
+            .compile_effective_schema()?
+            .into_iter()
+            .find(|s| s.type_id == type_key))
     }
 
     /// Resolve every slot's effective value at a viewpoint (`as_of` valid time +

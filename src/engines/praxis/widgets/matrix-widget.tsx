@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import { AlertTriangle } from 'design-system/icons';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'design-system';
@@ -40,6 +42,7 @@ export function MatrixWidget({
   selection,
   onSelectionChange,
 }: MatrixWidgetProperties) {
+  const t = useTranslations('engines.praxis.widgets.matrix');
   const [model, setModel] = useState<MatrixViewModel | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
@@ -88,7 +91,7 @@ export function MatrixWidget({
     [onSelectionChange, widget.id],
   );
 
-  let body: ReactNode = <Placeholder message="Loading matrix..." />;
+  let body: ReactNode = <Placeholder message={t('loading')} />;
   if (error) {
     body = <ErrorMessage message={error} />;
   } else if (model) {
@@ -100,6 +103,8 @@ export function MatrixWidget({
           cellMap={cellMap}
           activeNodeIds={activeNodeIds}
           activeCellIds={activeCellIds}
+          rowsColumnsLabel={t('rowsColumns')}
+          emptyMessage={t('empty')}
           onRowSelect={(rowId) => {
             emitSelection({ nodeIds: [rowId] });
           }}
@@ -110,7 +115,11 @@ export function MatrixWidget({
             emitSelection({ cellIds: [cellKey(rowId, columnId)] });
           }}
         />
-        <Legend />
+        <Legend
+          connectedLabel={t('legendConnected')}
+          missingLabel={t('legendMissing')}
+          selectionOverlapLabel={t('legendSelectionOverlap')}
+        />
       </>
     );
   }
@@ -145,6 +154,8 @@ export function MatrixWidget({
  * @param parameters.onRowSelect
  * @param parameters.onColumnSelect
  * @param parameters.onCellSelect
+ * @param parameters.rowsColumnsLabel
+ * @param parameters.emptyMessage
  */
 function MatrixTable(parameters: {
   readonly rows: MatrixAxis[];
@@ -155,6 +166,8 @@ function MatrixTable(parameters: {
   readonly onRowSelect: (rowId: string) => void;
   readonly onColumnSelect: (columnId: string) => void;
   readonly onCellSelect: (rowId: string, columnId: string) => void;
+  readonly rowsColumnsLabel: string;
+  readonly emptyMessage: string;
 }) {
   const {
     rows,
@@ -165,9 +178,11 @@ function MatrixTable(parameters: {
     onRowSelect,
     onColumnSelect,
     onCellSelect,
+    rowsColumnsLabel,
+    emptyMessage,
   } = parameters;
   if (rows.length === 0 || columns.length === 0) {
-    return <Placeholder message="Add rows and columns to visualise relationships" />;
+    return <Placeholder message={emptyMessage} />;
   }
   return (
     <div className="overflow-auto">
@@ -175,7 +190,7 @@ function MatrixTable(parameters: {
         <TableHeader>
           <TableRow>
             <TableHead className="text-muted-foreground w-48 text-xs font-semibold tracking-[0.2em] uppercase">
-              Rows / Columns
+              {rowsColumnsLabel}
             </TableHead>
             {columns.map((column) => (
               <TableHead key={column.id} className="text-center">
@@ -279,13 +294,25 @@ function MatrixCellView({
 
 /**
  *
+ * @param root0
+ * @param root0.connectedLabel
+ * @param root0.missingLabel
+ * @param root0.selectionOverlapLabel
  */
-function Legend() {
+function Legend({
+  connectedLabel,
+  missingLabel,
+  selectionOverlapLabel,
+}: {
+  readonly connectedLabel: string;
+  readonly missingLabel: string;
+  readonly selectionOverlapLabel: string;
+}) {
   return (
     <div className="text-muted-foreground flex flex-wrap gap-4 text-xs">
-      <LegendItem colorClass="bg-primary/20 text-primary" label="Connected" />
-      <LegendItem colorClass="bg-muted/30" label="Missing" />
-      <LegendItem colorClass="ring-2 ring-primary/40" label="Selection overlap" />
+      <LegendItem colorClass="bg-primary/20 text-primary" label={connectedLabel} />
+      <LegendItem colorClass="bg-muted/30" label={missingLabel} />
+      <LegendItem colorClass="ring-2 ring-primary/40" label={selectionOverlapLabel} />
     </div>
   );
 }

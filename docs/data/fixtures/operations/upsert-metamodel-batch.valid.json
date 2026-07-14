@@ -10,8 +10,11 @@
     "types": [
       {
         "type_id": "c8d3aeef-d3d2-5143-9c63-7e11c2f019a2",
+        "key": "Application",
         "applies_to": "node",
         "label": "Application",
+        "category": "Application",
+        "effect_types": [],
         "is_abstract": false,
         "parent_type_id": null
       }
@@ -19,8 +22,11 @@
     "fields": [
       {
         "field_id": "d4c7fcfa-3c4c-5ceb-abd3-1fc14e28c273",
+        "key": "disposition",
         "label": "disposition",
         "value_type": "str",
+        "semantic_kind": "enum",
+        "enum_values": ["Invest", "Tolerate", "Migrate", "Eliminate"],
         "cardinality_multi": false,
         "is_indexed": true
       }
@@ -40,9 +46,18 @@
         "edge_type_id": "5189e2d3-0b57-520d-9829-40c3d731f863",
         "allowed_src_type_ids": ["c8d3aeef-d3d2-5143-9c63-7e11c2f019a2"],
         "allowed_dst_type_ids": ["88c36fbe-5c8e-5485-92eb-952a4636be57"],
+        "allow_self": false,
+        "allow_duplicate": true,
+        "multiplicity_src": "many",
+        "multiplicity_dst": "many",
         "semantic_direction": "source_to_target"
       }
     ],
+    "validation": {
+      "string_max_length": 256,
+      "text_max_length": 4096,
+      "enum_case_sensitive": false
+    },
     "metamodel_version": "1.0.0",
     "metamodel_source": "core-v1.json"
   }

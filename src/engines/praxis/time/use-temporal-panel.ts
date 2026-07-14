@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
@@ -55,6 +57,7 @@ const INITIAL_STATE: TemporalPanelState = {
  * @returns {[TemporalPanelState, TemporalPanelActions]} current state and actions
  */
 export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
+  const t = useTranslations('engines.praxis.temporalPanel');
   const [state, setState] = useState<TemporalPanelState>(INITIAL_STATE);
   const layerReference = useRef<Layer>(INITIAL_STATE.layer);
   const loadDiff = useCallback(async (commits: TemporalCommitSummary[]) => {
@@ -176,31 +179,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         mergeConflicts: undefined,
         layer,
       }));
-      const loadSnapshot = async () => {
-        try {
-          const snapshot = await getStateAtSnapshot({
-            asOf: commitId,
-            scenario: branch,
-            layer,
-          });
-          setState((previous) => ({
-            ...previous,
-            commitId,
-            snapshot,
-            snapshotLoading: false,
-            loading: false,
-            layer,
-          }));
-        } catch (unknownError) {
-          setState((previous) => ({
-            ...previous,
-            snapshotLoading: false,
-            error: toErrorMessage(unknownError),
-            mergeConflicts: undefined,
-          }));
-        }
-      };
-      loadSnapshot().catch((_ignoredError: unknown) => {
+      loadCommitSnapshot(setState, { commitId, branch, layer }).catch((_ignoredError: unknown) => {
         return;
       });
     },
@@ -221,23 +200,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
       }
       const commitId = state.commitId;
       const branch = state.branch;
-      void (async () => {
-        try {
-          const snapshot = await getStateAtSnapshot({ asOf: commitId, scenario: branch, layer });
-          setState((previous) => ({
-            ...previous,
-            snapshot,
-            snapshotLoading: false,
-            layer,
-          }));
-        } catch (unknownError) {
-          setState((previous) => ({
-            ...previous,
-            snapshotLoading: false,
-            error: toErrorMessage(unknownError),
-          }));
-        }
-      })();
+      void loadLayerSnapshot(setState, { commitId, branch, layer });
     },
     [state.branch, state.commitId],
   );
@@ -264,7 +227,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
           ...previous,
           merging: false,
           mergeConflicts: result.conflicts,
-          error: 'Merge requires manual resolution.',
+          error: t('mergeRequiresResolution'),
         }));
         return;
       }
@@ -282,7 +245,7 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
         error: toErrorMessage(unknownError),
       }));
     }
-  }, [loadBranches, state.branch]);
+  }, [loadBranches, state.branch, t]);
 
   useEffect(() => {
     loadBranches().catch((_ignoredError: unknown) => {
@@ -307,6 +270,65 @@ export function useTemporalPanel(): [TemporalPanelState, TemporalPanelActions] {
       mergeIntoMain,
     },
   ];
+}
+
+interface SnapshotRequest {
+  readonly commitId: string;
+  readonly branch: string;
+  readonly layer: Layer;
+}
+
+/**
+ * Load and apply the snapshot for a selected commit, keeping the commit id and
+ * clearing the loading flags on success.
+ * @param setState temporal panel state setter
+ * @param request commit, branch, and layer to load
+ */
+async function loadCommitSnapshot(
+  setState: Dispatch<SetStateAction<TemporalPanelState>>,
+  request: SnapshotRequest,
+): Promise<void> {
+  const { commitId, branch, layer } = request;
+  try {
+    const snapshot = await getStateAtSnapshot({ asOf: commitId, scenario: branch, layer });
+    setState((previous) => ({
+      ...previous,
+      commitId,
+      snapshot,
+      snapshotLoading: false,
+      loading: false,
+      layer,
+    }));
+  } catch (unknownError) {
+    setState((previous) => ({
+      ...previous,
+      snapshotLoading: false,
+      error: toErrorMessage(unknownError),
+      mergeConflicts: undefined,
+    }));
+  }
+}
+
+/**
+ * Reload the snapshot after a layer change for the active commit.
+ * @param setState temporal panel state setter
+ * @param request commit, branch, and layer to load
+ */
+async function loadLayerSnapshot(
+  setState: Dispatch<SetStateAction<TemporalPanelState>>,
+  request: SnapshotRequest,
+): Promise<void> {
+  const { commitId, branch, layer } = request;
+  try {
+    const snapshot = await getStateAtSnapshot({ asOf: commitId, scenario: branch, layer });
+    setState((previous) => ({ ...previous, snapshot, snapshotLoading: false, layer }));
+  } catch (unknownError) {
+    setState((previous) => ({
+      ...previous,
+      snapshotLoading: false,
+      error: toErrorMessage(unknownError),
+    }));
+  }
 }
 
 /**

@@ -388,6 +388,32 @@ async workspaceAuthorTypedNode(request: IpcRequest<AuthorTypedNodePayload>) : Pr
 }
 },
 /**
+ * Author one **metamodel-validated** relationship into the open workspace's
+ * canonical log ([golden-journey] step 3). Endpoints, self-link, duplicate, and
+ * attribute rules are checked against the compiled effective schema before any
+ * operation is appended; an invalid write returns `VALIDATION_FAILED` and never
+ * enters the op log.
+ */
+async workspaceAuthorTypedEdge(request: IpcRequest<AuthorTypedEdgePayload>) : Promise<Result<IpcResponse<EdgeRecord>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_author_typed_edge", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The projected relationship listing — the derived twin edge view.
+ */
+async workspaceEdges(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResponse<EdgeRecord[]>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_edges", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Assert a slot value on a layer over a valid-time interval — a plan or actual
  * claim ([golden-journey] step 4). The value is validated against the
  * attribute's metamodel kind/enum before any operation is appended.
@@ -465,6 +491,11 @@ export type ApplyOperationsPayload = { branch?: string | null; operations?: Prax
  */
 export type AuthorNodePayload = { typeId: string | null }
 /**
+ * Payload for authoring one typed relationship: the relationship key, the two
+ * endpoint entity ids, and a flat string-valued attribute map.
+ */
+export type AuthorTypedEdgePayload = { relType: string; srcId: string; dstId: string; props?: Partial<{ [key in string]: string }> }
+/**
  * Payload for authoring one typed entity: the domain type key plus a flat
  * string-valued attribute map (name, enum choices, …).
  */
@@ -500,6 +531,34 @@ export type DiffArgs = { from: CommitRef; to: CommitRef; scope: string | null }
 export type DiffPayload = { before: Viewpoint; after: Viewpoint }
 export type DiffSummary = { from: string; to: string; nodeAdds: number; nodeMods: number; nodeDels: number; edgeAdds: number; edgeMods: number; edgeDels: number }
 export type DurationSummary = { count: number; total_ms: number }
+/**
+ * A host-facing projected relationship — the derived twin edge listing entry.
+ */
+export type EdgeRecord = { 
+/**
+ * The edge id.
+ */
+edgeId: string; 
+/**
+ * The relationship type's storage symbol UUID, if any.
+ */
+typeId: string | null; 
+/**
+ * The metamodel relationship key (e.g. `realises`), resolved from the symbol.
+ */
+typeLabel: string | null; 
+/**
+ * Source entity id.
+ */
+srcId: string; 
+/**
+ * Destination entity id.
+ */
+dstId: string; 
+/**
+ * Whether a tombstone has retired the edge.
+ */
+tombstoned: boolean }
 export type EdgeTombstone = { from: string; to: string }
 export type EdgeVersion = { id: string | null; from: string; to: string; type: string | null; directed: boolean | null; props: JsonValue | null }
 /**
@@ -570,7 +629,11 @@ export type MatrixViewModel = { metadata: ViewMetadata; rows: MatrixAxis[]; colu
 export type MergeConflict = { reference: string; kind: string; message: string }
 export type MergeRequest = { source: string; target: string }
 export type MergeResponse = { result: string | null; conflicts: MergeConflict[] | null }
-export type MetaAttribute = { name: string; uuid?: string | null; type: MetaAttributeKind; required?: boolean; enum?: string[] }
+export type MetaAttribute = { name: string; uuid?: string | null; type: MetaAttributeKind; required?: boolean; enum?: string[]; 
+/**
+ * `single` (default) or `multi`; declared explicitly in the seed.
+ */
+cardinality?: string | null }
 /**
  * A host-facing metamodel attribute descriptor for an entity type.
  */
@@ -592,7 +655,15 @@ export type MetaAttributeRules = { string: MetaStringRule | null; text: MetaStri
 export type MetaEnumRule = { caseSensitive: boolean | null }
 export type MetaModelDocument = { version: string; description: string | null; types: MetaType[]; relationships: MetaRelationship[]; validation: MetaValidationRules | null }
 export type MetaMultiplicity = { from: string; to: string }
-export type MetaRelationship = { id: string; uuid?: string | null; label: string | null; from: string[]; to: string[]; directed: boolean | null; multiplicity: MetaMultiplicity | null; attributes?: MetaAttribute[] }
+export type MetaRelationship = { id: string; uuid?: string | null; label: string | null; from: string[]; to: string[]; directed: boolean | null; multiplicity: MetaMultiplicity | null; 
+/**
+ * Whether a self-referential edge is permitted (declared inline in the seed).
+ */
+allowSelf?: boolean | null; 
+/**
+ * Whether duplicate edges between the same pair are permitted.
+ */
+allowDuplicate?: boolean | null; attributes?: MetaAttribute[] }
 export type MetaRelationshipValidation = { allowSelf: boolean | null; allowDuplicate: boolean | null }
 export type MetaStringRule = { maxLength: number | null }
 export type MetaType = { id: string; uuid?: string | null; label: string | null; category: string | null; extends: string | null; attributes?: MetaAttribute[]; effectTypes?: string[] | null }

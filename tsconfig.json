@@ -19,7 +19,8 @@
       "design-system/reactflow/*": ["design-system/components/*"],
       "adapters/*": ["adapters/*"],
       "dtos/*": ["dtos/*"],
-      "lib/*": ["lib/*"]
+      "lib/*": ["lib/*"],
+      "locales/*": ["../locales/*"]
     },
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
