@@ -5,4 +5,5 @@ it is the authoritative router for the project invariants, the domain glossary, 
 architecture boundaries, the coding and testing standards, and the ADRs.
 
 `AGENTS.md` intentionally keeps no separate copy of that guidance: maintaining a second full copy in step with
-`CLAUDE.md` proved error-prone and drifted. Treat `CLAUDE.md` as the single source of truth, and follow it exactly.
+`CLAUDE.md` proved error-prone and drifted. Treat `CLAUDE.md` as the single source of truth — including its precedence
+order and the agent stop rule — and follow it exactly.
