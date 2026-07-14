@@ -33,6 +33,7 @@ import { Button, ToggleGroup, ToggleGroupItem } from 'design-system';
 import { NodeSearchDialog } from 'design-system/reactflow/node-search';
 import { PraxisNode } from 'design-system/reactflow/praxis-node';
 import { TimelineEdge, type TimelineEdgeData } from 'design-system/reactflow/timeline-edge';
+import type { GraphLayoutNode } from 'dtos';
 import type {
   GraphLayoutContext,
   PraxisGraphWidgetConfig as GraphWidgetConfig,
@@ -83,7 +84,7 @@ export function GraphWidget({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const [metadata, setMetadata] = useState<GraphViewModel['metadata'] | undefined>();
-  const [background, setBackground] = useState<'dots' | 'lines' | 'cross'>('dots');
+  const [background, setBackground] = useState<BackgroundKind>('dots');
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [layoutHydrated, setLayoutHydrated] = useState(true);
@@ -183,18 +184,7 @@ export function GraphWidget({
           scenario: graphLayoutContext.scenario,
           layer: graphLayoutContext.layer,
         });
-        const layoutPositions = new Map((layout?.nodes ?? []).map((node) => [node.id, node]));
-        const mergedNodes = flowNodes.map((node) => {
-          const position = layoutPositions.get(node.id);
-          if (!position) {
-            return node;
-          }
-          return {
-            ...node,
-            position: { x: position.x, y: position.y },
-          };
-        });
-        setNodes(mergedNodes);
+        setNodes(mergeLayoutPositions(flowNodes, layout?.nodes ?? []));
       } else {
         setNodes(flowNodes);
       }
@@ -221,51 +211,16 @@ export function GraphWidget({
   }, [attachInspectHandlers, setNodes]);
 
   useEffect(() => {
-    const selectedNodeIds = selection?.nodeIds ?? [];
-    const selectedEdgeIds = selection?.edgeIds ?? [];
-    const selectedNodeIdSet = new Set(selectedNodeIds);
-    const selectedEdgeIdSet = new Set(selectedEdgeIds);
-
-    setNodes((current) => {
-      let didChange = false;
-      const next: typeof current = [];
-      for (const node of current) {
-        const isSelected = selectedNodeIdSet.has(node.id);
-        if (node.selected === isSelected) {
-          next.push(node);
-        } else {
-          didChange = true;
-          next.push({ ...node, selected: isSelected });
-        }
-      }
-      return didChange ? next : current;
-    });
-
-    setEdges((current) => {
-      let didChange = false;
-      const next: typeof current = [];
-      for (const edge of current) {
-        const isSelected = selectedEdgeIdSet.has(edge.id);
-        if (edge.selected === isSelected) {
-          next.push(edge);
-        } else {
-          didChange = true;
-          next.push({ ...edge, selected: isSelected });
-        }
-      }
-      return didChange ? next : current;
-    });
+    const selectedNodeIdSet = new Set(selection?.nodeIds);
+    const selectedEdgeIdSet = new Set(selection?.edgeIds);
+    setNodes((current) => applySelectedFlags(current, selectedNodeIdSet));
+    setEdges((current) => applySelectedFlags(current, selectedEdgeIdSet));
   }, [selection, setEdges, setNodes]);
 
   const handleSelection = useCallback(
     (nextSelection: { nodes?: Node[]; edges?: Edge[] }) => {
       const snapshot = selectionFromEvent(nextSelection);
-      if (
-        selection &&
-        areStringSetsEqual(selection.nodeIds, snapshot.nodeIds) &&
-        areStringSetsEqual(selection.edgeIds, snapshot.edgeIds) &&
-        areStringSetsEqual(selection.cellIds, snapshot.cellIds)
-      ) {
+      if (selectionMatchesSnapshot(selection, snapshot)) {
         return;
       }
 
@@ -388,7 +343,7 @@ export function GraphWidget({
                   type="single"
                   value={background}
                   onValueChange={(value) => {
-                    if (value === 'dots' || value === 'lines' || value === 'cross') {
+                    if (isBackgroundKind(value)) {
                       setBackground(value);
                     }
                   }}
@@ -512,12 +467,86 @@ interface GraphWidgetOverlayProperties {
   readonly errorBadgeLabel?: string;
 }
 
+type BackgroundKind = 'dots' | 'lines' | 'cross';
+
+/**
+ * Narrow a raw toggle-group value to a supported background kind.
+ * @param value - Raw toggle-group value.
+ * @returns True when the value is a known background kind.
+ */
+function isBackgroundKind(value: string): value is BackgroundKind {
+  return value === 'dots' || value === 'lines' || value === 'cross';
+}
+
+/**
+ * Reconcile the `selected` flag on flow nodes or edges against an id set,
+ * preserving referential identity when nothing changed.
+ * @param items - Current flow nodes or edges.
+ * @param selectedIds - Ids that should be marked selected.
+ * @returns The reconciled array, or the original reference when unchanged.
+ */
+function applySelectedFlags<T extends { id: string; selected?: boolean }>(
+  items: T[],
+  selectedIds: Set<string>,
+): T[] {
+  let didChange = false;
+  const next: T[] = [];
+  for (const item of items) {
+    const isSelected = selectedIds.has(item.id);
+    if (item.selected === isSelected) {
+      next.push(item);
+    } else {
+      didChange = true;
+      next.push({ ...item, selected: isSelected });
+    }
+  }
+  return didChange ? next : items;
+}
+
+/**
+ * Overlay persisted layout coordinates onto freshly built flow nodes.
+ * @param flowNodes - Nodes produced from the current view.
+ * @param layoutNodes - Persisted positions keyed by node id.
+ * @returns Flow nodes with saved positions applied where available.
+ */
+function mergeLayoutPositions(
+  flowNodes: Node<GraphNodeData>[],
+  layoutNodes: readonly GraphLayoutNode[],
+): Node<GraphNodeData>[] {
+  const positions = new Map(layoutNodes.map((node) => [node.id, node]));
+  return flowNodes.map((node) => {
+    const position = positions.get(node.id);
+    if (!position) {
+      return node;
+    }
+    return { ...node, position: { x: position.x, y: position.y } };
+  });
+}
+
+/**
+ * Whether the current selection already equals the snapshot from a flow event.
+ * @param selection - Current selection state, if any.
+ * @param snapshot - Selection derived from the latest flow event.
+ * @returns True when node, edge, and cell id sets all match.
+ */
+function selectionMatchesSnapshot(
+  selection: SelectionState | undefined,
+  snapshot: ReturnType<typeof selectionFromEvent>,
+): boolean {
+  return (
+    selection !== undefined &&
+    areStringSetsEqual(selection.nodeIds, snapshot.nodeIds) &&
+    areStringSetsEqual(selection.edgeIds, snapshot.edgeIds) &&
+    areStringSetsEqual(selection.cellIds, snapshot.cellIds)
+  );
+}
+
 /**
  * Map a background selection to the XYFlow variant enum.
  * @param background - Selected background type.
  * @returns Background variant.
  */
-function resolveBackgroundVariant(background: 'dots' | 'lines' | 'cross'): BackgroundVariant {
+function resolveBackgroundVariant(background: BackgroundKind): BackgroundVariant {
   switch (background) {
     case 'dots': {
       return BackgroundVariant.Dots;

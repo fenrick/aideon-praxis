@@ -74,57 +74,26 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : 'The workspace operation failed.';
 }
 
+/** Runs an operation inside the busy/open/error lifecycle and refreshes after. */
+type RunOperation = (operation: () => Promise<void>) => Promise<void>;
+
+/** The workspace lifecycle actions (create/open/author-blank/rebuild). */
+type LifecycleActions = Pick<
+  WorkspaceFoundationActions,
+  'createWorkspace' | 'openWorkspace' | 'authorNode' | 'rebuild'
+>;
+
+/** The metamodel authoring actions (typed nodes, typed edges, claims). */
+type AuthoringActions = Pick<
+  WorkspaceFoundationActions,
+  'authorTypedNode' | 'authorTypedEdge' | 'setClaim'
+>;
+
 /**
- * Golden-pattern `[state, actions]` hook over the canonical workspace
- * lifecycle + authoring IPC surface: create/open a workspace, author nodes
- * into the canonical op log, and read the derived twin listing back.
+ * The workspace lifecycle commands, each wrapped in the busy/refresh envelope.
+ * @param run - The lifecycle envelope that refreshes derived state after work.
  */
-export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFoundationActions] {
-  const [phase, setPhase] = useState<FoundationPhase>('closed');
-  const [status, setStatus] = useState<WorkspaceStatus | undefined>();
-  const [nodes, setNodes] = useState<readonly NodeRecord[]>([]);
-  const [edges, setEdges] = useState<readonly EdgeRecord[]>([]);
-  const [metamodelTypes, setMetamodelTypes] = useState<readonly MetaTypeInfo[]>([]);
-  // eslint-disable-next-line react/hook-use-state -- the public setter is the `setViewpoint` action below, which also re-resolves
-  const [viewpoint, setViewpointState] = useState<Viewpoint>(DEFAULT_VIEWPOINT);
-  const [resolved, setResolved] = useState<readonly ResolvedEntity[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | undefined>();
-
-  const refresh = useCallback(async (view: Viewpoint) => {
-    const nextStatus = await invokeIpc<WorkspaceStatus>('workspace_status', {});
-    const nextNodes = await invokeIpc<NodeRecord[]>('workspace_nodes', {});
-    const nextEdges = await invokeIpc<EdgeRecord[]>('workspace_edges', {});
-    // The metamodel is embedded host-side and workspace-independent; fetching
-    // it on refresh keeps the authoring palette in sync without a separate effect.
-    const nextTypes = await invokeIpc<MetaTypeInfo[]>('workspace_metamodel_types', {});
-    // The catalogue artefact: the twin resolved at the active viewpoint.
-    const nextResolved = await invokeIpc<ResolvedEntity[]>('workspace_state_at', view);
-    setStatus(nextStatus);
-    setNodes(nextNodes);
-    setEdges(nextEdges);
-    setMetamodelTypes(nextTypes);
-    setResolved(nextResolved);
-  }, []);
-
-  // The latest viewpoint, read by refresh() without re-creating callbacks.
-  const viewpointReference = useRef<Viewpoint>(DEFAULT_VIEWPOINT);
-
-  const run = useCallback(
-    async (operation: () => Promise<void>) => {
-      setPhase('busy');
-      setErrorMessage(undefined);
-      try {
-        await operation();
-        await refresh(viewpointReference.current);
-        setPhase('open');
-      } catch (error) {
-        setErrorMessage(messageOf(error));
-        setPhase('error');
-      }
-    },
-    [refresh],
-  );
-
+function useLifecycleActions(run: RunOperation): LifecycleActions {
   const createWorkspace = useCallback(
     async (root: string) => {
       await run(async () => {
@@ -149,6 +118,24 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
     });
   }, [run]);
 
+  const rebuild = useCallback(async () => {
+    await run(async () => {
+      // Accepted work: the command returns immediately; read-write (and the
+      // proof-carrying hash) arrives on the readiness event ([ADR-0040]).
+      const ready = waitForWorkspaceReady();
+      await invokeIpc<unknown>('workspace_rebuild', {});
+      await ready;
+    });
+  }, [run]);
+
+  return { createWorkspace, openWorkspace, authorNode, rebuild };
+}
+
+/**
+ * The metamodel authoring commands, each wrapped in the busy/refresh envelope.
+ * @param run - The lifecycle envelope that refreshes derived state after work.
+ */
+function useAuthoringActions(run: RunOperation): AuthoringActions {
   const authorTypedNode = useCallback(
     async (typeId: string, properties: Record<string, string>) => {
       await run(async () => {
@@ -194,6 +181,63 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
     [run],
   );
 
+  return { authorTypedNode, authorTypedEdge, setClaim };
+}
+
+/**
+ * Golden-pattern `[state, actions]` hook over the canonical workspace
+ * lifecycle + authoring IPC surface: create/open a workspace, author nodes
+ * into the canonical op log, and read the derived twin listing back.
+ */
+export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFoundationActions] {
+  const [phase, setPhase] = useState<FoundationPhase>('closed');
+  const [status, setStatus] = useState<WorkspaceStatus | undefined>();
+  const [nodes, setNodes] = useState<readonly NodeRecord[]>([]);
+  const [edges, setEdges] = useState<readonly EdgeRecord[]>([]);
+  const [metamodelTypes, setMetamodelTypes] = useState<readonly MetaTypeInfo[]>([]);
+  // eslint-disable-next-line react/hook-use-state -- the public setter is the `setViewpoint` action below, which also re-resolves
+  const [viewpoint, setViewpointState] = useState<Viewpoint>(DEFAULT_VIEWPOINT);
+  const [resolved, setResolved] = useState<readonly ResolvedEntity[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
+
+  const refresh = useCallback(async (view: Viewpoint) => {
+    const nextStatus = await invokeIpc<WorkspaceStatus>('workspace_status', {});
+    const nextNodes = await invokeIpc<NodeRecord[]>('workspace_nodes', {});
+    const nextEdges = await invokeIpc<EdgeRecord[]>('workspace_edges', {});
+    // The metamodel is embedded host-side and workspace-independent; fetching
+    // it on refresh keeps the authoring palette in sync without a separate effect.
+    const nextTypes = await invokeIpc<MetaTypeInfo[]>('workspace_metamodel_types', {});
+    // The catalogue artefact: the twin resolved at the active viewpoint.
+    const nextResolved = await invokeIpc<ResolvedEntity[]>('workspace_state_at', view);
+    setStatus(nextStatus);
+    setNodes(nextNodes);
+    setEdges(nextEdges);
+    setMetamodelTypes(nextTypes);
+    setResolved(nextResolved);
+  }, []);
+
+  // The latest viewpoint, read by refresh() without re-creating callbacks.
+  const viewpointReference = useRef<Viewpoint>(DEFAULT_VIEWPOINT);
+
+  const run = useCallback<RunOperation>(
+    async (operation) => {
+      setPhase('busy');
+      setErrorMessage(undefined);
+      try {
+        await operation();
+        await refresh(viewpointReference.current);
+        setPhase('open');
+      } catch (error) {
+        setErrorMessage(messageOf(error));
+        setPhase('error');
+      }
+    },
+    [refresh],
+  );
+
+  const lifecycle = useLifecycleActions(run);
+  const authoring = useAuthoringActions(run);
+
   const setViewpoint = useCallback(async (next: Viewpoint) => {
     viewpointReference.current = next;
     setViewpointState(next);
@@ -207,28 +251,8 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
     [],
   );
 
-  const rebuild = useCallback(async () => {
-    await run(async () => {
-      // Accepted work: the command returns immediately; read-write (and the
-      // proof-carrying hash) arrives on the readiness event ([ADR-0040]).
-      const ready = waitForWorkspaceReady();
-      await invokeIpc<unknown>('workspace_rebuild', {});
-      await ready;
-    });
-  }, [run]);
-
   return [
     { phase, status, nodes, edges, metamodelTypes, viewpoint, resolved, errorMessage },
-    {
-      createWorkspace,
-      openWorkspace,
-      authorNode,
-      authorTypedNode,
-      authorTypedEdge,
-      setClaim,
-      setViewpoint,
-      diff,
-      rebuild,
-    },
+    { ...lifecycle, ...authoring, setViewpoint, diff },
   ];
 }

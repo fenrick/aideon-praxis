@@ -109,6 +109,46 @@ function scheduleFrame(callback: () => void) {
 }
 
 /**
+ * Provide memoised zoom-in, zoom-out, and reset-view handlers bound to a
+ * viewport setter from the infinite-canvas hook.
+ * @param setViewport - Viewport state setter.
+ * @returns Zoom control click handlers.
+ */
+function useCanvasZoomControls(setViewport: ReturnType<typeof useInfiniteCanvas>['setViewport']) {
+  const handleZoomIn = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      setViewport((previous) => ({
+        ...previous,
+        scale: Math.min(previous.scale + 0.1, 3),
+      }));
+    },
+    [setViewport],
+  );
+
+  const handleZoomOut = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      setViewport((previous) => ({
+        ...previous,
+        scale: Math.max(previous.scale - 0.1, 0.1),
+      }));
+    },
+    [setViewport],
+  );
+
+  const handleResetView = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      setViewport({ x: 0, y: 0, scale: 0.8 });
+    },
+    [setViewport],
+  );
+
+  return { handleZoomIn, handleZoomOut, handleResetView };
+}
+
+/**
  * Lay out and render multiple canvas widgets on an infinite surface.
  * @param root0
  * @param root0.widgets
@@ -258,35 +298,7 @@ function AideonCanvasRuntimeImpl<TWidget extends CanvasWidgetLayout>({
     return `translate(${x}px, ${y}px) scale(${scale})`;
   }, [viewport.scale, viewport.x, viewport.y]);
 
-  const handleZoomIn = useCallback(
-    (event: React.MouseEvent) => {
-      event.stopPropagation();
-      setViewport((previous) => ({
-        ...previous,
-        scale: Math.min(previous.scale + 0.1, 3),
-      }));
-    },
-    [setViewport],
-  );
-
-  const handleZoomOut = useCallback(
-    (event: React.MouseEvent) => {
-      event.stopPropagation();
-      setViewport((previous) => ({
-        ...previous,
-        scale: Math.max(previous.scale - 0.1, 0.1),
-      }));
-    },
-    [setViewport],
-  );
-
-  const handleResetView = useCallback(
-    (event: React.MouseEvent) => {
-      event.stopPropagation();
-      setViewport({ x: 0, y: 0, scale: 0.8 });
-    },
-    [setViewport],
-  );
+  const { handleZoomIn, handleZoomOut, handleResetView } = useCanvasZoomControls(setViewport);
 
   return (
     <div

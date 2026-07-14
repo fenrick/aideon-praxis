@@ -5,7 +5,9 @@ import {
   useState,
   useSyncExternalStore,
   type ComponentPropsWithoutRef,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from 'react';
 
 import {
@@ -629,6 +631,105 @@ function ToolbarStatusMessage({ statusMessage }: { readonly statusMessage?: stri
 }
 
 /**
+ * Assemble the full command-palette list from shell, workspace, help, and debug sources.
+ * @param root0 - Inputs for the memoised command list.
+ * @param root0.sidebar - Sidebar controls when available.
+ * @param root0.shell - Shell controls when available.
+ * @param root0.theme - Theme controls when available.
+ * @param root0.workspaceCommands - Workspace-provided commands.
+ * @param root0.shortcutLabelFor - Formatter for shortcut labels.
+ * @param root0.isDevelopment - Whether debug-only commands should be included.
+ * @param root0.openStyleguide - Opens the styleguide window.
+ * @param root0.setShortcutsOpen - Toggles the keyboard-shortcuts dialog.
+ * @param root0.t - Translator scoped to `shell.toolbar`.
+ * @returns Palette-ready command items.
+ */
+function useShellCommandList({
+  sidebar,
+  shell,
+  theme,
+  workspaceCommands,
+  shortcutLabelFor,
+  isDevelopment,
+  openStyleguide,
+  setShortcutsOpen,
+  t,
+}: {
+  readonly sidebar: ReturnType<typeof useOptionalSidebar>;
+  readonly shell: ReturnType<typeof useAideonShellControls>;
+  readonly theme: ReturnType<typeof useOptionalTheme>;
+  readonly workspaceCommands: readonly AideonCommandItem[];
+  readonly shortcutLabelFor: (letter: string) => string;
+  readonly isDevelopment: boolean;
+  readonly openStyleguide: () => void;
+  readonly setShortcutsOpen: Dispatch<SetStateAction<boolean>>;
+  readonly t: (key: string) => string;
+}): AideonCommandItem[] {
+  return useMemo(() => {
+    const shellCommands = buildShellCommands({
+      sidebar,
+      shell,
+      theme,
+      workspaceCommands,
+      shortcutLabelFor,
+      t,
+    });
+    return [
+      ...shellCommands,
+      {
+        id: 'help.shortcuts',
+        group: 'Help',
+        label: t('keyboardShortcuts'),
+        onSelect: () => {
+          setShortcutsOpen(true);
+        },
+      },
+      ...(isDevelopment
+        ? ([
+            {
+              id: 'debug.styleguide',
+              group: 'Debug',
+              label: t('uiStyleGuide'),
+              onSelect: () => {
+                openStyleguide();
+              },
+            },
+          ] satisfies AideonCommandItem[])
+        : []),
+    ] satisfies AideonCommandItem[];
+  }, [
+    isDevelopment,
+    openStyleguide,
+    setShortcutsOpen,
+    shell,
+    sidebar,
+    theme,
+    workspaceCommands,
+    shortcutLabelFor,
+    t,
+  ]);
+}
+
+/**
+ * Open the command palette in response to the workspace-dispatched global event.
+ * @param setCommandPaletteOpen - Toggles the command-palette dialog.
+ */
+function useWorkspaceCommandPaletteEvent(setCommandPaletteOpen: Dispatch<SetStateAction<boolean>>) {
+  useEffect(() => {
+    if (typeof globalThis === 'undefined') {
+      return;
+    }
+    const handleCommandPalette = () => {
+      setCommandPaletteOpen(true);
+    };
+    globalThis.addEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
+    return () => {
+      globalThis.removeEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
+    };
+  }, [setCommandPaletteOpen]);
+}
+
+/**
  * Application-level toolbar shell for Aideon Desktop.
  * Workspace modules provide `center` (search) and `end` (actions) content.
  * @param root0
@@ -682,48 +783,17 @@ export function AideonToolbar({
     globalThis.location.assign('/styleguide');
   }, [isTauri]);
 
-  const commands = useMemo(() => {
-    const shellCommands = buildShellCommands({
-      sidebar,
-      shell,
-      theme,
-      workspaceCommands,
-      shortcutLabelFor,
-      t,
-    });
-    return [
-      ...shellCommands,
-      {
-        id: 'help.shortcuts',
-        group: 'Help',
-        label: t('keyboardShortcuts'),
-        onSelect: () => {
-          setShortcutsOpen(true);
-        },
-      },
-      ...(isDevelopment
-        ? ([
-            {
-              id: 'debug.styleguide',
-              group: 'Debug',
-              label: t('uiStyleGuide'),
-              onSelect: () => {
-                openStyleguide();
-              },
-            },
-          ] satisfies AideonCommandItem[])
-        : []),
-    ] satisfies AideonCommandItem[];
-  }, [
-    isDevelopment,
-    openStyleguide,
-    shell,
+  const commands = useShellCommandList({
     sidebar,
+    shell,
     theme,
     workspaceCommands,
     shortcutLabelFor,
+    isDevelopment,
+    openStyleguide,
+    setShortcutsOpen,
     t,
-  ]);
+  });
 
   useBrowserShortcutHandler({
     isTauri,
@@ -744,18 +814,7 @@ export function AideonToolbar({
     },
   });
 
-  useEffect(() => {
-    if (typeof globalThis === 'undefined') {
-      return;
-    }
-    const handleCommandPalette = () => {
-      setCommandPaletteOpen(true);
-    };
-    globalThis.addEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
-    return () => {
-      globalThis.removeEventListener('aideon_workspace_open_command_palette', handleCommandPalette);
-    };
-  }, []);
+  useWorkspaceCommandPaletteEvent(setCommandPaletteOpen);
 
   // macOS overlay titlebar: the traffic lights occupy the top-left ~70px, so
   // the first row's content is inset to clear them. Other platforms get none.

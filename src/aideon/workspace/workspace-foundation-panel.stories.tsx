@@ -84,48 +84,41 @@ const EDGES: EdgeRecord[] = [
   },
 ];
 
+/** Resolve the workspace status (shared by the create/open/status commands). */
+const resolveStatus = () => Promise.resolve(STATUS);
+
+/**
+ * Build the per-command IPC response map for a given node listing.
+ * @param nodes - The node listing to return.
+ */
+function hostResponses(nodes: NodeRecord[]): Map<string, () => Promise<unknown>> {
+  const authoredNode = () => Promise.resolve(nodes[0]);
+  return new Map<string, () => Promise<unknown>>([
+    ['workspace_create', resolveStatus],
+    ['workspace_open', resolveStatus],
+    ['workspace_status', resolveStatus],
+    ['workspace_nodes', () => Promise.resolve(nodes)],
+    ['workspace_edges', () => Promise.resolve(nodes.length > 0 ? EDGES : [])],
+    ['workspace_author_typed_edge', () => Promise.resolve(EDGES[0])],
+    ['workspace_metamodel_types', () => Promise.resolve(TYPES)],
+    ['workspace_state_at', () => Promise.resolve(nodes.length > 0 ? RESOLVED : [])],
+    ['workspace_diff', () => Promise.resolve(DELTAS)],
+    ['workspace_set_claim', () => Promise.resolve()],
+    ['workspace_author_node', authoredNode],
+    ['workspace_author_typed_node', authoredNode],
+  ]);
+}
+
 /**
  * Route mocked IPC responses per command.
  * @param nodes - The node listing to return.
  */
 function mockHost(nodes: NodeRecord[]) {
-  mocked(invokeIpc).mockImplementation((command: string) => {
-    switch (command) {
-      case 'workspace_create':
-      case 'workspace_open':
-      case 'workspace_status': {
-        return Promise.resolve(STATUS);
-      }
-      case 'workspace_nodes': {
-        return Promise.resolve(nodes);
-      }
-      case 'workspace_edges': {
-        return Promise.resolve(nodes.length > 0 ? EDGES : []);
-      }
-      case 'workspace_author_typed_edge': {
-        return Promise.resolve(EDGES[0]);
-      }
-      case 'workspace_metamodel_types': {
-        return Promise.resolve(TYPES);
-      }
-      case 'workspace_state_at': {
-        return Promise.resolve(nodes.length > 0 ? RESOLVED : []);
-      }
-      case 'workspace_diff': {
-        return Promise.resolve(DELTAS);
-      }
-      case 'workspace_set_claim': {
-        return Promise.resolve();
-      }
-      case 'workspace_author_node':
-      case 'workspace_author_typed_node': {
-        return Promise.resolve(nodes[0]);
-      }
-      default: {
-        return Promise.reject(new Error(`unmocked command ${command}`));
-      }
-    }
-  });
+  const responses = hostResponses(nodes);
+  mocked(invokeIpc).mockImplementation(
+    (command: string) =>
+      responses.get(command)?.() ?? Promise.reject(new Error(`unmocked command ${command}`)),
+  );
 }
 
 const meta = {

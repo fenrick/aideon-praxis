@@ -58,6 +58,38 @@ interface HostPlatformProviderProperties {
 }
 
 /**
+ * Resolve the effective inspector properties for the current selection by
+ * merging stored edits over the properties derived from the source graph view.
+ * @param selectionState - Current selection and stored per-selection edits.
+ * @param selectionState.selection - The active selection state.
+ * @param selectionState.properties - Stored per-selection property edits keyed by selection.
+ * @param selectionKind - Kind of the current selection.
+ * @param selectionId - Primary selection identifier, if any.
+ * @param graphViewCache - Cached graph views keyed by source widget id.
+ * @returns Merged selection properties, or undefined when nothing is selected.
+ */
+function resolveSelectedProperties(
+  selectionState: {
+    readonly selection: SelectionState;
+    readonly properties: Record<string, SelectionProperties>;
+  },
+  selectionKind: SelectionKind,
+  selectionId: string | undefined,
+  graphViewCache: Map<string, GraphViewModel>,
+): SelectionProperties | undefined {
+  if (!selectionId) {
+    return undefined;
+  }
+  const storedProperties = Reflect.get(selectionState.properties, selectionId) as
+    SelectionProperties | undefined;
+  const view = selectionState.selection.sourceWidgetId
+    ? graphViewCache.get(selectionState.selection.sourceWidgetId)
+    : undefined;
+  const viewProperties = resolveViewSelectionProperties({ selectionKind, selectionId, view });
+  return mergeSelectionProperties(viewProperties, storedProperties);
+}
+
+/**
  * Provide Praxis workspace selection and state context to descendant slots.
  * @param root0 - Provider props.
  * @param root0.onSelectionChange - Forwarded when the global selection changes.
@@ -278,18 +310,12 @@ function HostPlatformStateProvider({
 
   const selectionKind = deriveSelectionKind(selectionState.selection);
   const selectionId = primarySelectionId(selectionState.selection);
-  const selectedProperties = ((): SelectionProperties | undefined => {
-    if (!selectionId) {
-      return;
-    }
-    const storedProperties = Reflect.get(selectionState.properties, selectionId) as
-      SelectionProperties | undefined;
-    const view = selectionState.selection.sourceWidgetId
-      ? graphViewCache.get(selectionState.selection.sourceWidgetId)
-      : undefined;
-    const viewProperties = resolveViewSelectionProperties({ selectionKind, selectionId, view });
-    return mergeSelectionProperties(viewProperties, storedProperties);
-  })();
+  const selectedProperties = resolveSelectedProperties(
+    selectionState,
+    selectionKind,
+    selectionId,
+    graphViewCache,
+  );
 
   const handleSelectionChange = useCallback(
     (next: SelectionState) => {
