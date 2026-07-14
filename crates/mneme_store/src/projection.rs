@@ -72,10 +72,9 @@ pub fn open_runtime(paths: &Paths) -> Result<Connection> {
     Ok(conn)
 }
 
-/// Create the foundation projection tables if they do not exist.
-pub fn init_schema(conn: &Connection) -> Result<()> {
-    conn.execute_batch(
-        "
+/// The DDL for the foundation projection tables and indexes. Applied verbatim
+/// by [`init_schema`]; every statement is `IF NOT EXISTS` so it is idempotent.
+const FOUNDATION_SCHEMA_SQL: &str = "
         CREATE TABLE IF NOT EXISTS aideon_meta (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
@@ -155,8 +154,11 @@ pub fn init_schema(conn: &Connection) -> Result<()> {
         );
         CREATE INDEX IF NOT EXISTS aideon_edges_pair
             ON aideon_edges (partition_id, type_id, src_id, dst_id);
-        ",
-    )?;
+        ";
+
+/// Create the foundation projection tables if they do not exist.
+pub fn init_schema(conn: &Connection) -> Result<()> {
+    conn.execute_batch(FOUNDATION_SCHEMA_SQL)?;
     set_meta(
         conn,
         "runtime_schema_version",
@@ -253,97 +255,127 @@ pub fn record_applied_op(
 /// applied by the workspace where the on-disk projection is materialised).
 pub fn apply_kind_effect(conn: &Connection, env: &OpEnvelope) -> Result<()> {
     match &env.payload {
-        OpPayload::ActorDeclare(actor) => {
-            let digest = env.canonical_record_digest()?;
-            conn.execute(
-                "INSERT INTO aideon_actors(actor_id, actor_kind, display_name, declaration_digest)
+        OpPayload::ActorDeclare(actor) => apply_actor_declare(conn, env, actor)?,
+        OpPayload::CreateNode(node) => apply_create_node(conn, node)?,
+        OpPayload::CreateEdge(edge) => apply_create_edge(conn, edge)?,
+        OpPayload::TombstoneEntity(tomb) => apply_tombstone_entity(conn, tomb)?,
+        OpPayload::SetPropertyInterval(spi) => apply_set_property_interval(conn, spi)?,
+        _ => {}
+    }
+    Ok(())
+}
+
+/// Upsert the actor registry row for an `actor-declare` op.
+fn apply_actor_declare(
+    conn: &Connection,
+    env: &OpEnvelope,
+    actor: &mneme_core::ops::ActorDeclare,
+) -> Result<()> {
+    let digest = env.canonical_record_digest()?;
+    conn.execute(
+        "INSERT INTO aideon_actors(actor_id, actor_kind, display_name, declaration_digest)
                  VALUES (?1, ?2, ?3, ?4)
                  ON CONFLICT(actor_id) DO UPDATE SET
                     actor_kind = excluded.actor_kind,
                     display_name = excluded.display_name,
                     declaration_digest = excluded.declaration_digest",
-                params![
-                    actor.declared_actor_id.to_canonical_string(),
-                    format!("{:?}", actor.actor_kind).to_lowercase(),
-                    actor.display_name,
-                    digest
-                ],
-            )?;
-        }
-        OpPayload::CreateNode(node) => {
-            conn.execute(
-                "INSERT INTO aideon_nodes(partition_id, node_id, type_id, tombstoned)
+        params![
+            actor.declared_actor_id.to_canonical_string(),
+            format!("{:?}", actor.actor_kind).to_lowercase(),
+            actor.display_name,
+            digest
+        ],
+    )?;
+    Ok(())
+}
+
+/// Upsert the node-index row for a `create-node` op.
+fn apply_create_node(conn: &Connection, node: &mneme_core::ops::CreateNode) -> Result<()> {
+    conn.execute(
+        "INSERT INTO aideon_nodes(partition_id, node_id, type_id, tombstoned)
                  VALUES (?1, ?2, ?3, 0)
                  ON CONFLICT(partition_id, node_id) DO UPDATE SET
                     type_id = excluded.type_id",
-                params![
-                    node.partition.to_canonical_string(),
-                    node.node_id.to_canonical_string(),
-                    node.type_id.map(|t| t.to_canonical_string()),
-                ],
-            )?;
-        }
-        OpPayload::CreateEdge(edge) => {
-            conn.execute(
-                "INSERT INTO aideon_edges(partition_id, edge_id, type_id, src_id, dst_id, tombstoned)
+        params![
+            node.partition.to_canonical_string(),
+            node.node_id.to_canonical_string(),
+            node.type_id.map(|t| t.to_canonical_string()),
+        ],
+    )?;
+    Ok(())
+}
+
+/// Upsert the edge-index row for a `create-edge` op.
+fn apply_create_edge(conn: &Connection, edge: &mneme_core::ops::CreateEdge) -> Result<()> {
+    conn.execute(
+        "INSERT INTO aideon_edges(partition_id, edge_id, type_id, src_id, dst_id, tombstoned)
                  VALUES (?1, ?2, ?3, ?4, ?5, 0)
                  ON CONFLICT(partition_id, edge_id) DO UPDATE SET
                     type_id = excluded.type_id,
                     src_id = excluded.src_id,
                     dst_id = excluded.dst_id",
-                params![
-                    edge.partition.to_canonical_string(),
-                    edge.edge_id.to_canonical_string(),
-                    edge.type_id.map(|t| t.to_canonical_string()),
-                    edge.src_id.to_canonical_string(),
-                    edge.dst_id.to_canonical_string(),
-                ],
-            )?;
-        }
-        OpPayload::TombstoneEntity(tomb) => {
-            // Tombstone whichever entity it is — node or edge (one of these is a no-op).
-            conn.execute(
-                "UPDATE aideon_nodes SET tombstoned = 1
+        params![
+            edge.partition.to_canonical_string(),
+            edge.edge_id.to_canonical_string(),
+            edge.type_id.map(|t| t.to_canonical_string()),
+            edge.src_id.to_canonical_string(),
+            edge.dst_id.to_canonical_string(),
+        ],
+    )?;
+    Ok(())
+}
+
+/// Tombstone whichever entity a `tombstone-entity` op names — node or edge
+/// (one of these updates is a no-op).
+fn apply_tombstone_entity(
+    conn: &Connection,
+    tomb: &mneme_core::ops::TombstoneEntity,
+) -> Result<()> {
+    conn.execute(
+        "UPDATE aideon_nodes SET tombstoned = 1
                  WHERE partition_id = ?1 AND node_id = ?2",
-                params![
-                    tomb.partition.to_canonical_string(),
-                    tomb.entity_id.to_canonical_string(),
-                ],
-            )?;
-            conn.execute(
-                "UPDATE aideon_edges SET tombstoned = 1
+        params![
+            tomb.partition.to_canonical_string(),
+            tomb.entity_id.to_canonical_string(),
+        ],
+    )?;
+    conn.execute(
+        "UPDATE aideon_edges SET tombstoned = 1
                  WHERE partition_id = ?1 AND edge_id = ?2",
-                params![
-                    tomb.partition.to_canonical_string(),
-                    tomb.entity_id.to_canonical_string(),
-                ],
-            )?;
-        }
-        OpPayload::SetPropertyInterval(spi) => {
-            let layer = match spi.layer {
-                mneme_core::ops::Layer::Plan => "plan",
-                mneme_core::ops::Layer::Actual => "actual",
-            };
-            let value_json = serde_json::to_string(&spi.value)?;
-            conn.execute(
-                "INSERT INTO aideon_facts(
+        params![
+            tomb.partition.to_canonical_string(),
+            tomb.entity_id.to_canonical_string(),
+        ],
+    )?;
+    Ok(())
+}
+
+/// Append the property-fact row for a `set-property-interval` op.
+fn apply_set_property_interval(
+    conn: &Connection,
+    spi: &mneme_core::ops::SetPropertyInterval,
+) -> Result<()> {
+    let layer = match spi.layer {
+        mneme_core::ops::Layer::Plan => "plan",
+        mneme_core::ops::Layer::Actual => "actual",
+    };
+    let value_json = serde_json::to_string(&spi.value)?;
+    conn.execute(
+        "INSERT INTO aideon_facts(
                     partition_id, entity_id, field_id, layer,
                     valid_from, valid_to, asserted_at, value_json)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                params![
-                    spi.partition.to_canonical_string(),
-                    spi.entity_id.to_canonical_string(),
-                    spi.field_id.to_canonical_string(),
-                    layer,
-                    spi.valid_from.0,
-                    spi.valid_to.map(|v| v.0),
-                    spi.asserted_at.0,
-                    value_json,
-                ],
-            )?;
-        }
-        _ => {}
-    }
+        params![
+            spi.partition.to_canonical_string(),
+            spi.entity_id.to_canonical_string(),
+            spi.field_id.to_canonical_string(),
+            layer,
+            spi.valid_from.0,
+            spi.valid_to.map(|v| v.0),
+            spi.asserted_at.0,
+            value_json,
+        ],
+    )?;
     Ok(())
 }
 
@@ -461,18 +493,32 @@ pub struct ActorRow {
     pub display_name: String,
 }
 
+/// Run a parameterless `SELECT` and map every row through `map`, collecting the
+/// results. Shared by the projection's list queries so the prepare/iterate/
+/// collect boilerplate lives in one place.
+fn query_rows<T>(
+    conn: &Connection,
+    sql: &str,
+    map: impl FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
+) -> Result<Vec<T>> {
+    let mut stmt = conn.prepare(sql)?;
+    let rows = stmt.query_map([], map)?;
+    Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+}
+
 /// List every projected node, ordered by node id.
 pub fn list_nodes(conn: &Connection) -> Result<Vec<NodeRow>> {
-    let mut stmt =
-        conn.prepare("SELECT node_id, type_id, tombstoned FROM aideon_nodes ORDER BY node_id")?;
-    let rows = stmt.query_map([], |row| {
-        Ok(NodeRow {
-            node_id: row.get(0)?,
-            type_id: row.get(1)?,
-            tombstoned: row.get::<_, i64>(2)? != 0,
-        })
-    })?;
-    Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+    query_rows(
+        conn,
+        "SELECT node_id, type_id, tombstoned FROM aideon_nodes ORDER BY node_id",
+        |row| {
+            Ok(NodeRow {
+                node_id: row.get(0)?,
+                type_id: row.get(1)?,
+                tombstoned: row.get::<_, i64>(2)? != 0,
+            })
+        },
+    )
 }
 
 /// One projected edge row: the derived listing of `create-edge` /
@@ -493,19 +539,19 @@ pub struct EdgeRow {
 
 /// List every projected edge, ordered by edge id.
 pub fn list_edges(conn: &Connection) -> Result<Vec<EdgeRow>> {
-    let mut stmt = conn.prepare(
+    query_rows(
+        conn,
         "SELECT edge_id, type_id, src_id, dst_id, tombstoned FROM aideon_edges ORDER BY edge_id",
-    )?;
-    let rows = stmt.query_map([], |row| {
-        Ok(EdgeRow {
-            edge_id: row.get(0)?,
-            type_id: row.get(1)?,
-            src_id: row.get(2)?,
-            dst_id: row.get(3)?,
-            tombstoned: row.get::<_, i64>(4)? != 0,
-        })
-    })?;
-    Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+        |row| {
+            Ok(EdgeRow {
+                edge_id: row.get(0)?,
+                type_id: row.get(1)?,
+                src_id: row.get(2)?,
+                dst_id: row.get(3)?,
+                tombstoned: row.get::<_, i64>(4)? != 0,
+            })
+        },
+    )
 }
 
 /// Whether a live (non-tombstoned) edge of `type_id` already connects the
@@ -533,15 +579,16 @@ pub fn edge_exists(
 
 /// List every declared actor, ordered by actor id.
 pub fn list_actors(conn: &Connection) -> Result<Vec<ActorRow>> {
-    let mut stmt =
-        conn.prepare("SELECT actor_id, display_name FROM aideon_actors ORDER BY actor_id")?;
-    let rows = stmt.query_map([], |row| {
-        Ok(ActorRow {
-            actor_id: row.get(0)?,
-            display_name: row.get(1)?,
-        })
-    })?;
-    Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+    query_rows(
+        conn,
+        "SELECT actor_id, display_name FROM aideon_actors ORDER BY actor_id",
+        |row| {
+            Ok(ActorRow {
+                actor_id: row.get(0)?,
+                display_name: row.get(1)?,
+            })
+        },
+    )
 }
 
 /// Record (or update) an authored schema-document registry row.

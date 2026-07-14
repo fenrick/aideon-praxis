@@ -42,14 +42,19 @@ pub async fn run(args: TranslationSyncArgs) -> Result<()> {
     let key_secret = std::env::var("LARA_ACCESS_KEY_SECRET")
         .context("LARA_ACCESS_KEY_SECRET must be set (see .env.local)")?;
 
-    run_with(args, LARA_BASE_URL, key_id, key_secret).await
+    run_with(args, LARA_BASE_URL, LaraCredentials { key_id, key_secret }).await
+}
+
+/// Lara access-key credentials (id + secret) read from the environment.
+struct LaraCredentials {
+    key_id: String,
+    key_secret: String,
 }
 
 async fn run_with(
     args: TranslationSyncArgs,
     base_url: &str,
-    key_id: String,
-    key_secret: String,
+    credentials: LaraCredentials,
 ) -> Result<()> {
     let raw = fs::read_to_string(&args.source)
         .with_context(|| format!("read {}", args.source.display()))?;
@@ -57,38 +62,14 @@ async fn run_with(
         serde_json::from_str(&raw).with_context(|| format!("parse {}", args.source.display()))?;
     let source_hash = sha256_hex(raw.as_bytes());
 
-    let mut leaves = Vec::new();
-    plan_leaves(&source, &mut leaves);
-    if leaves.is_empty() {
+    let plan = plan_translation(&source);
+    if plan.leaves.is_empty() {
         println!("no translatable strings found in {}", args.source.display());
         return Ok(());
     }
+    warn_on_passthrough(plan.skipped);
 
-    let skipped = leaves
-        .iter()
-        .filter(|l| matches!(l, LeafPlan::PassThrough(_)))
-        .count();
-    if skipped > 0 {
-        println!(
-            "warning: {skipped} string(s) use ICU plural/select syntax and were left \
-             untranslated (English) in every locale — they mix translatable text with \
-             format keywords and need a human translator, not raw MT"
-        );
-    }
-
-    let masked_texts: Vec<String> = leaves
-        .iter()
-        .filter_map(|l| match l {
-            LeafPlan::Translatable { masked, .. } => Some(masked.clone()),
-            LeafPlan::PassThrough(_) => None,
-        })
-        .collect();
-
-    let out_dir = args
-        .out_dir
-        .clone()
-        .or_else(|| args.source.parent().map(PathBuf::from))
-        .unwrap_or_else(|| PathBuf::from("."));
+    let out_dir = resolve_out_dir(&args);
     fs::create_dir_all(&out_dir)
         .with_context(|| format!("create_dir_all {}", out_dir.display()))?;
 
@@ -96,10 +77,94 @@ async fn run_with(
     let mut manifest = load_manifest(&manifest_path, &args.source)?;
     manifest.source_sha256 = source_hash.clone();
 
-    let client = LaraClient::new(base_url.to_string(), key_id, key_secret)?;
+    let client = LaraClient::new(base_url.to_string(), credentials)?;
+    let ctx = SyncContext {
+        client: &client,
+        plan: &plan,
+        source: &source,
+        out_dir: &out_dir,
+        manifest_path: &manifest_path,
+        source_hash: &source_hash,
+    };
+    sync_targets(&ctx, &args.targets, &mut manifest).await
+}
 
-    for target in &args.targets {
-        if manifest.is_translated_at(target, &source_hash) {
+/// The classified source leaves plus the inputs derived from them once and
+/// shared across every target locale: the masked texts to send to Lara and the
+/// count of pass-through (untranslated) strings.
+struct TranslationPlan {
+    leaves: Vec<LeafPlan>,
+    masked_texts: Vec<String>,
+    skipped: usize,
+}
+
+/// Classify every source string leaf and derive the masked texts plus the
+/// pass-through count for the whole run.
+fn plan_translation(source: &Value) -> TranslationPlan {
+    let mut leaves = Vec::new();
+    plan_leaves(source, &mut leaves);
+
+    let skipped = leaves
+        .iter()
+        .filter(|l| matches!(l, LeafPlan::PassThrough(_)))
+        .count();
+
+    let masked_texts = leaves
+        .iter()
+        .filter_map(|l| match l {
+            LeafPlan::Translatable { masked, .. } => Some(masked.clone()),
+            LeafPlan::PassThrough(_) => None,
+        })
+        .collect();
+
+    TranslationPlan {
+        leaves,
+        masked_texts,
+        skipped,
+    }
+}
+
+/// Warn once that ICU plural/select strings were left untranslated.
+fn warn_on_passthrough(skipped: usize) {
+    if skipped > 0 {
+        println!(
+            "warning: {skipped} string(s) use ICU plural/select syntax and were left \
+             untranslated (English) in every locale — they mix translatable text with \
+             format keywords and need a human translator, not raw MT"
+        );
+    }
+}
+
+/// Resolve the directory locale files are written into: the explicit
+/// `--out-dir`, else the source file's parent, else the current directory.
+fn resolve_out_dir(args: &TranslationSyncArgs) -> PathBuf {
+    args.out_dir
+        .clone()
+        .or_else(|| args.source.parent().map(PathBuf::from))
+        .unwrap_or_else(|| PathBuf::from("."))
+}
+
+/// Shared, read-only context for translating one run's worth of target locales.
+struct SyncContext<'a> {
+    client: &'a LaraClient,
+    plan: &'a TranslationPlan,
+    source: &'a Value,
+    out_dir: &'a Path,
+    manifest_path: &'a Path,
+    source_hash: &'a str,
+}
+
+/// Translate and write each requested target locale, updating the manifest as
+/// each one succeeds or fails. Stops and returns the error on the first failure
+/// (after recording it), matching the original per-target loop behaviour.
+async fn sync_targets(
+    ctx: &SyncContext<'_>,
+    targets: &[String],
+    manifest: &mut TranslationStatusManifest,
+) -> Result<()> {
+    for target in targets {
+        if manifest.is_translated_at(target, ctx.source_hash) {
+            let source_hash = ctx.source_hash;
             println!(
                 "skipping '{target}': already translated at current en.json hash \
                  ({source_hash}) — no Lara call made"
@@ -107,21 +172,19 @@ async fn run_with(
             continue;
         }
 
-        let outcome =
-            translate_and_write_locale(&client, target, &masked_texts, &leaves, &source, &out_dir)
-                .await;
-        match outcome {
+        match translate_and_write_locale(ctx, target).await {
             Ok(count) => {
+                let skipped = ctx.plan.skipped;
                 println!(
                     "wrote {} ({count} strings translated, {skipped} passed through, target '{target}')",
-                    out_dir.join(format!("{target}.json")).display()
+                    ctx.out_dir.join(format!("{target}.json")).display()
                 );
-                manifest.mark_translated(target, &source_hash);
-                save_manifest(&manifest_path, &manifest)?;
+                manifest.mark_translated(target, ctx.source_hash);
+                save_manifest(ctx.manifest_path, manifest)?;
             }
             Err(err) => {
                 manifest.mark_failed(target, &err.to_string());
-                save_manifest(&manifest_path, &manifest)?;
+                save_manifest(ctx.manifest_path, manifest)?;
                 return Err(err);
             }
         }
@@ -132,17 +195,14 @@ async fn run_with(
 
 /// Translate every masked leaf into `target` and write `out_dir/<target>.json`.
 /// Returns the number of strings sent to Lara on success.
-async fn translate_and_write_locale(
-    client: &LaraClient,
-    target: &str,
-    masked_texts: &[String],
-    leaves: &[LeafPlan],
-    source: &Value,
-    out_dir: &Path,
-) -> Result<usize> {
+async fn translate_and_write_locale(ctx: &SyncContext<'_>, target: &str) -> Result<usize> {
+    let masked_texts = &ctx.plan.masked_texts;
+    let leaves = &ctx.plan.leaves;
+
     let mut translated_masked = Vec::with_capacity(masked_texts.len());
     for chunk in masked_texts.chunks(TRANSLATE_BATCH_SIZE) {
-        let mut batch = client
+        let mut batch = ctx
+            .client
             .translate_batch(chunk, target)
             .await
             .with_context(|| format!("translate batch to '{target}'"))?;
@@ -173,9 +233,9 @@ async fn translate_and_write_locale(
     }
 
     let mut iter = final_texts.into_iter();
-    let rebuilt = rebuild_with_texts(source, &mut iter);
+    let rebuilt = rebuild_with_texts(ctx.source, &mut iter);
     let json = serde_json::to_string_pretty(&rebuilt)?;
-    let out_path = out_dir.join(format!("{target}.json"));
+    let out_path = ctx.out_dir.join(format!("{target}.json"));
     fs::write(&out_path, format!("{json}\n"))
         .with_context(|| format!("write {}", out_path.display()))?;
     Ok(masked_texts.len())
@@ -348,27 +408,45 @@ fn rebuild_with_texts(template: &Value, texts: &mut std::vec::IntoIter<String>) 
 /// Nested braces (e.g. inside an ICU plural arm) are absorbed into their
 /// enclosing top-level group rather than reported separately.
 fn top_level_brace_spans(text: &str) -> Vec<Range<usize>> {
-    let mut spans = Vec::new();
-    let mut depth = 0usize;
-    let mut start = 0usize;
+    let mut scanner = BraceScanner::default();
     for (i, ch) in text.char_indices() {
+        scanner.feed(i, ch);
+    }
+    scanner.spans
+}
+
+/// Incremental brace-nesting tracker for [`top_level_brace_spans`]. Keeping the
+/// per-character branches in dedicated methods flattens the scan loop.
+#[derive(Default)]
+struct BraceScanner {
+    spans: Vec<Range<usize>>,
+    depth: usize,
+    start: usize,
+}
+
+impl BraceScanner {
+    /// Feed one character (at byte `index`) into the scan.
+    fn feed(&mut self, index: usize, ch: char) {
         match ch {
-            '{' => {
-                if depth == 0 {
-                    start = i;
-                }
-                depth += 1;
-            }
-            '}' if depth > 0 => {
-                depth -= 1;
-                if depth == 0 {
-                    spans.push(start..i + ch.len_utf8());
-                }
-            }
+            '{' => self.open(index),
+            '}' if self.depth > 0 => self.close(index, ch),
             _ => {}
         }
     }
-    spans
+
+    fn open(&mut self, index: usize) {
+        if self.depth == 0 {
+            self.start = index;
+        }
+        self.depth += 1;
+    }
+
+    fn close(&mut self, index: usize, ch: char) {
+        self.depth -= 1;
+        if self.depth == 0 {
+            self.spans.push(self.start..index + ch.len_utf8());
+        }
+    }
 }
 
 /// Mask simple `{name}`-style placeholders with opaque sentinels so MT can't
@@ -429,8 +507,7 @@ enum LaraTranslationField {
 struct LaraClient {
     http: reqwest::Client,
     base_url: String,
-    key_id: String,
-    key_secret: String,
+    credentials: LaraCredentials,
     // Cached for the process lifetime: this is a one-shot CLI run over a small
     // locale set, so a token expiring mid-run (rather than being refreshed) is
     // an accepted limitation, not handled with 401-triggered re-auth.
@@ -438,15 +515,14 @@ struct LaraClient {
 }
 
 impl LaraClient {
-    fn new(base_url: String, key_id: String, key_secret: String) -> Result<Self> {
+    fn new(base_url: String, credentials: LaraCredentials) -> Result<Self> {
         let http = reqwest::Client::builder()
             .build()
             .context("build http client")?;
         Ok(Self {
             http,
             base_url,
-            key_id,
-            key_secret,
+            credentials,
             token: Mutex::new(None),
         })
     }
@@ -464,18 +540,20 @@ impl LaraClient {
     /// `POST /v2/auth` handshake (Lara access-key auth scheme).
     async fn authenticate(&self) -> Result<String> {
         let path = "/v2/auth";
-        let body = serde_json::json!({ "id": self.key_id });
+        let body = serde_json::json!({ "id": self.credentials.key_id });
         let body_str = serde_json::to_string(&body).context("encode lara auth body")?;
         let content_md5 = BASE64.encode(Md5::digest(body_str.as_bytes()));
         let date = httpdate::fmt_http_date(SystemTime::now());
         let content_type = "application/json";
         let signature = sign_challenge(
-            &self.key_secret,
-            "POST",
-            path,
-            &content_md5,
-            content_type,
-            &date,
+            &self.credentials.key_secret,
+            &SignatureChallenge {
+                method: "POST",
+                path,
+                content_md5: &content_md5,
+                content_type,
+                date: &date,
+            },
         )?;
 
         let response = self
@@ -547,16 +625,25 @@ impl LaraClient {
     }
 }
 
+/// The canonical request fields signed into a `Lara:` signature challenge.
+struct SignatureChallenge<'a> {
+    method: &'a str,
+    path: &'a str,
+    content_md5: &'a str,
+    content_type: &'a str,
+    date: &'a str,
+}
+
 /// Build the `Lara:` request signature: base64(HMAC-SHA256(secret, challenge)),
 /// where challenge is `METHOD\nPATH\nContent-MD5\nContent-Type\nDate`.
-fn sign_challenge(
-    secret: &str,
-    method: &str,
-    path: &str,
-    content_md5: &str,
-    content_type: &str,
-    date: &str,
-) -> Result<String> {
+fn sign_challenge(secret: &str, challenge: &SignatureChallenge<'_>) -> Result<String> {
+    let SignatureChallenge {
+        method,
+        path,
+        content_md5,
+        content_type,
+        date,
+    } = challenge;
     let challenge = format!("{method}\n{path}\n{content_md5}\n{content_type}\n{date}");
     let mut mac = Hmac::<Sha256>::new_from_slice(secret.as_bytes())
         .map_err(|err| anyhow!("hmac init failed: {err}"))?;
@@ -626,24 +713,15 @@ mod tests {
 
     #[test]
     fn sign_challenge_is_deterministic_for_same_inputs() {
-        let a = sign_challenge(
-            "secret",
-            "POST",
-            "/v2/auth",
-            "md5hash",
-            "application/json",
-            "Wed, 21 Oct 2015 07:28:00 GMT",
-        )
-        .expect("sign");
-        let b = sign_challenge(
-            "secret",
-            "POST",
-            "/v2/auth",
-            "md5hash",
-            "application/json",
-            "Wed, 21 Oct 2015 07:28:00 GMT",
-        )
-        .expect("sign");
+        let challenge = SignatureChallenge {
+            method: "POST",
+            path: "/v2/auth",
+            content_md5: "md5hash",
+            content_type: "application/json",
+            date: "Wed, 21 Oct 2015 07:28:00 GMT",
+        };
+        let a = sign_challenge("secret", &challenge).expect("sign");
+        let b = sign_challenge("secret", &challenge).expect("sign");
         assert_eq!(a, b);
     }
 
@@ -714,8 +792,14 @@ mod tests {
             .mount(&server)
             .await;
 
-        let client = LaraClient::new(server.uri(), "key-id".into(), "key-secret".into())
-            .expect("build client");
+        let client = LaraClient::new(
+            server.uri(),
+            LaraCredentials {
+                key_id: "key-id".into(),
+                key_secret: "key-secret".into(),
+            },
+        )
+        .expect("build client");
 
         let result = client
             .translate_batch(&["Hello".to_string(), "Goodbye".to_string()], "fr")
@@ -738,8 +822,14 @@ mod tests {
             .mount(&server)
             .await;
 
-        let client = LaraClient::new(server.uri(), "bad-id".into(), "bad-secret".into())
-            .expect("build client");
+        let client = LaraClient::new(
+            server.uri(),
+            LaraCredentials {
+                key_id: "bad-id".into(),
+                key_secret: "bad-secret".into(),
+            },
+        )
+        .expect("build client");
 
         let err = client
             .translate_batch(&["Hello".to_string()], "fr")
@@ -784,9 +874,16 @@ mod tests {
             targets: vec!["fr".to_string()],
         };
 
-        let err = run_with(args, &server.uri(), "key-id".into(), "key-secret".into())
-            .await
-            .expect_err("should bail on count mismatch");
+        let err = run_with(
+            args,
+            &server.uri(),
+            LaraCredentials {
+                key_id: "key-id".into(),
+                key_secret: "key-secret".into(),
+            },
+        )
+        .await
+        .expect_err("should bail on count mismatch");
         assert!(err.to_string().contains("lara returned"));
     }
 
@@ -830,9 +927,16 @@ mod tests {
             targets: vec!["fr".to_string()],
         };
 
-        run_with(args, &server.uri(), "key-id".into(), "key-secret".into())
-            .await
-            .expect("run_with");
+        run_with(
+            args,
+            &server.uri(),
+            LaraCredentials {
+                key_id: "key-id".into(),
+                key_secret: "key-secret".into(),
+            },
+        )
+        .await
+        .expect("run_with");
 
         let written = fs::read_to_string(out_dir.join("fr.json")).expect("read fr.json");
         let value: Value = serde_json::from_str(&written).expect("parse fr.json");
@@ -875,9 +979,16 @@ mod tests {
             targets: vec!["es".to_string()],
         };
 
-        run_with(args, &server.uri(), "key-id".into(), "key-secret".into())
-            .await
-            .expect("run_with should succeed without calling Lara");
+        run_with(
+            args,
+            &server.uri(),
+            LaraCredentials {
+                key_id: "key-id".into(),
+                key_secret: "key-secret".into(),
+            },
+        )
+        .await
+        .expect("run_with should succeed without calling Lara");
 
         assert!(
             !out_dir.join("es.json").exists(),
@@ -920,9 +1031,16 @@ mod tests {
             targets: vec!["es".to_string(), "fr".to_string()],
         };
 
-        let err = run_with(args, &server.uri(), "key-id".into(), "key-secret".into())
-            .await
-            .expect_err("fr should fail with no matching mock");
+        let err = run_with(
+            args,
+            &server.uri(),
+            LaraCredentials {
+                key_id: "key-id".into(),
+                key_secret: "key-secret".into(),
+            },
+        )
+        .await
+        .expect_err("fr should fail with no matching mock");
         assert!(err.to_string().contains("translate batch"));
 
         let manifest_raw =
@@ -975,9 +1093,16 @@ mod tests {
             targets: vec!["es".to_string()],
         };
 
-        let err = run_with(args, &server.uri(), "key-id".into(), "key-secret".into())
-            .await
-            .expect_err("resync should fail with no matching mock");
+        let err = run_with(
+            args,
+            &server.uri(),
+            LaraCredentials {
+                key_id: "key-id".into(),
+                key_secret: "key-secret".into(),
+            },
+        )
+        .await
+        .expect_err("resync should fail with no matching mock");
         assert!(err.to_string().contains("translate batch"));
 
         let manifest_raw =

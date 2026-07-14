@@ -20,43 +20,68 @@ fn id(s: &str) -> Id {
     s.parse().expect("valid uuid")
 }
 
-fn field(field_id: &str, key: &str, kind: FieldKind, enum_values: &[&str]) -> FieldDef {
+/// A field definition's authoring inputs, grouped so the builder takes one
+/// cohesive spec rather than a string-heavy argument list.
+struct FieldSpec<'a> {
+    field_id: &'a str,
+    key: &'a str,
+    kind: FieldKind,
+    enum_values: &'a [&'a str],
+}
+
+fn field(spec: FieldSpec<'_>) -> FieldDef {
     FieldDef {
-        field_id: id(field_id),
-        key: key.to_owned(),
-        label: key.to_owned(),
-        value_type: match kind {
+        field_id: id(spec.field_id),
+        key: spec.key.to_owned(),
+        label: spec.key.to_owned(),
+        value_type: match spec.kind {
             FieldKind::Number => mneme_core::schema::ValueType::F64,
             FieldKind::Datetime => mneme_core::schema::ValueType::Time,
             FieldKind::Boolean => mneme_core::schema::ValueType::Bool,
             _ => mneme_core::schema::ValueType::Str,
         },
-        semantic_kind: kind,
-        enum_values: enum_values.iter().map(|s| (*s).to_owned()).collect(),
+        semantic_kind: spec.kind,
+        enum_values: spec.enum_values.iter().map(|s| (*s).to_owned()).collect(),
         cardinality_multi: false,
         is_indexed: false,
     }
 }
 
-fn attach(type_id: &str, field_id: &str, required: bool) -> TypeFieldDef {
+/// A type↔field attachment's authoring inputs.
+struct AttachSpec<'a> {
+    type_id: &'a str,
+    field_id: &'a str,
+    required: bool,
+}
+
+fn attach(spec: AttachSpec<'_>) -> TypeFieldDef {
     TypeFieldDef {
-        type_id: id(type_id),
-        field_id: id(field_id),
-        is_required: required,
+        type_id: id(spec.type_id),
+        field_id: id(spec.field_id),
+        is_required: spec.required,
         default_value: None,
         override_default: false,
         tighten_required: false,
     }
 }
 
-fn node_type(type_id: &str, key: &str, label: &str, category: &str, effects: &[&str]) -> TypeDef {
+/// A node type's authoring inputs.
+struct NodeSpec<'a> {
+    type_id: &'a str,
+    key: &'a str,
+    label: &'a str,
+    category: &'a str,
+    effects: &'a [&'a str],
+}
+
+fn node_type(spec: NodeSpec<'_>) -> TypeDef {
     TypeDef {
-        type_id: id(type_id),
-        key: key.to_owned(),
+        type_id: id(spec.type_id),
+        key: spec.key.to_owned(),
         applies_to: EntityKind::Node,
-        label: label.to_owned(),
-        category: Some(category.to_owned()),
-        effect_types: effects.iter().map(|s| (*s).to_owned()).collect(),
+        label: spec.label.to_owned(),
+        category: Some(spec.category.to_owned()),
+        effect_types: spec.effects.iter().map(|s| (*s).to_owned()).collect(),
         is_abstract: false,
         parent_type_id: None,
     }
@@ -92,91 +117,13 @@ const VSS_NAME: &str = "578015f8-6bfd-5eb8-8e25-e61514dcca20";
 const VSS_PURPOSE: &str = "dac8b144-6faa-5b56-84bb-c429765108f4";
 const VSS_OWNER: &str = "52707e42-820c-5fc9-8d9c-82b66f07ee99";
 
-/// The seed batch for the two representative types under test, in the authoring
+/// The seed batch for the representative types under test, in the authoring
 /// order the fixtures pin.
 fn seed_batch() -> AuthoredMetamodelBatch {
     AuthoredMetamodelBatch {
-        types: vec![
-            node_type(CAPABILITY, "Capability", "Capability", "Business", &[]),
-            node_type(
-                PLAN_EVENT,
-                "PlanEvent",
-                "Plan Event",
-                "Planning",
-                &["create", "update", "delete", "link", "unlink"],
-            ),
-            node_type(
-                APPLICATION,
-                "Application",
-                "Application",
-                "Application",
-                &[],
-            ),
-            node_type(
-                VSS,
-                "ValueStreamStage",
-                "Value Stream Stage",
-                "Business",
-                &[],
-            ),
-        ],
-        fields: vec![
-            field(CAP_NAME, "name", FieldKind::String, &[]),
-            field(
-                CAP_TIER,
-                "tier",
-                FieldKind::Enum,
-                &["Strategic", "Core", "Supporting"],
-            ),
-            field(
-                CAP_LIFECYCLE,
-                "lifecycle",
-                FieldKind::Enum,
-                &["Target", "Current", "Retire"],
-            ),
-            field(PE_NAME, "name", FieldKind::String, &[]),
-            field(PE_EFFECTIVE_AT, "effective_at", FieldKind::Datetime, &[]),
-            field(PE_CONFIDENCE, "confidence", FieldKind::Number, &[]),
-            field(
-                PE_SOURCE_PRIORITY,
-                "source.priority",
-                FieldKind::Enum,
-                &["P0", "P1", "P2"],
-            ),
-            field(APP_NAME, "name", FieldKind::String, &[]),
-            field(APP_VENDOR, "vendor", FieldKind::String, &[]),
-            field(
-                APP_DISPOSITION,
-                "disposition",
-                FieldKind::Enum,
-                &["Invest", "Tolerate", "Migrate", "Eliminate"],
-            ),
-            field(
-                APP_LIFECYCLE,
-                "lifecycle",
-                FieldKind::Enum,
-                &["Plan", "Build", "Run", "Retire"],
-            ),
-            field(VSS_NAME, "name", FieldKind::String, &[]),
-            field(VSS_PURPOSE, "purpose", FieldKind::String, &[]),
-            field(VSS_OWNER, "owner", FieldKind::String, &[]),
-        ],
-        type_fields: vec![
-            attach(CAPABILITY, CAP_NAME, true),
-            attach(CAPABILITY, CAP_TIER, false),
-            attach(CAPABILITY, CAP_LIFECYCLE, false),
-            attach(PLAN_EVENT, PE_NAME, true),
-            attach(PLAN_EVENT, PE_EFFECTIVE_AT, true),
-            attach(PLAN_EVENT, PE_CONFIDENCE, false),
-            attach(PLAN_EVENT, PE_SOURCE_PRIORITY, false),
-            attach(APPLICATION, APP_NAME, true),
-            attach(APPLICATION, APP_VENDOR, false),
-            attach(APPLICATION, APP_DISPOSITION, false),
-            attach(APPLICATION, APP_LIFECYCLE, false),
-            attach(VSS, VSS_NAME, true),
-            attach(VSS, VSS_PURPOSE, false),
-            attach(VSS, VSS_OWNER, false),
-        ],
+        types: seed_types(),
+        fields: seed_fields(),
+        type_fields: seed_type_fields(),
         edge_type_rules: vec![],
         validation: validation(),
         metamodel_version: Some("1.0.0".to_owned()),
@@ -184,10 +131,147 @@ fn seed_batch() -> AuthoredMetamodelBatch {
     }
 }
 
-fn fixture_canonical(name: &str) -> Vec<u8> {
+fn seed_types() -> Vec<TypeDef> {
+    vec![
+        node_type(NodeSpec {
+            type_id: CAPABILITY,
+            key: "Capability",
+            label: "Capability",
+            category: "Business",
+            effects: &[],
+        }),
+        node_type(NodeSpec {
+            type_id: PLAN_EVENT,
+            key: "PlanEvent",
+            label: "Plan Event",
+            category: "Planning",
+            effects: &["create", "update", "delete", "link", "unlink"],
+        }),
+        node_type(NodeSpec {
+            type_id: APPLICATION,
+            key: "Application",
+            label: "Application",
+            category: "Application",
+            effects: &[],
+        }),
+        node_type(NodeSpec {
+            type_id: VSS,
+            key: "ValueStreamStage",
+            label: "Value Stream Stage",
+            category: "Business",
+            effects: &[],
+        }),
+    ]
+}
+
+fn seed_fields() -> Vec<FieldDef> {
+    // (field_id, key, kind, enum_values) rows, mapped through the builder so the
+    // authoring table stays compact and the builder keeps one cohesive spec.
+    let rows: &[(&str, &str, FieldKind, &[&str])] = &[
+        (CAP_NAME, "name", FieldKind::String, &[]),
+        (
+            CAP_TIER,
+            "tier",
+            FieldKind::Enum,
+            &["Strategic", "Core", "Supporting"],
+        ),
+        (
+            CAP_LIFECYCLE,
+            "lifecycle",
+            FieldKind::Enum,
+            &["Target", "Current", "Retire"],
+        ),
+        (PE_NAME, "name", FieldKind::String, &[]),
+        (PE_EFFECTIVE_AT, "effective_at", FieldKind::Datetime, &[]),
+        (PE_CONFIDENCE, "confidence", FieldKind::Number, &[]),
+        (
+            PE_SOURCE_PRIORITY,
+            "source.priority",
+            FieldKind::Enum,
+            &["P0", "P1", "P2"],
+        ),
+        (APP_NAME, "name", FieldKind::String, &[]),
+        (APP_VENDOR, "vendor", FieldKind::String, &[]),
+        (
+            APP_DISPOSITION,
+            "disposition",
+            FieldKind::Enum,
+            &["Invest", "Tolerate", "Migrate", "Eliminate"],
+        ),
+        (
+            APP_LIFECYCLE,
+            "lifecycle",
+            FieldKind::Enum,
+            &["Plan", "Build", "Run", "Retire"],
+        ),
+        (VSS_NAME, "name", FieldKind::String, &[]),
+        (VSS_PURPOSE, "purpose", FieldKind::String, &[]),
+        (VSS_OWNER, "owner", FieldKind::String, &[]),
+    ];
+    rows.iter()
+        .map(|&(field_id, key, kind, enum_values)| {
+            field(FieldSpec {
+                field_id,
+                key,
+                kind,
+                enum_values,
+            })
+        })
+        .collect()
+}
+
+fn seed_type_fields() -> Vec<TypeFieldDef> {
+    // (type_id, field_id, required) rows for each type↔field attachment.
+    let rows: &[(&str, &str, bool)] = &[
+        (CAPABILITY, CAP_NAME, true),
+        (CAPABILITY, CAP_TIER, false),
+        (CAPABILITY, CAP_LIFECYCLE, false),
+        (PLAN_EVENT, PE_NAME, true),
+        (PLAN_EVENT, PE_EFFECTIVE_AT, true),
+        (PLAN_EVENT, PE_CONFIDENCE, false),
+        (PLAN_EVENT, PE_SOURCE_PRIORITY, false),
+        (APPLICATION, APP_NAME, true),
+        (APPLICATION, APP_VENDOR, false),
+        (APPLICATION, APP_DISPOSITION, false),
+        (APPLICATION, APP_LIFECYCLE, false),
+        (VSS, VSS_NAME, true),
+        (VSS, VSS_PURPOSE, false),
+        (VSS, VSS_OWNER, false),
+    ];
+    rows.iter()
+        .map(|&(type_id, field_id, required)| {
+            attach(AttachSpec {
+                type_id,
+                field_id,
+                required,
+            })
+        })
+        .collect()
+}
+
+/// One oracle case: a compiled type key, its committed fixture file, and the
+/// assertion message. Grouping the three strings keeps the runner off a
+/// string-heavy argument list.
+struct OracleCase {
+    type_key: &'static str,
+    fixture: &'static str,
+    message: &'static str,
+}
+
+/// Compile the seed batch and assert the named type matches its committed
+/// effective-schema fixture byte-for-byte under the canonical-JSON profile.
+fn assert_compiles_to_fixture(case: &OracleCase) {
+    let batch = seed_batch();
+    let schemas = compile(&batch).expect("compile succeeds");
+    let schema = schemas
+        .iter()
+        .find(|s| s.type_id == case.type_key)
+        .expect("type compiled");
+    let compiled = to_canonical_json_bytes(schema).expect("schema canonicalises");
+
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../docs/data/fixtures/metamodel")
-        .join(name);
+        .join(case.fixture);
     let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("read {path:?}: {e}"));
     let mut value: serde_json::Value = serde_json::from_slice(&bytes).expect("fixture parses");
     // `notes` documents the oracle; it is not a compiler output.
@@ -195,53 +279,45 @@ fn fixture_canonical(name: &str) -> Vec<u8> {
         .as_object_mut()
         .expect("fixture is an object")
         .remove("notes");
-    canonical_json_bytes(&value).expect("fixture canonicalises")
-}
+    let expected = canonical_json_bytes(&value).expect("fixture canonicalises");
 
-fn compiled_canonical(type_key: &str) -> Vec<u8> {
-    let batch = seed_batch();
-    let schemas = compile(&batch).expect("compile succeeds");
-    let schema = schemas
-        .iter()
-        .find(|s| s.type_id == type_key)
-        .expect("type compiled");
-    to_canonical_json_bytes(schema).expect("schema canonicalises")
+    assert_eq!(compiled, expected, "{}", case.message);
 }
 
 #[test]
 fn capability_compiles_to_its_fixture() {
-    assert_eq!(
-        compiled_canonical("Capability"),
-        fixture_canonical("capability.effective-schema.json"),
-        "compiled Capability must match its effective-schema fixture byte-for-byte"
-    );
+    assert_compiles_to_fixture(&OracleCase {
+        type_key: "Capability",
+        fixture: "capability.effective-schema.json",
+        message: "compiled Capability must match its effective-schema fixture byte-for-byte",
+    });
 }
 
 #[test]
 fn plan_event_compiles_to_its_fixture() {
-    assert_eq!(
-        compiled_canonical("PlanEvent"),
-        fixture_canonical("plan-event.effective-schema.json"),
-        "compiled PlanEvent must match its effective-schema fixture (datetime/number/dotted enum + effect_types)"
-    );
+    assert_compiles_to_fixture(&OracleCase {
+        type_key: "PlanEvent",
+        fixture: "plan-event.effective-schema.json",
+        message: "compiled PlanEvent must match its effective-schema fixture (datetime/number/dotted enum + effect_types)",
+    });
 }
 
 #[test]
 fn application_compiles_to_its_fixture() {
-    assert_eq!(
-        compiled_canonical("Application"),
-        fixture_canonical("application.effective-schema.json"),
-        "compiled Application must match its effective-schema fixture (four slots, two enums)"
-    );
+    assert_compiles_to_fixture(&OracleCase {
+        type_key: "Application",
+        fixture: "application.effective-schema.json",
+        message: "compiled Application must match its effective-schema fixture (four slots, two enums)",
+    });
 }
 
 #[test]
 fn value_stream_stage_compiles_to_its_fixture() {
-    assert_eq!(
-        compiled_canonical("ValueStreamStage"),
-        fixture_canonical("value-stream-stage.effective-schema.json"),
-        "compiled ValueStreamStage must match its fixture (three string slots, no extends)"
-    );
+    assert_compiles_to_fixture(&OracleCase {
+        type_key: "ValueStreamStage",
+        fixture: "value-stream-stage.effective-schema.json",
+        message: "compiled ValueStreamStage must match its fixture (three string slots, no extends)",
+    });
 }
 
 #[test]

@@ -50,18 +50,41 @@ fn capability() -> EffectiveSchema {
     }
 }
 
-/// `accesses` edge: BusinessProcess/Application → DataEntity, no self, no duplicate,
-/// required `mode` enum.
-fn accesses_rule() -> EffectiveEdgeRule {
+/// An edge rule's endpoint and multiplicity policy, grouped so the builder takes
+/// one cohesive spec rather than a string-heavy argument list.
+struct EdgeRuleSpec<'a> {
+    key: &'a str,
+    allowed_src: &'a [&'a str],
+    allowed_dst: &'a [&'a str],
+    allow_self: bool,
+    allow_duplicate: bool,
+}
+
+/// Build an effective edge rule with `many`/`many` multiplicity, the common
+/// shape across these fixtures.
+fn edge_rule(spec: EdgeRuleSpec<'_>) -> EffectiveEdgeRule {
+    let own = |xs: &[&str]| xs.iter().map(|s| (*s).to_owned()).collect();
     EffectiveEdgeRule {
-        key: "accesses".to_owned(),
-        allowed_src: vec!["BusinessProcess".to_owned(), "Application".to_owned()],
-        allowed_dst: vec!["DataEntity".to_owned()],
-        allow_self: false,
-        allow_duplicate: false,
+        key: spec.key.to_owned(),
+        allowed_src: own(spec.allowed_src),
+        allowed_dst: own(spec.allowed_dst),
+        allow_self: spec.allow_self,
+        allow_duplicate: spec.allow_duplicate,
         multiplicity_src: "many".to_owned(),
         multiplicity_dst: "many".to_owned(),
     }
+}
+
+/// `accesses` edge: BusinessProcess/Application → DataEntity, no self, no duplicate,
+/// required `mode` enum.
+fn accesses_rule() -> EffectiveEdgeRule {
+    edge_rule(EdgeRuleSpec {
+        key: "accesses",
+        allowed_src: &["BusinessProcess", "Application"],
+        allowed_dst: &["DataEntity"],
+        allow_self: false,
+        allow_duplicate: false,
+    })
 }
 
 fn accesses_schema() -> EffectiveSchema {
@@ -83,15 +106,13 @@ fn accesses_schema() -> EffectiveSchema {
 
 /// `serves`: Capability → ValueStreamStage, no self, duplicates allowed.
 fn serves_rule() -> EffectiveEdgeRule {
-    EffectiveEdgeRule {
-        key: "serves".to_owned(),
-        allowed_src: vec!["Capability".to_owned()],
-        allowed_dst: vec!["ValueStreamStage".to_owned()],
+    edge_rule(EdgeRuleSpec {
+        key: "serves",
+        allowed_src: &["Capability"],
+        allowed_dst: &["ValueStreamStage"],
         allow_self: false,
         allow_duplicate: true,
-        multiplicity_src: "many".to_owned(),
-        multiplicity_dst: "many".to_owned(),
-    }
+    })
 }
 
 fn serves_schema() -> EffectiveSchema {
@@ -152,14 +173,24 @@ fn overlong_string_is_rejected() {
 
 // ---- edge cases ----
 
+/// An edge write's runtime context, borrowing the endpoint type keys.
+fn edge_ctx<'a>(
+    src_type: &'a str,
+    dst_type: &'a str,
+    is_self: bool,
+    duplicate_exists: bool,
+) -> EdgeContext<'a> {
+    EdgeContext {
+        src_type,
+        dst_type,
+        is_self,
+        duplicate_exists,
+    }
+}
+
 #[test]
 fn accesses_with_mode_validates() {
-    let ctx = EdgeContext {
-        src_type: "Application",
-        dst_type: "DataEntity",
-        is_self: false,
-        duplicate_exists: false,
-    };
+    let ctx = edge_ctx("Application", "DataEntity", false, false);
     let r = validate_edge(
         &accesses_rule(),
         &accesses_schema(),
@@ -171,24 +202,14 @@ fn accesses_with_mode_validates() {
 
 #[test]
 fn accesses_without_mode_is_rejected() {
-    let ctx = EdgeContext {
-        src_type: "Application",
-        dst_type: "DataEntity",
-        is_self: false,
-        duplicate_exists: false,
-    };
+    let ctx = edge_ctx("Application", "DataEntity", false, false);
     let err = validate_edge(&accesses_rule(), &accesses_schema(), &ctx, &json!({})).unwrap_err();
     assert_eq!(err.code(), "MISSING_REQUIRED_ATTRIBUTE");
 }
 
 #[test]
 fn duplicate_accesses_is_rejected() {
-    let ctx = EdgeContext {
-        src_type: "Application",
-        dst_type: "DataEntity",
-        is_self: false,
-        duplicate_exists: true,
-    };
+    let ctx = edge_ctx("Application", "DataEntity", false, true);
     let err = validate_edge(
         &accesses_rule(),
         &accesses_schema(),
@@ -201,12 +222,7 @@ fn duplicate_accesses_is_rejected() {
 
 #[test]
 fn serves_self_link_is_rejected() {
-    let ctx = EdgeContext {
-        src_type: "Capability",
-        dst_type: "ValueStreamStage",
-        is_self: true,
-        duplicate_exists: false,
-    };
+    let ctx = edge_ctx("Capability", "ValueStreamStage", true, false);
     let err = validate_edge(&serves_rule(), &serves_schema(), &ctx, &json!({})).unwrap_err();
     assert_eq!(err.code(), "SELF_LINK_NOT_ALLOWED");
 }
@@ -214,12 +230,7 @@ fn serves_self_link_is_rejected() {
 #[test]
 fn application_serves_valuestreamstage_wrong_src_is_rejected() {
     // serves.from is [Capability]; an Application source is not allowed.
-    let ctx = EdgeContext {
-        src_type: "Application",
-        dst_type: "ValueStreamStage",
-        is_self: false,
-        duplicate_exists: false,
-    };
+    let ctx = edge_ctx("Application", "ValueStreamStage", false, false);
     let err = validate_edge(&serves_rule(), &serves_schema(), &ctx, &json!({})).unwrap_err();
     assert_eq!(err.code(), "ENDPOINT_TYPE_NOT_ALLOWED");
 }

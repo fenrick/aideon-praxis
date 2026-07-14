@@ -214,56 +214,61 @@ fn validate_slots(slots: &[EffectiveSlot], props: &Json) -> Result<(), Validatio
 
 fn check_value(slot: &EffectiveSlot, value: &Json) -> Result<(), ValidationError> {
     match slot.kind {
-        FieldKind::String | FieldKind::Text => {
-            let s = value.as_str().ok_or_else(|| wrong_kind(slot))?;
-            if let Some(max) = slot.max_length
-                && s.chars().count() > max as usize
-            {
-                return Err(ValidationError::StringTooLong {
-                    key: slot.key.clone(),
-                    max,
-                });
-            }
+        FieldKind::String | FieldKind::Text => check_string(slot, value),
+        FieldKind::Number => require(slot, value.is_number()),
+        FieldKind::Boolean => require(slot, value.is_boolean()),
+        FieldKind::Datetime => check_datetime(slot, value),
+        FieldKind::Enum => check_enum(slot, value),
+        // A blob slot carries a reference (string/object); no scalar check here.
+        FieldKind::Blob => Ok(()),
+    }
+}
+
+/// Reject with a wrong-kind error unless the scalar predicate holds.
+fn require(slot: &EffectiveSlot, ok: bool) -> Result<(), ValidationError> {
+    if ok { Ok(()) } else { Err(wrong_kind(slot)) }
+}
+
+/// A `string`/`text` value must be a string within its length cap.
+fn check_string(slot: &EffectiveSlot, value: &Json) -> Result<(), ValidationError> {
+    let s = value.as_str().ok_or_else(|| wrong_kind(slot))?;
+    if let Some(max) = slot.max_length
+        && s.chars().count() > max as usize
+    {
+        return Err(ValidationError::StringTooLong {
+            key: slot.key.clone(),
+            max,
+        });
+    }
+    Ok(())
+}
+
+/// A `datetime` value must be an RFC 3339 timestamp string.
+fn check_datetime(slot: &EffectiveSlot, value: &Json) -> Result<(), ValidationError> {
+    let s = value.as_str().ok_or_else(|| wrong_kind(slot))?;
+    if ::time::OffsetDateTime::parse(s, &::time::format_description::well_known::Rfc3339).is_err() {
+        return Err(wrong_kind(slot));
+    }
+    Ok(())
+}
+
+/// An `enum` value must be a declared variant, honouring case sensitivity.
+fn check_enum(slot: &EffectiveSlot, value: &Json) -> Result<(), ValidationError> {
+    let s = value.as_str().ok_or_else(|| wrong_kind(slot))?;
+    let variants = slot.enum_variants.as_deref().unwrap_or(&[]);
+    let case_sensitive = slot.case_sensitive.unwrap_or(true);
+    let ok = variants.iter().any(|v| {
+        if case_sensitive {
+            v == s
+        } else {
+            v.eq_ignore_ascii_case(s)
         }
-        FieldKind::Number => {
-            if !value.is_number() {
-                return Err(wrong_kind(slot));
-            }
-        }
-        FieldKind::Boolean => {
-            if !value.is_boolean() {
-                return Err(wrong_kind(slot));
-            }
-        }
-        FieldKind::Datetime => {
-            let s = value.as_str().ok_or_else(|| wrong_kind(slot))?;
-            if ::time::OffsetDateTime::parse(s, &::time::format_description::well_known::Rfc3339)
-                .is_err()
-            {
-                return Err(wrong_kind(slot));
-            }
-        }
-        FieldKind::Enum => {
-            let s = value.as_str().ok_or_else(|| wrong_kind(slot))?;
-            let variants = slot.enum_variants.as_deref().unwrap_or(&[]);
-            let case_sensitive = slot.case_sensitive.unwrap_or(true);
-            let ok = variants.iter().any(|v| {
-                if case_sensitive {
-                    v == s
-                } else {
-                    v.eq_ignore_ascii_case(s)
-                }
-            });
-            if !ok {
-                return Err(ValidationError::EnumValueNotAllowed {
-                    key: slot.key.clone(),
-                    value: s.to_owned(),
-                });
-            }
-        }
-        FieldKind::Blob => {
-            // A blob slot carries a reference (string/object); no scalar check here.
-        }
+    });
+    if !ok {
+        return Err(ValidationError::EnumValueNotAllowed {
+            key: slot.key.clone(),
+            value: s.to_owned(),
+        });
     }
     Ok(())
 }

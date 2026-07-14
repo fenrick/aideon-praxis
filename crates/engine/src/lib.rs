@@ -383,34 +383,18 @@ impl Engine {
         dst_id: &str,
         props: serde_json::Value,
     ) -> Result<EdgeRecord> {
-        let rule = self
-            .edge_rules
-            .iter()
-            .find(|r| r.key == rel_type)
-            .cloned()
-            .ok_or_else(|| StoreError::Validation {
-                message: format!("unknown relationship type `{rel_type}`"),
-            })?;
-        let schema = self
-            .schemas
-            .iter()
-            .find(|s| s.type_id == rel_type)
-            .cloned()
-            .ok_or_else(|| StoreError::Validation {
-                message: format!("relationship type `{rel_type}` has no effective schema"),
-            })?;
+        // Resolve the compiled rule, effective schema, and storage symbol; an
+        // unknown relationship key is rejected before any op is appended.
+        let (rule, schema, rel_symbol) = self.resolve_edge_rules(rel_type)?;
 
-        // Resolve both endpoints' domain type keys from the projected twin.
+        // Resolve both endpoints' domain type keys from the projected twin, then
+        // validate the intended write; on failure nothing is appended.
         let nodes = self.workspace.list_nodes()?;
         let src_type = self.node_type_key(&nodes, src_id)?;
         let dst_type = self.node_type_key(&nodes, dst_id)?;
-
-        let rel_symbol = self.relationship_symbol(rel_type)?;
         let duplicate_exists =
             self.workspace
                 .edge_exists(&rel_symbol.to_canonical_string(), src_id, dst_id)?;
-
-        // Validate the intended write; on failure nothing is appended.
         validate_edge(
             &rule,
             &schema,
@@ -435,7 +419,6 @@ impl Engine {
         let dst = Id::from_str(dst_id).map_err(|_| StoreError::Validation {
             message: "destination id is not a UUID".into(),
         })?;
-
         self.workspace.author(
             actor,
             Origin::manual(),
@@ -456,35 +439,7 @@ impl Engine {
             }),
         )?;
 
-        // Persist each supplied relationship attribute as a plan-layer fact,
-        // resolving its field symbol from the compiled slot descriptors.
-        if let Some(map) = props.as_object() {
-            for (name, json) in map {
-                let Some(slot) = schema.slots.iter().find(|s| &s.key == name) else {
-                    continue;
-                };
-                let field_id = Id::from_str(&slot.uuid).map_err(|_| StoreError::Validation {
-                    message: format!("slot `{name}` has an invalid uuid"),
-                })?;
-                self.workspace.author(
-                    actor,
-                    Origin::manual(),
-                    OpPayload::SetPropertyInterval(SetPropertyInterval {
-                        partition,
-                        scenario_id: None,
-                        actor,
-                        asserted_at: mneme_core::Hlc(0),
-                        entity_id: edge_id,
-                        field_id,
-                        value: to_value(json)?,
-                        valid_from: ValidTime(0),
-                        valid_to: None,
-                        layer: Layer::Plan,
-                        write_options: None,
-                    }),
-                )?;
-            }
-        }
+        self.append_edge_props(edge_id, &schema, &props)?;
 
         Ok(EdgeRecord {
             edge_id: edge_id.to_canonical_string(),
@@ -494,6 +449,75 @@ impl Engine {
             dst_id: dst_id.to_owned(),
             tombstoned: false,
         })
+    }
+
+    /// Resolve a relationship key to its compiled validation rule, effective
+    /// schema, and storage symbol, rejecting an unknown key with a validation
+    /// error before any op is appended.
+    fn resolve_edge_rules(
+        &self,
+        rel_type: &str,
+    ) -> Result<(EffectiveEdgeRule, EffectiveSchema, Id)> {
+        let rule = self
+            .edge_rules
+            .iter()
+            .find(|r| r.key == rel_type)
+            .cloned()
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("unknown relationship type `{rel_type}`"),
+            })?;
+        let schema = self
+            .schemas
+            .iter()
+            .find(|s| s.type_id == rel_type)
+            .cloned()
+            .ok_or_else(|| StoreError::Validation {
+                message: format!("relationship type `{rel_type}` has no effective schema"),
+            })?;
+        let rel_symbol = self.relationship_symbol(rel_type)?;
+        Ok((rule, schema, rel_symbol))
+    }
+
+    /// Persist each supplied relationship attribute as a plan-layer fact over
+    /// the open interval, resolving its field symbol from the compiled slot
+    /// descriptors. An attribute with no matching slot is skipped.
+    fn append_edge_props(
+        &mut self,
+        edge_id: Id,
+        schema: &EffectiveSchema,
+        props: &serde_json::Value,
+    ) -> Result<()> {
+        let Some(map) = props.as_object() else {
+            return Ok(());
+        };
+        let actor = self.session_actor()?;
+        let partition = self.workspace.partition_id();
+        for (name, json) in map {
+            let Some(slot) = schema.slots.iter().find(|s| &s.key == name) else {
+                continue;
+            };
+            let field_id = Id::from_str(&slot.uuid).map_err(|_| StoreError::Validation {
+                message: format!("slot `{name}` has an invalid uuid"),
+            })?;
+            self.workspace.author(
+                actor,
+                Origin::manual(),
+                OpPayload::SetPropertyInterval(SetPropertyInterval {
+                    partition,
+                    scenario_id: None,
+                    actor,
+                    asserted_at: mneme_core::Hlc(0),
+                    entity_id: edge_id,
+                    field_id,
+                    value: to_value(json)?,
+                    valid_from: ValidTime(0),
+                    valid_to: None,
+                    layer: Layer::Plan,
+                    write_options: None,
+                }),
+            )?;
+        }
+        Ok(())
     }
 
     /// The projected edge listing — the derived twin view, re-derived on rebuild.
@@ -990,46 +1014,33 @@ mod tests {
     }
 
     #[test]
-    fn accesses_without_mode_is_rejected_and_appends_nothing() {
-        let dir = TempDir::new().unwrap();
-        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
-        let (app, _cap, data, _) = seed_nodes(&mut engine);
-        let before = engine.status().unwrap().applied_op_count;
+    fn invalid_typed_edges_are_rejected_and_append_nothing() {
+        // Each case names the relationship and the endpoint pick from the seeded
+        // (app, cap, data, cap2) tuple that makes the write invalid. In every
+        // case the write must be refused and append no op to the canonical log.
+        type EndpointPick = fn(&(String, String, String, String)) -> (String, String);
+        let cases: &[(&str, EndpointPick)] = &[
+            // accesses requires a mode; omitting it is rejected. Application → DataEntity.
+            ("accesses", |(app, _c, data, _)| (app.clone(), data.clone())),
+            // realises.from is [Application, TechnologyComponent]; a Capability source is invalid.
+            ("realises", |(app, cap, _d, _)| (cap.clone(), app.clone())),
+            // serves disallows a self-link (allowSelf=false).
+            ("serves", |(_a, cap, _d, _)| (cap.clone(), cap.clone())),
+        ];
 
-        let err = engine
-            .author_typed_edge("accesses", &app, &data, serde_json::json!({}))
-            .unwrap_err();
-        assert!(matches!(err, StoreError::Validation { .. }));
-        assert_eq!(engine.status().unwrap().applied_op_count, before);
-    }
+        for (rel_type, pick) in cases {
+            let dir = TempDir::new().unwrap();
+            let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
+            let seeded = seed_nodes(&mut engine);
+            let (src, dst) = pick(&seeded);
+            let before = engine.status().unwrap().applied_op_count;
 
-    #[test]
-    fn wrong_endpoint_edge_is_rejected_and_appends_nothing() {
-        let dir = TempDir::new().unwrap();
-        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
-        let (app, cap, _data, _) = seed_nodes(&mut engine);
-        let before = engine.status().unwrap().applied_op_count;
-
-        // realises.from is [Application, TechnologyComponent]; a Capability source is invalid.
-        let err = engine
-            .author_typed_edge("realises", &cap, &app, serde_json::json!({}))
-            .unwrap_err();
-        assert!(matches!(err, StoreError::Validation { .. }));
-        assert_eq!(engine.status().unwrap().applied_op_count, before);
-    }
-
-    #[test]
-    fn serves_self_link_is_rejected_and_appends_nothing() {
-        let dir = TempDir::new().unwrap();
-        let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
-        let (_app, cap, _data, _) = seed_nodes(&mut engine);
-        let before = engine.status().unwrap().applied_op_count;
-
-        let err = engine
-            .author_typed_edge("serves", &cap, &cap, serde_json::json!({}))
-            .unwrap_err();
-        assert!(matches!(err, StoreError::Validation { .. }));
-        assert_eq!(engine.status().unwrap().applied_op_count, before);
+            let err = engine
+                .author_typed_edge(rel_type, &src, &dst, serde_json::json!({}))
+                .unwrap_err();
+            assert!(matches!(err, StoreError::Validation { .. }));
+            assert_eq!(engine.status().unwrap().applied_op_count, before);
+        }
     }
 
     #[test]
