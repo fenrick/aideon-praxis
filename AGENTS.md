@@ -10,7 +10,7 @@ The docs are authoritative; code is updated to match them.
 ## Read these first
 
 - [`docs/00-index/README.md`](docs/00-index/README.md) — documentation map and reading order.
-- [`CONTEXT.md`](CONTEXT.md) — the canonical domain glossary (twin, workspace, viewpoint, fact, layer, scenario). Use
+- [`CONTEXT.md`](./CONTEXT.md) — the canonical domain glossary (twin, workspace, viewpoint, fact, layer, scenario). Use
   these terms exactly.
 - [`docs/agents/domain.md`](docs/agents/domain.md) — how to orient before changing anything.
 - [`docs/agents/workflow.md`](docs/agents/workflow.md) — the task loop and quality gates: CodeScene before/after scores
