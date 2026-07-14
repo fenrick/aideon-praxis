@@ -40,10 +40,30 @@ import type { ClaimInput } from './use-workspace-foundation';
 import { useWorkspaceFoundation } from './use-workspace-foundation';
 
 /** The two layer-priority presets the viewpoint control offers. */
-const LAYER_PRESETS: Record<string, string[]> = {
-  'actual-first': ['actual', 'plan'],
-  'plan-only': ['plan'],
-};
+type LayerPreset = 'actual-first' | 'plan-only';
+
+/**
+ * Narrow a Select's onValueChange string to a known layer preset.
+ * @param value - Raw value from the preset Select.
+ */
+function isLayerPreset(value: string): value is LayerPreset {
+  return value === 'actual-first' || value === 'plan-only';
+}
+
+/**
+ * Resolve the layer list for a preset.
+ * @param preset - Layer preset to resolve.
+ */
+function layersForPreset(preset: LayerPreset): string[] {
+  switch (preset) {
+    case 'actual-first': {
+      return ['actual', 'plan'];
+    }
+    case 'plan-only': {
+      return ['plan'];
+    }
+  }
+}
 
 /**
  * Author one metamodel-typed entity: pick a type, fill its attributes, create.
@@ -543,7 +563,7 @@ function CatalogueCard({
               onValueChange={(next) => {
                 onViewpoint({
                   asOf: viewpoint.asOf,
-                  layers: LAYER_PRESETS[next] ?? ['actual', 'plan'],
+                  layers: isLayerPreset(next) ? layersForPreset(next) : ['actual', 'plan'],
                 });
               }}
             >
