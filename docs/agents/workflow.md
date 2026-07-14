@@ -53,6 +53,15 @@ Codacy is the security/static-analysis gate; use the Codacy MCP tools (`codacy_l
   completion note.
 - Query by **category**, not the Error/Warning/Info triad — the severity tiers hide categories (see the team's Codacy
   notes).
+- **Trust the analysis of the commit that re-scanned the file.** Codacy's incremental analysis can resurface an
+  already-fixed finding on a later commit that did not touch the offending file — a stale phantom whose `lineText` and
+  `commitInfo.sha` cite content the file no longer contains. Before treating a High as real, confirm the finding matches
+  the file at HEAD; if it cites deleted content, force a fresh scan by making a small real change to that file and
+  pushing. Never chase a phantom with speculative edits to the code it names.
+- **Agentlinter gotchas.** The `referenced-files-exist` rule does not resolve directory-less links (a bare
+  `[x](CONTEXT.md)` or `[x](./CONTEXT.md)` to a repo-root file is reported "not found" even though the file exists and
+  is indexed); directory-qualified links resolve. Keep `AGENTS.md` a thin prose pointer to `CLAUDE.md` rather than a
+  duplicated copy — the duplicate drifts and carries the links that trip this rule.
 
 ## Native QA on macOS (Tauri)
 
@@ -77,6 +86,13 @@ pnpm tauri dev   # boots Next.js on :1420 + the Tauri host
 
 Work is **not done** until `pnpm run ci` passes and the push succeeds through the pre-push hook. **⛔ Never
 `--no-verify`.** If the hook blocks: read the error, fix it, commit, push again.
+
+**Tests passing is not CI passing.** `cargo test` does not run Clippy or `rustfmt`; Vitest does not run ESLint or
+Prettier. Run the actual gate lanes before claiming done — `cargo clippy --all-targets -- -D warnings`,
+`cargo fmt --check`, `pnpm run node:lint`, `pnpm run node:format:check` — each catches real failures a test run misses
+(e.g. a `clippy::type_complexity` error, or unformatted files). When capturing a lane's result through a shell pipe,
+remember the pipe returns the _last_ command's exit code, not the tool's (zsh: use `$pipestatus`, or write to a file and
+check `$?`) — a green-looking `| tail` can hide a failed build.
 
 Alongside the CI gate, verify and record (in the PR description or issue comment):
 

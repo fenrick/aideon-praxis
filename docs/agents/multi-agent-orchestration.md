@@ -35,6 +35,11 @@ fact.**
 
 - Verifies the underlying artefact directly (file contents, hashes, git status, test output) before treating any
   recruit's "done"/"approved"/"confirmed" claim as fact. Narration is a lead, not a conclusion.
+- Runs the **full CI gate on the merged tree** before committing — never trusts a recruit's "tests pass" as "CI passes".
+  A recruit typically runs a subset (its crate's tests, its file's typecheck); it does not run Clippy, `rustfmt`,
+  ESLint, or Prettier across the whole change. Several individually-green, file-disjoint clusters can still fail Clippy
+  `-D warnings` or format-check collectively — those failures only surface when the lead runs `pnpm run ci` (or the
+  underlying lanes) over the combined working tree.
 - Never lets a recruit stage, commit, or push on its own initiative — that stays a lead-only, explicit action after
   independent verification.
 - States plainly, in each recruit's role brief, that only the lead's directly-attributed instructions (or the recruit's
