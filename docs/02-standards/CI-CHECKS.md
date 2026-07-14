@@ -23,8 +23,12 @@ pnpm run host:ci     # host:format:check, host:lint, host:check, host:test
 CI runs the renderer and Rust halves as parallel jobs, with lint and typecheck ahead of the heavier test and build jobs
 so a quick failure fails fast ([`.github/workflows/pipeline.yml`](../../.github/workflows/pipeline.yml);
 [CODING-STANDARDS.md §17](./CODING-STANDARDS.md#17-commit-hygiene-and-ci)). A pre-commit hook (Husky + lint-staged) runs
-format and lint on changed files locally so the same rules are met before the commit lands; a pre-push hook runs the
-full `pnpm run ci`.
+format and lint on changed files locally so the same rules are met before the commit lands. The pre-push hook
+([`.husky/pre-push`](../../.husky/pre-push)) routes by what changed — `node:ci` for renderer changes, `host:ci` for Rust
+changes, both skipped on docs/workflow-only pushes (`AIDEON_PREPUSH_FULL=1` forces both) — and then reports the
+CodeScene code-health gate against [`.codescene-thresholds`](../../.codescene-thresholds) when `CODESCENE_PAT` is set.
+The thresholds are a ratchet: never edit them down, and keep every touched file's file-level score trending up (see
+[`docs/agents/workflow.md`](../agents/workflow.md)).
 
 ---
 
