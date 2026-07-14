@@ -22,13 +22,33 @@ const STORAGE_KEY = 'aideon.locale';
 
 // Static export has no request-time server, so locale switching is a client
 // preference (like ColorThemeProvider), not URL-based next-intl routing.
-const messageLoaders: Record<AppLocale, () => Promise<Messages>> = {
-  en: () => Promise.resolve(en),
-  es: () => import('locales/es.json').then((module) => module.default),
-  fr: () => import('locales/fr.json').then((module) => module.default),
-  de: () => import('locales/de.json').then((module) => module.default),
-  ja: () => import('locales/ja.json').then((module) => module.default),
-};
+//
+// Written as an explicit switch (not a Record<AppLocale, loader> keyed by a
+// variable) so the locale never selects which import runs via a dynamic
+// property lookup — each branch is a statically-known call.
+/**
+ * Load the message catalog for a locale.
+ * @param locale - Locale to load messages for.
+ */
+function loadMessages(locale: AppLocale): Promise<Messages> {
+  switch (locale) {
+    case 'en': {
+      return Promise.resolve(en);
+    }
+    case 'es': {
+      return import('locales/es.json').then((module) => module.default);
+    }
+    case 'fr': {
+      return import('locales/fr.json').then((module) => module.default);
+    }
+    case 'de': {
+      return import('locales/de.json').then((module) => module.default);
+    }
+    case 'ja': {
+      return import('locales/ja.json').then((module) => module.default);
+    }
+  }
+}
 
 /**
  * Read the persisted locale from local storage.
@@ -85,7 +105,7 @@ export function AppLocaleProvider({ children }: { readonly children: ReactNode }
     const controller = new AbortController();
 
     void (async () => {
-      const loaded = await messageLoaders[locale]();
+      const loaded = await loadMessages(locale);
       if (controller.signal.aborted) {
         return;
       }
