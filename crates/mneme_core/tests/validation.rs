@@ -185,6 +185,8 @@ fn edge_ctx<'a>(
         dst_type,
         is_self,
         duplicate_exists,
+        src_out_degree: 0,
+        dst_in_degree: 0,
     }
 }
 

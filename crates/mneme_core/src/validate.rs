@@ -71,6 +71,18 @@ pub enum ValidationError {
         /// The relationship key.
         key: String,
     },
+    /// An endpoint whose `one` multiplicity bound is already satisfied.
+    MultiplicityExceeded {
+        /// The relationship key.
+        key: String,
+        /// The bounded endpoint: `"src"` or `"dst"`.
+        endpoint: &'static str,
+    },
+    /// An attribute set that is not a JSON object.
+    MalformedProps {
+        /// What the write was expected to carry.
+        expected: &'static str,
+    },
 }
 
 impl ValidationError {
@@ -87,6 +99,8 @@ impl ValidationError {
             Self::EndpointTypeNotAllowed { .. } => "ENDPOINT_TYPE_NOT_ALLOWED",
             Self::SelfLinkNotAllowed { .. } => "SELF_LINK_NOT_ALLOWED",
             Self::DuplicateRelationship { .. } => "DUPLICATE_RELATIONSHIP",
+            Self::MultiplicityExceeded { .. } => "MULTIPLICITY_EXCEEDED",
+            Self::MalformedProps { .. } => "MALFORMED_PROPS",
         }
     }
 }
@@ -120,6 +134,10 @@ impl std::fmt::Display for ValidationError {
             }
             Self::SelfLinkNotAllowed { key } => write!(f, "`{key}` forbids self-links"),
             Self::DuplicateRelationship { key } => write!(f, "`{key}` forbids duplicate edges"),
+            Self::MultiplicityExceeded { key, endpoint } => {
+                write!(f, "`{key}` allows at most one {endpoint} endpoint")
+            }
+            Self::MalformedProps { expected } => write!(f, "attribute set must be {expected}"),
         }
     }
 }
@@ -147,6 +165,10 @@ pub struct EdgeContext<'a> {
     pub is_self: bool,
     /// Whether an edge of this type already connects the same ordered pair.
     pub duplicate_exists: bool,
+    /// Existing edges of this relationship type leaving the source entity.
+    pub src_out_degree: u32,
+    /// Existing edges of this relationship type entering the destination entity.
+    pub dst_in_degree: u32,
 }
 
 /// Validate an edge write against its relationship rule and effective schema.
@@ -190,14 +212,40 @@ pub fn validate_edge(
             key: rule.key.clone(),
         });
     }
+    check_multiplicity(rule, ctx)?;
     validate_slots(&schema.slots, props)
+}
+
+/// Enforce `one`-bounded endpoints as a count-against-bounds check; any bound
+/// other than `one` (i.e. `many`) is unbounded. `multiplicity_dst = "one"`
+/// caps how many destinations a source may reach, so it is checked against the
+/// source's out-degree; `multiplicity_src` is the mirror on the destination.
+fn check_multiplicity(
+    rule: &EffectiveEdgeRule,
+    ctx: &EdgeContext<'_>,
+) -> Result<(), ValidationError> {
+    if rule.multiplicity_dst == "one" && ctx.src_out_degree >= 1 {
+        return Err(ValidationError::MultiplicityExceeded {
+            key: rule.key.clone(),
+            endpoint: "dst",
+        });
+    }
+    if rule.multiplicity_src == "one" && ctx.dst_in_degree >= 1 {
+        return Err(ValidationError::MultiplicityExceeded {
+            key: rule.key.clone(),
+            endpoint: "src",
+        });
+    }
+    Ok(())
 }
 
 /// Shared slot checks for node and edge attribute sets.
 fn validate_slots(slots: &[EffectiveSlot], props: &Json) -> Result<(), ValidationError> {
-    let obj = props.as_object();
+    let obj = props.as_object().ok_or(ValidationError::MalformedProps {
+        expected: "a JSON object",
+    })?;
     for slot in slots {
-        let present = obj.and_then(|o| o.get(&slot.key)).filter(|v| !v.is_null());
+        let present = obj.get(&slot.key).filter(|v| !v.is_null());
         match present {
             None => {
                 if slot.required {
@@ -277,5 +325,90 @@ fn wrong_kind(slot: &EffectiveSlot) -> ValidationError {
     ValidationError::WrongAttributeKind {
         key: slot.key.clone(),
         expected: slot.kind,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::effective::{Cardinality, SlotSource};
+    use serde_json::json;
+
+    fn empty_schema() -> EffectiveSchema {
+        EffectiveSchema {
+            type_id: "R".into(),
+            label: "R".into(),
+            category: None,
+            uuid: "u".into(),
+            extends: None,
+            inheritance_chain: vec!["R".into()],
+            slots: Vec::new(),
+            effect_types: Vec::new(),
+        }
+    }
+
+    fn edge_rule(mult_src: &str, mult_dst: &str) -> EffectiveEdgeRule {
+        EffectiveEdgeRule {
+            key: "serves".into(),
+            allowed_src: vec!["A".into()],
+            allowed_dst: vec!["B".into()],
+            allow_self: true,
+            allow_duplicate: true,
+            multiplicity_src: mult_src.into(),
+            multiplicity_dst: mult_dst.into(),
+        }
+    }
+
+    fn ctx(src_out_degree: u32, dst_in_degree: u32) -> EdgeContext<'static> {
+        EdgeContext {
+            src_type: "A",
+            dst_type: "B",
+            is_self: false,
+            duplicate_exists: false,
+            src_out_degree,
+            dst_in_degree,
+        }
+    }
+
+    #[test]
+    fn non_object_props_are_rejected_as_malformed() {
+        let schema = EffectiveSchema {
+            slots: vec![EffectiveSlot {
+                key: "name".into(),
+                kind: FieldKind::String,
+                required: false,
+                cardinality: Cardinality::Single,
+                max_length: None,
+                enum_variants: None,
+                case_sensitive: None,
+                format: None,
+                uuid: "s".into(),
+                source: SlotSource::SelfDeclared,
+            }],
+            ..empty_schema()
+        };
+        // A bare JSON number is not an attribute set even when no slot is required.
+        let err = validate_node(&schema, &json!(42)).unwrap_err();
+        assert_eq!(err.code(), "MALFORMED_PROPS");
+    }
+
+    #[test]
+    fn one_bound_dst_endpoint_is_rejected_once_the_source_already_links() {
+        let rule = edge_rule("many", "one");
+        let err = validate_edge(&rule, &empty_schema(), &ctx(1, 0), &json!({})).unwrap_err();
+        assert!(matches!(
+            err,
+            ValidationError::MultiplicityExceeded {
+                endpoint: "dst",
+                ..
+            }
+        ));
+        assert_eq!(err.code(), "MULTIPLICITY_EXCEEDED");
+    }
+
+    #[test]
+    fn many_multiplicity_is_unbounded_at_any_degree() {
+        let rule = edge_rule("many", "many");
+        validate_edge(&rule, &empty_schema(), &ctx(9, 9), &json!({})).unwrap();
     }
 }

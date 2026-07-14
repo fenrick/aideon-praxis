@@ -278,12 +278,30 @@ impl Workspace {
     /// Whether a live edge of `type_id` already connects `src_id → dst_id`
     /// (the M1 duplicate-edge check).
     pub fn edge_exists(&self, type_id: &str, src_id: &str, dst_id: &str) -> Result<bool> {
+        let partition = self.partition_id().to_canonical_string();
         projection::edge_exists(
             &self.conn,
-            &self.partition_id().to_canonical_string(),
-            type_id,
-            src_id,
-            dst_id,
+            &projection::EdgeQuery {
+                partition_id: &partition,
+                type_id,
+                src_id,
+                dst_id,
+            },
+        )
+    }
+
+    /// The source out-degree and destination in-degree for a relationship type
+    /// (the M1 multiplicity check input), counted over live edges.
+    pub fn edge_degree(&self, type_id: &str, src_id: &str, dst_id: &str) -> Result<(u32, u32)> {
+        let partition = self.partition_id().to_canonical_string();
+        projection::edge_degree(
+            &self.conn,
+            &projection::EdgeQuery {
+                partition_id: &partition,
+                type_id,
+                src_id,
+                dst_id,
+            },
         )
     }
 

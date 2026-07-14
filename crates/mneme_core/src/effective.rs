@@ -37,6 +37,13 @@ pub enum CompileError {
         /// The type carrying the dangling attachment.
         type_key: String,
     },
+    /// A relationship rule names an endpoint entity type absent from the batch.
+    UnknownEndpointType {
+        /// The relationship key carrying the dangling endpoint reference.
+        key: String,
+        /// The unresolved endpoint entity type reference.
+        entity_type: String,
+    },
 }
 
 impl std::fmt::Display for CompileError {
@@ -50,6 +57,12 @@ impl std::fmt::Display for CompileError {
             }
             Self::UnknownField { type_key } => {
                 write!(f, "type `{type_key}` attaches an unknown field")
+            }
+            Self::UnknownEndpointType { key, entity_type } => {
+                write!(
+                    f,
+                    "relationship `{key}` references unknown endpoint type `{entity_type}`"
+                )
             }
         }
     }
@@ -161,8 +174,9 @@ pub fn compile(batch: &AuthoredMetamodelBatch) -> Result<Vec<EffectiveSchema>, C
 /// Compile each edge-type rule to its key-resolved form.
 ///
 /// # Errors
-/// Returns [`CompileError::UnknownParent`] (reused as "unresolved reference")
-/// when a rule names an `edge_type_id` or endpoint `type_id` absent from the batch.
+/// Returns [`CompileError::UnknownParent`] when a rule names an `edge_type_id`
+/// absent from the batch, or [`CompileError::UnknownEndpointType`] when it names
+/// an endpoint `type_id` absent from the batch.
 pub fn compile_edge_rules(
     batch: &AuthoredMetamodelBatch,
 ) -> Result<Vec<EffectiveEdgeRule>, CompileError> {
@@ -179,8 +193,9 @@ pub fn compile_edge_rules(
                 ids.iter()
                     .map(|tid| {
                         find_type(batch, tid).map(|t| t.key.clone()).ok_or_else(|| {
-                            CompileError::UnknownParent {
-                                type_key: edge.key.clone(),
+                            CompileError::UnknownEndpointType {
+                                key: edge.key.clone(),
+                                entity_type: tid.to_canonical_string(),
                             }
                         })
                     })

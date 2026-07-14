@@ -19,6 +19,7 @@ pub use mneme_store::{AppliedFrontier, FoundationProjectionSnapshot, Manifest, W
 
 use mneme_core::effective::{EffectiveEdgeRule, EffectiveSchema};
 use mneme_core::ops::{CreateEdge, CreateNode, Layer, SetPropertyInterval};
+use mneme_core::schema::FieldKind;
 use mneme_core::time::ValidTime;
 use mneme_core::validate::{EdgeContext, validate_edge, validate_node};
 use std::collections::BTreeMap;
@@ -313,6 +314,9 @@ impl Engine {
             .ok_or_else(|| StoreError::Validation {
                 message: format!("unknown type `{type_id}`"),
             })?;
+        // The host stringifies every prop value; coerce number/boolean slots to
+        // their typed JSON per the schema before validating and storing.
+        let props = coerce_props(schema, props);
         validate_node(schema, &props).map_err(|e| StoreError::Validation {
             message: e.to_string(),
         })?;
@@ -386,15 +390,23 @@ impl Engine {
         // Resolve the compiled rule, effective schema, and storage symbol; an
         // unknown relationship key is rejected before any op is appended.
         let (rule, schema, rel_symbol) = self.resolve_edge_rules(rel_type)?;
+        // The host stringifies every prop value; coerce number/boolean slots to
+        // their typed JSON per the schema before validating and storing.
+        let props = coerce_props(&schema, props);
 
         // Resolve both endpoints' domain type keys from the projected twin, then
         // validate the intended write; on failure nothing is appended.
         let nodes = self.workspace.list_nodes()?;
         let src_type = self.node_type_key(&nodes, src_id)?;
         let dst_type = self.node_type_key(&nodes, dst_id)?;
-        let duplicate_exists =
+        let rel_symbol_str = rel_symbol.to_canonical_string();
+        let duplicate_exists = self
+            .workspace
+            .edge_exists(&rel_symbol_str, src_id, dst_id)?;
+        // Existing per-type degree at each endpoint feeds the multiplicity check.
+        let (src_out_degree, dst_in_degree) =
             self.workspace
-                .edge_exists(&rel_symbol.to_canonical_string(), src_id, dst_id)?;
+                .edge_degree(&rel_symbol_str, src_id, dst_id)?;
         validate_edge(
             &rule,
             &schema,
@@ -403,6 +415,8 @@ impl Engine {
                 dst_type: &dst_type,
                 is_self: src_id == dst_id,
                 duplicate_exists,
+                src_out_degree,
+                dst_in_degree,
             },
             &props,
         )
@@ -411,34 +425,13 @@ impl Engine {
         })?;
 
         let edge_id = Id::new_v4();
-        let actor = self.session_actor()?;
-        let partition = self.workspace.partition_id();
         let src = Id::from_str(src_id).map_err(|_| StoreError::Validation {
             message: "source id is not a UUID".into(),
         })?;
         let dst = Id::from_str(dst_id).map_err(|_| StoreError::Validation {
             message: "destination id is not a UUID".into(),
         })?;
-        self.workspace.author(
-            actor,
-            Origin::manual(),
-            OpPayload::CreateEdge(CreateEdge {
-                partition,
-                scenario_id: None,
-                actor,
-                asserted_at: mneme_core::Hlc(0),
-                edge_id,
-                type_id: Some(rel_symbol),
-                src_id: src,
-                dst_id: dst,
-                exists_valid_from: ValidTime(0),
-                exists_valid_to: None,
-                layer: Layer::Plan,
-                weight: None,
-                write_options: None,
-            }),
-        )?;
-
+        self.append_create_edge(edge_id, rel_symbol, (src, dst))?;
         self.append_edge_props(edge_id, &schema, &props)?;
 
         Ok(EdgeRecord {
@@ -476,6 +469,38 @@ impl Engine {
             })?;
         let rel_symbol = self.relationship_symbol(rel_type)?;
         Ok((rule, schema, rel_symbol))
+    }
+
+    /// Append the `create-edge` op for a validated relationship, carrying its
+    /// storage symbol, on the plan layer over the open-ended interval.
+    fn append_create_edge(
+        &mut self,
+        edge_id: Id,
+        rel_symbol: Id,
+        endpoints: (Id, Id),
+    ) -> Result<()> {
+        let actor = self.session_actor()?;
+        let partition = self.workspace.partition_id();
+        self.workspace.author(
+            actor,
+            Origin::manual(),
+            OpPayload::CreateEdge(CreateEdge {
+                partition,
+                scenario_id: None,
+                actor,
+                asserted_at: mneme_core::Hlc(0),
+                edge_id,
+                type_id: Some(rel_symbol),
+                src_id: endpoints.0,
+                dst_id: endpoints.1,
+                exists_valid_from: ValidTime(0),
+                exists_valid_to: None,
+                layer: Layer::Plan,
+                weight: None,
+                write_options: None,
+            }),
+        )?;
+        Ok(())
     }
 
     /// Persist each supplied relationship attribute as a plan-layer fact over
@@ -882,6 +907,49 @@ fn meta_types(registry: &MetaModelRegistry) -> Vec<MetaTypeInfo> {
             id: ty.id,
         })
         .collect()
+}
+
+/// Coerce string-encoded prop values to their typed JSON per the effective
+/// schema. The host stringifies every value, so `number` and `boolean` slots
+/// arrive as strings; this restores their JSON kind before validation and
+/// storage. Only keys matching a known slot are touched; a value that does not
+/// parse is left unchanged so the validator rejects it (never swallowed).
+/// String/text/enum/datetime/blob values pass through verbatim.
+fn coerce_props(schema: &EffectiveSchema, props: serde_json::Value) -> serde_json::Value {
+    let serde_json::Value::Object(mut map) = props else {
+        return props;
+    };
+    for slot in &schema.slots {
+        if let Some(value) = map.get_mut(&slot.key) {
+            coerce_value(slot.kind, value);
+        }
+    }
+    serde_json::Value::Object(map)
+}
+
+/// Coerce a single string value to the JSON kind its slot expects. A non-string
+/// value, or a string that does not parse to the target kind, is left as-is.
+fn coerce_value(kind: FieldKind, value: &mut serde_json::Value) {
+    let serde_json::Value::String(s) = value else {
+        return;
+    };
+    match kind {
+        FieldKind::Number => {
+            if let Ok(number) = s.parse::<serde_json::Number>() {
+                *value = serde_json::Value::Number(number);
+            }
+        }
+        FieldKind::Boolean => match s.as_str() {
+            "true" => *value = serde_json::Value::Bool(true),
+            "false" => *value = serde_json::Value::Bool(false),
+            _ => {}
+        },
+        FieldKind::String
+        | FieldKind::Text
+        | FieldKind::Enum
+        | FieldKind::Datetime
+        | FieldKind::Blob => {}
+    }
 }
 
 /// Convert a JSON attribute value into the canonical [`Value`] algebra. The M1
@@ -1309,6 +1377,73 @@ mod tests {
                 .iter()
                 .any(|p| p.field == "lifecycle" && p.value == "Run" && p.layer == "actual")
         );
+    }
+
+    #[test]
+    fn coerce_props_restores_number_json_kind() {
+        use mneme_core::effective::{Cardinality, EffectiveSlot, SlotSource};
+        let schema = EffectiveSchema {
+            type_id: "T".into(),
+            label: "T".into(),
+            category: None,
+            uuid: "u".into(),
+            extends: None,
+            inheritance_chain: vec!["T".into()],
+            slots: vec![EffectiveSlot {
+                key: "confidence".into(),
+                kind: FieldKind::Number,
+                required: false,
+                cardinality: Cardinality::Single,
+                max_length: None,
+                enum_variants: None,
+                case_sensitive: None,
+                format: None,
+                uuid: "s".into(),
+                source: SlotSource::SelfDeclared,
+            }],
+            effect_types: Vec::new(),
+        };
+        // A numeric string is restored to a JSON number.
+        let out = coerce_props(&schema, serde_json::json!({ "confidence": "42" }));
+        assert_eq!(out["confidence"], serde_json::json!(42));
+        assert!(out["confidence"].is_number());
+        // A non-numeric string is left unchanged (so the validator can reject it).
+        let bad = coerce_props(&schema, serde_json::json!({ "confidence": "x" }));
+        assert_eq!(bad["confidence"], serde_json::json!("x"));
+    }
+
+    #[test]
+    fn number_attribute_is_coerced_from_string_and_bad_value_rejected() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), None).unwrap();
+
+        // PlanEvent.confidence is a `number`; authored as the string "42" it
+        // coerces to a JSON number, validates, and lands in the op log.
+        let node = engine
+            .author_typed_node(
+                "PlanEvent",
+                serde_json::json!({
+                    "name": "Launch",
+                    "effective_at": "2026-01-01T00:00:00Z",
+                    "confidence": "42"
+                }),
+            )
+            .unwrap();
+        assert_eq!(node.type_label.as_deref(), Some("PlanEvent"));
+
+        // A non-numeric string is left unchanged and rejected as a wrong kind,
+        // appending nothing to the canonical log.
+        let before = engine.status().unwrap().applied_op_count;
+        let bad = engine.author_typed_node(
+            "PlanEvent",
+            serde_json::json!({
+                "name": "Bad",
+                "effective_at": "2026-01-01T00:00:00Z",
+                "confidence": "notanumber"
+            }),
+        );
+        assert!(matches!(bad, Err(StoreError::Validation { .. })));
+        assert_eq!(engine.status().unwrap().applied_op_count, before);
     }
 
     #[test]

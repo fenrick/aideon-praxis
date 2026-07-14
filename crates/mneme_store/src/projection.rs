@@ -554,27 +554,53 @@ pub fn list_edges(conn: &Connection) -> Result<Vec<EdgeRow>> {
     )
 }
 
+/// The `(partition, relationship type, ordered endpoint pair)` selector shared
+/// by the edge-existence and edge-degree projections.
+pub struct EdgeQuery<'a> {
+    /// The partition the edge lives in.
+    pub partition_id: &'a str,
+    /// The relationship type symbol UUID.
+    pub type_id: &'a str,
+    /// The source entity id.
+    pub src_id: &'a str,
+    /// The destination entity id.
+    pub dst_id: &'a str,
+}
+
 /// Whether a live (non-tombstoned) edge of `type_id` already connects the
 /// ordered pair `src_id → dst_id` — the M1 duplicate-edge check.
-pub fn edge_exists(
-    conn: &Connection,
-    partition_id: &str,
-    type_id: &str,
-    src_id: &str,
-    dst_id: &str,
-) -> Result<bool> {
-    use rusqlite::OptionalExtension;
+pub fn edge_exists(conn: &Connection, q: &EdgeQuery<'_>) -> Result<bool> {
     Ok(conn
         .query_row(
             "SELECT 1 FROM aideon_edges
              WHERE partition_id = ?1 AND type_id = ?2 AND src_id = ?3 AND dst_id = ?4
                AND tombstoned = 0
              LIMIT 1",
-            params![partition_id, type_id, src_id, dst_id],
+            params![q.partition_id, q.type_id, q.src_id, q.dst_id],
             |_| Ok(()),
         )
         .optional()?
         .is_some())
+}
+
+/// Count live edges of `type_id` for the M1 multiplicity check: the source's
+/// out-degree (edges leaving `src_id`) and the destination's in-degree (edges
+/// entering `dst_id`), for that relationship type. Counted before the new edge
+/// is appended, so a `one`-bounded endpoint is exceeded once the count reaches 1.
+pub fn edge_degree(conn: &Connection, q: &EdgeQuery<'_>) -> Result<(u32, u32)> {
+    let out_degree: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM aideon_edges
+         WHERE partition_id = ?1 AND type_id = ?2 AND src_id = ?3 AND tombstoned = 0",
+        params![q.partition_id, q.type_id, q.src_id],
+        |row| row.get(0),
+    )?;
+    let in_degree: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM aideon_edges
+         WHERE partition_id = ?1 AND type_id = ?2 AND dst_id = ?3 AND tombstoned = 0",
+        params![q.partition_id, q.type_id, q.dst_id],
+        |row| row.get(0),
+    )?;
+    Ok((out_degree as u32, in_degree as u32))
 }
 
 /// List every declared actor, ordered by actor id.
