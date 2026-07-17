@@ -85,15 +85,25 @@ jobs:
             echo "::warning::${kept} kept SARIF runs have findings but GitHub allows 20 per file; lower-priority runs will be omitted."
           fi
           jq --arg deny "$deny" '
+            def slug: ascii_downcase | gsub("[^a-z0-9]+"; "-");
+            # Runs from adopted tools, in the original (deterministic) order.
             ([.runs[] | select(((.tool.driver.name // "") | ascii_downcase | test($deny)) | not)]) as $wanted
-            | ( [$wanted[] | select(((.results // []) | length) > 0)]
-              + [$wanted[] | select(((.results // []) | length) == 0)]
-              )[0:20] as $capped
-            | .runs = ($capped | map(.automationDetails.id = (((.tool.driver.name // "codacy") | ascii_downcase | gsub("[^a-z0-9]+"; "-")) + "/")))
+            # Stable, unique category per run: slug(tool) plus a per-tool occurrence
+            # index in original order (handles duplicate/missing tool names without
+            # depending on findings, so a tool keeps its category across runs).
+            | (reduce range(0; ($wanted | length)) as $i ({ c: {}, out: [] };
+                 ($wanted[$i].tool.driver.name // "codacy" | slug) as $s
+                 | (.c[$s] // 0) as $n
+                 | .c[$s] = ($n + 1)
+                 | .out += [ $wanted[$i] * { automationDetails: { id: ($s + "-" + ($n | tostring) + "/") } } ]
+               ) | .out) as $tagged
+            # Cap at the GitHub 20-run-per-file limit, findings-bearing runs first.
+            | .runs = ( [$tagged[] | select(((.results // []) | length) > 0)]
+                      + [$tagged[] | select(((.results // []) | length) == 0)] )[0:20]
           ' results.sarif > results.prepared.sarif
           mv results.prepared.sarif results.sarif
           echo "SARIF runs after preparation: $(jq '.runs | length' results.sarif)"
-          echo "Tools kept: $(jq -r '[.runs[].tool.driver.name] | unique | join(\", \")' results.sarif)"
+          jq -r '"Tools kept: " + ([.runs[].tool.driver.name // "codacy"] | unique | join(","))' results.sarif
 
       # Upload the SARIF file generated in the previous step
       - name: Upload SARIF results file
