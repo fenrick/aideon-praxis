@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -51,7 +51,6 @@ describe('color theme provider', () => {
   });
 
   afterEach(() => {
-    cleanup();
     localStorageMock.clear();
     delete document.documentElement.dataset.colorTheme;
   });

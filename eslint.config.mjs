@@ -6,7 +6,7 @@ import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
 import stylistic from '@stylistic/eslint-plugin';
-import importPlugin from 'eslint-plugin-import';
+import importPlugin from 'eslint-plugin-import-x';
 import jsdoc from 'eslint-plugin-jsdoc';
 import prettierPlugin from 'eslint-plugin-prettier';
 import promise from 'eslint-plugin-promise';
@@ -16,8 +16,6 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
 
 import jest from 'eslint-plugin-jest';
-import jestDom from 'eslint-plugin-jest-dom';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import testingLibrary from 'eslint-plugin-testing-library';
@@ -121,8 +119,8 @@ export default defineConfig([
       sourceType: 'module',
     },
     settings: {
-      // Allow import/no-unresolved to pick up TS path aliases in package tsconfigs.
-      'import/resolver': {
+      // Allow import-x/no-unresolved to pick up TS path aliases in package tsconfigs.
+      'import-x/resolver': {
         typescript: {
           project: ['./tsconfig.json'],
           alwaysTryTypes: true,
@@ -168,8 +166,7 @@ export default defineConfig([
   react.configs.flat.recommended,
   react.configs.flat['jsx-runtime'],
 
-  // Accessibility for JSX
-  jsxA11y.flatConfigs.recommended,
+  // jsx-a11y dropped: no ESLint 10 support (see PR #810).
 
   // React Hooks rules
   {
@@ -224,7 +221,7 @@ export default defineConfig([
     name: 'no-eslint-import-sorting',
     rules: {
       'sort-imports': 'off',
-      'import/order': 'off',
+      'import-x/order': 'off',
     },
   },
   {
@@ -238,19 +235,49 @@ export default defineConfig([
     },
   },
 
-  // Test files: Jest + Testing Library + jest-dom
+  // Test files: Jest + Testing Library.
+  // jest-dom dropped: no ESLint 10 support (see PR #810).
+  // Each ruleset is its own flat-config entry scoped to the test globs: spreading
+  // several `configs['flat/*']` into ONE object literal shallow-merges them, so only
+  // the last `rules`/`plugins` survive — pushing them separately keeps all active.
   {
+    name: 'jest/recommended',
     files: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
-
-    // Jest recommended + style rules
     ...jest.configs['flat/recommended'],
+    // Tests run on Vitest (Jest-compatible API); no `jest` package is installed, so
+    // the plugin cannot auto-detect a version. Pin it to Jest 29's API surface, which
+    // Vitest mirrors, so version-gated rules (e.g. no-deprecated-functions) can load.
+    settings: { jest: { version: 29 } },
+  },
+  {
+    name: 'jest/style',
+    files: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
     ...jest.configs['flat/style'],
-
-    // React Testing Library best practices
+  },
+  {
+    name: 'testing-library/react',
+    files: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
     ...testingLibrary.configs['flat/react'],
-
-    // jest-dom assertions best practices
-    ...jestDom.configs['flat/recommended'],
+  },
+  {
+    // Narrow, justified exception to the DOM-access rules for a few low-level
+    // tests where an accessible-query equivalent does not exist and inventing
+    // one would be *wrong*: asserting `aria-hidden` on decorative SVGs (an
+    // element hidden from the a11y tree cannot be found by an accessible query
+    // — ADR-0024); driving raw PointerEvents on non-interactive drag/resize
+    // handles (giving them an interactive role would fail interactive ARIA
+    // rules); and polling `document.activeElement` for focus-trap detection.
+    // Scoped to these files only — the rules remain active everywhere else.
+    name: 'testing-library/dom-access-exceptions',
+    files: [
+      'src/design-system/blocks/accessibility.test.tsx',
+      'src/aideon/shell/aideon-desktop-shell.test.tsx',
+      'tests/aideon/canvas/draggable-widget-wrapper.test.tsx',
+    ],
+    rules: {
+      'testing-library/no-node-access': 'off',
+      'testing-library/no-container': 'off',
+    },
   },
 
   // Put eslint-config-prettier LAST so it can disable any formatting rules
@@ -270,7 +297,6 @@ export default defineConfig([
       'line-comment-position': ['error', { position: 'above' }], // S139
       'no-sequences': 'error', // S878
       'no-continue': 'error', // S909
-      'jsx-a11y/iframe-has-title': 'error', // S1090
       '@typescript-eslint/no-shadow': 'error', // S1117
       'no-trailing-spaces': 'error', // S1131
       'no-unsafe-finally': 'error', // S1143
@@ -301,7 +327,7 @@ export default defineConfig([
       'no-empty-pattern': 'error', // S3799
       'no-unsafe-negation': 'error', // S3812
       'no-new-native-nonconstructor': 'error', // S3834
-      'import/no-duplicates': 'error', // S3863
+      'import-x/no-duplicates': 'error', // S3863
       '@typescript-eslint/await-thenable': 'error', // S4123
       '@typescript-eslint/no-misused-new': 'error', // S4124
       'valid-typeof': 'error', // S4125
@@ -352,29 +378,9 @@ export default defineConfig([
       'react/default-props-match-prop-types': 'error', // S6775
       'react/no-is-mounted': 'error', // S6789
       'react/no-string-refs': 'error', // S6790
-      'jsx-a11y/aria-proptypes': 'error', // S6793
-      'jsx-a11y/role-has-required-aria-props': 'error', // S6807
-      'jsx-a11y/role-supports-aria-props': 'error', // S6811
-      'jsx-a11y/prefer-tag-over-role': 'error', // S6819
-      'jsx-a11y/aria-role': 'error', // S6821
-      'jsx-a11y/no-redundant-roles': 'error', // S6822
-      'jsx-a11y/aria-activedescendant-has-tabindex': 'error', // S6823
-      'jsx-a11y/aria-unsupported-elements': 'error', // S6824
-      'jsx-a11y/no-aria-hidden-on-focusable': 'error', // S6825
       'no-case-declarations': 'error', // S6836
-      'jsx-a11y/autocomplete-valid': 'error', // S6840
-      'jsx-a11y/tabindex-no-positive': 'error', // S6841
-      'jsx-a11y/no-noninteractive-element-to-interactive-role': 'error', // S6842
-      'jsx-a11y/no-interactive-element-to-noninteractive-role': 'error', // S6843
-      'jsx-a11y/no-noninteractive-tabindex': 'error', // S6845
-      'jsx-a11y/no-access-key': 'error', // S6846
-      'jsx-a11y/no-noninteractive-element-interactions': 'error', // S6847
-      'jsx-a11y/no-static-element-interactions': 'error', // S6848
-      'jsx-a11y/heading-has-content': 'error', // S6850
-      'jsx-a11y/img-redundant-alt': 'error', // S6851
-      'jsx-a11y/interactive-supports-focus': 'error', // S6852
-      'import/no-absolute-path': 'error', // S6859
-      'import/no-mutable-exports': 'error', // S6861
+      'import-x/no-absolute-path': 'error', // S6859
+      'import-x/no-mutable-exports': 'error', // S6861
       // Angular rules (plugin not installed yet)
       // '@angular-eslint/contextual-lifecycle': 'error', // S7641
       // '@angular-eslint/no-empty-lifecycle-method': 'error', // S7647
@@ -462,9 +468,6 @@ export default defineConfig([
       '@typescript-eslint/switch-exhaustiveness-check': 'error', // S131
       '@typescript-eslint/no-unused-expressions': 'error', // S905
       'no-unused-private-class-members': 'error', // S1068
-      'jsx-a11y/alt-text': 'error', // S1077
-      'jsx-a11y/mouse-events-have-key-events': 'error', // S1082
-      'jsx-a11y/click-events-have-key-events': 'error', // S1082
       'brace-style': ['error', '1tbs', { allowSingleLine: true }], // S1105
       '@stylistic/no-extra-semi': 'error', // S1116
       '@typescript-eslint/no-empty-function': 'error', // S1186
@@ -484,13 +487,10 @@ export default defineConfig([
       'prefer-template': 'error', // S3512
       'no-throw-literal': 'error', // S3696
       '@typescript-eslint/no-empty-interface': 'error', // S4023
-      'jsx-a11y/media-has-caption': 'error', // S4084
       '@typescript-eslint/prefer-for-of': 'error', // S4138
       '@typescript-eslint/prefer-namespace-keyword': 'error', // S4156
       'getter-return': 'error', // S4275
       '@typescript-eslint/no-this-alias': 'error', // S4327
-      'jsx-a11y/lang': 'error', // S5254
-      'jsx-a11y/html-has-lang': 'error', // S5254
       'react-hooks/rules-of-hooks': 'error', // S6440
       'react/no-unused-class-component-methods': 'error', // S6441
       'react/jsx-key': 'error', // S6477
@@ -516,16 +516,12 @@ export default defineConfig([
       'no-useless-call': 'error', // S6676
       'no-self-compare': 'error', // S6679
       'react/no-unknown-property': 'error', // S6747
-      'jsx-a11y/aria-props': 'error', // S6747
       'react/jsx-no-useless-fragment': 'error', // S6749
       'react/hook-use-state': 'error', // S6754
       'react/no-find-dom-node': 'error', // S6788
       'react/no-unsafe': 'error', // S6791
-      'jsx-a11y/anchor-has-content': 'error', // S6827
-      'jsx-a11y/anchor-is-valid': 'error', // S6844
-      'jsx-a11y/label-has-associated-control': 'error', // S6853
       'react/no-deprecated': 'error', // S6957
-      'import/no-self-import': 'error', // S7060
+      'import-x/no-self-import': 'error', // S7060
     },
   },
 

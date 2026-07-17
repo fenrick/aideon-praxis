@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getChartView } from 'praxis/praxis-api';
@@ -37,7 +37,6 @@ const widget = {
 describe('ChartWidget', () => {
   afterEach(() => {
     vi.clearAllMocks();
-    cleanup();
   });
 
   it('renders KPI summary', async () => {
@@ -49,7 +48,7 @@ describe('ChartWidget', () => {
     });
 
     render(<ChartWidget widget={widget} reloadVersion={0} />);
-    await waitFor(() => expect(screen.getByText(/4,200 %/)).toBeInTheDocument());
+    expect(await screen.findByText(/4,200 %/)).toBeInTheDocument();
     expect(mockedGetChartView).toHaveBeenCalledWith(
       expect.objectContaining({
         asOf: baseDefinition.asOf,
@@ -67,7 +66,7 @@ describe('ChartWidget', () => {
     });
 
     render(<ChartWidget widget={widget} reloadVersion={10} />);
-    await waitFor(() => expect(screen.getByText(/10/)).toBeInTheDocument());
+    expect(await screen.findByText(/10/)).toBeInTheDocument();
     expect(screen.queryByText(/vs last span/i)).not.toBeInTheDocument();
   });
 
@@ -80,7 +79,7 @@ describe('ChartWidget', () => {
     });
 
     render(<ChartWidget widget={widget} reloadVersion={11} />);
-    await waitFor(() => expect(screen.getByText(/No data/i)).toBeInTheDocument());
+    expect(await screen.findByText(/No data/i)).toBeInTheDocument();
   });
 
   it('shows line chart series', async () => {
@@ -105,11 +104,11 @@ describe('ChartWidget', () => {
         reloadVersion={1}
       />,
     );
-    await waitFor(() => expect(screen.getByLabelText(/Throughput trend/)).toBeInTheDocument());
+    expect(await screen.findByLabelText(/Throughput trend/)).toBeInTheDocument();
     expect(screen.getByText(/Jan:10/)).toBeInTheDocument();
   });
 
-  it('shows no data when the line series is missing or empty', async () => {
+  it('shows no data when the line series is empty', async () => {
     mockedGetChartView.mockResolvedValueOnce({
       chartType: 'line',
       series: [],
@@ -122,10 +121,10 @@ describe('ChartWidget', () => {
         reloadVersion={12}
       />,
     );
-    await waitFor(() => expect(screen.getByText(/No data/i)).toBeInTheDocument());
+    expect(await screen.findByText(/No data/i)).toBeInTheDocument();
+  });
 
-    cleanup();
-
+  it('renders a line series whose points are empty', async () => {
     mockedGetChartView.mockResolvedValueOnce({
       chartType: 'line',
       series: [{ id: 's1', label: 'Empty', points: [], color: '#000' }],
@@ -138,7 +137,7 @@ describe('ChartWidget', () => {
         reloadVersion={13}
       />,
     );
-    await waitFor(() => expect(screen.getByLabelText(/Empty trend/)).toBeInTheDocument());
+    expect(await screen.findByLabelText(/Empty trend/)).toBeInTheDocument();
   });
 
   it('falls back to bar chart for other types', async () => {
@@ -164,11 +163,11 @@ describe('ChartWidget', () => {
         reloadVersion={2}
       />,
     );
-    await waitFor(() => expect(screen.getByText('Q1')).toBeInTheDocument());
+    expect(await screen.findByText('Q1')).toBeInTheDocument();
     expect(screen.getByText('Capex')).toBeInTheDocument();
   });
 
-  it('shows no data for empty bar series and handles missing points', async () => {
+  it('shows no data for an empty bar series', async () => {
     mockedGetChartView.mockResolvedValueOnce({
       chartType: 'bar',
       series: [],
@@ -180,10 +179,10 @@ describe('ChartWidget', () => {
         reloadVersion={14}
       />,
     );
-    await waitFor(() => expect(screen.getByText(/No data/i)).toBeInTheDocument());
+    expect(await screen.findByText(/No data/i)).toBeInTheDocument();
+  });
 
-    cleanup();
-
+  it('renders bar series and handles missing points', async () => {
     mockedGetChartView.mockResolvedValueOnce({
       chartType: 'bar',
       series: [
@@ -209,7 +208,7 @@ describe('ChartWidget', () => {
         reloadVersion={15}
       />,
     );
-    await waitFor(() => expect(screen.getByText('Primary')).toBeInTheDocument());
+    expect(await screen.findByText('Primary')).toBeInTheDocument();
     expect(screen.getByText('Secondary')).toBeInTheDocument();
     expect(screen.getByText('Q2')).toBeInTheDocument();
   });
@@ -222,6 +221,6 @@ describe('ChartWidget', () => {
         reloadVersion={3}
       />,
     );
-    await waitFor(() => expect(screen.getByText(/boom/)).toBeInTheDocument());
+    expect(await screen.findByText(/boom/)).toBeInTheDocument();
   });
 });

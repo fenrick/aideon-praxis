@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AideonToolbar, __test__ } from 'aideon/shell/aideon-toolbar';
@@ -30,7 +30,6 @@ vi.mock('design-system/desktop-shell', async () => {
 });
 
 afterEach(() => {
-  cleanup();
   toggleSidebar.mockClear();
 });
 

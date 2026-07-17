@@ -44,7 +44,7 @@ export async function listProjectsWithScenarios(): Promise<ProjectSummary[]> {
     return projects;
   } catch (error) {
     const message = toErrorMessage(error);
-    throw new Error(`Host command '${COMMANDS.listProjects}' failed: ${message}`);
+    throw new Error(`Host command '${COMMANDS.listProjects}' failed: ${message}`, { cause: error });
   }
 }
 
@@ -63,7 +63,9 @@ export async function listLayoutsFromHost(): Promise<LayoutPreset[]> {
     return templates;
   } catch (error) {
     const message = toErrorMessage(error);
-    throw new Error(`Host command '${COMMANDS.listTemplates}' failed: ${message}`);
+    throw new Error(`Host command '${COMMANDS.listTemplates}' failed: ${message}`, {
+      cause: error,
+    });
   }
 }
 
@@ -83,7 +85,7 @@ export async function saveLayoutToHost(template: LayoutPreset): Promise<LayoutPr
     return normaliseTemplate(payload);
   } catch (error) {
     const message = toErrorMessage(error);
-    throw new Error(`Host command '${COMMANDS.saveTemplate}' failed: ${message}`);
+    throw new Error(`Host command '${COMMANDS.saveTemplate}' failed: ${message}`, { cause: error });
   }
 }
 

@@ -1,14 +1,10 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ArtefactFrame } from 'design-system/blocks/artefact-frame';
 import { DashboardGrid } from 'design-system/blocks/dashboard-grid';
 import { FilterBar } from 'design-system/blocks/filter-bar';
 import { WidgetFrame } from 'design-system/blocks/widget-frame';
-
-afterEach(() => {
-  cleanup();
-});
 
 describe('ArtefactFrame', () => {
   it('renders children in ready state', () => {

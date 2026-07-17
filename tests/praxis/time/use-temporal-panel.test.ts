@@ -137,7 +137,7 @@ const SNAPSHOT_MAP = new Map<string, StateAtSnapshot>(Object.entries(SNAPSHOTS))
  * Creates a harness exposing state and actions from useTemporalPanel.
  * @returns {{state: TemporalPanelState, actions: TemporalPanelActions, unmount: () => void}} harness helpers
  */
-function renderTemporalPanelHook() {
+function mountTemporalPanelHook() {
   const container = document.createElement('div');
   document.body.append(container);
   const root = createRoot(container);
@@ -160,7 +160,7 @@ function renderTemporalPanelHook() {
     return createElement('div');
   }
 
-  act(() => {
+  const mountBridge = () => {
     root.render(
       createElement(HookBridge, {
         onValue: (value) => {
@@ -168,7 +168,8 @@ function renderTemporalPanelHook() {
         },
       }),
     );
-  });
+  };
+  act(mountBridge);
 
   const getCurrent = () => {
     if (!current) {
@@ -243,7 +244,7 @@ describe('useTemporalPanel', () => {
   });
 
   it('loads branches, commits, and latest snapshot on mount', async () => {
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => !harness.state.loading);
 
@@ -258,7 +259,7 @@ describe('useTemporalPanel', () => {
   });
 
   it('fetches snapshots when selecting historical commits', async () => {
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => harness.state.commitId === 'commit-main-002');
 
@@ -291,7 +292,7 @@ describe('useTemporalPanel', () => {
   });
 
   it('surfaces merge conflicts when the worker rejects a merge', async () => {
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => !harness.state.loading);
 
@@ -333,7 +334,7 @@ describe('useTemporalPanel', () => {
   it('stores errors when branch loading fails', async () => {
     listBranchesSpy.mockRejectedValueOnce(new Error('network down'));
 
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => !harness.state.loading);
       expect(harness.state.error).toContain('network down');
@@ -345,7 +346,7 @@ describe('useTemporalPanel', () => {
   it('handles empty branches and avoids calling commits/snapshots', async () => {
     listBranchesSpy.mockResolvedValueOnce([]);
 
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => !harness.state.loading);
       expect(harness.state.branch).toBeUndefined();
@@ -359,7 +360,7 @@ describe('useTemporalPanel', () => {
   it('surfaces errors when commit loading fails', async () => {
     listCommitsSpy.mockRejectedValueOnce(new Error('commit fetch failed'));
 
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => !harness.state.loading);
       expect(harness.state.error).toContain('commit fetch failed');
@@ -371,7 +372,7 @@ describe('useTemporalPanel', () => {
   it('does nothing when selecting commits without a branch or repeating the same commit', async () => {
     listBranchesSpy.mockResolvedValueOnce([]);
 
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => !harness.state.loading);
       act(() => {
@@ -382,7 +383,7 @@ describe('useTemporalPanel', () => {
       harness.unmount();
     }
 
-    const harness2 = renderTemporalPanelHook();
+    const harness2 = mountTemporalPanelHook();
     try {
       await waitForState(() => harness2.state.commitId === 'commit-main-002');
       getSnapshotSpy.mockClear();
@@ -397,7 +398,7 @@ describe('useTemporalPanel', () => {
   });
 
   it('clears snapshots when selecting an empty commit id', async () => {
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => harness.state.commitId === 'commit-main-002');
       act(() => {
@@ -411,7 +412,7 @@ describe('useTemporalPanel', () => {
   });
 
   it('reloads snapshot when switching layers', async () => {
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => harness.state.commitId === 'commit-main-002');
       getSnapshotSpy.mockClear();
@@ -430,7 +431,7 @@ describe('useTemporalPanel', () => {
   });
 
   it('does not merge when already on main; merges and reloads when successful', async () => {
-    const harness = renderTemporalPanelHook();
+    const harness = mountTemporalPanelHook();
     try {
       await waitForState(() => harness.state.branch === 'main');
       act(() => {
@@ -442,7 +443,7 @@ describe('useTemporalPanel', () => {
       harness.unmount();
     }
 
-    const harness2 = renderTemporalPanelHook();
+    const harness2 = mountTemporalPanelHook();
     try {
       await waitForState(() => !harness2.state.loading);
       act(() => {

@@ -1,9 +1,5 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-afterEach(() => {
-  cleanup();
-});
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ConfidenceLabel } from 'design-system/blocks/confidence-label';
 import { EmptyState } from 'design-system/blocks/empty-state';

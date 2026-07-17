@@ -53,7 +53,9 @@ export type ToolbarSeparatorProperties = Readonly<ComponentPropsWithoutRef<'div'
  * @param root0.className - Optional custom classes.
  */
 export function ToolbarSeparator({ className, ...properties }: ToolbarSeparatorProperties) {
-  return <div className={cn('bg-border/70 h-5 w-px', className)} {...properties} />;
+  return (
+    <div role="separator" className={cn('bg-border/70 h-5 w-px', className)} {...properties} />
+  );
 }
 
 /**

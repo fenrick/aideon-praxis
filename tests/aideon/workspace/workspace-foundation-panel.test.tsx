@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -152,7 +152,9 @@ describe('WorkspaceFoundationPanel', () => {
       expect(screen.getByText('Foundation status')).toBeInTheDocument();
     });
     expect(screen.getByText('3')).toBeInTheDocument();
-    expect(screen.getByRole('list', { name: 'Node list' }).children).toHaveLength(2);
+    expect(
+      within(screen.getByRole('list', { name: 'Node list' })).getAllByRole('listitem'),
+    ).toHaveLength(2);
     expect(screen.getByText('tombstoned')).toBeInTheDocument();
     // The derived listing surfaces each node's metamodel type label.
     expect(screen.getAllByText('Capability').length).toBeGreaterThan(0);
@@ -187,7 +189,7 @@ describe('WorkspaceFoundationPanel', () => {
     });
     // The derived edge inspector re-derives from the op log.
     const edges = screen.getByRole('list', { name: 'Edge list' });
-    expect(edges.children).toHaveLength(1);
+    expect(within(edges).getAllByRole('listitem')).toHaveLength(1);
     expect(screen.getByText('realises')).toBeInTheDocument();
     expect(invokeMock).toHaveBeenCalledWith('workspace_edges', {});
     // The create action is gated until a verb + both endpoints are chosen.
