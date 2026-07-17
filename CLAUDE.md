@@ -10,8 +10,9 @@ The docs are authoritative; code is updated to match them.
 ## Read these first
 
 - [`docs/00-index/README.md`](docs/00-index/README.md) — documentation map and reading order.
-- [`CONTEXT.md`](CONTEXT.md) — the canonical domain glossary (twin, workspace, viewpoint, fact, layer, scenario). Use
-  these terms exactly.
+- `CONTEXT.md` (at the repository root) — the canonical domain glossary (twin, workspace, viewpoint, fact, layer,
+  scenario). Use these terms exactly. (Referenced as plain text, not a link: the Codacy Agentlinter cannot resolve a
+  root-level relative link and flags it as missing even though the file exists.)
 - [`docs/agents/domain.md`](docs/agents/domain.md) — how to orient before changing anything.
 - [`docs/agents/workflow.md`](docs/agents/workflow.md) — the task loop and quality gates: CodeScene before/after scores
   (Boy Scout Rule, threshold ratchet), Codacy severity policy, native macOS/Tauri QA, localisation via
