@@ -65,26 +65,31 @@ jobs:
       #      (These are also disabled in the Codacy UI; the CLI ignores that.)
       #   2. Drop empty (no-finding) runs; keep findings-bearing runs first.
       #   3. Cap at 20 runs (warn, never silently drop, if findings exceed 20).
-      #   4. Give each surviving run a unique category (automationDetails.id).
+      #   4. Give each surviving run a STABLE category (automationDetails.id) —
+      #      the tool name, not a positional index, so GitHub keeps each tool's
+      #      alert history across runs (an index shifts when a tool flips between
+      #      clean and findings, which would reset that tool's alert stream).
       - name: Prepare SARIF for code scanning
+        env:
+          # Analyzers this repo does not adopt (its gates are ESLint + Prettier +
+          # Tailwind + clippy). Matched as whole words, case-insensitively,
+          # against the SARIF tool driver name. Security/IaC tools (Trivy,
+          # Checkov, Semgrep) and everything else are kept.
+          EXCLUDED_ANALYZERS: 'csslint|stylelint|jshint|biome|remark|pmd'
         run: |
           # Guard: if no analyzer produced output, emit a valid empty SARIF.
           [ -f results.sarif ] || echo '{"version":"2.1.0","runs":[]}' > results.sarif
-          # Analyzers this repo does not adopt (matched case-insensitively on the
-          # SARIF tool driver name). Security/IaC tools (Trivy, Checkov, Semgrep)
-          # and any others are kept.
-          deny='csslint|stylelint|jshint|biome|remark|(^|[^a-z])pmd([^a-z]|$)'
+          deny="\\b(${EXCLUDED_ANALYZERS})\\b"
           kept=$(jq --arg deny "$deny" '[.runs[] | select(((.tool.driver.name // "") | ascii_downcase | test($deny)) | not) | select(((.results // []) | length) > 0)] | length' results.sarif)
           if [ "$kept" -gt 20 ]; then
             echo "::warning::${kept} kept SARIF runs have findings but GitHub allows 20 per file; lower-priority runs will be omitted."
           fi
           jq --arg deny "$deny" '
-            [.runs[] | select(((.tool.driver.name // "") | ascii_downcase | test($deny)) | not)] as $wanted
+            ([.runs[] | select(((.tool.driver.name // "") | ascii_downcase | test($deny)) | not)]) as $wanted
             | ( [$wanted[] | select(((.results // []) | length) > 0)]
               + [$wanted[] | select(((.results // []) | length) == 0)]
               )[0:20] as $capped
-            | .runs = $capped
-            | .runs |= (to_entries | map(.value.automationDetails.id = ((.value.tool.driver.name // "codacy") + "-" + (.key | tostring) + "/") | .value))
+            | .runs = ($capped | map(.automationDetails.id = (((.tool.driver.name // "codacy") | ascii_downcase | gsub("[^a-z0-9]+"; "-")) + "/")))
           ' results.sarif > results.prepared.sarif
           mv results.prepared.sarif results.sarif
           echo "SARIF runs after preparation: $(jq '.runs | length' results.sarif)"
