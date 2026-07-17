@@ -46,80 +46,49 @@ function normalizeSeverity(severity: Severity): NormalizedSeverity {
 }
 
 /**
+ * Attributes for every normalized severity level, keyed by label.
+ *
+ * The `Record<NormalizedSeverity, ...>` type makes the compiler require an
+ * entry for every severity, so the mapping stays exhaustive.
+ */
+const severityAttributesByLevel: Record<NormalizedSeverity, SeverityAttributes> = {
+  emergency: {
+    level: 'ERROR',
+    severityNumber: 0,
+    severityText: 'Emergency',
+    consoleMethod: 'error',
+  },
+  alert: { level: 'ERROR', severityNumber: 1, severityText: 'Alert', consoleMethod: 'error' },
+  critical: { level: 'ERROR', severityNumber: 2, severityText: 'Critical', consoleMethod: 'error' },
+  error: { level: 'ERROR', severityNumber: 3, severityText: 'Error', consoleMethod: 'error' },
+  warning: { level: 'WARN', severityNumber: 4, severityText: 'Warning', consoleMethod: 'warn' },
+  notice: { level: 'INFO', severityNumber: 5, severityText: 'Notice', consoleMethod: 'info' },
+  informational: {
+    level: 'INFO',
+    severityNumber: 6,
+    severityText: 'Informational',
+    consoleMethod: 'info',
+  },
+  debug: { level: 'DEBUG', severityNumber: 7, severityText: 'Debug', consoleMethod: 'debug' },
+};
+
+/**
+ * Lookup derived from {@link severityAttributesByLevel} so callers can resolve
+ * attributes by a runtime severity value without an object index expression.
+ */
+const severityAttributesLookup = new Map(Object.entries(severityAttributesByLevel));
+
+/**
  * Describe the attributes that every severity level maps to.
  * @param severity normalized severity label.
  * @returns characteristics for the requested level.
  */
 function describeSeverity(severity: NormalizedSeverity): SeverityAttributes {
-  switch (severity) {
-    case 'emergency': {
-      return {
-        level: 'ERROR',
-        severityNumber: 0,
-        severityText: 'Emergency',
-        consoleMethod: 'error',
-      };
-    }
-    case 'alert': {
-      return {
-        level: 'ERROR',
-        severityNumber: 1,
-        severityText: 'Alert',
-        consoleMethod: 'error',
-      };
-    }
-    case 'critical': {
-      return {
-        level: 'ERROR',
-        severityNumber: 2,
-        severityText: 'Critical',
-        consoleMethod: 'error',
-      };
-    }
-    case 'error': {
-      return {
-        level: 'ERROR',
-        severityNumber: 3,
-        severityText: 'Error',
-        consoleMethod: 'error',
-      };
-    }
-    case 'warning': {
-      return {
-        level: 'WARN',
-        severityNumber: 4,
-        severityText: 'Warning',
-        consoleMethod: 'warn',
-      };
-    }
-    case 'notice': {
-      return {
-        level: 'INFO',
-        severityNumber: 5,
-        severityText: 'Notice',
-        consoleMethod: 'info',
-      };
-    }
-    case 'informational': {
-      return {
-        level: 'INFO',
-        severityNumber: 6,
-        severityText: 'Informational',
-        consoleMethod: 'info',
-      };
-    }
-    case 'debug': {
-      return {
-        level: 'DEBUG',
-        severityNumber: 7,
-        severityText: 'Debug',
-        consoleMethod: 'debug',
-      };
-    }
-    default: {
-      return assertNever(severity);
-    }
+  const attributes = severityAttributesLookup.get(severity);
+  if (attributes === undefined) {
+    throw new Error('Unhandled severity level');
   }
+  return attributes;
 }
 
 /**

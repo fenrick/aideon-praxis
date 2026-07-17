@@ -226,14 +226,14 @@ pub(super) async fn state_at(inner: &mut Inner, args: StateAtArgs) -> PraxisResu
     let (commit_id, snapshot, branch_name) =
         resolve_snapshot(inner, &args.as_of, args.scenario.as_deref()).await?;
     let stats = snapshot.stats();
-    Ok(StateAtResult::new(
+    Ok(StateAtResult {
         commit_id,
-        Some(branch_name),
-        args.confidence,
-        args.layer.clone(),
-        stats.node_count as u64,
-        stats.edge_count as u64,
-    ))
+        scenario: Some(branch_name),
+        confidence: args.confidence,
+        layer: args.layer.clone(),
+        nodes: stats.node_count as u64,
+        edges: stats.edge_count as u64,
+    })
 }
 
 pub(super) async fn diff_summary(inner: &mut Inner, args: DiffArgs) -> PraxisResult<DiffSummary> {
@@ -259,14 +259,14 @@ pub(super) async fn topology_delta(
     let (from_id, from_snapshot, _) = resolve_snapshot(inner, &args.from, None).await?;
     let (to_id, to_snapshot, _) = resolve_snapshot(inner, &args.to, None).await?;
     let patch = from_snapshot.diff(&to_snapshot);
-    Ok(TopologyDeltaResult::new(
-        from_id,
-        to_id,
-        patch.node_adds.len() as u64,
-        patch.node_dels.len() as u64,
-        patch.edge_adds.len() as u64,
-        patch.edge_dels.len() as u64,
-    ))
+    Ok(TopologyDeltaResult {
+        from: from_id,
+        to: to_id,
+        node_adds: patch.node_adds.len() as u64,
+        node_dels: patch.node_dels.len() as u64,
+        edge_adds: patch.edge_adds.len() as u64,
+        edge_dels: patch.edge_dels.len() as u64,
+    })
 }
 
 /// Returns the head commit of a branch, or the appropriate error if the branch

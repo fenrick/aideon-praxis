@@ -281,6 +281,50 @@ function useBrowserShortcutHandler({
 }
 
 /**
+ * Route a single host-dispatched shell command to the matching handler.
+ * @param root0 - Command dispatch context.
+ * @param root0.command - Command identifier from the host event.
+ * @param root0.payload - Optional command payload from the host event.
+ * @param root0.sidebar - Sidebar controls when available.
+ * @param root0.shell - Shell controls when available.
+ * @param root0.onShellCommand - Workspace callback for every command.
+ * @param root0.openCommandPalette - Opens the command palette.
+ */
+function dispatchTauriShellCommand({
+  command,
+  payload,
+  sidebar,
+  shell,
+  onShellCommand,
+  openCommandPalette,
+}: {
+  readonly command?: string;
+  readonly payload?: unknown;
+  readonly sidebar: ReturnType<typeof useOptionalSidebar>;
+  readonly shell: ReturnType<typeof useAideonShellControls>;
+  readonly onShellCommand?: (command: string, payload?: unknown) => void;
+  readonly openCommandPalette: () => void;
+}) {
+  const builtInHandlers = new Map<string, () => void>([
+    [HOST_SHELL_COMMAND_IDS.toggleNavigation, () => sidebar?.toggleSidebar()],
+    [HOST_SHELL_COMMAND_IDS.toggleInspector, () => shell?.toggleInspector()],
+    [HOST_SHELL_COMMAND_IDS.openCommandPalette, openCommandPalette],
+    [
+      HOST_SHELL_COMMAND_IDS.filePrint,
+      () => {
+        globalThis.print();
+      },
+    ],
+  ]);
+
+  if (!command) {
+    return;
+  }
+  builtInHandlers.get(command)?.();
+  onShellCommand?.(command, payload);
+}
+
+/**
  *
  * @param root0
  * @param root0.isTauri
@@ -318,25 +362,14 @@ function useTauriShellCommandListener({
         unlisten = await listen<{ command?: string; payload?: unknown }>(
           HOST_EVENT_NAMES.shellCommand,
           (event) => {
-            const command = event.payload.command;
-            const payload = event.payload.payload;
-
-            if (command === HOST_SHELL_COMMAND_IDS.toggleNavigation) {
-              sidebar?.toggleSidebar();
-            }
-            if (command === HOST_SHELL_COMMAND_IDS.toggleInspector) {
-              shell?.toggleInspector();
-            }
-            if (command === HOST_SHELL_COMMAND_IDS.openCommandPalette) {
-              openCommandPalette();
-            }
-            if (command === HOST_SHELL_COMMAND_IDS.filePrint) {
-              globalThis.print();
-            }
-
-            if (command) {
-              onShellCommand?.(command, payload);
-            }
+            dispatchTauriShellCommand({
+              command: event.payload.command,
+              payload: event.payload.payload,
+              sidebar,
+              shell,
+              onShellCommand,
+              openCommandPalette,
+            });
           },
         );
       } catch {

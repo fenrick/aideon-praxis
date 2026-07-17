@@ -9,6 +9,9 @@
 use rusqlite::Connection;
 use serde::Serialize;
 
+use uuid::Uuid;
+
+use mneme_core::Id;
 use mneme_core::canonical::{blake3_hex, canonical_json_bytes};
 use mneme_core::value::U64Str;
 
@@ -118,77 +121,68 @@ impl FoundationProjectionSnapshot {
 pub fn read_snapshot(conn: &Connection) -> Result<FoundationProjectionSnapshot> {
     let workspace_id = crate::projection::get_meta(conn, "workspace_id")?.unwrap_or_default();
 
-    let mut partition_ids = {
-        let mut stmt = conn.prepare("SELECT partition_id FROM aideon_partitions")?;
-        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
-        rows.collect::<std::result::Result<Vec<_>, _>>()?
-    };
+    let mut partition_ids = conn
+        .prepare("SELECT partition_id FROM aideon_partitions")?
+        .query_map([], |row| row.get::<_, String>(0))?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
     partition_ids.sort();
 
     let mut partitions = Vec::new();
     for partition_id in partition_ids {
-        let applied_ops = {
-            let mut stmt = conn.prepare(
+        let applied_ops = conn
+            .prepare(
                 "SELECT op_id, canonical_record_digest FROM aideon_applied_ops
                  WHERE partition_id = ?1 ORDER BY op_id",
-            )?;
-            let rows = stmt.query_map([&partition_id], |row| {
+            )?
+            .query_map([&partition_id], |row| {
                 Ok(AppliedOp {
                     op_id: row.get(0)?,
                     canonical_record_digest: row.get(1)?,
                 })
-            })?;
-            rows.collect::<std::result::Result<Vec<_>, _>>()?
-        };
-        let pid =
-            mneme_core::Id::from_uuid(uuid::Uuid::parse_str(&partition_id).unwrap_or_default());
-        let head = replay_head(conn, pid)?.map(ReplayHeadSnapshot::from);
+            })?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        let pid = Id::from_uuid(Uuid::parse_str(&partition_id).unwrap_or_default());
         partitions.push(PartitionSnapshot {
             partition_id,
             applied_ops,
-            replay_head: head,
+            replay_head: replay_head(conn, pid)?.map(ReplayHeadSnapshot::from),
         });
     }
 
-    let schema_documents = {
-        let mut stmt = conn.prepare(
+    let schema_documents = conn
+        .prepare(
             "SELECT package_id, version, relative_path, canonical_digest
              FROM aideon_schema_docs ORDER BY package_id, version",
-        )?;
-        let rows = stmt.query_map([], |row| {
+        )?
+        .query_map([], |row| {
             Ok(SchemaDoc {
                 package_id: row.get(0)?,
                 version: row.get(1)?,
                 relative_path: row.get(2)?,
                 canonical_digest: row.get(3)?,
             })
-        })?;
-        rows.collect::<std::result::Result<Vec<_>, _>>()?
-    };
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
 
-    let actors = {
-        let mut stmt = conn
-            .prepare("SELECT actor_id, declaration_digest FROM aideon_actors ORDER BY actor_id")?;
-        let rows = stmt.query_map([], |row| {
+    let actors = conn
+        .prepare("SELECT actor_id, declaration_digest FROM aideon_actors ORDER BY actor_id")?
+        .query_map([], |row| {
             Ok(ActorSnapshot {
                 actor_id: row.get(0)?,
                 declaration_digest: row.get(1)?,
             })
-        })?;
-        rows.collect::<std::result::Result<Vec<_>, _>>()?
-    };
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
 
-    let objects = {
-        let mut stmt =
-            conn.prepare("SELECT sha256, byte_length FROM aideon_objects ORDER BY sha256")?;
-        let rows = stmt.query_map([], |row| {
+    let objects = conn
+        .prepare("SELECT sha256, byte_length FROM aideon_objects ORDER BY sha256")?
+        .query_map([], |row| {
             Ok(ObjectSnapshot {
                 sha256: row.get(0)?,
                 byte_length: U64Str(row.get::<_, i64>(1)? as u64),
             })
-        })?;
-        rows.collect::<std::result::Result<Vec<_>, _>>()?
-    };
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
 
     Ok(FoundationProjectionSnapshot {
         workspace_id,
