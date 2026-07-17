@@ -53,36 +53,42 @@ jobs:
           # Force 0 exit code to allow SARIF file generation
           # This will handover control about PR rejection to the GitHub side
           max-allowed-issues: 2147483647
-          # Honour the tools enabled in the Codacy project config (via
-          # project-token) instead of force-running EVERY dockerised analyzer.
-          # The default (true) runs CSSLint/Stylelint/JSHint/Biome/Remark/PMD
-          # locally regardless of the UI-disabled state, flooding GitHub code
-          # scanning with ~2k style findings from tools this repo doesn't use.
-          run-docker-tools: false
 
-      # GitHub code scanning constrains the SARIF Codacy produces two ways:
-      #   1. upload-sarif@v4 no longer combines multiple runs that share a
-      #      category (github.blog/changelog/2025-07-21); Codacy emits one run
-      #      per tool with no category.
-      #   2. A SARIF file may contain at most 20 runs; Codacy runs ~26 tools.
-      # Fix both: keep the runs that have findings first, drop empty (no-finding)
-      # runs, cap at 20, and give each surviving run a unique category. A warning
-      # fires (rather than silently dropping) if findings-bearing runs exceed 20.
-      - name: Prepare SARIF for code scanning (unique categories, <=20 runs)
+      # The Codacy CLI runs every dockerised analyzer regardless of the tools
+      # disabled in the Codacy project (run-docker-tools defaults to true and
+      # run-docker-tools:false produces no SARIF at all). It also emits one run
+      # per tool with no category, and GitHub code scanning both (a) rejects
+      # multiple runs sharing a category (upload-sarif@v4, 2025-07-21 change) and
+      # (b) caps a SARIF file at 20 runs. So prepare the SARIF here:
+      #   1. Drop runs from analyzers this repo does not use — its gates are
+      #      ESLint + Prettier + Tailwind + clippy, not these style/JS linters.
+      #      (These are also disabled in the Codacy UI; the CLI ignores that.)
+      #   2. Drop empty (no-finding) runs; keep findings-bearing runs first.
+      #   3. Cap at 20 runs (warn, never silently drop, if findings exceed 20).
+      #   4. Give each surviving run a unique category (automationDetails.id).
+      - name: Prepare SARIF for code scanning
         run: |
-          nonempty=$(jq '[.runs[] | select(((.results // []) | length) > 0)] | length' results.sarif)
-          if [ "$nonempty" -gt 20 ]; then
-            echo "::warning::${nonempty} SARIF runs have findings but GitHub allows 20 per file; lower-priority tool runs will be omitted from code scanning."
+          # Guard: if no analyzer produced output, emit a valid empty SARIF.
+          [ -f results.sarif ] || echo '{"version":"2.1.0","runs":[]}' > results.sarif
+          # Analyzers this repo does not adopt (matched case-insensitively on the
+          # SARIF tool driver name). Security/IaC tools (Trivy, Checkov, Semgrep)
+          # and any others are kept.
+          deny='csslint|stylelint|jshint|biome|remark|(^|[^a-z])pmd([^a-z]|$)'
+          kept=$(jq --arg deny "$deny" '[.runs[] | select(((.tool.driver.name // "") | ascii_downcase | test($deny)) | not) | select(((.results // []) | length) > 0)] | length' results.sarif)
+          if [ "$kept" -gt 20 ]; then
+            echo "::warning::${kept} kept SARIF runs have findings but GitHub allows 20 per file; lower-priority runs will be omitted."
           fi
-          jq '
-            ( [.runs[] | select(((.results // []) | length) > 0)]
-            + [.runs[] | select(((.results // []) | length) == 0)]
-            )[0:20] as $capped
+          jq --arg deny "$deny" '
+            [.runs[] | select(((.tool.driver.name // "") | ascii_downcase | test($deny)) | not)] as $wanted
+            | ( [$wanted[] | select(((.results // []) | length) > 0)]
+              + [$wanted[] | select(((.results // []) | length) == 0)]
+              )[0:20] as $capped
             | .runs = $capped
             | .runs |= (to_entries | map(.value.automationDetails.id = ((.value.tool.driver.name // "codacy") + "-" + (.key | tostring) + "/") | .value))
           ' results.sarif > results.prepared.sarif
           mv results.prepared.sarif results.sarif
           echo "SARIF runs after preparation: $(jq '.runs | length' results.sarif)"
+          echo "Tools kept: $(jq -r '[.runs[].tool.driver.name] | unique | join(\", \")' results.sarif)"
 
       # Upload the SARIF file generated in the previous step
       - name: Upload SARIF results file
