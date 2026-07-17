@@ -364,10 +364,6 @@ async fn open_migration_db(output: &Path, force: bool) -> Result<SqliteDb> {
     fs::create_dir_all(output).with_context(|| format!("failed to create {}", output.display()))?;
 
     let db_path = output.join("praxis.sqlite");
-    if db_path.exists() && force {
-        fs::remove_file(&db_path)
-            .with_context(|| format!("failed to remove {}", db_path.display()))?;
-    }
     SqliteDb::open(&db_path)
         .await
         .map_err(|err| anyhow!(err.to_string()))
