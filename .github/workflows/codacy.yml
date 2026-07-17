@@ -53,6 +53,12 @@ jobs:
           # Force 0 exit code to allow SARIF file generation
           # This will handover control about PR rejection to the GitHub side
           max-allowed-issues: 2147483647
+          # Honour the tools enabled in the Codacy project config (via
+          # project-token) instead of force-running EVERY dockerised analyzer.
+          # The default (true) runs CSSLint/Stylelint/JSHint/Biome/Remark/PMD
+          # locally regardless of the UI-disabled state, flooding GitHub code
+          # scanning with ~2k style findings from tools this repo doesn't use.
+          run-docker-tools: false
 
       # GitHub code scanning constrains the SARIF Codacy produces two ways:
       #   1. upload-sarif@v4 no longer combines multiple runs that share a
