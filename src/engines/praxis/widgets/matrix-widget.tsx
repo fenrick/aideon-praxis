@@ -83,8 +83,10 @@ function useMatrixView(
   }, [loadView]);
 
   useEffect(() => {
-    reload();
-  }, [reload, reloadVersion]);
+    loadView().catch((_ignoredError: unknown) => {
+      return;
+    });
+  }, [loadView, reloadVersion]);
 
   return [{ model, loading, error }, reload];
 }
