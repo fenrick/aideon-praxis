@@ -44,34 +44,21 @@ fn edge_tombstone_key(tombstone: &EdgeTombstone) -> (String, String) {
     (tombstone.from.clone(), tombstone.to.clone())
 }
 
-pub(super) fn derive_commit_id(
-    prefix: &str,
-    branch: &str,
-    parents: &[String],
-    author: Option<&str>,
-    message: &str,
-    tags: &[String],
-    changes: &ChangeSet,
-) -> String {
-    #[derive(Serialize)]
-    struct Identity<'a> {
-        branch: &'a str,
-        parents: &'a [String],
-        author: Option<&'a str>,
-        message: &'a str,
-        tags: &'a [String],
-        changes: &'a ChangeSet,
-    }
+/// The commit-identity inputs that are hashed to derive a deterministic commit
+/// id. Grouping them keeps [`derive_commit_id`] to a small argument list and
+/// doubles as the serialized hash payload.
+#[derive(Serialize)]
+pub(super) struct CommitIdentity<'a> {
+    pub(super) branch: &'a str,
+    pub(super) parents: &'a [String],
+    pub(super) author: Option<&'a str>,
+    pub(super) message: &'a str,
+    pub(super) tags: &'a [String],
+    pub(super) changes: &'a ChangeSet,
+}
 
-    let identity = Identity {
-        branch,
-        parents,
-        author,
-        message,
-        tags,
-        changes,
-    };
-    let payload = serde_json::to_vec(&identity).expect("commit identity serialization");
+pub(super) fn derive_commit_id(prefix: &str, identity: &CommitIdentity<'_>) -> String {
+    let payload = serde_json::to_vec(identity).expect("commit identity serialization");
     let mut hasher = Hasher::new();
     hasher.update(&payload);
     let hex = hasher.finalize().to_hex().to_string();

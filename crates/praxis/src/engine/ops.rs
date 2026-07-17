@@ -2,8 +2,8 @@
 
 use crate::engine::state::{BranchState, CommitRecord, Inner};
 use crate::engine::util::{
-    change_count, current_timestamp, derive_commit_id, find_common_ancestor, normalize_change_set,
-    resolve_commit_id, resolve_snapshot, validate_branch_name,
+    CommitIdentity, change_count, current_timestamp, derive_commit_id, find_common_ancestor,
+    normalize_change_set, resolve_commit_id, resolve_snapshot, validate_branch_name,
 };
 use crate::error::{PraxisError, PraxisResult};
 use crate::graph::GraphSnapshot;
@@ -137,12 +137,14 @@ pub(super) async fn commit(
 
     let commit_id = derive_commit_id(
         &inner.config.commit_id_prefix,
-        &request.branch,
-        &parents,
-        request.author.as_deref(),
-        &request.message,
-        &request.tags,
-        &normalized_changes,
+        &CommitIdentity {
+            branch: &request.branch,
+            parents: &parents,
+            author: request.author.as_deref(),
+            message: &request.message,
+            tags: &request.tags,
+            changes: &normalized_changes,
+        },
     );
 
     ensure_commit_absent(inner, &commit_id).await?;
@@ -322,12 +324,14 @@ pub(super) async fn merge(inner: &mut Inner, request: MergeRequest) -> PraxisRes
     let tags = vec!["merge".into()];
     let commit_id = derive_commit_id(
         &inner.config.commit_id_prefix,
-        &request.target,
-        &parents,
-        None,
-        &message,
-        &tags,
-        &normalized_changes,
+        &CommitIdentity {
+            branch: &request.target,
+            parents: &parents,
+            author: None,
+            message: &message,
+            tags: &tags,
+            changes: &normalized_changes,
+        },
     );
 
     ensure_commit_absent(inner, &commit_id).await?;

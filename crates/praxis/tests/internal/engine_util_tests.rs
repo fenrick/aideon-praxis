@@ -71,21 +71,25 @@ fn derive_commit_id_is_deterministic_for_same_input() {
     let set = ChangeSet::default();
     let id1 = derive_commit_id(
         "commit-",
-        "main",
-        &["p1".into()],
-        Some("me"),
-        "message",
-        &["tag".into()],
-        &set,
+        &CommitIdentity {
+            branch: "main",
+            parents: &["p1".into()],
+            author: Some("me"),
+            message: "message",
+            tags: &["tag".into()],
+            changes: &set,
+        },
     );
     let id2 = derive_commit_id(
         "commit-",
-        "main",
-        &["p1".into()],
-        Some("me"),
-        "message",
-        &["tag".into()],
-        &set,
+        &CommitIdentity {
+            branch: "main",
+            parents: &["p1".into()],
+            author: Some("me"),
+            message: "message",
+            tags: &["tag".into()],
+            changes: &set,
+        },
     );
     assert_eq!(id1, id2);
     assert!(id1.starts_with("commit-"));

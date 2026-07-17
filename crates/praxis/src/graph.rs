@@ -69,38 +69,27 @@ impl GraphSnapshot {
     }
 
     pub fn diff(&self, other: &GraphSnapshot) -> DiffPatch {
-        let mut patch = DiffPatch::default();
-
-        for (id, node) in other.nodes.iter() {
-            if !self.nodes.contains_key(id) {
-                patch.node_adds.push(node.clone());
-            } else if self.nodes.get(id) != Some(node) {
-                patch.node_mods.push(node.clone());
-            }
-        }
-        for id in self.nodes.keys() {
-            if !other.nodes.contains_key(id) {
-                patch.node_dels.push(NodeTombstone { id: id.clone() });
-            }
-        }
-
-        for (key, edge) in other.edges.iter() {
-            if !self.edges.contains_key(key) {
-                patch.edge_adds.push(edge.clone());
-            } else if self.edges.get(key) != Some(edge) {
-                patch.edge_mods.push(edge.clone());
-            }
-        }
-        for key in self.edges.keys() {
-            if !other.edges.contains_key(key) {
-                patch.edge_dels.push(EdgeTombstone {
+        let nodes = diff_maps(&self.nodes, &other.nodes);
+        let edges = diff_maps(&self.edges, &other.edges);
+        DiffPatch {
+            node_adds: nodes.adds.into_iter().cloned().collect(),
+            node_mods: nodes.mods.into_iter().cloned().collect(),
+            node_dels: nodes
+                .dels
+                .into_iter()
+                .map(|id| NodeTombstone { id: id.clone() })
+                .collect(),
+            edge_adds: edges.adds.into_iter().cloned().collect(),
+            edge_mods: edges.mods.into_iter().cloned().collect(),
+            edge_dels: edges
+                .dels
+                .into_iter()
+                .map(|key| EdgeTombstone {
                     from: key.from.clone(),
                     to: key.to.clone(),
-                });
-            }
+                })
+                .collect(),
         }
-
-        patch
     }
 
     fn validate(&self) -> PraxisResult<()> {
@@ -156,6 +145,39 @@ impl GraphSnapshot {
     }
 }
 
+/// Categorised differences between two maps: entries only in `other` (adds),
+/// entries present in both but changed (mods), and entries only in `base` (dels).
+struct MapDiff<'a, K, V> {
+    adds: Vec<&'a V>,
+    mods: Vec<&'a V>,
+    dels: Vec<&'a K>,
+}
+
+fn diff_maps<'a, K, V>(base: &'a BTreeMap<K, V>, other: &'a BTreeMap<K, V>) -> MapDiff<'a, K, V>
+where
+    K: Ord,
+    V: PartialEq,
+{
+    let mut diff = MapDiff {
+        adds: Vec::new(),
+        mods: Vec::new(),
+        dels: Vec::new(),
+    };
+    for (key, value) in other.iter() {
+        match base.get(key) {
+            None => diff.adds.push(value),
+            Some(existing) if existing != value => diff.mods.push(value),
+            Some(_) => {}
+        }
+    }
+    for key in base.keys() {
+        if !other.contains_key(key) {
+            diff.dels.push(key);
+        }
+    }
+    diff
+}
+
 fn sanitize_node(node: &NodeVersion) -> NodeVersion {
     let mut copy = NodeVersion {
         id: node.id.clone(),
@@ -177,6 +199,19 @@ fn apply_node_changes(
     registry: &MetaModelRegistry,
 ) -> PraxisResult<()> {
     // Node deletes first — we will validate edges afterwards to forbid dangling refs.
+    apply_node_deletes(snapshot, change)?;
+    // Creates require the node to be absent; updates require it to be present.
+    // Updates are replace-by-id for now (TODO: support partial updates with schema merge).
+    for node in &change.node_creates {
+        put_node(snapshot, node, registry, NodePresence::MustBeAbsent)?;
+    }
+    for node in &change.node_updates {
+        put_node(snapshot, node, registry, NodePresence::MustExist)?;
+    }
+    Ok(())
+}
+
+fn apply_node_deletes(snapshot: &mut GraphSnapshot, change: &ChangeSet) -> PraxisResult<()> {
     for tombstone in &change.node_deletes {
         if snapshot.nodes.remove(&tombstone.id).is_none() {
             return Err(PraxisError::ValidationFailed {
@@ -184,27 +219,38 @@ fn apply_node_changes(
             });
         }
     }
+    Ok(())
+}
 
-    for node in &change.node_creates {
-        registry.validate_node(node)?;
-        if snapshot.nodes.contains_key(&node.id) {
+/// Whether a node must already exist in the snapshot before writing it.
+#[derive(Clone, Copy)]
+enum NodePresence {
+    MustExist,
+    MustBeAbsent,
+}
+
+fn put_node(
+    snapshot: &mut GraphSnapshot,
+    node: &NodeVersion,
+    registry: &MetaModelRegistry,
+    presence: NodePresence,
+) -> PraxisResult<()> {
+    registry.validate_node(node)?;
+    let exists = snapshot.nodes.contains_key(&node.id);
+    match presence {
+        NodePresence::MustBeAbsent if exists => {
             return Err(PraxisError::ValidationFailed {
                 message: format!("node '{}' already exists", node.id),
             });
         }
-        snapshot.nodes.insert(node.id.clone(), sanitize_node(node));
-    }
-
-    // Node updates are replace-by-id for now (TODO: support partial updates with schema merge).
-    for node in &change.node_updates {
-        registry.validate_node(node)?;
-        if !snapshot.nodes.contains_key(&node.id) {
+        NodePresence::MustExist if !exists => {
             return Err(PraxisError::ValidationFailed {
                 message: format!("node '{}' missing for update", node.id),
             });
         }
-        snapshot.nodes.insert(node.id.clone(), sanitize_node(node));
+        _ => {}
     }
+    snapshot.nodes.insert(node.id.clone(), sanitize_node(node));
     Ok(())
 }
 
@@ -213,49 +259,74 @@ fn apply_edge_changes(
     change: &ChangeSet,
     registry: &MetaModelRegistry,
 ) -> PraxisResult<()> {
-    // Edge deletes
     for tombstone in &change.edge_deletes {
         remove_edges_matching(&mut snapshot.edges, tombstone)?;
     }
-
     for edge in &change.edge_creates {
-        ensure_endpoints_exist(&snapshot.nodes, edge)?;
-        let from_type = node_type(&snapshot.nodes, &edge.from)?;
-        let to_type = node_type(&snapshot.nodes, &edge.to)?;
-        registry.validate_edge(edge, &from_type, &to_type)?;
-        let key = EdgeKey::new(edge);
-        if snapshot.edges.contains_key(&key) {
-            return Err(PraxisError::ValidationFailed {
-                message: format!(
-                    "edge '{}' already exists",
-                    edge.id
-                        .clone()
-                        .unwrap_or_else(|| format!("{}->{}", edge.from, edge.to))
-                ),
-            });
-        }
-        let rel_type = relationship_type(edge)?;
-        if !registry.allows_duplicate(rel_type) {
-            assert_no_duplicate_edge(&snapshot.edges, edge, rel_type)?;
-        }
-        snapshot.edges.insert(key, sanitize_edge(edge));
+        create_edge(snapshot, edge, registry)?;
     }
-
-    // Edge updates — replace existing entry by id when present, otherwise resolve by endpoints.
     for edge in &change.edge_updates {
-        ensure_endpoints_exist(&snapshot.nodes, edge)?;
-        let key = resolve_edge_key(&snapshot.edges, edge)?;
-        snapshot.edges.remove(&key);
-        let from_type = node_type(&snapshot.nodes, &edge.from)?;
-        let to_type = node_type(&snapshot.nodes, &edge.to)?;
-        registry.validate_edge(edge, &from_type, &to_type)?;
-        let rel_type = relationship_type(edge)?;
-        if !registry.allows_duplicate(rel_type) {
-            assert_no_duplicate_edge(&snapshot.edges, edge, rel_type)?;
-        }
-        snapshot
-            .edges
-            .insert(EdgeKey::new(edge), sanitize_edge(edge));
+        update_edge(snapshot, edge, registry)?;
+    }
+    Ok(())
+}
+
+fn create_edge(
+    snapshot: &mut GraphSnapshot,
+    edge: &EdgeVersion,
+    registry: &MetaModelRegistry,
+) -> PraxisResult<()> {
+    ensure_endpoints_exist(&snapshot.nodes, edge)?;
+    let from_type = node_type(&snapshot.nodes, &edge.from)?;
+    let to_type = node_type(&snapshot.nodes, &edge.to)?;
+    registry.validate_edge(edge, &from_type, &to_type)?;
+    let key = EdgeKey::new(edge);
+    if snapshot.edges.contains_key(&key) {
+        return Err(PraxisError::ValidationFailed {
+            message: format!(
+                "edge '{}' already exists",
+                edge.id
+                    .clone()
+                    .unwrap_or_else(|| format!("{}->{}", edge.from, edge.to))
+            ),
+        });
+    }
+    let rel_type = relationship_type(edge)?;
+    if !registry.allows_duplicate(rel_type) {
+        assert_no_duplicate_edge(&snapshot.edges, edge, rel_type)?;
+    }
+    snapshot.edges.insert(key, sanitize_edge(edge));
+    Ok(())
+}
+
+// Edge updates — replace existing entry by id when present, otherwise resolve by endpoints.
+fn update_edge(
+    snapshot: &mut GraphSnapshot,
+    edge: &EdgeVersion,
+    registry: &MetaModelRegistry,
+) -> PraxisResult<()> {
+    ensure_endpoints_exist(&snapshot.nodes, edge)?;
+    let key = resolve_edge_key(&snapshot.edges, edge)?;
+    snapshot.edges.remove(&key);
+    validate_edge_against_registry(snapshot, edge, registry)?;
+    snapshot
+        .edges
+        .insert(EdgeKey::new(edge), sanitize_edge(edge));
+    Ok(())
+}
+
+/// Validate an edge's endpoint types and relationship-type constraints against the registry.
+fn validate_edge_against_registry(
+    snapshot: &GraphSnapshot,
+    edge: &EdgeVersion,
+    registry: &MetaModelRegistry,
+) -> PraxisResult<()> {
+    let from_type = node_type(&snapshot.nodes, &edge.from)?;
+    let to_type = node_type(&snapshot.nodes, &edge.to)?;
+    registry.validate_edge(edge, &from_type, &to_type)?;
+    let rel_type = relationship_type(edge)?;
+    if !registry.allows_duplicate(rel_type) {
+        assert_no_duplicate_edge(&snapshot.edges, edge, rel_type)?;
     }
     Ok(())
 }

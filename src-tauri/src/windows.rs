@@ -72,59 +72,90 @@ pub fn create_windows<R: Runtime>(app: &App<R>) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn open_settings<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
-    if let Some(window) = app.get_webview_window("settings") {
+/// Declarative description of a system window: everything that varies between
+/// the `open_*` commands, so they can share one focus-or-build routine.
+struct SystemWindowSpec {
+    label: &'static str,
+    route: &'static str,
+    title: &'static str,
+    resizable: bool,
+    always_on_top: bool,
+    inner_size: (f64, f64),
+}
+
+const SETTINGS_WINDOW: SystemWindowSpec = SystemWindowSpec {
+    label: "settings",
+    route: ROUTE_SETTINGS,
+    title: "Preferences",
+    resizable: false,
+    always_on_top: false,
+    inner_size: (520.0, 440.0),
+};
+
+const ABOUT_WINDOW: SystemWindowSpec = SystemWindowSpec {
+    label: "about",
+    route: ROUTE_ABOUT,
+    title: "About Aideon",
+    resizable: false,
+    always_on_top: false,
+    inner_size: (420.0, 300.0),
+};
+
+const STATUS_WINDOW: SystemWindowSpec = SystemWindowSpec {
+    label: "status",
+    route: ROUTE_STATUS,
+    title: "Status",
+    resizable: false,
+    always_on_top: true,
+    inner_size: (360.0, 140.0),
+};
+
+const STYLEGUIDE_WINDOW: SystemWindowSpec = SystemWindowSpec {
+    label: "styleguide",
+    route: ROUTE_STYLEGUIDE,
+    title: "UI Style Guide",
+    resizable: true,
+    always_on_top: false,
+    inner_size: (900.0, 700.0),
+};
+
+/// Focus an existing window with `spec.label`, or build it from `spec`.
+fn open_system_window<R: Runtime>(
+    app: &AppHandle<R>,
+    spec: &SystemWindowSpec,
+) -> Result<(), HostError> {
+    if let Some(window) = app.get_webview_window(spec.label) {
         let _ = window.set_focus();
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App(ROUTE_SETTINGS.into()))
-        .title("Preferences")
-        .resizable(false)
-        .inner_size(520.0, 440.0)
+    WebviewWindowBuilder::new(app, spec.label, WebviewUrl::App(spec.route.into()))
+        .title(spec.title)
+        .resizable(spec.resizable)
+        .always_on_top(spec.always_on_top)
+        .inner_size(spec.inner_size.0, spec.inner_size.1)
         .center()
         .build()
         .map(|_| ())
         .map_err(|err| HostError::internal(err.to_string()))
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn open_settings<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
+    open_system_window(&app, &SETTINGS_WINDOW)
 }
 
 #[tauri::command]
 #[specta::specta]
 pub fn open_about<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
-    if let Some(window) = app.get_webview_window("about") {
-        let _ = window.set_focus();
-        return Ok(());
-    }
-
-    WebviewWindowBuilder::new(&app, "about", WebviewUrl::App(ROUTE_ABOUT.into()))
-        .title("About Aideon")
-        .resizable(false)
-        .inner_size(420.0, 300.0)
-        .center()
-        .build()
-        .map(|_| ())
-        .map_err(|err| HostError::internal(err.to_string()))
+    open_system_window(&app, &ABOUT_WINDOW)
 }
 
 #[tauri::command]
 #[specta::specta]
 pub fn open_status<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
-    if let Some(window) = app.get_webview_window("status") {
-        let _ = window.set_focus();
-        return Ok(());
-    }
-
-    WebviewWindowBuilder::new(&app, "status", WebviewUrl::App(ROUTE_STATUS.into()))
-        .title("Status")
-        .resizable(false)
-        .always_on_top(true)
-        .inner_size(360.0, 140.0)
-        .center()
-        .build()
-        .map(|_| ())
-        .map_err(|err| HostError::internal(err.to_string()))
+    open_system_window(&app, &STATUS_WINDOW)
 }
 
 #[tauri::command]
@@ -137,19 +168,7 @@ pub fn open_styleguide<R: Runtime>(app: AppHandle<R>) -> Result<(), HostError> {
         ));
     }
     log::info!("host: open_styleguide requested");
-    if let Some(window) = app.get_webview_window("styleguide") {
-        let _ = window.set_focus();
-        return Ok(());
-    }
-
-    WebviewWindowBuilder::new(&app, "styleguide", WebviewUrl::App(ROUTE_STYLEGUIDE.into()))
-        .title("UI Style Guide")
-        .resizable(true)
-        .inner_size(900.0, 700.0)
-        .center()
-        .build()
-        .map(|_| ())
-        .map_err(|err| HostError::internal(err.to_string()))
+    open_system_window(&app, &STYLEGUIDE_WINDOW)
 }
 
 #[derive(Debug, Deserialize, Type)]

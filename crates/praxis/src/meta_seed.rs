@@ -1,6 +1,6 @@
 use serde_json::{Map, Value, json};
 
-use crate::meta::MetaModelRegistry;
+use crate::meta::{MetaAttribute, MetaModelRegistry};
 use crate::temporal::{ChangeSet, NodeVersion};
 use std::collections::HashMap;
 
@@ -47,12 +47,7 @@ fn node_for_type(spec: &MetaTypeSpec, registry: Option<&CoreUuidRegistry>) -> No
     if !spec.attributes.is_empty() {
         props.insert(
             "attributes".into(),
-            Value::Array(
-                spec.attributes
-                    .iter()
-                    .map(|attr| attribute_to_json(spec.id, attr, registry))
-                    .collect(),
-            ),
+            attributes_json(spec.id, spec.attributes, registry),
         );
     }
     NodeVersion {
@@ -74,46 +69,14 @@ fn node_for_relationship(
         .and_then(|registry| registry.relationship_uuids.get(spec.id))
         .cloned()
     {
-        props.insert("uuid".into(), Value::String(uuid.clone()));
+        props.insert("uuid".into(), Value::String(uuid));
     }
+    props.insert("from".into(), string_array(spec.from));
+    props.insert("to".into(), string_array(spec.to));
     props.insert(
-        "from".into(),
-        Value::Array(
-            spec.from
-                .iter()
-                .map(|typ| Value::String(typ.to_string()))
-                .collect(),
-        ),
+        "details".into(),
+        Value::Object(relationship_details(spec, registry)),
     );
-    props.insert(
-        "to".into(),
-        Value::Array(
-            spec.to
-                .iter()
-                .map(|typ| Value::String(typ.to_string()))
-                .collect(),
-        ),
-    );
-    let mut details = Map::new();
-    details.insert("directed".into(), Value::Bool(spec.directed));
-    if let Some((mul_from, mul_to)) = spec.multiplicity {
-        details.insert(
-            "multiplicity".into(),
-            json!({ "from": mul_from, "to": mul_to }),
-        );
-    }
-    if !spec.attributes.is_empty() {
-        details.insert(
-            "attributes".into(),
-            Value::Array(
-                spec.attributes
-                    .iter()
-                    .map(|attr| attribute_to_json(spec.id, attr, registry))
-                    .collect(),
-            ),
-        );
-    }
-    props.insert("details".into(), Value::Object(details));
     props.insert(
         "name".into(),
         Value::String(format!("{} relationship", spec.label)),
@@ -173,6 +136,44 @@ fn attribute_to_json(
     Value::Object(map)
 }
 
+fn attributes_json(
+    owner_id: &str,
+    attributes: &[MetaAttributeSpec],
+    registry: Option<&CoreUuidRegistry>,
+) -> Value {
+    Value::Array(
+        attributes
+            .iter()
+            .map(|attr| attribute_to_json(owner_id, attr, registry))
+            .collect(),
+    )
+}
+
+fn string_array(items: &[&str]) -> Value {
+    Value::Array(items.iter().map(|s| Value::String(s.to_string())).collect())
+}
+
+fn relationship_details(
+    spec: &MetaRelationshipSpec,
+    registry: Option<&CoreUuidRegistry>,
+) -> Map<String, Value> {
+    let mut details = Map::new();
+    details.insert("directed".into(), Value::Bool(spec.directed));
+    if let Some((mul_from, mul_to)) = spec.multiplicity {
+        details.insert(
+            "multiplicity".into(),
+            json!({ "from": mul_from, "to": mul_to }),
+        );
+    }
+    if !spec.attributes.is_empty() {
+        details.insert(
+            "attributes".into(),
+            attributes_json(spec.id, spec.attributes, registry),
+        );
+    }
+    details
+}
+
 #[derive(Debug)]
 struct CoreUuidRegistry {
     type_uuids: HashMap<String, String>,
@@ -195,24 +196,28 @@ fn core_uuid_registry() -> Option<CoreUuidRegistry> {
         .collect::<HashMap<_, _>>();
     let mut attribute_uuids = HashMap::new();
     for ty in &doc.types {
-        for attr in &ty.attributes {
-            if let Some(uuid) = attr.uuid.as_ref() {
-                attribute_uuids.insert(format!("{}.{}", ty.id, attr.name), uuid.clone());
-            }
-        }
+        extend_attribute_uuids(&mut attribute_uuids, &ty.id, &ty.attributes);
     }
     for rel in &doc.relationships {
-        for attr in &rel.attributes {
-            if let Some(uuid) = attr.uuid.as_ref() {
-                attribute_uuids.insert(format!("{}.{}", rel.id, attr.name), uuid.clone());
-            }
-        }
+        extend_attribute_uuids(&mut attribute_uuids, &rel.id, &rel.attributes);
     }
     Some(CoreUuidRegistry {
         type_uuids,
         relationship_uuids,
         attribute_uuids,
     })
+}
+
+fn extend_attribute_uuids(
+    map: &mut HashMap<String, String>,
+    owner_id: &str,
+    attributes: &[MetaAttribute],
+) {
+    for attr in attributes {
+        if let Some(uuid) = attr.uuid.as_ref() {
+            map.insert(format!("{owner_id}.{}", attr.name), uuid.clone());
+        }
+    }
 }
 
 struct MetaAttributeSpec {
