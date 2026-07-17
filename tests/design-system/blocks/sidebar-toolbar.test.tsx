@@ -50,7 +50,7 @@ describe('Toolbar blocks', () => {
     const rightSection = screen.getByText('Right', { selector: 'div' });
     expect(leftSection).toHaveClass('justify-start');
     expect(rightSection).toHaveClass('justify-end');
-    const separator = screen.getByText('Right').previousSibling as HTMLElement;
+    const separator = screen.getByRole('separator');
     expect(separator).toHaveClass('h-5');
   });
 });

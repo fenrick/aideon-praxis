@@ -1,12 +1,8 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
 import { PanelField, PanelToolbar } from '../../../src/design-system/blocks/panel';
-
-afterEach(() => {
-  cleanup();
-});
 
 describe('PanelToolbar', () => {
   it('applies justify alignment based on the align prop', () => {
@@ -36,13 +32,13 @@ describe('PanelField', () => {
   });
 
   it('omits optional helpers when not provided', () => {
-    const { queryByText } = render(
+    render(
       <PanelField label="Data">
         <input aria-label="Field" />
       </PanelField>,
     );
 
-    expect(queryByText('Action')).not.toBeInTheDocument();
-    expect(queryByText('Save target')).not.toBeInTheDocument();
+    expect(screen.queryByText('Action')).not.toBeInTheDocument();
+    expect(screen.queryByText('Save target')).not.toBeInTheDocument();
   });
 });

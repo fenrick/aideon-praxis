@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
 import { DiffMarker } from 'design-system/blocks/diff-marker';
 import { ExplanationSurface } from 'design-system/blocks/explanation-surface';
@@ -7,10 +7,6 @@ import { InspectorPanel } from 'design-system/blocks/inspector-panel';
 import { InspectorSection, InspectorSectionGroup } from 'design-system/blocks/inspector-section';
 import { PropertyList, PropertyRow } from 'design-system/blocks/property-list';
 import { ProvenancePanel } from 'design-system/blocks/provenance-panel';
-
-afterEach(() => {
-  cleanup();
-});
 
 describe('InspectorPanel', () => {
   it('renders title and children', () => {

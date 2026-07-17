@@ -73,9 +73,8 @@ describe('CatalogueWidget', () => {
       }),
     );
     expect(screen.getByText('Customer Onboarding')).toBeInTheDocument();
-    const selectedRow = screen.getByText('Customer Onboarding').closest('tr');
-    expect(selectedRow).not.toBeNull();
-    expect(selectedRow?.dataset.state).toBe('selected');
+    const selectedRow = screen.getByTestId('catalogue-row-cap-1');
+    expect(selectedRow).toHaveAttribute('data-state', 'selected');
   });
 
   it('shows API errors instead of an empty placeholder', async () => {

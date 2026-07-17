@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
@@ -29,7 +29,6 @@ vi.mock('@/root', () => ({ AideonDesktopRoot: () => <div>Root</div> }));
 const listenMock = vi.mocked(listen);
 
 afterEach(() => {
-  cleanup();
   clearTauriMocks();
   vi.clearAllMocks();
   vi.useRealTimers();

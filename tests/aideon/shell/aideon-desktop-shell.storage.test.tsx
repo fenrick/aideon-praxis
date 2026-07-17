@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { PropsWithChildren } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('design-system/components/ui/scroll-area', () => ({
   ScrollArea: ({ children, ...properties }: PropsWithChildren<Record<string, unknown>>) => (
@@ -34,10 +34,6 @@ function setLocalStorage(storage: Storage | undefined) {
 }
 
 describe('AideonDesktopShell storage', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders slots without a toolbar and tolerates missing localStorage', () => {
     setLocalStorage(undefined);
 

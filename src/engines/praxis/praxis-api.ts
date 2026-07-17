@@ -536,7 +536,7 @@ async function invokeHost<T>(command: string, payload: object): Promise<T> {
     return result;
   } catch (error) {
     const message = toErrorMessage(error);
-    throw new Error(`Host command '${command}' failed: ${message}`);
+    throw new Error(`Host command '${command}' failed: ${message}`, { cause: error });
   }
 }
 
