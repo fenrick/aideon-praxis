@@ -56,6 +56,29 @@ fn safe_segment(input: &str) -> String {
     if out.is_empty() { "_".into() } else { out }
 }
 
+/// Sanitise an optional identifier, treating blank values as absent.
+fn optional_segment(value: Option<&str>) -> Option<String> {
+    value.and_then(|value| {
+        let trimmed = value.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(safe_segment(trimmed))
+        }
+    })
+}
+
+/// Append the time-context suffix (`scenario-`, `layer-`, `layout-<asOf>.json`) shared by all layout keys.
+fn push_layout_suffix(path: &mut String, as_of: &str, scenario: Option<&str>, layer: Option<&str>) {
+    if let Some(scenario) = optional_segment(scenario) {
+        path.push_str(&format!("/scenario-{scenario}"));
+    }
+    if let Some(layer) = optional_segment(layer) {
+        path.push_str(&format!("/layer-{layer}"));
+    }
+    path.push_str(&format!("/layout-{}.json", safe_segment(as_of)));
+}
+
 /// Resolve the on-disk key used to persist a canvas layout snapshot for a document and time context.
 fn canvas_store_key(
     doc_id: &str,
@@ -63,33 +86,8 @@ fn canvas_store_key(
     scenario: Option<&str>,
     layer: Option<&str>,
 ) -> String {
-    let doc_id = safe_segment(doc_id);
-    let as_of = safe_segment(as_of);
-    let scenario = scenario.and_then(|value| {
-        let trimmed = value.trim();
-        if trimmed.is_empty() {
-            None
-        } else {
-            Some(safe_segment(trimmed))
-        }
-    });
-    let layer = layer.and_then(|value| {
-        let trimmed = value.trim();
-        if trimmed.is_empty() {
-            None
-        } else {
-            Some(safe_segment(trimmed))
-        }
-    });
-
-    let mut path = format!("canvas/{doc_id}");
-    if let Some(scenario) = scenario {
-        path.push_str(&format!("/scenario-{scenario}"));
-    }
-    if let Some(layer) = layer {
-        path.push_str(&format!("/layer-{layer}"));
-    }
-    path.push_str(&format!("/layout-{as_of}.json"));
+    let mut path = format!("canvas/{}", safe_segment(doc_id));
+    push_layout_suffix(&mut path, as_of, scenario, layer);
     path
 }
 
@@ -101,34 +99,12 @@ fn graph_layout_store_key(
     scenario: Option<&str>,
     layer: Option<&str>,
 ) -> String {
-    let doc_id = safe_segment(doc_id);
-    let widget_id = safe_segment(widget_id);
-    let as_of = safe_segment(as_of);
-    let scenario = scenario.and_then(|value| {
-        let trimmed = value.trim();
-        if trimmed.is_empty() {
-            None
-        } else {
-            Some(safe_segment(trimmed))
-        }
-    });
-    let layer = layer.and_then(|value| {
-        let trimmed = value.trim();
-        if trimmed.is_empty() {
-            None
-        } else {
-            Some(safe_segment(trimmed))
-        }
-    });
-
-    let mut path = format!("graph/{doc_id}/widget-{widget_id}");
-    if let Some(scenario) = scenario {
-        path.push_str(&format!("/scenario-{scenario}"));
-    }
-    if let Some(layer) = layer {
-        path.push_str(&format!("/layer-{layer}"));
-    }
-    path.push_str(&format!("/layout-{as_of}.json"));
+    let mut path = format!(
+        "graph/{}/widget-{}",
+        safe_segment(doc_id),
+        safe_segment(widget_id)
+    );
+    push_layout_suffix(&mut path, as_of, scenario, layer);
     path
 }
 
@@ -139,6 +115,34 @@ fn canvas_snapshot_base() -> Result<std::path::PathBuf, HostError> {
     Ok(dirs::data_dir()
         .ok_or_else(|| HostError::internal("no data dir"))?
         .join("AideonPraxis"))
+}
+
+/// Serialise a layout payload to pretty JSON and persist it under `key`.
+fn write_snapshot<T: serde::Serialize>(key: &str, payload: &T) -> Result<(), HostError> {
+    let base = canvas_snapshot_base()?;
+    let store = FileSnapshotStore::new(base.clone());
+    let json = serde_json::to_vec_pretty(payload)
+        .map_err(|e| HostError::internal(format!("serialize failed: {e}")))?;
+    store
+        .put(key, &json)
+        .map_err(|e| HostError::internal(e.to_string()))?;
+    info!("host: snapshot wrote {}/{}", base.display(), key);
+    Ok(())
+}
+
+/// Load and deserialise a layout snapshot, returning `None` when it does not exist.
+fn read_snapshot<T: serde::de::DeserializeOwned>(key: &str) -> Result<Option<T>, HostError> {
+    let base = canvas_snapshot_base()?;
+    let store = FileSnapshotStore::new(base);
+    match store.get(key) {
+        Ok(bytes) => {
+            let value = serde_json::from_slice::<T>(&bytes)
+                .map_err(|e| HostError::internal(format!("deserialize failed: {e}")))?;
+            Ok(Some(value))
+        }
+        Err(message) if is_missing_snapshot_error(&message) => Ok(None),
+        Err(message) => Err(HostError::internal(message)),
+    }
 }
 
 /// Persist a canvas layout snapshot (geometry, z-order, grouping) for a document and asOf.
@@ -153,21 +157,13 @@ pub async fn canvas_save_layout(payload: CanvasLayoutSaveRequest) -> Result<(), 
         payload.edges.len(),
         payload.groups.len()
     );
-    let base = canvas_snapshot_base()?;
-    let store = FileSnapshotStore::new(base.clone());
     let key = canvas_store_key(
         &payload.doc_id,
         &payload.as_of,
         payload.scenario.as_deref(),
         payload.layer.as_deref(),
     );
-    let json = serde_json::to_vec_pretty(&payload)
-        .map_err(|e| HostError::internal(format!("serialize failed: {e}")))?;
-    store
-        .put(&key, &json)
-        .map_err(|e| HostError::internal(e.to_string()))?;
-    info!("host: canvas_save_layout wrote {}/{}", base.display(), key);
-    Ok(())
+    write_snapshot(&key, &payload)
 }
 
 /// Load a canvas layout snapshot (if any) for a document and time context.
@@ -180,24 +176,13 @@ pub async fn canvas_get_layout(
         "host: canvas_get_layout doc_id={} as_of={} scenario={:?} layer={:?}",
         payload.doc_id, payload.as_of, payload.scenario, payload.layer
     );
-    let base = canvas_snapshot_base()?;
-    let store = FileSnapshotStore::new(base.clone());
     let key = canvas_store_key(
         &payload.doc_id,
         &payload.as_of,
         payload.scenario.as_deref(),
         payload.layer.as_deref(),
     );
-
-    match store.get(&key) {
-        Ok(bytes) => {
-            let layout = serde_json::from_slice::<CanvasLayoutSaveRequest>(&bytes)
-                .map_err(|e| HostError::internal(format!("deserialize failed: {e}")))?;
-            Ok(Some(layout))
-        }
-        Err(message) if is_missing_snapshot_error(&message) => Ok(None),
-        Err(message) => Err(HostError::internal(message)),
-    }
+    read_snapshot(&key)
 }
 
 /// Persist a graph layout snapshot for a specific widget in a document.
@@ -211,8 +196,6 @@ pub async fn graph_layout_save(payload: GraphLayoutSaveRequest) -> Result<(), Ho
         payload.as_of,
         payload.nodes.len()
     );
-    let base = canvas_snapshot_base()?;
-    let store = FileSnapshotStore::new(base.clone());
     let key = graph_layout_store_key(
         &payload.doc_id,
         &payload.widget_id,
@@ -220,13 +203,7 @@ pub async fn graph_layout_save(payload: GraphLayoutSaveRequest) -> Result<(), Ho
         payload.scenario.as_deref(),
         payload.layer.as_deref(),
     );
-    let json = serde_json::to_vec_pretty(&payload)
-        .map_err(|e| HostError::internal(format!("serialize failed: {e}")))?;
-    store
-        .put(&key, &json)
-        .map_err(|e| HostError::internal(e.to_string()))?;
-    info!("host: graph_layout_save wrote {}/{}", base.display(), key);
-    Ok(())
+    write_snapshot(&key, &payload)
 }
 
 /// Load a graph layout snapshot for a specific widget (if available).
@@ -239,8 +216,6 @@ pub async fn graph_layout_get(
         "host: graph_layout_get doc_id={} widget_id={} as_of={} scenario={:?} layer={:?}",
         payload.doc_id, payload.widget_id, payload.as_of, payload.scenario, payload.layer
     );
-    let base = canvas_snapshot_base()?;
-    let store = FileSnapshotStore::new(base.clone());
     let key = graph_layout_store_key(
         &payload.doc_id,
         &payload.widget_id,
@@ -248,73 +223,60 @@ pub async fn graph_layout_get(
         payload.scenario.as_deref(),
         payload.layer.as_deref(),
     );
+    read_snapshot(&key)
+}
 
-    match store.get(&key) {
-        Ok(bytes) => {
-            let layout = serde_json::from_slice::<GraphLayoutSaveRequest>(&bytes)
-                .map_err(|e| HostError::internal(format!("deserialize failed: {e}")))?;
-            Ok(Some(layout))
+/// Define a namespaced, requestId-wrapped Tauri command that delegates to a bare
+/// handler through the shared telemetry envelope.
+macro_rules! ipc_layout_command {
+    ($(#[$meta:meta])* $name:ident, $req:ty, $resp:ty, $inner:ident) => {
+        $(#[$meta])*
+        #[tauri::command]
+        #[specta::specta]
+        pub async fn $name(
+            request: IpcRequest<$req>,
+        ) -> Result<IpcResponse<$resp>, HostError> {
+            crate::telemetry::respond_with_request(
+                stringify!($name),
+                request,
+                |payload| async move { $inner(payload).await },
+            )
+            .await
         }
-        Err(message) if is_missing_snapshot_error(&message) => Ok(None),
-        Err(message) => Err(HostError::internal(message)),
-    }
+    };
 }
 
-/// Namespaced + requestId-wrapped graph layout load command.
-#[tauri::command]
-#[specta::specta]
-pub async fn praxis_graph_layout_get(
-    request: IpcRequest<GraphLayoutGetRequest>,
-) -> Result<IpcResponse<Option<GraphLayoutSaveRequest>>, HostError> {
-    crate::telemetry::respond_with_request(
-        "praxis_graph_layout_get",
-        request,
-        |payload| async move { graph_layout_get(payload).await },
-    )
-    .await
-}
+ipc_layout_command!(
+    /// Namespaced + requestId-wrapped graph layout load command.
+    praxis_graph_layout_get,
+    GraphLayoutGetRequest,
+    Option<GraphLayoutSaveRequest>,
+    graph_layout_get
+);
 
-/// Namespaced + requestId-wrapped graph layout persistence command.
-#[tauri::command]
-#[specta::specta]
-pub async fn praxis_graph_layout_save(
-    request: IpcRequest<GraphLayoutSaveRequest>,
-) -> Result<IpcResponse<()>, HostError> {
-    crate::telemetry::respond_with_request(
-        "praxis_graph_layout_save",
-        request,
-        |payload| async move { graph_layout_save(payload).await },
-    )
-    .await
-}
+ipc_layout_command!(
+    /// Namespaced + requestId-wrapped graph layout persistence command.
+    praxis_graph_layout_save,
+    GraphLayoutSaveRequest,
+    (),
+    graph_layout_save
+);
 
-/// Namespaced + requestId-wrapped canvas layout load command.
-#[tauri::command]
-#[specta::specta]
-pub async fn praxis_canvas_get_layout(
-    request: IpcRequest<CanvasLayoutGetRequest>,
-) -> Result<IpcResponse<Option<CanvasLayoutSaveRequest>>, HostError> {
-    crate::telemetry::respond_with_request(
-        "praxis_canvas_get_layout",
-        request,
-        |payload| async move { canvas_get_layout(payload).await },
-    )
-    .await
-}
+ipc_layout_command!(
+    /// Namespaced + requestId-wrapped canvas layout load command.
+    praxis_canvas_get_layout,
+    CanvasLayoutGetRequest,
+    Option<CanvasLayoutSaveRequest>,
+    canvas_get_layout
+);
 
-/// Namespaced + requestId-wrapped canvas layout persistence command.
-#[tauri::command]
-#[specta::specta]
-pub async fn praxis_canvas_save_layout(
-    request: IpcRequest<CanvasLayoutSaveRequest>,
-) -> Result<IpcResponse<()>, HostError> {
-    crate::telemetry::respond_with_request(
-        "praxis_canvas_save_layout",
-        request,
-        |payload| async move { canvas_save_layout(payload).await },
-    )
-    .await
-}
+ipc_layout_command!(
+    /// Namespaced + requestId-wrapped canvas layout persistence command.
+    praxis_canvas_save_layout,
+    CanvasLayoutSaveRequest,
+    (),
+    canvas_save_layout
+);
 
 #[cfg(test)]
 #[path = "../tests/internal/scene_tests.rs"]

@@ -96,11 +96,9 @@ pub async fn list_templates() -> Result<Vec<TemplatePayload>, HostError> {
 pub async fn workspace_templates_list(
     request: IpcRequest<EmptyPayload>,
 ) -> Result<IpcResponse<Vec<TemplatePayload>>, HostError> {
-    respond_with_request(
-        "workspace_templates_list",
-        request,
-        move |_payload| async move { list_templates().await },
-    )
+    respond_with_request("workspace_templates_list", request, |_payload| {
+        list_templates()
+    })
     .await
 }
 
@@ -134,12 +132,7 @@ pub async fn save_template(payload: TemplatePayload) -> Result<TemplatePayload, 
 pub async fn workspace_templates_save(
     request: IpcRequest<TemplatePayload>,
 ) -> Result<IpcResponse<TemplatePayload>, HostError> {
-    respond_with_request(
-        "workspace_templates_save",
-        request,
-        move |payload| async move { save_template(payload).await },
-    )
-    .await
+    respond_with_request("workspace_templates_save", request, save_template).await
 }
 
 fn workspace_snapshot_base() -> Result<std::path::PathBuf, HostError> {
@@ -155,8 +148,23 @@ fn template_store_key() -> &'static str {
     "workspace/templates.json"
 }
 
-fn default_templates() -> Vec<TemplatePayload> {
-    let graph_overview = json!({
+/// Metadata for a template widget: `(id, title, size, kind)`.
+type WidgetMeta = (&'static str, &'static str, &'static str, &'static str);
+
+/// Build a single widget payload from its metadata and view.
+fn widget(meta: WidgetMeta, view: Value) -> TemplateWidgetPayload {
+    let (id, title, size, kind) = meta;
+    TemplateWidgetPayload {
+        id: id.into(),
+        title: title.into(),
+        size: Some(size.into()),
+        kind: kind.into(),
+        view,
+    }
+}
+
+fn graph_overview_view() -> Value {
+    json!({
         "id": "executive-overview",
         "name": "Executive Overview",
         "kind": "graph",
@@ -164,8 +172,11 @@ fn default_templates() -> Vec<TemplatePayload> {
             "nodeTypes": ["Capability", "Application"],
             "edgeTypes": ["depends_on", "supports"]
         }
-    });
-    let catalogue_base = json!({
+    })
+}
+
+fn catalogue_base_view() -> Value {
+    json!({
         "id": "capability-catalogue",
         "name": "Capability Catalogue",
         "kind": "catalogue",
@@ -174,37 +185,51 @@ fn default_templates() -> Vec<TemplatePayload> {
             { "id": "owner", "label": "Owner", "type": "string" },
             { "id": "state", "label": "State", "type": "string" }
         ]
-    });
-    let matrix_base = json!({
+    })
+}
+
+fn matrix_base_view() -> Value {
+    json!({
         "id": "capability-to-service",
         "name": "Capability to Service Matrix",
         "kind": "matrix",
         "rowType": "Capability",
         "columnType": "Service",
         "relationship": "depends_on"
-    });
-    let kpi_chart = json!({
+    })
+}
+
+fn kpi_chart_view() -> Value {
+    json!({
         "id": "kpi-operational",
         "name": "Operational KPIs",
         "kind": "chart",
         "chartType": "kpi",
         "measure": "Operational readiness"
-    });
-    let line_chart = json!({
+    })
+}
+
+fn line_chart_view() -> Value {
+    json!({
         "id": "velocity-line",
         "name": "Velocity trend",
         "kind": "chart",
         "chartType": "line",
         "measure": "Velocity"
-    });
-    let bar_chart = json!({
+    })
+}
+
+fn bar_chart_view() -> Value {
+    json!({
         "id": "heatmap-bar",
         "name": "Capability maturity",
         "kind": "chart",
         "chartType": "bar",
         "measure": "Maturity"
-    });
+    })
+}
 
+fn default_templates() -> Vec<TemplatePayload> {
     vec![
         TemplatePayload {
             id: "template-executive".into(),
@@ -212,34 +237,27 @@ fn default_templates() -> Vec<TemplatePayload> {
             name: "Executive overview".into(),
             description: "Graph + KPI + catalogue snapshot for leadership reviews.".into(),
             widgets: vec![
-                TemplateWidgetPayload {
-                    id: "graph-overview".into(),
-                    title: "Twin overview graph".into(),
-                    size: Some("full".into()),
-                    kind: "graph".into(),
-                    view: graph_overview.clone(),
-                },
-                TemplateWidgetPayload {
-                    id: "kpi-services".into(),
-                    title: "Critical services KPI".into(),
-                    size: Some("half".into()),
-                    kind: "chart".into(),
-                    view: kpi_chart.clone(),
-                },
-                TemplateWidgetPayload {
-                    id: "velocity-line".into(),
-                    title: "Velocity trend".into(),
-                    size: Some("half".into()),
-                    kind: "chart".into(),
-                    view: line_chart.clone(),
-                },
-                TemplateWidgetPayload {
-                    id: "catalogue-primary".into(),
-                    title: "Capability catalogue".into(),
-                    size: Some("full".into()),
-                    kind: "catalogue".into(),
-                    view: catalogue_base.clone(),
-                },
+                widget(
+                    ("graph-overview", "Twin overview graph", "full", "graph"),
+                    graph_overview_view(),
+                ),
+                widget(
+                    ("kpi-services", "Critical services KPI", "half", "chart"),
+                    kpi_chart_view(),
+                ),
+                widget(
+                    ("velocity-line", "Velocity trend", "half", "chart"),
+                    line_chart_view(),
+                ),
+                widget(
+                    (
+                        "catalogue-primary",
+                        "Capability catalogue",
+                        "full",
+                        "catalogue",
+                    ),
+                    catalogue_base_view(),
+                ),
             ],
         },
         TemplatePayload {
@@ -248,34 +266,32 @@ fn default_templates() -> Vec<TemplatePayload> {
             name: "Explorer workspace".into(),
             description: "Graph, matrix, and comparative chart for deeper analysis.".into(),
             widgets: vec![
-                TemplateWidgetPayload {
-                    id: "graph-explorer".into(),
-                    title: "Explorer graph".into(),
-                    size: Some("full".into()),
-                    kind: "graph".into(),
-                    view: graph_overview,
-                },
-                TemplateWidgetPayload {
-                    id: "matrix-coverage".into(),
-                    title: "Capability to Service coverage".into(),
-                    size: Some("half".into()),
-                    kind: "matrix".into(),
-                    view: matrix_base,
-                },
-                TemplateWidgetPayload {
-                    id: "maturity-bars".into(),
-                    title: "Capability maturity".into(),
-                    size: Some("half".into()),
-                    kind: "chart".into(),
-                    view: bar_chart,
-                },
-                TemplateWidgetPayload {
-                    id: "catalogue-explorer".into(),
-                    title: "Capability rollup".into(),
-                    size: Some("full".into()),
-                    kind: "catalogue".into(),
-                    view: catalogue_base,
-                },
+                widget(
+                    ("graph-explorer", "Explorer graph", "full", "graph"),
+                    graph_overview_view(),
+                ),
+                widget(
+                    (
+                        "matrix-coverage",
+                        "Capability to Service coverage",
+                        "half",
+                        "matrix",
+                    ),
+                    matrix_base_view(),
+                ),
+                widget(
+                    ("maturity-bars", "Capability maturity", "half", "chart"),
+                    bar_chart_view(),
+                ),
+                widget(
+                    (
+                        "catalogue-explorer",
+                        "Capability rollup",
+                        "full",
+                        "catalogue",
+                    ),
+                    catalogue_base_view(),
+                ),
             ],
         },
     ]

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use aideon_praxis::temporal::{ChangeSet, CommitSummary};
@@ -148,26 +148,34 @@ fn repo_root() -> PathBuf {
         .to_path_buf()
 }
 
-fn extract_event_names_from_source(source: &str) -> Vec<String> {
-    let mut found = Vec::new();
+/// Scan `source` for `pub const <PREFIX>… = "value";` declarations and return the
+/// first double-quoted `value` from each matching line that `accept` approves.
+fn extract_quoted_constants(
+    source: &str,
+    prefix: &str,
+    accept: impl Fn(&str) -> bool,
+) -> Vec<String> {
+    source
+        .lines()
+        .filter_map(|line| {
+            let trimmed = line.trim();
+            if !trimmed.starts_with(prefix) {
+                return None;
+            }
+            let (_, rest) = trimmed.split_once('"')?;
+            let (value, _) = rest.split_once('"')?;
+            accept(value).then(|| value.to_string())
+        })
+        .collect()
+}
 
-    for line in source.lines() {
-        let trimmed = line.trim();
-        if !trimmed.starts_with("pub const EVENT_") {
-            continue;
-        }
-        if let Some((_, rest)) = trimmed.split_once('"')
-            && let Some((event, _)) = rest.split_once('"')
-            && !event.is_empty()
+fn extract_event_names_from_source(source: &str) -> Vec<String> {
+    extract_quoted_constants(source, "pub const EVENT_", |event| {
+        !event.is_empty()
             && event
                 .chars()
                 .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == ':')
-        {
-            found.push(event.to_string());
-        }
-    }
-
-    found
+    })
 }
 
 fn payload_keys_for_event(name: &str) -> Vec<String> {
@@ -255,41 +263,38 @@ fn build_event_manifest() -> Result<EventManifest> {
     })
 }
 
-async fn export_event_manifest(args: EventManifestArgs) -> Result<()> {
-    let repo = repo_root();
-    let out = if args.out.is_absolute() {
-        args.out
+/// Resolve a manifest output path against the repo root unless it is absolute.
+fn resolve_out_path(out: PathBuf) -> PathBuf {
+    if out.is_absolute() {
+        out
     } else {
-        repo.join(args.out)
-    };
+        repo_root().join(out)
+    }
+}
+
+/// Serialize `manifest` as pretty JSON (with a trailing newline) to `out`,
+/// creating parent directories as needed, then report the written path.
+fn write_manifest_json<T: Serialize>(out: PathBuf, manifest: &T, label: &str) -> Result<()> {
+    let out = resolve_out_path(out);
     if let Some(parent) = out.parent() {
         fs::create_dir_all(parent)
             .with_context(|| format!("create_dir_all {}", parent.display()))?;
     }
-    let manifest = build_event_manifest()?;
-    let json = serde_json::to_string_pretty(&manifest)?;
+    let json = serde_json::to_string_pretty(manifest)?;
     fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
-    println!("Wrote event manifest to {}", out.display());
+    println!("Wrote {label} to {}", out.display());
     Ok(())
 }
 
+async fn export_event_manifest(args: EventManifestArgs) -> Result<()> {
+    write_manifest_json(args.out, &build_event_manifest()?, "event manifest")
+}
+
 fn extract_shell_command_ids_from_source(source: &str) -> Vec<String> {
-    let mut found = Vec::new();
-    for line in source.lines() {
-        let trimmed = line.trim();
-        if !trimmed.starts_with("pub const SHELL_COMMAND_") {
-            continue;
-        }
-        if let Some((_, rest)) = trimmed.split_once('"')
-            && let Some((id, _)) = rest.split_once('"')
-            && id
-                .chars()
-                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
-        {
-            found.push(id.to_string());
-        }
-    }
-    found
+    extract_quoted_constants(source, "pub const SHELL_COMMAND_", |id| {
+        id.chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+    })
 }
 
 fn payload_keys_for_shell_command(id: &str) -> Vec<String> {
@@ -324,59 +329,61 @@ fn build_shell_command_manifest() -> Result<ShellCommandManifest> {
 }
 
 async fn export_shell_command_manifest(args: ShellCommandManifestArgs) -> Result<()> {
-    let repo = repo_root();
-    let out = if args.out.is_absolute() {
-        args.out
-    } else {
-        repo.join(args.out)
-    };
-    if let Some(parent) = out.parent() {
-        fs::create_dir_all(parent)
-            .with_context(|| format!("create_dir_all {}", parent.display()))?;
+    write_manifest_json(
+        args.out,
+        &build_shell_command_manifest()?,
+        "shell command manifest",
+    )
+}
+
+/// Prepare the migration output directory and open a fresh sqlite store,
+/// honouring `--force` (clears an existing store) and refusing to clobber an
+/// existing `praxis.sqlite` otherwise.
+/// Clear an existing output directory when `--force` is set, or refuse to
+/// proceed when it already holds a `praxis.sqlite` store.
+fn clear_or_guard_output(output: &Path, force: bool) -> Result<()> {
+    if !output.exists() {
+        return Ok(());
     }
-    let manifest = build_shell_command_manifest()?;
-    let json = serde_json::to_string_pretty(&manifest)?;
-    fs::write(&out, format!("{json}\n")).with_context(|| format!("write {}", out.display()))?;
-    println!("Wrote shell command manifest to {}", out.display());
+    if force {
+        return fs::remove_dir_all(output)
+            .with_context(|| format!("failed to clean {}", output.display()));
+    }
+    if output.join("praxis.sqlite").exists() {
+        return Err(anyhow!(
+            "output '{}' already contains praxis.sqlite; rerun with --force to overwrite",
+            output.display()
+        ));
+    }
     Ok(())
 }
 
-async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
-    let raw = fs::read_to_string(&args.input)
-        .with_context(|| format!("failed to read {}", args.input.display()))?;
-    let legacy: LegacyState = serde_json::from_str(&raw)
-        .with_context(|| format!("failed to parse {}", args.input.display()))?;
+async fn open_migration_db(output: &Path, force: bool) -> Result<SqliteDb> {
+    clear_or_guard_output(output, force)?;
 
-    if args.output.exists() {
-        if args.force {
-            fs::remove_dir_all(&args.output)
-                .with_context(|| format!("failed to clean {}", args.output.display()))?;
-        } else if args.output.join("praxis.sqlite").exists() {
-            return Err(anyhow!(
-                "output '{}' already contains praxis.sqlite; rerun with --force to overwrite",
-                args.output.display()
-            ));
-        }
-    }
+    fs::create_dir_all(output).with_context(|| format!("failed to create {}", output.display()))?;
 
-    fs::create_dir_all(&args.output)
-        .with_context(|| format!("failed to create {}", args.output.display()))?;
-
-    let db_path = args.output.join("praxis.sqlite");
-    if db_path.exists() && args.force {
+    let db_path = output.join("praxis.sqlite");
+    if db_path.exists() && force {
         fs::remove_file(&db_path)
             .with_context(|| format!("failed to remove {}", db_path.display()))?;
     }
-    let db = SqliteDb::open(&db_path)
+    SqliteDb::open(&db_path)
         .await
-        .map_err(|err| anyhow!(err.to_string()))?;
+        .map_err(|err| anyhow!(err.to_string()))
+}
 
+/// Replay legacy commits into `db`, returning the accumulated snapshots and the
+/// id of the last commit written.
+async fn apply_legacy_commits(
+    db: &SqliteDb,
+    commits: Vec<LegacyCommit>,
+) -> Result<(HashMap<String, GraphSnapshot>, Option<String>)> {
+    let registry = MetaModelRegistry::embedded().map_err(|err| anyhow!(err.to_string()))?;
     let mut snapshots: HashMap<String, GraphSnapshot> = HashMap::new();
     let mut last_commit_id: Option<String> = None;
 
-    let registry = MetaModelRegistry::embedded().map_err(|err| anyhow!(err.to_string()))?;
-
-    for commit in legacy.commits {
+    for commit in commits {
         let base = match commit.summary.parents.first() {
             Some(parent) => snapshots.get(parent).cloned().ok_or_else(|| {
                 anyhow!("missing parent '{parent}' for commit {}", commit.summary.id)
@@ -399,23 +406,46 @@ async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
         snapshots.insert(persisted.summary.id, next);
     }
 
-    if legacy.branches.is_empty() {
+    Ok((snapshots, last_commit_id))
+}
+
+/// Recreate branch heads after migration: default to a single `main` head at the
+/// last commit, or reproduce the explicit branches from the legacy export.
+async fn set_migrated_branches(
+    db: &SqliteDb,
+    branches: Vec<LegacyBranch>,
+    last_commit_id: Option<&str>,
+) -> Result<()> {
+    if branches.is_empty() {
         db.ensure_branch("main")
             .await
             .map_err(|err| anyhow!(err.to_string()))?;
-        db.compare_and_swap_branch("main", None, last_commit_id.as_deref())
+        db.compare_and_swap_branch("main", None, last_commit_id)
             .await
             .map_err(|err| anyhow!(err.to_string()))?;
-    } else {
-        for branch in legacy.branches {
-            db.ensure_branch(&branch.name)
-                .await
-                .map_err(|err| anyhow!(err.to_string()))?;
-            db.compare_and_swap_branch(&branch.name, None, branch.head.as_deref())
-                .await
-                .map_err(|err| anyhow!(err.to_string()))?;
-        }
+        return Ok(());
     }
+
+    for branch in branches {
+        db.ensure_branch(&branch.name)
+            .await
+            .map_err(|err| anyhow!(err.to_string()))?;
+        db.compare_and_swap_branch(&branch.name, None, branch.head.as_deref())
+            .await
+            .map_err(|err| anyhow!(err.to_string()))?;
+    }
+    Ok(())
+}
+
+async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
+    let raw = fs::read_to_string(&args.input)
+        .with_context(|| format!("failed to read {}", args.input.display()))?;
+    let legacy: LegacyState = serde_json::from_str(&raw)
+        .with_context(|| format!("failed to parse {}", args.input.display()))?;
+
+    let db = open_migration_db(&args.output, args.force).await?;
+    let (snapshots, last_commit_id) = apply_legacy_commits(&db, legacy.commits).await?;
+    set_migrated_branches(&db, legacy.branches, last_commit_id.as_deref()).await?;
 
     println!(
         "Migrated {} commits into {}",
@@ -429,6 +459,44 @@ async fn migrate_state(args: MigrateStateArgs) -> Result<()> {
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    /// Assert a freshly built `manifest` matches the checked-in JSON at `rel_path`.
+    fn assert_manifest_checked_in<T>(manifest: T, rel_path: &str, regen_cmd: &str)
+    where
+        T: serde::de::DeserializeOwned + PartialEq + std::fmt::Debug,
+    {
+        let path = repo_root().join(rel_path);
+        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!(
+                "missing {}; run `{}` to generate it",
+                path.display(),
+                regen_cmd
+            )
+        });
+        let on_disk: T = serde_json::from_str(&raw).unwrap_or_else(|_| panic!("parse {rel_path}"));
+        assert_eq!(on_disk, manifest, "{rel_path} drifted; rerun `{regen_cmd}`");
+    }
+
+    /// Run an export closure against a temp `filename` and return the file body.
+    async fn export_to_temp<Fut>(filename: &str, run: impl FnOnce(PathBuf) -> Fut) -> String
+    where
+        Fut: std::future::Future<Output = Result<()>>,
+    {
+        let dir = tempdir().expect("tempdir");
+        let out = dir.path().join(filename);
+        run(out.clone()).await.expect("export manifest");
+        fs::read_to_string(&out).expect("read manifest")
+    }
+
+    /// Collect boundary violations for a single-package workspace.
+    fn violations_for(pkg: CargoPackage) -> Vec<String> {
+        violations_for_packages(vec![pkg])
+    }
+
+    /// Collect boundary violations for a workspace of the given packages.
+    fn violations_for_packages(packages: Vec<CargoPackage>) -> Vec<String> {
+        collect_boundary_violations(&CargoMetadata { packages })
+    }
 
     #[test]
     fn cli_parses_health_defaults() {
@@ -472,49 +540,28 @@ mod tests {
 
     #[test]
     fn event_manifest_is_deterministic_and_checked_in() {
-        let repo = repo_root();
-        let manifest = build_event_manifest().expect("build manifest");
-        let path = repo.join("docs/contracts/event-manifest.json");
-        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
-            panic!(
-                "missing {}; run `cargo run -p aideon_xtask -- event-manifest` to generate it",
-                path.display()
-            )
-        });
-        let on_disk: EventManifest = serde_json::from_str(&raw).expect("parse event-manifest.json");
-        assert_eq!(
-            on_disk, manifest,
-            "event-manifest.json drifted; rerun `cargo run -p aideon_xtask -- event-manifest`"
+        assert_manifest_checked_in(
+            build_event_manifest().expect("build manifest"),
+            "docs/contracts/event-manifest.json",
+            "cargo run -p aideon_xtask -- event-manifest",
         );
     }
 
     #[test]
     fn shell_command_manifest_is_deterministic_and_checked_in() {
-        let repo = repo_root();
-        let manifest = build_shell_command_manifest().expect("build manifest");
-        let path = repo.join("docs/contracts/shell-command-manifest.json");
-        let raw = fs::read_to_string(&path).unwrap_or_else(|_| {
-            panic!(
-                "missing {}; run `cargo run -p aideon_xtask -- shell-command-manifest` to generate it",
-                path.display()
-            )
-        });
-        let on_disk: ShellCommandManifest =
-            serde_json::from_str(&raw).expect("parse shell-command-manifest.json");
-        assert_eq!(
-            on_disk, manifest,
-            "shell-command-manifest.json drifted; rerun `cargo run -p aideon_xtask -- shell-command-manifest`"
+        assert_manifest_checked_in(
+            build_shell_command_manifest().expect("build manifest"),
+            "docs/contracts/shell-command-manifest.json",
+            "cargo run -p aideon_xtask -- shell-command-manifest",
         );
     }
 
     #[tokio::test]
     async fn export_event_manifest_writes_json_file() {
-        let dir = tempdir().expect("tempdir");
-        let out = dir.path().join("event-manifest.json");
-        export_event_manifest(EventManifestArgs { out: out.clone() })
-            .await
-            .expect("export manifest");
-        let raw = fs::read_to_string(&out).expect("read manifest");
+        let raw = export_to_temp("event-manifest.json", |out| {
+            export_event_manifest(EventManifestArgs { out })
+        })
+        .await;
         let manifest: EventManifest = serde_json::from_str(&raw).expect("parse manifest");
         assert_eq!(manifest.schema_version, 1);
         assert!(!manifest.events.is_empty());
@@ -522,12 +569,10 @@ mod tests {
 
     #[tokio::test]
     async fn export_shell_command_manifest_writes_json_file() {
-        let dir = tempdir().expect("tempdir");
-        let out = dir.path().join("shell-command-manifest.json");
-        export_shell_command_manifest(ShellCommandManifestArgs { out: out.clone() })
-            .await
-            .expect("export manifest");
-        let raw = fs::read_to_string(&out).expect("read manifest");
+        let raw = export_to_temp("shell-command-manifest.json", |out| {
+            export_shell_command_manifest(ShellCommandManifestArgs { out })
+        })
+        .await;
         let manifest: ShellCommandManifest = serde_json::from_str(&raw).expect("parse manifest");
         assert_eq!(manifest.schema_version, 1);
         assert!(!manifest.commands.is_empty());
@@ -648,14 +693,11 @@ mod tests {
 
     #[test]
     fn boundaries_rejects_engine_depending_on_tauri() {
-        let metadata = CargoMetadata {
-            packages: vec![pkg(
-                "aideon_praxis",
-                "/workspace/crates/praxis/Cargo.toml",
-                &["tauri"],
-            )],
-        };
-        let v = collect_boundary_violations(&metadata);
+        let v = violations_for(pkg(
+            "aideon_praxis",
+            "/workspace/crates/praxis/Cargo.toml",
+            &["tauri"],
+        ));
         assert!(
             !v.is_empty(),
             "should flag tauri import from an engine crate"
@@ -668,17 +710,14 @@ mod tests {
 
     #[test]
     fn boundaries_rejects_engine_depending_on_host() {
-        let metadata = CargoMetadata {
-            packages: vec![
-                pkg("aideon_desktop", "/workspace/src-tauri/Cargo.toml", &[]),
-                pkg(
-                    "aideon_praxis",
-                    "/workspace/crates/praxis/Cargo.toml",
-                    &["aideon_desktop"],
-                ),
-            ],
-        };
-        let v = collect_boundary_violations(&metadata);
+        let v = violations_for_packages(vec![
+            pkg("aideon_desktop", "/workspace/src-tauri/Cargo.toml", &[]),
+            pkg(
+                "aideon_praxis",
+                "/workspace/crates/praxis/Cargo.toml",
+                &["aideon_desktop"],
+            ),
+        ]);
         assert!(
             !v.is_empty(),
             "should flag engine depending on host (aideon_desktop)"
@@ -687,14 +726,11 @@ mod tests {
 
     #[test]
     fn boundaries_rejects_praxis_depending_on_metis() {
-        let metadata = CargoMetadata {
-            packages: vec![pkg(
-                "aideon_praxis",
-                "/workspace/crates/praxis/Cargo.toml",
-                &["aideon_metis"],
-            )],
-        };
-        let v = collect_boundary_violations(&metadata);
+        let v = violations_for(pkg(
+            "aideon_praxis",
+            "/workspace/crates/praxis/Cargo.toml",
+            &["aideon_metis"],
+        ));
         assert!(!v.is_empty(), "praxis must not depend on metis (D9)");
         assert!(
             v[0].contains("lateral"),
@@ -704,27 +740,21 @@ mod tests {
 
     #[test]
     fn boundaries_rejects_metis_depending_on_chrona() {
-        let metadata = CargoMetadata {
-            packages: vec![pkg(
-                "aideon_metis",
-                "/workspace/crates/metis/Cargo.toml",
-                &["aideon_chrona"],
-            )],
-        };
-        let v = collect_boundary_violations(&metadata);
+        let v = violations_for(pkg(
+            "aideon_metis",
+            "/workspace/crates/metis/Cargo.toml",
+            &["aideon_chrona"],
+        ));
         assert!(!v.is_empty(), "metis must not depend on chrona");
     }
 
     #[test]
     fn boundaries_allows_mneme_store_depending_on_mneme_core() {
-        let metadata = CargoMetadata {
-            packages: vec![pkg(
-                "aideon_mneme_store",
-                "/workspace/crates/mneme_store/Cargo.toml",
-                &["aideon_mneme_core"],
-            )],
-        };
-        let v = collect_boundary_violations(&metadata);
+        let v = violations_for(pkg(
+            "aideon_mneme_store",
+            "/workspace/crates/mneme_store/Cargo.toml",
+            &["aideon_mneme_core"],
+        ));
         assert!(
             v.is_empty(),
             "mneme_store → mneme_core is an allowed storage-layer edge"
@@ -735,14 +765,11 @@ mod tests {
     fn boundaries_allows_chrona_depending_on_praxis() {
         // chrona→praxis is a contract-only dependency; allowed at the crate level
         // (neutral contracts crate not yet extracted — D21).
-        let metadata = CargoMetadata {
-            packages: vec![pkg(
-                "aideon_chrona",
-                "/workspace/crates/chrona/Cargo.toml",
-                &["aideon_praxis"],
-            )],
-        };
-        let v = collect_boundary_violations(&metadata);
+        let v = violations_for(pkg(
+            "aideon_chrona",
+            "/workspace/crates/chrona/Cargo.toml",
+            &["aideon_praxis"],
+        ));
         assert!(
             v.is_empty(),
             "chrona → praxis is the allowed contract-only edge"
@@ -752,22 +779,63 @@ mod tests {
     #[test]
     fn boundaries_engine_harness_is_exempt() {
         // aideon_engine is the composition harness; it may depend on every engine.
-        let metadata = CargoMetadata {
-            packages: vec![
-                pkg("aideon_desktop", "/workspace/src-tauri/Cargo.toml", &[]),
-                pkg(
-                    "aideon_engine",
-                    "/workspace/crates/engine/Cargo.toml",
-                    &["aideon_praxis", "aideon_metis", "aideon_chrona"],
-                ),
-            ],
-        };
-        let v = collect_boundary_violations(&metadata);
+        let v = violations_for_packages(vec![
+            pkg("aideon_desktop", "/workspace/src-tauri/Cargo.toml", &[]),
+            pkg(
+                "aideon_engine",
+                "/workspace/crates/engine/Cargo.toml",
+                &["aideon_praxis", "aideon_metis", "aideon_chrona"],
+            ),
+        ]);
         assert!(
             v.is_empty(),
             "the engine harness is exempt from lateral checks"
         );
     }
+}
+
+/// True when `main` already carries commits (an existing, populated datastore).
+async fn main_has_commits(engine: &PraxisEngine) -> bool {
+    engine
+        .list_branches()
+        .await
+        .into_iter()
+        .any(|branch| branch.name == "main" && branch.head.is_some())
+}
+
+/// Report the outcome of an import: the last commit's stats, or that no commits
+/// were produced.
+async fn report_import_result(
+    engine: &PraxisEngine,
+    dataset: &BaselineDataset,
+    db_path: &Path,
+) -> Result<()> {
+    let commits = engine
+        .list_commits("main".into())
+        .await
+        .map_err(|err| anyhow!(err.to_string()))?;
+    let Some(last) = commits.last() else {
+        println!(
+            "imported dataset {} (no commits reported) into {}",
+            dataset.version,
+            db_path.display()
+        );
+        return Ok(());
+    };
+
+    let stats = engine
+        .stats_for_commit(&last.id)
+        .await
+        .map_err(|err| anyhow!(err.to_string()))?;
+    println!(
+        "imported dataset {} (commits={} nodes={} edges={}) into {}",
+        dataset.version,
+        commits.len(),
+        stats.node_count,
+        stats.edge_count,
+        db_path.display()
+    );
+    Ok(())
 }
 
 async fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
@@ -788,22 +856,9 @@ async fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
     fs::create_dir_all(&args.datastore)
         .with_context(|| format!("failed to create {}", args.datastore.display()))?;
     let db_path = args.datastore.join("praxis.sqlite");
-    let storage = SqliteDb::open(&db_path)
-        .await
-        .map_err(|err| anyhow!(err.to_string()))?;
-    let engine = PraxisEngine::with_stores_unseeded(
-        PraxisEngineConfig::default(),
-        Arc::new(storage.clone()),
-    )
-    .await
-    .map_err(|err| anyhow!(err.to_string()))?;
+    let (_storage, engine) = open_sqlite_engine(&db_path).await?;
 
-    let has_commits = engine
-        .list_branches()
-        .await
-        .into_iter()
-        .any(|branch| branch.name == "main" && branch.head.is_some());
-    if has_commits {
+    if main_has_commits(&engine).await {
         return Err(anyhow!(
             "datastore '{}' already contains commits; rerun with --force",
             args.datastore.display()
@@ -815,37 +870,13 @@ async fn import_dataset(args: ImportDatasetArgs) -> Result<()> {
         .await
         .map_err(|err| anyhow!(err.to_string()))?;
 
-    let commits = engine
-        .list_commits("main".into())
-        .await
-        .map_err(|err| anyhow!(err.to_string()))?;
-    if let Some(last) = commits.last() {
-        let stats = engine
-            .stats_for_commit(&last.id)
-            .await
-            .map_err(|err| anyhow!(err.to_string()))?;
-        println!(
-            "imported dataset {} (commits={} nodes={} edges={}) into {}",
-            dataset.version,
-            commits.len(),
-            stats.node_count,
-            stats.edge_count,
-            db_path.display()
-        );
-    } else {
-        println!(
-            "imported dataset {} (no commits reported) into {}",
-            dataset.version,
-            db_path.display()
-        );
-    }
-
-    Ok(())
+    report_import_result(&engine, &dataset, &db_path).await
 }
 
-async fn check_health(args: HealthArgs) -> Result<()> {
-    let db_path = args.datastore.join("praxis.sqlite");
-    let storage = SqliteDb::open(&db_path)
+/// Open the sqlite store at `db_path` and build an unseeded engine over it,
+/// returning both so callers can query the engine and the raw store.
+async fn open_sqlite_engine(db_path: &Path) -> Result<(SqliteDb, PraxisEngine)> {
+    let storage = SqliteDb::open(db_path)
         .await
         .map_err(|err| anyhow!(err.to_string()))?;
     let engine = PraxisEngine::with_stores_unseeded(
@@ -854,6 +885,174 @@ async fn check_health(args: HealthArgs) -> Result<()> {
     )
     .await
     .map_err(|err| anyhow!(err.to_string()))?;
+    Ok((storage, engine))
+}
+
+/// A single integrity observation from a health scan.
+struct Finding {
+    kind: &'static str,
+    message: String,
+}
+
+impl Finding {
+    fn error(message: String) -> Self {
+        Self {
+            kind: "error",
+            message,
+        }
+    }
+
+    fn warning(message: String) -> Self {
+        Self {
+            kind: "warning",
+            message,
+        }
+    }
+}
+
+/// Check a branch's recorded head against its commit list and its head's
+/// timestamp metadata, appending any findings.
+fn collect_branch_findings(
+    branch_name: &str,
+    head: Option<&String>,
+    commits: &[CommitSummary],
+    findings: &mut Vec<Finding>,
+) {
+    match (head, commits.last()) {
+        (Some(head), Some(last)) if head != &last.id => {
+            findings.push(Finding::error(format!(
+                "branch '{}' head {} mismatches latest commit {}",
+                branch_name, head, last.id
+            )));
+        }
+        (Some(head), None) => findings.push(Finding::error(format!(
+            "branch '{}' records head {} but has no commits",
+            branch_name, head
+        ))),
+        (None, Some(last)) => findings.push(Finding::warning(format!(
+            "branch '{}' has {} commits but no recorded head (latest {})",
+            branch_name,
+            commits.len(),
+            last.id
+        ))),
+        (None, None) => findings.push(Finding::warning(format!(
+            "branch '{}' is empty",
+            branch_name
+        ))),
+        _ => {}
+    }
+
+    if let Some(last) = commits.last()
+        && last.time.is_none()
+    {
+        findings.push(Finding::warning(format!(
+            "branch '{}' head {} missing timestamp metadata",
+            branch_name, last.id
+        )));
+    }
+}
+
+/// Record a finding if the commit's snapshot cannot be read back.
+async fn check_commit_snapshot(
+    engine: &PraxisEngine,
+    commit_id: &str,
+    findings: &mut Vec<Finding>,
+) {
+    if let Err(err) = engine.stats_for_commit(commit_id).await {
+        findings.push(Finding::error(format!(
+            "snapshot for commit {} unreadable: {}",
+            commit_id, err
+        )));
+    }
+}
+
+/// Record a finding if the commit's snapshot tag is missing, unreadable, or
+/// resolves to a different commit.
+async fn check_snapshot_tag(storage: &SqliteDb, commit_id: &str, findings: &mut Vec<Finding>) {
+    let tag_key = format!("snapshot/{}", commit_id);
+    match storage.get_tag(&tag_key).await {
+        Ok(Some(resolved)) if resolved == commit_id => {}
+        Ok(Some(resolved)) => findings.push(Finding::error(format!(
+            "snapshot tag {} points to {} instead of {}",
+            tag_key, resolved, commit_id
+        ))),
+        Ok(None) => findings.push(Finding::warning(format!(
+            "snapshot tag missing for commit {}",
+            commit_id
+        ))),
+        Err(err) => findings.push(Finding::error(format!(
+            "snapshot tag lookup failed for {}: {}",
+            commit_id, err
+        ))),
+    }
+}
+
+/// Verify that every commit's snapshot is readable and its snapshot tag resolves
+/// to itself, appending any findings.
+async fn collect_commit_findings(
+    engine: &PraxisEngine,
+    storage: &SqliteDb,
+    commits: &[CommitSummary],
+    findings: &mut Vec<Finding>,
+) {
+    for commit in commits {
+        check_commit_snapshot(engine, &commit.id, findings).await;
+        check_snapshot_tag(storage, &commit.id, findings).await;
+    }
+}
+
+/// The accumulated result of a datastore health scan.
+struct HealthScan {
+    db_path: PathBuf,
+    branches_scanned: usize,
+    commit_total: usize,
+    findings: Vec<Finding>,
+}
+
+/// Print the scan summary and any warnings.
+fn print_health_summary(scan: &HealthScan, warnings: &[&Finding]) {
+    println!("Datastore: {}", scan.db_path.display());
+    println!("Branches scanned: {}", scan.branches_scanned);
+    println!("Commits scanned: {}", scan.commit_total);
+    for warn in warnings {
+        println!("warning: {}", warn.message);
+    }
+}
+
+/// Print the scan summary and findings, returning an error if any finding is an
+/// error-level observation.
+fn report_health(scan: &HealthScan, quiet: bool) -> Result<()> {
+    let errors: Vec<&Finding> = scan.findings.iter().filter(|f| f.kind == "error").collect();
+    let warnings: Vec<&Finding> = scan
+        .findings
+        .iter()
+        .filter(|f| f.kind == "warning")
+        .collect();
+
+    if !quiet {
+        print_health_summary(scan, &warnings);
+    }
+
+    if !errors.is_empty() {
+        for err in &errors {
+            eprintln!("error: {}", err.message);
+        }
+        return Err(anyhow!(
+            "health check failed ({} errors, {} warnings)",
+            errors.len(),
+            warnings.len()
+        ));
+    }
+
+    if !quiet {
+        println!("health check passed with {} warnings", warnings.len());
+    }
+    Ok(())
+}
+
+async fn check_health(args: HealthArgs) -> Result<()> {
+    let db_path = args.datastore.join("praxis.sqlite");
+    let (storage, engine) = open_sqlite_engine(&db_path).await?;
 
     let branches = engine.list_branches().await;
     let filtered: Vec<_> = branches
@@ -868,127 +1067,27 @@ async fn check_health(args: HealthArgs) -> Result<()> {
         return Err(anyhow!("no branches found (filter={:?})", args.branch));
     }
 
-    struct Finding {
-        kind: &'static str,
-        message: String,
-    }
-
     let mut findings: Vec<Finding> = Vec::new();
     let mut commit_total: usize = 0;
 
     for branch in &filtered {
-        let branch_name = branch.name.clone();
         let commits = engine
-            .list_commits(branch_name.clone())
+            .list_commits(branch.name.clone())
             .await
             .map_err(|err| anyhow!(err.to_string()))?;
         commit_total += commits.len();
 
-        match (branch.head.as_ref(), commits.last()) {
-            (Some(head), Some(last)) if head != &last.id => {
-                findings.push(Finding {
-                    kind: "error",
-                    message: format!(
-                        "branch '{}' head {} mismatches latest commit {}",
-                        branch_name, head, last.id
-                    ),
-                });
-            }
-            (Some(head), None) => findings.push(Finding {
-                kind: "error",
-                message: format!(
-                    "branch '{}' records head {} but has no commits",
-                    branch_name, head
-                ),
-            }),
-            (None, Some(last)) => findings.push(Finding {
-                kind: "warning",
-                message: format!(
-                    "branch '{}' has {} commits but no recorded head (latest {})",
-                    branch_name,
-                    commits.len(),
-                    last.id
-                ),
-            }),
-            (None, None) => findings.push(Finding {
-                kind: "warning",
-                message: format!("branch '{}' is empty", branch_name),
-            }),
-            _ => {}
-        }
-
-        if let Some(last) = commits.last()
-            && last.time.is_none()
-        {
-            findings.push(Finding {
-                kind: "warning",
-                message: format!(
-                    "branch '{}' head {} missing timestamp metadata",
-                    branch_name, last.id
-                ),
-            });
-        }
-
-        for commit in commits {
-            if let Err(err) = engine.stats_for_commit(&commit.id).await {
-                findings.push(Finding {
-                    kind: "error",
-                    message: format!("snapshot for commit {} unreadable: {}", commit.id, err),
-                });
-            }
-
-            let tag_key = format!("snapshot/{}", commit.id);
-            match storage.get_tag(&tag_key).await {
-                Ok(Some(resolved)) if resolved == commit.id => {}
-                Ok(Some(resolved)) => findings.push(Finding {
-                    kind: "error",
-                    message: format!(
-                        "snapshot tag {} points to {} instead of {}",
-                        tag_key, resolved, commit.id
-                    ),
-                }),
-                Ok(None) => findings.push(Finding {
-                    kind: "warning",
-                    message: format!("snapshot tag missing for commit {}", commit.id),
-                }),
-                Err(err) => findings.push(Finding {
-                    kind: "error",
-                    message: format!("snapshot tag lookup failed for {}: {}", commit.id, err),
-                }),
-            }
-        }
+        collect_branch_findings(&branch.name, branch.head.as_ref(), &commits, &mut findings);
+        collect_commit_findings(&engine, &storage, &commits, &mut findings).await;
     }
 
-    if !args.quiet {
-        println!("Datastore: {}", db_path.display());
-        println!("Branches scanned: {}", filtered.len());
-        println!("Commits scanned: {}", commit_total);
-    }
-
-    let errors: Vec<&Finding> = findings.iter().filter(|f| f.kind == "error").collect();
-    let warnings: Vec<&Finding> = findings.iter().filter(|f| f.kind == "warning").collect();
-
-    if !args.quiet {
-        for warn in &warnings {
-            println!("warning: {}", warn.message);
-        }
-    }
-
-    if !errors.is_empty() {
-        for err in &errors {
-            eprintln!("error: {}", err.message);
-        }
-        return Err(anyhow!(
-            "health check failed ({} errors, {} warnings)",
-            errors.len(),
-            warnings.len()
-        ));
-    }
-
-    if !args.quiet {
-        println!("health check passed with {} warnings", warnings.len());
-    }
-    Ok(())
+    let scan = HealthScan {
+        db_path,
+        branches_scanned: filtered.len(),
+        commit_total,
+        findings,
+    };
+    report_health(&scan, args.quiet)
 }
 
 async fn dry_run_dataset(dataset: &BaselineDataset) -> Result<()> {
@@ -1067,6 +1166,63 @@ struct CargoDependency {
 ///
 /// Returns the list of violations (empty = clean). The caller decides whether to
 /// print/exit with an error.
+/// Flat-forbidden lateral engine→engine targets for a given engine crate
+/// (MODULE-DEPENDENCY-MAP.md). The "contracts allowed / internals forbidden"
+/// edges (metis→praxis, chrona→praxis, continuum→*) are NOT crate-level
+/// enforceable until a neutral contracts crate exists (D21), so they are
+/// intentionally omitted here rather than risk false positives.
+fn forbidden_lateral_targets(pkg_lower: &str) -> &'static [&'static str] {
+    if pkg_lower.contains("praxis") {
+        &["metis", "chrona", "continuum"]
+    } else if pkg_lower.contains("metis") {
+        &["chrona", "continuum"]
+    } else if pkg_lower.contains("chrona") {
+        &["metis", "continuum"]
+    } else {
+        &[]
+    }
+}
+
+/// True when `dep_name` is an upward dependency an engine must never take:
+/// Tauri, the host crate, or the composition harness.
+fn is_forbidden_upward_dep(
+    dep_name: &str,
+    host_pkg: Option<&str>,
+    harness_pkg: Option<&str>,
+) -> bool {
+    dep_name == "tauri"
+        || dep_name == "tauri-build"
+        || host_pkg == Some(dep_name)
+        || harness_pkg == Some(dep_name)
+}
+
+/// Append any dependency-direction violations for a single engine `pkg`.
+fn collect_pkg_violations(
+    pkg: &CargoPackage,
+    host_pkg: Option<&str>,
+    harness_pkg: Option<&str>,
+    violations: &mut Vec<String>,
+) {
+    let forbidden_lateral = forbidden_lateral_targets(&pkg.name.to_lowercase());
+
+    for dep in &pkg.dependencies {
+        let dep_name = dep.name.as_str();
+        if is_forbidden_upward_dep(dep_name, host_pkg, harness_pkg) {
+            violations.push(format!(
+                "engine `{}` depends on `{dep_name}` — engines must never import Tauri, the host, or the composition harness",
+                pkg.name
+            ));
+        }
+        let dep_lower = dep_name.to_lowercase();
+        if forbidden_lateral.iter().any(|t| dep_lower.contains(t)) {
+            violations.push(format!(
+                "forbidden lateral edge: `{}` depends on `{dep_name}` — no lateral engine dependency; composition routes through the host (MODULE-DEPENDENCY-MAP.md)",
+                pkg.name
+            ));
+        }
+    }
+}
+
 fn collect_boundary_violations(metadata: &CargoMetadata) -> Vec<String> {
     let pkg_at = |needle: &str| {
         metadata
@@ -1089,43 +1245,12 @@ fn collect_boundary_violations(metadata: &CargoMetadata) -> Vec<String> {
         if harness_pkg.as_deref() == Some(pkg.name.as_str()) {
             continue;
         }
-        let pkg_lower = pkg.name.to_lowercase();
-
-        // Flat-forbidden lateral engine→engine edges (MODULE-DEPENDENCY-MAP.md).
-        // The "contracts allowed / internals forbidden" edges (metis→praxis,
-        // chrona→praxis, continuum→*) are NOT crate-level enforceable until a
-        // neutral contracts crate exists (D21), so they are intentionally
-        // omitted here rather than risk false positives.
-        let forbidden_lateral: &[&str] = if pkg_lower.contains("praxis") {
-            &["metis", "chrona", "continuum"]
-        } else if pkg_lower.contains("metis") {
-            &["chrona", "continuum"]
-        } else if pkg_lower.contains("chrona") {
-            &["metis", "continuum"]
-        } else {
-            &[]
-        };
-
-        for dep in &pkg.dependencies {
-            let dep_name = dep.name.as_str();
-            if dep_name == "tauri"
-                || dep_name == "tauri-build"
-                || host_pkg.as_deref() == Some(dep_name)
-                || harness_pkg.as_deref() == Some(dep_name)
-            {
-                violations.push(format!(
-                    "engine `{}` depends on `{dep_name}` — engines must never import Tauri, the host, or the composition harness",
-                    pkg.name
-                ));
-            }
-            let dep_lower = dep_name.to_lowercase();
-            if forbidden_lateral.iter().any(|t| dep_lower.contains(t)) {
-                violations.push(format!(
-                    "forbidden lateral edge: `{}` depends on `{dep_name}` — no lateral engine dependency; composition routes through the host (MODULE-DEPENDENCY-MAP.md)",
-                    pkg.name
-                ));
-            }
-        }
+        collect_pkg_violations(
+            pkg,
+            host_pkg.as_deref(),
+            harness_pkg.as_deref(),
+            &mut violations,
+        );
     }
 
     violations
