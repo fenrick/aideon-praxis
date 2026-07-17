@@ -236,13 +236,25 @@ pub(super) async fn state_at(inner: &mut Inner, args: StateAtArgs) -> PraxisResu
     })
 }
 
+/// Resolves both diff endpoints, keeping the snapshots alive at the call site so
+/// the borrowed [`DiffPatch`] produced by [`GraphSnapshot::diff`] remains valid.
+async fn resolve_endpoints(
+    inner: &mut Inner,
+    from: &CommitRef,
+    to: &CommitRef,
+) -> PraxisResult<(String, Arc<GraphSnapshot>, String, Arc<GraphSnapshot>)> {
+    let (from_id, from_snapshot, _) = resolve_snapshot(inner, from, None).await?;
+    let (to_id, to_snapshot, _) = resolve_snapshot(inner, to, None).await?;
+    Ok((from_id, from_snapshot, to_id, to_snapshot))
+}
+
 pub(super) async fn diff_summary(inner: &mut Inner, args: DiffArgs) -> PraxisResult<DiffSummary> {
-    let (from_id, from_snapshot, _) = resolve_snapshot(inner, &args.from, None).await?;
-    let (to_id, to_snapshot, _) = resolve_snapshot(inner, &args.to, None).await?;
+    let (from, from_snapshot, to, to_snapshot) =
+        resolve_endpoints(inner, &args.from, &args.to).await?;
     let patch = from_snapshot.diff(&to_snapshot);
     Ok(DiffSummary {
-        from: from_id,
-        to: to_id,
+        from,
+        to,
         node_adds: patch.node_adds.len() as u64,
         node_mods: patch.node_mods.len() as u64,
         node_dels: patch.node_dels.len() as u64,
@@ -256,12 +268,12 @@ pub(super) async fn topology_delta(
     inner: &mut Inner,
     args: TopologyDeltaArgs,
 ) -> PraxisResult<TopologyDeltaResult> {
-    let (from_id, from_snapshot, _) = resolve_snapshot(inner, &args.from, None).await?;
-    let (to_id, to_snapshot, _) = resolve_snapshot(inner, &args.to, None).await?;
+    let (from, from_snapshot, to, to_snapshot) =
+        resolve_endpoints(inner, &args.from, &args.to).await?;
     let patch = from_snapshot.diff(&to_snapshot);
     Ok(TopologyDeltaResult {
-        from: from_id,
-        to: to_id,
+        from,
+        to,
         node_adds: patch.node_adds.len() as u64,
         node_dels: patch.node_dels.len() as u64,
         edge_adds: patch.edge_adds.len() as u64,
@@ -317,9 +329,47 @@ pub(super) async fn merge(inner: &mut Inner, request: MergeRequest) -> PraxisRes
             conflicts: None,
         });
     }
+
+    let commit_id = finalize_merge(
+        inner,
+        MergeCommitPlan {
+            request: &request,
+            source_head,
+            target_head,
+            target_snapshot: target_snapshot.as_ref(),
+            changes,
+        },
+    )
+    .await?;
+
+    Ok(MergeResponse {
+        result: Some(commit_id),
+        conflicts: None,
+    })
+}
+
+/// The resolved inputs needed to build and persist a merge commit.
+struct MergeCommitPlan<'a> {
+    request: &'a MergeRequest,
+    source_head: String,
+    target_head: String,
+    target_snapshot: &'a GraphSnapshot,
+    changes: ChangeSet,
+}
+
+/// Builds the merge commit from the resolved [`MergeCommitPlan`] and persists it,
+/// returning the new commit id. Split out of [`merge`] to keep it cohesive.
+async fn finalize_merge(inner: &mut Inner, plan: MergeCommitPlan<'_>) -> PraxisResult<String> {
+    let MergeCommitPlan {
+        request,
+        source_head,
+        target_head,
+        target_snapshot,
+        changes,
+    } = plan;
     let normalized_changes = normalize_change_set(&changes);
 
-    let parents = vec![target_head.clone(), source_head.clone()];
+    let parents = vec![target_head.clone(), source_head];
     let message = format!("merge {} -> {}", request.source, request.target);
     let tags = vec!["merge".into()];
     let commit_id = derive_commit_id(
@@ -348,22 +398,17 @@ pub(super) async fn merge(inner: &mut Inner, request: MergeRequest) -> PraxisRes
     };
     let snapshot = Arc::new(target_snapshot.apply(&normalized_changes, inner.registry.as_ref())?);
 
-    let commit_id = persist_commit(
+    persist_commit(
         inner,
         CommitToPersist {
-            branch: request.target,
+            branch: request.target.clone(),
             prev_head: Some(target_head),
             summary,
             snapshot,
             change_set: normalized_changes,
         },
     )
-    .await?;
-
-    Ok(MergeResponse {
-        result: Some(commit_id),
-        conflicts: None,
-    })
+    .await
 }
 
 fn detect_conflicts(source: &DiffPatch, target: &DiffPatch) -> Vec<MergeConflict> {

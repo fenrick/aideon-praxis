@@ -496,6 +496,148 @@ function useNodeContextMenu(
 }
 
 /**
+ * Build a refresh handler that reloads the current graph view, swallowing any
+ * rejection from the fire-and-forget reload.
+ * @param loadView - Reloads the graph view.
+ * @returns A stable refresh handler.
+ */
+function useRefreshHandler(loadView: () => Promise<void>) {
+  return useCallback(() => {
+    loadView().catch((_ignoredError: unknown) => {
+      return;
+    });
+  }, [loadView]);
+}
+
+/**
+ * Build the node-search selection handler that selects the chosen node and
+ * closes the search dialog.
+ * @param handleSelection - Propagates the new selection upward.
+ * @param setNodeSearchOpen - Toggles the node-search dialog.
+ * @returns A stable handler for a node picked in the search dialog.
+ */
+function useNodeSelectedHandler(
+  handleSelection: (nextSelection: { nodes?: Node[]; edges?: Edge[] }) => void,
+  setNodeSearchOpen: (open: boolean) => void,
+) {
+  return useCallback(
+    (node: Node) => {
+      handleSelection({ nodes: [node], edges: [] });
+      setNodeSearchOpen(false);
+    },
+    [handleSelection, setNodeSearchOpen],
+  );
+}
+
+type GraphChrome = ReturnType<typeof useGraphChrome>;
+type GraphTranslator = ReturnType<typeof useTranslations<'engines.praxis.widgets.graphWidget'>>;
+
+/**
+ * Render the React Flow canvas decorations: background grid plus the optional
+ * controls and mini-map overlays.
+ * @param properties - Component properties.
+ * @param properties.chrome - Canvas chrome state from `useGraphChrome`.
+ */
+function GraphCanvasDecorations({ chrome }: { readonly chrome: GraphChrome }) {
+  const { background, showControls, showMiniMap } = chrome;
+  return (
+    <>
+      <Background
+        color="hsl(var(--muted-foreground))"
+        variant={resolveBackgroundVariant(background)}
+        gap={16}
+        size={1}
+      />
+      {showControls ? <Controls position="bottom-right" /> : undefined}
+      {showMiniMap ? (
+        <MiniMap
+          position="top-right"
+          nodeColor={() => 'hsl(var(--primary) / 0.85)'}
+          maskColor="hsl(var(--background) / 0.85)"
+          className="border-border/60 bg-background/80 rounded-xl border shadow-sm"
+        />
+      ) : undefined}
+    </>
+  );
+}
+
+/**
+ * Render the top-left control panel: background selector, mini-map/controls
+ * toggles, auto-layout, and the node-search launcher.
+ * @param properties - Component properties.
+ * @param properties.t - Scoped translator for the graph widget.
+ * @param properties.chrome - Canvas chrome state from `useGraphChrome`.
+ * @param properties.onAutoLayout - Handler that re-applies the automatic layout.
+ */
+function GraphControlsPanel({
+  t,
+  chrome,
+  onAutoLayout,
+}: {
+  readonly t: GraphTranslator;
+  readonly chrome: GraphChrome;
+  readonly onAutoLayout: () => void;
+}) {
+  const {
+    background,
+    handleBackgroundChange,
+    showMiniMap,
+    showControls,
+    toggleMiniMap,
+    toggleControls,
+    openNodeSearch,
+  } = chrome;
+  return (
+    <Panel
+      position="top-left"
+      className="border-border/60 bg-background/90 text-muted-foreground rounded-2xl border p-3 text-xs shadow"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <ToggleGroup
+          type="single"
+          value={background}
+          onValueChange={handleBackgroundChange}
+          className="gap-1"
+        >
+          <ToggleGroupItem value="dots" aria-label={t('backgroundDotsAria')} className="h-7 px-2">
+            {t('backgroundDots')}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="lines" aria-label={t('backgroundLinesAria')} className="h-7 px-2">
+            {t('backgroundLines')}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="cross" aria-label={t('backgroundCrossAria')} className="h-7 px-2">
+            {t('backgroundCross')}
+          </ToggleGroupItem>
+        </ToggleGroup>
+        <Button
+          variant={showMiniMap ? 'secondary' : 'ghost'}
+          size="sm"
+          className="h-7 px-2 text-xs"
+          onClick={toggleMiniMap}
+        >
+          {t('miniMap')}
+        </Button>
+        <Button
+          variant={showControls ? 'secondary' : 'ghost'}
+          size="sm"
+          className="h-7 px-2 text-xs"
+          onClick={toggleControls}
+        >
+          {t('controls')}
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={onAutoLayout}>
+          {t('autoLayout')}
+        </Button>
+      </div>
+      <p className="text-muted-foreground/90 mt-2 text-[11px]">{t('metaActionsHint')}</p>
+      <Button variant="ghost" size="sm" className="mt-1 px-0 text-xs" onClick={openNodeSearch}>
+        {t('openNodeSearch')}
+      </Button>
+    </Panel>
+  );
+}
+
+/**
  *
  * @param root0
  * @param root0.widget
@@ -542,19 +684,8 @@ export function GraphWidget({
     onRequestMetaModelFocus,
   });
 
-  const {
-    background,
-    handleBackgroundChange,
-    showMiniMap,
-    showControls,
-    nodeSearchOpen,
-    setNodeSearchOpen,
-    nodeTypes,
-    edgeTypes,
-    toggleMiniMap,
-    toggleControls,
-    openNodeSearch,
-  } = useGraphChrome();
+  const chrome = useGraphChrome();
+  const { nodeSearchOpen, setNodeSearchOpen, nodeTypes, edgeTypes } = chrome;
 
   const handleNodesChange = useNodesChangeHandler(setNodes, persistLayout);
   useReattachInspectHandlers(setNodes, attachInspectHandlers);
@@ -563,15 +694,8 @@ export function GraphWidget({
   const { contextMenu, handleNodeContextMenu, dismissContextMenu, focusContextMenu } =
     useNodeContextMenu(nodes, onRequestMetaModelFocus);
 
-  const handleRefresh = () => {
-    loadView().catch((_ignoredError: unknown) => {
-      return;
-    });
-  };
-  const handleNodeSelected = (node: Node) => {
-    handleSelection({ nodes: [node], edges: [] });
-    setNodeSearchOpen(false);
-  };
+  const handleRefresh = useRefreshHandler(loadView);
+  const handleNodeSelected = useNodeSelectedHandler(handleSelection, setNodeSearchOpen);
 
   return (
     <div className="relative h-full w-full">
@@ -596,89 +720,8 @@ export function GraphWidget({
             onPaneClick={dismissContextMenu}
             onPaneContextMenu={dismissContextMenu}
           >
-            <Background
-              color="hsl(var(--muted-foreground))"
-              variant={resolveBackgroundVariant(background)}
-              gap={16}
-              size={1}
-            />
-            {showControls ? <Controls position="bottom-right" /> : undefined}
-            {showMiniMap ? (
-              <MiniMap
-                position="top-right"
-                nodeColor={() => 'hsl(var(--primary) / 0.85)'}
-                maskColor="hsl(var(--background) / 0.85)"
-                className="border-border/60 bg-background/80 rounded-xl border shadow-sm"
-              />
-            ) : undefined}
-            <Panel
-              position="top-left"
-              className="border-border/60 bg-background/90 text-muted-foreground rounded-2xl border p-3 text-xs shadow"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <ToggleGroup
-                  type="single"
-                  value={background}
-                  onValueChange={handleBackgroundChange}
-                  className="gap-1"
-                >
-                  <ToggleGroupItem
-                    value="dots"
-                    aria-label={t('backgroundDotsAria')}
-                    className="h-7 px-2"
-                  >
-                    {t('backgroundDots')}
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="lines"
-                    aria-label={t('backgroundLinesAria')}
-                    className="h-7 px-2"
-                  >
-                    {t('backgroundLines')}
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="cross"
-                    aria-label={t('backgroundCrossAria')}
-                    className="h-7 px-2"
-                  >
-                    {t('backgroundCross')}
-                  </ToggleGroupItem>
-                </ToggleGroup>
-                <Button
-                  variant={showMiniMap ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={toggleMiniMap}
-                >
-                  {t('miniMap')}
-                </Button>
-                <Button
-                  variant={showControls ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={toggleControls}
-                >
-                  {t('controls')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={handleAutoLayout}
-                >
-                  {t('autoLayout')}
-                </Button>
-              </div>
-              <p className="text-muted-foreground/90 mt-2 text-[11px]">{t('metaActionsHint')}</p>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-1 px-0 text-xs"
-                onClick={openNodeSearch}
-              >
-                {t('openNodeSearch')}
-              </Button>
-            </Panel>
+            <GraphCanvasDecorations chrome={chrome} />
+            <GraphControlsPanel t={t} chrome={chrome} onAutoLayout={handleAutoLayout} />
           </ReactFlow>
         </ReactFlowProvider>
         {loading ? <GraphWidgetOverlay message={t('loadingGraph')} /> : undefined}
