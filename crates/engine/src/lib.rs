@@ -10,7 +10,7 @@
 use serde::Serialize;
 use specta::Type;
 
-use aideon_praxis::meta::MetaModelRegistry;
+use aideon_praxis::meta::{MetaModelDocument, MetaModelRegistry};
 
 pub use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 pub use mneme_core::{Id, Value};
@@ -155,6 +155,38 @@ pub struct Viewpoint {
     pub layers: Vec<String>,
 }
 
+/// A request to author one typed relationship: the relationship key, both
+/// endpoint entity ids, and the flat attribute map to validate and store.
+pub struct TypedEdgeRequest<'a> {
+    /// The relationship key (e.g. `realises`).
+    pub rel_type: &'a str,
+    /// The source entity id.
+    pub src_id: &'a str,
+    /// The destination entity id.
+    pub dst_id: &'a str,
+    /// The supplied attributes, as a flat JSON object.
+    pub props: serde_json::Value,
+}
+
+/// A single plan/actual claim: the entity + attribute it targets, the value to
+/// assert, and the layer/valid-time coordinate it holds over.
+pub struct PropertyClaim<'a> {
+    /// The entity the claim is about.
+    pub entity_id: &'a str,
+    /// The entity's metamodel domain type key.
+    pub type_id: &'a str,
+    /// The attribute name (e.g. `lifecycle`).
+    pub attribute: &'a str,
+    /// The value to assert.
+    pub value: &'a str,
+    /// `"plan"` or `"actual"`.
+    pub layer: &'a str,
+    /// The valid-time the claim opens at.
+    pub valid_from: i64,
+    /// The valid-time the claim closes at; `None` for open-ended.
+    pub valid_to: Option<i64>,
+}
+
 /// The in-process engine handle wrapping one open workspace.
 pub struct Engine {
     workspace: Workspace,
@@ -199,19 +231,7 @@ impl Engine {
             .map_err(|e| StoreError::Corruption(format!("effective-schema compile failed: {e}")))?;
         let edge_rules = mneme_core::effective::compile_edge_rules(&batch)
             .map_err(|e| StoreError::Corruption(format!("edge-rule compile failed: {e}")))?;
-        let document = registry.document();
-        let mut type_labels = BTreeMap::new();
-        let mut attribute_labels = BTreeMap::new();
-        for ty in &document.types {
-            if let Some(uuid) = ty.uuid.as_ref() {
-                type_labels.insert(uuid.clone(), ty.id.clone());
-            }
-            for attr in &ty.attributes {
-                if let Some(uuid) = attr.uuid.as_ref() {
-                    attribute_labels.insert(uuid.clone(), attr.name.clone());
-                }
-            }
-        }
+        let (type_labels, attribute_labels) = build_label_maps(&registry.document());
         Ok(Self {
             workspace,
             registry,
@@ -380,13 +400,13 @@ impl Engine {
     /// On success it appends a `create-edge` (carrying the relationship symbol)
     /// followed by one `set-property-interval` per supplied attribute on the
     /// `plan` layer over the open interval.
-    pub fn author_typed_edge(
-        &mut self,
-        rel_type: &str,
-        src_id: &str,
-        dst_id: &str,
-        props: serde_json::Value,
-    ) -> Result<EdgeRecord> {
+    pub fn author_typed_edge(&mut self, request: TypedEdgeRequest<'_>) -> Result<EdgeRecord> {
+        let TypedEdgeRequest {
+            rel_type,
+            src_id,
+            dst_id,
+            props,
+        } = request;
         // Resolve the compiled rule, effective schema, and storage symbol; an
         // unknown relationship key is rejected before any op is appended.
         let (rule, schema, rel_symbol) = self.resolve_edge_rules(rel_type)?;
@@ -614,17 +634,16 @@ impl Engine {
     /// out-of-range value is refused with [`StoreError::Validation`].
     ///
     /// `layer` is `"plan"` or `"actual"`; `valid_to` is `None` for open-ended.
-    #[allow(clippy::too_many_arguments)] // a claim is a flat 7-field coordinate
-    pub fn set_property_claim(
-        &mut self,
-        entity_id: &str,
-        type_id: &str,
-        attribute: &str,
-        value: &str,
-        layer: &str,
-        valid_from: i64,
-        valid_to: Option<i64>,
-    ) -> Result<()> {
+    pub fn set_property_claim(&mut self, claim: PropertyClaim<'_>) -> Result<()> {
+        let PropertyClaim {
+            entity_id,
+            type_id,
+            attribute,
+            value,
+            layer,
+            valid_from,
+            valid_to,
+        } = claim;
         self.check_attribute_value(type_id, attribute, value)?;
         let entity = Id::from_str(entity_id).map_err(|_| StoreError::Validation {
             message: "entity id is not a UUID".into(),
@@ -700,43 +719,17 @@ impl Engine {
     /// Compare the twin at two viewpoints, returning only the slots whose
     /// resolved value differs ([ADR-0008]).
     pub fn diff(&self, before: &Viewpoint, after: &Viewpoint) -> Result<Vec<PropertyDelta>> {
-        let index = |entities: Vec<ResolvedEntity>| {
-            let mut map: BTreeMap<(String, String), (Option<String>, Option<String>)> =
-                BTreeMap::new();
-            for entity in entities {
-                for property in entity.properties {
-                    map.insert(
-                        (entity.node_id.clone(), property.field),
-                        (entity.type_label.clone(), Some(property.value)),
-                    );
-                }
-            }
-            map
-        };
-        let a = index(self.state_at(before)?);
-        let b = index(self.state_at(after)?);
+        let a = index_viewpoint(self.state_at(before)?);
+        let b = index_viewpoint(self.state_at(after)?);
 
         let mut keys: Vec<(String, String)> = a.keys().chain(b.keys()).cloned().collect();
         keys.sort();
         keys.dedup();
 
-        let mut deltas = Vec::new();
-        for key in keys {
-            let before_v = a.get(&key);
-            let after_v = b.get(&key);
-            let before_value = before_v.and_then(|(_, v)| v.clone());
-            let after_value = after_v.and_then(|(_, v)| v.clone());
-            if before_value != after_value {
-                deltas.push(PropertyDelta {
-                    node_id: key.0,
-                    type_label: before_v.or(after_v).and_then(|(t, _)| t.clone()),
-                    field: key.1,
-                    before: before_value,
-                    after: after_value,
-                });
-            }
-        }
-        Ok(deltas)
+        Ok(keys
+            .into_iter()
+            .filter_map(|key| property_delta(&key, a.get(&key), b.get(&key)))
+            .collect())
     }
 
     /// Check a candidate value against an attribute's metamodel kind/enum, so a
@@ -857,6 +850,72 @@ impl Engine {
     pub fn workspace_mut(&mut self) -> &mut Workspace {
         &mut self.workspace
     }
+}
+
+/// A viewpoint's resolved slots, keyed by `(entity id, attribute)` and carrying
+/// the entity's type label alongside the resolved value.
+type ViewpointIndex = BTreeMap<(String, String), (Option<String>, Option<String>)>;
+
+/// Build the reverse symbol-UUID → domain-key maps for entity types and their
+/// attributes from the compiled metamodel document.
+fn build_label_maps(
+    document: &MetaModelDocument,
+) -> (BTreeMap<String, String>, BTreeMap<String, String>) {
+    let type_labels = document
+        .types
+        .iter()
+        .filter_map(|ty| ty.uuid.as_ref().map(|uuid| (uuid.clone(), ty.id.clone())))
+        .collect();
+    let attribute_labels = document
+        .types
+        .iter()
+        .flat_map(|ty| &ty.attributes)
+        .filter_map(|attr| {
+            attr.uuid
+                .as_ref()
+                .map(|uuid| (uuid.clone(), attr.name.clone()))
+        })
+        .collect();
+    (type_labels, attribute_labels)
+}
+
+/// Index a viewpoint's resolved entities by `(entity id, attribute)` so two
+/// viewpoints can be compared slot for slot.
+fn index_viewpoint(entities: Vec<ResolvedEntity>) -> ViewpointIndex {
+    entities
+        .into_iter()
+        .flat_map(|entity| {
+            let node_id = entity.node_id;
+            let type_label = entity.type_label;
+            entity.properties.into_iter().map(move |property| {
+                (
+                    (node_id.clone(), property.field),
+                    (type_label.clone(), Some(property.value)),
+                )
+            })
+        })
+        .collect()
+}
+
+/// Build the [`PropertyDelta`] for one slot, or `None` when the resolved value
+/// is unchanged between the two viewpoints.
+fn property_delta(
+    key: &(String, String),
+    before: Option<&(Option<String>, Option<String>)>,
+    after: Option<&(Option<String>, Option<String>)>,
+) -> Option<PropertyDelta> {
+    let before_value = before.and_then(|(_, v)| v.clone());
+    let after_value = after.and_then(|(_, v)| v.clone());
+    if before_value == after_value {
+        return None;
+    }
+    Some(PropertyDelta {
+        node_id: key.0.clone(),
+        type_label: before.or(after).and_then(|(t, _)| t.clone()),
+        field: key.1.clone(),
+        before: before_value,
+        after: after_value,
+    })
 }
 
 /// Parse a layer string (`plan` / `actual`) into the canonical [`Layer`].
@@ -1037,7 +1096,12 @@ mod tests {
 
         // Application realises Capability — a valid seed relationship.
         let edge = engine
-            .author_typed_edge("realises", &app, &cap, serde_json::json!({}))
+            .author_typed_edge(TypedEdgeRequest {
+                rel_type: "realises",
+                src_id: &app,
+                dst_id: &cap,
+                props: serde_json::json!({}),
+            })
             .unwrap();
         assert_eq!(edge.type_label.as_deref(), Some("realises"));
         assert!(!edge.tombstoned);
@@ -1055,23 +1119,23 @@ mod tests {
         let (app, _cap, data, _) = seed_nodes(&mut engine);
 
         engine
-            .author_typed_edge(
-                "accesses",
-                &app,
-                &data,
-                serde_json::json!({ "mode": "readwrite" }),
-            )
+            .author_typed_edge(TypedEdgeRequest {
+                rel_type: "accesses",
+                src_id: &app,
+                dst_id: &data,
+                props: serde_json::json!({ "mode": "readwrite" }),
+            })
             .unwrap();
         let after_first = engine.status().unwrap().applied_op_count;
 
         // A second accesses between the same pair is rejected (allowDuplicate=false).
         let err = engine
-            .author_typed_edge(
-                "accesses",
-                &app,
-                &data,
-                serde_json::json!({ "mode": "read" }),
-            )
+            .author_typed_edge(TypedEdgeRequest {
+                rel_type: "accesses",
+                src_id: &app,
+                dst_id: &data,
+                props: serde_json::json!({ "mode": "read" }),
+            })
             .unwrap_err();
         assert!(matches!(err, StoreError::Validation { .. }));
         assert_eq!(
@@ -1104,7 +1168,12 @@ mod tests {
             let before = engine.status().unwrap().applied_op_count;
 
             let err = engine
-                .author_typed_edge(rel_type, &src, &dst, serde_json::json!({}))
+                .author_typed_edge(TypedEdgeRequest {
+                    rel_type,
+                    src_id: &src,
+                    dst_id: &dst,
+                    props: serde_json::json!({}),
+                })
                 .unwrap_err();
             assert!(matches!(err, StoreError::Validation { .. }));
             assert_eq!(engine.status().unwrap().applied_op_count, before);
@@ -1117,7 +1186,12 @@ mod tests {
         let mut engine = Engine::create(dir.path(), Some(Id::new_v4())).unwrap();
         let (app, cap, _data, _) = seed_nodes(&mut engine);
         let err = engine
-            .author_typed_edge("bogus", &app, &cap, serde_json::json!({}))
+            .author_typed_edge(TypedEdgeRequest {
+                rel_type: "bogus",
+                src_id: &app,
+                dst_id: &cap,
+                props: serde_json::json!({}),
+            })
             .unwrap_err();
         assert!(matches!(err, StoreError::Validation { .. }));
     }
@@ -1215,6 +1289,39 @@ mod tests {
         );
     }
 
+    /// Build an `Application.lifecycle` claim — a test convenience over the
+    /// [`PropertyClaim`] coordinate.
+    fn lifecycle_claim<'a>(
+        id: &'a str,
+        value: &'a str,
+        layer: &'a str,
+        interval: (i64, Option<i64>),
+    ) -> PropertyClaim<'a> {
+        PropertyClaim {
+            entity_id: id,
+            type_id: "Application",
+            attribute: "lifecycle",
+            value,
+            layer,
+            valid_from: interval.0,
+            valid_to: interval.1,
+        }
+    }
+
+    /// Resolve one entity's `lifecycle` slot at a viewpoint — a test convenience.
+    fn lifecycle_at(engine: &Engine, id: &str, view: &Viewpoint) -> ResolvedProperty {
+        engine
+            .state_at(view)
+            .unwrap()
+            .into_iter()
+            .find(|e| e.node_id == id)
+            .unwrap()
+            .properties
+            .into_iter()
+            .find(|p| p.field == "lifecycle")
+            .unwrap()
+    }
+
     #[test]
     fn plan_and_actual_claims_resolve_and_diff_across_viewpoints() {
         let dir = TempDir::new().unwrap();
@@ -1226,21 +1333,13 @@ mod tests {
             .unwrap();
         let id = app.node_id.clone();
 
-        // A plan claim: lifecycle = Target over [0, 100). An actual claim:
-        // lifecycle = Current from 50 onward (open-ended).
+        // A plan claim: lifecycle = Build over [0, 100). An actual claim:
+        // lifecycle = Run from 50 onward (open-ended).
         engine
-            .set_property_claim(
-                &id,
-                "Application",
-                "lifecycle",
-                "Build",
-                "plan",
-                0,
-                Some(100),
-            )
+            .set_property_claim(lifecycle_claim(&id, "Build", "plan", (0, Some(100))))
             .unwrap();
         engine
-            .set_property_claim(&id, "Application", "lifecycle", "Run", "actual", 50, None)
+            .set_property_claim(lifecycle_claim(&id, "Run", "actual", (50, None)))
             .unwrap();
 
         let plan_first = Viewpoint {
@@ -1252,27 +1351,13 @@ mod tests {
             layers: vec!["actual".into(), "plan".into()],
         };
 
-        // At as_of=10 only the plan interval covers: lifecycle resolves to Target.
-        let early = engine.state_at(&plan_first).unwrap();
-        let early_app = early.iter().find(|e| e.node_id == id).unwrap();
-        let early_life = early_app
-            .properties
-            .iter()
-            .find(|p| p.field == "lifecycle")
-            .unwrap();
+        // At as_of=10 only the plan interval covers: lifecycle resolves to Build.
+        let early_life = lifecycle_at(&engine, &id, &plan_first);
         assert_eq!(early_life.value, "Build");
         assert_eq!(early_life.layer, "plan");
 
-        // At as_of=60 the actual layer wins: lifecycle resolves to Current.
-        let late = engine.state_at(&after_actual).unwrap();
-        let late_life = late
-            .iter()
-            .find(|e| e.node_id == id)
-            .unwrap()
-            .properties
-            .iter()
-            .find(|p| p.field == "lifecycle")
-            .unwrap();
+        // At as_of=60 the actual layer wins: lifecycle resolves to Run.
+        let late_life = lifecycle_at(&engine, &id, &after_actual);
         assert_eq!(late_life.value, "Run");
         assert_eq!(late_life.layer, "actual");
 
@@ -1287,22 +1372,13 @@ mod tests {
 
         // A claim with an out-of-range enum is refused; no op appended.
         let before_ops = engine.status().unwrap().applied_op_count;
-        let bad =
-            engine.set_property_claim(&id, "Application", "lifecycle", "Nonsense", "plan", 0, None);
+        let bad = engine.set_property_claim(lifecycle_claim(&id, "Nonsense", "plan", (0, None)));
         assert!(matches!(bad, Err(StoreError::Validation { .. })));
         assert_eq!(engine.status().unwrap().applied_op_count, before_ops);
 
         // Resolution survives a runtime wipe: it re-derives from canonical ops.
         let rebuilt = engine.rebuild().unwrap();
-        let after = rebuilt.state_at(&after_actual).unwrap();
-        let after_life = after
-            .iter()
-            .find(|e| e.node_id == id)
-            .unwrap()
-            .properties
-            .iter()
-            .find(|p| p.field == "lifecycle")
-            .unwrap();
+        let after_life = lifecycle_at(&rebuilt, &id, &after_actual);
         assert_eq!(after_life.value, "Run", "resolution re-derives after wipe");
     }
 
@@ -1325,26 +1401,15 @@ mod tests {
             .author_typed_node("Application", serde_json::json!({ "name": "Billing" }))
             .unwrap();
         engine
-            .set_property_claim(
+            .set_property_claim(lifecycle_claim(
                 &app.node_id,
-                "Application",
-                "lifecycle",
                 "Build",
                 "plan",
-                0,
-                Some(100),
-            )
+                (0, Some(100)),
+            ))
             .unwrap();
         engine
-            .set_property_claim(
-                &app.node_id,
-                "Application",
-                "lifecycle",
-                "Run",
-                "actual",
-                50,
-                None,
-            )
+            .set_property_claim(lifecycle_claim(&app.node_id, "Run", "actual", (50, None)))
             .unwrap();
 
         let view = Viewpoint {

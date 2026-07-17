@@ -33,13 +33,23 @@ export function MainScreen() {
   );
 }
 
+interface SetupError {
+  readonly code: string;
+  readonly message: string;
+}
+
+interface HostSetupState {
+  readonly backendReady: boolean;
+  readonly setupPhase: string;
+  readonly setupError: SetupError | undefined;
+}
+
 /**
- * Splash screen displayed while the host initializes.
+ * Build the rotating splash load lines from translations.
+ * @param t - Translation lookup scoped to the `app` namespace.
  */
-export function SplashScreenRoute() {
-  const t = useTranslations('app');
-  const shouldSignalFrontendReady = true;
-  const loadLines = useMemo(
+function useSplashLoadLines(t: ReturnType<typeof useTranslations>): readonly string[] {
+  return useMemo(
     () => [
       t('splash.lines.reticulatingSplines'),
       t('splash.lines.weavingTwinOrbits'),
@@ -56,47 +66,47 @@ export function SplashScreenRoute() {
     ],
     [t],
   );
+}
 
-  const [currentLine, setCurrentLine] = useState<string>(loadLines[0] ?? '');
+/**
+ * Subscribe to host setup events and track the backend readiness state.
+ */
+function useHostSetupState(): HostSetupState {
   const [backendReady, setBackendReady] = useState(false);
   const [setupPhase, setSetupPhase] = useState<string>('starting');
-  const [setupError, setSetupError] = useState<{ code: string; message: string } | undefined>();
+  const [setupError, setSetupError] = useState<SetupError | undefined>();
 
   useEffect(() => {
     if (!isTauriRuntime()) {
       return;
     }
     let cancelled = false;
-    let unlistenBackend: undefined | (() => void);
-    let unlistenProgress: undefined | (() => void);
-    let unlistenFailed: undefined | (() => void);
+    const unlisteners: (undefined | (() => void))[] = [];
     const subscribe = async () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
         if (cancelled) {
           return;
         }
-        unlistenBackend = await listen(HOST_EVENT_NAMES.setupBackendReady, () => {
-          setBackendReady(true);
-        });
-        unlistenProgress = await listen<{ phase?: string }>(
-          HOST_EVENT_NAMES.setupProgress,
-          (event) => {
+        unlisteners.push(
+          await listen(HOST_EVENT_NAMES.setupBackendReady, () => {
+            setBackendReady(true);
+          }),
+          await listen<{ phase?: string }>(HOST_EVENT_NAMES.setupProgress, (event) => {
             const phase = event.payload.phase;
             if (typeof phase === 'string' && phase.length > 0) {
               setSetupPhase(phase);
             }
-          },
-        );
-        unlistenFailed = await listen<{ code?: string; message?: string }>(
-          HOST_EVENT_NAMES.setupFailed,
-          (event) => {
-            const code = event.payload.code;
-            const message = event.payload.message;
-            if (typeof code === 'string' && typeof message === 'string') {
-              setSetupError({ code, message });
-            }
-          },
+          }),
+          await listen<{ code?: string; message?: string }>(
+            HOST_EVENT_NAMES.setupFailed,
+            (event) => {
+              const { code, message } = event.payload;
+              if (typeof code === 'string' && typeof message === 'string') {
+                setSetupError({ code, message });
+              }
+            },
+          ),
         );
       } catch {
         // ignore missing tauri event module (browser preview)
@@ -105,9 +115,9 @@ export function SplashScreenRoute() {
     subscribe().catch(() => false);
     return () => {
       cancelled = true;
-      unlistenBackend?.();
-      unlistenProgress?.();
-      unlistenFailed?.();
+      for (const unlisten of unlisteners) {
+        unlisten?.();
+      }
     };
   }, []);
 
@@ -128,62 +138,114 @@ export function SplashScreenRoute() {
     void checkSetup();
   }, []);
 
+  return { backendReady, setupPhase, setupError };
+}
+
+/**
+ * Resolve the status line to show for the current setup state.
+ * @param t - Translation lookup scoped to the `app` namespace.
+ * @param setup - Current host setup state.
+ */
+function resolveStatusLine(
+  t: ReturnType<typeof useTranslations>,
+  setup: HostSetupState,
+): string | undefined {
+  if (setup.setupError) {
+    return t('hostStatus.setupFailedBanner');
+  }
+  if (setup.backendReady) {
+    return t('hostStatus.backendReady');
+  }
+  if (setup.setupPhase === 'migrating') {
+    return t('hostStatus.migrating');
+  }
+  return undefined;
+}
+
+/**
+ * Compute the rotating splash line, honouring host setup status overrides.
+ * @param t - Translation lookup scoped to the `app` namespace.
+ * @param loadLines - Rotating placeholder lines.
+ * @param setup - Current host setup state.
+ */
+function useSplashLine(
+  t: ReturnType<typeof useTranslations>,
+  loadLines: readonly string[],
+  setup: HostSetupState,
+): string {
+  const [currentLine, setCurrentLine] = useState<string>(loadLines[0] ?? '');
+
   useEffect(() => {
-    let ix = 0;
+    let index = 0;
     const interval = setInterval(() => {
-      if (setupError) {
-        setCurrentLine(t('hostStatus.setupFailedBanner'));
+      const statusLine = resolveStatusLine(t, setup);
+      if (statusLine !== undefined) {
+        setCurrentLine(statusLine);
         return;
       }
-      if (backendReady) {
-        setCurrentLine(t('hostStatus.backendReady'));
-        return;
-      }
-      if (setupPhase === 'migrating') {
-        setCurrentLine(t('hostStatus.migrating'));
-        return;
-      }
-      setCurrentLine(loadLines[ix % loadLines.length] ?? '');
-      ix += 1;
+      setCurrentLine(loadLines[index % loadLines.length] ?? '');
+      index += 1;
     }, 800);
     return () => {
       clearInterval(interval);
     };
-  }, [backendReady, loadLines, setupError, setupPhase, t]);
+  }, [loadLines, setup, t]);
+
+  return currentLine;
+}
+
+/**
+ * Error overlay rendered when host setup fails.
+ * @param root0 - Component props.
+ * @param root0.setupError - The reported setup error.
+ */
+function SetupErrorOverlay({ setupError }: { readonly setupError: SetupError }): ReactElement {
+  const t = useTranslations('app');
+  return (
+    <div className="fixed inset-0 flex items-end justify-end p-6">
+      <Card className="border-destructive/50 bg-card/90 w-full max-w-md shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-destructive">{t('hostStatus.setupFailedTitle')}</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            {t('hostStatus.setupFailedDescription')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="border-border/60 bg-muted/30 rounded-md border px-3 py-2">
+            <p className="text-xs font-medium">
+              <span className="font-mono">{setupError.code}</span>
+            </p>
+            <p className="text-muted-foreground mt-1 text-xs">{setupError.message}</p>
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                openStatusWindow().catch(() => false);
+              }}
+            >
+              {t('hostStatus.openStatus')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/**
+ * Splash screen displayed while the host initializes.
+ */
+export function SplashScreenRoute() {
+  const t = useTranslations('app');
+  const loadLines = useSplashLoadLines(t);
+  const setup = useHostSetupState();
+  const currentLine = useSplashLine(t, loadLines, setup);
 
   return (
-    <FrontendReady enabled={shouldSignalFrontendReady}>
+    <FrontendReady enabled>
       <PraxisSplashScreen line={currentLine} />
-      {setupError && (
-        <div className="fixed inset-0 flex items-end justify-end p-6">
-          <Card className="border-destructive/50 bg-card/90 w-full max-w-md shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-destructive">{t('hostStatus.setupFailedTitle')}</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                {t('hostStatus.setupFailedDescription')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="border-border/60 bg-muted/30 rounded-md border px-3 py-2">
-                <p className="text-xs font-medium">
-                  <span className="font-mono">{setupError.code}</span>
-                </p>
-                <p className="text-muted-foreground mt-1 text-xs">{setupError.message}</p>
-              </div>
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    openStatusWindow().catch(() => false);
-                  }}
-                >
-                  {t('hostStatus.openStatus')}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {setup.setupError && <SetupErrorOverlay setupError={setup.setupError} />}
     </FrontendReady>
   );
 }

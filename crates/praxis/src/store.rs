@@ -35,15 +35,20 @@ pub struct MemoryStore {
     tags: Arc<Mutex<HashMap<String, String>>>,
 }
 
+/// Locks an in-memory store, mapping a poisoned mutex to an integrity error.
+fn lock_store<'a, T>(
+    mutex: &'a Mutex<T>,
+    store: &str,
+) -> PraxisResult<std::sync::MutexGuard<'a, T>> {
+    mutex.lock().map_err(|_| PraxisError::IntegrityViolation {
+        message: format!("{store} store poisoned"),
+    })
+}
+
 #[async_trait]
 impl Store for MemoryStore {
     async fn list_branches(&self) -> PraxisResult<Vec<(String, Option<String>)>> {
-        let guard = self
-            .branches
-            .lock()
-            .map_err(|_| PraxisError::IntegrityViolation {
-                message: "branch store poisoned".into(),
-            })?;
+        let guard = lock_store(&self.branches, "branch")?;
         Ok(guard
             .iter()
             .map(|(name, head)| (name.clone(), head.clone()))
@@ -51,23 +56,13 @@ impl Store for MemoryStore {
     }
 
     async fn ensure_branch(&self, name: &str) -> PraxisResult<()> {
-        let mut guard = self
-            .branches
-            .lock()
-            .map_err(|_| PraxisError::IntegrityViolation {
-                message: "branch store poisoned".into(),
-            })?;
+        let mut guard = lock_store(&self.branches, "branch")?;
         guard.entry(name.to_string()).or_insert(None);
         Ok(())
     }
 
     async fn get_branch_head(&self, name: &str) -> PraxisResult<Option<String>> {
-        let guard = self
-            .branches
-            .lock()
-            .map_err(|_| PraxisError::IntegrityViolation {
-                message: "branch store poisoned".into(),
-            })?;
+        let guard = lock_store(&self.branches, "branch")?;
         Ok(guard.get(name).cloned().flatten())
     }
 
@@ -77,12 +72,7 @@ impl Store for MemoryStore {
         expected: Option<&str>,
         next: Option<&str>,
     ) -> PraxisResult<()> {
-        let mut guard = self
-            .branches
-            .lock()
-            .map_err(|_| PraxisError::IntegrityViolation {
-                message: "branch store poisoned".into(),
-            })?;
+        let mut guard = lock_store(&self.branches, "branch")?;
         let current = guard.get(name).cloned().flatten();
         if current.as_deref() != expected {
             return Err(PraxisError::ConcurrencyConflict {
@@ -96,44 +86,24 @@ impl Store for MemoryStore {
     }
 
     async fn put_commit(&self, commit: &PersistedCommit) -> PraxisResult<()> {
-        let mut guard = self
-            .commits
-            .lock()
-            .map_err(|_| PraxisError::IntegrityViolation {
-                message: "commit store poisoned".into(),
-            })?;
+        let mut guard = lock_store(&self.commits, "commit")?;
         guard.insert(commit.summary.id.clone(), commit.clone());
         Ok(())
     }
 
     async fn get_commit(&self, id: &str) -> PraxisResult<Option<PersistedCommit>> {
-        let guard = self
-            .commits
-            .lock()
-            .map_err(|_| PraxisError::IntegrityViolation {
-                message: "commit store poisoned".into(),
-            })?;
+        let guard = lock_store(&self.commits, "commit")?;
         Ok(guard.get(id).cloned())
     }
 
     async fn put_tag(&self, tag: &str, commit_id: &str) -> PraxisResult<()> {
-        let mut guard = self
-            .tags
-            .lock()
-            .map_err(|_| PraxisError::IntegrityViolation {
-                message: "tag store poisoned".into(),
-            })?;
+        let mut guard = lock_store(&self.tags, "tag")?;
         guard.insert(tag.to_string(), commit_id.to_string());
         Ok(())
     }
 
     async fn get_tag(&self, tag: &str) -> PraxisResult<Option<String>> {
-        let guard = self
-            .tags
-            .lock()
-            .map_err(|_| PraxisError::IntegrityViolation {
-                message: "tag store poisoned".into(),
-            })?;
+        let guard = lock_store(&self.tags, "tag")?;
         Ok(guard.get(tag).cloned())
     }
 }

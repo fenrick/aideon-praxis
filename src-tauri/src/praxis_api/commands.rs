@@ -75,101 +75,89 @@ pub async fn praxis_scenario_list(
     Ok(praxis_scenario_list_inner(state.engine(), request).await)
 }
 
-async fn praxis_graph_view_inner(
+/// A view definition that can be resolved against a snapshot into its view model.
+///
+/// Ties each `*ViewDefinition` to its `*ViewModel` so the resolve-then-build flow
+/// is expressed once in [`build_snapshot_view`] rather than duplicated per view.
+trait SnapshotView: Sized {
+    type Model;
+
+    fn as_of(&self) -> &str;
+    fn scenario(&self) -> Option<&str>;
+    fn into_model(
+        self,
+        snapshot: &GraphSnapshot,
+        resolved_as_of: &str,
+        resolved_branch: &str,
+    ) -> Self::Model;
+}
+
+async fn build_snapshot_view<D: SnapshotView>(
     engine: &TemporalEngine,
-    definition: GraphViewDefinition,
-) -> Result<GraphViewModel, HostError> {
+    definition: D,
+) -> Result<D::Model, HostError> {
     let (commit_id, snapshot, branch) =
-        resolve_snapshot(engine, &definition.as_of, definition.scenario.as_deref()).await?;
-    Ok(GraphViewModel::from_snapshot(
-        definition,
-        snapshot.as_ref(),
-        &commit_id,
-        &branch,
-    ))
+        resolve_snapshot(engine, definition.as_of(), definition.scenario()).await?;
+    Ok(definition.into_model(snapshot.as_ref(), &commit_id, &branch))
 }
 
-async fn praxis_artefact_execute_graph_inner(
-    engine: &TemporalEngine,
-    request: IpcRequest<GraphViewDefinition>,
-) -> IpcResponse<GraphViewModel> {
-    command_envelope("praxis_artefact_execute_graph", request, |definition| {
-        praxis_graph_view_inner(engine, definition)
-    })
-    .await
+/// Wires a view definition/model pair to its [`SnapshotView`] impl and the
+/// telemetry-wrapped `*_inner` command handler.
+macro_rules! snapshot_view_command {
+    ($inner:ident, $telemetry:literal, $definition:ty => $model:ty) => {
+        impl SnapshotView for $definition {
+            type Model = $model;
+
+            fn as_of(&self) -> &str {
+                &self.as_of
+            }
+
+            fn scenario(&self) -> Option<&str> {
+                self.scenario.as_deref()
+            }
+
+            fn into_model(
+                self,
+                snapshot: &GraphSnapshot,
+                resolved_as_of: &str,
+                resolved_branch: &str,
+            ) -> Self::Model {
+                <$model>::from_snapshot(self, snapshot, resolved_as_of, resolved_branch)
+            }
+        }
+
+        async fn $inner(
+            engine: &TemporalEngine,
+            request: IpcRequest<$definition>,
+        ) -> IpcResponse<$model> {
+            command_envelope($telemetry, request, |definition| {
+                build_snapshot_view(engine, definition)
+            })
+            .await
+        }
+    };
 }
 
-async fn praxis_catalogue_view_inner(
-    engine: &TemporalEngine,
-    definition: CatalogueViewDefinition,
-) -> Result<CatalogueViewModel, HostError> {
-    let (commit_id, snapshot, branch) =
-        resolve_snapshot(engine, &definition.as_of, definition.scenario.as_deref()).await?;
-    Ok(CatalogueViewModel::from_snapshot(
-        definition,
-        snapshot.as_ref(),
-        &commit_id,
-        &branch,
-    ))
-}
-
-async fn praxis_artefact_execute_catalogue_inner(
-    engine: &TemporalEngine,
-    request: IpcRequest<CatalogueViewDefinition>,
-) -> IpcResponse<CatalogueViewModel> {
-    command_envelope("praxis_artefact_execute_catalogue", request, |definition| {
-        praxis_catalogue_view_inner(engine, definition)
-    })
-    .await
-}
-
-async fn praxis_matrix_view_inner(
-    engine: &TemporalEngine,
-    definition: MatrixViewDefinition,
-) -> Result<MatrixViewModel, HostError> {
-    let (commit_id, snapshot, branch) =
-        resolve_snapshot(engine, &definition.as_of, definition.scenario.as_deref()).await?;
-    Ok(MatrixViewModel::from_snapshot(
-        definition,
-        snapshot.as_ref(),
-        &commit_id,
-        &branch,
-    ))
-}
-
-async fn praxis_artefact_execute_matrix_inner(
-    engine: &TemporalEngine,
-    request: IpcRequest<MatrixViewDefinition>,
-) -> IpcResponse<MatrixViewModel> {
-    command_envelope("praxis_artefact_execute_matrix", request, |definition| {
-        praxis_matrix_view_inner(engine, definition)
-    })
-    .await
-}
-
-async fn praxis_chart_view_inner(
-    engine: &TemporalEngine,
-    definition: ChartViewDefinition,
-) -> Result<ChartViewModel, HostError> {
-    let (commit_id, snapshot, branch) =
-        resolve_snapshot(engine, &definition.as_of, definition.scenario.as_deref()).await?;
-    Ok(ChartViewModel::from_snapshot(
-        definition,
-        snapshot.as_ref(),
-        &commit_id,
-        &branch,
-    ))
-}
-
-async fn praxis_artefact_execute_chart_inner(
-    engine: &TemporalEngine,
-    request: IpcRequest<ChartViewDefinition>,
-) -> IpcResponse<ChartViewModel> {
-    command_envelope("praxis_artefact_execute_chart", request, |definition| {
-        praxis_chart_view_inner(engine, definition)
-    })
-    .await
-}
+snapshot_view_command!(
+    praxis_artefact_execute_graph_inner,
+    "praxis_artefact_execute_graph",
+    GraphViewDefinition => GraphViewModel
+);
+snapshot_view_command!(
+    praxis_artefact_execute_catalogue_inner,
+    "praxis_artefact_execute_catalogue",
+    CatalogueViewDefinition => CatalogueViewModel
+);
+snapshot_view_command!(
+    praxis_artefact_execute_matrix_inner,
+    "praxis_artefact_execute_matrix",
+    MatrixViewDefinition => MatrixViewModel
+);
+snapshot_view_command!(
+    praxis_artefact_execute_chart_inner,
+    "praxis_artefact_execute_chart",
+    ChartViewDefinition => ChartViewModel
+);
 
 async fn praxis_apply_operations_inner(
     engine: &TemporalEngine,
@@ -269,81 +257,106 @@ fn change_set_from_operations(
 ) -> Result<ChangeSet, HostError> {
     let mut changes = ChangeSet::default();
     for operation in operations {
-        match operation {
-            PraxisOperation::CreateNode { node } => {
-                let node_type = node
-                    .r#type
-                    .clone()
-                    .ok_or_else(|| HostError::invalid_input("node type is required"))?;
-                changes.node_creates.push(NodeVersion {
-                    id: node.id,
-                    r#type: Some(node_type),
-                    props: node.props,
-                });
-            }
-            PraxisOperation::UpdateNode { node } => {
-                let existing = snapshot
-                    .node(&node.id)
-                    .ok_or_else(|| HostError::invalid_input("node missing for update"))?;
-                let node_type = node
-                    .r#type
-                    .clone()
-                    .or_else(|| existing.r#type.clone())
-                    .ok_or_else(|| HostError::invalid_input("node type is required"))?;
-                let merged_props = merge_props(existing.props.clone(), node.props);
-                changes.node_updates.push(NodeVersion {
-                    id: node.id,
-                    r#type: Some(node_type),
-                    props: merged_props,
-                });
-            }
-            PraxisOperation::DeleteNode { node_id } => {
-                changes.node_deletes.push(NodeTombstone { id: node_id });
-            }
-            PraxisOperation::CreateEdge { edge } => {
-                let edge_type = edge
-                    .r#type
-                    .clone()
-                    .ok_or_else(|| HostError::invalid_input("edge type is required"))?;
-                changes.edge_creates.push(EdgeVersion {
-                    id: edge.id,
-                    from: edge.from,
-                    to: edge.to,
-                    r#type: Some(edge_type),
-                    directed: edge.directed,
-                    props: edge.props,
-                });
-            }
-            PraxisOperation::UpdateEdge { edge } => {
-                let existing = find_edge(snapshot, edge.id.as_deref(), &edge.from, &edge.to)
-                    .ok_or_else(|| HostError::invalid_input("edge missing for update"))?;
-                let edge_type = edge
-                    .r#type
-                    .clone()
-                    .or_else(|| existing.r#type.clone())
-                    .ok_or_else(|| HostError::invalid_input("edge type is required"))?;
-                let merged_props = merge_props(existing.props.clone(), edge.props);
-                changes.edge_updates.push(EdgeVersion {
-                    id: edge.id.or_else(|| existing.id.clone()),
-                    from: edge.from.clone(),
-                    to: edge.to.clone(),
-                    r#type: Some(edge_type),
-                    directed: edge.directed.or(existing.directed),
-                    props: merged_props,
-                });
-            }
-            PraxisOperation::DeleteEdge { edge_id } => {
-                let existing = snapshot
-                    .edge_by_id(&edge_id)
-                    .ok_or_else(|| HostError::invalid_input("edge missing for delete"))?;
-                changes.edge_deletes.push(EdgeTombstone {
-                    from: existing.from.clone(),
-                    to: existing.to.clone(),
-                });
-            }
-        }
+        apply_operation(operation, snapshot, &mut changes)?;
     }
     Ok(changes)
+}
+
+fn apply_operation(
+    operation: PraxisOperation,
+    snapshot: &GraphSnapshot,
+    changes: &mut ChangeSet,
+) -> Result<(), HostError> {
+    match operation {
+        PraxisOperation::CreateNode { node } => changes.node_creates.push(node_create(node)?),
+        PraxisOperation::UpdateNode { node } => {
+            changes.node_updates.push(node_update(node, snapshot)?)
+        }
+        PraxisOperation::DeleteNode { node_id } => {
+            changes.node_deletes.push(NodeTombstone { id: node_id })
+        }
+        PraxisOperation::CreateEdge { edge } => changes.edge_creates.push(edge_create(edge)?),
+        PraxisOperation::UpdateEdge { edge } => {
+            changes.edge_updates.push(edge_update(edge, snapshot)?)
+        }
+        PraxisOperation::DeleteEdge { edge_id } => {
+            changes.edge_deletes.push(edge_delete(&edge_id, snapshot)?)
+        }
+    }
+    Ok(())
+}
+
+fn node_create(node: TwinNode) -> Result<NodeVersion, HostError> {
+    let node_type = node
+        .r#type
+        .clone()
+        .ok_or_else(|| HostError::invalid_input("node type is required"))?;
+    Ok(NodeVersion {
+        id: node.id,
+        r#type: Some(node_type),
+        props: node.props,
+    })
+}
+
+fn node_update(node: TwinNode, snapshot: &GraphSnapshot) -> Result<NodeVersion, HostError> {
+    let existing = snapshot
+        .node(&node.id)
+        .ok_or_else(|| HostError::invalid_input("node missing for update"))?;
+    let node_type = node
+        .r#type
+        .clone()
+        .or_else(|| existing.r#type.clone())
+        .ok_or_else(|| HostError::invalid_input("node type is required"))?;
+    let merged_props = merge_props(existing.props.clone(), node.props);
+    Ok(NodeVersion {
+        id: node.id,
+        r#type: Some(node_type),
+        props: merged_props,
+    })
+}
+
+fn edge_create(edge: TwinEdge) -> Result<EdgeVersion, HostError> {
+    let edge_type = edge
+        .r#type
+        .clone()
+        .ok_or_else(|| HostError::invalid_input("edge type is required"))?;
+    Ok(EdgeVersion {
+        id: edge.id,
+        from: edge.from,
+        to: edge.to,
+        r#type: Some(edge_type),
+        directed: edge.directed,
+        props: edge.props,
+    })
+}
+
+fn edge_update(edge: TwinEdge, snapshot: &GraphSnapshot) -> Result<EdgeVersion, HostError> {
+    let existing = find_edge(snapshot, edge.id.as_deref(), &edge.from, &edge.to)
+        .ok_or_else(|| HostError::invalid_input("edge missing for update"))?;
+    let edge_type = edge
+        .r#type
+        .clone()
+        .or_else(|| existing.r#type.clone())
+        .ok_or_else(|| HostError::invalid_input("edge type is required"))?;
+    let merged_props = merge_props(existing.props.clone(), edge.props);
+    Ok(EdgeVersion {
+        id: edge.id.or_else(|| existing.id.clone()),
+        from: edge.from.clone(),
+        to: edge.to.clone(),
+        r#type: Some(edge_type),
+        directed: edge.directed.or(existing.directed),
+        props: merged_props,
+    })
+}
+
+fn edge_delete(edge_id: &str, snapshot: &GraphSnapshot) -> Result<EdgeTombstone, HostError> {
+    let existing = snapshot
+        .edge_by_id(edge_id)
+        .ok_or_else(|| HostError::invalid_input("edge missing for delete"))?;
+    Ok(EdgeTombstone {
+        from: existing.from.clone(),
+        to: existing.to.clone(),
+    })
 }
 
 fn find_edge<'a>(

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useTranslations } from 'next-intl';
 
@@ -28,6 +28,67 @@ interface MatrixWidgetProperties {
   readonly onSelectionChange?: (selection: WidgetSelection) => void;
 }
 
+interface MatrixSelectionPayload {
+  readonly nodeIds?: string[];
+  readonly cellIds?: string[];
+}
+
+type EmitSelection = (payload: MatrixSelectionPayload) => void;
+
+interface MatrixLabels {
+  readonly loading: string;
+  readonly empty: string;
+  readonly rowsColumns: string;
+  readonly legendConnected: string;
+  readonly legendMissing: string;
+  readonly legendSelectionOverlap: string;
+}
+
+interface MatrixViewState {
+  readonly model: MatrixViewModel | undefined;
+  readonly loading: boolean;
+  readonly error: string | undefined;
+}
+
+/**
+ * Load the matrix view model and expose its loading state alongside a reload trigger.
+ * @param definition - The matrix view definition to fetch.
+ * @param reloadVersion - Bumped by the host to force a fresh fetch.
+ */
+function useMatrixView(
+  definition: MatrixWidgetConfig['view'],
+  reloadVersion: number,
+): readonly [MatrixViewState, () => void] {
+  const [model, setModel] = useState<MatrixViewModel | undefined>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>();
+
+  const loadView = useCallback(async () => {
+    setLoading(true);
+    setError(undefined);
+    try {
+      const view = await getMatrixView(definition);
+      setModel(view);
+    } catch (unknownError) {
+      setError(toErrorMessage(unknownError));
+    } finally {
+      setLoading(false);
+    }
+  }, [definition]);
+
+  const reload = useCallback(() => {
+    loadView().catch((_ignoredError: unknown) => {
+      return;
+    });
+  }, [loadView]);
+
+  useEffect(() => {
+    reload();
+  }, [reload, reloadVersion]);
+
+  return [{ model, loading, error }, reload];
+}
+
 /**
  *
  * @param root0
@@ -43,44 +104,11 @@ export function MatrixWidget({
   onSelectionChange,
 }: MatrixWidgetProperties) {
   const t = useTranslations('engines.praxis.widgets.matrix');
-  const [model, setModel] = useState<MatrixViewModel | undefined>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | undefined>();
-
   const definition = useMemo(() => widget.view, [widget.view]);
+  const [{ model, loading, error }, reload] = useMatrixView(definition, reloadVersion);
 
-  const loadView = useCallback(async () => {
-    setLoading(true);
-    setError(undefined);
-    try {
-      const view = await getMatrixView(definition);
-      setModel(view);
-    } catch (unknownError) {
-      const message = toErrorMessage(unknownError);
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [definition]);
-
-  useEffect(() => {
-    loadView().catch((_ignoredError: unknown) => {
-      return;
-    });
-  }, [loadView, reloadVersion]);
-
-  const cellMap = useMemo(() => buildCellIndex(model?.cells ?? []), [model?.cells]);
-  const activeNodeIds = useMemo(
-    () => (selection?.nodeIds ? new Set(selection.nodeIds) : new Set<string>()),
-    [selection?.nodeIds],
-  );
-  const activeCellIds = useMemo(
-    () => (selection?.cellIds ? new Set(selection.cellIds) : new Set<string>()),
-    [selection?.cellIds],
-  );
-
-  const emitSelection = useCallback(
-    (payload: { nodeIds?: string[]; cellIds?: string[] }) => {
+  const emitSelection = useCallback<EmitSelection>(
+    (payload) => {
       onSelectionChange?.({
         widgetId: widget.id,
         nodeIds: payload.nodeIds ?? [],
@@ -91,38 +119,14 @@ export function MatrixWidget({
     [onSelectionChange, widget.id],
   );
 
-  let body: ReactNode = <Placeholder message={t('loading')} />;
-  if (error) {
-    body = <ErrorMessage message={error} />;
-  } else if (model) {
-    body = (
-      <>
-        <MatrixTable
-          rows={model.rows}
-          columns={model.columns}
-          cellMap={cellMap}
-          activeNodeIds={activeNodeIds}
-          activeCellIds={activeCellIds}
-          rowsColumnsLabel={t('rowsColumns')}
-          emptyMessage={t('empty')}
-          onRowSelect={(rowId) => {
-            emitSelection({ nodeIds: [rowId] });
-          }}
-          onColumnSelect={(columnId) => {
-            emitSelection({ nodeIds: [columnId] });
-          }}
-          onCellSelect={(rowId, columnId) => {
-            emitSelection({ cellIds: [cellKey(rowId, columnId)] });
-          }}
-        />
-        <Legend
-          connectedLabel={t('legendConnected')}
-          missingLabel={t('legendMissing')}
-          selectionOverlapLabel={t('legendSelectionOverlap')}
-        />
-      </>
-    );
-  }
+  const labels: MatrixLabels = {
+    loading: t('loading'),
+    empty: t('empty'),
+    rowsColumns: t('rowsColumns'),
+    legendConnected: t('legendConnected'),
+    legendMissing: t('legendMissing'),
+    legendSelectionOverlap: t('legendSelectionOverlap'),
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -130,16 +134,67 @@ export function MatrixWidget({
         metadata={model?.metadata}
         fallbackTitle={widget.title}
         loading={loading}
-        onRefresh={() => {
-          loadView().catch((_ignoredError: unknown) => {
-            return;
-          });
-        }}
+        onRefresh={reload}
       />
       <div className="border-border/60 bg-background/40 flex-1 space-y-3 rounded-2xl border p-3">
-        {body}
+        <MatrixBody
+          model={model}
+          error={error}
+          selection={selection}
+          emitSelection={emitSelection}
+          labels={labels}
+        />
       </div>
     </div>
+  );
+}
+
+/**
+ * Render the loading, error, or populated matrix state.
+ * @param root0
+ * @param root0.model
+ * @param root0.error
+ * @param root0.selection
+ * @param root0.emitSelection
+ * @param root0.labels
+ */
+function MatrixBody({
+  model,
+  error,
+  selection,
+  emitSelection,
+  labels,
+}: {
+  readonly model: MatrixViewModel | undefined;
+  readonly error: string | undefined;
+  readonly selection?: SelectionState;
+  readonly emitSelection: EmitSelection;
+  readonly labels: MatrixLabels;
+}) {
+  if (error) {
+    return <ErrorMessage message={error} />;
+  }
+  if (!model) {
+    return <Placeholder message={labels.loading} />;
+  }
+  return (
+    <>
+      <MatrixTable
+        rows={model.rows}
+        columns={model.columns}
+        cellMap={buildCellIndex(model.cells)}
+        activeNodeIds={toIdSet(selection?.nodeIds)}
+        activeCellIds={toIdSet(selection?.cellIds)}
+        rowsColumnsLabel={labels.rowsColumns}
+        emptyMessage={labels.empty}
+        emitSelection={emitSelection}
+      />
+      <Legend
+        connectedLabel={labels.legendConnected}
+        missingLabel={labels.legendMissing}
+        selectionOverlapLabel={labels.legendSelectionOverlap}
+      />
+    </>
   );
 }
 
@@ -151,9 +206,7 @@ export function MatrixWidget({
  * @param parameters.cellMap
  * @param parameters.activeNodeIds
  * @param parameters.activeCellIds
- * @param parameters.onRowSelect
- * @param parameters.onColumnSelect
- * @param parameters.onCellSelect
+ * @param parameters.emitSelection
  * @param parameters.rowsColumnsLabel
  * @param parameters.emptyMessage
  */
@@ -163,9 +216,7 @@ function MatrixTable(parameters: {
   readonly cellMap: Map<string, MatrixCell>;
   readonly activeNodeIds: Set<string>;
   readonly activeCellIds: Set<string>;
-  readonly onRowSelect: (rowId: string) => void;
-  readonly onColumnSelect: (columnId: string) => void;
-  readonly onCellSelect: (rowId: string, columnId: string) => void;
+  readonly emitSelection: EmitSelection;
   readonly rowsColumnsLabel: string;
   readonly emptyMessage: string;
 }) {
@@ -175,9 +226,7 @@ function MatrixTable(parameters: {
     cellMap,
     activeNodeIds,
     activeCellIds,
-    onRowSelect,
-    onColumnSelect,
-    onCellSelect,
+    emitSelection,
     rowsColumnsLabel,
     emptyMessage,
   } = parameters;
@@ -204,7 +253,7 @@ function MatrixTable(parameters: {
                   )}
                   data-testid={`matrix-column-${column.id}`}
                   onClick={() => {
-                    onColumnSelect(column.id);
+                    emitSelection({ nodeIds: [column.id] });
                   }}
                 >
                   {column.label}
@@ -222,7 +271,7 @@ function MatrixTable(parameters: {
                   className="w-full rounded-lg px-2 py-1 text-left"
                   data-testid={`matrix-row-${row.id}`}
                   onClick={() => {
-                    onRowSelect(row.id);
+                    emitSelection({ nodeIds: [row.id] });
                   }}
                 >
                   {row.label}
@@ -237,7 +286,7 @@ function MatrixTable(parameters: {
                     (activeNodeIds.has(row.id) && activeNodeIds.has(column.id))
                   }
                   onClick={() => {
-                    onCellSelect(row.id, column.id);
+                    emitSelection({ cellIds: [cellKey(row.id, column.id)] });
                   }}
                 />
               ))}
@@ -362,7 +411,7 @@ function ErrorMessage({ message }: { readonly message: string }) {
 }
 
 /**
- *
+ * Build a lookup of matrix cells keyed by their row and column identifiers.
  * @param cells
  */
 function buildCellIndex(cells: MatrixCell[]): Map<string, MatrixCell> {
@@ -371,6 +420,14 @@ function buildCellIndex(cells: MatrixCell[]): Map<string, MatrixCell> {
     map.set(cellKey(cell.rowId, cell.columnId), cell);
   }
   return map;
+}
+
+/**
+ * Build a set of identifiers, treating an absent list as empty.
+ * @param ids
+ */
+function toIdSet(ids: string[] | undefined): Set<string> {
+  return new Set<string>(ids);
 }
 
 /**
