@@ -1,4 +1,4 @@
-# ADR-0041: Reconciling the design-token contract — DTCG source authoritative, shadcn variables generated
+# ADR-0041: Design-token contract reconciliation — DTCG source authoritative, shadcn variables generated
 
 - Status: Accepted
 - Date: 2026-07-18
