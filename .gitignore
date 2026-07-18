@@ -340,3 +340,6 @@ storybook-static/
 
 # Mock visual-validation screenshots (generated)
 tests/visual-mock/screens/
+
+# Story visual-regression screenshots (generated)
+tests/visual-stories/screens/
