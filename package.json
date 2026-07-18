@@ -51,6 +51,7 @@
     "commitlint": "commitlint --from=origin/main --to=HEAD",
     "test:stories": "vitest run --config vitest.storybook.config.mjs",
     "test:visual-mock": "node tests/visual-mock/run.mjs",
+    "test:visual-stories": "node tests/visual-stories/run.mjs",
     "prepare": "husky"
   },
   "dependencies": {
