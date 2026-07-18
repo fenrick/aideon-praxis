@@ -352,6 +352,16 @@
   --aideon-status-muted: var(--aideon-status-stale);
   --aideon-status-muted-soft: var(--aideon-status-stale-soft);
 
+  /* Content provenance (ADR-0041, tokens.md §2): asserted (human), inferred
+     (system-derived), generated (AI). Distinct hues, each paired with a distinct
+     icon+label in the block so colour is never the sole carrier (WCAG 1.4.1). */
+  --aideon-provenance-asserted: oklch(0.5 0.08 200);
+  --aideon-provenance-asserted-soft: oklch(0.955 0.019 200);
+  --aideon-provenance-inferred: oklch(0.54 0.12 255);
+  --aideon-provenance-inferred-soft: oklch(0.957 0.023 255);
+  --aideon-provenance-generated: oklch(0.55 0.15 305);
+  --aideon-provenance-generated-soft: oklch(0.958 0.026 305);
+
   --aideon-space-2xs: 0.25rem;
   --aideon-space-xs: 0.5rem;
   --aideon-space-sm: 0.75rem;
@@ -445,6 +455,14 @@
   --aideon-status-muted: var(--aideon-status-stale);
   --aideon-status-muted-soft: var(--aideon-status-stale-soft);
 
+  /* Provenance dark remap: brighter base for contrast on dark surfaces, darker soft fill. */
+  --aideon-provenance-asserted: oklch(0.72 0.09 200);
+  --aideon-provenance-asserted-soft: oklch(0.29 0.03 200);
+  --aideon-provenance-inferred: oklch(0.74 0.11 255);
+  --aideon-provenance-inferred-soft: oklch(0.3 0.04 255);
+  --aideon-provenance-generated: oklch(0.75 0.13 305);
+  --aideon-provenance-generated-soft: oklch(0.31 0.05 305);
+
   --aideon-elevation-shell: 0 24px 56px -40px color-mix(in oklab, black 48%, transparent);
   --aideon-elevation-panel: 0 18px 36px -30px color-mix(in oklab, black 44%, transparent);
   --aideon-elevation-frame: 0 14px 26px -24px color-mix(in oklab, black 42%, transparent);
@@ -515,6 +533,12 @@
   --color-status-success-soft: var(--aideon-status-success-soft);
   --color-status-muted: var(--aideon-status-muted);
   --color-status-muted-soft: var(--aideon-status-muted-soft);
+  --color-provenance-asserted: var(--aideon-provenance-asserted);
+  --color-provenance-asserted-soft: var(--aideon-provenance-asserted-soft);
+  --color-provenance-inferred: var(--aideon-provenance-inferred);
+  --color-provenance-inferred-soft: var(--aideon-provenance-inferred-soft);
+  --color-provenance-generated: var(--aideon-provenance-generated);
+  --color-provenance-generated-soft: var(--aideon-provenance-generated-soft);
   --font-sans: var(--font-sans);
   --font-editorial: var(--font-editorial);
   --font-heading: var(--font-heading);
