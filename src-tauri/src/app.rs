@@ -22,97 +22,16 @@ use uuid::Uuid;
 static SESSION_MARKER_PATH: OnceCell<PathBuf> = OnceCell::new();
 
 pub fn run() {
-    let log_level = log_level();
     // The typed IPC surface is generated from the Rust commands (ADR-0039):
     // this builder both registers the handlers and is the source the TypeScript
     // client is generated from, so the registered set and the generated set
     // cannot drift.
     let ipc = crate::bindings::ipc_builder();
     tauri::Builder::default()
-        .plugin(
-            tauri_plugin_log::Builder::new()
-                .targets([
-                    Target::new(TargetKind::Stdout),
-                    Target::new(TargetKind::LogDir { file_name: None }),
-                    Target::new(TargetKind::Webview),
-                ])
-                .level(log_level)
-                .build(),
-        )
+        .plugin(logging_plugin(log_level()))
         .manage(Mutex::new(SetupState::new()))
         .manage(crate::workspace_lifecycle::WorkspaceManager::default())
-        .setup(|app| {
-            build_menu(app)?;
-
-            app.on_menu_event(move |app, event| {
-                handle_menu_event(app, event);
-            });
-
-            let handle = app.handle();
-            let handle_ref = &handle;
-            let previous_session = detect_previous_session(handle_ref);
-            let session_id = Uuid::new_v4().to_string();
-            let _ = logging::init_context(session_id.clone());
-            install_panic_hook();
-
-            if let Some(previous) = previous_session {
-                log_event!(
-                    severity = 1,
-                    component = "core",
-                    event = "app_crash_detected",
-                    message = "Detected a previous unclean shutdown",
-                    correlation_id = "startup",
-                    metadata = json!({
-                        "previous_session_id": previous.session_id,
-                        "previous_timestamp": previous.timestamp
-                    })
-                );
-            }
-
-            if let Some(marker_path) = session_marker_path(handle_ref) {
-                register_session_marker_path(marker_path.clone());
-                if let Err(error) = session_marker::persist_marker(&marker_path, &session_id) {
-                    log::warn!(
-                        "host: failed to persist session marker {}: {}",
-                        marker_path.display(),
-                        error
-                    );
-                }
-            }
-
-            log_event!(
-                severity = 5,
-                component = "core",
-                event = "app_start",
-                message = "Application bootstrap starting",
-                correlation_id = "startup"
-            );
-
-            create_windows(app)?;
-            emit_setup_progress(handle_ref, "starting");
-
-            log_event!(
-                severity = 6,
-                component = "core",
-                event = "app_ready",
-                message = "UI is ready for interaction",
-                correlation_id = "startup"
-            );
-
-            let backend_handle = handle.clone();
-            spawn(async move {
-                sleep(Duration::from_millis(120)).await;
-                if let Err(error) = run_backend_setup(backend_handle).await {
-                    log::error!(
-                        "host: backend setup failed: {} ({})",
-                        error.message,
-                        error.code
-                    );
-                }
-            });
-
-            Ok(())
-        })
+        .setup(|app| bootstrap(app))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(ipc.invoke_handler())
@@ -127,6 +46,111 @@ pub fn run() {
         correlation_id = "shutdown"
     );
     let _ = clear_registered_session_marker();
+}
+
+/// Builds the `tauri-plugin-log` plugin with the host's standard targets.
+fn logging_plugin<R: Runtime>(level: LevelFilter) -> tauri::plugin::TauriPlugin<R> {
+    tauri_plugin_log::Builder::new()
+        .targets([
+            Target::new(TargetKind::Stdout),
+            Target::new(TargetKind::LogDir { file_name: None }),
+            Target::new(TargetKind::Webview),
+        ])
+        .level(level)
+        .build()
+}
+
+/// Wires the menu, session state, windows, and backend setup during startup.
+fn bootstrap(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    build_menu(app)?;
+    app.on_menu_event(|app, event| {
+        handle_menu_event(app, event);
+    });
+
+    let handle = app.handle().clone();
+    initialise_session(&handle);
+
+    create_windows(app)?;
+    emit_setup_progress(&handle, "starting");
+
+    log_event!(
+        severity = 6,
+        component = "core",
+        event = "app_ready",
+        message = "UI is ready for interaction",
+        correlation_id = "startup"
+    );
+
+    spawn_backend_setup(handle);
+    Ok(())
+}
+
+/// Establishes a new logging session, installs the panic hook, and records the
+/// startup markers (including any detected unclean shutdown).
+fn initialise_session<R: Runtime>(handle: &AppHandle<R>) {
+    let previous_session = detect_previous_session(handle);
+    let session_id = Uuid::new_v4().to_string();
+    let _ = logging::init_context(session_id.clone());
+    install_panic_hook();
+
+    if let Some(previous) = previous_session {
+        log_crash_detected(&previous);
+    }
+
+    persist_session_marker(handle, &session_id);
+
+    log_event!(
+        severity = 5,
+        component = "core",
+        event = "app_start",
+        message = "Application bootstrap starting",
+        correlation_id = "startup"
+    );
+}
+
+/// Records that a previous session ended without a clean shutdown.
+fn log_crash_detected(previous: &session_marker::SessionMarker) {
+    log_event!(
+        severity = 1,
+        component = "core",
+        event = "app_crash_detected",
+        message = "Detected a previous unclean shutdown",
+        correlation_id = "startup",
+        metadata = json!({
+            "previous_session_id": previous.session_id,
+            "previous_timestamp": previous.timestamp
+        })
+    );
+}
+
+/// Persists the marker for the current session so a later unclean shutdown can
+/// be detected on the next launch.
+fn persist_session_marker<R: Runtime>(handle: &AppHandle<R>, session_id: &str) {
+    let Some(marker_path) = session_marker_path(handle) else {
+        return;
+    };
+    register_session_marker_path(marker_path.clone());
+    if let Err(error) = session_marker::persist_marker(&marker_path, session_id) {
+        log::warn!(
+            "host: failed to persist session marker {}: {}",
+            marker_path.display(),
+            error
+        );
+    }
+}
+
+/// Spawns the deferred backend setup task after a short delay.
+fn spawn_backend_setup(handle: AppHandle) {
+    spawn(async move {
+        sleep(Duration::from_millis(120)).await;
+        if let Err(error) = run_backend_setup(handle).await {
+            log::error!(
+                "host: backend setup failed: {} ({})",
+                error.message,
+                error.code
+            );
+        }
+    });
 }
 
 fn detect_previous_session<R: Runtime>(

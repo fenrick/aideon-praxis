@@ -1,120 +1,78 @@
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
-import { forwardRef } from 'react';
+import type { ComponentPropsWithoutRef, ElementType, ReactNode } from 'react';
+import { createElement, forwardRef } from 'react';
 
 import { cn } from '../lib/utilities';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
+/**
+ * Create a card-backed panel sub-component that applies a base class name,
+ * merges caller-supplied class names, and forwards its ref to the element.
+ * @param BaseComponent - Underlying card primitive to render.
+ * @param baseClassName - Tailwind classes always applied to the element.
+ * @param componentDisplayName - Display name for React devtools.
+ * @returns A ref-forwarding component wrapping the base primitive.
+ */
+function createPanelPart<BaseComponentType extends ElementType>(
+  BaseComponent: BaseComponentType,
+  baseClassName: string,
+  componentDisplayName: string,
+) {
+  const PanelPart = forwardRef<
+    HTMLDivElement,
+    Readonly<ComponentPropsWithoutRef<BaseComponentType>>
+  >(function PanelPartRenderer(properties, reference) {
+    const { className, ...rest } = properties as { className?: string };
+    return createElement(BaseComponent, {
+      ref: reference,
+      className: cn(baseClassName, className),
+      ...rest,
+    });
+  });
+  PanelPart.displayName = componentDisplayName;
+  return PanelPart;
+}
+
 export type PanelProperties = Readonly<ComponentPropsWithoutRef<typeof Card>>;
 
-/**
- * Card-styled container for desktop panels.
- * @param root0 - Panel properties.
- * @returns Panel wrapper element.
- */
-export const Panel = forwardRef<HTMLDivElement, PanelProperties>(function PanelInner(
-  { className, ...properties },
-  reference,
-) {
-  return (
-    <Card
-      ref={reference}
-      className={cn('border-border/70 bg-card rounded-2xl text-sm shadow-sm', className)}
-      {...properties}
-    />
-  );
-});
+/** Card-styled container for desktop panels. */
+export const Panel = createPanelPart(
+  Card,
+  'border-border/70 bg-card rounded-2xl text-sm shadow-sm',
+  'Panel',
+);
 
 export type PanelHeaderProperties = Readonly<ComponentPropsWithoutRef<typeof CardHeader>>;
 
-/**
- * Panel header with consistent padding and divider.
- * @param root0 - Header properties.
- * @returns Header element.
- */
-export const PanelHeader = forwardRef<HTMLDivElement, PanelHeaderProperties>(
-  function PanelHeaderInner({ className, ...properties }, reference) {
-    return (
-      <CardHeader
-        ref={reference}
-        className={cn('border-border/60 space-y-1.5 border-b pb-4', className)}
-        {...properties}
-      />
-    );
-  },
+/** Panel header with consistent padding and divider. */
+export const PanelHeader = createPanelPart(
+  CardHeader,
+  'border-border/60 space-y-1.5 border-b pb-4',
+  'PanelHeader',
 );
 
 export type PanelTitleProperties = Readonly<ComponentPropsWithoutRef<typeof CardTitle>>;
 
-/**
- * Panel title text.
- * @param root0 - Title properties.
- * @returns Title element.
- */
-export const PanelTitle = forwardRef<HTMLDivElement, PanelTitleProperties>(function PanelTitleInner(
-  { className, ...properties },
-  reference,
-) {
-  return (
-    <CardTitle
-      ref={reference}
-      className={cn('text-base font-semibold', className)}
-      {...properties}
-    />
-  );
-});
+/** Panel title text. */
+export const PanelTitle = createPanelPart(CardTitle, 'text-base font-semibold', 'PanelTitle');
 
 export type PanelDescriptionProperties = Readonly<ComponentPropsWithoutRef<typeof CardDescription>>;
 
-/**
- * Secondary description for a panel.
- * @param root0 - Description properties.
- * @returns Description element.
- */
-export const PanelDescription = forwardRef<HTMLDivElement, PanelDescriptionProperties>(
-  function PanelDescriptionInner({ className, ...properties }, reference) {
-    return (
-      <CardDescription
-        ref={reference}
-        className={cn('text-muted-foreground text-xs', className)}
-        {...properties}
-      />
-    );
-  },
+/** Secondary description for a panel. */
+export const PanelDescription = createPanelPart(
+  CardDescription,
+  'text-muted-foreground text-xs',
+  'PanelDescription',
 );
 
 export type PanelContentProperties = Readonly<ComponentPropsWithoutRef<typeof CardContent>>;
 
-/**
- * Body content wrapper for panels.
- * @param root0 - Content properties.
- * @returns Content container.
- */
-export const PanelContent = forwardRef<HTMLDivElement, PanelContentProperties>(
-  function PanelContentInner({ className, ...properties }, reference) {
-    return (
-      <CardContent
-        ref={reference}
-        className={cn('space-y-4 pt-4 text-sm', className)}
-        {...properties}
-      />
-    );
-  },
-);
+/** Body content wrapper for panels. */
+export const PanelContent = createPanelPart(CardContent, 'space-y-4 pt-4 text-sm', 'PanelContent');
 
 export type PanelFooterProperties = Readonly<ComponentPropsWithoutRef<typeof CardFooter>>;
 
-/**
- * Footer region for actions within a panel.
- * @param root0 - Footer properties.
- * @returns Footer element.
- */
-export const PanelFooter = forwardRef<HTMLDivElement, PanelFooterProperties>(
-  function PanelFooterInner({ className, ...properties }, reference) {
-    return (
-      <CardFooter ref={reference} className={cn('justify-end gap-2', className)} {...properties} />
-    );
-  },
-);
+/** Footer region for actions within a panel. */
+export const PanelFooter = createPanelPart(CardFooter, 'justify-end gap-2', 'PanelFooter');
 
 export type PanelFieldProperties = Readonly<ComponentPropsWithoutRef<'div'>> & {
   readonly label: string;

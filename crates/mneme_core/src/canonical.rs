@@ -66,32 +66,40 @@ fn write_value(value: &Value, out: &mut String) -> Result<(), CoreError> {
         Value::Bool(false) => out.push_str("false"),
         Value::Number(n) => write_number(n, out)?,
         Value::String(s) => write_string(s, out),
-        Value::Array(items) => {
-            out.push('[');
-            for (i, item) in items.iter().enumerate() {
-                if i > 0 {
-                    out.push(',');
-                }
-                write_value(item, out)?;
-            }
-            out.push(']');
-        }
-        Value::Object(map) => {
-            let mut keys: Vec<&String> = map.keys().collect();
-            // Ascending UTF-8 byte order — the Aideon divergence from JCS.
-            keys.sort_unstable_by(|a, b| a.as_bytes().cmp(b.as_bytes()));
-            out.push('{');
-            for (i, key) in keys.iter().enumerate() {
-                if i > 0 {
-                    out.push(',');
-                }
-                write_string(key, out);
-                out.push(':');
-                write_value(&map[*key], out)?;
-            }
-            out.push('}');
-        }
+        Value::Array(items) => write_array(items, out)?,
+        Value::Object(map) => write_object(map, out)?,
     }
+    Ok(())
+}
+
+/// Write a JSON array: `[` + comma-joined canonical elements + `]`.
+fn write_array(items: &[Value], out: &mut String) -> Result<(), CoreError> {
+    out.push('[');
+    for (i, item) in items.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        write_value(item, out)?;
+    }
+    out.push(']');
+    Ok(())
+}
+
+/// Write a JSON object with keys sorted by ascending UTF-8 byte order — the
+/// Aideon divergence from JCS — then each `"key":value` pair comma-joined.
+fn write_object(map: &serde_json::Map<String, Value>, out: &mut String) -> Result<(), CoreError> {
+    let mut keys: Vec<&String> = map.keys().collect();
+    keys.sort_unstable_by(|a, b| a.as_bytes().cmp(b.as_bytes()));
+    out.push('{');
+    for (i, key) in keys.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        write_string(key, out);
+        out.push(':');
+        write_value(&map[*key], out)?;
+    }
+    out.push('}');
     Ok(())
 }
 
@@ -196,17 +204,22 @@ fn format_ecmascript(digits: &str, point: i32, k: i32) -> String {
         // 0.00…digits
         format!("0.{}{}", "0".repeat((-n) as usize), digits)
     } else {
-        // Exponential notation.
-        let exponent = n - 1;
-        let mantissa = if k == 1 {
-            digits.to_string()
-        } else {
-            let (head, tail) = digits.split_at(1);
-            format!("{head}.{tail}")
-        };
-        let sign = if exponent >= 0 { "+" } else { "-" };
-        format!("{mantissa}e{sign}{}", exponent.abs())
+        format_exponential(digits, n, k)
     }
+}
+
+/// ECMAScript exponential form: a `d.ddd`e`±E` mantissa/exponent rendering used
+/// when the decimal point falls outside the `[-6, 21]` fixed-notation window.
+fn format_exponential(digits: &str, n: i32, k: i32) -> String {
+    let exponent = n - 1;
+    let mantissa = if k == 1 {
+        digits.to_string()
+    } else {
+        let (head, tail) = digits.split_at(1);
+        format!("{head}.{tail}")
+    };
+    let sign = if exponent >= 0 { "+" } else { "-" };
+    format!("{mantissa}e{sign}{}", exponent.abs())
 }
 
 #[cfg(test)]

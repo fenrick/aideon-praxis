@@ -441,20 +441,23 @@ pub fn resolve_at(
             .position(|l| *l == layer)
             .unwrap_or(usize::MAX)
     };
+    // The tie-break key: a higher-priority layer (lower rank), then later
+    // `asserted_at`, then later apply order wins. A larger key is better, so a
+    // candidate supersedes the incumbent exactly when its key is greater
+    // ([resolution-rules]).
+    let precedence = |c: &Candidate| {
+        (
+            std::cmp::Reverse(rank(&c.layer)),
+            c.asserted_at,
+            c.apply_seq,
+        )
+    };
     for row in rows {
         let (entity_id, field_id, cand) = row?;
         let key = (entity_id, field_id);
-        let take = match best.get(&key) {
-            None => true,
-            Some(current) => {
-                let (a, b) = (rank(&cand.layer), rank(&current.layer));
-                a < b
-                    || (a == b && cand.asserted_at > current.asserted_at)
-                    || (a == b
-                        && cand.asserted_at == current.asserted_at
-                        && cand.apply_seq > current.apply_seq)
-            }
-        };
+        let take = best
+            .get(&key)
+            .is_none_or(|current| precedence(&cand) > precedence(current));
         if take {
             best.insert(key, cand);
         }
@@ -724,17 +727,16 @@ mod resolve_tests {
     use super::*;
 
     /// Insert one fact row directly (bypassing the op layer) for resolver tests.
-    #[allow(clippy::too_many_arguments)]
+    /// `slot` is `(entity, field, layer)`; `interval` is `(valid_from, valid_to,
+    /// asserted_at)`.
     fn insert_fact(
         conn: &Connection,
-        entity: &str,
-        field: &str,
-        layer: &str,
-        valid_from: i64,
-        valid_to: Option<i64>,
-        asserted_at: i64,
+        slot: (&str, &str, &str),
+        interval: (i64, Option<i64>, i64),
         value: &str,
     ) {
+        let (entity, field, layer) = slot;
+        let (valid_from, valid_to, asserted_at) = interval;
         conn.execute(
             "INSERT INTO aideon_facts(
                 partition_id, entity_id, field_id, layer,
@@ -759,8 +761,8 @@ mod resolve_tests {
         init_schema(&conn).unwrap();
 
         // A plan claim over [0,10); an actual claim over [5, open).
-        insert_fact(&conn, "e1", "f1", "plan", 0, Some(10), 1, "\"planned\"");
-        insert_fact(&conn, "e1", "f1", "actual", 5, None, 2, "\"realised\"");
+        insert_fact(&conn, ("e1", "f1", "plan"), (0, Some(10), 1), "\"planned\"");
+        insert_fact(&conn, ("e1", "f1", "actual"), (5, None, 2), "\"realised\"");
 
         let policy = ["actual", "plan"];
 
@@ -792,8 +794,8 @@ mod resolve_tests {
     fn later_assertion_on_same_layer_supersedes() {
         let conn = Connection::open_in_memory().unwrap();
         init_schema(&conn).unwrap();
-        insert_fact(&conn, "e1", "f1", "plan", 0, None, 1, "\"first\"");
-        insert_fact(&conn, "e1", "f1", "plan", 0, None, 5, "\"second\"");
+        insert_fact(&conn, ("e1", "f1", "plan"), (0, None, 1), "\"first\"");
+        insert_fact(&conn, ("e1", "f1", "plan"), (0, None, 5), "\"second\"");
         let out = resolve_at(&conn, 3, &["plan"]).unwrap();
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].value_json, "\"second\"", "latest asserted_at wins");

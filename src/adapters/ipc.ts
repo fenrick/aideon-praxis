@@ -54,28 +54,31 @@ interface InvokeOptions {
   readonly log?: boolean;
 }
 
+/** Correlated context threaded through a single IPC round-trip. */
+interface IpcContext {
+  readonly command: string;
+  readonly requestId: string;
+  readonly shouldLog: boolean;
+}
+
+const IPC_SOURCE = { module: 'ipc', function: 'invokeIpc' } as const;
+
 /**
  * Build metadata for instrumentation entries.
- * @param command
- * @param requestId
- * @param additional
+ * @param context - Correlated IPC context.
+ * @param additional - Extra metadata fields to merge in.
  */
 function buildMetadata(
-  command: string,
-  requestId: string,
+  context: IpcContext,
   additional?: Record<string, unknown>,
 ): Record<string, unknown> {
   return {
-    command,
-    request_id: requestId,
+    command: context.command,
+    request_id: context.requestId,
     ...additional,
   };
 }
 
-/**
- * Emit an instrumentation log entry if logging is enabled.
- * @param error
- */
 /**
  * Ignores log failures to prevent instrumentation noise from crashing commands.
  * @param _error - Ignored instrumentation error.
@@ -85,9 +88,9 @@ function ignoreLogError(_error: unknown): void {
 }
 
 /**
- *
- * @param log
- * @param logEntry
+ * Emit an instrumentation log entry if logging is enabled.
+ * @param log - Whether logging is enabled.
+ * @param logEntry - The structured log entry to emit.
  */
 function emitLog(log: boolean, logEntry: Parameters<typeof logMessage>[0]): void {
   if (!log) {
@@ -96,55 +99,43 @@ function emitLog(log: boolean, logEntry: Parameters<typeof logMessage>[0]): void
   logMessage(logEntry).catch(ignoreLogError);
 }
 
-const IPC_SOURCE = { module: 'ipc', function: 'invokeIpc' } as const;
-
 /**
- *
- * @param command
- * @param requestId
- * @param shouldLog
- * @param metadata
- * @param throwMessage
- * @param details
+ * Log an invalid-response failure and throw a HostIpcError.
+ * @param context - Correlated IPC context.
+ * @param metadata - Extra metadata describing the failure.
+ * @param throwMessage - Human-readable message for the thrown error.
+ * @param details - Arbitrary error detail payload.
  */
 function logInvalidResponse(
-  command: string,
-  requestId: string,
-  shouldLog: boolean,
+  context: IpcContext,
   metadata: Record<string, unknown>,
   throwMessage: string,
   details?: unknown,
 ): never {
-  emitLog(shouldLog, {
+  emitLog(context.shouldLog, {
     severity: 'error',
     component: 'ui',
     eventName: 'command_failed',
     message: 'Command returned invalid response',
-    correlationId: requestId,
-    metadata: buildMetadata(command, requestId, metadata),
+    correlationId: context.requestId,
+    metadata: buildMetadata(context, metadata),
     source: IPC_SOURCE,
   });
   throw new HostIpcError('invalid_response', throwMessage, details ?? {});
 }
 
 /**
- *
- * @param response
- * @param command
- * @param requestId
- * @param shouldLog
+ * Validate the response envelope shape and correlate its requestId.
+ * @param response - Raw value returned by the host.
+ * @param context - Correlated IPC context.
  */
 function ensureValidResponseRecord(
   response: unknown,
-  command: string,
-  requestId: string,
-  shouldLog: boolean,
+  context: IpcContext,
 ): Record<string, unknown> {
   if (typeof response !== 'object' || response === null) {
     return logInvalidResponse(
-      command,
-      requestId,
-      shouldLog,
+      context,
       { error_kind: 'invalid_response' },
       'Host returned invalid response.',
       response,
@@ -155,23 +146,19 @@ function ensureValidResponseRecord(
   const responseRequestId = record.requestId;
   if (typeof responseRequestId !== 'string') {
     return logInvalidResponse(
-      command,
-      requestId,
-      shouldLog,
+      context,
       { error_kind: 'invalid_response' },
       'Host returned invalid response.',
       record,
     );
   }
 
-  if (responseRequestId !== requestId) {
+  if (responseRequestId !== context.requestId) {
     return logInvalidResponse(
-      command,
-      requestId,
-      shouldLog,
+      context,
       { error_kind: 'mismatched_request_id' },
       'Host returned mismatched requestId.',
-      { expected: requestId, got: responseRequestId },
+      { expected: context.requestId, got: responseRequestId },
     );
   }
 
@@ -179,64 +166,102 @@ function ensureValidResponseRecord(
 }
 
 /**
- *
- * @param record
- * @param command
- * @param requestId
- * @param shouldLog
+ * Log a successful command and return its result payload.
+ * @param record - Validated response record.
+ * @param context - Correlated IPC context.
  */
-function resolveResultFromRecord(
-  record: Record<string, unknown>,
-  command: string,
-  requestId: string,
-  shouldLog: boolean,
-): unknown {
-  const status = record.status;
-  if (status === 'ok') {
-    emitLog(shouldLog, {
-      // DEBUG: routine per-command chatter mirrored from the host. Failures below
-      // stay ERROR. Raise the log filter to trace individual calls.
-      severity: 'debug',
-      component: 'ui',
-      eventName: 'command_completed',
-      message: 'Command completed',
-      correlationId: requestId,
-      metadata: buildMetadata(command, requestId, { status }),
-      source: IPC_SOURCE,
-    });
-    return record.result;
-  }
+function resolveOkResult(record: Record<string, unknown>, context: IpcContext): unknown {
+  emitLog(context.shouldLog, {
+    // DEBUG: routine per-command chatter mirrored from the host. Failures below
+    // stay ERROR. Raise the log filter to trace individual calls.
+    severity: 'debug',
+    component: 'ui',
+    eventName: 'command_completed',
+    message: 'Command completed',
+    correlationId: context.requestId,
+    metadata: buildMetadata(context, { status: 'ok' }),
+    source: IPC_SOURCE,
+  });
+  return record.result;
+}
 
-  if (status !== 'error') {
-    return logInvalidResponse(
-      command,
-      requestId,
-      shouldLog,
-      { error_kind: 'invalid_response' },
-      'Host returned invalid response.',
-      record,
-    );
-  }
-
+/**
+ * Log a reported command error and throw the corresponding HostIpcError.
+ * @param record - Validated response record.
+ * @param context - Correlated IPC context.
+ */
+function throwReportedError(record: Record<string, unknown>, context: IpcContext): never {
   const error = record.error as Partial<IpcError> | undefined;
   const code = typeof error?.code === 'string' ? error.code : 'UNKNOWN_ERROR';
   // RFC-9457 Problem Detail: the human explanation is `detail`.
   const message =
     typeof error?.detail === 'string' ? error.detail : 'Host reported an unknown error.';
   const details = error?.details ?? {};
-  emitLog(shouldLog, {
+  emitLog(context.shouldLog, {
     severity: 'error',
     component: 'ui',
     eventName: 'command_failed',
     message: 'Command failed',
-    correlationId: requestId,
-    metadata: buildMetadata(command, requestId, {
+    correlationId: context.requestId,
+    metadata: buildMetadata(context, {
       error_kind: code,
       error_message: message,
     }),
     source: IPC_SOURCE,
   });
   throw new HostIpcError(code, message, details);
+}
+
+/**
+ * Resolve the result payload from a validated response record.
+ * @param record - Validated response record.
+ * @param context - Correlated IPC context.
+ */
+function resolveResultFromRecord(record: Record<string, unknown>, context: IpcContext): unknown {
+  const status = record.status;
+  if (status === 'ok') {
+    return resolveOkResult(record, context);
+  }
+  if (status === 'error') {
+    return throwReportedError(record, context);
+  }
+  return logInvalidResponse(
+    context,
+    { error_kind: 'invalid_response' },
+    'Host returned invalid response.',
+    record,
+  );
+}
+
+/**
+ * Invoke the host command and return its raw response envelope.
+ * @param payload - Command payload object.
+ * @param context - Correlated IPC context.
+ */
+async function dispatchInvoke(
+  payload: Record<string, unknown>,
+  context: IpcContext,
+): Promise<unknown> {
+  try {
+    return await invoke(context.command, {
+      request: { requestId: context.requestId, payload } satisfies IpcRequest<
+        Record<string, unknown>
+      >,
+    });
+  } catch (error) {
+    emitLog(context.shouldLog, {
+      severity: 'error',
+      component: 'ui',
+      eventName: 'command_failed',
+      message: `Command invocation failed`,
+      correlationId: context.requestId,
+      metadata: buildMetadata(context, {
+        error_message: error instanceof Error ? error.message : String(error),
+      }),
+      source: IPC_SOURCE,
+    });
+    throw error;
+  }
 }
 
 /**
@@ -250,38 +275,22 @@ export async function invokeIpc<Result>(
   payload: Record<string, unknown>,
   options?: InvokeOptions,
 ): Promise<Result> {
-  const requestId = nextRequestId();
-  const shouldLog = options?.log ?? true;
-  emitLog(shouldLog, {
+  const context: IpcContext = {
+    command,
+    requestId: nextRequestId(),
+    shouldLog: options?.log ?? true,
+  };
+  emitLog(context.shouldLog, {
     severity: 'debug',
     component: 'ui',
     eventName: 'command_invoked',
     message: `Invoking ${command}`,
-    correlationId: requestId,
-    metadata: buildMetadata(command, requestId),
-    source: { module: 'ipc', function: 'invokeIpc' },
+    correlationId: context.requestId,
+    metadata: buildMetadata(context),
+    source: IPC_SOURCE,
   });
 
-  let response: unknown;
-  try {
-    response = await invoke(command, {
-      request: { requestId, payload } satisfies IpcRequest<Record<string, unknown>>,
-    });
-  } catch (error) {
-    emitLog(shouldLog, {
-      severity: 'error',
-      component: 'ui',
-      eventName: 'command_failed',
-      message: `Command invocation failed`,
-      correlationId: requestId,
-      metadata: buildMetadata(command, requestId, {
-        error_message: error instanceof Error ? error.message : String(error),
-      }),
-      source: IPC_SOURCE,
-    });
-    throw error;
-  }
-
-  const record = ensureValidResponseRecord(response, command, requestId, shouldLog);
-  return resolveResultFromRecord(record, command, requestId, shouldLog) as Result;
+  const response = await dispatchInvoke(payload, context);
+  const record = ensureValidResponseRecord(response, context);
+  return resolveResultFromRecord(record, context) as Result;
 }

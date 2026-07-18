@@ -130,10 +130,28 @@ impl Workspace {
             OpenDecision::FullRebuild => {
                 reset_runtime(&conn)?;
                 projection::set_identity(&conn, manifest.workspace_id, partition)?;
-                replay_into(&mut conn, &paths, &manifest, &records, 0, &tail)?;
+                replay_into(
+                    &mut conn,
+                    &ReplayPlan {
+                        paths: &paths,
+                        manifest: &manifest,
+                        records: &records,
+                        from_count: 0,
+                        tail: &tail,
+                    },
+                )?;
             }
             OpenDecision::Incremental { from_count } => {
-                replay_into(&mut conn, &paths, &manifest, &records, from_count, &tail)?;
+                replay_into(
+                    &mut conn,
+                    &ReplayPlan {
+                        paths: &paths,
+                        manifest: &manifest,
+                        records: &records,
+                        from_count,
+                        tail: &tail,
+                    },
+                )?;
             }
             OpenDecision::Current => {}
         }
@@ -492,19 +510,23 @@ fn reset_runtime(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
+/// The inputs to a single [`replay_into`] pass: where to read authored docs
+/// from, which partition/log to replay, the starting record count, and the
+/// tail cursor the head is advanced to.
+struct ReplayPlan<'a> {
+    paths: &'a Paths,
+    manifest: &'a Manifest,
+    records: &'a [LogRecord],
+    from_count: u64,
+    tail: &'a ReplayHead,
+}
+
 /// Replay `records[from_count..]` into the projection in one transaction,
 /// advancing the head to the tail.
-fn replay_into(
-    conn: &mut Connection,
-    paths: &Paths,
-    manifest: &Manifest,
-    records: &[LogRecord],
-    from_count: u64,
-    tail: &ReplayHead,
-) -> Result<()> {
-    let partition = manifest.partition_id;
+fn replay_into(conn: &mut Connection, plan: &ReplayPlan) -> Result<()> {
+    let partition = plan.manifest.partition_id;
     let tx = conn.transaction()?;
-    for record in &records[from_count as usize..] {
+    for record in &plan.records[plan.from_count as usize..] {
         let outcome = projection::record_applied_op(
             &tx,
             partition,
@@ -517,10 +539,10 @@ fn replay_into(
         }
         projection::apply_kind_effect(&tx, &record.env)?;
         if let OpPayload::UpsertMetamodelBatch(batch) = &record.env.payload {
-            materialize_one(&tx, paths, batch)?;
+            materialize_one(&tx, plan.paths, batch)?;
         }
     }
-    set_replay_head(&tx, partition, tail)?;
+    set_replay_head(&tx, partition, plan.tail)?;
     tx.commit()?;
     Ok(())
 }
@@ -671,6 +693,55 @@ mod seam_tests {
         })
     }
 
+    /// A fresh empty runtime DB plus a matching manifest, for `decide_open`
+    /// cases. The returned `TempDir` must be held for the DB's lifetime.
+    fn open_test_runtime() -> (TempDir, Connection, Id, Id, Manifest) {
+        let dir = TempDir::new().unwrap();
+        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
+        let paths = Paths::new(dir.path());
+        let conn = open_runtime(&paths).unwrap();
+
+        let workspace_id = Id::new_v4();
+        let partition_id = Id::new_v4();
+        let manifest = Manifest::new(workspace_id, partition_id, None);
+        (dir, conn, workspace_id, partition_id, manifest)
+    }
+
+    /// Stamp the runtime with a matching identity and the current schema
+    /// version — the precondition for a non-`FullRebuild` decision.
+    fn set_current_identity(conn: &Connection, workspace_id: Id, partition_id: Id) {
+        projection::set_identity(conn, workspace_id, partition_id).unwrap();
+        projection::set_meta(
+            conn,
+            "runtime_schema_version",
+            &RUNTIME_SCHEMA_VERSION.to_string(),
+        )
+        .unwrap();
+    }
+
+    /// Run `decide_open` against an empty tail and no canonical records — the
+    /// shape shared by the identity/schema-version precondition cases.
+    fn decide_with_empty_tail(conn: &Connection, manifest: &Manifest) -> OpenDecision {
+        decide_open(conn, manifest, &ReplayHead::empty(), &[]).unwrap()
+    }
+
+    /// A throwaway `ActorDeclare` envelope, used to stand in for canonical
+    /// records whose only relevant field in these tests is their digest.
+    fn dummy_env() -> OpEnvelope {
+        OpEnvelope::new(
+            Id::new_v4(),
+            Id::new_v4(),
+            mneme_core::Hlc(1),
+            Origin::manual(),
+            vec![],
+            OpPayload::ActorDeclare(ActorDeclare {
+                declared_actor_id: Id::new_v4(),
+                actor_kind: ActorKind::Person,
+                display_name: "x".into(),
+            }),
+        )
+    }
+
     /// After every `author()` call the canonical head and the projection head
     /// read back from the DB must agree ([ADR-0027]).
     #[test]
@@ -695,27 +766,13 @@ mod seam_tests {
     /// the canonical tail.
     #[test]
     fn decide_open_current_when_projection_matches_tail() {
-        let dir = TempDir::new().unwrap();
-        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
-        let paths = Paths::new(dir.path());
-        let conn = open_runtime(&paths).unwrap();
+        let (_dir, conn, workspace_id, partition_id, manifest) = open_test_runtime();
 
-        let workspace_id = Id::new_v4();
-        let partition_id = Id::new_v4();
-        let manifest = Manifest::new(workspace_id, partition_id, None);
-        let tail = ReplayHead::empty();
-
-        projection::set_identity(&conn, workspace_id, partition_id).unwrap();
-        projection::set_meta(
-            &conn,
-            "runtime_schema_version",
-            &RUNTIME_SCHEMA_VERSION.to_string(),
-        )
-        .unwrap();
-        set_replay_head(&conn, partition_id, &tail).unwrap();
+        set_current_identity(&conn, workspace_id, partition_id);
+        set_replay_head(&conn, partition_id, &ReplayHead::empty()).unwrap();
 
         assert_eq!(
-            decide_open(&conn, &manifest, &tail, &[]).unwrap(),
+            decide_with_empty_tail(&conn, &manifest),
             OpenDecision::Current
         );
     }
@@ -724,16 +781,10 @@ mod seam_tests {
     /// wiped runtime).
     #[test]
     fn decide_open_full_rebuild_when_no_identity() {
-        let dir = TempDir::new().unwrap();
-        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
-        let paths = Paths::new(dir.path());
-        let conn = open_runtime(&paths).unwrap();
-
-        let manifest = Manifest::new(Id::new_v4(), Id::new_v4(), None);
-        let tail = ReplayHead::empty();
+        let (_dir, conn, _workspace_id, _partition_id, manifest) = open_test_runtime();
 
         assert_eq!(
-            decide_open(&conn, &manifest, &tail, &[]).unwrap(),
+            decide_with_empty_tail(&conn, &manifest),
             OpenDecision::FullRebuild
         );
     }
@@ -742,21 +793,13 @@ mod seam_tests {
     /// schema version is wrong.
     #[test]
     fn decide_open_full_rebuild_when_schema_version_mismatch() {
-        let dir = TempDir::new().unwrap();
-        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
-        let paths = Paths::new(dir.path());
-        let conn = open_runtime(&paths).unwrap();
-
-        let workspace_id = Id::new_v4();
-        let partition_id = Id::new_v4();
-        let manifest = Manifest::new(workspace_id, partition_id, None);
-        let tail = ReplayHead::empty();
+        let (_dir, conn, workspace_id, partition_id, manifest) = open_test_runtime();
 
         projection::set_identity(&conn, workspace_id, partition_id).unwrap();
         projection::set_meta(&conn, "runtime_schema_version", "999").unwrap();
 
         assert_eq!(
-            decide_open(&conn, &manifest, &tail, &[]).unwrap(),
+            decide_with_empty_tail(&conn, &manifest),
             OpenDecision::FullRebuild
         );
     }
@@ -765,45 +808,19 @@ mod seam_tests {
     /// prefix of the canonical tail.
     #[test]
     fn decide_open_incremental_from_strict_prefix() {
-        let dir = TempDir::new().unwrap();
-        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
-        let paths = Paths::new(dir.path());
-        let conn = open_runtime(&paths).unwrap();
-
-        let workspace_id = Id::new_v4();
-        let partition_id = Id::new_v4();
-        let manifest = Manifest::new(workspace_id, partition_id, None);
-
-        projection::set_identity(&conn, workspace_id, partition_id).unwrap();
-        projection::set_meta(
-            &conn,
-            "runtime_schema_version",
-            &RUNTIME_SCHEMA_VERSION.to_string(),
-        )
-        .unwrap();
+        let (_dir, conn, workspace_id, partition_id, manifest) = open_test_runtime();
+        set_current_identity(&conn, workspace_id, partition_id);
 
         // Manufacture two records with known digests.
         let digest1 = "aaaa".to_string();
         let digest2 = "bbbb".to_string();
-        let dummy_env = OpEnvelope::new(
-            Id::new_v4(),
-            Id::new_v4(),
-            mneme_core::Hlc(1),
-            Origin::manual(),
-            vec![],
-            OpPayload::ActorDeclare(ActorDeclare {
-                declared_actor_id: Id::new_v4(),
-                actor_kind: ActorKind::Person,
-                display_name: "x".into(),
-            }),
-        );
         let records = vec![
             LogRecord {
-                env: dummy_env.clone(),
+                env: dummy_env(),
                 digest: digest1.clone(),
             },
             LogRecord {
-                env: dummy_env.clone(),
+                env: dummy_env(),
                 digest: digest2.clone(),
             },
         ];
@@ -833,37 +850,11 @@ mod seam_tests {
     /// form a valid prefix of the canonical log (diverged).
     #[test]
     fn decide_open_full_rebuild_on_divergence() {
-        let dir = TempDir::new().unwrap();
-        std::fs::create_dir_all(dir.path().join(".aideon/runtime")).unwrap();
-        let paths = Paths::new(dir.path());
-        let conn = open_runtime(&paths).unwrap();
+        let (_dir, conn, workspace_id, partition_id, manifest) = open_test_runtime();
+        set_current_identity(&conn, workspace_id, partition_id);
 
-        let workspace_id = Id::new_v4();
-        let partition_id = Id::new_v4();
-        let manifest = Manifest::new(workspace_id, partition_id, None);
-
-        projection::set_identity(&conn, workspace_id, partition_id).unwrap();
-        projection::set_meta(
-            &conn,
-            "runtime_schema_version",
-            &RUNTIME_SCHEMA_VERSION.to_string(),
-        )
-        .unwrap();
-
-        let dummy_env = OpEnvelope::new(
-            Id::new_v4(),
-            Id::new_v4(),
-            mneme_core::Hlc(1),
-            Origin::manual(),
-            vec![],
-            OpPayload::ActorDeclare(ActorDeclare {
-                declared_actor_id: Id::new_v4(),
-                actor_kind: ActorKind::Person,
-                display_name: "x".into(),
-            }),
-        );
         let records = vec![LogRecord {
-            env: dummy_env,
+            env: dummy_env(),
             digest: "canonical-digest".to_string(),
         }];
 

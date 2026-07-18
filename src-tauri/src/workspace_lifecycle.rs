@@ -356,7 +356,12 @@ pub async fn workspace_author_typed_edge(
                 .as_mut()
                 .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
             engine
-                .author_typed_edge(&payload.rel_type, &payload.src_id, &payload.dst_id, props)
+                .author_typed_edge(aideon_engine::TypedEdgeRequest {
+                    rel_type: &payload.rel_type,
+                    src_id: &payload.src_id,
+                    dst_id: &payload.dst_id,
+                    props,
+                })
                 .map_err(map_store_error)
         },
     )
@@ -413,15 +418,15 @@ pub async fn workspace_set_claim(
                 .as_mut()
                 .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
             engine
-                .set_property_claim(
-                    &payload.entity_id,
-                    &payload.type_id,
-                    &payload.attribute,
-                    &payload.value,
-                    &payload.layer,
-                    payload.valid_from,
-                    payload.valid_to,
-                )
+                .set_property_claim(aideon_engine::PropertyClaim {
+                    entity_id: &payload.entity_id,
+                    type_id: &payload.type_id,
+                    attribute: &payload.attribute,
+                    value: &payload.value,
+                    layer: &payload.layer,
+                    valid_from: payload.valid_from,
+                    valid_to: payload.valid_to,
+                })
                 .map_err(map_store_error)
         })
         .await,

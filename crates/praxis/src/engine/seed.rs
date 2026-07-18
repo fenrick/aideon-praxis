@@ -4,7 +4,7 @@ use super::SeedMetadata;
 use crate::PraxisEngine;
 use crate::dataset::BaselineDataset;
 use crate::engine::ops;
-use crate::engine::util::{derive_commit_id, normalize_change_set};
+use crate::engine::util::{CommitIdentity, derive_commit_id, normalize_change_set};
 use crate::error::PraxisResult;
 use crate::meta_seed::meta_model_seed_change_set;
 use crate::temporal::CommitChangesRequest;
@@ -93,12 +93,14 @@ impl PraxisEngine {
         let parents: Vec<String> = expected_parent.into_iter().collect();
         let commit_id = derive_commit_id(
             &inner.config.commit_id_prefix,
-            &request.branch,
-            &parents,
-            request.author.as_deref(),
-            &request.message,
-            &request.tags,
-            &normalized_changes,
+            &CommitIdentity {
+                branch: &request.branch,
+                parents: &parents,
+                author: request.author.as_deref(),
+                message: &request.message,
+                tags: &request.tags,
+                changes: &normalized_changes,
+            },
         );
 
         if inner.store.get_commit(&commit_id).await?.is_some() {

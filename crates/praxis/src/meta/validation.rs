@@ -251,7 +251,7 @@ fn validate_datetime(value: &Value, format_error: impl Fn(String) -> String) -> 
 }
 
 fn validate_blob(value: &Value, format_error: impl Fn(String) -> String) -> PraxisResult<()> {
-    if value.is_string() || value.is_object() || value.is_array() {
+    if matches!(value, Value::String(_) | Value::Object(_) | Value::Array(_)) {
         Ok(())
     } else {
         Err(PraxisError::ValidationFailed {

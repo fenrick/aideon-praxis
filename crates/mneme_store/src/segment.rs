@@ -154,31 +154,45 @@ pub fn list_sealed_segments(paths: &Paths) -> Result<Vec<u32>> {
     }
     let mut seqnos = Vec::new();
     for entry in fs::read_dir(&dir)? {
-        let entry = entry?;
-        let name = entry.file_name();
+        let name = entry?.file_name();
         let Some(name) = name.to_str() else { continue };
-        if name == "current.ops.jsonl" {
-            continue;
+        if let Some(seq) = parse_sealed_seqno(name)? {
+            seqnos.push(seq);
         }
-        let Some(seq) = name.strip_suffix(".ops.jsonl") else {
-            continue;
-        };
-        if seq.len() != 6 || !seq.bytes().all(|b| b.is_ascii_digit()) {
-            return Err(StoreError::Corruption(format!(
-                "invalid segment filename `{name}` (format v1 requires six digits)"
-            )));
-        }
-        let value: u32 = seq
-            .parse()
-            .map_err(|_| StoreError::Corruption(format!("unparseable segment `{name}`")))?;
-        if value == 0 {
-            return Err(StoreError::Corruption(
-                "000000.ops.jsonl is reserved and invalid".to_string(),
-            ));
-        }
-        seqnos.push(value);
     }
     seqnos.sort_unstable();
+    ensure_contiguous_from_one(&seqnos)?;
+    Ok(seqnos)
+}
+
+/// Parse one directory entry name into its sealed sequence number, returning
+/// `None` for entries that are not sealed segments (the loose segment or any
+/// unrelated file) and an error for a malformed sealed-segment name.
+fn parse_sealed_seqno(name: &str) -> Result<Option<u32>> {
+    if name == "current.ops.jsonl" {
+        return Ok(None);
+    }
+    let Some(seq) = name.strip_suffix(".ops.jsonl") else {
+        return Ok(None);
+    };
+    if seq.len() != 6 || !seq.bytes().all(|b| b.is_ascii_digit()) {
+        return Err(StoreError::Corruption(format!(
+            "invalid segment filename `{name}` (format v1 requires six digits)"
+        )));
+    }
+    let value: u32 = seq
+        .parse()
+        .map_err(|_| StoreError::Corruption(format!("unparseable segment `{name}`")))?;
+    if value == 0 {
+        return Err(StoreError::Corruption(
+            "000000.ops.jsonl is reserved and invalid".to_string(),
+        ));
+    }
+    Ok(Some(value))
+}
+
+/// Ensure the sorted sequence numbers start at `000001` with no gap.
+fn ensure_contiguous_from_one(seqnos: &[u32]) -> Result<()> {
     for (i, seq) in seqnos.iter().enumerate() {
         let expected = i as u32 + 1;
         if *seq != expected {
@@ -187,7 +201,7 @@ pub fn list_sealed_segments(paths: &Paths) -> Result<Vec<u32>> {
             )));
         }
     }
-    Ok(seqnos)
+    Ok(())
 }
 
 /// Verify a sealed segment's checksum and return its operation record lines
@@ -195,7 +209,29 @@ pub fn list_sealed_segments(paths: &Paths) -> Result<Vec<u32>> {
 /// sealed segment is corruption, never truncation.
 pub fn verify_sealed_segment(path: &Path) -> Result<Vec<String>> {
     let data = fs::read(path)?;
-    let mut line_spans = Vec::new(); // (start, end_incl_lf)
+    let line_spans = split_sealed_lines(&data, path)?;
+    let Some((checksum_start, _)) = line_spans.last().copied() else {
+        return Err(StoreError::Corruption(format!(
+            "sealed segment {path:?} is empty"
+        )));
+    };
+    let checksum = parse_checksum_record(&data[checksum_start..data.len() - 1], path)?;
+
+    let op_count = line_spans.len() - 1;
+    verify_checksum_fields(&checksum, &data[..checksum_start], op_count, path)?;
+
+    let mut records = Vec::with_capacity(op_count);
+    for (start, end) in &line_spans[..op_count] {
+        records.push(String::from_utf8_lossy(&data[*start..*end - 1]).into_owned());
+    }
+    Ok(records)
+}
+
+/// Split a sealed segment's bytes into LF-terminated line spans
+/// `(start, end_incl_lf)`. A trailing byte with no LF is corruption, never
+/// truncation, in a sealed segment.
+fn split_sealed_lines(data: &[u8], path: &Path) -> Result<Vec<(usize, usize)>> {
+    let mut line_spans = Vec::new();
     let mut offset = 0usize;
     while offset < data.len() {
         let Some(rel) = data[offset..].iter().position(|b| *b == b'\n') else {
@@ -207,12 +243,12 @@ pub fn verify_sealed_segment(path: &Path) -> Result<Vec<String>> {
         line_spans.push((offset, end));
         offset = end;
     }
-    let Some((checksum_start, _)) = line_spans.last().copied() else {
-        return Err(StoreError::Corruption(format!(
-            "sealed segment {path:?} is empty"
-        )));
-    };
-    let checksum_line = &data[checksum_start..data.len() - 1];
+    Ok(line_spans)
+}
+
+/// Parse the trailing checksum line and confirm it carries the reserved
+/// segment-checksum discriminator.
+fn parse_checksum_record(checksum_line: &[u8], path: &Path) -> Result<serde_json::Value> {
     let checksum: serde_json::Value = serde_json::from_slice(checksum_line)
         .map_err(|e| StoreError::Corruption(format!("checksum record not JSON: {e}")))?;
     if checksum.get("record_type").and_then(|v| v.as_str()) != Some(SEGMENT_CHECKSUM_RECORD_TYPE) {
@@ -220,10 +256,18 @@ pub fn verify_sealed_segment(path: &Path) -> Result<Vec<String>> {
             "sealed segment {path:?} has no trailing segment-checksum record"
         )));
     }
+    Ok(checksum)
+}
 
-    let covered = &data[..checksum_start];
-    let expected_bytes = checksum.get("bytes").and_then(serde_json::Value::as_u64);
-    if expected_bytes != Some(checksum_start as u64) {
+/// Confirm the checksum record's byte count, digest, and record count match the
+/// covered operation bytes.
+fn verify_checksum_fields(
+    checksum: &serde_json::Value,
+    covered: &[u8],
+    op_count: usize,
+    path: &Path,
+) -> Result<()> {
+    if checksum.get("bytes").and_then(serde_json::Value::as_u64) != Some(covered.len() as u64) {
         return Err(StoreError::Corruption(format!(
             "sealed segment {path:?} checksum byte count mismatch"
         )));
@@ -234,19 +278,12 @@ pub fn verify_sealed_segment(path: &Path) -> Result<Vec<String>> {
             "sealed segment {path:?} checksum digest mismatch"
         )));
     }
-
-    let op_count = line_spans.len() - 1;
     if checksum.get("records").and_then(serde_json::Value::as_u64) != Some(op_count as u64) {
         return Err(StoreError::Corruption(format!(
             "sealed segment {path:?} record count mismatch"
         )));
     }
-
-    let mut records = Vec::with_capacity(op_count);
-    for (start, end) in &line_spans[..op_count] {
-        records.push(String::from_utf8_lossy(&data[*start..*end - 1]).into_owned());
-    }
-    Ok(records)
+    Ok(())
 }
 
 /// Build the canonical checksum-record bytes (one JSONL line) covering

@@ -157,20 +157,34 @@ impl<T> IpcRequest<T> {
 /// Validates a W3C Trace Context `traceparent` header value without
 /// a regex dependency: `00-<32 lowercase hex>-<16 lowercase hex>-<2 lowercase hex>`.
 fn is_valid_traceparent(value: &str) -> bool {
-    // Expected: "00-" + 32 hex + "-" + 16 hex + "-" + 2 hex = 55 chars
-    let bytes = value.as_bytes();
-    if bytes.len() != 55 {
+    // Expected segments: version "00", 32-hex trace id, 16-hex parent id,
+    // 2-hex flags — joined by single '-' (55 chars total).
+    let Some([version, trace_id, parent_id, flags]) = split_traceparent_segments(value) else {
         return false;
+    };
+    version == "00"
+        && is_lowercase_hex(trace_id, 32)
+        && is_lowercase_hex(parent_id, 16)
+        && is_lowercase_hex(flags, 2)
+}
+
+/// Split a `traceparent` value into its four `-`-delimited segments, or `None`
+/// when the field count differs.
+fn split_traceparent_segments(value: &str) -> Option<[&str; 4]> {
+    let mut parts = value.split('-');
+    let segments = [parts.next()?, parts.next()?, parts.next()?, parts.next()?];
+    if parts.next().is_some() {
+        return None;
     }
-    let is_hex = |b: u8| b.is_ascii_digit() || (b'a'..=b'f').contains(&b);
-    bytes[0] == b'0'
-        && bytes[1] == b'0'
-        && bytes[2] == b'-'
-        && bytes[3..35].iter().all(|&b| is_hex(b))
-        && bytes[35] == b'-'
-        && bytes[36..52].iter().all(|&b| is_hex(b))
-        && bytes[52] == b'-'
-        && bytes[53..55].iter().all(|&b| is_hex(b))
+    Some(segments)
+}
+
+/// True when `segment` is exactly `len` lowercase hex characters (`0-9`, `a-f`).
+fn is_lowercase_hex(segment: &str, len: usize) -> bool {
+    segment.len() == len
+        && segment
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
 /// Payload used when a command requires a payload object but has no inputs.

@@ -179,26 +179,6 @@ pub struct StateAtResult {
     pub edges: u64,
 }
 
-impl StateAtResult {
-    pub fn new(
-        commit_id: String,
-        scenario: Option<String>,
-        confidence: Option<f64>,
-        layer: Option<String>,
-        nodes: u64,
-        edges: u64,
-    ) -> Self {
-        Self {
-            commit_id,
-            scenario,
-            confidence,
-            layer,
-            nodes,
-            edges,
-        }
-    }
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DiffArgs {
@@ -236,26 +216,6 @@ pub struct TopologyDeltaResult {
     pub node_dels: u64,
     pub edge_adds: u64,
     pub edge_dels: u64,
-}
-
-impl TopologyDeltaResult {
-    pub fn new(
-        from: String,
-        to: String,
-        node_adds: u64,
-        node_dels: u64,
-        edge_adds: u64,
-        edge_dels: u64,
-    ) -> Self {
-        Self {
-            from,
-            to,
-            node_adds,
-            node_dels,
-            edge_adds,
-            edge_dels,
-        }
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]

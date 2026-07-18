@@ -100,7 +100,7 @@ async fn graph_view_from_snapshot_is_well_formed() {
         }),
         scope: None,
     };
-    let model = praxis_graph_view_inner(&engine, def).await.unwrap();
+    let model = build_snapshot_view(&engine, def).await.unwrap();
     assert_eq!(model.metadata.id, "graph-1");
     assert!(!model.metadata.as_of.is_empty());
     assert_eq!(model.stats.nodes, model.nodes.len());
@@ -129,7 +129,7 @@ async fn catalogue_view_defaults_columns_when_missing() {
         columns: Vec::new(),
         limit: None,
     };
-    let model = praxis_catalogue_view_inner(&engine, def).await.unwrap();
+    let model = build_snapshot_view(&engine, def).await.unwrap();
     assert_eq!(model.columns.len(), 3);
     assert!(model.rows.iter().all(|row| row.values.contains_key("name")));
 }
@@ -153,7 +153,7 @@ async fn catalogue_view_respects_explicit_columns() {
         }],
         limit: None,
     };
-    let model = praxis_catalogue_view_inner(&engine, def).await.unwrap();
+    let model = build_snapshot_view(&engine, def).await.unwrap();
     assert_eq!(model.columns.len(), 1);
     assert_eq!(model.columns[0].id, "owner");
 }
@@ -174,7 +174,7 @@ async fn matrix_view_has_cells_for_each_axis_pair() {
         confidence: None,
         filters: None,
     };
-    let model = praxis_matrix_view_inner(&engine, def).await.unwrap();
+    let model = build_snapshot_view(&engine, def).await.unwrap();
     assert_eq!(model.cells.len(), model.rows.len() * model.columns.len());
     assert!(
         model
@@ -200,16 +200,14 @@ async fn chart_view_supports_kpi_and_line() {
         confidence: None,
         filters: None,
     };
-    let kpi = praxis_chart_view_inner(&engine, base.clone())
-        .await
-        .unwrap();
+    let kpi = build_snapshot_view(&engine, base.clone()).await.unwrap();
     assert_eq!(kpi.chart_type, "kpi");
     assert!(kpi.kpi.is_some());
     assert!(kpi.series.is_empty());
 
     let mut line_def = base;
     line_def.chart_type = "line".into();
-    let line = praxis_chart_view_inner(&engine, line_def).await.unwrap();
+    let line = build_snapshot_view(&engine, line_def).await.unwrap();
     assert_eq!(line.chart_type, "line");
     assert!(line.kpi.is_none());
     assert_eq!(line.series.len(), 1);

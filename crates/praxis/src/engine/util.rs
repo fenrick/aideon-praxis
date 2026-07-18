@@ -1,6 +1,6 @@
 //! Utility and helper functions for the Praxis engine.
 
-use crate::engine::state::Inner;
+use crate::engine::state::{BranchState, Inner};
 use crate::error::{PraxisError, PraxisResult};
 use crate::graph::GraphSnapshot;
 use crate::temporal::{ChangeSet, CommitRef, EdgeTombstone, EdgeVersion};
@@ -44,34 +44,21 @@ fn edge_tombstone_key(tombstone: &EdgeTombstone) -> (String, String) {
     (tombstone.from.clone(), tombstone.to.clone())
 }
 
-pub(super) fn derive_commit_id(
-    prefix: &str,
-    branch: &str,
-    parents: &[String],
-    author: Option<&str>,
-    message: &str,
-    tags: &[String],
-    changes: &ChangeSet,
-) -> String {
-    #[derive(Serialize)]
-    struct Identity<'a> {
-        branch: &'a str,
-        parents: &'a [String],
-        author: Option<&'a str>,
-        message: &'a str,
-        tags: &'a [String],
-        changes: &'a ChangeSet,
-    }
+/// The commit-identity inputs that are hashed to derive a deterministic commit
+/// id. Grouping them keeps [`derive_commit_id`] to a small argument list and
+/// doubles as the serialized hash payload.
+#[derive(Serialize)]
+pub(super) struct CommitIdentity<'a> {
+    pub(super) branch: &'a str,
+    pub(super) parents: &'a [String],
+    pub(super) author: Option<&'a str>,
+    pub(super) message: &'a str,
+    pub(super) tags: &'a [String],
+    pub(super) changes: &'a ChangeSet,
+}
 
-    let identity = Identity {
-        branch,
-        parents,
-        author,
-        message,
-        tags,
-        changes,
-    };
-    let payload = serde_json::to_vec(&identity).expect("commit identity serialization");
+pub(super) fn derive_commit_id(prefix: &str, identity: &CommitIdentity<'_>) -> String {
+    let payload = serde_json::to_vec(identity).expect("commit identity serialization");
     let mut hasher = Hasher::new();
     hasher.update(&payload);
     let hex = hasher.finalize().to_hex().to_string();
@@ -138,56 +125,61 @@ pub(super) async fn resolve_commit_id(
     scenario_hint: Option<&str>,
 ) -> PraxisResult<String> {
     match reference {
-        CommitRef::Id(value) => {
-            if inner.record_for(value).await.is_ok() {
-                Ok(value.clone())
-            } else if let Some(branch_state) = inner.branches.get(value.as_str()) {
-                branch_state
-                    .head
-                    .clone()
-                    .ok_or_else(|| PraxisError::UnknownCommit {
-                        commit: value.clone(),
-                    })
-            } else if let Some(hint) = scenario_hint {
-                let branch =
-                    inner
-                        .branches
-                        .get(hint)
-                        .ok_or_else(|| PraxisError::UnknownBranch {
-                            branch: hint.into(),
-                        })?;
-                branch
-                    .head
-                    .clone()
-                    .ok_or_else(|| PraxisError::UnknownCommit {
-                        commit: hint.into(),
-                    })
-            } else {
-                Err(PraxisError::UnknownCommit {
-                    commit: value.clone(),
-                })
-            }
-        }
+        CommitRef::Id(value) => resolve_id_reference(inner, value, scenario_hint).await,
         CommitRef::Branch { branch, at } => {
-            if let Some(at) = at {
-                inner.record_for(at).await?;
-                return Ok(at.clone());
-            }
-            let target_branch =
-                inner
-                    .branches
-                    .get(branch)
-                    .ok_or_else(|| PraxisError::UnknownBranch {
-                        branch: branch.clone(),
-                    })?;
-            target_branch
-                .head
-                .clone()
-                .ok_or_else(|| PraxisError::UnknownCommit {
-                    commit: branch.clone(),
-                })
+            resolve_branch_reference(inner, branch, at.as_deref()).await
         }
     }
+}
+
+async fn resolve_id_reference(
+    inner: &mut Inner,
+    value: &str,
+    scenario_hint: Option<&str>,
+) -> PraxisResult<String> {
+    if inner.record_for(value).await.is_ok() {
+        return Ok(value.to_string());
+    }
+    if let Some(branch_state) = inner.branches.get(value) {
+        return branch_head(branch_state, value);
+    }
+    let hint = scenario_hint.ok_or_else(|| PraxisError::UnknownCommit {
+        commit: value.to_string(),
+    })?;
+    let branch = inner
+        .branches
+        .get(hint)
+        .ok_or_else(|| PraxisError::UnknownBranch {
+            branch: hint.to_string(),
+        })?;
+    branch_head(branch, hint)
+}
+
+async fn resolve_branch_reference(
+    inner: &mut Inner,
+    branch: &str,
+    at: Option<&str>,
+) -> PraxisResult<String> {
+    if let Some(at) = at {
+        inner.record_for(at).await?;
+        return Ok(at.to_string());
+    }
+    let target_branch = inner
+        .branches
+        .get(branch)
+        .ok_or_else(|| PraxisError::UnknownBranch {
+            branch: branch.to_string(),
+        })?;
+    branch_head(target_branch, branch)
+}
+
+fn branch_head(state: &BranchState, missing: &str) -> PraxisResult<String> {
+    state
+        .head
+        .clone()
+        .ok_or_else(|| PraxisError::UnknownCommit {
+            commit: missing.to_string(),
+        })
 }
 
 pub(super) async fn find_common_ancestor(
@@ -206,11 +198,7 @@ pub(super) async fn find_common_ancestor(
         if ancestors_a.contains(&id) {
             return Ok(Some(id));
         }
-        if let Ok(record) = inner.record_for(&id).await {
-            for parent in &record.summary.parents {
-                queue.push_back(parent.clone());
-            }
-        }
+        enqueue_parents(inner, &id, &mut queue).await;
     }
     Ok(None)
 }
@@ -220,16 +208,21 @@ async fn collect_ancestors(inner: &mut Inner, head: &str) -> PraxisResult<HashSe
     let mut queue: VecDeque<String> = VecDeque::new();
     queue.push_back(head.to_string());
     while let Some(id) = queue.pop_front() {
-        if !visited.insert(id.clone()) {
-            continue;
-        }
-        if let Ok(record) = inner.record_for(&id).await {
-            for parent in &record.summary.parents {
-                queue.push_back(parent.clone());
-            }
+        if visited.insert(id.clone()) {
+            enqueue_parents(inner, &id, &mut queue).await;
         }
     }
     Ok(visited)
+}
+
+/// Enqueues the parents of `id` onto `queue`, skipping any commit whose record
+/// cannot be loaded.
+async fn enqueue_parents(inner: &mut Inner, id: &str, queue: &mut VecDeque<String>) {
+    if let Ok(record) = inner.record_for(id).await {
+        for parent in &record.summary.parents {
+            queue.push_back(parent.clone());
+        }
+    }
 }
 
 #[cfg(test)]

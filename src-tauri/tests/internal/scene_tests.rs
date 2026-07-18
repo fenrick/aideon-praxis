@@ -22,7 +22,14 @@ fn ipc_request<T>(payload: T) -> IpcRequest<T> {
 
 #[test]
 fn store_key_is_stable() {
-    let key = canvas_store_key("doc1", "2025-01-01", Some("main"), None);
+    let key = LayoutCoords {
+        doc_id: "doc1",
+        widget_id: None,
+        as_of: "2025-01-01",
+        scenario: Some("main"),
+        layer: None,
+    }
+    .store_key();
     assert_eq!(key, "canvas/doc1/scenario-main/layout-2025-01-01.json");
 }
 
@@ -36,13 +43,27 @@ fn safe_segment_sanitizes_inputs() {
 
 #[test]
 fn store_key_trims_blank_segments() {
-    let key = canvas_store_key("doc1", "2025-01-01", Some(" "), Some(""));
+    let key = LayoutCoords {
+        doc_id: "doc1",
+        widget_id: None,
+        as_of: "2025-01-01",
+        scenario: Some(" "),
+        layer: Some(""),
+    }
+    .store_key();
     assert_eq!(key, "canvas/doc1/layout-2025-01-01.json");
 }
 
 #[test]
 fn graph_layout_key_is_stable() {
-    let key = graph_layout_store_key("doc1", "widget1", "2025-01-01", Some("main"), None);
+    let key = LayoutCoords {
+        doc_id: "doc1",
+        widget_id: Some("widget1"),
+        as_of: "2025-01-01",
+        scenario: Some("main"),
+        layer: None,
+    }
+    .store_key();
     assert_eq!(
         key,
         "graph/doc1/widget-widget1/scenario-main/layout-2025-01-01.json"

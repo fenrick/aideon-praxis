@@ -9,6 +9,95 @@ pub struct GraphViewModel {
     pub edges: Vec<GraphEdgeView>,
 }
 
+/// Compiled graph filters derived from a [`GraphViewDefinition`].
+struct GraphFilters {
+    node_types: Option<HashSet<String>>,
+    edge_types: Option<HashSet<String>>,
+    search: Option<String>,
+    scope: Option<HashSet<String>>,
+}
+
+impl GraphFilters {
+    fn from_definition(definition: &GraphViewDefinition, snapshot: &GraphSnapshot) -> Self {
+        let filters = definition.filters.as_ref();
+        let scope = definition
+            .scope
+            .as_ref()
+            .map(|scope| scope.root_ids.iter().cloned().collect::<HashSet<String>>())
+            .filter(|ids| !ids.is_empty())
+            .map(|ids| expand_scope(&ids, snapshot));
+        Self {
+            node_types: filters
+                .and_then(|f| f.node_types.as_ref())
+                .map(|v| collect_set(v)),
+            edge_types: filters
+                .and_then(|f| f.edge_types.as_ref())
+                .map(|v| collect_set(v)),
+            search: filters
+                .and_then(|f| f.search.as_ref())
+                .map(|q| q.to_lowercase()),
+            scope,
+        }
+    }
+
+    fn accepts_node(&self, node: &NodeVersion, label: &str) -> bool {
+        if let Some(scope) = self.scope.as_ref()
+            && !scope.contains(&node.id)
+        {
+            return false;
+        }
+        node_included(node, label, self.node_types.as_ref(), self.search.as_ref())
+    }
+
+    fn accepts_edge(&self, edge: &EdgeVersion, label: &str) -> bool {
+        if !type_allowed(self.edge_types.as_ref(), edge.r#type.as_ref()) {
+            return false;
+        }
+        match self.search.as_ref() {
+            Some(query) => edge_matches_query(edge, label, query),
+            None => true,
+        }
+    }
+}
+
+fn collect_graph_nodes(snapshot: &GraphSnapshot, filters: &GraphFilters) -> Vec<GraphNodeView> {
+    snapshot
+        .nodes()
+        .filter_map(|node| {
+            let label = node_label(node);
+            filters.accepts_node(node, &label).then(|| GraphNodeView {
+                id: node.id.clone(),
+                label,
+                r#type: node.r#type.clone(),
+                position: None,
+                props: node.props.clone(),
+            })
+        })
+        .collect()
+}
+
+fn collect_graph_edges(
+    snapshot: &GraphSnapshot,
+    filters: &GraphFilters,
+    node_ids: &HashSet<String>,
+) -> Vec<GraphEdgeView> {
+    snapshot
+        .edges()
+        .filter(|edge| node_ids.contains(&edge.from) && node_ids.contains(&edge.to))
+        .filter_map(|edge| {
+            let label = edge_label(edge);
+            filters.accepts_edge(edge, &label).then(|| GraphEdgeView {
+                id: edge.id.clone(),
+                from: edge.from.clone(),
+                to: edge.to.clone(),
+                r#type: edge.r#type.clone(),
+                label: Some(label),
+                props: edge.props.clone(),
+            })
+        })
+        .collect()
+}
+
 impl GraphViewModel {
     fn from_snapshot(
         definition: GraphViewDefinition,
@@ -16,99 +105,18 @@ impl GraphViewModel {
         resolved_as_of: &str,
         resolved_branch: &str,
     ) -> Self {
-        let filters = definition.filters.as_ref();
-        let node_type_filter = filters
-            .and_then(|filter| filter.node_types.as_ref())
-            .map(|types| types.iter().cloned().collect::<HashSet<String>>());
-        let edge_type_filter = filters
-            .and_then(|filter| filter.edge_types.as_ref())
-            .map(|types| types.iter().cloned().collect::<HashSet<String>>());
-        let search_query = filters
-            .and_then(|filter| filter.search.as_ref())
-            .map(|query| query.to_lowercase());
-
-        let scope_ids = definition
-            .scope
-            .as_ref()
-            .map(|scope| scope.root_ids.iter().cloned().collect::<HashSet<String>>());
-        let scope_allowed = scope_ids
-            .as_ref()
-            .filter(|ids| !ids.is_empty())
-            .map(|ids| expand_scope(ids, snapshot));
-
-        let mut nodes = Vec::new();
-        for node in snapshot.nodes() {
-            if let Some(scope) = scope_allowed.as_ref()
-                && !scope.contains(&node.id)
-            {
-                continue;
-            }
-            if let Some(filter) = node_type_filter.as_ref()
-                && !node
-                    .r#type
-                    .as_ref()
-                    .map(|ty| filter.contains(ty))
-                    .unwrap_or(false)
-            {
-                continue;
-            }
-            let label = node_label(node);
-            if let Some(query) = search_query.as_ref()
-                && !node_matches_query(node, &label, query)
-            {
-                continue;
-            }
-            nodes.push(GraphNodeView {
-                id: node.id.clone(),
-                label,
-                r#type: node.r#type.clone(),
-                position: None,
-                props: node.props.clone(),
-            });
-        }
-
+        let filters = GraphFilters::from_definition(&definition, snapshot);
+        let nodes = collect_graph_nodes(snapshot, &filters);
         let node_ids: HashSet<String> = nodes.iter().map(|node| node.id.clone()).collect();
-        let mut edges = Vec::new();
-        for edge in snapshot.edges() {
-            if !node_ids.contains(&edge.from) || !node_ids.contains(&edge.to) {
-                continue;
-            }
-            if let Some(filter) = edge_type_filter.as_ref()
-                && !edge
-                    .r#type
-                    .as_ref()
-                    .map(|ty| filter.contains(ty))
-                    .unwrap_or(false)
-            {
-                continue;
-            }
-            let label = edge_label(edge);
-            if let Some(query) = search_query.as_ref()
-                && !edge_matches_query(edge, &label, query)
-            {
-                continue;
-            }
-            edges.push(GraphEdgeView {
-                id: edge.id.clone(),
-                from: edge.from.clone(),
-                to: edge.to.clone(),
-                r#type: edge.r#type.clone(),
-                label: Some(label),
-                props: edge.props.clone(),
-            });
-        }
+        let edges = collect_graph_edges(snapshot, &filters, &node_ids);
 
-        let scenario = definition
-            .scenario
-            .clone()
-            .or_else(|| Some(resolved_branch.to_string()));
         Self {
             metadata: metadata_from(
                 &definition.id,
                 &definition.name,
                 resolved_as_of,
                 definition.layer.clone(),
-                scenario,
+                resolve_scenario(&definition.scenario, resolved_branch),
             ),
             stats: ViewStats {
                 nodes: nodes.len(),
@@ -151,6 +159,26 @@ pub struct CatalogueViewModel {
     pub rows: Vec<CatalogueRow>,
 }
 
+fn default_catalogue_columns() -> Vec<CatalogueColumn> {
+    vec![
+        CatalogueColumn {
+            id: "name".into(),
+            label: "Name".into(),
+            r#type: CatalogueColumnType::String,
+        },
+        CatalogueColumn {
+            id: "type".into(),
+            label: "Type".into(),
+            r#type: CatalogueColumnType::String,
+        },
+        CatalogueColumn {
+            id: "owner".into(),
+            label: "Owner".into(),
+            r#type: CatalogueColumnType::String,
+        },
+    ]
+}
+
 impl CatalogueViewModel {
     fn from_snapshot(
         definition: CatalogueViewDefinition,
@@ -159,31 +187,15 @@ impl CatalogueViewModel {
         resolved_branch: &str,
     ) -> Self {
         let filters = definition.filters.as_ref();
-        let node_type_filter = filters
-            .and_then(|filter| filter.node_types.as_ref())
-            .map(|types| types.iter().cloned().collect::<HashSet<String>>());
-        let search_query = filters
-            .and_then(|filter| filter.search.as_ref())
-            .map(|query| query.to_lowercase());
+        let node_types = filters
+            .and_then(|f| f.node_types.as_ref())
+            .map(|v| collect_set(v));
+        let search = filters
+            .and_then(|f| f.search.as_ref())
+            .map(|q| q.to_lowercase());
 
         let columns = if definition.columns.is_empty() {
-            vec![
-                CatalogueColumn {
-                    id: "name".into(),
-                    label: "Name".into(),
-                    r#type: CatalogueColumnType::String,
-                },
-                CatalogueColumn {
-                    id: "type".into(),
-                    label: "Type".into(),
-                    r#type: CatalogueColumnType::String,
-                },
-                CatalogueColumn {
-                    id: "owner".into(),
-                    label: "Owner".into(),
-                    r#type: CatalogueColumnType::String,
-                },
-            ]
+            default_catalogue_columns()
         } else {
             definition.columns
         };
@@ -191,22 +203,12 @@ impl CatalogueViewModel {
         let mut rows: Vec<CatalogueRow> = snapshot
             .nodes()
             .filter(|node| {
-                if let Some(filter) = node_type_filter.as_ref()
-                    && !node
-                        .r#type
-                        .as_ref()
-                        .map(|ty| filter.contains(ty))
-                        .unwrap_or(false)
-                {
-                    return false;
-                }
-                let label = node_label(node);
-                if let Some(query) = search_query.as_ref()
-                    && !node_matches_query(node, &label, query)
-                {
-                    return false;
-                }
-                true
+                node_included(
+                    node,
+                    &node_label(node),
+                    node_types.as_ref(),
+                    search.as_ref(),
+                )
             })
             .map(|node| CatalogueRow {
                 id: node.id.clone(),
@@ -217,17 +219,13 @@ impl CatalogueViewModel {
             rows.truncate(limit as usize);
         }
 
-        let scenario = definition
-            .scenario
-            .clone()
-            .or_else(|| Some(resolved_branch.to_string()));
         Self {
             metadata: metadata_from(
                 &definition.id,
                 &definition.name,
                 resolved_as_of,
                 definition.layer.clone(),
-                scenario,
+                resolve_scenario(&definition.scenario, resolved_branch),
             ),
             columns,
             rows,
@@ -315,6 +313,81 @@ pub struct ChartViewModel {
     pub kpi: Option<ChartKpiSummary>,
 }
 
+fn matrix_axes(
+    snapshot: &GraphSnapshot,
+    row_type: &str,
+    column_type: &str,
+) -> (Vec<MatrixAxis>, Vec<MatrixAxis>) {
+    let mut rows = Vec::new();
+    let mut columns = Vec::new();
+    for node in snapshot.nodes() {
+        let node_type = node.r#type.as_deref();
+        if node_type == Some(row_type) {
+            rows.push(matrix_axis(node));
+        } else if node_type == Some(column_type) {
+            columns.push(matrix_axis(node));
+        }
+    }
+    (rows, columns)
+}
+
+fn matrix_axis(node: &NodeVersion) -> MatrixAxis {
+    MatrixAxis {
+        id: node.id.clone(),
+        label: node_label(node),
+    }
+}
+
+fn matrix_edges<'a>(
+    snapshot: &'a GraphSnapshot,
+    relationship: Option<&str>,
+) -> Vec<&'a EdgeVersion> {
+    snapshot
+        .edges()
+        .filter(|edge| match relationship {
+            Some(rel) => edge.r#type.as_deref() == Some(rel),
+            None => true,
+        })
+        .collect()
+}
+
+fn matrix_cells(
+    rows: &[MatrixAxis],
+    columns: &[MatrixAxis],
+    edges: &[&EdgeVersion],
+) -> Vec<MatrixCell> {
+    let mut cells = Vec::new();
+    for row in rows {
+        for column in columns {
+            cells.push(matrix_cell(row, column, edges));
+        }
+    }
+    cells
+}
+
+fn matrix_cell(row: &MatrixAxis, column: &MatrixAxis, edges: &[&EdgeVersion]) -> MatrixCell {
+    let matched = edges.iter().find(|edge| {
+        (edge.from == row.id && edge.to == column.id)
+            || (edge.from == column.id && edge.to == row.id)
+    });
+    match matched {
+        Some(edge) => MatrixCell {
+            row_id: row.id.clone(),
+            column_id: column.id.clone(),
+            state: MatrixCellState::Connected,
+            strength: edge_strength(edge),
+            value: edge_value(edge),
+        },
+        None => MatrixCell {
+            row_id: row.id.clone(),
+            column_id: column.id.clone(),
+            state: MatrixCellState::Missing,
+            strength: None,
+            value: None,
+        },
+    }
+}
+
 impl MatrixViewModel {
     fn from_snapshot(
         definition: MatrixViewDefinition,
@@ -322,79 +395,93 @@ impl MatrixViewModel {
         resolved_as_of: &str,
         resolved_branch: &str,
     ) -> Self {
-        let row_type = definition.row_type.clone();
-        let column_type = definition.column_type.clone();
-        let relationship = definition.relationship.clone();
+        let (rows, columns) = matrix_axes(snapshot, &definition.row_type, &definition.column_type);
+        let edges = matrix_edges(snapshot, definition.relationship.as_deref());
+        let cells = matrix_cells(&rows, &columns, &edges);
 
-        let mut rows = Vec::new();
-        let mut columns = Vec::new();
-        for node in snapshot.nodes() {
-            if node.r#type.as_deref() == Some(&row_type) {
-                rows.push(MatrixAxis {
-                    id: node.id.clone(),
-                    label: node_label(node),
-                });
-            } else if node.r#type.as_deref() == Some(&column_type) {
-                columns.push(MatrixAxis {
-                    id: node.id.clone(),
-                    label: node_label(node),
-                });
-            }
-        }
-
-        let mut edges = Vec::new();
-        for edge in snapshot.edges() {
-            if let Some(ref rel) = relationship
-                && edge.r#type.as_deref() != Some(rel.as_str())
-            {
-                continue;
-            }
-            edges.push(edge);
-        }
-
-        let mut cells = Vec::new();
-        for row in &rows {
-            for column in &columns {
-                let matched = edges.iter().find(|edge| {
-                    (edge.from == row.id && edge.to == column.id)
-                        || (edge.from == column.id && edge.to == row.id)
-                });
-                if let Some(edge) = matched {
-                    cells.push(MatrixCell {
-                        row_id: row.id.clone(),
-                        column_id: column.id.clone(),
-                        state: MatrixCellState::Connected,
-                        strength: edge_strength(edge),
-                        value: edge_value(edge),
-                    });
-                } else {
-                    cells.push(MatrixCell {
-                        row_id: row.id.clone(),
-                        column_id: column.id.clone(),
-                        state: MatrixCellState::Missing,
-                        strength: None,
-                        value: None,
-                    });
-                }
-            }
-        }
-
-        let scenario = definition
-            .scenario
-            .clone()
-            .or_else(|| Some(resolved_branch.to_string()));
         Self {
             metadata: metadata_from(
                 &definition.id,
                 &definition.name,
                 resolved_as_of,
                 definition.layer.clone(),
-                scenario,
+                resolve_scenario(&definition.scenario, resolved_branch),
             ),
             rows,
             columns,
             cells,
         }
+    }
+}
+
+fn chart_measure(measure: &str, snapshot: &GraphSnapshot) -> (f64, Option<String>) {
+    let measure = measure.to_lowercase();
+    if measure.contains("edge") || measure.contains("link") {
+        (snapshot.edges().count() as f64, Some("links".into()))
+    } else {
+        (snapshot.nodes().count() as f64, Some("entities".into()))
+    }
+}
+
+fn kpi_chart(metadata: ViewMetadata, value: f64, units: Option<String>) -> ChartViewModel {
+    ChartViewModel {
+        metadata,
+        chart_type: "kpi".into(),
+        series: Vec::new(),
+        kpi: Some(ChartKpiSummary {
+            value,
+            units,
+            delta: None,
+            trend: None,
+        }),
+    }
+}
+
+fn line_chart(metadata: ViewMetadata, measure: &str, value: f64) -> ChartViewModel {
+    let point = |label: &str| ChartPoint {
+        label: label.into(),
+        value,
+        timestamp: None,
+    };
+    ChartViewModel {
+        metadata,
+        chart_type: "line".into(),
+        series: vec![ChartSeries {
+            id: "series-primary".into(),
+            label: measure.to_string(),
+            color: Some("#2563eb".into()),
+            points: vec![point("T-2"), point("T-1"), point("Now")],
+        }],
+        kpi: None,
+    }
+}
+
+fn bar_chart(metadata: ViewMetadata, measure: &str, snapshot: &GraphSnapshot) -> ChartViewModel {
+    let mut counts: HashMap<String, u64> = HashMap::new();
+    for node in snapshot.nodes() {
+        if let Some(node_type) = node.r#type.as_ref() {
+            *counts.entry(node_type.clone()).or_default() += 1;
+        }
+    }
+    let mut points: Vec<ChartPoint> = counts
+        .into_iter()
+        .map(|(label, count)| ChartPoint {
+            label,
+            value: count as f64,
+            timestamp: None,
+        })
+        .collect();
+    points.sort_by(|a, b| a.label.cmp(&b.label));
+    ChartViewModel {
+        metadata,
+        chart_type: "bar".into(),
+        series: vec![ChartSeries {
+            id: "by-type".into(),
+            label: measure.to_string(),
+            color: Some("#0f172a".into()),
+            points,
+        }],
+        kpi: None,
     }
 }
 
@@ -405,93 +492,51 @@ impl ChartViewModel {
         resolved_as_of: &str,
         resolved_branch: &str,
     ) -> Self {
-        let scenario = definition
-            .scenario
-            .clone()
-            .or_else(|| Some(resolved_branch.to_string()));
         let metadata = metadata_from(
             &definition.id,
             &definition.name,
             resolved_as_of,
             definition.layer.clone(),
-            scenario,
+            resolve_scenario(&definition.scenario, resolved_branch),
         );
-        let node_count = snapshot.nodes().count() as f64;
-        let edge_count = snapshot.edges().count() as f64;
-        let measure = definition.measure.to_lowercase();
-        let (value, units) = if measure.contains("edge") || measure.contains("link") {
-            (edge_count, Some("links".into()))
-        } else {
-            (node_count, Some("entities".into()))
-        };
+        let (value, units) = chart_measure(&definition.measure, snapshot);
         match definition.chart_type.as_str() {
-            "kpi" => Self {
-                metadata,
-                chart_type: "kpi".into(),
-                series: Vec::new(),
-                kpi: Some(ChartKpiSummary {
-                    value,
-                    units,
-                    delta: None,
-                    trend: None,
-                }),
-            },
-            "line" => Self {
-                metadata,
-                chart_type: "line".into(),
-                series: vec![ChartSeries {
-                    id: "series-primary".into(),
-                    label: definition.measure.clone(),
-                    color: Some("#2563eb".into()),
-                    points: vec![
-                        ChartPoint {
-                            label: "T-2".into(),
-                            value,
-                            timestamp: None,
-                        },
-                        ChartPoint {
-                            label: "T-1".into(),
-                            value,
-                            timestamp: None,
-                        },
-                        ChartPoint {
-                            label: "Now".into(),
-                            value,
-                            timestamp: None,
-                        },
-                    ],
-                }],
-                kpi: None,
-            },
-            _ => {
-                let mut counts: HashMap<String, u64> = HashMap::new();
-                for node in snapshot.nodes() {
-                    if let Some(node_type) = node.r#type.as_ref() {
-                        *counts.entry(node_type.clone()).or_default() += 1;
-                    }
-                }
-                let mut points: Vec<ChartPoint> = counts
-                    .into_iter()
-                    .map(|(label, count)| ChartPoint {
-                        label,
-                        value: count as f64,
-                        timestamp: None,
-                    })
-                    .collect();
-                points.sort_by(|a, b| a.label.cmp(&b.label));
-                Self {
-                    metadata,
-                    chart_type: "bar".into(),
-                    series: vec![ChartSeries {
-                        id: "by-type".into(),
-                        label: definition.measure.clone(),
-                        color: Some("#0f172a".into()),
-                        points,
-                    }],
-                    kpi: None,
-                }
-            }
+            "kpi" => kpi_chart(metadata, value, units),
+            "line" => line_chart(metadata, &definition.measure, value),
+            _ => bar_chart(metadata, &definition.measure, snapshot),
         }
+    }
+}
+
+fn resolve_scenario(scenario: &Option<String>, resolved_branch: &str) -> Option<String> {
+    scenario
+        .clone()
+        .or_else(|| Some(resolved_branch.to_string()))
+}
+
+fn collect_set(values: &[String]) -> HashSet<String> {
+    values.iter().cloned().collect()
+}
+
+fn type_allowed(filter: Option<&HashSet<String>>, ty: Option<&String>) -> bool {
+    match filter {
+        None => true,
+        Some(filter) => ty.map(|ty| filter.contains(ty)).unwrap_or(false),
+    }
+}
+
+fn node_included(
+    node: &NodeVersion,
+    label: &str,
+    node_types: Option<&HashSet<String>>,
+    search: Option<&String>,
+) -> bool {
+    if !type_allowed(node_types, node.r#type.as_ref()) {
+        return false;
+    }
+    match search {
+        Some(query) => node_matches_query(node, label, query),
+        None => true,
     }
 }
 
@@ -519,19 +564,18 @@ fn node_label(node: &NodeVersion) -> String {
         .to_string()
 }
 
+fn any_matches(query: &str, candidates: &[&str]) -> bool {
+    candidates
+        .iter()
+        .any(|candidate| candidate.to_lowercase().contains(query))
+}
+
 fn node_matches_query(node: &NodeVersion, label: &str, query: &str) -> bool {
-    if label.to_lowercase().contains(query) {
-        return true;
+    let mut candidates = vec![label, node.id.as_str()];
+    if let Some(node_type) = node.r#type.as_deref() {
+        candidates.push(node_type);
     }
-    if node.id.to_lowercase().contains(query) {
-        return true;
-    }
-    if let Some(node_type) = node.r#type.as_ref()
-        && node_type.to_lowercase().contains(query)
-    {
-        return true;
-    }
-    false
+    any_matches(query, &candidates)
 }
 
 fn edge_label(edge: &EdgeVersion) -> String {
@@ -551,18 +595,11 @@ fn edge_label(edge: &EdgeVersion) -> String {
 }
 
 fn edge_matches_query(edge: &EdgeVersion, label: &str, query: &str) -> bool {
-    if label.to_lowercase().contains(query) {
-        return true;
+    let mut candidates = vec![label, edge.from.as_str(), edge.to.as_str()];
+    if let Some(edge_type) = edge.r#type.as_deref() {
+        candidates.push(edge_type);
     }
-    if edge.from.to_lowercase().contains(query) || edge.to.to_lowercase().contains(query) {
-        return true;
-    }
-    if let Some(edge_type) = edge.r#type.as_ref()
-        && edge_type.to_lowercase().contains(query)
-    {
-        return true;
-    }
-    false
+    any_matches(query, &candidates)
 }
 
 fn catalogue_values(node: &NodeVersion, columns: &[CatalogueColumn]) -> Map<String, Value> {

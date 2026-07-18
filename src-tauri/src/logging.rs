@@ -28,84 +28,114 @@ pub fn init_context(session_id: String) -> Option<&'static LoggingContext> {
     CONTEXT.get()
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn log_record(
-    severity: u8,
-    component: &str,
-    event_name: &str,
-    message: &str,
-    correlation_id: &str,
-    metadata: Option<Value>,
-    module: &str,
-    file: &str,
-    line: u32,
-) {
-    let level = severity_to_level(severity);
-    let level_name = level_to_str(level);
-    let timestamp = OffsetDateTime::now_utc()
+/// The event-specific fields of a single structured log record.
+pub struct LogEntry<'a> {
+    pub severity: u8,
+    pub component: &'a str,
+    pub event_name: &'a str,
+    pub message: &'a str,
+    pub correlation_id: &'a str,
+    pub metadata: Option<Value>,
+}
+
+/// The originating source location for a log record.
+pub struct SourceLocation<'a> {
+    pub module: &'a str,
+    pub file: &'a str,
+    pub line: u32,
+}
+
+pub fn log_record(entry: LogEntry, source: SourceLocation) {
+    let level = severity_to_level(entry.severity);
+    let mut record = base_record(&entry, level);
+    insert_context(&mut record);
+    record.insert("source".into(), source_value(&source));
+    merge_metadata(&mut record, entry.metadata);
+
+    let encoded = encode_record(record);
+    log::log!(target: "tauri", level, "{}", encoded);
+}
+
+fn current_timestamp() -> String {
+    OffsetDateTime::now_utc()
         .format(&Rfc3339)
         .unwrap_or_else(|_| {
             OffsetDateTime::now_utc()
                 .format(&Rfc3339)
                 .unwrap_or_default()
-        });
+        })
+}
 
+fn base_record(entry: &LogEntry, level: log::Level) -> Map<String, Value> {
     let mut record = Map::new();
-    record.insert("timestamp".into(), Value::String(timestamp));
-    record.insert("level".into(), Value::String(level_name.to_string()));
-    record.insert("syslog.severity".into(), Value::from(severity));
+    record.insert("timestamp".into(), Value::String(current_timestamp()));
+    record.insert(
+        "level".into(),
+        Value::String(level_to_str(level).to_string()),
+    );
+    record.insert("syslog.severity".into(), Value::from(entry.severity));
     record.insert(
         "syslog.severity_text".into(),
-        Value::String(severity_text(severity).to_string()),
+        Value::String(severity_text(entry.severity).to_string()),
     );
-    record.insert("message".into(), Value::String(message.to_string()));
-    record.insert("component".into(), Value::String(component.to_string()));
-    record.insert("event_name".into(), Value::String(event_name.to_string()));
+    record.insert("message".into(), Value::String(entry.message.to_string()));
+    record.insert(
+        "component".into(),
+        Value::String(entry.component.to_string()),
+    );
+    record.insert(
+        "event_name".into(),
+        Value::String(entry.event_name.to_string()),
+    );
     record.insert(
         "correlation_id".into(),
-        Value::String(correlation_id.to_string()),
+        Value::String(entry.correlation_id.to_string()),
     );
+    record
+}
 
-    if let Some(ctx) = CONTEXT.get() {
-        record.insert("session_id".into(), Value::String(ctx.session_id.clone()));
-        record.insert(
-            "build".into(),
-            json!({
-                "version": ctx.build_version,
-                "commit": ctx.build_commit.as_deref().unwrap_or("unknown"),
-            }),
-        );
-        record.insert(
-            "platform".into(),
-            json!({
-                "os": ctx.platform_os,
-                "arch": ctx.platform_arch,
-            }),
-        );
-    } else {
+fn insert_context(record: &mut Map<String, Value>) {
+    let Some(ctx) = CONTEXT.get() else {
         record.insert("session_id".into(), Value::String("unknown".into()));
-    }
-
+        return;
+    };
+    record.insert("session_id".into(), Value::String(ctx.session_id.clone()));
     record.insert(
-        "source".into(),
+        "build".into(),
         json!({
-            "layer": "rust",
-            "module": module,
-            "file": file,
-            "line": line,
+            "version": ctx.build_version,
+            "commit": ctx.build_commit.as_deref().unwrap_or("unknown"),
         }),
     );
+    record.insert(
+        "platform".into(),
+        json!({
+            "os": ctx.platform_os,
+            "arch": ctx.platform_arch,
+        }),
+    );
+}
 
+fn source_value(source: &SourceLocation) -> Value {
+    json!({
+        "layer": "rust",
+        "module": source.module,
+        "file": source.file,
+        "line": source.line,
+    })
+}
+
+fn merge_metadata(record: &mut Map<String, Value>, metadata: Option<Value>) {
     if let Some(Value::Object(map)) = metadata {
         for (key, value) in map {
             record.entry(key).or_insert(value);
         }
     }
+}
 
-    let payload = Value::Object(record);
-    let encoded = serde_json::to_string(&payload)
-        .unwrap_or_else(|_| "{\"message\":\"log serialization failed\"}".to_string());
-    log::log!(target: "tauri", level, "{}", encoded);
+fn encode_record(record: Map<String, Value>) -> String {
+    serde_json::to_string(&Value::Object(record))
+        .unwrap_or_else(|_| "{\"message\":\"log serialization failed\"}".to_string())
 }
 
 fn severity_to_level(severity: u8) -> log::Level {
@@ -178,15 +208,19 @@ macro_rules! log_event {
         let correlation = $crate::log_event!(@corr $($correlation)?);
         let metadata = $crate::log_event!(@meta $($metadata)?);
         $crate::logging::log_record(
-            $severity,
-            $component,
-            $event,
-            $message,
-            correlation,
-            metadata,
-            module_path!(),
-            file!(),
-            line!(),
+            $crate::logging::LogEntry {
+                severity: $severity,
+                component: $component,
+                event_name: $event,
+                message: $message,
+                correlation_id: correlation,
+                metadata,
+            },
+            $crate::logging::SourceLocation {
+                module: module_path!(),
+                file: file!(),
+                line: line!(),
+            },
         );
     }};
     (@corr $value:expr) => { $value };
