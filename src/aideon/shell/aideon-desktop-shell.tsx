@@ -1,13 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ScrollArea } from 'design-system';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarInset,
-  SidebarProvider,
-} from 'design-system/desktop-shell';
+import { ResizableShell, ScrollArea } from 'design-system';
+import { SidebarInset, SidebarProvider } from 'design-system/desktop-shell';
 import { cn } from 'design-system/lib/utilities';
 
 import { AideonShellControlsProvider } from './shell-controls';
@@ -19,6 +14,10 @@ import { AideonShellControlsProvider } from './shell-controls';
  */
 type ContentLayout = 'scroll' | 'full-bleed';
 
+const INSPECTOR_COLLAPSED_STORAGE_KEY = 'aideon-shell-inspector-collapsed';
+const PANEL_SIZES_STORAGE_KEY = 'aideon-shell-panel-sizes';
+const DEFAULT_PANEL_SIZES: readonly [number, number] = [65, 35];
+
 interface AideonDesktopShellProperties {
   readonly navigation: ReactNode;
   readonly content: ReactNode;
@@ -29,23 +28,67 @@ interface AideonDesktopShellProperties {
 }
 
 /**
- *
- * @param storage
+ * Resolve `localStorage` without assuming a browser environment (tests, SSR,
+ * locked-down hosts). Returns `undefined` when it is unavailable.
  */
-function readInspectorCollapsed(storage: Storage) {
+function getLocalStorage(): Storage | undefined {
   try {
-    return storage.getItem('aideon-shell-inspector-collapsed') === '1';
+    const storage = (globalThis as { localStorage?: Storage }).localStorage;
+    if (storage && typeof storage.getItem === 'function') {
+      return storage;
+    }
+  } catch {
+    /* ignore */
+  }
+  return undefined;
+}
+
+/**
+ * Read the persisted inspector collapse flag, defaulting to expanded.
+ */
+function readInspectorCollapsed(): boolean {
+  try {
+    return getLocalStorage()?.getItem(INSPECTOR_COLLAPSED_STORAGE_KEY) === '1';
   } catch {
     return false;
   }
 }
 
 /**
+ * Read the persisted `[content%, inspector%]` panel split (ADR-0026 UI state),
+ * falling back to the content-dominant default when unset or malformed.
+ */
+function readPanelSizes(): readonly [number, number] {
+  const storage = getLocalStorage();
+  if (!storage) {
+    return DEFAULT_PANEL_SIZES;
+  }
+  try {
+    const raw = storage.getItem(PANEL_SIZES_STORAGE_KEY);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (
+        Array.isArray(parsed) &&
+        parsed.length === 2 &&
+        typeof parsed[0] === 'number' &&
+        typeof parsed[1] === 'number'
+      ) {
+        return [parsed[0], parsed[1]];
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_PANEL_SIZES;
+}
+
+/**
  * The Aideon desktop frame. A full-width toolbar spans the top; below it the
- * navigation rail, content surface, and inspector rail sit in one row. The
- * toolbar lives inside the navigation `SidebarProvider` so its toggle and ⌘B
- * drive the nav rail; the inspector has its own provider so it toggles
- * independently. Sidebars dock below the toolbar via `--header-height`.
+ * navigation rail and a content-dominant resizable split (content surface plus
+ * inspector rail) sit in one row. The toolbar lives inside the navigation
+ * `SidebarProvider` so its toggle and ⌘B drive the nav rail. The inspector is
+ * the secondary pane of a {@link ResizableShell}; ⌘I / the toolbar toggle
+ * collapse and restore it, and the drag split persists to `localStorage`.
  * @param root0 - Component props.
  * @param root0.navigation - Navigation rail (a Sidebar).
  * @param root0.content - Content surface.
@@ -62,36 +105,46 @@ export function AideonDesktopShell({
   contentLayout = 'scroll',
   className,
 }: AideonDesktopShellProperties) {
-  const [inspectorCollapsed, setInspectorCollapsed] = useState(() => {
-    try {
-      const storage = (globalThis as unknown as { localStorage?: Storage }).localStorage;
-      if (storage && typeof storage.getItem === 'function') {
-        return readInspectorCollapsed(storage);
-      }
-    } catch {
-      /* ignore */
-    }
-    return false;
-  });
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(readInspectorCollapsed);
+
+  // Last-known panel split. `restoreSizes` is the value the split mounts with
+  // (first mount or restore after a collapse). The ref tracks live drag sizes
+  // without re-rendering the content surface; it seeds `restoreSizes` on the
+  // next toggle. The ref is only read in event handlers, never during render.
+  const [restoreSizes, setRestoreSizes] = useState<readonly [number, number]>(readPanelSizes);
+  const panelSizesReference = useRef<readonly [number, number]>(restoreSizes);
 
   const persistInspectorCollapsed = useCallback((next: boolean) => {
     try {
-      const storage = (globalThis as unknown as { localStorage?: Storage }).localStorage;
-      if (storage && typeof storage.setItem === 'function') {
-        storage.setItem('aideon-shell-inspector-collapsed', next ? '1' : '0');
-      }
+      getLocalStorage()?.setItem(INSPECTOR_COLLAPSED_STORAGE_KEY, next ? '1' : '0');
     } catch {
       /* ignore */
     }
   }, []);
 
   const toggleInspector = useCallback(() => {
+    // Remount the restored split at the last-known drag position.
+    setRestoreSizes(panelSizesReference.current);
     setInspectorCollapsed((previous) => {
       const next = !previous;
       persistInspectorCollapsed(next);
       return next;
     });
   }, [persistInspectorCollapsed]);
+
+  const handlePanelLayout = useCallback((sizes: number[]) => {
+    const [contentSize, inspectorSize] = sizes;
+    if (typeof contentSize !== 'number' || typeof inspectorSize !== 'number') {
+      return;
+    }
+    const next: [number, number] = [contentSize, inspectorSize];
+    panelSizesReference.current = next;
+    try {
+      getLocalStorage()?.setItem(PANEL_SIZES_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   // The toolbar height drives how far the sidebars dock below it. Measure it so
   // a one- or two-row toolbar both align, and reflow when it wraps.
@@ -116,6 +169,35 @@ export function AideonDesktopShell({
     '--header-height': toolbar ? `${String(headerHeight)}px` : '0px',
   } as CSSProperties;
 
+  const contentRegion =
+    contentLayout === 'full-bleed' ? (
+      <div
+        aria-label="Main content"
+        className="h-full min-w-0 overflow-hidden"
+        data-testid="aideon-shell-content"
+      >
+        {content}
+      </div>
+    ) : (
+      <ScrollArea
+        aria-label="Main content"
+        className="h-full min-w-0"
+        data-testid="aideon-shell-content"
+      >
+        <div className="min-h-full p-4 md:p-6">{content}</div>
+      </ScrollArea>
+    );
+
+  const inspectorRegion = (
+    <div
+      aria-label="Inspector"
+      className="h-full min-h-0 overflow-auto"
+      data-testid="aideon-shell-inspector"
+    >
+      {inspector}
+    </div>
+  );
+
   return (
     <AideonShellControlsProvider value={{ inspectorCollapsed, toggleInspector }}>
       <SidebarProvider className={cn('flex-col', className)} style={headerStyle}>
@@ -133,44 +215,17 @@ export function AideonDesktopShell({
           {navigation}
 
           <SidebarInset className="min-w-0">
-            {contentLayout === 'full-bleed' ? (
-              <div
-                aria-label="Main content"
-                className="h-full overflow-hidden"
-                data-testid="aideon-shell-content"
-              >
-                {content}
-              </div>
+            {inspectorCollapsed ? (
+              contentRegion
             ) : (
-              <ScrollArea
-                aria-label="Main content"
-                className="h-full"
-                data-testid="aideon-shell-content"
-              >
-                <div className="min-h-full p-4 md:p-6">{content}</div>
-              </ScrollArea>
+              <ResizableShell
+                defaultSizes={restoreSizes}
+                onLayout={handlePanelLayout}
+                contentSlot={contentRegion}
+                inspectorSlot={inspectorRegion}
+              />
             )}
           </SidebarInset>
-
-          <SidebarProvider
-            enableKeyboardShortcut={false}
-            open={!inspectorCollapsed}
-            onOpenChange={(open) => {
-              setInspectorCollapsed(!open);
-              persistInspectorCollapsed(!open);
-            }}
-            className="!min-h-0 w-auto"
-            style={headerStyle}
-          >
-            <Sidebar
-              aria-label="Inspector"
-              side="right"
-              collapsible="offcanvas"
-              data-testid="aideon-shell-inspector"
-            >
-              <SidebarContent className="p-0">{inspector}</SidebarContent>
-            </Sidebar>
-          </SidebarProvider>
         </div>
       </SidebarProvider>
     </AideonShellControlsProvider>

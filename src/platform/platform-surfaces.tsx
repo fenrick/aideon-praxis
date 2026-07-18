@@ -1,9 +1,7 @@
 import { SurfaceRouter } from './surfaces/surface-router';
 
-/** Toolbar slot — not yet implemented. */
-export function PlatformToolbar(): undefined {
-  return undefined;
-}
+export { PlatformInspector } from './platform-inspector';
+export { PlatformToolbar } from './platform-toolbar';
 
 /**
  * Content slot. Renders the active goal surface selected in the navigation rail
@@ -11,9 +9,4 @@ export function PlatformToolbar(): undefined {
  */
 export function PlatformContent() {
   return <SurfaceRouter />;
-}
-
-/** Inspector slot — not yet implemented. */
-export function PlatformInspector(): undefined {
-  return undefined;
 }
