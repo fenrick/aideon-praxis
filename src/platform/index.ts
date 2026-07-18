@@ -5,4 +5,7 @@ export { HostPlatformProvider } from './host-platform-provider';
 export { LicensingProvider, useLicensing } from './licensing';
 export { PlatformNavigation } from './platform-navigation';
 export { PlatformContent, PlatformInspector, PlatformToolbar } from './platform-surfaces';
+export { SURFACES } from './surfaces/surface-registry';
+export type { SurfaceDefinition } from './surfaces/surface-registry';
+export { SurfaceProvider, useActiveSurface } from './surfaces/surface-router';
 export { useWidgetCatalog } from './widget-catalog';

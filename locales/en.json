@@ -205,6 +205,17 @@
       "operationRejected": "Operation rejected."
     }
   },
+  "surfaces": {
+    "home": "Workspace home",
+    "model": "Modelling studio",
+    "scenarios": "Scenarios",
+    "artefacts": "Artefacts",
+    "review": "Review",
+    "briefings": "Briefings",
+    "import": "Import",
+    "admin": "Administration",
+    "comingSoon": "Coming soon"
+  },
   "adapters": {
     "dialog": {
       "chooseWorkspaceFolder": "Choose a workspace folder"

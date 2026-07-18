@@ -205,6 +205,17 @@
       "operationRejected": "Operación rechazada."
     }
   },
+  "surfaces": {
+    "home": "Inicio del espacio de trabajo",
+    "model": "Estudio de modelado",
+    "scenarios": "Escenarios",
+    "artefacts": "Artefactos",
+    "review": "Revisión",
+    "briefings": "Informes",
+    "import": "Importar",
+    "admin": "Administración",
+    "comingSoon": "Próximamente"
+  },
   "adapters": {
     "dialog": {
       "chooseWorkspaceFolder": "Elija una carpeta de espacio de trabajo"

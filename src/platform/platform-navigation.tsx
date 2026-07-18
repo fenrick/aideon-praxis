@@ -1,5 +1,3 @@
-import type { ComponentType } from 'react';
-
 import { useTranslations } from 'next-intl';
 
 import { TooltipProvider } from 'design-system';
@@ -13,34 +11,62 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from 'design-system/desktop-shell';
-import { Brain, Database, LayoutGrid } from 'design-system/icons';
 import { cn } from 'design-system/lib/utilities';
-import type { EngineId } from './engine';
-import { ENGINES } from './engines';
-import { useLicensing } from './licensing';
 
-const ENGINE_ICONS: Partial<Record<EngineId, ComponentType<{ className?: string }>>> = {
-  praxis: LayoutGrid,
-  metis: Brain,
-  mneme: Database,
-};
+import { SURFACES, type SurfaceDefinition } from './surfaces/surface-registry';
+import { useActiveSurface } from './surfaces/surface-router';
 
 interface PlatformNavigationProperties {
   readonly className?: string;
 }
 
+const PRIMARY_SURFACES = SURFACES.filter((surface) => surface.id !== 'admin');
+const ADMIN_SURFACES = SURFACES.filter((surface) => surface.id === 'admin');
+
+interface SurfaceMenuItemProperties {
+  readonly surface: SurfaceDefinition;
+  readonly activeSurfaceId: string;
+  readonly onSelect: (surfaceId: string) => void;
+}
+
 /**
- * Host navigation rail (shadcn sidebar-09): a licensed-engine presence rail plus
- * the scenarios panel. The engine rail is a passive indicator — engines are
- * functional/licensed, not surfaces to switch between — so the whole rail
+ * A single navigation rail item for a goal surface.
+ * @param root0 - Component props.
+ * @param root0.surface - The surface this item selects.
+ * @param root0.activeSurfaceId - The currently active surface id.
+ * @param root0.onSelect - Handler invoked with the surface id when clicked.
+ */
+function SurfaceMenuItem({ surface, activeSurfaceId, onSelect }: SurfaceMenuItemProperties) {
+  const t = useTranslations();
+  const Icon = surface.icon;
+  const label = t(surface.labelKey);
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        tooltip={{ children: label, hidden: false }}
+        isActive={surface.id === activeSurfaceId}
+        onClick={() => {
+          onSelect(surface.id);
+        }}
+        className="px-2.5 md:px-2"
+      >
+        <Icon />
+        <span className="sr-only">{label}</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
+/**
+ * Host navigation rail (shadcn sidebar-09): a goal-destination rail. Navigation
+ * is by surface, not by engine — each item routes the content area to a goal
+ * surface. Administration is grouped apart at the foot of the rail. The rail
  * collapses to icons with ⌘B and becomes a drawer on small screens.
  * @param root0 - Component props.
  * @param root0.className - Optional wrapper class.
  */
 export function PlatformNavigation({ className }: PlatformNavigationProperties) {
-  const t = useTranslations();
-  const { licensed } = useLicensing();
-  const engines = ENGINES.filter((engine) => licensed(engine.id));
+  const { activeSurfaceId, setActiveSurface } = useActiveSurface();
 
   return (
     <TooltipProvider>
@@ -58,22 +84,28 @@ export function PlatformNavigation({ className }: PlatformNavigationProperties) 
             <SidebarGroup className="px-1.5">
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {engines.map((engine) => {
-                    const Icon = ENGINE_ICONS[engine.id] ?? LayoutGrid;
-                    const engineLabel = t(engine.label);
-                    return (
-                      <SidebarMenuItem key={engine.id}>
-                        <SidebarMenuButton
-                          tooltip={{ children: engineLabel, hidden: false }}
-                          isActive={engine.id === 'praxis'}
-                          className="px-2.5 md:px-2"
-                        >
-                          <Icon />
-                          <span className="sr-only">{engineLabel}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
+                  {PRIMARY_SURFACES.map((surface) => (
+                    <SurfaceMenuItem
+                      key={surface.id}
+                      surface={surface}
+                      activeSurfaceId={activeSurfaceId}
+                      onSelect={setActiveSurface}
+                    />
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarGroup className="mt-auto px-1.5">
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {ADMIN_SURFACES.map((surface) => (
+                    <SurfaceMenuItem
+                      key={surface.id}
+                      surface={surface}
+                      activeSurfaceId={activeSurfaceId}
+                      onSelect={setActiveSurface}
+                    />
+                  ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

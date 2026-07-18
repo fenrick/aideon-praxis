@@ -54,7 +54,34 @@ const scenarios = [
     name: 'canvas-graph',
     route: '/',
     fixtures: { withGraphTemplate: true },
+    drive: async (page) => {
+      // Engines are not a navigation axis: the canvas lives on the Model
+      // surface, so drive navigation there before the graph is asserted.
+      await page.waitForTimeout(2000);
+      await page
+        .getByRole('button', { name: /modelling studio/i })
+        .first()
+        .click({ timeout: 10000 });
+      await page.waitForTimeout(1000);
+    },
     waitFor: '.react-flow',
+    expect: ['Customer Portal'],
+  },
+  {
+    name: 'surface-nav',
+    route: '/',
+    fixtures: { withGraphTemplate: true },
+    drive: async (page) => {
+      // Default surface is the workspace foundation gate; navigating to the
+      // Model surface swaps the content area to the Topos canvas.
+      await page.waitForTimeout(2000);
+      await page
+        .getByRole('button', { name: /modelling studio/i })
+        .first()
+        .click({ timeout: 10000 });
+      await page.waitForSelector('.react-flow', { timeout: 10000 });
+      await page.waitForTimeout(1000);
+    },
     expect: ['Customer Portal'],
   },
   { name: 'settings', route: '/settings', expect: ['Color theme'] },

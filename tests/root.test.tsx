@@ -32,6 +32,7 @@ vi.mock('aideon/shell/aideon-toolbar', () => ({
 vi.mock('platform', () => ({
   LicensingProvider: ({ children }: { children: ReactNode }) => children,
   HostPlatformProvider: ({ children }: { children: ReactNode }) => children,
+  SurfaceProvider: ({ children }: { children: ReactNode }) => children,
   PlatformNavigation: () => <div>Navigation</div>,
   PlatformToolbar: () => <div>Layout toolbar</div>,
   PlatformContent: () => <div>Content</div>,
