@@ -18,3 +18,7 @@ exclude_paths:
   - 'memory/**'
   - '.github/pull_request_template.md'
   - 'scripts/**'
+  # Browser visual-validation harness (test tooling, not product code). Its
+  # localhost health-check fetch and mock callback-id generation trip product
+  # security patterns (SSRF/weak-random) that do not apply to a test runner.
+  - 'tests/visual-mock/**'
