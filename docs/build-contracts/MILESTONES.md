@@ -100,13 +100,12 @@ typed IPC + capabilities enforced; no open ports.
   Tier-1 host boundary gate (#319); shell composition + Tier-2 WebDriver e2e (#317, #320).
 - **Done (✅) since:** host workspace lifecycle wired to the canonical portable workspace format —
   `PraxisEngine::with_sqlite()` replaced end-to-end; Tier-1 host boundary test proves
-  create/open/author/rebuild/`foundation_rebuild_hash` equivalence via canonical files (#254, closed). Observability
-  baseline — `correlation_id` reconstruction end-to-end (#367, closed; full W3C trace-context + OTel #271 is **not** an
-  M0 exit requirement). M0 accessibility baseline — keyboard, accessible names, axe smoke (#368, closed). M0
-  host-boundary security baseline — capability parity, redaction, path validation (#369, closed).
-- **Done (✅) since:** visual/Storybook regression for honest-state blocks (#280, PR #817); crash-recovery
-  fault-injection + rebuild-equivalence suite (#251); the CI `Pipeline` `tauri-plugin-log` npm/crate minor mismatch
-  aligned (#816). Full W3C trace-context + OTel (#271) was never an M0 exit requirement and is rehomed to M6.
+  create/open/author/rebuild/`foundation_rebuild_hash` equivalence via canonical files (#254). Observability baseline —
+  `correlation_id` reconstruction end-to-end (#367). M0 accessibility baseline — keyboard, accessible names, axe smoke
+  (#368). M0 host-boundary security baseline — capability parity, redaction, path validation (#369). Visual/Storybook
+  regression for honest-state blocks (#280, PR #817). Crash-recovery fault-injection + rebuild-equivalence suite (#251).
+  CI `Pipeline` `tauri-plugin-log` npm/crate minor mismatch aligned (#816). Full W3C trace-context + OTel (#271) was
+  never an M0 exit requirement and is rehomed to M6.
 - **Exit gate — MET:** golden-journey lifecycle steps (1, 8, 9, 10) run green in the real window through the canonical
   file path; the CI `Pipeline` (WebDriver E2E + Tier-2 in-window smoke, ADR-0040) is green on `main`. M0 has no open
   issues.
@@ -168,7 +167,9 @@ op-log retention/compaction/GC [D15].
    and at least one interaction works, on the **shipped** webview targets. A jsdom/Storybook/static-export/IPC-boundary
    test is a unit test with a mock layer and **does not** satisfy a host or UX gate [D2].
 3. **The golden journey** for the milestone's segment must be **executed** in CI, not merely documented [D11].
-4. A milestone is complete only when all three hold on the seed dataset. M0 currently meets (1) only.
+4. A milestone is complete only when all three hold on the seed dataset. **M0 meets all three** — engine oracles,
+   in-window host/UX gates (Tier-1 + Tier-2, ADR-0040), and the golden-journey segment green in CI — and is complete;
+   M1–M6 follow the same three-gate bar.
 
 ---
 
