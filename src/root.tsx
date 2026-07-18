@@ -8,6 +8,7 @@ import {
   PlatformInspector,
   PlatformNavigation,
   PlatformToolbar,
+  SurfaceProvider,
 } from 'platform';
 
 /**
@@ -20,19 +21,21 @@ export function AideonDesktopRoot() {
   return (
     <LicensingProvider>
       <HostPlatformProvider>
-        <AideonDesktopShell
-          contentLayout="full-bleed"
-          navigation={<PlatformNavigation />}
-          toolbar={
-            <AideonToolbar
-              title="Aideon"
-              modeLabel={modeLabel}
-              workspaceToolbar={<PlatformToolbar />}
-            />
-          }
-          content={<PlatformContent />}
-          inspector={<PlatformInspector />}
-        />
+        <SurfaceProvider>
+          <AideonDesktopShell
+            contentLayout="full-bleed"
+            navigation={<PlatformNavigation />}
+            toolbar={
+              <AideonToolbar
+                title="Aideon"
+                modeLabel={modeLabel}
+                workspaceToolbar={<PlatformToolbar />}
+              />
+            }
+            content={<PlatformContent />}
+            inspector={<PlatformInspector />}
+          />
+        </SurfaceProvider>
       </HostPlatformProvider>
     </LicensingProvider>
   );

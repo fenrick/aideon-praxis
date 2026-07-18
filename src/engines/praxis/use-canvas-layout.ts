@@ -1,15 +1,11 @@
 import { useMemo } from 'react';
 
 import type { CanvasRuntimeLayoutPersistence } from 'aideon/canvas/canvas-runtime';
-import type { Layer } from 'dtos';
 import { getCanvasLayout, saveCanvasLayout } from 'praxis/praxis-api';
 import type { PraxisCanvasWidget as CanvasWidget, GraphLayoutContext } from 'praxis/types';
 
 interface CanvasLayoutInput {
   readonly documentId?: string;
-  readonly asOf?: string;
-  readonly scenario?: string;
-  readonly layer: Layer;
 }
 
 interface CanvasLayoutResult {
@@ -20,47 +16,42 @@ interface CanvasLayoutResult {
 
 /**
  * Derive the canvas layout key, graph layout context, and layout persistence
- * adapter from the active document and runtime viewpoint. All three are
- * undefined until a document and as-of are resolved.
- * @param input - Active document id and runtime viewpoint.
+ * adapter from the active document. All three are undefined until a document is
+ * resolved.
+ *
+ * Layout arrangement is deliberately **not** keyed by the viewpoint: the key is
+ * the document only. Changing valid time, scenario, or layer changes the data
+ * the canvas shows, never the arrangement — a scenario switch must not silently
+ * rearrange the studio.
+ * @param input - Active document id.
  * @param input.documentId - Active template document id.
- * @param input.asOf - Runtime as-of token.
- * @param input.scenario - Runtime scenario branch.
- * @param input.layer - Runtime layer.
  */
-export function useCanvasLayout({
-  documentId,
-  asOf,
-  scenario,
-  layer,
-}: CanvasLayoutInput): CanvasLayoutResult {
+export function useCanvasLayout({ documentId }: CanvasLayoutInput): CanvasLayoutResult {
   const canvasLayoutKey = useMemo(() => {
-    if (!documentId || !asOf || !scenario) {
+    if (!documentId) {
       return;
     }
-    return `${documentId}::${scenario}::${layer}::${asOf}`;
-  }, [documentId, asOf, layer, scenario]);
+    return documentId;
+  }, [documentId]);
 
   const graphLayoutContext = useMemo<GraphLayoutContext | undefined>(() => {
-    if (!documentId || !asOf) {
+    if (!documentId) {
       return;
     }
-    return { docId: documentId, asOf, scenario, layer };
-  }, [documentId, asOf, layer, scenario]);
+    return { docId: documentId };
+  }, [documentId]);
 
   const canvasLayoutPersistence = useMemo<
     CanvasRuntimeLayoutPersistence<CanvasWidget> | undefined
   >(() => {
-    if (!documentId || !asOf) {
+    if (!documentId) {
       return;
     }
-
-    const context = { docId: documentId, asOf, scenario, layer } as const;
 
     return {
       load: async () => {
         try {
-          const layout = await getCanvasLayout(context);
+          const layout = await getCanvasLayout({ docId: documentId });
           if (!layout) {
             return;
           }
@@ -101,9 +92,7 @@ export function useCanvasLayout({
             .filter((node): node is NonNullable<typeof node> => node !== undefined);
 
           await saveCanvasLayout({
-            docId: context.docId,
-            asOf: context.asOf,
-            scenario: context.scenario,
+            docId: documentId,
             nodes,
             edges: [],
             groups: [],
@@ -113,7 +102,7 @@ export function useCanvasLayout({
         }
       },
     };
-  }, [documentId, asOf, layer, scenario]);
+  }, [documentId]);
 
   return { canvasLayoutKey, graphLayoutContext, canvasLayoutPersistence };
 }

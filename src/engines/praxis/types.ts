@@ -1,4 +1,3 @@
-import type { Layer } from 'dtos';
 import type {
   CatalogueViewDefinition,
   ChartViewDefinition,
@@ -11,11 +10,13 @@ import type { CanvasWidgetLayout } from 'aideon/canvas/types';
 
 export type PraxisWidgetKind = 'graph' | 'catalogue' | 'matrix' | 'chart';
 
+/**
+ * Context a graph widget needs to persist its layout. Layout is keyed by
+ * document (plus the widget's own id) only, never by the viewpoint, so a
+ * scenario/layer/valid-time switch never rearranges the widget.
+ */
 export interface GraphLayoutContext {
   readonly docId: string;
-  readonly asOf: string;
-  readonly scenario?: string;
-  readonly layer?: Layer;
 }
 
 interface BaseWidgetConfig<TView> extends CanvasWidgetLayout {

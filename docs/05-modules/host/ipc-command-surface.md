@@ -75,6 +75,13 @@ The command names are stable identifiers and a public contract surface. Long-run
 commands return an `AcceptedJob` immediately rather than blocking
 ([accepted work and backpressure](./accepted-work-and-backpressure.md)).
 
+The canvas and graph **layout** commands (`praxis_canvas_get_layout` / `_save_layout`, `praxis_graph_layout_get` /
+`_save`) persist arrangement keyed by document (and, for graph widgets, the widget id) **only** — never by the
+viewpoint. Their payloads carry no `asOf`, `scenario`, or `layer`; changing the viewpoint changes the data the canvas
+shows, never the arrangement (see "Layout persistence is not keyed by the viewpoint" in
+[praxis-contributions/DESIGN.md](../../frontend/praxis-contributions/DESIGN.md)). The data read
+`praxis_canvas_get_scene` legitimately keeps `asOf`.
+
 ---
 
 ## Related documents

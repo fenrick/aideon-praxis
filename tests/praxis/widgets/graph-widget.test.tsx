@@ -272,9 +272,6 @@ describe('GraphWidget', () => {
     getGraphLayoutMock.mockResolvedValue({
       docId: 'doc-1',
       widgetId: 'graph-widget',
-      asOf: '2025-11-01T00:00:00.000Z',
-      scenario: 'main',
-      layer: 'Plan',
       nodes: [{ id: 'node-1', x: 99, y: 88 }],
     });
 
@@ -284,9 +281,6 @@ describe('GraphWidget', () => {
         reloadVersion={0}
         graphLayoutContext={{
           docId: 'doc-1',
-          asOf: '2025-11-01T00:00:00.000Z',
-          scenario: 'main',
-          layer: 'Plan',
         }}
       />,
     );
@@ -295,9 +289,6 @@ describe('GraphWidget', () => {
       expect(getGraphLayoutMock).toHaveBeenCalledWith({
         docId: 'doc-1',
         widgetId: 'graph-widget',
-        asOf: '2025-11-01T00:00:00.000Z',
-        scenario: 'main',
-        layer: 'Plan',
       });
     });
 
@@ -322,9 +313,6 @@ describe('GraphWidget', () => {
     expect(payload).toMatchObject({
       docId: 'doc-1',
       widgetId: 'graph-widget',
-      asOf: '2025-11-01T00:00:00.000Z',
-      scenario: 'main',
-      layer: 'Plan',
       nodes: [{ id: 'node-1', x: 10, y: 20 }],
     });
   });

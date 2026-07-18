@@ -148,17 +148,17 @@ export async function getMetaModelDocument(): Promise<MetaModelDocument> {
 }
 
 /**
- * Fetch a persisted canvas layout snapshot for the given time context.
- * @param request lookup key (doc + time)
+ * Fetch a persisted canvas layout snapshot for the given document.
+ *
+ * Layout is keyed by document only, never by the viewpoint: changing valid
+ * time, scenario, or layer changes the data shown, never the arrangement.
+ * @param request lookup key (doc)
  */
 export async function getCanvasLayout(
   request: CanvasLayoutGetRequest,
 ): Promise<CanvasLayoutSnapshot | undefined> {
   const result = await invokeHost<CanvasLayoutSnapshot | null>(COMMANDS.canvasGetLayout, {
     docId: request.docId,
-    asOf: request.asOf,
-    scenario: request.scenario,
-    layer: request.layer,
   });
   return result ?? undefined;
 }
@@ -170,9 +170,6 @@ export async function getCanvasLayout(
 export async function saveCanvasLayout(snapshot: CanvasLayoutSnapshot): Promise<void> {
   await invokeHost<unknown>(COMMANDS.canvasSaveLayout, {
     docId: snapshot.docId,
-    asOf: snapshot.asOf,
-    scenario: snapshot.scenario,
-    layer: snapshot.layer,
     nodes: snapshot.nodes,
     edges: snapshot.edges,
     groups: snapshot.groups,
@@ -180,8 +177,10 @@ export async function saveCanvasLayout(snapshot: CanvasLayoutSnapshot): Promise<
 }
 
 /**
- * Fetch a persisted graph layout snapshot for the given widget and time context.
- * @param request lookup key (doc + widget + time)
+ * Fetch a persisted graph layout snapshot for the given widget.
+ *
+ * Layout is keyed by document and widget only, never by the viewpoint.
+ * @param request lookup key (doc + widget)
  */
 export async function getGraphLayout(
   request: GraphLayoutGetRequest,
@@ -189,9 +188,6 @@ export async function getGraphLayout(
   const result = await invokeHost<GraphLayoutSnapshot | null>(COMMANDS.graphLayoutGet, {
     docId: request.docId,
     widgetId: request.widgetId,
-    asOf: request.asOf,
-    scenario: request.scenario,
-    layer: request.layer,
   });
   return result ?? undefined;
 }
@@ -204,9 +200,6 @@ export async function saveGraphLayout(snapshot: GraphLayoutSnapshot): Promise<vo
   await invokeHost<unknown>(COMMANDS.graphLayoutSave, {
     docId: snapshot.docId,
     widgetId: snapshot.widgetId,
-    asOf: snapshot.asOf,
-    scenario: snapshot.scenario,
-    layer: snapshot.layer,
     nodes: snapshot.nodes,
   });
 }

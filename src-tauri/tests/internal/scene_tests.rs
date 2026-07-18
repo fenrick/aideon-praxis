@@ -25,12 +25,9 @@ fn store_key_is_stable() {
     let key = LayoutCoords {
         doc_id: "doc1",
         widget_id: None,
-        as_of: "2025-01-01",
-        scenario: Some("main"),
-        layer: None,
     }
     .store_key();
-    assert_eq!(key, "canvas/doc1/scenario-main/layout-2025-01-01.json");
+    assert_eq!(key, "canvas/doc1/layout.json");
 }
 
 #[test]
@@ -41,17 +38,19 @@ fn safe_segment_sanitizes_inputs() {
     assert_eq!(safe_segment("spaces are bad"), "spaces_are_bad");
 }
 
+/// The layout arrangement is keyed by document only; changing the viewpoint
+/// (valid time, scenario, or layer) must resolve to the identical key so a
+/// scenario switch never silently rearranges the studio.
 #[test]
-fn store_key_trims_blank_segments() {
-    let key = LayoutCoords {
-        doc_id: "doc1",
-        widget_id: None,
-        as_of: "2025-01-01",
-        scenario: Some(" "),
-        layer: Some(""),
-    }
-    .store_key();
-    assert_eq!(key, "canvas/doc1/layout-2025-01-01.json");
+fn canvas_store_key_ignores_the_viewpoint() {
+    let request_a = CanvasLayoutGetRequest {
+        doc_id: "doc1".into(),
+    };
+    let request_b = CanvasLayoutGetRequest {
+        doc_id: "doc1".into(),
+    };
+    assert_eq!(request_a.store_key(), request_b.store_key());
+    assert_eq!(request_a.store_key(), "canvas/doc1/layout.json");
 }
 
 #[test]
@@ -59,15 +58,20 @@ fn graph_layout_key_is_stable() {
     let key = LayoutCoords {
         doc_id: "doc1",
         widget_id: Some("widget1"),
-        as_of: "2025-01-01",
-        scenario: Some("main"),
-        layer: None,
     }
     .store_key();
-    assert_eq!(
-        key,
-        "graph/doc1/widget-widget1/scenario-main/layout-2025-01-01.json"
-    );
+    assert_eq!(key, "graph/doc1/widget-widget1/layout.json");
+}
+
+/// The graph-widget layout is keyed by document and widget only; the viewpoint
+/// never contributes to the key, so it is stable across scenario/layer/as-of.
+#[test]
+fn graph_store_key_ignores_the_viewpoint() {
+    let request = GraphLayoutGetRequest {
+        doc_id: "doc1".into(),
+        widget_id: "widget1".into(),
+    };
+    assert_eq!(request.store_key(), "graph/doc1/widget-widget1/layout.json");
 }
 
 #[test]
@@ -101,9 +105,6 @@ async fn canvas_layout_roundtrips() {
 
     let payload = CanvasLayoutSaveRequest {
         doc_id: "doc-a".into(),
-        as_of: "commit-1".into(),
-        scenario: Some("main".into()),
-        layer: None,
         nodes: vec![CanvasNode {
             id: "w1".into(),
             type_id: "widget".into(),
@@ -123,9 +124,6 @@ async fn canvas_layout_roundtrips() {
 
     let loaded = canvas_get_layout(CanvasLayoutGetRequest {
         doc_id: payload.doc_id.clone(),
-        as_of: payload.as_of.clone(),
-        scenario: payload.scenario.clone(),
-        layer: payload.layer.clone(),
     })
     .await
     .unwrap();
@@ -152,9 +150,6 @@ async fn canvas_get_layout_returns_none_when_missing() {
 
     let response = canvas_get_layout(CanvasLayoutGetRequest {
         doc_id: "missing-doc".into(),
-        as_of: "missing".into(),
-        scenario: None,
-        layer: None,
     })
     .await
     .expect("missing layout");
@@ -187,9 +182,6 @@ async fn graph_layout_roundtrips() {
     let payload = GraphLayoutSaveRequest {
         doc_id: "doc-a".into(),
         widget_id: "widget-1".into(),
-        as_of: "commit-1".into(),
-        scenario: None,
-        layer: None,
         nodes: vec![GraphLayoutNode {
             id: "n1".into(),
             x: 12.0,
@@ -202,9 +194,6 @@ async fn graph_layout_roundtrips() {
     let loaded = graph_layout_get(GraphLayoutGetRequest {
         doc_id: payload.doc_id.clone(),
         widget_id: payload.widget_id.clone(),
-        as_of: payload.as_of.clone(),
-        scenario: payload.scenario.clone(),
-        layer: payload.layer.clone(),
     })
     .await
     .unwrap();
@@ -230,9 +219,6 @@ async fn praxis_scene_wrappers_cover_ipc_surface() {
 
     let canvas_payload = CanvasLayoutSaveRequest {
         doc_id: "doc-ipc".into(),
-        as_of: "commit-1".into(),
-        scenario: Some("main".into()),
-        layer: None,
         nodes: vec![CanvasNode {
             id: "w1".into(),
             type_id: "widget".into(),
@@ -255,9 +241,6 @@ async fn praxis_scene_wrappers_cover_ipc_surface() {
 
     let response = praxis_canvas_get_layout(ipc_request(CanvasLayoutGetRequest {
         doc_id: canvas_payload.doc_id.clone(),
-        as_of: canvas_payload.as_of.clone(),
-        scenario: canvas_payload.scenario.clone(),
-        layer: canvas_payload.layer.clone(),
     }))
     .await
     .expect("canvas get");
@@ -267,9 +250,6 @@ async fn praxis_scene_wrappers_cover_ipc_surface() {
     let graph_payload = GraphLayoutSaveRequest {
         doc_id: "doc-ipc".into(),
         widget_id: "widget-1".into(),
-        as_of: "commit-1".into(),
-        scenario: None,
-        layer: None,
         nodes: vec![GraphLayoutNode {
             id: "n1".into(),
             x: 12.0,
@@ -285,9 +265,6 @@ async fn praxis_scene_wrappers_cover_ipc_surface() {
     let response = praxis_graph_layout_get(ipc_request(GraphLayoutGetRequest {
         doc_id: graph_payload.doc_id.clone(),
         widget_id: graph_payload.widget_id.clone(),
-        as_of: graph_payload.as_of.clone(),
-        scenario: graph_payload.scenario.clone(),
-        layer: graph_payload.layer.clone(),
     }))
     .await
     .expect("graph get");

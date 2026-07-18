@@ -214,6 +214,10 @@ const SCENARIOS = [
   },
 ];
 
+// Projects carry their scenarios; the provider derives the active scenario (and
+// thus the runtime cursor that gates widget instantiation) from here.
+const PROJECTS = [{ id: 'proj-demo', name: 'Enterprise Demo', scenarios: SCENARIOS }];
+
 const METAMODEL_DOCUMENT = {
   version: '1',
   description: null,
@@ -238,7 +242,7 @@ export function makeFixtures(options = {}) {
     graphView: GRAPH_VIEW,
     matrixView: MATRIX_VIEW,
     scenarios: SCENARIOS,
-    projects: [],
+    projects: PROJECTS,
     metamodelDocument: METAMODEL_DOCUMENT,
     templates: options.withGraphTemplate ? [GRAPH_TEMPLATE] : [],
   };
