@@ -50,6 +50,13 @@ const scenarios = [
     },
     expect: ['Foundation status', 'Customer Portal', 'Catalogue'],
   },
+  {
+    name: 'canvas-graph',
+    route: '/',
+    fixtures: { withGraphTemplate: true },
+    waitFor: '.react-flow',
+    expect: ['Customer Portal'],
+  },
   { name: 'settings', route: '/settings', expect: ['Color theme'] },
   { name: 'about', route: '/about', expect: ['Desktop shell'] },
   { name: 'status', route: '/status', expect: ['status'] },
