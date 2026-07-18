@@ -8,7 +8,7 @@ aideon_continuum = { path = "../crates/continuum" }
 aideon_praxis = { path = "../crates/praxis" }
 anyhow = "1.0.103"
 base64 = "0.22"
-clap = { version = "4.6.1", features = ["derive"] }
+clap = { version = "4.6.2", features = ["derive"] }
 hmac = "0.13"
 httpdate = "1.0"
 md-5 = "0.11"
@@ -16,7 +16,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.150", features = ["preserve_order"] }
 sha2 = "0.11"
-tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.53.0", features = ["macros", "rt-multi-thread"] }
 
 [dev-dependencies]
 tempfile = "3.27"
