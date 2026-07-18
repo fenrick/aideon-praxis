@@ -151,6 +151,18 @@ function EditablePropertyField({
 }
 
 /**
+ * Whether the selection carries edge endpoints worth showing as derived rows.
+ * @param properties - Merged selection properties, if any.
+ * @returns True when either endpoint is present.
+ */
+function hasEndpoints(properties: SelectionProperties | undefined): boolean {
+  if (!properties) {
+    return false;
+  }
+  return properties.from !== undefined || properties.to !== undefined;
+}
+
+/**
  * Build the read-only derived rows (type, endpoints) for the current selection.
  * @param properties - Merged selection properties, if any.
  * @param t - Inspector translator.
@@ -164,10 +176,10 @@ function derivedPropertyItems(
   const rows: PropertyItem[] = [
     { key: 'type', label: t('fieldType'), value: properties?.type ?? empty },
   ];
-  if (properties && (properties.from !== undefined || properties.to !== undefined)) {
+  if (hasEndpoints(properties)) {
     rows.push(
-      { key: 'from', label: t('fieldFrom'), value: properties.from ?? empty },
-      { key: 'to', label: t('fieldTo'), value: properties.to ?? empty },
+      { key: 'from', label: t('fieldFrom'), value: properties?.from ?? empty },
+      { key: 'to', label: t('fieldTo'), value: properties?.to ?? empty },
     );
   }
   return rows;

@@ -19,8 +19,8 @@ import type { ScenarioSummary } from 'praxis/praxis-api';
 
 import { useHostPlatform } from '../host-platform-context';
 
-/** Number of skeleton rows shown while scenarios load. */
-const SKELETON_ROW_COUNT = 3;
+/** Stable keys for the skeleton rows shown while scenarios load. */
+const SKELETON_ROW_KEYS = ['scenario-skeleton-a', 'scenario-skeleton-b', 'scenario-skeleton-c'];
 
 /**
  * A single selectable scenario row: name, branch, and default marker. The active
@@ -108,8 +108,8 @@ function ScenarioList({
   if (loading) {
     return (
       <div className="flex flex-col gap-2" data-testid="scenario-studio-loading">
-        {Array.from({ length: SKELETON_ROW_COUNT }, (_value, index) => (
-          <Skeleton key={index} className="h-14 w-full rounded-2xl" />
+        {SKELETON_ROW_KEYS.map((skeletonKey) => (
+          <Skeleton key={skeletonKey} className="h-14 w-full rounded-2xl" />
         ))}
       </div>
     );
