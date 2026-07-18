@@ -185,10 +185,11 @@ _Informative:_
 
 ## Related documents
 
-| Document                                                                                    | What it covers                                                  |
-| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| [ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)                             | The decision: DTCG format and the reference/semantic tiers.     |
-| [ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md) | Tokens as styling truth behind the proxy boundary.              |
-| [honest-state-treatments.md](./honest-state-treatments.md)                                  | The status and provenance colour treatments and greyscale rule. |
-| [motion.md](./motion.md)                                                                    | The reduced-motion fallback for motion tokens.                  |
-| [accessibility.md](./accessibility.md)                                                      | Contrast and target-size obligations the tokens satisfy.        |
+| Document                                                                                         | What it covers                                                             |
+| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| [ADR-0025](../../06-adrs/ADR-0025-design-token-architecture.md)                                  | The decision: DTCG format and the reference/semantic tiers.                |
+| [ADR-0041](../../06-adrs/ADR-0041-token-contract-reconciliation-dtcg-source-shadcn-generated.md) | The reconciliation: DTCG source authoritative, shadcn variables generated. |
+| [ADR-0010](../../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md)      | Tokens as styling truth behind the proxy boundary.                         |
+| [honest-state-treatments.md](./honest-state-treatments.md)                                       | The status and provenance colour treatments and greyscale rule.            |
+| [motion.md](./motion.md)                                                                         | The reduced-motion fallback for motion tokens.                             |
+| [accessibility.md](./accessibility.md)                                                           | Contrast and target-size obligations the tokens satisfy.                   |

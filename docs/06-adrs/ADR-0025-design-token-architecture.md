@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-06-11
 - Depends-On: ADR-0010
-- Relates-To: ADR-0024, ADR-0026
+- Relates-To: ADR-0024, ADR-0026, ADR-0041
 
 ## Context
 
@@ -79,7 +79,8 @@ tiering supplies the separation of value from meaning.
 
 ## Follow-ups / Open Questions
 
-- The semantic token name set and its mapping to shadcn's expected variables.
+- The semantic token name set and its mapping to shadcn's expected variables — resolved by
+  [ADR-0041](./ADR-0041-token-contract-reconciliation-dtcg-source-shadcn-generated.md).
 - A high-contrast theme as a further semantic remap.
 - Automated DTCG ↔ design-tool synchronisation.
 
