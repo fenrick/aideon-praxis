@@ -337,3 +337,6 @@ storybook-static/
 
 # Codacy CLI local cache/config (created by `codacy-cli install`); not committed.
 .codacy/
+
+# Mock visual-validation screenshots (generated)
+tests/visual-mock/screens/

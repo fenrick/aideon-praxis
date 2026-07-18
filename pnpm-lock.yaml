@@ -409,6 +409,9 @@ importers:
       lint-staged:
         specifier: ^17.0.8
         version: 17.0.8
+      playwright:
+        specifier: 1.60.0
+        version: 1.60.0
       prettier:
         specifier: ^3.9.5
         version: 3.9.5
