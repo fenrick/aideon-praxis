@@ -1,9 +1,9 @@
-import type { ReactElement } from 'react';
+import { useCallback, useMemo, type ReactElement } from 'react';
 
 import type { WidgetRenderContext } from 'platform/engine';
 import { useHostPlatform } from 'platform/host-platform-context';
 import { useWidgetCatalog } from 'platform/widget-catalog';
-import type { PraxisWidgetViewEvent } from 'praxis/types';
+import type { PraxisCanvasWidget, PraxisWidgetViewEvent } from 'praxis/types';
 
 import { AideonCanvasRuntime } from './canvas-runtime';
 import type { WidgetSelection } from './types';
@@ -22,31 +22,44 @@ export function ToposCanvasSurface(): ReactElement {
   const host = useHostPlatform();
   const catalog = useWidgetCatalog();
 
-  const renderContext: WidgetRenderContext = {
-    reloadVersion: host.propertyState.reloadTick,
-    selection: host.selection,
-    // A widget reports selection as `WidgetSelection` (`widgetId`); the host's
-    // selection store keys on `SelectionState` (`sourceWidgetId`). Bridge the two.
-    onSelection: (event: WidgetSelection) => {
-      host.onSelectionChange({
-        sourceWidgetId: event.widgetId,
-        nodeIds: event.nodeIds,
-        edgeIds: event.edgeIds,
-        cellIds: event.cellIds,
-      });
-    },
-    onViewChange: (event) => {
-      host.onGraphViewChange(event as PraxisWidgetViewEvent);
-    },
-    layoutContext: host.graphLayoutContext,
-  };
+  const { onSelectionChange, onGraphViewChange } = host;
+  const reloadVersion = host.propertyState.reloadTick;
+
+  // Memoised so the runtime's `renderWidget` prop is stable across renders and
+  // its memoisation holds — a fresh context each render would re-render widgets.
+  const renderContext = useMemo<WidgetRenderContext>(
+    () => ({
+      reloadVersion,
+      selection: host.selection,
+      // A widget reports selection as `WidgetSelection` (`widgetId`); the host's
+      // selection store keys on `SelectionState` (`sourceWidgetId`). Bridge them.
+      onSelection: (event: WidgetSelection) => {
+        onSelectionChange({
+          sourceWidgetId: event.widgetId,
+          nodeIds: event.nodeIds,
+          edgeIds: event.edgeIds,
+          cellIds: event.cellIds,
+        });
+      },
+      onViewChange: (event) => {
+        onGraphViewChange(event as PraxisWidgetViewEvent);
+      },
+      layoutContext: host.graphLayoutContext,
+    }),
+    [reloadVersion, host.selection, host.graphLayoutContext, onSelectionChange, onGraphViewChange],
+  );
+
+  const renderWidget = useCallback(
+    (widget: PraxisCanvasWidget) => catalog.renderWidget(widget, renderContext),
+    [catalog, renderContext],
+  );
 
   return (
     <AideonCanvasRuntime
       widgets={host.widgets}
       layoutKey={host.canvasLayoutKey}
       layoutPersistence={host.canvasLayoutPersistence}
-      renderWidget={(widget) => catalog.renderWidget(widget, renderContext)}
+      renderWidget={renderWidget}
     />
   );
 }
