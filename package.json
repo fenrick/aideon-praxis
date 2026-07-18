@@ -50,6 +50,7 @@
     "webdriver:test:headless": "xvfb-run -a wdio run tests/webdriver/wdio.conf.js",
     "commitlint": "commitlint --from=origin/main --to=HEAD",
     "test:stories": "vitest run --config vitest.storybook.config.mjs",
+    "test:visual-mock": "node tests/visual-mock/run.mjs",
     "prepare": "husky"
   },
   "dependencies": {
@@ -187,6 +188,7 @@
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^17.0.8",
+    "playwright": "1.60.0",
     "prettier": "^3.9.5",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.8.0",
