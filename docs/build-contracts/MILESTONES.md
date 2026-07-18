@@ -72,9 +72,21 @@ a named milestone owner (M0 Tier-1 / M1 respectively), not "obvious later" work.
 
 ---
 
+## Design-system conformance is folded per-milestone
+
+There is **no standalone design milestone.** The design system is a cross-cutting foundational layer
+([ADR-0010](../06-adrs/ADR-0010-design-system-shadcn-foundation-behind-proxy-boundary.md),
+[ADR-0025](../06-adrs/ADR-0025-design-token-architecture.md),
+[ADR-0041](../06-adrs/ADR-0041-token-contract-reconciliation-dtcg-source-shadcn-generated.md)) — it cannot occupy a
+single slot in a linear order, because placed early it blocks feature work and placed late it defers the quality bar.
+Instead, **each milestone owns the design-system, WCAG 2.2 AA, and honest-state conformance for the surfaces it
+introduces**, verified by that milestone's Tier-2 in-window UX gate. The foundational token-contract migration (the DTCG
+generation of ADR-0041) lands with M1 as its first consumer. The `audit/shell-ux` issue label is the cross-cutting view
+of this conformance backlog across every milestone.
+
 ## Per-milestone
 
-### M0 — Foundation · **in progress** ◐
+### M0 — Foundation · **complete** ✅
 
 [contract](./M0-foundation.md) · capability gate: a portable workspace opens, round-trips, and rebuilds losslessly;
 typed IPC + capabilities enforced; no open ports.
@@ -92,27 +104,32 @@ typed IPC + capabilities enforced; no open ports.
   baseline — `correlation_id` reconstruction end-to-end (#367, closed; full W3C trace-context + OTel #271 is **not** an
   M0 exit requirement). M0 accessibility baseline — keyboard, accessible names, axe smoke (#368, closed). M0
   host-boundary security baseline — capability parity, redaction, path validation (#369, closed).
-- **Remaining in M0:** visual/Storybook regression tests for honest-state design-system blocks (#280); crash-recovery
-  fault-injection + rebuild-equivalence suite (#251, unblocked now #254 is closed). CI `Pipeline` must be green — it was
-  red on a `tauri-plugin-log` npm/crate minor mismatch (Rust 2.9.0 vs npm 2.8.0), aligned in this change.
-- **Exit gate:** golden-journey lifecycle steps (1, 8, 9, 10) in the real window through the canonical file path. #254
-  is closed; the gate is met once the CI `Pipeline` (which runs those steps) is green.
+- **Done (✅) since:** visual/Storybook regression for honest-state blocks (#280, PR #817); crash-recovery
+  fault-injection + rebuild-equivalence suite (#251); the CI `Pipeline` `tauri-plugin-log` npm/crate minor mismatch
+  aligned (#816). Full W3C trace-context + OTel (#271) was never an M0 exit requirement and is rehomed to M6.
+- **Exit gate — MET:** golden-journey lifecycle steps (1, 8, 9, 10) run green in the real window through the canonical
+  file path; the CI `Pipeline` (WebDriver E2E + Tier-2 in-window smoke, ADR-0040) is green on `main`. M0 has no open
+  issues.
 
 ### M1 — Meaning · ☐
 
 [contract](./M1-meaning.md) · gate: authoring validates against the metamodel; invalid writes rejected at the boundary;
 metamodel compiles deterministically as data.
 
-- **Owns:** effective-schema compile + validation · Change Event/task pipeline [D10] · authoring + inspector UX [D5].
-- **Exit gate:** effective-schema fixtures + rejection tests **plus** authoring/inspector proven in the Tauri window.
+- **Owns:** effective-schema compile + validation · Change Event/task pipeline [D10] · authoring + inspector UX [D5] ·
+  the foundational design-system/token contract its authoring surfaces consume (ADR-0041 DTCG migration).
+- **Exit gate:** effective-schema fixtures + rejection tests **plus** authoring/inspector proven in the Tauri window
+  **meeting the design-system + WCAG 2.2 AA + honest-state contract for those surfaces**.
 
 ### M2 — Time · ☐
 
 [contract](./M2-time.md) · gate: every read viewpoint-qualified; `state-at` and `diff` resolve across valid/asserted
 time, layers, scenarios.
 
-- **Owns:** temporal resolution/diff (consumes the M0 HLC) · viewpoint/time-control UX [D5].
-- **Exit gate:** resolution vector suite **plus** the time control proven in the Tauri window.
+- **Owns:** temporal resolution/diff (consumes the M0 HLC) · viewpoint/time-control UX [D5] · the honest-state
+  treatments its temporal surfaces introduce (stale/generated/provenance driven by real data).
+- **Exit gate:** resolution vector suite **plus** the time control proven in the Tauri window **meeting the
+  design-system + WCAG 2.2 AA + honest-state contract for those surfaces**.
 
 ### M3 — Artefacts + analytics · ☐ · **end of MVP**
 
@@ -122,7 +139,8 @@ honestly.
 - **Owns:** catalogue execution · bounded analytics · integrity scoring (**Praxis** [D9]) · catalogue view UX [D5] ·
   packaging/signing as the shippable-MVP gate [D13].
 - **Exit gate:** catalogue oracle + analytics-bounds tests + integrity gate **plus** the catalogue view proven in the
-  Tauri window **plus** a signed bundle on each shipped target.
+  Tauri window **meeting the design-system + WCAG 2.2 AA + honest-state contract for those surfaces (bounded/partial
+  treatments driven by real analytics bounds)** **plus** a signed bundle on each shipped target.
 
 ### M4 — Interchange · ☐ (no build contract yet)
 
