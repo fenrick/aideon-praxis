@@ -31,7 +31,7 @@ tags link the resolved defect.
 | Minimal accepted-work core (job runner, RunEvent, readiness, backpressure) [D1]                                      | M0    | Tier-1 host boundary test — proof-carrying readiness round-trip [D4·ADR-0040]         | ✅     |
 | Typed IPC surface + capability enforcement + **codegen** manifest [D7]                                               | M0    | Tier-1 host boundary test (round-trip, per-window deny, drift) [D4·ADR-0040]          | ✅     |
 | Shell chrome + lifecycle/honest-state UX [D5]                                                                        | M0    | Tier-2 in-window: Win/Linux interaction · macOS launch-smoke+screenshot [D2·ADR-0040] | ✅     |
-| Observability baseline — `correlation_id` reconstruction [D14]                                                       | M0    | `correlation_id` end-to-end test (#367); full OTel/traceparent deferred to #271       | ◐      |
+| Observability baseline — `correlation_id` reconstruction [D14]                                                       | M0    | `correlation_id` end-to-end test (#367); full OTel/traceparent deferred to #271       | ✅     |
 | Architecture fitness functions (renderer/host/engine boundary · crate-dep direction) [D9·D21]                        | M0    | ESLint boundary rule + Rust crate-dep-direction `xtask` check, both merge-blocking    | ✅     |
 | Metamodel — authored/structural (materialise `authored/`)                                                            | M0    | `mneme_core` schema fixtures                                                          | ✅     |
 | Metamodel — effective compile + validation                                                                           | M1    | effective-schema fixtures + rejection tests                                           | ☐      |
@@ -86,17 +86,17 @@ typed IPC + capabilities enforced; no open ports.
   functions (ESLint boundary + `xtask` crate-dep direction, both merge-blocking); typed IPC codegen (ADR-0039, #303);
   workspace lifecycle IPC + per-window capability (#290, #318); proof-carrying accepted-work readiness (#316, ADR-0040);
   Tier-1 host boundary gate (#319); shell composition + Tier-2 WebDriver e2e (#317, #320).
-- **Remaining in M0 (blocker):** host workspace lifecycle wired to canonical portable workspace format —
-  `PraxisEngine::with_sqlite()` must be replaced end-to-end; Tier-1 host boundary test must prove
-  create/open/author/rebuild/`foundation_rebuild_hash` equivalence via canonical files (#254, `ready-for-agent`).
-- **Remaining in M0:** observability baseline (#367, `ready-for-agent` — prove `correlation_id` reconstruction
-  end-to-end; no OTel/traceparent). Full W3C trace-context + OTel span hierarchy (#271, `ready-for-human`) is **not** an
-  M0 exit requirement — current `correlation_id` propagation satisfies the M0 baseline. Visual regression tests for
-  honest-state design-system blocks (#280, `ready-for-agent`). M0 accessibility baseline — keyboard, accessible names,
-  axe smoke check (#368, `ready-for-agent`). M0 host-boundary security baseline — capability parity, redaction, path
-  validation (#369, `ready-for-agent`). Crash-recovery fault injection (#251, `ready-for-human`, blocked by #254).
-- **Exit gate:** golden-journey lifecycle steps (1, 8, 9, 10) in the real window through the canonical file path. Not
-  met until #254 closes.
+- **Done (✅) since:** host workspace lifecycle wired to the canonical portable workspace format —
+  `PraxisEngine::with_sqlite()` replaced end-to-end; Tier-1 host boundary test proves
+  create/open/author/rebuild/`foundation_rebuild_hash` equivalence via canonical files (#254, closed). Observability
+  baseline — `correlation_id` reconstruction end-to-end (#367, closed; full W3C trace-context + OTel #271 is **not** an
+  M0 exit requirement). M0 accessibility baseline — keyboard, accessible names, axe smoke (#368, closed). M0
+  host-boundary security baseline — capability parity, redaction, path validation (#369, closed).
+- **Remaining in M0:** visual/Storybook regression tests for honest-state design-system blocks (#280); crash-recovery
+  fault-injection + rebuild-equivalence suite (#251, unblocked now #254 is closed). CI `Pipeline` must be green — it was
+  red on a `tauri-plugin-log` npm/crate minor mismatch (Rust 2.9.0 vs npm 2.8.0), aligned in this change.
+- **Exit gate:** golden-journey lifecycle steps (1, 8, 9, 10) in the real window through the canonical file path. #254
+  is closed; the gate is met once the CI `Pipeline` (which runs those steps) is green.
 
 ### M1 — Meaning · ☐
 
