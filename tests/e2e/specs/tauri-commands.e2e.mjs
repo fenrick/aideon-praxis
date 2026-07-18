@@ -264,13 +264,10 @@ async function resolveLatestCommitId() {
 
 // Canvas + graph layout surface and metamodel read: canvas layout save/get,
 // per-widget graph layout save/get, scene read, and metamodel get.
-async function assertCanvasCommands(ids, latestCommitId) {
+async function assertCanvasCommands(ids) {
   assertOk(
     await invokeIpc('praxis_canvas_save_layout', {
       docId: ids.docId,
-      asOf: latestCommitId,
-      scenario: 'main',
-      layer: null,
       nodes: [
         {
           id: ids.widgetId,
@@ -292,9 +289,6 @@ async function assertCanvasCommands(ids, latestCommitId) {
   assertOk(
     await invokeIpc('praxis_canvas_get_layout', {
       docId: ids.docId,
-      asOf: latestCommitId,
-      scenario: 'main',
-      layer: null,
     }),
     'praxis_canvas_get_layout',
   );
@@ -302,9 +296,6 @@ async function assertCanvasCommands(ids, latestCommitId) {
     await invokeIpc('praxis_graph_layout_save', {
       docId: ids.docId,
       widgetId: ids.widgetId,
-      asOf: latestCommitId,
-      scenario: null,
-      layer: null,
       nodes: [
         {
           id: ids.nodeA,
@@ -319,9 +310,6 @@ async function assertCanvasCommands(ids, latestCommitId) {
     await invokeIpc('praxis_graph_layout_get', {
       docId: ids.docId,
       widgetId: ids.widgetId,
-      asOf: latestCommitId,
-      scenario: null,
-      layer: null,
     }),
     'praxis_graph_layout_get',
   );
@@ -641,7 +629,7 @@ describe('tauri e2e command coverage', () => {
 
     const latestCommitId = await resolveLatestCommitId();
 
-    await assertCanvasCommands(ids, latestCommitId);
+    await assertCanvasCommands(ids);
     await assertArtefactCommands(latestCommitId);
     await assertTaskAndScenarioCommands(ids);
     await assertTemporalCommands(latestCommitId);

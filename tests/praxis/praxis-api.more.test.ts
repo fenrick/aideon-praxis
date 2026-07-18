@@ -136,7 +136,6 @@ describe('praxis-api host paths', () => {
       mockIpcOk({
         docId: 'doc-1',
         widgetId: 'widget-9',
-        asOf: '2025-01-01',
         nodes: [{ id: 'n1', x: 1, y: 2 }],
       }),
     );
@@ -144,7 +143,6 @@ describe('praxis-api host paths', () => {
     const layout = await getGraphLayout({
       docId: 'doc-1',
       widgetId: 'widget-9',
-      asOf: '2025-01-01',
     });
 
     expect(layout?.nodes).toEqual([{ id: 'n1', x: 1, y: 2 }]);
@@ -153,9 +151,6 @@ describe('praxis-api host paths', () => {
     expect(payloadFromInvokeArguments(invokeArguments)).toEqual({
       docId: 'doc-1',
       widgetId: 'widget-9',
-      asOf: '2025-01-01',
-      scenario: undefined,
-      layer: undefined,
     });
   });
 });

@@ -142,9 +142,6 @@ async function resolveLayoutNodes(
   const layout = await getGraphLayout({
     docId: graphLayoutContext.docId,
     widgetId,
-    asOf: graphLayoutContext.asOf,
-    scenario: graphLayoutContext.scenario,
-    layer: graphLayoutContext.layer,
   });
   return mergeLayoutPositions(flowNodes, layout?.nodes ?? []);
 }
@@ -212,9 +209,6 @@ function useGraphViewModel(parameters: {
       void saveGraphLayout({
         docId: graphLayoutContext.docId,
         widgetId,
-        asOf: graphLayoutContext.asOf,
-        scenario: graphLayoutContext.scenario,
-        layer: graphLayoutContext.layer,
         nodes: nextNodes.map((node) => ({
           id: node.id,
           x: node.position.x,

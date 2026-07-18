@@ -1229,9 +1229,6 @@ function HostPlatformStateProvider({
 
   const canvasLayout = useCanvasLayout({
     documentId: activeTemplate?.documentId,
-    asOf: runtimeAsOf,
-    scenario: runtimeScenario,
-    layer: runtimeLayer,
   });
 
   const selectionKind = deriveSelectionKind(selectionStore.state.selection);

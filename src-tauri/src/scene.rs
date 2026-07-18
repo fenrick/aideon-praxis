@@ -56,53 +56,30 @@ fn safe_segment(input: &str) -> String {
     if out.is_empty() { "_".into() } else { out }
 }
 
-/// Sanitise an optional identifier, treating blank values as absent.
-fn optional_segment(value: Option<&str>) -> Option<String> {
-    value.and_then(|value| {
-        let trimmed = value.trim();
-        if trimmed.is_empty() {
-            None
-        } else {
-            Some(safe_segment(trimmed))
-        }
-    })
-}
-
-/// Append the time-context suffix (`scenario-`, `layer-`, `layout-<asOf>.json`) shared by all layout keys.
-fn push_layout_suffix(path: &mut String, as_of: &str, scenario: Option<&str>, layer: Option<&str>) {
-    if let Some(scenario) = optional_segment(scenario) {
-        path.push_str(&format!("/scenario-{scenario}"));
-    }
-    if let Some(layer) = optional_segment(layer) {
-        path.push_str(&format!("/layer-{layer}"));
-    }
-    path.push_str(&format!("/layout-{}.json", safe_segment(as_of)));
-}
-
-/// Document, widget, and time-context coordinates that identify a layout snapshot.
+/// Document and widget coordinates that identify a layout snapshot.
+///
+/// Layout arrangement is deliberately **not** keyed by the viewpoint (valid time,
+/// scenario, or layer): changing the viewpoint changes the data the canvas shows,
+/// never the arrangement. See the "Layout persistence is not keyed by the
+/// viewpoint" section of `docs/frontend/praxis-contributions/DESIGN.md`.
 ///
 /// A `None` `widget_id` denotes a canvas layout; `Some` denotes a graph-widget layout.
 struct LayoutCoords<'a> {
     doc_id: &'a str,
     widget_id: Option<&'a str>,
-    as_of: &'a str,
-    scenario: Option<&'a str>,
-    layer: Option<&'a str>,
 }
 
 impl LayoutCoords<'_> {
     /// Resolve the on-disk key used to persist this layout snapshot.
     fn store_key(&self) -> String {
-        let mut path = match self.widget_id {
+        match self.widget_id {
             Some(widget_id) => format!(
-                "graph/{}/widget-{}",
+                "graph/{}/widget-{}/layout.json",
                 safe_segment(self.doc_id),
                 safe_segment(widget_id)
             ),
-            None => format!("canvas/{}", safe_segment(self.doc_id)),
-        };
-        push_layout_suffix(&mut path, self.as_of, self.scenario, self.layer);
-        path
+            None => format!("canvas/{}/layout.json", safe_segment(self.doc_id)),
+        }
     }
 }
 
@@ -121,9 +98,6 @@ macro_rules! impl_store_key {
                 LayoutCoords {
                     doc_id: &self.doc_id,
                     widget_id: impl_store_key!(@widget self $(, $widget)?),
-                    as_of: &self.as_of,
-                    scenario: self.scenario.as_deref(),
-                    layer: self.layer.as_deref(),
                 }
                 .store_key()
             }
@@ -179,14 +153,15 @@ fn read_snapshot<T: serde::de::DeserializeOwned>(key: &str) -> Result<Option<T>,
     }
 }
 
-/// Persist a canvas layout snapshot (geometry, z-order, grouping) for a document and asOf.
+/// Persist a canvas layout snapshot (geometry, z-order, grouping) for a document.
+///
+/// The layout is keyed by document only, never by the viewpoint.
 #[tauri::command]
 #[specta::specta]
 pub async fn canvas_save_layout(payload: CanvasLayoutSaveRequest) -> Result<(), HostError> {
     info!(
-        "host: canvas_save_layout doc_id={} as_of={} nodes={} edges={} groups={}",
+        "host: canvas_save_layout doc_id={} nodes={} edges={} groups={}",
         payload.doc_id,
-        payload.as_of,
         payload.nodes.len(),
         payload.edges.len(),
         payload.groups.len()
@@ -194,16 +169,13 @@ pub async fn canvas_save_layout(payload: CanvasLayoutSaveRequest) -> Result<(), 
     write_snapshot(&payload.store_key(), &payload)
 }
 
-/// Load a canvas layout snapshot (if any) for a document and time context.
+/// Load a canvas layout snapshot (if any) for a document.
 #[tauri::command]
 #[specta::specta]
 pub async fn canvas_get_layout(
     payload: CanvasLayoutGetRequest,
 ) -> Result<Option<CanvasLayoutSaveRequest>, HostError> {
-    info!(
-        "host: canvas_get_layout doc_id={} as_of={} scenario={:?} layer={:?}",
-        payload.doc_id, payload.as_of, payload.scenario, payload.layer
-    );
+    info!("host: canvas_get_layout doc_id={}", payload.doc_id);
     read_snapshot(&payload.store_key())
 }
 
@@ -212,10 +184,9 @@ pub async fn canvas_get_layout(
 #[specta::specta]
 pub async fn graph_layout_save(payload: GraphLayoutSaveRequest) -> Result<(), HostError> {
     info!(
-        "host: graph_layout_save doc_id={} widget_id={} as_of={} nodes={}",
+        "host: graph_layout_save doc_id={} widget_id={} nodes={}",
         payload.doc_id,
         payload.widget_id,
-        payload.as_of,
         payload.nodes.len()
     );
     write_snapshot(&payload.store_key(), &payload)
@@ -228,8 +199,8 @@ pub async fn graph_layout_get(
     payload: GraphLayoutGetRequest,
 ) -> Result<Option<GraphLayoutSaveRequest>, HostError> {
     info!(
-        "host: graph_layout_get doc_id={} widget_id={} as_of={} scenario={:?} layer={:?}",
-        payload.doc_id, payload.widget_id, payload.as_of, payload.scenario, payload.layer
+        "host: graph_layout_get doc_id={} widget_id={}",
+        payload.doc_id, payload.widget_id
     );
     read_snapshot(&payload.store_key())
 }

@@ -74,9 +74,6 @@ export const WithGraphLayoutContext: Story = {
     selection: EMPTY_SELECTION,
     graphLayoutContext: {
       docId: 'canvasdoc-executive',
-      asOf: '2025-06-01T00:00:00Z',
-      scenario: 'main',
-      layer: 'Plan',
     },
     onSelectionChange: () => {
       return;

@@ -1,8 +1,5 @@
 export interface CanvasLayoutGetRequest {
   readonly docId: string;
-  readonly asOf: string;
-  readonly scenario?: string;
-  readonly layer?: string;
 }
 
 export interface CanvasNode {
@@ -34,9 +31,6 @@ export interface CanvasGroup {
 
 export interface CanvasLayoutSnapshot {
   readonly docId: string;
-  readonly asOf: string;
-  readonly scenario?: string;
-  readonly layer?: string;
   readonly nodes: CanvasNode[];
   readonly edges: CanvasEdge[];
   readonly groups: CanvasGroup[];
