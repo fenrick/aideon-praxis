@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { fn } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
-import type { ScenarioSummary } from 'praxis/praxis-api';
+import type { ScenarioSummary, TemporalCommitSummary } from 'praxis/praxis-api';
 
 import { ToolbarControlBand } from './platform-toolbar';
 
@@ -21,6 +21,25 @@ const scenarios: ScenarioSummary[] = [
   },
 ];
 
+const commits: TemporalCommitSummary[] = [
+  {
+    id: 'c0d1e2f3a4b5',
+    branch: 'main',
+    parents: [],
+    message: 'Seed workspace',
+    tags: [],
+    changeCount: 12,
+  },
+  {
+    id: 'a1b2c3d4e5f6',
+    branch: 'main',
+    parents: ['c0d1e2f3a4b5'],
+    message: 'Add billing capability',
+    tags: [],
+    changeCount: 4,
+  },
+];
+
 const noopReference = fn();
 const noopSelect = fn();
 
@@ -35,8 +54,11 @@ const meta = {
     onSelectScenario: noopSelect,
     scenarioTriggerReference: noopReference,
     branch: 'main',
+    commits,
     commitId: 'a1b2c3d4e5f6',
+    onSelectCommit: fn(),
     layer: 'Plan',
+    onSelectLayer: fn(),
     timeLoading: false,
   },
   render: (properties) => (
@@ -53,9 +75,9 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const LatestCommit: Story = {
-  name: 'Latest (no commit)',
+  name: 'Latest (newest commit)',
   args: {
-    commitId: undefined,
+    commitId: 'a1b2c3d4e5f6',
     branch: 'growth-2027',
     activeScenarioId: 'growth',
   },
@@ -68,6 +90,7 @@ export const Loading: Story = {
     activeScenarioId: undefined,
     timeLoading: true,
     branch: undefined,
+    commits: [],
     commitId: undefined,
   },
 };
@@ -79,5 +102,19 @@ export const NoScenarios: Story = {
     scenariosLoading: false,
     activeScenarioId: undefined,
     templateName: undefined,
+    commits: [],
+    commitId: undefined,
+  },
+};
+
+export const LayerInteraction: Story = {
+  name: 'Layer control drives selection',
+  args: { onSelectLayer: fn() },
+  play: async ({ canvas, args }) => {
+    const trigger = canvas.getByTestId('toolbar-layer-select');
+    await userEvent.click(trigger);
+    const option = await within(document.body).findByRole('option', { name: 'Actual' });
+    await userEvent.click(option);
+    await expect(args.onSelectLayer).toHaveBeenCalledWith('Actual');
   },
 };

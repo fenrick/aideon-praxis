@@ -13,6 +13,7 @@ import {
 
 import { ModellingStudioSurface } from './modelling-studio-surface';
 import { createPlaceholderSurface } from './placeholder-surface';
+import { ScenarioStudioSurface } from './scenario-studio-surface';
 import { WorkspaceHomeSurface } from './workspace-home-surface';
 
 /**
@@ -59,7 +60,7 @@ export const SURFACES: readonly SurfaceDefinition[] = [
     labelKey: 'surfaces.scenarios',
     icon: Layers,
     compositionPolicy: 'bounded',
-    Component: createPlaceholderSurface('surfaces.scenarios'),
+    Component: ScenarioStudioSurface,
   },
   {
     id: 'artefacts',

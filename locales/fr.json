@@ -216,7 +216,14 @@
       "timeCommit": "Commit {commit}",
       "layerLabel": "Layer",
       "export": "Export",
-      "statusReady": "Ready"
+      "statusReady": "Ready",
+      "layerPlan": "Plan",
+      "layerActual": "Actual",
+      "assertedLabel": "Asserted",
+      "assertedNow": "As recorded",
+      "scopeLabel": "Scope",
+      "scopeAll": "Whole model",
+      "viewpointPlaceholderHint": "Not yet adjustable"
     },
     "inspector": {
       "title": "Inspector",
@@ -258,7 +265,17 @@
     "briefings": "Briefings",
     "import": "Import",
     "admin": "Administration",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "scenarioStudio": {
+      "title": "Scenarios",
+      "description": "Compare and switch between the scenario branches of this workspace.",
+      "error": "Could not load scenarios",
+      "empty": "No scenarios yet",
+      "emptyDescription": "Scenarios appear here once the workspace defines them.",
+      "defaultBadge": "Default",
+      "activeBadge": "Active",
+      "selectLabel": "Select scenario {name}"
+    }
   },
   "adapters": {
     "dialog": {

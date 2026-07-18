@@ -111,6 +111,38 @@ const scenarios = [
     // still satisfies the gate if a node click is missed.
     expect: ['Inspector', 'Customer Portal'],
   },
+  {
+    name: 'scenario-studio',
+    route: '/',
+    drive: async (page) => {
+      // Scenarios are a goal destination on the navigation rail; selecting it
+      // routes the content area to the bounded scenario-studio surface.
+      await page.waitForTimeout(2000);
+      await page
+        .getByRole('button', { name: /scenario/i })
+        .first()
+        .click({ timeout: 10000 });
+      await page.waitForTimeout(1000);
+    },
+    waitFor: '[data-testid="scenario-studio-list"]',
+    expect: ['Scenarios', 'Baseline'],
+  },
+  {
+    name: 'viewpoint',
+    route: '/',
+    fixtures: { withGraphTemplate: true },
+    drive: async (page) => {
+      // The always-visible viewpoint controls live in the toolbar control band.
+      // Opening the layer select surfaces the interactive Plan/Actual options.
+      await page.waitForTimeout(2000);
+      await page
+        .getByTestId('toolbar-layer-select')
+        .click({ timeout: 10000 })
+        .catch(() => {});
+      await page.waitForTimeout(800);
+    },
+    expect: ['Layer', 'Actual'],
+  },
   { name: 'settings', route: '/settings', expect: ['Color theme'] },
   { name: 'about', route: '/about', expect: ['Desktop shell'] },
   { name: 'status', route: '/status', expect: ['status'] },
