@@ -142,18 +142,15 @@ fn create_entity_action(type_id: &str, props: Value) -> Value {
     json!({ "kind": "create_entity", "typeId": type_id, "props": props })
 }
 
-fn create_relationship_action(rel_type: &str, src_id: &str, dst_id: &str, props: Value) -> Value {
-    json!({
-        "kind": "create_relationship",
-        "relType": rel_type,
-        "srcId": src_id,
-        "dstId": dst_id,
-        "props": props,
-    })
-}
-
 fn change_event(rationale: &str, action: Value) -> Value {
     json!({ "rationale": rationale, "action": action })
+}
+
+/// A lifecycle app + webview pair, bundled so the Change Event test helpers
+/// below take one argument instead of threading both through every call.
+struct Harness<'a> {
+    app: &'a App<MockRuntime>,
+    webview: &'a WebviewWindow<MockRuntime>,
 }
 
 /// Accept one Change Event over the real `workspace_apply_change_event` seam
@@ -162,8 +159,7 @@ fn change_event(rationale: &str, action: Value) -> Value {
 /// accepted job runs off-thread, so a test cannot observe success/failure from
 /// the dispatch response alone (see `AuthoringRunLedger`/`RunTerminalEvent`).
 async fn apply_change_event_and_wait(
-    app: &App<MockRuntime>,
-    webview: &WebviewWindow<MockRuntime>,
+    harness: &Harness<'_>,
     idempotency_key: &str,
     payload: Value,
 ) -> (Value, Value) {
@@ -172,14 +168,14 @@ async fn apply_change_event_and_wait(
     use tauri::Listener;
 
     let (tx, rx) = mpsc::channel::<Value>();
-    app.listen(super::EVENT_RUN_TERMINAL, move |event| {
+    harness.app.listen(super::EVENT_RUN_TERMINAL, move |event| {
         if let Ok(payload) = serde_json::from_str::<Value>(event.payload()) {
             let _ = tx.send(payload);
         }
     });
 
     let accepted = dispatch_idempotent(
-        webview,
+        harness.webview,
         "workspace_apply_change_event_inner",
         idempotency_key,
         payload,
@@ -200,6 +196,24 @@ async fn apply_change_event_and_wait(
     (accepted, terminal)
 }
 
+/// Author one typed entity and wait for it to land, returning its node id —
+/// the common "create X, then find X" shape most tests below need.
+async fn author_entity_and_wait(
+    harness: &Harness<'_>,
+    idempotency_key: &str,
+    rationale: &str,
+    type_id: &str,
+    props: Value,
+) -> String {
+    apply_change_event_and_wait(
+        harness,
+        idempotency_key,
+        change_event(rationale, create_entity_action(type_id, props)),
+    )
+    .await;
+    wait_for_node_of_type(harness.webview, type_id).await
+}
+
 /// Submit a Change Event expected to fail validation; assert the host error
 /// code on the terminal event and that the op log is unchanged. Unlike the
 /// synchronous typed-authoring commands this replaces, the async terminal
@@ -208,20 +222,19 @@ async fn apply_change_event_and_wait(
 /// message — so this can only assert the shared `VALIDATION_FAILED` code, not
 /// which rule fired.
 async fn assert_change_event_rejected(
-    app: &App<MockRuntime>,
-    webview: &WebviewWindow<MockRuntime>,
+    harness: &Harness<'_>,
     idempotency_key: &str,
     payload: Value,
 ) {
-    let before = dispatch(webview, "workspace_status", json!({})).expect("status ok");
+    let before = dispatch(harness.webview, "workspace_status", json!({})).expect("status ok");
     let op_count = before["result"]["appliedOpCount"].clone();
 
     let (_accepted, terminal) =
-        apply_change_event_and_wait(app, webview, idempotency_key, payload).await;
+        apply_change_event_and_wait(harness, idempotency_key, payload).await;
     assert_eq!(terminal["succeeded"], false, "terminal event: {terminal:?}");
     assert_eq!(terminal["errorCode"], "VALIDATION_FAILED");
 
-    let after = dispatch(webview, "workspace_status", json!({})).expect("status ok");
+    let after = dispatch(harness.webview, "workspace_status", json!({})).expect("status ok");
     assert_eq!(
         after["result"]["appliedOpCount"], op_count,
         "a rejected write never enters model/ops/"
@@ -558,29 +571,27 @@ async fn author_typed_node_then_list_survives_reopen_with_hash_equality() {
     let dir = TempDir::new().unwrap();
     let (app, webview) = lifecycle_app();
     let root = dir.path().to_string_lossy().to_string();
+    let harness = Harness {
+        app: &app,
+        webview: &webview,
+    };
 
     dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
 
-    apply_change_event_and_wait(
-        &app,
-        &webview,
+    let first_id = author_entity_and_wait(
+        &harness,
         "author-first",
-        change_event(
-            "Model the first capability",
-            create_entity_action("Capability", json!({ "name": "First" })),
-        ),
+        "Model the first capability",
+        "Capability",
+        json!({ "name": "First" }),
     )
     .await;
-    let first_id = wait_for_first_node(&webview).await;
-
-    apply_change_event_and_wait(
-        &app,
-        &webview,
+    author_entity_and_wait(
+        &harness,
         "author-second",
-        change_event(
-            "Model the second capability",
-            create_entity_action("Capability", json!({ "name": "Second" })),
-        ),
+        "Model the second capability",
+        "Capability",
+        json!({ "name": "Second" }),
     )
     .await;
 
@@ -658,20 +669,21 @@ async fn plan_actual_claims_resolve_and_diff_over_dispatch() {
     let dir = TempDir::new().unwrap();
     let (app, webview) = lifecycle_app();
     let root = dir.path().to_string_lossy().to_string();
+    let harness = Harness {
+        app: &app,
+        webview: &webview,
+    };
     dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
 
     // Author an Application, then a plan claim and an actual claim on lifecycle.
-    apply_change_event_and_wait(
-        &app,
-        &webview,
+    let id = author_entity_and_wait(
+        &harness,
         "plan-actual-billing",
-        change_event(
-            "Model the Billing application",
-            create_entity_action("Application", json!({ "name": "Billing" })),
-        ),
+        "Model the Billing application",
+        "Application",
+        json!({ "name": "Billing" }),
     )
     .await;
-    let id = wait_for_first_node(&webview).await;
 
     dispatch(
         &webview,
@@ -738,34 +750,28 @@ async fn plan_actual_claims_resolve_and_diff_over_dispatch() {
 
 #[tokio::test]
 async fn typed_authoring_validates_and_a_rejected_write_never_enters_the_op_log() {
-    let dir = TempDir::new().unwrap();
-    let (app, webview) = lifecycle_app();
-    let root = dir.path().to_string_lossy().to_string();
-    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+    let (_dir, app, webview) = created_lifecycle_app();
+    let harness = Harness {
+        app: &app,
+        webview: &webview,
+    };
 
     // A valid Capability lands through the real Change Event seam.
-    let (_accepted, terminal) = apply_change_event_and_wait(
-        &app,
-        &webview,
+    author_entity_and_wait(
+        &harness,
         "capability-ok",
-        change_event(
-            "Model the customer insight capability",
-            create_entity_action(
-                "Capability",
-                json!({ "name": "Customer Insight", "tier": "Strategic" }),
-            ),
-        ),
+        "Model the customer insight capability",
+        "Capability",
+        json!({ "name": "Customer Insight", "tier": "Strategic" }),
     )
     .await;
-    assert_eq!(terminal["succeeded"], true, "terminal event: {terminal:?}");
     let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
     assert_eq!(nodes["result"].as_array().map(Vec::len), Some(1));
 
     // A structurally-fine but metamodel-invalid write is refused, and the
     // canonical op log is unchanged (the M1 oracle assertion).
     assert_change_event_rejected(
-        &app,
-        &webview,
+        &harness,
         "capability-bad-enum",
         change_event(
             "Model an invalid capability",
@@ -781,40 +787,37 @@ async fn typed_authoring_validates_and_a_rejected_write_never_enters_the_op_log(
 #[tokio::test]
 async fn author_typed_edge_round_trips_and_rejects_at_the_boundary() {
     let (_dir, app, webview) = created_lifecycle_app();
+    let harness = Harness {
+        app: &app,
+        webview: &webview,
+    };
 
     // Author an Application and a Capability (both valid).
-    apply_change_event_and_wait(
-        &app,
-        &webview,
+    let app_id = author_entity_and_wait(
+        &harness,
         "edge-app",
-        change_event(
-            "Model the Insight Hub application",
-            create_entity_action("Application", json!({ "name": "Insight Hub" })),
-        ),
+        "Model the Insight Hub application",
+        "Application",
+        json!({ "name": "Insight Hub" }),
     )
     .await;
-    let app_id = wait_for_node_of_type(&webview, "Application").await;
-
-    apply_change_event_and_wait(
-        &app,
-        &webview,
+    let cap_id = author_entity_and_wait(
+        &harness,
         "edge-cap",
-        change_event(
-            "Model the customer insight capability",
-            create_entity_action("Capability", json!({ "name": "Customer Insight" })),
-        ),
+        "Model the customer insight capability",
+        "Capability",
+        json!({ "name": "Customer Insight" }),
     )
     .await;
-    let cap_id = wait_for_node_of_type(&webview, "Capability").await;
 
     // Application realises Capability — a valid seed relationship; it lands.
     let (_accepted, terminal) = apply_change_event_and_wait(
-        &app,
-        &webview,
+        &harness,
         "edge-realises",
         change_event(
             "Insight Hub realises the customer insight capability",
-            create_relationship_action("realises", &app_id, &cap_id, json!({})),
+            json!({ "kind": "create_relationship", "relType": "realises",
+                    "srcId": app_id, "dstId": cap_id, "props": {} }),
         ),
     )
     .await;
@@ -829,12 +832,12 @@ async fn author_typed_edge_round_trips_and_rejects_at_the_boundary() {
     // A wrong-endpoint relationship (Capability cannot be a `realises` source)
     // is refused, and the canonical op log and edge count are unchanged.
     assert_change_event_rejected(
-        &app,
-        &webview,
+        &harness,
         "edge-wrong-endpoint",
         change_event(
             "Attempt a wrong-endpoint realises",
-            create_relationship_action("realises", &cap_id, &app_id, json!({})),
+            json!({ "kind": "create_relationship", "relType": "realises",
+                    "srcId": cap_id, "dstId": app_id, "props": {} }),
         ),
     )
     .await;
@@ -862,11 +865,14 @@ fn created_lifecycle_app() -> (TempDir, App<MockRuntime>, WebviewWindow<MockRunt
 #[tokio::test]
 async fn author_typed_node_rejects_a_missing_required_attribute() {
     let (_dir, app, webview) = created_lifecycle_app();
+    let harness = Harness {
+        app: &app,
+        webview: &webview,
+    };
 
     // Capability.name is required; omitting it is a structurally-fine but invalid write.
     assert_change_event_rejected(
-        &app,
-        &webview,
+        &harness,
         "missing-required",
         change_event(
             "Model an invalid capability",
@@ -881,11 +887,14 @@ async fn author_typed_node_rejects_a_missing_required_attribute() {
 #[tokio::test]
 async fn author_typed_node_rejects_a_string_over_max_length() {
     let (_dir, app, webview) = created_lifecycle_app();
+    let harness = Harness {
+        app: &app,
+        webview: &webview,
+    };
 
     let too_long = "x".repeat(257);
     assert_change_event_rejected(
-        &app,
-        &webview,
+        &harness,
         "string-too-long",
         change_event(
             "Model an invalid capability",
@@ -901,43 +910,35 @@ async fn author_typed_node_rejects_a_string_over_max_length() {
 #[tokio::test]
 async fn author_typed_edge_rejects_a_duplicate_relationship() {
     let (_dir, app, webview) = created_lifecycle_app();
+    let harness = Harness {
+        app: &app,
+        webview: &webview,
+    };
 
-    apply_change_event_and_wait(
-        &app,
-        &webview,
+    let app_id = author_entity_and_wait(
+        &harness,
         "dup-app",
-        change_event(
-            "Model the Insight Hub application",
-            create_entity_action("Application", json!({ "name": "Insight Hub" })),
-        ),
+        "Model the Insight Hub application",
+        "Application",
+        json!({ "name": "Insight Hub" }),
     )
     .await;
-    let app_id = wait_for_node_of_type(&webview, "Application").await;
-
-    apply_change_event_and_wait(
-        &app,
-        &webview,
+    let entity_id = author_entity_and_wait(
+        &harness,
         "dup-entity",
-        change_event(
-            "Model the customer profile data entity",
-            create_entity_action("DataEntity", json!({ "name": "Customer Profile" })),
-        ),
+        "Model the customer profile data entity",
+        "DataEntity",
+        json!({ "name": "Customer Profile" }),
     )
     .await;
-    let entity_id = wait_for_node_of_type(&webview, "DataEntity").await;
 
     let (_accepted, terminal) = apply_change_event_and_wait(
-        &app,
-        &webview,
+        &harness,
         "dup-first-access",
         change_event(
             "Insight Hub accesses the customer profile",
-            create_relationship_action(
-                "accesses",
-                &app_id,
-                &entity_id,
-                json!({ "mode": "readwrite" }),
-            ),
+            json!({ "kind": "create_relationship", "relType": "accesses",
+                    "srcId": app_id, "dstId": entity_id, "props": { "mode": "readwrite" } }),
         ),
     )
     .await;
@@ -948,12 +949,12 @@ async fn author_typed_edge_rejects_a_duplicate_relationship() {
 
     // A second `accesses` between the same ordered pair is a duplicate.
     assert_change_event_rejected(
-        &app,
-        &webview,
+        &harness,
         "dup-second-access",
         change_event(
             "Attempt a duplicate accesses relationship",
-            create_relationship_action("accesses", &app_id, &entity_id, json!({ "mode": "read" })),
+            json!({ "kind": "create_relationship", "relType": "accesses",
+                    "srcId": app_id, "dstId": entity_id, "props": { "mode": "read" } }),
         ),
     )
     .await;
