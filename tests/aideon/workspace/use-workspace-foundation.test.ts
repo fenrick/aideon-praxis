@@ -14,6 +14,17 @@ import { useWorkspaceFoundation } from '@/aideon/workspace/use-workspace-foundat
 const invokeMock = vi.mocked(invokeIpc);
 const terminalMock = vi.mocked(prepareForRunTerminal);
 
+/** The `workspace_open` response shared by every test that opens a workspace. */
+function mockWorkspaceOpenResult() {
+  return Promise.resolve({
+    workspaceId: 'workspace',
+    partitionId: 'partition',
+    workspaceFormatVersion: 1,
+    appliedOpCount: 0,
+    foundationRebuildHash: 'a'.repeat(64),
+  });
+}
+
 describe('useWorkspaceFoundation authoring intents', () => {
   beforeEach(() => {
     invokeMock.mockReset();
@@ -68,5 +79,74 @@ describe('useWorkspaceFoundation authoring intents', () => {
     expect(intentKeys).toHaveLength(2);
     expect(intentKeys[0]).not.toBe('');
     expect(intentKeys[1]).toBe(intentKeys[0]);
+  });
+});
+
+describe('useWorkspaceFoundation refresh parallelism (#796)', () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    terminalMock.mockReset();
+  });
+
+  it('dispatches all five refresh reads before any of them resolves', async () => {
+    const dispatched: string[] = [];
+    const deferred = new Map<string, { resolve: (value: unknown) => void }>();
+
+    invokeMock.mockImplementation((command) => {
+      if (command === 'workspace_open') {
+        return mockWorkspaceOpenResult();
+      }
+      dispatched.push(command);
+      return new Promise((resolve) => {
+        deferred.set(command, { resolve });
+      });
+    });
+
+    const { result } = renderHook(() => useWorkspaceFoundation());
+
+    const openPromise = act(async () => {
+      await result.current[1].openWorkspace('workspace-root');
+    });
+
+    // All five reads must have been dispatched even though none has resolved yet.
+    const expectedCommands = [
+      'workspace_edges',
+      'workspace_metamodel_types',
+      'workspace_nodes',
+      'workspace_state_at',
+      'workspace_status',
+    ];
+    await vi.waitFor(() => {
+      expect(dispatched.toSorted((a, b) => a.localeCompare(b))).toEqual(expectedCommands);
+    });
+
+    for (const command of dispatched) {
+      const fallback = command === 'workspace_status' ? {} : [];
+      deferred.get(command)?.resolve(fallback);
+    }
+    await openPromise;
+
+    expect(result.current[0].phase).toBe('open');
+  });
+
+  it('surfaces a rejected refresh read as an error phase', async () => {
+    invokeMock.mockImplementation((command) => {
+      if (command === 'workspace_open') {
+        return mockWorkspaceOpenResult();
+      }
+      if (command === 'workspace_edges') {
+        return Promise.reject(new Error('edges read failed'));
+      }
+      return Promise.resolve([]);
+    });
+
+    const { result } = renderHook(() => useWorkspaceFoundation());
+
+    await act(async () => {
+      await result.current[1].openWorkspace('workspace-root');
+    });
+
+    expect(result.current[0].phase).toBe('error');
+    expect(result.current[0].errorMessage).toContain('edges read failed');
   });
 });
