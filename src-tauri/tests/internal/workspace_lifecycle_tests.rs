@@ -609,3 +609,120 @@ async fn author_typed_edge_round_trips_and_rejects_at_the_boundary() {
         1
     );
 }
+
+/// #347: a required attribute left out is refused with `MISSING_REQUIRED_ATTRIBUTE`
+/// and the write never reaches the op log.
+#[tokio::test]
+async fn author_typed_node_rejects_a_missing_required_attribute() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    let op_count = before["result"]["appliedOpCount"].clone();
+
+    // Capability.name is required; omitting it is a structurally-fine but invalid write.
+    let bad = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Capability", "props": { "tier": "Strategic" } }),
+    )
+    .expect("envelope returned");
+    assert_eq!(bad["status"], "error");
+    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
+
+    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(
+        after["result"]["appliedOpCount"], op_count,
+        "a rejected write never enters model/ops/"
+    );
+}
+
+/// #347: a string over the metamodel's `maxLength` (256) is refused with
+/// `STRING_TOO_LONG` and the write never reaches the op log.
+#[tokio::test]
+async fn author_typed_node_rejects_a_string_over_max_length() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    let op_count = before["result"]["appliedOpCount"].clone();
+
+    let too_long = "x".repeat(257);
+    let bad = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Capability", "props": { "name": too_long } }),
+    )
+    .expect("envelope returned");
+    assert_eq!(bad["status"], "error");
+    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
+
+    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(
+        after["result"]["appliedOpCount"], op_count,
+        "a rejected write never enters model/ops/"
+    );
+}
+
+/// #347: `accesses` has `allowDuplicate=false`; a second identical relationship
+/// between the same ordered pair is refused with `DUPLICATE_RELATIONSHIP` and
+/// never reaches the op log.
+#[tokio::test]
+async fn author_typed_edge_rejects_a_duplicate_relationship() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    let root = dir.path().to_string_lossy().to_string();
+    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+
+    let app = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "Application", "props": { "name": "Insight Hub" } }),
+    )
+    .expect("app envelope");
+    let app_id = app["result"]["nodeId"].as_str().unwrap().to_string();
+
+    let entity = dispatch(
+        &webview,
+        "workspace_author_typed_node",
+        json!({ "typeId": "DataEntity", "props": { "name": "Customer Profile" } }),
+    )
+    .expect("entity envelope");
+    let entity_id = entity["result"]["nodeId"].as_str().unwrap().to_string();
+
+    let first = dispatch(
+        &webview,
+        "workspace_author_typed_edge",
+        json!({ "relType": "accesses", "srcId": app_id, "dstId": entity_id,
+                "props": { "mode": "readwrite" } }),
+    )
+    .expect("edge envelope");
+    assert_eq!(
+        first["status"], "ok",
+        "the first access relationship lands: {first:?}"
+    );
+
+    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    let op_count = before["result"]["appliedOpCount"].clone();
+
+    // A second `accesses` between the same ordered pair is a duplicate.
+    let bad = dispatch(
+        &webview,
+        "workspace_author_typed_edge",
+        json!({ "relType": "accesses", "srcId": app_id, "dstId": entity_id,
+                "props": { "mode": "read" } }),
+    )
+    .expect("bad envelope returned");
+    assert_eq!(bad["status"], "error");
+    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
+
+    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(
+        after["result"]["appliedOpCount"], op_count,
+        "a rejected relationship never enters model/ops/"
+    );
+}
