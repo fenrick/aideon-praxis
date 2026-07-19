@@ -3,6 +3,8 @@ import { createContext, useCallback, useContext, useMemo, useReducer } from 'rea
 import { dedupeIds } from 'aideon/canvas/selection';
 import { EMPTY_SELECTION, type SelectionState, type WidgetSelection } from 'aideon/canvas/types';
 
+import type { SelectionKind } from 'praxis/types';
+
 export interface SelectionProperties {
   readonly name?: string;
   readonly dataSource?: string;
@@ -134,9 +136,7 @@ export function useSelectionStore(): SelectionContextValue {
  *
  * @param selection
  */
-export function deriveSelectionKind(
-  selection: SelectionState,
-): 'artefact' | 'node' | 'edge' | 'cell' | 'none' {
+export function deriveSelectionKind(selection: SelectionState): SelectionKind {
   if (selection.cellIds.length > 0) {
     return 'cell';
   }
