@@ -135,6 +135,15 @@ pub fn recover_loose_tail(paths: &Paths) -> Result<LooseRecovery> {
     })
 }
 
+/// Durably discard the loose segment suffix starting at `valid_len`.
+pub fn truncate_loose_tail(paths: &Paths, valid_len: u64) -> Result<()> {
+    let path = paths.current_segment();
+    let file = OpenOptions::new().write(true).open(path)?;
+    file.set_len(valid_len)?;
+    file.sync_all()?;
+    Ok(())
+}
+
 /// Whether a loose-segment line is a sealed-segment checksum trailer rather
 /// than an operation record.
 fn is_checksum_record(line: &str) -> bool {

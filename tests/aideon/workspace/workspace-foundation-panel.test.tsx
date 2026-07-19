@@ -10,6 +10,7 @@ import type {
   EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
+  ObjectInspection,
   PropertyDelta,
   ResolvedEntity,
   WorkspaceStatus,
@@ -29,6 +30,7 @@ const STATUS: WorkspaceStatus = {
 // The generated wire type carries `null` for an absent field (serde Option).
 // eslint-disable-next-line unicorn/no-null
 const NONE: string | null = null;
+const PRIMARY_NODE_ID = '11111111-0000-4000-8000-000000000003';
 
 const TYPES: MetaTypeInfo[] = [
   {
@@ -44,7 +46,7 @@ const TYPES: MetaTypeInfo[] = [
 
 const NODES: NodeRecord[] = [
   {
-    nodeId: '11111111-0000-4000-8000-000000000003',
+    nodeId: PRIMARY_NODE_ID,
     typeId: NONE,
     typeLabel: 'Capability',
     tombstoned: false,
@@ -70,11 +72,25 @@ const EDGES: EdgeRecord[] = [
 
 const RESOLVED: ResolvedEntity[] = [
   {
-    nodeId: '11111111-0000-4000-8000-000000000003',
+    nodeId: PRIMARY_NODE_ID,
     typeLabel: 'Capability',
     properties: [{ field: 'tier', value: 'Strategic', layer: 'plan' }],
   },
 ];
+
+const INSPECTION: ObjectInspection = {
+  objectId: PRIMARY_NODE_ID,
+  objectKind: 'entity',
+  typeLabel: 'Capability',
+  properties: [{ field: 'tier', value: 'Strategic', layer: 'plan' }],
+  provenance: {
+    changeEventId: '33333333-0000-4000-8000-000000000001',
+    transactionOwnerActorId: '44444444-0000-4000-8000-000000000001',
+    rationale: 'Model customer insight',
+    source: 'desktop.modelling-studio',
+    lifecycle: 'applied',
+  },
+};
 
 const DELTAS: PropertyDelta[] = [
   {
@@ -94,20 +110,17 @@ const resolveStatus = () => Promise.resolve(STATUS);
  * @param nodes - Node listing the host returns.
  */
 function hostResponses(nodes: NodeRecord[]): Map<string, () => Promise<unknown>> {
-  const authoredNode = () => Promise.resolve(nodes[0]);
   return new Map<string, () => Promise<unknown>>([
     ['workspace_create', resolveStatus],
     ['workspace_open', resolveStatus],
     ['workspace_status', resolveStatus],
     ['workspace_nodes', () => Promise.resolve(nodes)],
     ['workspace_edges', () => Promise.resolve(EDGES)],
-    ['workspace_author_typed_edge', () => Promise.resolve(EDGES[0])],
     ['workspace_metamodel_types', () => Promise.resolve(TYPES)],
     ['workspace_state_at', () => Promise.resolve(RESOLVED)],
+    ['workspace_inspect_object', () => Promise.resolve(INSPECTION)],
     ['workspace_diff', () => Promise.resolve(DELTAS)],
     ['workspace_set_claim', () => Promise.resolve()],
-    ['workspace_author_node', authoredNode],
-    ['workspace_author_typed_node', authoredNode],
   ]);
 }
 
@@ -177,6 +190,25 @@ describe('WorkspaceFoundationPanel', () => {
     expect(screen.getByLabelText('Entity type')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create entity' })).toBeDisabled();
     expect(invokeMock).toHaveBeenCalledWith('workspace_metamodel_types', {});
+  });
+
+  it('loads resolved meaning and provenance for the selected object', async () => {
+    mockHost(NODES);
+    render(<WorkspaceFoundationPanel />);
+    await openWorkspace('Open');
+    const inspectButtons = await screen.findAllByRole('button', { name: 'Inspect Capability' });
+    const inspectButton = inspectButtons.at(0);
+    expect(inspectButton).toBeDefined();
+    if (inspectButton !== undefined) {
+      await userEvent.click(inspectButton);
+    }
+
+    expect(await screen.findByText('Model customer insight')).toBeInTheDocument();
+    expect(screen.getByText('desktop.modelling-studio')).toBeInTheDocument();
+    expect(invokeMock).toHaveBeenCalledWith('workspace_inspect_object', {
+      objectId: PRIMARY_NODE_ID,
+      viewpoint: { asOf: 0, layers: ['actual', 'plan'] },
+    });
   });
 
   it('lists relationships and gates the edge-authoring form', async () => {

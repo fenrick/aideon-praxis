@@ -29,6 +29,7 @@ import type {
   EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
+  ObjectInspection,
   PropertyDelta,
   ResolvedEntity,
   Viewpoint,
@@ -208,22 +209,33 @@ function EnumOrInputField({
  * @param root0.typeLabel - The metamodel type label, or `null` when untyped.
  * @param root0.code - The truncated identifier content.
  * @param root0.tombstoned - Whether the record is tombstoned.
+ * @param root0.onInspect - Select this object in the shared inspector.
  */
 function ListRow({
   typeLabel,
   code,
   tombstoned,
+  onInspect,
 }: {
   readonly typeLabel: string | null;
   readonly code: ReactNode;
   readonly tombstoned: boolean;
+  readonly onInspect: () => void;
 }) {
   return (
     <li className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
-      <span className="flex items-center gap-2">
-        {typeLabel === null ? undefined : <Badge variant="secondary">{typeLabel}</Badge>}
-        <code className="truncate">{code}</code>
-      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        aria-label={`Inspect ${typeLabel ?? 'object'}`}
+        onClick={onInspect}
+      >
+        <span className="flex items-center gap-2">
+          {typeLabel === null ? undefined : <Badge variant="secondary">{typeLabel}</Badge>}
+          <code className="truncate">{code}</code>
+        </span>
+      </Button>
       {tombstoned ? <Badge variant="outline">tombstoned</Badge> : undefined}
     </li>
   );
@@ -370,6 +382,7 @@ const SEED_RELATIONSHIPS = ['serves', 'realises', 'accesses', 'hosts', 'plan_eff
  * @param root0 - Form props.
  * @param root0.nodes - The authored entities to choose endpoints from.
  * @param root0.onAuthor - Called with the verb, endpoints, and any attributes.
+ * @param root0.onInspect - Select a relationship in the shared inspector.
  */
 function EdgeAuthoringForm({
   nodes,
@@ -471,11 +484,13 @@ function EdgeAuthoringForm({
  * @param root0.edges - The projected relationships (re-derived from the op log).
  * @param root0.nodes - The authored entities (endpoint choices).
  * @param root0.onAuthor - Called with the verb, endpoints, and any attributes.
+ * @param root0.onInspect - Select a relationship in the shared inspector.
  */
 function RelationshipsCard({
   edges,
   nodes,
   onAuthor,
+  onInspect,
 }: {
   readonly edges: readonly EdgeRecord[];
   readonly nodes: readonly NodeRecord[];
@@ -485,6 +500,7 @@ function RelationshipsCard({
     destinationId: string,
     properties: Record<string, string>,
   ) => void;
+  readonly onInspect: (objectId: string) => void;
 }) {
   const t = useTranslations('workspace');
   return (
@@ -496,6 +512,9 @@ function RelationshipsCard({
             key={edge.edgeId}
             typeLabel={edge.typeLabel}
             tombstoned={edge.tombstoned}
+            onInspect={() => {
+              onInspect(edge.edgeId);
+            }}
             code={
               <>
                 {edge.srcId.slice(0, 8)}… → {edge.dstId.slice(0, 8)}…
@@ -1049,15 +1068,18 @@ function FoundationStatusCard({
  * @param root0.nodes - The authored entities (re-derived from the op log).
  * @param root0.types - The seed metamodel's authorable entity types.
  * @param root0.onAuthor - Author a metamodel-typed entity.
+ * @param root0.onInspect - Select an entity in the shared inspector.
  */
 function EntitiesCard({
   nodes,
   types,
   onAuthor,
+  onInspect,
 }: {
   readonly nodes: readonly NodeRecord[];
   readonly types: readonly MetaTypeInfo[];
   readonly onAuthor: (typeId: string, properties: Record<string, string>) => void;
+  readonly onInspect: (objectId: string) => void;
 }) {
   const t = useTranslations('workspace');
   return (
@@ -1069,10 +1091,53 @@ function EntitiesCard({
             key={node.nodeId}
             typeLabel={node.typeLabel}
             tombstoned={node.tombstoned}
+            onInspect={() => {
+              onInspect(node.nodeId);
+            }}
             code={<>{node.nodeId.slice(0, 8)}…</>}
           />
         ))}
       </ItemList>
+    </SectionCard>
+  );
+}
+
+/**
+ * Shared details for the currently selected model object.
+ * @param root0 - Inspector props.
+ * @param root0.inspection - Selected object details, or absent before selection.
+ */
+function ObjectInspectorCard({
+  inspection,
+}: {
+  readonly inspection: ObjectInspection | undefined;
+}) {
+  return (
+    <SectionCard title="Inspector" description="Resolved meaning and canonical provenance">
+      {inspection === undefined ? (
+        <p className="text-muted-foreground text-sm">
+          Select an entity or relationship to inspect it.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3 text-sm">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{inspection.typeLabel ?? inspection.objectKind}</Badge>
+            <code>{inspection.objectId.slice(0, 12)}…</code>
+          </div>
+          {inspection.properties.map((property) => (
+            <div key={property.field} className="flex items-center justify-between gap-2">
+              <span className="text-muted-foreground">{property.field}</span>
+              <span>{property.value}</span>
+            </div>
+          ))}
+          {inspection.provenance === null ? undefined : (
+            <div className="border-t pt-3">
+              <p className="font-medium">{inspection.provenance.rationale}</p>
+              <p className="text-muted-foreground">{inspection.provenance.source}</p>
+            </div>
+          )}
+        </div>
+      )}
     </SectionCard>
   );
 }
@@ -1088,7 +1153,17 @@ function EntitiesCard({
  */
 export function WorkspaceFoundationPanel() {
   const [
-    { phase, status, nodes, edges, metamodelTypes, viewpoint, resolved, errorMessage },
+    {
+      phase,
+      status,
+      nodes,
+      edges,
+      metamodelTypes,
+      viewpoint,
+      resolved,
+      selectedObject,
+      errorMessage,
+    },
     actions,
   ] = useWorkspaceFoundation();
   const [root, setRoot] = useState('');
@@ -1132,6 +1207,9 @@ export function WorkspaceFoundationPanel() {
             onAuthor={(typeId, properties) => {
               void actions.authorTypedNode(typeId, properties);
             }}
+            onInspect={(objectId) => {
+              void actions.inspectObject(objectId);
+            }}
           />
 
           <RelationshipsCard
@@ -1140,7 +1218,12 @@ export function WorkspaceFoundationPanel() {
             onAuthor={(relationshipType, sourceId, destinationId, properties) => {
               void actions.authorTypedEdge(relationshipType, sourceId, destinationId, properties);
             }}
+            onInspect={(objectId) => {
+              void actions.inspectObject(objectId);
+            }}
           />
+
+          <ObjectInspectorCard inspection={selectedObject} />
 
           <CatalogueCard
             entities={resolved}

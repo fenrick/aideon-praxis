@@ -15,7 +15,9 @@ use aideon_praxis::meta::{MetaModelDocument, MetaModelRegistry};
 pub use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 pub use mneme_core::{Id, Value};
 pub use mneme_store::error::{Result, StoreError};
-pub use mneme_store::{AppliedFrontier, FoundationProjectionSnapshot, Manifest, Workspace};
+pub use mneme_store::{
+    AppliedFrontier, ChangeEventBatch, FoundationProjectionSnapshot, Manifest, Workspace,
+};
 
 use mneme_core::effective::{EffectiveEdgeRule, EffectiveSchema};
 use mneme_core::ops::{CreateEdge, CreateNode, Layer, SetPropertyInterval};
@@ -127,6 +129,28 @@ pub struct ResolvedEntity {
     pub properties: Vec<ResolvedProperty>,
 }
 
+/// Canonical Change Event provenance shown by the shared inspector.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ChangeEventProvenance {
+    pub change_event_id: String,
+    pub transaction_owner_actor_id: String,
+    pub rationale: String,
+    pub source: String,
+    pub lifecycle: String,
+}
+
+/// Host-facing details for one selected entity or relationship.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ObjectInspection {
+    pub object_id: String,
+    pub object_kind: String,
+    pub type_label: Option<String>,
+    pub properties: Vec<ResolvedProperty>,
+    pub provenance: Option<ChangeEventProvenance>,
+}
+
 /// One slot whose resolved value differs between two viewpoints ([ADR-0008]:
 /// a diff compares two viewpoints).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Type)]
@@ -168,6 +192,17 @@ pub struct TypedEdgeRequest<'a> {
     pub props: serde_json::Value,
 }
 
+struct ValidatedTypedEdge {
+    rel_type: String,
+    src_id: String,
+    dst_id: String,
+    src: Id,
+    dst: Id,
+    rel_symbol: Id,
+    schema: EffectiveSchema,
+    props: serde_json::Value,
+}
+
 /// A single plan/actual claim: the entity + attribute it targets, the value to
 /// assert, and the layer/valid-time coordinate it holds over.
 pub struct PropertyClaim<'a> {
@@ -206,6 +241,54 @@ pub struct Engine {
 }
 
 impl Engine {
+    /// Workspace root for host-owned adjacent durable records.
+    #[must_use]
+    pub fn workspace_root(&self) -> &Path {
+        self.workspace.paths().root()
+    }
+
+    /// Inspect one projected object at a viewpoint with canonical provenance.
+    pub fn inspect_object(&self, object_id: &str, view: &Viewpoint) -> Result<ObjectInspection> {
+        let id = Id::from_str(object_id).map_err(|_| StoreError::Validation {
+            message: "object id is not a UUID".to_string(),
+        })?;
+        let nodes = self.nodes()?;
+        let edges = self.edges()?;
+        let (object_kind, type_label) =
+            if let Some(node) = nodes.iter().find(|node| node.node_id == object_id) {
+                ("entity", node.type_label.clone())
+            } else if let Some(edge) = edges.iter().find(|edge| edge.edge_id == object_id) {
+                ("relationship", edge.type_label.clone())
+            } else {
+                return Err(StoreError::Validation {
+                    message: "object does not exist".to_string(),
+                });
+            };
+        let properties = self
+            .state_at(view)?
+            .into_iter()
+            .find(|entity| entity.node_id == object_id)
+            .map(|entity| entity.properties)
+            .unwrap_or_default();
+        let provenance =
+            self.workspace
+                .change_event_for_object(id)?
+                .map(|metadata| ChangeEventProvenance {
+                    change_event_id: metadata.change_event_id.to_canonical_string(),
+                    transaction_owner_actor_id: metadata.owner_actor_id.to_canonical_string(),
+                    rationale: metadata.rationale,
+                    source: metadata.source,
+                    lifecycle: "applied".to_string(),
+                });
+        Ok(ObjectInspection {
+            object_id: object_id.to_string(),
+            object_kind: object_kind.to_string(),
+            type_label,
+            properties,
+            provenance,
+        })
+    }
+
     /// Create a new workspace and open it for writing.
     pub fn create(root: impl AsRef<Path>, created_by_actor_id: Option<Id>) -> Result<Self> {
         Self::wrap(Workspace::create(root, created_by_actor_id)?)
@@ -316,13 +399,22 @@ impl Engine {
     /// type, omitting a required attribute, or carrying an out-of-range enum is
     /// rejected with [`StoreError::Validation`] and **never enters the op log**.
     ///
-    /// On success it appends a `create-node` (carrying the type's symbol UUID)
-    /// followed by one `set-property-interval` per supplied attribute, on the
-    /// `plan` layer over the open-ended interval.
+    /// On success it commits a `create-node` and all supplied attributes as one
+    /// actual-layer Change Event.
     pub fn author_typed_node(
         &mut self,
         type_id: &str,
         props: serde_json::Value,
+    ) -> Result<NodeRecord> {
+        self.author_typed_node_with_rationale(type_id, props, format!("Create {type_id}"))
+    }
+
+    /// Author a typed entity with caller-supplied Change Event rationale.
+    pub fn author_typed_node_with_rationale(
+        &mut self,
+        type_id: &str,
+        props: serde_json::Value,
+        rationale: impl Into<String>,
     ) -> Result<NodeRecord> {
         let node_id = Id::new_v4();
         // Validate the intended write against the compiled effective schema
@@ -345,44 +437,42 @@ impl Engine {
         let actor = self.session_actor()?;
         let partition = self.workspace.partition_id();
 
-        self.workspace.author(
+        let mut payloads = vec![OpPayload::CreateNode(CreateNode {
+            partition,
+            scenario_id: None,
             actor,
-            Origin::manual(),
-            OpPayload::CreateNode(CreateNode {
-                partition,
-                scenario_id: None,
-                actor,
-                asserted_at: mneme_core::Hlc(0),
-                node_id,
-                type_id: Some(type_symbol),
-                write_options: None,
-            }),
-        )?;
+            asserted_at: mneme_core::Hlc(0),
+            node_id,
+            type_id: Some(type_symbol),
+            write_options: None,
+        })];
 
-        // Persist each supplied attribute as a plan-layer fact so the meaning is
-        // canonical, not just validated in flight.
+        // Resolve and convert every property before the canonical append.
         if let Some(map) = props.as_object() {
             for (name, json) in map {
                 let field_id = self.attribute_symbol(type_id, name)?;
-                self.workspace.author(
+                payloads.push(OpPayload::SetPropertyInterval(SetPropertyInterval {
+                    partition,
+                    scenario_id: None,
                     actor,
-                    Origin::manual(),
-                    OpPayload::SetPropertyInterval(SetPropertyInterval {
-                        partition,
-                        scenario_id: None,
-                        actor,
-                        asserted_at: mneme_core::Hlc(0),
-                        entity_id: node_id,
-                        field_id,
-                        value: to_value(json)?,
-                        valid_from: ValidTime(0),
-                        valid_to: None,
-                        layer: Layer::Plan,
-                        write_options: None,
-                    }),
-                )?;
+                    asserted_at: mneme_core::Hlc(0),
+                    entity_id: node_id,
+                    field_id,
+                    value: to_value(json)?,
+                    valid_from: ValidTime(0),
+                    valid_to: None,
+                    layer: Layer::Actual,
+                    write_options: None,
+                }));
             }
         }
+        self.workspace.author_change_event_batch(ChangeEventBatch {
+            actor_id: actor,
+            origin: Origin::manual(),
+            rationale: rationale.into(),
+            source: "engine.typed-node".to_string(),
+            payloads,
+        })?;
 
         Ok(self.record_of(
             node_id.to_canonical_string(),
@@ -397,10 +487,43 @@ impl Engine {
     /// or a bad/missing attribute is rejected with [`StoreError::Validation`] and
     /// **never enters the op log**.
     ///
-    /// On success it appends a `create-edge` (carrying the relationship symbol)
-    /// followed by one `set-property-interval` per supplied attribute on the
-    /// `plan` layer over the open interval.
+    /// On success it commits the edge and all supplied attributes as one
+    /// actual-layer Change Event.
     pub fn author_typed_edge(&mut self, request: TypedEdgeRequest<'_>) -> Result<EdgeRecord> {
+        let rationale = format!("Create {} relationship", request.rel_type);
+        self.author_typed_edge_with_rationale(request, rationale)
+    }
+
+    /// Author a typed relationship with caller-supplied Change Event rationale.
+    pub fn author_typed_edge_with_rationale(
+        &mut self,
+        request: TypedEdgeRequest<'_>,
+        rationale: impl Into<String>,
+    ) -> Result<EdgeRecord> {
+        let edge = self.validate_typed_edge(request)?;
+        let edge_id = Id::new_v4();
+        let actor = self.session_actor()?;
+        let partition = self.workspace.partition_id();
+        let payloads = typed_edge_payloads(&edge, edge_id, actor, partition)?;
+        self.workspace.author_change_event_batch(ChangeEventBatch {
+            actor_id: actor,
+            origin: Origin::manual(),
+            rationale: rationale.into(),
+            source: "engine.typed-edge".to_string(),
+            payloads,
+        })?;
+
+        Ok(EdgeRecord {
+            edge_id: edge_id.to_canonical_string(),
+            type_id: Some(edge.rel_symbol.to_canonical_string()),
+            type_label: Some(edge.rel_type),
+            src_id: edge.src_id,
+            dst_id: edge.dst_id,
+            tombstoned: false,
+        })
+    }
+
+    fn validate_typed_edge(&self, request: TypedEdgeRequest<'_>) -> Result<ValidatedTypedEdge> {
         let TypedEdgeRequest {
             rel_type,
             src_id,
@@ -444,23 +567,21 @@ impl Engine {
             message: e.to_string(),
         })?;
 
-        let edge_id = Id::new_v4();
         let src = Id::from_str(src_id).map_err(|_| StoreError::Validation {
             message: "source id is not a UUID".into(),
         })?;
         let dst = Id::from_str(dst_id).map_err(|_| StoreError::Validation {
             message: "destination id is not a UUID".into(),
         })?;
-        self.append_create_edge(edge_id, rel_symbol, (src, dst))?;
-        self.append_edge_props(edge_id, &schema, &props)?;
-
-        Ok(EdgeRecord {
-            edge_id: edge_id.to_canonical_string(),
-            type_id: Some(rel_symbol.to_canonical_string()),
-            type_label: Some(rel_type.to_owned()),
+        Ok(ValidatedTypedEdge {
+            rel_type: rel_type.to_owned(),
             src_id: src_id.to_owned(),
             dst_id: dst_id.to_owned(),
-            tombstoned: false,
+            src,
+            dst,
+            rel_symbol,
+            schema,
+            props,
         })
     }
 
@@ -489,80 +610,6 @@ impl Engine {
             })?;
         let rel_symbol = self.relationship_symbol(rel_type)?;
         Ok((rule, schema, rel_symbol))
-    }
-
-    /// Append the `create-edge` op for a validated relationship, carrying its
-    /// storage symbol, on the plan layer over the open-ended interval.
-    fn append_create_edge(
-        &mut self,
-        edge_id: Id,
-        rel_symbol: Id,
-        endpoints: (Id, Id),
-    ) -> Result<()> {
-        let actor = self.session_actor()?;
-        let partition = self.workspace.partition_id();
-        self.workspace.author(
-            actor,
-            Origin::manual(),
-            OpPayload::CreateEdge(CreateEdge {
-                partition,
-                scenario_id: None,
-                actor,
-                asserted_at: mneme_core::Hlc(0),
-                edge_id,
-                type_id: Some(rel_symbol),
-                src_id: endpoints.0,
-                dst_id: endpoints.1,
-                exists_valid_from: ValidTime(0),
-                exists_valid_to: None,
-                layer: Layer::Plan,
-                weight: None,
-                write_options: None,
-            }),
-        )?;
-        Ok(())
-    }
-
-    /// Persist each supplied relationship attribute as a plan-layer fact over
-    /// the open interval, resolving its field symbol from the compiled slot
-    /// descriptors. An attribute with no matching slot is skipped.
-    fn append_edge_props(
-        &mut self,
-        edge_id: Id,
-        schema: &EffectiveSchema,
-        props: &serde_json::Value,
-    ) -> Result<()> {
-        let Some(map) = props.as_object() else {
-            return Ok(());
-        };
-        let actor = self.session_actor()?;
-        let partition = self.workspace.partition_id();
-        for (name, json) in map {
-            let Some(slot) = schema.slots.iter().find(|s| &s.key == name) else {
-                continue;
-            };
-            let field_id = Id::from_str(&slot.uuid).map_err(|_| StoreError::Validation {
-                message: format!("slot `{name}` has an invalid uuid"),
-            })?;
-            self.workspace.author(
-                actor,
-                Origin::manual(),
-                OpPayload::SetPropertyInterval(SetPropertyInterval {
-                    partition,
-                    scenario_id: None,
-                    actor,
-                    asserted_at: mneme_core::Hlc(0),
-                    entity_id: edge_id,
-                    field_id,
-                    value: to_value(json)?,
-                    valid_from: ValidTime(0),
-                    valid_to: None,
-                    layer: Layer::Plan,
-                    write_options: None,
-                }),
-            )?;
-        }
-        Ok(())
     }
 
     /// The projected edge listing — the derived twin view, re-derived on rebuild.
@@ -968,6 +1015,54 @@ fn meta_types(registry: &MetaModelRegistry) -> Vec<MetaTypeInfo> {
         .collect()
 }
 
+fn typed_edge_payloads(
+    edge: &ValidatedTypedEdge,
+    edge_id: Id,
+    actor: Id,
+    partition: Id,
+) -> Result<Vec<OpPayload>> {
+    let mut payloads = vec![OpPayload::CreateEdge(CreateEdge {
+        partition,
+        scenario_id: None,
+        actor,
+        asserted_at: mneme_core::Hlc(0),
+        edge_id,
+        type_id: Some(edge.rel_symbol),
+        src_id: edge.src,
+        dst_id: edge.dst,
+        exists_valid_from: ValidTime(0),
+        exists_valid_to: None,
+        layer: Layer::Actual,
+        weight: None,
+        write_options: None,
+    })];
+    let Some(properties) = edge.props.as_object() else {
+        return Ok(payloads);
+    };
+    for (name, json) in properties {
+        let Some(slot) = edge.schema.slots.iter().find(|slot| &slot.key == name) else {
+            continue;
+        };
+        let field_id = Id::from_str(&slot.uuid).map_err(|_| StoreError::Validation {
+            message: format!("slot `{name}` has an invalid uuid"),
+        })?;
+        payloads.push(OpPayload::SetPropertyInterval(SetPropertyInterval {
+            partition,
+            scenario_id: None,
+            actor,
+            asserted_at: mneme_core::Hlc(0),
+            entity_id: edge_id,
+            field_id,
+            value: to_value(json)?,
+            valid_from: ValidTime(0),
+            valid_to: None,
+            layer: Layer::Actual,
+            write_options: None,
+        }));
+    }
+    Ok(payloads)
+}
+
 /// Coerce string-encoded prop values to their typed JSON per the effective
 /// schema. The host stringifies every value, so `number` and `boolean` slots
 /// arrive as strings; this restores their JSON kind before validation and
@@ -1250,6 +1345,13 @@ mod tests {
         assert_eq!(node.type_label.as_deref(), Some("Capability"));
         let after_valid = engine.status().unwrap().applied_op_count;
         assert_eq!(after_valid, 4, "actor + create-node + name + tier");
+        let log = std::fs::read_to_string(engine.workspace.paths().current_segment()).unwrap();
+        assert_eq!(
+            log.matches("\"record_type\":\"change-event-commit\"")
+                .count(),
+            1,
+            "one typed authoring task has one canonical commit marker"
+        );
 
         // Enum match is case-insensitive per the seed (tier lower-case still valid).
         engine
@@ -1286,6 +1388,36 @@ mod tests {
                 .iter()
                 .any(|n| n.node_id == node_id && n.type_label.as_deref() == Some("Capability")),
             "the typed node is re-derived after a rebuild"
+        );
+    }
+
+    #[test]
+    fn object_inspection_returns_resolved_properties_and_change_event_provenance() {
+        let dir = TempDir::new().unwrap();
+        let mut engine = Engine::create(dir.path(), None).unwrap();
+        let node = engine
+            .author_typed_node_with_rationale(
+                "Capability",
+                serde_json::json!({ "name": "Customer Insight", "tier": "Strategic" }),
+                "Model customer insight",
+            )
+            .unwrap();
+
+        let inspection = engine
+            .inspect_object(
+                &node.node_id,
+                &Viewpoint {
+                    as_of: 0,
+                    layers: vec!["actual".into()],
+                },
+            )
+            .unwrap();
+
+        assert_eq!(inspection.object_kind, "entity");
+        assert_eq!(inspection.properties.len(), 2);
+        assert_eq!(
+            inspection.provenance.as_ref().unwrap().rationale,
+            "Model customer insight"
         );
     }
 

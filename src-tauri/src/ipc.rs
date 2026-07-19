@@ -107,7 +107,7 @@ fn classify(code: &str) -> (ProblemCategory, ProblemRecovery, &'static str) {
 /// Canonical IPC request envelope.
 ///
 /// Matches the host design doc contract:
-/// `{ requestId: "uuid", traceparent?: string, payload: { ... } }`.
+/// `{ requestId: "uuid", idempotencyKey?: string, traceparent?: string, payload: { ... } }`.
 ///
 /// `traceparent` is W3C Trace Context transport metadata (ADR-0019). It is
 /// optional: absent means no span context; present but invalid returns
@@ -116,6 +116,9 @@ fn classify(code: &str) -> (ProblemCategory, ProblemRecovery, &'static str) {
 #[serde(rename_all = "camelCase")]
 pub struct IpcRequest<T> {
     pub request_id: String,
+    /// Stable mutation-intent key. Required by mutating command handlers.
+    #[serde(default)]
+    pub idempotency_key: Option<String>,
     #[serde(default)]
     pub traceparent: Option<String>,
     pub payload: T,
@@ -127,6 +130,7 @@ impl<T> IpcRequest<T> {
     pub fn new(request_id: impl Into<String>, payload: T) -> Self {
         Self {
             request_id: request_id.into(),
+            idempotency_key: None,
             traceparent: None,
             payload,
         }

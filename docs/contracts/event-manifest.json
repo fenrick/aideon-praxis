@@ -2,6 +2,10 @@
   "schemaVersion": 1,
   "events": [
     {
+      "name": "run:terminal",
+      "payloadKeys": []
+    },
+    {
       "name": "setup_backend_ready",
       "payloadKeys": []
     },

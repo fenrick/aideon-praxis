@@ -1,21 +1,17 @@
 import { iconBaseline } from './iconography';
 import { motionBaseline, motionTokens } from './motion';
 import { semanticStateContracts } from './semantic-states';
+import {
+  generatedElevationScale,
+  generatedRadiusScale,
+  generatedSpacingScale,
+} from './tokens.generated';
 
 export const spacingTokenKeys = ['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'] as const;
 
 export type SpacingToken = (typeof spacingTokenKeys)[number];
 
-export const spacingScale: Record<SpacingToken, string> = {
-  '2xs': '0.25rem',
-  xs: '0.5rem',
-  sm: '0.75rem',
-  md: '1rem',
-  lg: '1.25rem',
-  xl: '1.5rem',
-  '2xl': '2rem',
-  '3xl': '3rem',
-};
+export const spacingScale: Record<SpacingToken, string> = generatedSpacingScale;
 
 export const typographyTokens = {
   eyebrow: 'text-[0.6875rem]/[1.1rem] font-semibold uppercase tracking-[0.14em]',
@@ -30,19 +26,9 @@ export const typographyTokens = {
   editorialHero: 'font-editorial text-4xl/[1.02] font-medium tracking-[-0.02em]',
 } as const;
 
-export const radiusScale = {
-  sm: 'var(--radius-sm)',
-  md: 'var(--radius-md)',
-  lg: 'var(--radius-lg)',
-  xl: 'var(--radius-xl)',
-  frame: '1.25rem',
-} as const;
+export const radiusScale = generatedRadiusScale;
 
-export const elevationScale = {
-  shell: 'var(--aideon-elevation-shell)',
-  panel: 'var(--aideon-elevation-panel)',
-  frame: 'var(--aideon-elevation-frame)',
-} as const;
+export const elevationScale = generatedElevationScale;
 
 interface DensityContract {
   clusterGap: SpacingToken;

@@ -31,6 +31,7 @@ commands.allow = [
   "workspace_edges",
   "workspace_metamodel_types",
   "workspace_nodes",
+  "workspace_inspect_object",
   "workspace_projects_list",
   "workspace_state_at",
   "workspace_status",

@@ -7,7 +7,7 @@
 export const commands = {
 /**
  * Namespaced + requestId-wrapped setup completion signal.
- * 
+ *
  * The registered command is concrete over `tauri::Wry` (the codegen seam
  * cannot collect a runtime-generic command); the generic `_inner` keeps the
  * behaviour testable under `MockRuntime`.
@@ -337,19 +337,6 @@ async workspaceRebuild(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcRe
 }
 },
 /**
- * Author one `create-node` into the open workspace's canonical log
- * ([golden-journey] step 3). The node id is minted host-side; a session
- * actor self-declares on the first authoring of a fresh workspace.
- */
-async workspaceAuthorNode(request: IpcRequest<AuthorNodePayload>) : Promise<Result<IpcResponse<NodeRecord>, HostError>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("workspace_author_node", { request }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
  * List the derived twin's projected nodes ([golden-journey] step 3 read-back).
  */
 async workspaceNodes(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResponse<NodeRecord[]>, HostError>> {
@@ -374,29 +361,11 @@ async workspaceMetamodelTypes(request: IpcRequest<EmptyPayload>) : Promise<Resul
 }
 },
 /**
- * Author one **metamodel-validated** entity into the open workspace's canonical
- * log ([golden-journey] step 3). The write is checked against the seed
- * effective schema before any operation is appended; an invalid write returns
- * `VALIDATION_FAILED` and never enters the op log.
+ * Accept one task-first Change Event for background execution.
  */
-async workspaceAuthorTypedNode(request: IpcRequest<AuthorTypedNodePayload>) : Promise<Result<IpcResponse<NodeRecord>, HostError>> {
+async workspaceApplyChangeEvent(request: IpcRequest<ApplyChangeEventPayload>) : Promise<Result<IpcResponse<AcceptedJob>, HostError>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("workspace_author_typed_node", { request }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Author one **metamodel-validated** relationship into the open workspace's
- * canonical log ([golden-journey] step 3). Endpoints, self-link, duplicate, and
- * attribute rules are checked against the compiled effective schema before any
- * operation is appended; an invalid write returns `VALIDATION_FAILED` and never
- * enters the op log.
- */
-async workspaceAuthorTypedEdge(request: IpcRequest<AuthorTypedEdgePayload>) : Promise<Result<IpcResponse<EdgeRecord>, HostError>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("workspace_author_typed_edge", { request }) };
+    return { status: "ok", data: await TAURI_INVOKE("workspace_apply_change_event", { request }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -408,6 +377,17 @@ async workspaceAuthorTypedEdge(request: IpcRequest<AuthorTypedEdgePayload>) : Pr
 async workspaceEdges(request: IpcRequest<EmptyPayload>) : Promise<Result<IpcResponse<EdgeRecord[]>, HostError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("workspace_edges", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Inspect one entity or relationship with resolved values and provenance.
+ */
+async workspaceInspectObject(request: IpcRequest<InspectObjectPayload>) : Promise<Result<IpcResponse<ObjectInspection>, HostError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_inspect_object", { request }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -467,9 +447,11 @@ async systemMetricsSnapshot() : Promise<MetricsSnapshot> {
 
 
 export const events = __makeEvents__<{
+runTerminal: RunTerminalEvent,
 workspaceLifecycleChanged: WorkspaceLifecycleEvent,
 workspaceReadyReadWrite: WorkspaceReadinessEvent
 }>({
+runTerminal: "run:terminal",
 workspaceLifecycleChanged: "workspace:lifecycle_changed",
 workspaceReadyReadWrite: "workspace:ready_read_write"
 })
@@ -485,21 +467,11 @@ workspaceReadyReadWrite: "workspace:ready_read_write"
  * ([accepted-job-shape]). Acceptance is receipt, not durability.
  */
 export type AcceptedJob = { runId: string; queueClass: WorkQueueClass; idempotencyKey: string; ledgerRef: string; acceptedAt: string }
+/**
+ * Accepted Change Event submission. The rationale becomes canonical metadata.
+ */
+export type ApplyChangeEventPayload = { rationale: string; action: ChangeEventAction }
 export type ApplyOperationsPayload = { branch?: string | null; operations?: PraxisOperation[] }
-/**
- * Payload for authoring one node: an optional declared type id.
- */
-export type AuthorNodePayload = { typeId: string | null }
-/**
- * Payload for authoring one typed relationship: the relationship key, the two
- * endpoint entity ids, and a flat string-valued attribute map.
- */
-export type AuthorTypedEdgePayload = { relType: string; srcId: string; dstId: string; props?: Partial<{ [key in string]: string }> }
-/**
- * Payload for authoring one typed entity: the domain type key plus a flat
- * string-valued attribute map (name, enum choices, …).
- */
-export type AuthorTypedNodePayload = { typeId: string; props?: Partial<{ [key in string]: string }> }
 export type BranchInfo = { name: string; head: string | null }
 export type CanvasEdge = { id: string; source: string; target: string; label?: string | null; z?: number | null }
 export type CanvasGroup = { id: string; name?: string | null; parentId?: string | null; z?: number | null }
@@ -513,6 +485,14 @@ export type CatalogueColumnType = "string" | "number" | "boolean"
 export type CatalogueRow = { id: string; values: Partial<{ [key in string]: JsonValue }> }
 export type CatalogueViewDefinition = { id: string; name: string; kind: string; asOf: string; layer?: string | null; scenario?: string | null; confidence?: number | null; filters?: ViewFilters | null; columns?: CatalogueColumn[]; limit?: number | null }
 export type CatalogueViewModel = { metadata: ViewMetadata; columns: CatalogueColumn[]; rows: CatalogueRow[] }
+/**
+ * One task-first authoring action accepted by the M1 host seam.
+ */
+export type ChangeEventAction = ({ kind: "create_entity" } & CreateEntityAction) | ({ kind: "create_relationship" } & CreateRelationshipAction)
+/**
+ * Canonical Change Event provenance shown by the shared inspector.
+ */
+export type ChangeEventProvenance = { changeEventId: string; transactionOwnerActorId: string; rationale: string; source: string; lifecycle: string }
 export type ChangeSet = { nodeCreates: NodeVersion[]; nodeUpdates: NodeVersion[]; nodeDeletes: NodeTombstone[]; edgeCreates: EdgeVersion[]; edgeUpdates: EdgeVersion[]; edgeDeletes: EdgeTombstone[] }
 export type ChartKpiSummary = { value: number; units?: string | null; delta?: number | null; trend?: string | null }
 export type ChartPoint = { label: string; value: number; timestamp?: string | null }
@@ -524,6 +504,8 @@ export type CommitChangesResponse = { id: string }
 export type CommitRef = { id: string } | { branch: { branch: string; at: string | null } }
 export type CommitSummary = { id: string; parents: string[]; branch: string; author: string | null; time: string | null; message: string; tags: string[]; changeCount: number }
 export type CreateBranchRequest = { name: string; from: CommitRef | null }
+export type CreateEntityAction = { typeId: string; props?: Partial<{ [key in string]: string }> }
+export type CreateRelationshipAction = { relType: string; srcId: string; dstId: string; props?: Partial<{ [key in string]: string }> }
 export type DiffArgs = { from: CommitRef; to: CommitRef; scope: string | null }
 /**
  * Payload for a two-viewpoint diff ([golden-journey] step 6, [ADR-0008]).
@@ -534,27 +516,27 @@ export type DurationSummary = { count: number; total_ms: number }
 /**
  * A host-facing projected relationship — the derived twin edge listing entry.
  */
-export type EdgeRecord = { 
+export type EdgeRecord = {
 /**
  * The edge id.
  */
-edgeId: string; 
+edgeId: string;
 /**
  * The relationship type's storage symbol UUID, if any.
  */
-typeId: string | null; 
+typeId: string | null;
 /**
  * The metamodel relationship key (e.g. `realises`), resolved from the symbol.
  */
-typeLabel: string | null; 
+typeLabel: string | null;
 /**
  * Source entity id.
  */
-srcId: string; 
+srcId: string;
 /**
  * Destination entity id.
  */
-dstId: string; 
+dstId: string;
 /**
  * Whether a tombstone has retired the edge.
  */
@@ -575,35 +557,43 @@ export type GraphViewModel = { metadata: ViewMetadata; stats: ViewStats; nodes: 
 export type GraphViewScope = { rootIds?: string[] }
 /**
  * Stable error envelope returned by host commands.
- * 
+ *
  * - `code` is a stable, machine-readable identifier (snake_case).
  * - `message` is user-facing and may change between releases.
  */
 export type HostError = { code: string; message: string }
 /**
+ * Shared-inspector lookup at the active viewpoint.
+ */
+export type InspectObjectPayload = { objectId: string; viewpoint: Viewpoint }
+/**
  * The RFC-9457 Problem Detail carried over IPC ([error-envelope], [ADR-0016]).
  * `HostError` maps to this at the boundary, gaining the category, recovery
  * hint, and correlation id that let the renderer react generically.
  */
-export type IpcError = { 
+export type IpcError = {
 /**
  * Stable, non-dereferenceable problem URI (`aideon:problem/<kebab-code>`).
  */
 type: string; code: string; title: string; detail: string; category: ProblemCategory; recovery: ProblemRecovery; correlationId: string; details: JsonValue }
 /**
  * Canonical IPC request envelope.
- * 
+ *
  * Matches the host design doc contract:
- * `{ requestId: "uuid", traceparent?: string, payload: { ... } }`.
- * 
+ * `{ requestId: "uuid", idempotencyKey?: string, traceparent?: string, payload: { ... } }`.
+ *
  * `traceparent` is W3C Trace Context transport metadata (ADR-0019). It is
  * optional: absent means no span context; present but invalid returns
  * `INVALID_TRACE_CONTEXT` without echoing the raw value.
  */
-export type IpcRequest<T> = { requestId: string; traceparent?: string | null; payload: T }
+export type IpcRequest<T> = { requestId: string;
+/**
+ * Stable mutation-intent key. Required by mutating command handlers.
+ */
+idempotencyKey?: string | null; traceparent?: string | null; payload: T }
 /**
  * Canonical IPC response envelope.
- * 
+ *
  * Matches the host design doc contract:
  * `{ requestId, status, result?, error? }`.
  */
@@ -629,7 +619,7 @@ export type MatrixViewModel = { metadata: ViewMetadata; rows: MatrixAxis[]; colu
 export type MergeConflict = { reference: string; kind: string; message: string }
 export type MergeRequest = { source: string; target: string }
 export type MergeResponse = { result: string | null; conflicts: MergeConflict[] | null }
-export type MetaAttribute = { name: string; uuid?: string | null; type: MetaAttributeKind; required?: boolean; enum?: string[]; 
+export type MetaAttribute = { name: string; uuid?: string | null; type: MetaAttributeKind; required?: boolean; enum?: string[];
 /**
  * `single` (default) or `multi`; declared explicitly in the seed.
  */
@@ -637,15 +627,15 @@ cardinality?: string | null }
 /**
  * A host-facing metamodel attribute descriptor for an entity type.
  */
-export type MetaAttributeInfo = { 
+export type MetaAttributeInfo = {
 /**
  * The attribute name (e.g. `name`, `tier`).
  */
-name: string; 
+name: string;
 /**
  * Whether a valid write must carry it.
  */
-required: boolean; 
+required: boolean;
 /**
  * The closed enum choices, when the attribute is an enum; else empty.
  */
@@ -655,11 +645,11 @@ export type MetaAttributeRules = { string: MetaStringRule | null; text: MetaStri
 export type MetaEnumRule = { caseSensitive: boolean | null }
 export type MetaModelDocument = { version: string; description: string | null; types: MetaType[]; relationships: MetaRelationship[]; validation: MetaValidationRules | null }
 export type MetaMultiplicity = { from: string; to: string }
-export type MetaRelationship = { id: string; uuid?: string | null; label: string | null; from: string[]; to: string[]; directed: boolean | null; multiplicity: MetaMultiplicity | null; 
+export type MetaRelationship = { id: string; uuid?: string | null; label: string | null; from: string[]; to: string[]; directed: boolean | null; multiplicity: MetaMultiplicity | null;
 /**
  * Whether a self-referential edge is permitted (declared inline in the seed).
  */
-allowSelf?: boolean | null; 
+allowSelf?: boolean | null;
 /**
  * Whether duplicate edges between the same pair are permitted.
  */
@@ -671,19 +661,19 @@ export type MetaType = { id: string; uuid?: string | null; label: string | null;
  * A host-facing metamodel entity type — the authorable palette the renderer
  * offers ([M1 build contract], step 2).
  */
-export type MetaTypeInfo = { 
+export type MetaTypeInfo = {
 /**
  * The domain type key (e.g. `Application`).
  */
-id: string; 
+id: string;
 /**
  * A human label; falls back to the id.
  */
-label: string; 
+label: string;
 /**
  * The metamodel category (e.g. `Business`, `Application`).
  */
-category: string | null; 
+category: string | null;
 /**
  * The type's authorable attributes.
  */
@@ -693,26 +683,30 @@ export type MetricsSnapshot = { command_failures: Partial<{ [key in string]: num
 /**
  * A host-facing projected node — the derived twin listing entry.
  */
-export type NodeRecord = { 
+export type NodeRecord = {
 /**
  * The node id.
  */
-nodeId: string; 
+nodeId: string;
 /**
  * The declared node type's storage symbol UUID, if any.
  */
-typeId: string | null; 
+typeId: string | null;
 /**
  * The metamodel domain type key (e.g. `Application`), resolved from the
  * symbol UUID via the registry; `None` for an untyped or unknown-symbol node.
  */
-typeLabel: string | null; 
+typeLabel: string | null;
 /**
  * Whether a tombstone has retired the node.
  */
 tombstoned: boolean }
 export type NodeTombstone = { id: string }
 export type NodeVersion = { id: string; type: string | null; props: JsonValue | null }
+/**
+ * Host-facing details for one selected entity or relationship.
+ */
+export type ObjectInspection = { objectId: string; objectKind: string; typeLabel: string | null; properties: ResolvedProperty[]; provenance: ChangeEventProvenance | null }
 export type OpenWindowPayload = { window: string }
 /**
  * Payload for create/open: the host-resolved workspace root.
@@ -735,23 +729,23 @@ export type ProjectPayload = { id: string; name: string; scenarios: ScenarioSumm
  * One slot whose resolved value differs between two viewpoints ([ADR-0008]:
  * a diff compares two viewpoints).
  */
-export type PropertyDelta = { 
+export type PropertyDelta = {
 /**
  * The entity id.
  */
-nodeId: string; 
+nodeId: string;
 /**
  * The metamodel domain type key, if known.
  */
-typeLabel: string | null; 
+typeLabel: string | null;
 /**
  * The attribute name.
  */
-field: string; 
+field: string;
 /**
  * The value resolved at the first viewpoint, if any.
  */
-before: string | null; 
+before: string | null;
 /**
  * The value resolved at the second viewpoint, if any.
  */
@@ -759,15 +753,15 @@ after: string | null }
 /**
  * An entity with its slots resolved at a viewpoint.
  */
-export type ResolvedEntity = { 
+export type ResolvedEntity = {
 /**
  * The entity id.
  */
-nodeId: string; 
+nodeId: string;
 /**
  * The metamodel domain type key, if known.
  */
-typeLabel: string | null; 
+typeLabel: string | null;
 /**
  * The entity's resolved slots at the viewpoint, ordered by attribute name.
  */
@@ -776,25 +770,29 @@ properties: ResolvedProperty[] }
  * A single resolved slot value at a viewpoint — the winning fact after
  * interval, layer, and asserted-time selection ([M2 core]).
  */
-export type ResolvedProperty = { 
+export type ResolvedProperty = {
 /**
  * The attribute name (e.g. `lifecycle`), resolved from its symbol UUID.
  */
-field: string; 
+field: string;
 /**
  * The effective value's display form.
  */
-value: string; 
+value: string;
 /**
  * The layer the winning fact came from (`plan` / `actual`).
  */
 layer: string }
+/**
+ * Terminal notification for accepted host-local work.
+ */
+export type RunTerminalEvent = { runId: string; correlationId: string; succeeded: boolean; errorCode: string | null }
 export type ScenarioSummary = { id: string; name: string; branch: string; description?: string | null; updatedAt: string; isDefault?: boolean | null }
 /**
  * Payload for asserting one plan/actual claim at a valid time ([golden-journey]
  * step 4).
  */
-export type SetClaimPayload = { entityId: string; typeId: string; attribute: string; value: string; 
+export type SetClaimPayload = { entityId: string; typeId: string; attribute: string; value: string;
 /**
  * `"plan"` or `"actual"`.
  */
@@ -816,11 +814,11 @@ export type ViewStats = { nodes: number; edges: number }
  * A viewpoint: an `as_of` valid time and an ordered layer preference
  * (highest priority first).
  */
-export type Viewpoint = { 
+export type Viewpoint = {
 /**
  * The valid-time coordinate to resolve at.
  */
-asOf: number; 
+asOf: number;
 /**
  * The layer preference, highest priority first (e.g. `["actual","plan"]`).
  */
@@ -829,10 +827,10 @@ layers: string[] }
  * The class of long-running work. M0 runs only `Rebuild`; the other Continuum
  * classes are deferred to M4 (variants are additive).
  */
-export type WorkQueueClass = "rebuild"
+export type WorkQueueClass = "rebuild" | "authoring"
 /**
  * A lightweight host-owned worker health snapshot for IPC exposure.
- * 
+ *
  * This was previously sourced from the (now-removed) Mneme prototype; it is a
  * host-local type until the M0 storage rebuild provides a real health surface.
  */
@@ -849,23 +847,23 @@ export type WorkspaceReadinessEvent = { workspaceId: string; jobId: string; read
 /**
  * A host-facing summary of an open workspace's foundation state.
  */
-export type WorkspaceStatus = { 
+export type WorkspaceStatus = {
 /**
  * The portable container identity.
  */
-workspaceId: string; 
+workspaceId: string;
 /**
  * The workspace's sole partition.
  */
-partitionId: string; 
+partitionId: string;
 /**
  * On-disk format version.
  */
-workspaceFormatVersion: number; 
+workspaceFormatVersion: number;
 /**
  * Count of applied canonical operations.
  */
-appliedOpCount: number; 
+appliedOpCount: number;
 /**
  * The structural foundation-rebuild hash over the current state.
  */

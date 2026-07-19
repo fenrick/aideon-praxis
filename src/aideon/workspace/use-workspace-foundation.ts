@@ -2,15 +2,18 @@ import { useCallback, useRef, useState } from 'react';
 
 import { invokeIpc } from '@/adapters/ipc';
 import type {
+  AcceptedJob,
+  ChangeEventAction,
   EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
+  ObjectInspection,
   PropertyDelta,
   ResolvedEntity,
   Viewpoint,
   WorkspaceStatus,
 } from '@/adapters/ipc-bindings.gen';
-import { waitForWorkspaceReady } from '@/adapters/workspace-events';
+import { prepareForRunTerminal, waitForWorkspaceReady } from '@/adapters/workspace-events';
 
 /** The foundation panel's lifecycle phase. */
 export type FoundationPhase = 'closed' | 'busy' | 'open' | 'error';
@@ -39,13 +42,13 @@ export interface WorkspaceFoundationState {
   readonly viewpoint: Viewpoint;
   /** The twin resolved at `viewpoint` — the catalogue artefact rows. */
   readonly resolved: readonly ResolvedEntity[];
+  readonly selectedObject: ObjectInspection | undefined;
   readonly errorMessage: string | undefined;
 }
 
 export interface WorkspaceFoundationActions {
   readonly createWorkspace: (root: string) => Promise<void>;
   readonly openWorkspace: (root: string) => Promise<void>;
-  readonly authorNode: () => Promise<void>;
   /** Author a metamodel-validated typed entity; rejects invalid at the boundary. */
   readonly authorTypedNode: (typeId: string, properties: Record<string, string>) => Promise<void>;
   /** Author a metamodel-validated relationship; rejects invalid at the boundary. */
@@ -62,6 +65,7 @@ export interface WorkspaceFoundationActions {
   /** Compare two viewpoints; returns the changed slots. */
   readonly diff: (before: Viewpoint, after: Viewpoint) => Promise<PropertyDelta[]>;
   readonly rebuild: () => Promise<void>;
+  readonly inspectObject: (objectId: string) => Promise<void>;
 }
 
 const DEFAULT_VIEWPOINT: Viewpoint = { asOf: 0, layers: ['actual', 'plan'] };
@@ -80,7 +84,7 @@ type RunOperation = (operation: () => Promise<void>) => Promise<void>;
 /** The workspace lifecycle actions (create/open/author-blank/rebuild). */
 type LifecycleActions = Pick<
   WorkspaceFoundationActions,
-  'createWorkspace' | 'openWorkspace' | 'authorNode' | 'rebuild'
+  'createWorkspace' | 'openWorkspace' | 'rebuild'
 >;
 
 /** The metamodel authoring actions (typed nodes, typed edges, claims). */
@@ -88,6 +92,34 @@ type AuthoringActions = Pick<
   WorkspaceFoundationActions,
   'authorTypedNode' | 'authorTypedEdge' | 'setClaim'
 >;
+
+interface AuthoringRequest extends Record<string, unknown> {
+  readonly rationale: string;
+  readonly action: ChangeEventAction;
+}
+
+/**
+ * Submit one accepted authoring task while preserving its key across transport retries.
+ * @param request - The complete logical authoring intent.
+ * @param intentKeys - Retry keys retained until a terminal outcome is observed.
+ */
+async function submitAuthoringTask(
+  request: AuthoringRequest,
+  intentKeys: Map<string, string>,
+): Promise<void> {
+  const intent = JSON.stringify(request);
+  const idempotencyKey = intentKeys.get(intent) ?? crypto.randomUUID();
+  intentKeys.set(intent, idempotencyKey);
+  const terminal = await prepareForRunTerminal();
+  const accepted = await invokeIpc<AcceptedJob>('workspace_apply_change_event', request, {
+    idempotencyKey,
+  });
+  const completed = await terminal.wait();
+  intentKeys.delete(intent);
+  if (completed.runId !== accepted.runId || !completed.succeeded) {
+    throw new Error(completed.errorCode ?? 'The authoring task failed.');
+  }
+}
 
 /**
  * The workspace lifecycle commands, each wrapped in the busy/refresh envelope.
@@ -112,12 +144,6 @@ function useLifecycleActions(run: RunOperation): LifecycleActions {
     [run],
   );
 
-  const authorNode = useCallback(async () => {
-    await run(async () => {
-      await invokeIpc<NodeRecord>('workspace_author_node', {});
-    });
-  }, [run]);
-
   const rebuild = useCallback(async () => {
     await run(async () => {
       // Accepted work: the command returns immediately; read-write (and the
@@ -128,7 +154,7 @@ function useLifecycleActions(run: RunOperation): LifecycleActions {
     });
   }, [run]);
 
-  return { createWorkspace, openWorkspace, authorNode, rebuild };
+  return { createWorkspace, openWorkspace, rebuild };
 }
 
 /**
@@ -136,10 +162,17 @@ function useLifecycleActions(run: RunOperation): LifecycleActions {
  * @param run - The lifecycle envelope that refreshes derived state after work.
  */
 function useAuthoringActions(run: RunOperation): AuthoringActions {
+  const intentKeys = useRef(new Map<string, string>());
   const authorTypedNode = useCallback(
     async (typeId: string, properties: Record<string, string>) => {
       await run(async () => {
-        await invokeIpc<NodeRecord>('workspace_author_typed_node', { typeId, props: properties });
+        await submitAuthoringTask(
+          {
+            rationale: `Create ${typeId}`,
+            action: { kind: 'create_entity', typeId, props: properties },
+          },
+          intentKeys.current,
+        );
       });
     },
     [run],
@@ -153,12 +186,19 @@ function useAuthoringActions(run: RunOperation): AuthoringActions {
       properties: Record<string, string>,
     ) => {
       await run(async () => {
-        await invokeIpc<EdgeRecord>('workspace_author_typed_edge', {
-          relType: relationshipType,
-          srcId: sourceId,
-          dstId: destinationId,
-          props: properties,
-        });
+        await submitAuthoringTask(
+          {
+            rationale: `Create ${relationshipType} relationship`,
+            action: {
+              kind: 'create_relationship',
+              relType: relationshipType,
+              srcId: sourceId,
+              dstId: destinationId,
+              props: properties,
+            },
+          },
+          intentKeys.current,
+        );
       });
     },
     [run],
@@ -184,6 +224,34 @@ function useAuthoringActions(run: RunOperation): AuthoringActions {
   return { authorTypedNode, authorTypedEdge, setClaim };
 }
 
+/** Own and refresh the derived workspace snapshot displayed by the foundation surface. */
+function useWorkspaceSnapshot() {
+  const [status, setStatus] = useState<WorkspaceStatus | undefined>();
+  const [nodes, setNodes] = useState<readonly NodeRecord[]>([]);
+  const [edges, setEdges] = useState<readonly EdgeRecord[]>([]);
+  const [metamodelTypes, setMetamodelTypes] = useState<readonly MetaTypeInfo[]>([]);
+  const [resolved, setResolved] = useState<readonly ResolvedEntity[]>([]);
+  const refresh = useCallback(async (view: Viewpoint) => {
+    const [nextStatus, nextNodes, nextEdges, nextTypes, nextResolved] = await Promise.all([
+      invokeIpc<WorkspaceStatus>('workspace_status', {}),
+      invokeIpc<NodeRecord[]>('workspace_nodes', {}),
+      invokeIpc<EdgeRecord[]>('workspace_edges', {}),
+      invokeIpc<MetaTypeInfo[]>('workspace_metamodel_types', {}),
+      invokeIpc<ResolvedEntity[]>('workspace_state_at', view),
+    ]);
+    setStatus(nextStatus);
+    setNodes(nextNodes);
+    setEdges(nextEdges);
+    setMetamodelTypes(nextTypes);
+    setResolved(nextResolved);
+  }, []);
+  return {
+    state: { status, nodes, edges, metamodelTypes, resolved },
+    refresh,
+    setResolved,
+  };
+}
+
 /**
  * Golden-pattern `[state, actions]` hook over the canonical workspace
  * lifecycle + authoring IPC surface: create/open a workspace, author nodes
@@ -191,30 +259,10 @@ function useAuthoringActions(run: RunOperation): AuthoringActions {
  */
 export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFoundationActions] {
   const [phase, setPhase] = useState<FoundationPhase>('closed');
-  const [status, setStatus] = useState<WorkspaceStatus | undefined>();
-  const [nodes, setNodes] = useState<readonly NodeRecord[]>([]);
-  const [edges, setEdges] = useState<readonly EdgeRecord[]>([]);
-  const [metamodelTypes, setMetamodelTypes] = useState<readonly MetaTypeInfo[]>([]);
-  // eslint-disable-next-line react/hook-use-state -- the public setter is the `setViewpoint` action below, which also re-resolves
-  const [viewpoint, setViewpointState] = useState<Viewpoint>(DEFAULT_VIEWPOINT);
-  const [resolved, setResolved] = useState<readonly ResolvedEntity[]>([]);
+  const [viewpoint, setViewpoint] = useState<Viewpoint>(DEFAULT_VIEWPOINT);
+  const [selectedObject, setSelectedObject] = useState<ObjectInspection | undefined>();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
-
-  const refresh = useCallback(async (view: Viewpoint) => {
-    const nextStatus = await invokeIpc<WorkspaceStatus>('workspace_status', {});
-    const nextNodes = await invokeIpc<NodeRecord[]>('workspace_nodes', {});
-    const nextEdges = await invokeIpc<EdgeRecord[]>('workspace_edges', {});
-    // The metamodel is embedded host-side and workspace-independent; fetching
-    // it on refresh keeps the authoring palette in sync without a separate effect.
-    const nextTypes = await invokeIpc<MetaTypeInfo[]>('workspace_metamodel_types', {});
-    // The catalogue artefact: the twin resolved at the active viewpoint.
-    const nextResolved = await invokeIpc<ResolvedEntity[]>('workspace_state_at', view);
-    setStatus(nextStatus);
-    setNodes(nextNodes);
-    setEdges(nextEdges);
-    setMetamodelTypes(nextTypes);
-    setResolved(nextResolved);
-  }, []);
+  const { state: snapshotState, refresh, setResolved } = useWorkspaceSnapshot();
 
   // The latest viewpoint, read by refresh() without re-creating callbacks.
   const viewpointReference = useRef<Viewpoint>(DEFAULT_VIEWPOINT);
@@ -238,12 +286,15 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
   const lifecycle = useLifecycleActions(run);
   const authoring = useAuthoringActions(run);
 
-  const setViewpoint = useCallback(async (next: Viewpoint) => {
-    viewpointReference.current = next;
-    setViewpointState(next);
-    const nextResolved = await invokeIpc<ResolvedEntity[]>('workspace_state_at', next);
-    setResolved(nextResolved);
-  }, []);
+  const changeViewpoint = useCallback(
+    async (next: Viewpoint) => {
+      viewpointReference.current = next;
+      setViewpoint(next);
+      const nextResolved = await invokeIpc<ResolvedEntity[]>('workspace_state_at', next);
+      setResolved(nextResolved);
+    },
+    [setResolved],
+  );
 
   const diff = useCallback(
     async (before: Viewpoint, after: Viewpoint) =>
@@ -251,8 +302,22 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
     [],
   );
 
+  const inspectObject = useCallback(async (objectId: string) => {
+    const inspection = await invokeIpc<ObjectInspection>('workspace_inspect_object', {
+      objectId,
+      viewpoint: viewpointReference.current,
+    });
+    setSelectedObject(inspection);
+  }, []);
+
   return [
-    { phase, status, nodes, edges, metamodelTypes, viewpoint, resolved, errorMessage },
-    { ...lifecycle, ...authoring, setViewpoint, diff },
+    {
+      phase,
+      ...snapshotState,
+      viewpoint,
+      selectedObject,
+      errorMessage,
+    },
+    { ...lifecycle, ...authoring, setViewpoint: changeViewpoint, diff, inspectObject },
   ];
 }

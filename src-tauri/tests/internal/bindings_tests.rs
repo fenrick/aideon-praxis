@@ -46,15 +46,14 @@ fn commands_regenerate_the_renderer_client_and_manifest() {
     // Strip it deterministically — regeneration re-applies this, so the
     // committed file never drifts.
     let raw = std::fs::read_to_string(GENERATED_CLIENT).expect("read generated client");
-    if raw.contains("TAURI_CHANNEL") {
-        let pruned = raw
-            .lines()
-            .filter(|line| !line.contains("Channel as TAURI_CHANNEL"))
-            .collect::<Vec<_>>()
-            .join("\n")
-            + "\n";
-        std::fs::write(GENERATED_CLIENT, pruned).expect("rewrite pruned client");
-    }
+    let normalized = raw
+        .lines()
+        .filter(|line| !line.contains("Channel as TAURI_CHANNEL"))
+        .map(str::trim_end)
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
+    std::fs::write(GENERATED_CLIENT, normalized).expect("normalize generated client");
 
     let ts = std::fs::read_to_string(GENERATED_CLIENT).expect("read generated client");
     assert!(

@@ -43,6 +43,7 @@ async fn system_window_open_rejects_unknown_window() {
         IpcRequest {
             request_id: "req-1".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: OpenWindowPayload {
                 window: "unknown".to_string(),
             },
@@ -63,6 +64,7 @@ async fn system_window_open_handles_known_windows() {
         IpcRequest {
             request_id: "req-2".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: OpenWindowPayload {
                 window: "settings".to_string(),
             },
@@ -77,6 +79,7 @@ async fn system_window_open_handles_known_windows() {
         IpcRequest {
             request_id: "req-3".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: OpenWindowPayload {
                 window: "about".to_string(),
             },

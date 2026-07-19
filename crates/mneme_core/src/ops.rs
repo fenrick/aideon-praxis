@@ -4,6 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+use std::collections::HashSet;
 
 use crate::canonical::{CANONICAL_JSON_PROFILE_VERSION, blake3_hex, canonical_jsonl_record};
 use crate::error::CoreError;
@@ -11,6 +12,170 @@ use crate::ids::Id;
 use crate::schema::AuthoredMetamodelBatch;
 use crate::time::{Hlc, ValidTime};
 use crate::value::{FiniteF64, Value};
+
+/// The M1 authoring-object kind carried by a grouped operation batch.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChangeEventKind {
+    /// A base-case actual-layer change. Plan Events arrive with M2.
+    Change,
+}
+
+/// Approval state for an M1 Change Event.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChangeEventApprovalState {
+    /// No approval workflow applies before Themis owns that policy at M6.
+    NotRequired,
+}
+
+/// Lifecycle recorded once a Change Event's operation batch is durable.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChangeEventLifecycle {
+    /// The complete batch reached its canonical commit marker.
+    Applied,
+}
+
+/// Canonical authoring context repeated on every operation in one Change Event.
+///
+/// Repetition keeps each operation self-describing while `transaction_id`
+/// groups the atomic batch. The host derives the M1 defaults; the renderer only
+/// supplies the rationale and task actions.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChangeEventMetadata {
+    /// Stable identity of the user-facing authoring object.
+    pub change_event_id: Id,
+    /// M1 supports ordinary Change Events; Plan Events arrive with M2.
+    pub event_kind: ChangeEventKind,
+    /// Logical workspace actor responsible for the change.
+    pub owner_actor_id: Id,
+    /// Human-authored reason for the change.
+    pub rationale: String,
+    /// Stable source identifier for the authoring surface.
+    pub source: String,
+    /// Approval is explicitly not required until governance arrives at M6.
+    pub approval_state: ChangeEventApprovalState,
+    /// Optional grouping identity for related authoring objects.
+    pub group_id: Option<Id>,
+    /// Dependencies on earlier Change Events, empty for the M1 local writer.
+    pub dependency_event_ids: Vec<Id>,
+    /// Durable lifecycle state represented by these committed operations.
+    pub lifecycle: ChangeEventLifecycle,
+}
+
+impl ChangeEventMetadata {
+    /// Build the settled M1 metadata for a durably applied desktop change.
+    #[must_use]
+    pub fn applied(
+        change_event_id: Id,
+        owner_actor_id: Id,
+        rationale: impl Into<String>,
+        source: impl Into<String>,
+    ) -> Self {
+        Self {
+            change_event_id,
+            event_kind: ChangeEventKind::Change,
+            owner_actor_id,
+            rationale: rationale.into(),
+            source: source.into(),
+            approval_state: ChangeEventApprovalState::NotRequired,
+            group_id: None,
+            dependency_event_ids: Vec::new(),
+            lifecycle: ChangeEventLifecycle::Applied,
+        }
+    }
+}
+
+/// Reserved discriminator for an atomic Change Event batch commit marker.
+pub const BATCH_COMMIT_RECORD_TYPE: &str = "change-event-commit";
+
+/// Canonical marker that makes all preceding operations for a transaction
+/// visible as one committed Change Event.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BatchCommit {
+    record_type: String,
+    /// Canonical record format version.
+    pub format_version: u32,
+    /// Transaction shared by the covered operations.
+    pub transaction_id: Id,
+    /// Covered operation identities in append order.
+    pub operation_ids: Vec<Id>,
+    /// Redundant count used to reject truncated or edited markers.
+    pub operation_count: u64,
+    /// BLAKE3 over the exact ordered canonical operation-record bytes.
+    pub operations_digest: String,
+}
+
+impl BatchCommit {
+    /// Build a commit marker over an ordered operation byte sequence.
+    #[must_use]
+    pub fn new(transaction_id: Id, operation_ids: Vec<Id>, operation_bytes: &[u8]) -> Self {
+        Self {
+            record_type: BATCH_COMMIT_RECORD_TYPE.to_string(),
+            format_version: CANONICAL_JSON_PROFILE_VERSION,
+            operation_count: operation_ids.len() as u64,
+            transaction_id,
+            operation_ids,
+            operations_digest: blake3_hex(operation_bytes),
+        }
+    }
+
+    /// Canonical JSONL bytes for this commit marker.
+    pub fn canonical_record_bytes(&self) -> Result<Vec<u8>, CoreError> {
+        let value = serde_json::to_value(self)
+            .map_err(|e| CoreError::InvalidRecord(format!("batch commit: {e}")))?;
+        canonical_jsonl_record(&value)
+    }
+}
+
+/// Parse and validate one canonical Change Event commit-marker line.
+pub fn parse_batch_commit_line(line: &str) -> Result<BatchCommit, CoreError> {
+    let value: JsonValue = serde_json::from_str(line)
+        .map_err(|e| CoreError::InvalidRecord(format!("batch commit: {e}")))?;
+    parse_batch_commit(&value)
+}
+
+/// Parse and validate a Change Event commit marker from an already-decoded
+/// JSON value.
+pub fn parse_batch_commit(value: &JsonValue) -> Result<BatchCommit, CoreError> {
+    let commit: BatchCommit = serde_json::from_value(value.clone())
+        .map_err(|e| CoreError::InvalidRecord(format!("batch commit: {e}")))?;
+    if commit.record_type != BATCH_COMMIT_RECORD_TYPE {
+        return Err(CoreError::InvalidRecord(format!(
+            "batch commit record_type must be `{BATCH_COMMIT_RECORD_TYPE}`"
+        )));
+    }
+    if commit.format_version != CANONICAL_JSON_PROFILE_VERSION {
+        return Err(CoreError::InvalidRecord(format!(
+            "unsupported batch commit format_version {}",
+            commit.format_version
+        )));
+    }
+    if commit.operation_count != commit.operation_ids.len() as u64 {
+        return Err(CoreError::InvalidRecord(
+            "batch commit operation_count does not match operation_ids".to_string(),
+        ));
+    }
+    if commit.operation_ids.is_empty() {
+        return Err(CoreError::InvalidRecord(
+            "batch commit must cover at least one operation".to_string(),
+        ));
+    }
+    let mut operation_ids = HashSet::with_capacity(commit.operation_ids.len());
+    if !commit
+        .operation_ids
+        .iter()
+        .all(|id| operation_ids.insert(*id))
+    {
+        return Err(CoreError::InvalidRecord(
+            "batch commit operation_ids must be unique".to_string(),
+        ));
+    }
+    Ok(commit)
+}
 
 /// The layer a fact or edge existence is asserted into.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -375,6 +540,12 @@ pub struct OpEnvelope {
     pub origin: Origin,
     /// Causal dependencies, by `op_id` (`[]` for M0-authored ops).
     pub deps: Vec<Id>,
+    /// Atomic Change Event transaction, absent on legacy M0 operations.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transaction_id: Option<Id>,
+    /// Canonical authoring context, present exactly when `transaction_id` is.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub change_event: Option<ChangeEventMetadata>,
     /// Typed payload for this kind.
     pub payload: OpPayload,
 }
@@ -399,8 +570,22 @@ impl OpEnvelope {
             format_version: CANONICAL_JSON_PROFILE_VERSION,
             origin,
             deps,
+            transaction_id: None,
+            change_event: None,
             payload,
         }
+    }
+
+    /// Attach this operation to one atomic Change Event batch.
+    #[must_use]
+    pub fn in_change_event(
+        mut self,
+        transaction_id: Id,
+        change_event: ChangeEventMetadata,
+    ) -> Self {
+        self.transaction_id = Some(transaction_id);
+        self.change_event = Some(change_event);
+        self
     }
 
     /// The partition this operation belongs to, where the payload carries one.
@@ -455,6 +640,10 @@ struct RawEnvelope {
     format_version: u32,
     origin: Origin,
     deps: Vec<Id>,
+    #[serde(default)]
+    transaction_id: Option<Id>,
+    #[serde(default)]
+    change_event: Option<ChangeEventMetadata>,
     payload: JsonValue,
 }
 
@@ -491,6 +680,11 @@ pub fn parse_record(value: &JsonValue) -> Result<OpEnvelope, CoreError> {
     };
 
     let payload = route_payload(kind, raw.payload)?;
+    if raw.transaction_id.is_some() != raw.change_event.is_some() {
+        return Err(CoreError::InvalidRecord(
+            "transaction_id and change_event must be present together".to_string(),
+        ));
+    }
     Ok(OpEnvelope {
         op_id: raw.op_id,
         actor_id: raw.actor_id,
@@ -499,6 +693,8 @@ pub fn parse_record(value: &JsonValue) -> Result<OpEnvelope, CoreError> {
         format_version: raw.format_version,
         origin: raw.origin,
         deps: raw.deps,
+        transaction_id: raw.transaction_id,
+        change_event: raw.change_event,
         payload,
     })
 }

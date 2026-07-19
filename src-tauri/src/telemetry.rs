@@ -231,6 +231,7 @@ mod telemetry_tests {
         let request = IpcRequest {
             request_id: "req-ok".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: "payload".to_string(),
         };
 
@@ -251,6 +252,7 @@ mod telemetry_tests {
         let request = IpcRequest {
             request_id: "req-1".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: "payload".to_string(),
         };
 
@@ -270,6 +272,7 @@ mod telemetry_tests {
         let request = IpcRequest {
             request_id: "req-e".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: (),
         };
 
@@ -291,6 +294,7 @@ mod telemetry_tests {
         let request = IpcRequest {
             request_id: "req-i".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: (),
         };
 
@@ -325,6 +329,7 @@ mod telemetry_tests {
         let request = IpcRequest {
             request_id: "req-err".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: (),
         };
 

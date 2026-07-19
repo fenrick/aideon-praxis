@@ -171,10 +171,11 @@ async function waitForSplashClosed() {
   await browser.switchToWindow(handle);
 }
 
-async function invokeIpc(command, payload) {
+async function invokeIpc(command, payload, idempotencyKey) {
   return invokeCommand(command, {
     request: {
       requestId: nextRequestId(),
+      idempotencyKey,
       payload,
     },
   });
@@ -515,22 +516,40 @@ async function assertWorkspaceAuthoringCommands() {
   assertOkOrError(await invokeIpc('workspace_metamodel_types', {}), 'workspace_metamodel_types');
   assertOkOrError(await invokeIpc('workspace_nodes', {}), 'workspace_nodes');
   assertOkOrError(
-    await invokeIpc('workspace_author_node', { typeId: null }),
-    'workspace_author_node',
-  );
-  assertOkOrError(
-    await invokeIpc('workspace_author_typed_node', { typeId: 'Capability', props: {} }),
-    'workspace_author_typed_node',
+    await invokeIpc(
+      'workspace_apply_change_event',
+      {
+        rationale: 'e2e smoke: create a capability',
+        action: { kind: 'create_entity', typeId: 'Capability', props: {} },
+      },
+      `e2e-create-entity-${nextId('ce')}`,
+    ),
+    'workspace_apply_change_event (create_entity)',
   );
   assertOkOrError(await invokeIpc('workspace_edges', {}), 'workspace_edges');
   assertOkOrError(
-    await invokeIpc('workspace_author_typed_edge', {
-      relType: 'realises',
-      srcId: '00000000-0000-4000-8000-000000000000',
-      dstId: '00000000-0000-4000-8000-000000000001',
-      props: {},
+    await invokeIpc(
+      'workspace_apply_change_event',
+      {
+        rationale: 'e2e smoke: link a relationship',
+        action: {
+          kind: 'create_relationship',
+          relType: 'realises',
+          srcId: '00000000-0000-4000-8000-000000000000',
+          dstId: '00000000-0000-4000-8000-000000000001',
+          props: {},
+        },
+      },
+      `e2e-create-relationship-${nextId('cr')}`,
+    ),
+    'workspace_apply_change_event (create_relationship)',
+  );
+  assertOkOrError(
+    await invokeIpc('workspace_inspect_object', {
+      objectId: '00000000-0000-4000-8000-000000000000',
+      viewpoint: { asOf: 0, layers: ['actual'] },
     }),
-    'workspace_author_typed_edge',
+    'workspace_inspect_object',
   );
   assertOkOrError(
     await invokeIpc('workspace_set_claim', {

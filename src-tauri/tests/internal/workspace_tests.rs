@@ -38,6 +38,7 @@ async fn projects_list_wraps_request_id() {
         IpcRequest {
             request_id: "req-1".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: EmptyPayload {},
         },
     )
@@ -75,6 +76,7 @@ async fn templates_list_is_bootstrapped_and_wrapped() {
     let response = workspace_templates_list(IpcRequest {
         request_id: "req-2".to_string(),
         traceparent: None,
+        idempotency_key: None,
         payload: EmptyPayload {},
     })
     .await
@@ -129,6 +131,7 @@ async fn templates_save_roundtrips() {
     let response = workspace_templates_save(IpcRequest {
         request_id: "req-save".to_string(),
         traceparent: None,
+        idempotency_key: None,
         payload,
     })
     .await

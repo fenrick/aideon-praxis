@@ -21,6 +21,7 @@ use tauri_specta::Event;
 /// `run:progress` does) while the contract refers to them by their dotted names.
 pub const EVENT_LIFECYCLE_CHANGED: &str = "workspace:lifecycle_changed";
 pub const EVENT_READY_READ_WRITE: &str = "workspace:ready_read_write";
+pub const EVENT_RUN_TERMINAL: &str = "run:terminal";
 
 /// The class of long-running work. M0 runs only `Rebuild`; the other Continuum
 /// classes are deferred to M4 (variants are additive).
@@ -28,6 +29,7 @@ pub const EVENT_READY_READ_WRITE: &str = "workspace:ready_read_write";
 #[serde(rename_all = "snake_case")]
 pub enum WorkQueueClass {
     Rebuild,
+    Authoring,
 }
 
 /// The acknowledgement a long-running command returns immediately
@@ -49,6 +51,18 @@ impl AcceptedJob {
         Self {
             run_id,
             queue_class: WorkQueueClass::Rebuild,
+            idempotency_key,
+            ledger_ref,
+            accepted_at,
+        }
+    }
+
+    /// Build an acknowledgement for a task-first Change Event submission.
+    pub fn authoring(run_id: String, idempotency_key: String, accepted_at: String) -> Self {
+        let ledger_ref = format!("ops/runs/{run_id}/run.json");
+        Self {
+            run_id,
+            queue_class: WorkQueueClass::Authoring,
             idempotency_key,
             ledger_ref,
             accepted_at,
@@ -102,6 +116,20 @@ impl Event for WorkspaceLifecycleEvent {
 
 impl Event for WorkspaceReadinessEvent {
     const NAME: &'static str = EVENT_READY_READ_WRITE;
+}
+
+/// Terminal notification for accepted host-local work.
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct RunTerminalEvent {
+    pub run_id: String,
+    pub correlation_id: String,
+    pub succeeded: bool,
+    pub error_code: Option<String>,
+}
+
+impl Event for RunTerminalEvent {
+    const NAME: &'static str = EVENT_RUN_TERMINAL;
 }
 
 impl WorkspaceReadinessEvent {
