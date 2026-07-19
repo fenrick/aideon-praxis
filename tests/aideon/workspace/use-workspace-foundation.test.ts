@@ -14,6 +14,17 @@ import { useWorkspaceFoundation } from '@/aideon/workspace/use-workspace-foundat
 const invokeMock = vi.mocked(invokeIpc);
 const terminalMock = vi.mocked(prepareForRunTerminal);
 
+/** The `workspace_open` response shared by every test that opens a workspace. */
+function mockWorkspaceOpenResult() {
+  return Promise.resolve({
+    workspaceId: 'workspace',
+    partitionId: 'partition',
+    workspaceFormatVersion: 1,
+    appliedOpCount: 0,
+    foundationRebuildHash: 'a'.repeat(64),
+  });
+}
+
 describe('useWorkspaceFoundation authoring intents', () => {
   beforeEach(() => {
     invokeMock.mockReset();
@@ -83,13 +94,7 @@ describe('useWorkspaceFoundation refresh parallelism (#796)', () => {
 
     invokeMock.mockImplementation((command) => {
       if (command === 'workspace_open') {
-        return Promise.resolve({
-          workspaceId: 'workspace',
-          partitionId: 'partition',
-          workspaceFormatVersion: 1,
-          appliedOpCount: 0,
-          foundationRebuildHash: 'a'.repeat(64),
-        });
+        return mockWorkspaceOpenResult();
       }
       dispatched.push(command);
       return new Promise((resolve) => {
@@ -104,16 +109,15 @@ describe('useWorkspaceFoundation refresh parallelism (#796)', () => {
     });
 
     // All five reads must have been dispatched even though none has resolved yet.
+    const expectedCommands = [
+      'workspace_edges',
+      'workspace_metamodel_types',
+      'workspace_nodes',
+      'workspace_state_at',
+      'workspace_status',
+    ];
     await vi.waitFor(() => {
-      expect(dispatched.toSorted((a, b) => a.localeCompare(b))).toEqual(
-        [
-          'workspace_status',
-          'workspace_nodes',
-          'workspace_edges',
-          'workspace_metamodel_types',
-          'workspace_state_at',
-        ].toSorted((a, b) => a.localeCompare(b)),
-      );
+      expect(dispatched.toSorted((a, b) => a.localeCompare(b))).toEqual(expectedCommands);
     });
 
     for (const command of dispatched) {
@@ -128,13 +132,7 @@ describe('useWorkspaceFoundation refresh parallelism (#796)', () => {
   it('surfaces a rejected refresh read as an error phase', async () => {
     invokeMock.mockImplementation((command) => {
       if (command === 'workspace_open') {
-        return Promise.resolve({
-          workspaceId: 'workspace',
-          partitionId: 'partition',
-          workspaceFormatVersion: 1,
-          appliedOpCount: 0,
-          foundationRebuildHash: 'a'.repeat(64),
-        });
+        return mockWorkspaceOpenResult();
       }
       if (command === 'workspace_edges') {
         return Promise.reject(new Error('edges read failed'));
