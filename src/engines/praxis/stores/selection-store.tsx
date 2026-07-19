@@ -136,7 +136,7 @@ export function useSelectionStore(): SelectionContextValue {
  */
 export function deriveSelectionKind(
   selection: SelectionState,
-): 'widget' | 'node' | 'edge' | 'cell' | 'none' {
+): 'artefact' | 'node' | 'edge' | 'cell' | 'none' {
   if (selection.cellIds.length > 0) {
     return 'cell';
   }
@@ -147,7 +147,7 @@ export function deriveSelectionKind(
     return 'edge';
   }
   if (selection.sourceWidgetId) {
-    return 'widget';
+    return 'artefact';
   }
   return 'none';
 }

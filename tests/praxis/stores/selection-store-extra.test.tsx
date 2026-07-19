@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { EMPTY_SELECTION } from 'aideon/canvas/types';
 import {
@@ -8,8 +8,15 @@ import {
   primarySelectionId,
   useSelectionStore,
 } from 'praxis/stores/selection-store';
+import type { SelectionKind } from 'praxis/types';
 
 describe('selection-store extra coverage', () => {
+  it('SelectionKind is exactly the selection-model spec set', () => {
+    expectTypeOf<SelectionKind>().toEqualTypeOf<'node' | 'edge' | 'cell' | 'artefact' | 'none'>();
+    // @ts-expect-error 'widget' is not a SelectionKind — it was renamed to 'artefact'.
+    expectTypeOf<'widget'>().toExtend<SelectionKind>();
+  });
+
   it('throws outside provider', () => {
     expect(() => renderHook(() => useSelectionStore())).toThrow(/SelectionProvider/);
   });
@@ -68,7 +75,7 @@ describe('selection-store extra coverage', () => {
         cellIds: [],
         sourceWidgetId: 'widget-1',
       }),
-    ).toBe('widget');
+    ).toBe('artefact');
     expect(
       deriveSelectionKind({
         nodeIds: [],
