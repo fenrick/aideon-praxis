@@ -24,9 +24,8 @@ const STATUS: WorkspaceStatus = {
   foundationRebuildHash: 'a'.repeat(64),
 };
 
-// The generated wire type carries `null` for an absent field (serde Option).
-// eslint-disable-next-line unicorn/no-null
-const NONE: string | null = null;
+// The generated wire type carries JSON null for an absent field (serde Option).
+const NONE = JSON.parse('null') as string | null;
 const PRIMARY_NODE_ID = '11111111-0000-4000-8000-000000000003';
 
 const TYPES: MetaTypeInfo[] = [
@@ -91,8 +90,15 @@ const STORY_TERMINAL: RunTerminalEvent = {
   errorCode: NONE,
 };
 
-const resolveStoryTerminal = () => Promise.resolve(STORY_TERMINAL);
-const prepareStoryTerminal = () => Promise.resolve({ wait: resolveStoryTerminal });
+/** Resolve the deterministic terminal event used by authoring stories. */
+function resolveStoryTerminal(): Promise<RunTerminalEvent> {
+  return Promise.resolve(STORY_TERMINAL);
+}
+
+/** Provide the story implementation of the accepted-work terminal listener. */
+function prepareStoryTerminal() {
+  return Promise.resolve({ wait: resolveStoryTerminal });
+}
 
 const DELTAS: PropertyDelta[] = [
   {

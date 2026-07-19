@@ -3,7 +3,7 @@ use std::fs;
 use mneme_core::ops::{CreateNode, OpPayload, Origin};
 use mneme_core::{Hlc, Id};
 use mneme_store::Paths;
-use mneme_store::Workspace;
+use mneme_store::{ChangeEventBatch, Workspace};
 use tempfile::TempDir;
 
 fn node_payload(node_id: Id) -> OpPayload {
@@ -18,6 +18,16 @@ fn node_payload(node_id: Id) -> OpPayload {
     })
 }
 
+fn batch(actor_id: Id, rationale: &str, payloads: Vec<OpPayload>) -> ChangeEventBatch {
+    ChangeEventBatch {
+        actor_id,
+        origin: Origin::manual(),
+        rationale: rationale.to_string(),
+        source: "desktop.modelling-studio".to_string(),
+        payloads,
+    }
+}
+
 #[test]
 fn authors_one_atomic_change_event_batch() {
     let dir = TempDir::new().unwrap();
@@ -25,13 +35,11 @@ fn authors_one_atomic_change_event_batch() {
     let mut workspace = Workspace::create(dir.path(), Some(actor)).unwrap();
 
     let applied = workspace
-        .author_change_event_batch(
+        .author_change_event_batch(batch(
             actor,
-            Origin::manual(),
             "Create two model elements",
-            "desktop.modelling-studio",
             vec![node_payload(Id::new_v4()), node_payload(Id::new_v4())],
-        )
+        ))
         .unwrap();
 
     assert_eq!(applied.operation_ids.len(), 2);
@@ -48,18 +56,40 @@ fn authors_one_atomic_change_event_batch() {
 }
 
 #[test]
+fn provenance_lookup_uses_the_runtime_projection() {
+    let dir = TempDir::new().unwrap();
+    let actor = Id::new_v4();
+    let node_id = Id::new_v4();
+    let mut workspace = Workspace::create(dir.path(), Some(actor)).unwrap();
+    workspace
+        .author_change_event_batch(batch(
+            actor,
+            "Create an inspectable model element",
+            vec![node_payload(node_id)],
+        ))
+        .unwrap();
+
+    fs::remove_file(workspace.paths().current_segment()).unwrap();
+
+    let provenance = workspace
+        .change_event_for_object(node_id)
+        .unwrap()
+        .expect("projected provenance");
+    assert_eq!(provenance.owner_actor_id, actor);
+    assert_eq!(provenance.rationale, "Create an inspectable model element");
+}
+
+#[test]
 fn missing_commit_marker_discards_the_whole_loose_batch_on_reopen() {
     let dir = TempDir::new().unwrap();
     let actor = Id::new_v4();
     let mut workspace = Workspace::create(dir.path(), Some(actor)).unwrap();
     workspace
-        .author_change_event_batch(
+        .author_change_event_batch(batch(
             actor,
-            Origin::manual(),
             "Create two model elements",
-            "desktop.modelling-studio",
             vec![node_payload(Id::new_v4()), node_payload(Id::new_v4())],
-        )
+        ))
         .unwrap();
     let log_path = workspace.paths().current_segment();
     let log = fs::read(&log_path).unwrap();
@@ -85,13 +115,11 @@ fn durable_marker_replays_the_complete_batch_after_runtime_loss() {
     {
         let mut workspace = Workspace::create(dir.path(), Some(actor)).unwrap();
         workspace
-            .author_change_event_batch(
+            .author_change_event_batch(batch(
                 actor,
-                Origin::manual(),
                 "Create two model elements",
-                "desktop.modelling-studio",
                 vec![node_payload(Id::new_v4()), node_payload(Id::new_v4())],
-            )
+            ))
             .unwrap();
     }
     fs::remove_dir_all(Paths::new(dir.path()).runtime_dir()).unwrap();
@@ -113,13 +141,11 @@ fn mismatched_commit_digest_is_canonical_corruption() {
     {
         let mut workspace = Workspace::create(dir.path(), Some(actor)).unwrap();
         workspace
-            .author_change_event_batch(
+            .author_change_event_batch(batch(
                 actor,
-                Origin::manual(),
                 "Create one model element",
-                "desktop.modelling-studio",
                 vec![node_payload(Id::new_v4())],
-            )
+            ))
             .unwrap();
         log_path = workspace.paths().current_segment();
     }

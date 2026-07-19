@@ -60,6 +60,19 @@ fn dispatch(
     cmd: &str,
     payload: Value,
 ) -> Result<Value, Value> {
+    dispatch_request(webview, cmd, None, payload)
+}
+
+fn dispatch_request(
+    webview: &WebviewWindow<MockRuntime>,
+    cmd: &str,
+    idempotency_key: Option<&str>,
+    payload: Value,
+) -> Result<Value, Value> {
+    let mut request = json!({ "requestId": "w1", "payload": payload });
+    if let Some(key) = idempotency_key {
+        request["idempotencyKey"] = Value::String(key.to_string());
+    }
     let response = get_ipc_response(
         webview,
         InvokeRequest {
@@ -67,7 +80,7 @@ fn dispatch(
             callback: CallbackFn(0),
             error: CallbackFn(1),
             url: invoke_url(),
-            body: InvokeBody::Json(json!({ "request": { "requestId": "w1", "payload": payload } })),
+            body: InvokeBody::Json(json!({ "request": request })),
             headers: Default::default(),
             invoke_key: INVOKE_KEY.to_string(),
         },
@@ -81,25 +94,33 @@ fn dispatch_idempotent(
     idempotency_key: &str,
     payload: Value,
 ) -> Result<Value, Value> {
-    let response = get_ipc_response(
-        webview,
-        InvokeRequest {
-            cmd: cmd.to_string(),
-            callback: CallbackFn(0),
-            error: CallbackFn(1),
-            url: invoke_url(),
-            body: InvokeBody::Json(json!({
-                "request": {
-                    "requestId": "w1",
-                    "idempotencyKey": idempotency_key,
-                    "payload": payload
-                }
-            })),
-            headers: Default::default(),
-            invoke_key: INVOKE_KEY.to_string(),
-        },
-    );
-    response.map(|body| body.deserialize::<Value>().expect("deserialize body"))
+    dispatch_request(webview, cmd, Some(idempotency_key), payload)
+}
+
+fn capability_change_event() -> Value {
+    json!({
+        "rationale": "Model the customer insight capability",
+        "action": {
+            "kind": "create_entity",
+            "typeId": "Capability",
+            "props": { "name": "Customer Insight", "tier": "Strategic" }
+        }
+    })
+}
+
+async fn wait_for_first_node(webview: &WebviewWindow<MockRuntime>) -> String {
+    for _ in 0..50 {
+        let nodes = dispatch(webview, "workspace_nodes", json!({})).expect("nodes ok");
+        if let Some(node_id) = nodes["result"]
+            .as_array()
+            .and_then(|nodes| nodes.first())
+            .and_then(|node| node["nodeId"].as_str())
+        {
+            return node_id.to_string();
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    }
+    panic!("accepted authoring job was not applied")
 }
 
 #[tokio::test]
@@ -117,14 +138,7 @@ async fn task_first_authoring_returns_an_accepted_job_and_applies() {
         &webview,
         "workspace_apply_change_event_inner",
         "create-capability-1",
-        json!({
-            "rationale": "Model the customer insight capability",
-            "action": {
-                "kind": "create_entity",
-                "typeId": "Capability",
-                "props": { "name": "Customer Insight", "tier": "Strategic" }
-            }
-        }),
+        capability_change_event(),
     )
     .expect("accepted");
     assert_eq!(accepted["status"], "ok");
@@ -141,28 +155,12 @@ async fn task_first_authoring_returns_an_accepted_job_and_applies() {
         &webview,
         "workspace_apply_change_event_inner",
         "create-capability-1",
-        json!({
-            "rationale": "Model the customer insight capability",
-            "action": {
-                "kind": "create_entity",
-                "typeId": "Capability",
-                "props": { "name": "Customer Insight", "tier": "Strategic" }
-            }
-        }),
+        capability_change_event(),
     )
     .expect("duplicate accepted");
     assert_eq!(duplicate["result"]["runId"], accepted["result"]["runId"]);
 
-    let mut authored_node_id = None;
-    for _ in 0..50 {
-        let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
-        if let Some(node) = nodes["result"].as_array().and_then(|nodes| nodes.first()) {
-            authored_node_id = node["nodeId"].as_str().map(str::to_string);
-            break;
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
-    }
-    let authored_node_id = authored_node_id.expect("accepted authoring job applied");
+    let authored_node_id = wait_for_first_node(&webview).await;
     let inspection = dispatch(
         &webview,
         "workspace_inspect_object",
@@ -745,14 +743,23 @@ fn assert_validation_rejected(
     );
 }
 
+fn created_lifecycle_app() -> (TempDir, App<MockRuntime>, WebviewWindow<MockRuntime>) {
+    let dir = TempDir::new().unwrap();
+    let (app, webview) = lifecycle_app();
+    dispatch(
+        &webview,
+        "workspace_create",
+        json!({ "root": dir.path().to_string_lossy() }),
+    )
+    .expect("create ok");
+    (dir, app, webview)
+}
+
 /// #347: a required attribute left out is refused with `MISSING_REQUIRED_ATTRIBUTE`
 /// and the write never reaches the op log.
 #[tokio::test]
 async fn author_typed_node_rejects_a_missing_required_attribute() {
-    let dir = TempDir::new().unwrap();
-    let (_app, webview) = lifecycle_app();
-    let root = dir.path().to_string_lossy().to_string();
-    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+    let (_dir, _app, webview) = created_lifecycle_app();
 
     // Capability.name is required; omitting it is a structurally-fine but invalid write.
     assert_validation_rejected(
@@ -767,10 +774,7 @@ async fn author_typed_node_rejects_a_missing_required_attribute() {
 /// `STRING_TOO_LONG` and the write never reaches the op log.
 #[tokio::test]
 async fn author_typed_node_rejects_a_string_over_max_length() {
-    let dir = TempDir::new().unwrap();
-    let (_app, webview) = lifecycle_app();
-    let root = dir.path().to_string_lossy().to_string();
-    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+    let (_dir, _app, webview) = created_lifecycle_app();
 
     let too_long = "x".repeat(257);
     assert_validation_rejected(

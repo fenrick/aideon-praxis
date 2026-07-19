@@ -85,7 +85,13 @@ const semanticPaths = [
   'size.target.comfortable',
 ] as const;
 
-const cssVariable = (tokenPath: string) => `--aideon-${tokenPath.replaceAll('.', '-')}`;
+/**
+ * Convert a DTCG token path to its generated CSS custom-property name.
+ * @param tokenPath - The dot-separated DTCG path.
+ */
+function cssVariable(tokenPath: string): string {
+  return `--aideon-${tokenPath.replaceAll('.', '-')}`;
+}
 
 interface GeneratedArtifacts {
   css: string;
@@ -96,21 +102,31 @@ interface TokenGeneratorModule {
   generateTokenArtifacts(options: { sourceDirectory: string }): Promise<GeneratedArtifacts>;
 }
 
-const generateTokenArtifacts = async (options: {
+/**
+ * Load the JavaScript token generator through its public module API.
+ * @param options - Generator input.
+ * @param options.sourceDirectory - Directory containing the DTCG sources.
+ */
+async function generateTokenArtifacts(options: {
   sourceDirectory: string;
-}): Promise<GeneratedArtifacts> => {
+}): Promise<GeneratedArtifacts> {
   const generatorUrl = pathToFileURL(path.join(process.cwd(), 'tools/generate-tokens.mjs')).href;
   const generator = (await import(
     /* @vite-ignore */ generatorUrl
   )) as unknown as TokenGeneratorModule;
   return generator.generateTokenArtifacts(options);
-};
+}
 
-const declarationValue = (css: string, name: string) => {
+/**
+ * Read one generated custom-property value from the CSS artifact.
+ * @param css - Generated stylesheet text.
+ * @param name - Custom-property name to find.
+ */
+function declarationValue(css: string, name: string): string | undefined {
   const prefix = `  ${name}: `;
   const declarationLine = css.split('\n').find((line) => line.startsWith(prefix));
   return declarationLine?.slice(prefix.length, -1);
-};
+}
 
 afterEach(async () => {
   await Promise.all(

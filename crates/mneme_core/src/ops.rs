@@ -133,7 +133,15 @@ impl BatchCommit {
 
 /// Parse and validate one canonical Change Event commit-marker line.
 pub fn parse_batch_commit_line(line: &str) -> Result<BatchCommit, CoreError> {
-    let commit: BatchCommit = serde_json::from_str(line)
+    let value: JsonValue = serde_json::from_str(line)
+        .map_err(|e| CoreError::InvalidRecord(format!("batch commit: {e}")))?;
+    parse_batch_commit(&value)
+}
+
+/// Parse and validate a Change Event commit marker from an already-decoded
+/// JSON value.
+pub fn parse_batch_commit(value: &JsonValue) -> Result<BatchCommit, CoreError> {
+    let commit: BatchCommit = serde_json::from_value(value.clone())
         .map_err(|e| CoreError::InvalidRecord(format!("batch commit: {e}")))?;
     if commit.record_type != BATCH_COMMIT_RECORD_TYPE {
         return Err(CoreError::InvalidRecord(format!(

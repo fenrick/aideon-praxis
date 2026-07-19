@@ -129,79 +129,73 @@ struct AuthoringJobContext<R: Runtime> {
 
 fn spawn_authoring<R: Runtime>(context: AuthoringJobContext<R>, payload: ApplyChangeEventPayload) {
     tauri::async_runtime::spawn(async move {
-        let AuthoringJobContext {
-            app,
-            open,
-            authoring,
-            run_id,
-            correlation_id,
-            ledger_path,
-            accepted_at,
-            idempotency_key,
-        } = context;
-        let ApplyChangeEventPayload { rationale, action } = payload;
-        let result = {
-            let mut guard = open.lock().await;
-            let engine = guard
-                .as_mut()
-                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"));
-            engine.and_then(|engine| match action {
-                ChangeEventAction::CreateEntity(CreateEntityAction { type_id, props }) => {
-                    let props = string_props(props);
-                    engine
-                        .author_typed_node_with_rationale(&type_id, props, rationale)
-                        .map(|_| ())
-                        .map_err(map_store_error)
-                }
-                ChangeEventAction::CreateRelationship(CreateRelationshipAction {
-                    rel_type,
-                    src_id,
-                    dst_id,
-                    props,
-                }) => {
-                    let props = string_props(props);
-                    engine
-                        .author_typed_edge_with_rationale(
-                            aideon_engine::TypedEdgeRequest {
-                                rel_type: &rel_type,
-                                src_id: &src_id,
-                                dst_id: &dst_id,
-                                props,
-                            },
-                            rationale,
-                        )
-                        .map(|_| ())
-                        .map_err(map_store_error)
-                }
-            })
-        };
-        let error_code = result.as_ref().err().map(|error| error.code.to_string());
-        let _ = write_run_ledger(
-            &ledger_path,
-            &AuthoringRunLedger {
-                run_id: run_id.clone(),
-                queue_class: "authoring",
-                idempotency_key,
-                accepted_at,
-                status: if result.is_ok() {
-                    "succeeded"
-                } else {
-                    "failed"
-                },
-                error_code: error_code.clone(),
-            },
-        );
-        let _ = app.emit(
-            EVENT_RUN_TERMINAL,
-            RunTerminalEvent {
-                run_id,
-                correlation_id,
-                succeeded: result.is_ok(),
-                error_code,
-            },
-        );
-        authoring.store(false, Ordering::SeqCst);
+        let result = apply_authoring(&context.open, payload).await;
+        finish_authoring(context, result);
     });
+}
+
+async fn apply_authoring(
+    open: &Mutex<Option<Engine>>,
+    payload: ApplyChangeEventPayload,
+) -> Result<(), HostError> {
+    let mut guard = open.lock().await;
+    let engine = guard
+        .as_mut()
+        .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+    let ApplyChangeEventPayload { rationale, action } = payload;
+    match action {
+        ChangeEventAction::CreateEntity(CreateEntityAction { type_id, props }) => engine
+            .author_typed_node_with_rationale(&type_id, string_props(props), rationale)
+            .map(|_| ())
+            .map_err(map_store_error),
+        ChangeEventAction::CreateRelationship(CreateRelationshipAction {
+            rel_type,
+            src_id,
+            dst_id,
+            props,
+        }) => engine
+            .author_typed_edge_with_rationale(
+                aideon_engine::TypedEdgeRequest {
+                    rel_type: &rel_type,
+                    src_id: &src_id,
+                    dst_id: &dst_id,
+                    props: string_props(props),
+                },
+                rationale,
+            )
+            .map(|_| ())
+            .map_err(map_store_error),
+    }
+}
+
+fn finish_authoring<R: Runtime>(context: AuthoringJobContext<R>, result: Result<(), HostError>) {
+    let error_code = result.as_ref().err().map(|error| error.code.to_string());
+    let status = if result.is_ok() {
+        "succeeded"
+    } else {
+        "failed"
+    };
+    let _ = write_run_ledger(
+        &context.ledger_path,
+        &AuthoringRunLedger {
+            run_id: context.run_id.clone(),
+            queue_class: "authoring",
+            idempotency_key: context.idempotency_key,
+            accepted_at: context.accepted_at,
+            status,
+            error_code: error_code.clone(),
+        },
+    );
+    let _ = context.app.emit(
+        EVENT_RUN_TERMINAL,
+        RunTerminalEvent {
+            run_id: context.run_id,
+            correlation_id: context.correlation_id,
+            succeeded: result.is_ok(),
+            error_code,
+        },
+    );
+    context.authoring.store(false, Ordering::SeqCst);
 }
 
 fn string_props(props: std::collections::HashMap<String, String>) -> serde_json::Value {

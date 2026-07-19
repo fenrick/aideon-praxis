@@ -9,7 +9,7 @@
 use rusqlite::{Connection, OptionalExtension, params};
 
 use mneme_core::Id;
-use mneme_core::ops::{OpEnvelope, OpPayload};
+use mneme_core::ops::{ChangeEventMetadata, OpEnvelope, OpPayload};
 
 use crate::error::{Result, StoreError};
 use crate::paths::Paths;
@@ -17,7 +17,8 @@ use crate::paths::Paths;
 /// The derived-runtime schema version; a mismatch forces a full rebuild.
 /// v2 added the `aideon_nodes` foundation projection.
 /// v3 added the `aideon_facts` property-fact projection (M2 resolution input).
-pub const RUNTIME_SCHEMA_VERSION: i64 = 4;
+/// v5 added indexed Change Event provenance per authored object.
+pub const RUNTIME_SCHEMA_VERSION: i64 = 5;
 
 /// The replay frontier persisted per partition ([workspace-integrity-and-recovery],
 /// "The replay frontier (`ReplayHead`)").
@@ -154,6 +155,12 @@ const FOUNDATION_SCHEMA_SQL: &str = "
         );
         CREATE INDEX IF NOT EXISTS aideon_edges_pair
             ON aideon_edges (partition_id, type_id, src_id, dst_id);
+        CREATE TABLE IF NOT EXISTS aideon_object_change_events (
+            partition_id TEXT NOT NULL,
+            object_id TEXT NOT NULL,
+            metadata_json TEXT NOT NULL,
+            PRIMARY KEY (partition_id, object_id)
+        );
         ";
 
 /// Create the foundation projection tables if they do not exist.
@@ -262,7 +269,62 @@ pub fn apply_kind_effect(conn: &Connection, env: &OpEnvelope) -> Result<()> {
         OpPayload::SetPropertyInterval(spi) => apply_set_property_interval(conn, spi)?,
         _ => {}
     }
+    apply_change_event_provenance(conn, env)?;
     Ok(())
+}
+
+fn apply_change_event_provenance(conn: &Connection, env: &OpEnvelope) -> Result<()> {
+    let (Some(object_id), Some(metadata)) = (payload_object_id(&env.payload), &env.change_event)
+    else {
+        return Ok(());
+    };
+    conn.execute(
+        "INSERT INTO aideon_object_change_events(partition_id, object_id, metadata_json)
+         VALUES (?1, ?2, ?3)
+         ON CONFLICT(partition_id, object_id) DO UPDATE SET
+            metadata_json = excluded.metadata_json",
+        params![
+            env.payload_partition()
+                .expect("object payloads always carry a partition")
+                .to_canonical_string(),
+            object_id.to_canonical_string(),
+            serde_json::to_string(metadata)?,
+        ],
+    )?;
+    Ok(())
+}
+
+fn payload_object_id(payload: &OpPayload) -> Option<Id> {
+    match payload {
+        OpPayload::CreateNode(payload) => Some(payload.node_id),
+        OpPayload::CreateEdge(payload) => Some(payload.edge_id),
+        OpPayload::TombstoneEntity(payload) => Some(payload.entity_id),
+        OpPayload::SetPropertyInterval(payload) => Some(payload.entity_id),
+        OpPayload::ClearPropertyInterval(payload) => Some(payload.entity_id),
+        OpPayload::SetEdgeExistenceInterval(payload) => Some(payload.edge_id),
+        OpPayload::UpsertMetamodelBatch(_) | OpPayload::ActorDeclare(_) => None,
+    }
+}
+
+/// Read the latest projected Change Event metadata touching an object.
+pub fn change_event_for_object(
+    conn: &Connection,
+    partition_id: Id,
+    object_id: Id,
+) -> Result<Option<ChangeEventMetadata>> {
+    let json: Option<String> = conn
+        .query_row(
+            "SELECT metadata_json FROM aideon_object_change_events
+             WHERE partition_id = ?1 AND object_id = ?2",
+            params![
+                partition_id.to_canonical_string(),
+                object_id.to_canonical_string()
+            ],
+            |row| row.get(0),
+        )
+        .optional()?;
+    json.map(|value| Ok(serde_json::from_str(&value)?))
+        .transpose()
 }
 
 /// Upsert the actor registry row for an `actor-declare` op.

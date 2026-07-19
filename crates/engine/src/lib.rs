@@ -15,7 +15,9 @@ use aideon_praxis::meta::{MetaModelDocument, MetaModelRegistry};
 pub use mneme_core::ops::{OpEnvelope, OpPayload, Origin};
 pub use mneme_core::{Id, Value};
 pub use mneme_store::error::{Result, StoreError};
-pub use mneme_store::{AppliedFrontier, FoundationProjectionSnapshot, Manifest, Workspace};
+pub use mneme_store::{
+    AppliedFrontier, ChangeEventBatch, FoundationProjectionSnapshot, Manifest, Workspace,
+};
 
 use mneme_core::effective::{EffectiveEdgeRule, EffectiveSchema};
 use mneme_core::ops::{CreateEdge, CreateNode, Layer, SetPropertyInterval};
@@ -188,6 +190,17 @@ pub struct TypedEdgeRequest<'a> {
     pub dst_id: &'a str,
     /// The supplied attributes, as a flat JSON object.
     pub props: serde_json::Value,
+}
+
+struct ValidatedTypedEdge {
+    rel_type: String,
+    src_id: String,
+    dst_id: String,
+    src: Id,
+    dst: Id,
+    rel_symbol: Id,
+    schema: EffectiveSchema,
+    props: serde_json::Value,
 }
 
 /// A single plan/actual claim: the entity + attribute it targets, the value to
@@ -453,13 +466,13 @@ impl Engine {
                 }));
             }
         }
-        self.workspace.author_change_event_batch(
-            actor,
-            Origin::manual(),
-            rationale,
-            "engine.typed-node",
+        self.workspace.author_change_event_batch(ChangeEventBatch {
+            actor_id: actor,
+            origin: Origin::manual(),
+            rationale: rationale.into(),
+            source: "engine.typed-node".to_string(),
             payloads,
-        )?;
+        })?;
 
         Ok(self.record_of(
             node_id.to_canonical_string(),
@@ -487,6 +500,30 @@ impl Engine {
         request: TypedEdgeRequest<'_>,
         rationale: impl Into<String>,
     ) -> Result<EdgeRecord> {
+        let edge = self.validate_typed_edge(request)?;
+        let edge_id = Id::new_v4();
+        let actor = self.session_actor()?;
+        let partition = self.workspace.partition_id();
+        let payloads = typed_edge_payloads(&edge, edge_id, actor, partition)?;
+        self.workspace.author_change_event_batch(ChangeEventBatch {
+            actor_id: actor,
+            origin: Origin::manual(),
+            rationale: rationale.into(),
+            source: "engine.typed-edge".to_string(),
+            payloads,
+        })?;
+
+        Ok(EdgeRecord {
+            edge_id: edge_id.to_canonical_string(),
+            type_id: Some(edge.rel_symbol.to_canonical_string()),
+            type_label: Some(edge.rel_type),
+            src_id: edge.src_id,
+            dst_id: edge.dst_id,
+            tombstoned: false,
+        })
+    }
+
+    fn validate_typed_edge(&self, request: TypedEdgeRequest<'_>) -> Result<ValidatedTypedEdge> {
         let TypedEdgeRequest {
             rel_type,
             src_id,
@@ -530,68 +567,21 @@ impl Engine {
             message: e.to_string(),
         })?;
 
-        let edge_id = Id::new_v4();
         let src = Id::from_str(src_id).map_err(|_| StoreError::Validation {
             message: "source id is not a UUID".into(),
         })?;
         let dst = Id::from_str(dst_id).map_err(|_| StoreError::Validation {
             message: "destination id is not a UUID".into(),
         })?;
-        let actor = self.session_actor()?;
-        let partition = self.workspace.partition_id();
-        let mut payloads = vec![OpPayload::CreateEdge(CreateEdge {
-            partition,
-            scenario_id: None,
-            actor,
-            asserted_at: mneme_core::Hlc(0),
-            edge_id,
-            type_id: Some(rel_symbol),
-            src_id: src,
-            dst_id: dst,
-            exists_valid_from: ValidTime(0),
-            exists_valid_to: None,
-            layer: Layer::Actual,
-            weight: None,
-            write_options: None,
-        })];
-        if let Some(map) = props.as_object() {
-            for (name, json) in map {
-                let Some(slot) = schema.slots.iter().find(|slot| &slot.key == name) else {
-                    continue;
-                };
-                let field_id = Id::from_str(&slot.uuid).map_err(|_| StoreError::Validation {
-                    message: format!("slot `{name}` has an invalid uuid"),
-                })?;
-                payloads.push(OpPayload::SetPropertyInterval(SetPropertyInterval {
-                    partition,
-                    scenario_id: None,
-                    actor,
-                    asserted_at: mneme_core::Hlc(0),
-                    entity_id: edge_id,
-                    field_id,
-                    value: to_value(json)?,
-                    valid_from: ValidTime(0),
-                    valid_to: None,
-                    layer: Layer::Actual,
-                    write_options: None,
-                }));
-            }
-        }
-        self.workspace.author_change_event_batch(
-            actor,
-            Origin::manual(),
-            rationale,
-            "engine.typed-edge",
-            payloads,
-        )?;
-
-        Ok(EdgeRecord {
-            edge_id: edge_id.to_canonical_string(),
-            type_id: Some(rel_symbol.to_canonical_string()),
-            type_label: Some(rel_type.to_owned()),
+        Ok(ValidatedTypedEdge {
+            rel_type: rel_type.to_owned(),
             src_id: src_id.to_owned(),
             dst_id: dst_id.to_owned(),
-            tombstoned: false,
+            src,
+            dst,
+            rel_symbol,
+            schema,
+            props,
         })
     }
 
@@ -1023,6 +1013,54 @@ fn meta_types(registry: &MetaModelRegistry) -> Vec<MetaTypeInfo> {
             id: ty.id,
         })
         .collect()
+}
+
+fn typed_edge_payloads(
+    edge: &ValidatedTypedEdge,
+    edge_id: Id,
+    actor: Id,
+    partition: Id,
+) -> Result<Vec<OpPayload>> {
+    let mut payloads = vec![OpPayload::CreateEdge(CreateEdge {
+        partition,
+        scenario_id: None,
+        actor,
+        asserted_at: mneme_core::Hlc(0),
+        edge_id,
+        type_id: Some(edge.rel_symbol),
+        src_id: edge.src,
+        dst_id: edge.dst,
+        exists_valid_from: ValidTime(0),
+        exists_valid_to: None,
+        layer: Layer::Actual,
+        weight: None,
+        write_options: None,
+    })];
+    let Some(properties) = edge.props.as_object() else {
+        return Ok(payloads);
+    };
+    for (name, json) in properties {
+        let Some(slot) = edge.schema.slots.iter().find(|slot| &slot.key == name) else {
+            continue;
+        };
+        let field_id = Id::from_str(&slot.uuid).map_err(|_| StoreError::Validation {
+            message: format!("slot `{name}` has an invalid uuid"),
+        })?;
+        payloads.push(OpPayload::SetPropertyInterval(SetPropertyInterval {
+            partition,
+            scenario_id: None,
+            actor,
+            asserted_at: mneme_core::Hlc(0),
+            entity_id: edge_id,
+            field_id,
+            value: to_value(json)?,
+            valid_from: ValidTime(0),
+            valid_to: None,
+            layer: Layer::Actual,
+            write_options: None,
+        }));
+    }
+    Ok(payloads)
 }
 
 /// Coerce string-encoded prop values to their typed JSON per the effective

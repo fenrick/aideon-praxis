@@ -17,7 +17,7 @@ use mneme_core::canonical::{blake3_hex, canonical_json_document};
 use mneme_core::effective::{EffectiveSchema, compile};
 use mneme_core::ops::{
     BATCH_COMMIT_RECORD_TYPE, BatchCommit, ChangeEventMetadata, OpEnvelope, OpPayload, Origin,
-    parse_batch_commit_line,
+    parse_batch_commit, parse_record,
 };
 use mneme_core::schema::AuthoredMetamodelBatch;
 use mneme_core::value::BlobRef;
@@ -93,6 +93,28 @@ pub struct AppliedBatchFrontier {
     pub projection_head: ReplayHead,
     /// Last HLC minted for this batch.
     pub hlc_watermark: Hlc,
+}
+
+/// Input for authoring one atomic Change Event batch.
+pub struct ChangeEventBatch {
+    /// Logical actor responsible for the task.
+    pub actor_id: Id,
+    /// Transport/source origin recorded on every operation.
+    pub origin: Origin,
+    /// Human-authored reason for the task.
+    pub rationale: String,
+    /// Stable source identifier for the authoring surface.
+    pub source: String,
+    /// Operations committed atomically in append order.
+    pub payloads: Vec<OpPayload>,
+}
+
+struct PreparedChangeEvent {
+    transaction_id: Id,
+    change_event_id: Id,
+    operation_ids: Vec<Id>,
+    envelopes: Vec<OpEnvelope>,
+    canonical_bytes: Vec<u8>,
 }
 
 /// An open canonical workspace held under the writer lock.
@@ -294,27 +316,30 @@ impl Workspace {
     /// Author a complete task as one atomic Change Event batch.
     pub fn author_change_event_batch(
         &mut self,
-        actor_id: Id,
-        origin: Origin,
-        rationale: impl Into<String>,
-        source: impl Into<String>,
-        payloads: Vec<OpPayload>,
+        batch: ChangeEventBatch,
     ) -> Result<AppliedBatchFrontier> {
-        if payloads.is_empty() {
+        if batch.payloads.is_empty() {
             return Err(StoreError::Validation {
                 message: "a Change Event must contain at least one operation".to_string(),
             });
         }
         self.ensure_atomic_batch_feature()?;
+        let prepared = self.prepare_change_event(batch)?;
+        let new_len = self.writer.append(&prepared.canonical_bytes)?;
+        self.project_change_event(prepared, new_len)
+    }
 
+    fn prepare_change_event(&mut self, batch: ChangeEventBatch) -> Result<PreparedChangeEvent> {
+        let ChangeEventBatch {
+            actor_id,
+            origin,
+            rationale,
+            source,
+            payloads,
+        } = batch;
         let transaction_id = Id::new_v4();
         let change_event_id = Id::new_v4();
-        let metadata = ChangeEventMetadata::applied(
-            change_event_id,
-            actor_id,
-            rationale.into(),
-            source.into(),
-        );
+        let metadata = ChangeEventMetadata::applied(change_event_id, actor_id, rationale, source);
         let mut envelopes = Vec::with_capacity(payloads.len());
         let mut operation_ids = Vec::with_capacity(payloads.len());
         let mut operation_bytes = Vec::new();
@@ -329,10 +354,28 @@ impl Workspace {
             envelopes.push(env);
         }
         let commit = BatchCommit::new(transaction_id, operation_ids.clone(), &operation_bytes);
-        let mut batch_bytes = operation_bytes;
-        batch_bytes.extend_from_slice(&commit.canonical_record_bytes()?);
+        operation_bytes.extend_from_slice(&commit.canonical_record_bytes()?);
+        Ok(PreparedChangeEvent {
+            transaction_id,
+            change_event_id,
+            operation_ids,
+            envelopes,
+            canonical_bytes: operation_bytes,
+        })
+    }
 
-        let new_len = self.writer.append(&batch_bytes)?;
+    fn project_change_event(
+        &mut self,
+        prepared: PreparedChangeEvent,
+        new_len: u64,
+    ) -> Result<AppliedBatchFrontier> {
+        let PreparedChangeEvent {
+            transaction_id,
+            change_event_id,
+            operation_ids,
+            envelopes,
+            canonical_bytes: _,
+        } = prepared;
         let partition = self.manifest.partition_id;
         let tx = self.conn.transaction()?;
         let mut last_digest = None;
@@ -512,28 +555,11 @@ impl Workspace {
 
     /// Latest canonical Change Event metadata touching an entity or edge.
     pub fn change_event_for_object(&self, object_id: Id) -> Result<Option<ChangeEventMetadata>> {
-        let records = self.read_all_records()?;
-        Ok(records.into_iter().rev().find_map(|record| {
-            (payload_object_id(&record.env.payload) == Some(object_id))
-                .then_some(record.env.change_event)
-                .flatten()
-        }))
+        projection::change_event_for_object(&self.conn, self.partition_id(), object_id)
     }
 
     fn read_all_records(&self) -> Result<Vec<LogRecord>> {
         Ok(read_canonical_log(&self.paths, &self.manifest)?.0)
-    }
-}
-
-fn payload_object_id(payload: &OpPayload) -> Option<Id> {
-    match payload {
-        OpPayload::CreateNode(payload) => Some(payload.node_id),
-        OpPayload::CreateEdge(payload) => Some(payload.edge_id),
-        OpPayload::TombstoneEntity(payload) => Some(payload.entity_id),
-        OpPayload::SetPropertyInterval(payload) => Some(payload.entity_id),
-        OpPayload::ClearPropertyInterval(payload) => Some(payload.entity_id),
-        OpPayload::SetEdgeExistenceInterval(payload) => Some(payload.edge_id),
-        OpPayload::UpsertMetamodelBatch(_) | OpPayload::ActorDeclare(_) => None,
     }
 }
 
@@ -572,81 +598,115 @@ struct LogScan {
     incomplete_batch_start: Option<u64>,
 }
 
+enum ParsedLogLine {
+    Commit(BatchCommit),
+    Operation(Box<LogRecord>),
+}
+
+#[derive(Default)]
+struct LogScanAccumulator {
+    records: Vec<LogRecord>,
+    pending: Vec<(LogRecord, Vec<u8>)>,
+    pending_start: Option<u64>,
+}
+
 fn scan_log_lines(lines: &[String], manifest: &Manifest, loose: bool) -> Result<LogScan> {
-    let mut records = Vec::new();
-    let mut pending: Vec<(LogRecord, Vec<u8>)> = Vec::new();
-    let mut pending_start = None;
+    let mut scan = LogScanAccumulator::default();
     let mut offset = 0_u64;
 
     for line in lines {
         let mut exact_bytes = line.as_bytes().to_vec();
         exact_bytes.push(b'\n');
         let exact_len = exact_bytes.len() as u64;
-        let is_commit = serde_json::from_str::<serde_json::Value>(line)?
-            .get("record_type")
-            .and_then(serde_json::Value::as_str)
-            == Some(BATCH_COMMIT_RECORD_TYPE);
-
-        if is_commit {
-            let commit = parse_batch_commit_line(line)?;
-            validate_and_commit_pending(&mut records, &pending, &commit, manifest)?;
-            pending.clear();
-            pending_start = None;
-        } else {
-            let record = parse_and_validate(line, manifest)?;
-            if record.env.transaction_id.is_some() {
-                if pending.is_empty() {
-                    pending_start = Some(offset);
-                } else if pending[0].0.env.transaction_id != record.env.transaction_id {
-                    return Err(StoreError::Corruption(
-                        "Change Event batches cannot interleave".to_string(),
-                    ));
-                }
-                let metadata = record
-                    .env
-                    .change_event
-                    .as_ref()
-                    .expect("core validates pairing");
-                if metadata.owner_actor_id != record.env.actor_id {
-                    return Err(StoreError::Corruption(
-                        "Change Event owner must match every operation actor".to_string(),
-                    ));
-                }
-                if let Some(first) = pending.first()
-                    && first.0.env.change_event.as_ref() != Some(metadata)
-                {
-                    return Err(StoreError::Corruption(
-                        "Change Event metadata differs within one transaction".to_string(),
-                    ));
-                }
-                pending.push((record, exact_bytes));
-            } else {
-                if !pending.is_empty() {
-                    return Err(StoreError::Corruption(
-                        "ungrouped operation interleaves a Change Event batch".to_string(),
-                    ));
-                }
-                records.push(record);
+        let value = serde_json::from_str::<serde_json::Value>(line)?;
+        match parse_log_line(&value, manifest)? {
+            ParsedLogLine::Commit(commit) => {
+                validate_and_commit_pending(&mut scan.records, &scan.pending, &commit, manifest)?;
+                scan.pending.clear();
+                scan.pending_start = None;
             }
+            ParsedLogLine::Operation(record) => scan.push(*record, exact_bytes, offset)?,
         }
         offset += exact_len;
     }
 
-    if pending.is_empty() {
-        return Ok(LogScan {
-            records,
-            incomplete_batch_start: None,
-        });
+    scan.finish(loose)
+}
+
+fn parse_log_line(value: &serde_json::Value, manifest: &Manifest) -> Result<ParsedLogLine> {
+    let record_type = value.get("record_type").and_then(serde_json::Value::as_str);
+    if record_type == Some(BATCH_COMMIT_RECORD_TYPE) {
+        return Ok(ParsedLogLine::Commit(parse_batch_commit(value)?));
     }
-    if loose {
-        return Ok(LogScan {
-            records,
-            incomplete_batch_start: pending_start,
-        });
+    Ok(ParsedLogLine::Operation(Box::new(parse_and_validate(
+        value, manifest,
+    )?)))
+}
+
+impl LogScanAccumulator {
+    fn push(&mut self, record: LogRecord, exact_bytes: Vec<u8>, offset: u64) -> Result<()> {
+        if record.env.transaction_id.is_none() {
+            if !self.pending.is_empty() {
+                return Err(StoreError::Corruption(
+                    "ungrouped operation interleaves a Change Event batch".to_string(),
+                ));
+            }
+            self.records.push(record);
+            return Ok(());
+        }
+        validate_pending_operation(&self.pending, &record)?;
+        if self.pending.is_empty() {
+            self.pending_start = Some(offset);
+        }
+        self.pending.push((record, exact_bytes));
+        Ok(())
     }
-    Err(StoreError::Corruption(
-        "sealed segment contains an uncommitted Change Event batch".to_string(),
-    ))
+
+    fn finish(self, loose: bool) -> Result<LogScan> {
+        if self.pending.is_empty() {
+            return Ok(LogScan {
+                records: self.records,
+                incomplete_batch_start: None,
+            });
+        }
+        if loose {
+            return Ok(LogScan {
+                records: self.records,
+                incomplete_batch_start: self.pending_start,
+            });
+        }
+        Err(StoreError::Corruption(
+            "sealed segment contains an uncommitted Change Event batch".to_string(),
+        ))
+    }
+}
+
+fn validate_pending_operation(pending: &[(LogRecord, Vec<u8>)], record: &LogRecord) -> Result<()> {
+    if let Some(first) = pending.first()
+        && first.0.env.transaction_id != record.env.transaction_id
+    {
+        return Err(StoreError::Corruption(
+            "Change Event batches cannot interleave".to_string(),
+        ));
+    }
+    let metadata = record
+        .env
+        .change_event
+        .as_ref()
+        .expect("core validates pairing");
+    if metadata.owner_actor_id != record.env.actor_id {
+        return Err(StoreError::Corruption(
+            "Change Event owner must match every operation actor".to_string(),
+        ));
+    }
+    if let Some(first) = pending.first()
+        && first.0.env.change_event.as_ref() != Some(metadata)
+    {
+        return Err(StoreError::Corruption(
+            "Change Event metadata differs within one transaction".to_string(),
+        ));
+    }
+    Ok(())
 }
 
 fn validate_and_commit_pending(
@@ -692,8 +752,8 @@ fn validate_and_commit_pending(
     Ok(())
 }
 
-fn parse_and_validate(line: &str, manifest: &Manifest) -> Result<LogRecord> {
-    let env = mneme_core::ops::parse_record_line(line)?;
+fn parse_and_validate(value: &serde_json::Value, manifest: &Manifest) -> Result<LogRecord> {
+    let env = parse_record(value)?;
     if let Some(partition) = env.payload_partition()
         && partition != manifest.partition_id
     {
@@ -771,6 +831,7 @@ fn reset_runtime(conn: &Connection) -> Result<()> {
         "DELETE FROM aideon_applied_ops;
          DELETE FROM aideon_nodes;
          DELETE FROM aideon_facts;
+         DELETE FROM aideon_object_change_events;
          DELETE FROM aideon_actors;
          DELETE FROM aideon_schema_docs;
          DELETE FROM aideon_objects;
