@@ -31,11 +31,13 @@ describe('toolbar Add widget entry point', () => {
   });
 });
 
-const hostPlatformState = {
-  widgetLibraryOpen: false,
-  onToggleWidgetLibrary: vi.fn(),
-  onCreateWidgetType: vi.fn(),
-};
+const { hostPlatformState } = vi.hoisted(() => ({
+  hostPlatformState: {
+    widgetLibraryOpen: false,
+    onToggleWidgetLibrary: vi.fn(),
+    onCreateWidgetType: vi.fn(),
+  },
+}));
 
 vi.mock('platform/host-platform-context', () => ({
   useHostPlatform: () => hostPlatformState,
