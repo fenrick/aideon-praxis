@@ -57,8 +57,8 @@ function selectionKindLabel(kind: SelectionKind, t: InspectorTranslate): string 
     case 'edge': {
       return t('kindEdge');
     }
-    case 'widget': {
-      return t('kindWidget');
+    case 'artefact': {
+      return t('kindArtefact');
     }
     case 'cell': {
       return t('kindCell');

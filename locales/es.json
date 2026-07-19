@@ -231,7 +231,7 @@
       "emptyDescription": "Choose a node or edge on the canvas to view and edit its properties.",
       "kindNode": "Node",
       "kindEdge": "Edge",
-      "kindWidget": "Widget",
+      "kindArtefact": "Artefacto",
       "kindCell": "Cell",
       "kindObject": "Object",
       "sectionProperties": "Properties",
