@@ -610,6 +610,35 @@ async fn author_typed_edge_round_trips_and_rejects_at_the_boundary() {
     );
 }
 
+/// Dispatch a write expected to fail validation; assert the specific rule
+/// fired (via the RFC-9457 `detail` text, which carries `ValidationError`'s
+/// exact message) rather than only the shared `VALIDATION_FAILED` host code,
+/// and that the op log is unchanged.
+fn assert_validation_rejected(
+    webview: &WebviewWindow<MockRuntime>,
+    cmd: &str,
+    payload: Value,
+    expected_detail_fragment: &str,
+) {
+    let before = dispatch(webview, "workspace_status", json!({})).expect("status ok");
+    let op_count = before["result"]["appliedOpCount"].clone();
+
+    let bad = dispatch(webview, cmd, payload).expect("envelope returned");
+    assert_eq!(bad["status"], "error");
+    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
+    let detail = bad["error"]["detail"].as_str().unwrap_or_default();
+    assert!(
+        detail.contains(expected_detail_fragment),
+        "expected detail to mention `{expected_detail_fragment}`, got: {detail:?}"
+    );
+
+    let after = dispatch(webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(
+        after["result"]["appliedOpCount"], op_count,
+        "a rejected write never enters model/ops/"
+    );
+}
+
 /// #347: a required attribute left out is refused with `MISSING_REQUIRED_ATTRIBUTE`
 /// and the write never reaches the op log.
 #[tokio::test]
@@ -619,23 +648,12 @@ async fn author_typed_node_rejects_a_missing_required_attribute() {
     let root = dir.path().to_string_lossy().to_string();
     dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
 
-    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    let op_count = before["result"]["appliedOpCount"].clone();
-
     // Capability.name is required; omitting it is a structurally-fine but invalid write.
-    let bad = dispatch(
+    assert_validation_rejected(
         &webview,
         "workspace_author_typed_node",
         json!({ "typeId": "Capability", "props": { "tier": "Strategic" } }),
-    )
-    .expect("envelope returned");
-    assert_eq!(bad["status"], "error");
-    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
-
-    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    assert_eq!(
-        after["result"]["appliedOpCount"], op_count,
-        "a rejected write never enters model/ops/"
+        "missing required attribute `name`",
     );
 }
 
@@ -648,23 +666,12 @@ async fn author_typed_node_rejects_a_string_over_max_length() {
     let root = dir.path().to_string_lossy().to_string();
     dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
 
-    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    let op_count = before["result"]["appliedOpCount"].clone();
-
     let too_long = "x".repeat(257);
-    let bad = dispatch(
+    assert_validation_rejected(
         &webview,
         "workspace_author_typed_node",
         json!({ "typeId": "Capability", "props": { "name": too_long } }),
-    )
-    .expect("envelope returned");
-    assert_eq!(bad["status"], "error");
-    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
-
-    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    assert_eq!(
-        after["result"]["appliedOpCount"], op_count,
-        "a rejected write never enters model/ops/"
+        "exceeds max length",
     );
 }
 
@@ -706,23 +713,12 @@ async fn author_typed_edge_rejects_a_duplicate_relationship() {
         "the first access relationship lands: {first:?}"
     );
 
-    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    let op_count = before["result"]["appliedOpCount"].clone();
-
     // A second `accesses` between the same ordered pair is a duplicate.
-    let bad = dispatch(
+    assert_validation_rejected(
         &webview,
         "workspace_author_typed_edge",
         json!({ "relType": "accesses", "srcId": app_id, "dstId": entity_id,
                 "props": { "mode": "read" } }),
-    )
-    .expect("bad envelope returned");
-    assert_eq!(bad["status"], "error");
-    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
-
-    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    assert_eq!(
-        after["result"]["appliedOpCount"], op_count,
-        "a rejected relationship never enters model/ops/"
+        "forbids duplicate edges",
     );
 }
