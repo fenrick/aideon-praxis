@@ -10,7 +10,7 @@ import {
   ToolbarSection,
   ToolbarSeparator,
 } from 'design-system';
-import { Clock, Download, GitCommitHorizontal, Layers } from 'design-system/icons';
+import { Clock, Download, GitCommitHorizontal, Layers, Plus } from 'design-system/icons';
 import { useTranslations } from 'next-intl';
 import type { RefCallback } from 'react';
 
@@ -42,6 +42,7 @@ interface ToolbarControlBandProperties {
   readonly layer: TemporalState['layer'];
   readonly onSelectLayer: (layer: Layer) => void;
   readonly timeLoading: boolean;
+  readonly onAddWidget: () => void;
 }
 
 /**
@@ -267,6 +268,8 @@ function ViewpointPlaceholders() {
  * @param root0.layer - Active plan/actual layer.
  * @param root0.onSelectLayer - Handler that switches the active layer.
  * @param root0.timeLoading - Whether the temporal cursor is still loading.
+ * @param root0.onAddWidget - Opens the widget-library dialog — the toolbar
+ *   entry point of the canonical Add-widget action (issue #440).
  */
 export function ToolbarControlBand({
   templateName,
@@ -282,6 +285,7 @@ export function ToolbarControlBand({
   layer,
   onSelectLayer,
   timeLoading,
+  onAddWidget,
 }: ToolbarControlBandProperties) {
   const t = useTranslations('platform.toolbar');
   return (
@@ -318,6 +322,10 @@ export function ToolbarControlBand({
         <span className="text-muted-foreground text-xs" data-testid="toolbar-status">
           {t('statusReady')}
         </span>
+        <Button type="button" variant="ghost" size="sm" onClick={onAddWidget}>
+          <Plus aria-hidden className="size-4" />
+          {t('addWidget')}
+        </Button>
         <Button type="button" variant="ghost" size="sm" disabled>
           <Download aria-hidden className="size-4" />
           {t('export')}
@@ -341,6 +349,7 @@ export function PlatformToolbar() {
     branchSelectReferenceCallback,
     temporalState,
     temporalActions,
+    onToggleWidgetLibrary,
   } = useHostPlatform();
   return (
     <ToolbarControlBand
@@ -356,6 +365,9 @@ export function PlatformToolbar() {
       onSelectCommit={temporalActions.selectCommit}
       layer={temporalState.layer}
       onSelectLayer={temporalActions.selectLayer}
+      onAddWidget={() => {
+        onToggleWidgetLibrary(true);
+      }}
       timeLoading={temporalState.loading}
     />
   );
