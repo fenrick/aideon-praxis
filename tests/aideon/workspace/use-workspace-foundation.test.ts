@@ -70,3 +70,85 @@ describe('useWorkspaceFoundation authoring intents', () => {
     expect(intentKeys[1]).toBe(intentKeys[0]);
   });
 });
+
+describe('useWorkspaceFoundation refresh parallelism (#796)', () => {
+  beforeEach(() => {
+    invokeMock.mockReset();
+    terminalMock.mockReset();
+  });
+
+  it('dispatches all five refresh reads before any of them resolves', async () => {
+    const dispatched: string[] = [];
+    const deferred = new Map<string, { resolve: (value: unknown) => void }>();
+
+    invokeMock.mockImplementation((command) => {
+      if (command === 'workspace_open') {
+        return Promise.resolve({
+          workspaceId: 'workspace',
+          partitionId: 'partition',
+          workspaceFormatVersion: 1,
+          appliedOpCount: 0,
+          foundationRebuildHash: 'a'.repeat(64),
+        });
+      }
+      dispatched.push(command);
+      return new Promise((resolve) => {
+        deferred.set(command, { resolve });
+      });
+    });
+
+    const { result } = renderHook(() => useWorkspaceFoundation());
+
+    const openPromise = act(async () => {
+      await result.current[1].openWorkspace('workspace-root');
+    });
+
+    // All five reads must have been dispatched even though none has resolved yet.
+    await vi.waitFor(() => {
+      expect(dispatched.toSorted((a, b) => a.localeCompare(b))).toEqual(
+        [
+          'workspace_status',
+          'workspace_nodes',
+          'workspace_edges',
+          'workspace_metamodel_types',
+          'workspace_state_at',
+        ].toSorted((a, b) => a.localeCompare(b)),
+      );
+    });
+
+    for (const command of dispatched) {
+      const fallback = command === 'workspace_status' ? {} : [];
+      deferred.get(command)?.resolve(fallback);
+    }
+    await openPromise;
+
+    expect(result.current[0].phase).toBe('open');
+  });
+
+  it('surfaces a rejected refresh read as an error phase', async () => {
+    invokeMock.mockImplementation((command) => {
+      if (command === 'workspace_open') {
+        return Promise.resolve({
+          workspaceId: 'workspace',
+          partitionId: 'partition',
+          workspaceFormatVersion: 1,
+          appliedOpCount: 0,
+          foundationRebuildHash: 'a'.repeat(64),
+        });
+      }
+      if (command === 'workspace_edges') {
+        return Promise.reject(new Error('edges read failed'));
+      }
+      return Promise.resolve([]);
+    });
+
+    const { result } = renderHook(() => useWorkspaceFoundation());
+
+    await act(async () => {
+      await result.current[1].openWorkspace('workspace-root');
+    });
+
+    expect(result.current[0].phase).toBe('error');
+    expect(result.current[0].errorMessage).toContain('edges read failed');
+  });
+});
