@@ -1,15 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { expect, mocked, userEvent } from 'storybook/test';
+import { expect, mocked, userEvent, within } from 'storybook/test';
 
 import { invokeIpc } from '@/adapters/ipc';
 import type {
   EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
+  ObjectInspection,
   PropertyDelta,
   ResolvedEntity,
+  RunTerminalEvent,
   WorkspaceStatus,
 } from '@/adapters/ipc-bindings.gen';
+import { prepareForRunTerminal } from '@/adapters/workspace-events';
 
 import { WorkspaceFoundationPanel } from './workspace-foundation-panel';
 
@@ -24,6 +27,7 @@ const STATUS: WorkspaceStatus = {
 // The generated wire type carries `null` for an absent field (serde Option).
 // eslint-disable-next-line unicorn/no-null
 const NONE: string | null = null;
+const PRIMARY_NODE_ID = '11111111-0000-4000-8000-000000000003';
 
 const TYPES: MetaTypeInfo[] = [
   {
@@ -39,7 +43,7 @@ const TYPES: MetaTypeInfo[] = [
 
 const NODES: NodeRecord[] = [
   {
-    nodeId: '11111111-0000-4000-8000-000000000003',
+    nodeId: PRIMARY_NODE_ID,
     typeId: NONE,
     typeLabel: 'Capability',
     tombstoned: false,
@@ -54,7 +58,7 @@ const NODES: NodeRecord[] = [
 
 const RESOLVED: ResolvedEntity[] = [
   {
-    nodeId: '11111111-0000-4000-8000-000000000003',
+    nodeId: PRIMARY_NODE_ID,
     typeLabel: 'Capability',
     properties: [
       { field: 'name', value: 'Customer Insight', layer: 'plan' },
@@ -62,6 +66,33 @@ const RESOLVED: ResolvedEntity[] = [
     ],
   },
 ];
+
+const INSPECTION: ObjectInspection = {
+  objectId: PRIMARY_NODE_ID,
+  objectKind: 'entity',
+  typeLabel: 'Capability',
+  properties: [
+    { field: 'name', value: 'Customer Insight', layer: 'plan' },
+    { field: 'tier', value: 'Strategic', layer: 'actual' },
+  ],
+  provenance: {
+    changeEventId: '33333333-0000-4000-8000-000000000001',
+    transactionOwnerActorId: '44444444-0000-4000-8000-000000000001',
+    rationale: 'Model customer insight',
+    source: 'desktop.modelling-studio',
+    lifecycle: 'applied',
+  },
+};
+
+const STORY_TERMINAL: RunTerminalEvent = {
+  runId: 'run-story-authoring',
+  correlationId: 'story-request',
+  succeeded: true,
+  errorCode: NONE,
+};
+
+const resolveStoryTerminal = () => Promise.resolve(STORY_TERMINAL);
+const prepareStoryTerminal = () => Promise.resolve({ wait: resolveStoryTerminal });
 
 const DELTAS: PropertyDelta[] = [
   {
@@ -92,20 +123,28 @@ const resolveStatus = () => Promise.resolve(STATUS);
  * @param nodes - The node listing to return.
  */
 function hostResponses(nodes: NodeRecord[]): Map<string, () => Promise<unknown>> {
-  const authoredNode = () => Promise.resolve(nodes[0]);
   return new Map<string, () => Promise<unknown>>([
     ['workspace_create', resolveStatus],
     ['workspace_open', resolveStatus],
     ['workspace_status', resolveStatus],
     ['workspace_nodes', () => Promise.resolve(nodes)],
     ['workspace_edges', () => Promise.resolve(nodes.length > 0 ? EDGES : [])],
-    ['workspace_author_typed_edge', () => Promise.resolve(EDGES[0])],
     ['workspace_metamodel_types', () => Promise.resolve(TYPES)],
     ['workspace_state_at', () => Promise.resolve(nodes.length > 0 ? RESOLVED : [])],
+    ['workspace_inspect_object', () => Promise.resolve(INSPECTION)],
+    [
+      'workspace_apply_change_event',
+      () =>
+        Promise.resolve({
+          runId: 'run-story-authoring',
+          queueClass: 'authoring',
+          idempotencyKey: 'story-intent',
+          ledgerRef: 'ops/runs/run-story-authoring/run.json',
+          acceptedAt: '2026-07-19T00:00:00Z',
+        }),
+    ],
     ['workspace_diff', () => Promise.resolve(DELTAS)],
     ['workspace_set_claim', () => Promise.resolve()],
-    ['workspace_author_node', authoredNode],
-    ['workspace_author_typed_node', authoredNode],
   ]);
 }
 
@@ -119,6 +158,7 @@ function mockHost(nodes: NodeRecord[]) {
     (command: string) =>
       responses.get(command)?.() ?? Promise.reject(new Error(`unmocked command ${command}`)),
   );
+  mocked(prepareForRunTerminal).mockImplementation(prepareStoryTerminal);
 }
 
 const meta = {
@@ -148,6 +188,12 @@ export const OpenWithNodes: Story = {
     await expect(canvas.getByText('tombstoned')).toBeVisible();
     // Each derived node surfaces its metamodel type label.
     await expect(canvas.getAllByText('Capability').length).toBeGreaterThan(0);
+    const inspectButton = canvas.getAllByRole('button', { name: /Inspect Capability/ }).at(0);
+    await expect(inspectButton).toBeDefined();
+    if (inspectButton !== undefined) {
+      await userEvent.click(inspectButton);
+    }
+    await expect(await canvas.findByText('Model customer insight')).toBeVisible();
   },
 };
 
@@ -156,17 +202,18 @@ export const AuthorTypedEntity: Story = {
   beforeEach: () => {
     mockHost([]);
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, canvasElement }) => {
     await userEvent.type(canvas.getByLabelText('Workspace folder'), '/Users/demo/workspaces/demo');
     await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
     await expect(await canvas.findByText(/No entities yet/)).toBeVisible();
 
     // Pick a type from the seed metamodel palette, fill required name, create.
     await userEvent.click(canvas.getByLabelText('Entity type'));
-    await userEvent.click(await canvas.findByRole('option', { name: 'Capability' }));
+    const documentBody = within(canvasElement.ownerDocument.body);
+    await userEvent.click(await documentBody.findByRole('option', { name: 'Capability' }));
     await userEvent.type(canvas.getByLabelText('name'), 'Customer Insight');
     await userEvent.click(canvas.getByRole('button', { name: /Create Capability/ }));
-    await expect(canvas.getByRole('button', { name: /Create Capability/ })).toBeVisible();
+    await expect(await canvas.findByRole('button', { name: 'Create entity' })).toBeVisible();
   },
 };
 

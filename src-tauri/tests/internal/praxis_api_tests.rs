@@ -13,6 +13,7 @@ fn ipc_request<T>(payload: T) -> IpcRequest<T> {
     IpcRequest {
         request_id: format!("req-{id}"),
         traceparent: None,
+        idempotency_key: None,
         payload,
     }
 }

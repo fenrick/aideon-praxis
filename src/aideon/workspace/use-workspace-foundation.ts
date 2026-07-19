@@ -2,15 +2,17 @@ import { useCallback, useRef, useState } from 'react';
 
 import { invokeIpc } from '@/adapters/ipc';
 import type {
+  AcceptedJob,
   EdgeRecord,
   MetaTypeInfo,
   NodeRecord,
+  ObjectInspection,
   PropertyDelta,
   ResolvedEntity,
   Viewpoint,
   WorkspaceStatus,
 } from '@/adapters/ipc-bindings.gen';
-import { waitForWorkspaceReady } from '@/adapters/workspace-events';
+import { prepareForRunTerminal, waitForWorkspaceReady } from '@/adapters/workspace-events';
 
 /** The foundation panel's lifecycle phase. */
 export type FoundationPhase = 'closed' | 'busy' | 'open' | 'error';
@@ -39,13 +41,13 @@ export interface WorkspaceFoundationState {
   readonly viewpoint: Viewpoint;
   /** The twin resolved at `viewpoint` — the catalogue artefact rows. */
   readonly resolved: readonly ResolvedEntity[];
+  readonly selectedObject: ObjectInspection | undefined;
   readonly errorMessage: string | undefined;
 }
 
 export interface WorkspaceFoundationActions {
   readonly createWorkspace: (root: string) => Promise<void>;
   readonly openWorkspace: (root: string) => Promise<void>;
-  readonly authorNode: () => Promise<void>;
   /** Author a metamodel-validated typed entity; rejects invalid at the boundary. */
   readonly authorTypedNode: (typeId: string, properties: Record<string, string>) => Promise<void>;
   /** Author a metamodel-validated relationship; rejects invalid at the boundary. */
@@ -62,6 +64,7 @@ export interface WorkspaceFoundationActions {
   /** Compare two viewpoints; returns the changed slots. */
   readonly diff: (before: Viewpoint, after: Viewpoint) => Promise<PropertyDelta[]>;
   readonly rebuild: () => Promise<void>;
+  readonly inspectObject: (objectId: string) => Promise<void>;
 }
 
 const DEFAULT_VIEWPOINT: Viewpoint = { asOf: 0, layers: ['actual', 'plan'] };
@@ -80,7 +83,7 @@ type RunOperation = (operation: () => Promise<void>) => Promise<void>;
 /** The workspace lifecycle actions (create/open/author-blank/rebuild). */
 type LifecycleActions = Pick<
   WorkspaceFoundationActions,
-  'createWorkspace' | 'openWorkspace' | 'authorNode' | 'rebuild'
+  'createWorkspace' | 'openWorkspace' | 'rebuild'
 >;
 
 /** The metamodel authoring actions (typed nodes, typed edges, claims). */
@@ -112,12 +115,6 @@ function useLifecycleActions(run: RunOperation): LifecycleActions {
     [run],
   );
 
-  const authorNode = useCallback(async () => {
-    await run(async () => {
-      await invokeIpc<NodeRecord>('workspace_author_node', {});
-    });
-  }, [run]);
-
   const rebuild = useCallback(async () => {
     await run(async () => {
       // Accepted work: the command returns immediately; read-write (and the
@@ -128,7 +125,7 @@ function useLifecycleActions(run: RunOperation): LifecycleActions {
     });
   }, [run]);
 
-  return { createWorkspace, openWorkspace, authorNode, rebuild };
+  return { createWorkspace, openWorkspace, rebuild };
 }
 
 /**
@@ -139,7 +136,19 @@ function useAuthoringActions(run: RunOperation): AuthoringActions {
   const authorTypedNode = useCallback(
     async (typeId: string, properties: Record<string, string>) => {
       await run(async () => {
-        await invokeIpc<NodeRecord>('workspace_author_typed_node', { typeId, props: properties });
+        const terminal = await prepareForRunTerminal();
+        const accepted = await invokeIpc<AcceptedJob>(
+          'workspace_apply_change_event',
+          {
+            rationale: `Create ${typeId}`,
+            action: { kind: 'create_entity', typeId, props: properties },
+          },
+          { idempotencyKey: crypto.randomUUID() },
+        );
+        const completed = await terminal.wait();
+        if (completed.runId !== accepted.runId || !completed.succeeded) {
+          throw new Error(completed.errorCode ?? 'The authoring task failed.');
+        }
       });
     },
     [run],
@@ -153,12 +162,25 @@ function useAuthoringActions(run: RunOperation): AuthoringActions {
       properties: Record<string, string>,
     ) => {
       await run(async () => {
-        await invokeIpc<EdgeRecord>('workspace_author_typed_edge', {
-          relType: relationshipType,
-          srcId: sourceId,
-          dstId: destinationId,
-          props: properties,
-        });
+        const terminal = await prepareForRunTerminal();
+        const accepted = await invokeIpc<AcceptedJob>(
+          'workspace_apply_change_event',
+          {
+            rationale: `Create ${relationshipType} relationship`,
+            action: {
+              kind: 'create_relationship',
+              relType: relationshipType,
+              srcId: sourceId,
+              dstId: destinationId,
+              props: properties,
+            },
+          },
+          { idempotencyKey: crypto.randomUUID() },
+        );
+        const completed = await terminal.wait();
+        if (completed.runId !== accepted.runId || !completed.succeeded) {
+          throw new Error(completed.errorCode ?? 'The authoring task failed.');
+        }
       });
     },
     [run],
@@ -198,6 +220,7 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
   // eslint-disable-next-line react/hook-use-state -- the public setter is the `setViewpoint` action below, which also re-resolves
   const [viewpoint, setViewpointState] = useState<Viewpoint>(DEFAULT_VIEWPOINT);
   const [resolved, setResolved] = useState<readonly ResolvedEntity[]>([]);
+  const [selectedObject, setSelectedObject] = useState<ObjectInspection | undefined>();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const refresh = useCallback(async (view: Viewpoint) => {
@@ -251,8 +274,26 @@ export function useWorkspaceFoundation(): [WorkspaceFoundationState, WorkspaceFo
     [],
   );
 
+  const inspectObject = useCallback(async (objectId: string) => {
+    const inspection = await invokeIpc<ObjectInspection>('workspace_inspect_object', {
+      objectId,
+      viewpoint: viewpointReference.current,
+    });
+    setSelectedObject(inspection);
+  }, []);
+
   return [
-    { phase, status, nodes, edges, metamodelTypes, viewpoint, resolved, errorMessage },
-    { ...lifecycle, ...authoring, setViewpoint, diff },
+    {
+      phase,
+      status,
+      nodes,
+      edges,
+      metamodelTypes,
+      viewpoint,
+      resolved,
+      selectedObject,
+      errorMessage,
+    },
+    { ...lifecycle, ...authoring, setViewpoint, diff, inspectObject },
   ];
 }

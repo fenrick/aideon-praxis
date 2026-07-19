@@ -22,9 +22,11 @@ pub const DEFAULT_SEAL_MAX_BYTES: u64 = 8_388_608;
 /// Default segment age seal threshold (24 h).
 pub const DEFAULT_SEAL_MAX_AGE_SECS: u64 = 86_400;
 
-/// Features this build implements. Empty at M0: any `required_features` entry
-/// forces refuse-or-degrade.
-const SUPPORTED_FEATURES: &[&str] = &[];
+/// Required feature for grouped Change Event commit markers.
+pub const ATOMIC_CHANGE_EVENT_BATCHES: &str = "atomic_change_event_batches";
+
+/// Features this build implements.
+const SUPPORTED_FEATURES: &[&str] = &[ATOMIC_CHANGE_EVENT_BATCHES];
 
 /// The workspace root descriptor.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -90,7 +92,7 @@ impl Manifest {
             segment_seal_max_bytes: DEFAULT_SEAL_MAX_BYTES,
             segment_seal_max_age_secs: DEFAULT_SEAL_MAX_AGE_SECS,
             feature_flags: BTreeMap::new(),
-            required_features: Vec::new(),
+            required_features: vec![ATOMIC_CHANGE_EVENT_BATCHES.to_string()],
         }
     }
 

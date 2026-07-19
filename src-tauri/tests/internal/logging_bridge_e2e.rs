@@ -163,6 +163,7 @@ async fn failed_workflow_error_envelope_carries_request_correlation_id() {
     let request = IpcRequest {
         request_id: "req-fail-01".to_string(),
         traceparent: None,
+        idempotency_key: None,
         payload: (),
     };
     let response: crate::ipc::IpcResponse<()> =

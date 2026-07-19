@@ -25,6 +25,13 @@ mod workspace_lifecycle;
 pub use aideon_praxis::praxis::temporal::{DiffArgs, DiffSummary, StateAtArgs, StateAtResult};
 pub use ipc::{HostError, IpcRequest, IpcResponse};
 pub use worker::WorkerHealth;
+// Legacy authoring functions remain Rust test seams, but are not registered in
+// the desktop IPC builder or granted by any window permission.
+#[doc(hidden)]
+pub use workspace_lifecycle::{
+    AuthorNodePayload, AuthorTypedEdgePayload, AuthorTypedNodePayload, workspace_author_node,
+    workspace_author_typed_edge, workspace_author_typed_node,
+};
 
 pub fn run() {
     app::run();

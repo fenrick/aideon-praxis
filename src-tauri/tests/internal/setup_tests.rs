@@ -32,6 +32,7 @@ async fn splash_is_only_closed_after_both_tasks_complete() {
         crate::ipc::IpcRequest {
             request_id: "req-frontend".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: SetupCompletePayload {
                 task: "frontend".to_string(),
             },
@@ -56,6 +57,7 @@ async fn splash_is_only_closed_after_both_tasks_complete() {
         crate::ipc::IpcRequest {
             request_id: "req-backend".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: SetupCompletePayload {
                 task: "backend".to_string(),
             },
@@ -104,6 +106,7 @@ async fn setup_state_roundtrips_over_ipc_envelope() {
         crate::ipc::IpcRequest {
             request_id: "req-1".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: crate::ipc::EmptyPayload {},
         },
     )
@@ -124,6 +127,7 @@ async fn system_setup_complete_marks_tasks() {
         crate::ipc::IpcRequest {
             request_id: "req-frontend".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: SetupCompletePayload {
                 task: "frontend".to_string(),
             },
@@ -139,6 +143,7 @@ async fn system_setup_complete_marks_tasks() {
         crate::ipc::IpcRequest {
             request_id: "req-backend".to_string(),
             traceparent: None,
+            idempotency_key: None,
             payload: SetupCompletePayload {
                 task: "backend".to_string(),
             },

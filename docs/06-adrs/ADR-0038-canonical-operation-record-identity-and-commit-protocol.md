@@ -116,15 +116,13 @@ SQLite-as-store, `Vec<u8>` payloads — is discarded and rebuilt to this spec,
   lives only in the registry and SQLite projection. Codes and names are never reassigned; removed kinds stay reserved.
   The record never stores both a code and a name (no contradictory state). Enum and value tags use stable schema-owned
   names, never Rust/serde debug names.
-- **Canonical append is the commit point; the SQLite projection is applied after.** Validate and serialise →
-  append-and-`fsync` to the loose `model/ops/` segment (the commit) → apply to SQLite → on projection failure, rebuild
-  from the log. A write that reached only SQLite **did not happen** and is never acknowledged. Projection application is
-  therefore idempotent and replayable, and the **visible projection frontier never leads the canonical durable
-  frontier**. A `bulk_mode` import may group `fsync`s behind durable barriers and defer derived work, but it changes
-  only _granularity_, never this rule: **acceptance is not durability** — an `AcceptedJob` acknowledges receipt; the
-  durability acknowledgement is a committed-barrier or terminal-success event, and every unit reported _committed_ is
-  durably present ([storage-trait-and-engine](../05-modules/mneme/storage-trait-and-engine.md),
-  [event-model](../04-contracts/accepted-work-and-events/event-model.md)).
+- **Canonical append is the commit point; the SQLite projection is applied after.** For a legacy ungrouped operation,
+  append-and-`fsync` of its JSONL record remains the commit. For an M1 grouped Change Event, its operation records are
+  provisional until the covering `change-event-commit` marker is included in the same append-and-`fsync`; the complete
+  group then commits atomically ([ADR-0042](./ADR-0042-change-event-atomic-batches.md)). A write that reached only
+  SQLite **did not happen** and is never acknowledged. Projection application is idempotent and replayable, and the
+  visible projection frontier never leads the canonical durable frontier. **Acceptance is not durability**: an
+  `AcceptedJob` acknowledges durable receipt of the job record; terminal success acknowledges the canonical commit.
 - **Duplicate vs collision.** Same `(partition_id, op_id)` with an equal `canonical_record_digest` (after parse →
   validate → normalise → canonicalise) is a replay **no-op**; same identity with a _different_ digest is
   **corruption/identity collision**, rejected — never silently keep the first. Invalid payload is rejected before

@@ -3,14 +3,18 @@
 //! access; the renderer crosses via typed IPC only. Long rebuilds run as
 //! accepted work — added in a later increment ([workspace-lifecycle](../../docs/05-modules/host/workspace-lifecycle.md)).
 
+use std::collections::HashMap;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use aideon_engine::{
-    EdgeRecord, Engine, MetaTypeInfo, NodeRecord, PropertyDelta, ResolvedEntity, StoreError,
-    Viewpoint, WorkspaceStatus,
+    EdgeRecord, Engine, MetaTypeInfo, NodeRecord, ObjectInspection, PropertyDelta, ResolvedEntity,
+    StoreError, Viewpoint, WorkspaceStatus,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::{AppHandle, Emitter, Runtime, State};
 use tokio::sync::Mutex;
@@ -18,8 +22,8 @@ use uuid::Uuid;
 
 use crate::ipc::{EmptyPayload, HostError, IpcRequest, IpcResponse};
 use crate::jobs::{
-    AcceptedJob, EVENT_LIFECYCLE_CHANGED, EVENT_READY_READ_WRITE, LifecycleState,
-    WorkspaceLifecycleEvent, WorkspaceReadinessEvent,
+    AcceptedJob, EVENT_LIFECYCLE_CHANGED, EVENT_READY_READ_WRITE, EVENT_RUN_TERMINAL,
+    LifecycleState, RunTerminalEvent, WorkspaceLifecycleEvent, WorkspaceReadinessEvent,
 };
 use crate::telemetry::command_envelope;
 
@@ -31,6 +35,182 @@ pub struct WorkspaceManager {
     open: Arc<Mutex<Option<Engine>>>,
     /// True while a rebuild job is in flight — the M0 backpressure signal.
     rebuilding: Arc<AtomicBool>,
+    /// True while a task-first authoring job holds the single writer.
+    authoring: Arc<AtomicBool>,
+    /// Session deduplication index for accepted authoring intent keys.
+    accepted_authoring: Arc<Mutex<HashMap<String, AcceptedAuthoring>>>,
+}
+
+#[derive(Clone)]
+struct AcceptedAuthoring {
+    job: AcceptedJob,
+    payload: ApplyChangeEventPayload,
+}
+
+/// One task-first authoring action accepted by the M1 host seam.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Type)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ChangeEventAction {
+    CreateEntity(CreateEntityAction),
+    CreateRelationship(CreateRelationshipAction),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateEntityAction {
+    pub type_id: String,
+    #[serde(default)]
+    pub props: std::collections::HashMap<String, String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateRelationshipAction {
+    pub rel_type: String,
+    pub src_id: String,
+    pub dst_id: String,
+    #[serde(default)]
+    pub props: std::collections::HashMap<String, String>,
+}
+
+/// Accepted Change Event submission. The rationale becomes canonical metadata.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplyChangeEventPayload {
+    pub rationale: String,
+    pub action: ChangeEventAction,
+}
+
+/// Shared-inspector lookup at the active viewpoint.
+#[derive(Debug, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct InspectObjectPayload {
+    pub object_id: String,
+    pub viewpoint: Viewpoint,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AuthoringRunLedger {
+    run_id: String,
+    queue_class: &'static str,
+    idempotency_key: String,
+    accepted_at: String,
+    status: &'static str,
+    error_code: Option<String>,
+}
+
+fn write_run_ledger(path: &Path, ledger: &AuthoringRunLedger) -> std::io::Result<()> {
+    let parent = path.parent().expect("run ledger has a parent");
+    fs::create_dir_all(parent)?;
+    let temp = parent.join(format!(".run-{}.tmp", Uuid::new_v4()));
+    let bytes = serde_json::to_vec(ledger).map_err(std::io::Error::other)?;
+    let mut file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(&temp)?;
+    file.write_all(&bytes)?;
+    file.sync_all()?;
+    fs::rename(&temp, path)?;
+    OpenOptions::new().read(true).open(parent)?.sync_all()?;
+    Ok(())
+}
+
+struct AuthoringJobContext<R: Runtime> {
+    app: AppHandle<R>,
+    open: Arc<Mutex<Option<Engine>>>,
+    authoring: Arc<AtomicBool>,
+    run_id: String,
+    correlation_id: String,
+    ledger_path: PathBuf,
+    accepted_at: String,
+    idempotency_key: String,
+}
+
+fn spawn_authoring<R: Runtime>(context: AuthoringJobContext<R>, payload: ApplyChangeEventPayload) {
+    tauri::async_runtime::spawn(async move {
+        let AuthoringJobContext {
+            app,
+            open,
+            authoring,
+            run_id,
+            correlation_id,
+            ledger_path,
+            accepted_at,
+            idempotency_key,
+        } = context;
+        let ApplyChangeEventPayload { rationale, action } = payload;
+        let result = {
+            let mut guard = open.lock().await;
+            let engine = guard
+                .as_mut()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"));
+            engine.and_then(|engine| match action {
+                ChangeEventAction::CreateEntity(CreateEntityAction { type_id, props }) => {
+                    let props = string_props(props);
+                    engine
+                        .author_typed_node_with_rationale(&type_id, props, rationale)
+                        .map(|_| ())
+                        .map_err(map_store_error)
+                }
+                ChangeEventAction::CreateRelationship(CreateRelationshipAction {
+                    rel_type,
+                    src_id,
+                    dst_id,
+                    props,
+                }) => {
+                    let props = string_props(props);
+                    engine
+                        .author_typed_edge_with_rationale(
+                            aideon_engine::TypedEdgeRequest {
+                                rel_type: &rel_type,
+                                src_id: &src_id,
+                                dst_id: &dst_id,
+                                props,
+                            },
+                            rationale,
+                        )
+                        .map(|_| ())
+                        .map_err(map_store_error)
+                }
+            })
+        };
+        let error_code = result.as_ref().err().map(|error| error.code.to_string());
+        let _ = write_run_ledger(
+            &ledger_path,
+            &AuthoringRunLedger {
+                run_id: run_id.clone(),
+                queue_class: "authoring",
+                idempotency_key,
+                accepted_at,
+                status: if result.is_ok() {
+                    "succeeded"
+                } else {
+                    "failed"
+                },
+                error_code: error_code.clone(),
+            },
+        );
+        let _ = app.emit(
+            EVENT_RUN_TERMINAL,
+            RunTerminalEvent {
+                run_id,
+                correlation_id,
+                succeeded: result.is_ok(),
+                error_code,
+            },
+        );
+        authoring.store(false, Ordering::SeqCst);
+    });
+}
+
+fn string_props(props: std::collections::HashMap<String, String>) -> serde_json::Value {
+    serde_json::Value::Object(
+        props
+            .into_iter()
+            .map(|(key, value)| (key, serde_json::Value::String(value)))
+            .collect(),
+    )
 }
 
 /// ISO-8601 acceptance timestamp for an accepted job.
@@ -368,6 +548,112 @@ pub async fn workspace_author_typed_edge(
     .await)
 }
 
+/// Accept one task-first Change Event for background execution.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_apply_change_event(
+    app: AppHandle,
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<ApplyChangeEventPayload>,
+) -> Result<IpcResponse<AcceptedJob>, HostError> {
+    workspace_apply_change_event_inner(app, manager, request).await
+}
+
+/// Runtime-generic implementation used by the real command and dispatch tests.
+#[tauri::command]
+pub async fn workspace_apply_change_event_inner<R: Runtime>(
+    app: AppHandle<R>,
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<ApplyChangeEventPayload>,
+) -> Result<IpcResponse<AcceptedJob>, HostError> {
+    let idempotency_key = request.idempotency_key.clone();
+    let correlation_id = request.request_id.clone();
+    Ok(command_envelope(
+        "workspace_apply_change_event",
+        request,
+        move |payload| async move {
+            let idempotency_key = idempotency_key
+                .filter(|key| !key.trim().is_empty())
+                .ok_or_else(|| {
+                    HostError::new(
+                        "VALIDATION_FAILED",
+                        "idempotencyKey is required for Change Event authoring",
+                    )
+                })?;
+            let mut accepted_jobs = manager.accepted_authoring.lock().await;
+            if let Some(accepted) = accepted_jobs.get(&idempotency_key) {
+                if accepted.payload != payload {
+                    return Err(HostError::new(
+                        "IDENTITY_COLLISION",
+                        "idempotencyKey was already used for different authoring work",
+                    ));
+                }
+                return Ok(accepted.job.clone());
+            }
+            let workspace_root = manager
+                .open
+                .lock()
+                .await
+                .as_ref()
+                .map(|engine| engine.workspace_root().to_path_buf())
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            if manager.authoring.swap(true, Ordering::SeqCst) {
+                return Err(HostError::new(
+                    "BACKPRESSURE",
+                    "an authoring task is already running",
+                ));
+            }
+            let run_id = Uuid::new_v4().to_string();
+            let accepted_at = now_iso();
+            let accepted = AcceptedJob::authoring(
+                run_id.clone(),
+                idempotency_key.clone(),
+                accepted_at.clone(),
+            );
+            let ledger_path = workspace_root.join(&accepted.ledger_ref);
+            if let Err(error) = write_run_ledger(
+                &ledger_path,
+                &AuthoringRunLedger {
+                    run_id: run_id.clone(),
+                    queue_class: "authoring",
+                    idempotency_key: idempotency_key.clone(),
+                    accepted_at: accepted_at.clone(),
+                    status: "accepted",
+                    error_code: None,
+                },
+            ) {
+                manager.authoring.store(false, Ordering::SeqCst);
+                return Err(HostError::internal(format!(
+                    "write authoring ledger: {error}"
+                )));
+            }
+            accepted_jobs.insert(
+                accepted.idempotency_key.clone(),
+                AcceptedAuthoring {
+                    job: accepted.clone(),
+                    payload: payload.clone(),
+                },
+            );
+            drop(accepted_jobs);
+            spawn_authoring(
+                AuthoringJobContext {
+                    app,
+                    open: manager.open.clone(),
+                    authoring: manager.authoring.clone(),
+                    run_id,
+                    correlation_id,
+                    ledger_path,
+                    accepted_at,
+                    idempotency_key,
+                },
+                payload,
+            );
+            Ok(accepted)
+        },
+    )
+    .await)
+}
+
 /// The projected relationship listing — the derived twin edge view.
 #[tauri::command]
 #[specta::specta]
@@ -382,6 +668,27 @@ pub async fn workspace_edges(
                 .as_ref()
                 .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
             engine.edges().map_err(map_store_error)
+        })
+        .await,
+    )
+}
+
+/// Inspect one entity or relationship with resolved values and provenance.
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_inspect_object(
+    manager: State<'_, WorkspaceManager>,
+    request: IpcRequest<InspectObjectPayload>,
+) -> Result<IpcResponse<ObjectInspection>, HostError> {
+    Ok(
+        command_envelope("workspace_inspect_object", request, |payload| async move {
+            let guard = manager.open.lock().await;
+            let engine = guard
+                .as_ref()
+                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
+            engine
+                .inspect_object(&payload.object_id, &payload.viewpoint)
+                .map_err(map_store_error)
         })
         .await,
     )

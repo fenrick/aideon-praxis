@@ -8,6 +8,10 @@
 import { access, constants, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { checkTokenArtifacts } from './generate-tokens.mjs';
+
+await checkTokenArtifacts();
+
 const uiDir = join(process.cwd(), 'src/lib/ui');
 
 try {

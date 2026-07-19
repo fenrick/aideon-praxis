@@ -25,4 +25,4 @@ pub use error::{Result, StoreError};
 pub use manifest::Manifest;
 pub use paths::Paths;
 pub use rebuild::FoundationProjectionSnapshot;
-pub use workspace::{AppliedFrontier, Workspace};
+pub use workspace::{AppliedBatchFrontier, AppliedFrontier, Workspace};

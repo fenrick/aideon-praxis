@@ -38,7 +38,9 @@ fn lifecycle_app() -> (App<MockRuntime>, WebviewWindow<MockRuntime>) {
             super::workspace_metamodel_types,
             super::workspace_author_typed_node,
             super::workspace_author_typed_edge,
+            super::workspace_apply_change_event_inner,
             super::workspace_edges,
+            super::workspace_inspect_object,
             super::workspace_set_claim,
             super::workspace_state_at,
             super::workspace_diff
@@ -71,6 +73,110 @@ fn dispatch(
         },
     );
     response.map(|body| body.deserialize::<Value>().expect("deserialize body"))
+}
+
+fn dispatch_idempotent(
+    webview: &WebviewWindow<MockRuntime>,
+    cmd: &str,
+    idempotency_key: &str,
+    payload: Value,
+) -> Result<Value, Value> {
+    let response = get_ipc_response(
+        webview,
+        InvokeRequest {
+            cmd: cmd.to_string(),
+            callback: CallbackFn(0),
+            error: CallbackFn(1),
+            url: invoke_url(),
+            body: InvokeBody::Json(json!({
+                "request": {
+                    "requestId": "w1",
+                    "idempotencyKey": idempotency_key,
+                    "payload": payload
+                }
+            })),
+            headers: Default::default(),
+            invoke_key: INVOKE_KEY.to_string(),
+        },
+    );
+    response.map(|body| body.deserialize::<Value>().expect("deserialize body"))
+}
+
+#[tokio::test]
+async fn task_first_authoring_returns_an_accepted_job_and_applies() {
+    let dir = TempDir::new().unwrap();
+    let (_app, webview) = lifecycle_app();
+    dispatch(
+        &webview,
+        "workspace_create",
+        json!({ "root": dir.path().to_string_lossy() }),
+    )
+    .expect("create ok");
+
+    let accepted = dispatch_idempotent(
+        &webview,
+        "workspace_apply_change_event_inner",
+        "create-capability-1",
+        json!({
+            "rationale": "Model the customer insight capability",
+            "action": {
+                "kind": "create_entity",
+                "typeId": "Capability",
+                "props": { "name": "Customer Insight", "tier": "Strategic" }
+            }
+        }),
+    )
+    .expect("accepted");
+    assert_eq!(accepted["status"], "ok");
+    assert_eq!(accepted["result"]["queueClass"], "authoring");
+    assert_eq!(accepted["result"]["idempotencyKey"], "create-capability-1");
+    let ledger = dir
+        .path()
+        .join(accepted["result"]["ledgerRef"].as_str().unwrap());
+    assert!(
+        ledger.exists(),
+        "acceptance must be durable before response"
+    );
+    let duplicate = dispatch_idempotent(
+        &webview,
+        "workspace_apply_change_event_inner",
+        "create-capability-1",
+        json!({
+            "rationale": "Model the customer insight capability",
+            "action": {
+                "kind": "create_entity",
+                "typeId": "Capability",
+                "props": { "name": "Customer Insight", "tier": "Strategic" }
+            }
+        }),
+    )
+    .expect("duplicate accepted");
+    assert_eq!(duplicate["result"]["runId"], accepted["result"]["runId"]);
+
+    let mut authored_node_id = None;
+    for _ in 0..50 {
+        let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
+        if let Some(node) = nodes["result"].as_array().and_then(|nodes| nodes.first()) {
+            authored_node_id = node["nodeId"].as_str().map(str::to_string);
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    }
+    let authored_node_id = authored_node_id.expect("accepted authoring job applied");
+    let inspection = dispatch(
+        &webview,
+        "workspace_inspect_object",
+        json!({
+            "objectId": authored_node_id,
+            "viewpoint": { "asOf": 0, "layers": ["actual"] }
+        }),
+    )
+    .expect("inspect ok");
+    assert_eq!(inspection["result"]["objectKind"], "entity");
+    assert_eq!(
+        inspection["result"]["provenance"]["rationale"],
+        "Model the customer insight capability"
+    );
 }
 
 #[tokio::test]

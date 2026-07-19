@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 
 export interface IpcRequest<Payload> {
   readonly requestId: string;
+  readonly idempotencyKey?: string;
   readonly payload: Payload;
 }
 
@@ -52,12 +53,14 @@ function nextRequestId(): string {
 
 interface InvokeOptions {
   readonly log?: boolean;
+  readonly idempotencyKey?: string;
 }
 
 /** Correlated context threaded through a single IPC round-trip. */
 interface IpcContext {
   readonly command: string;
   readonly requestId: string;
+  readonly idempotencyKey?: string;
   readonly shouldLog: boolean;
 }
 
@@ -244,9 +247,11 @@ async function dispatchInvoke(
 ): Promise<unknown> {
   try {
     return await invoke(context.command, {
-      request: { requestId: context.requestId, payload } satisfies IpcRequest<
-        Record<string, unknown>
-      >,
+      request: {
+        requestId: context.requestId,
+        idempotencyKey: context.idempotencyKey,
+        payload,
+      } satisfies IpcRequest<Record<string, unknown>>,
     });
   } catch (error) {
     emitLog(context.shouldLog, {
@@ -278,6 +283,7 @@ export async function invokeIpc<Result>(
   const context: IpcContext = {
     command,
     requestId: nextRequestId(),
+    idempotencyKey: options?.idempotencyKey,
     shouldLog: options?.log ?? true,
   };
   emitLog(context.shouldLog, {

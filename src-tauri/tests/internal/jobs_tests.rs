@@ -17,6 +17,18 @@ fn accepted_rebuild_job_carries_class_and_ledger_ref() {
 }
 
 #[test]
+fn accepted_authoring_job_preserves_the_mutation_intent_key() {
+    let job = AcceptedJob::authoring(
+        "run_2".to_string(),
+        "intent_2".to_string(),
+        "2026-01-01T00:00:00Z".to_string(),
+    );
+    assert_eq!(job.queue_class, WorkQueueClass::Authoring);
+    assert_eq!(job.idempotency_key, "intent_2");
+    assert_eq!(job.ledger_ref, "ops/runs/run_2/run.json");
+}
+
+#[test]
 fn readiness_event_is_an_integrity_claim_with_the_hash_attached() {
     let event = WorkspaceReadinessEvent::read_write(
         "ws".to_string(),

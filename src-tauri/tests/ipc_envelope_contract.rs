@@ -2,9 +2,10 @@ use aideon_desktop_lib::{HostError, IpcRequest, IpcResponse};
 
 #[test]
 fn ipc_request_deserializes_with_camelcase_fields() {
-    let json = r#"{"requestId":"req-1","payload":{"task":"frontend"}}"#;
+    let json = r#"{"requestId":"req-1","idempotencyKey":"intent-1","payload":{"task":"frontend"}}"#;
     let request: IpcRequest<serde_json::Value> = serde_json::from_str(json).expect("deserialize");
     assert_eq!(request.request_id, "req-1");
+    assert_eq!(request.idempotency_key.as_deref(), Some("intent-1"));
     assert_eq!(request.payload["task"], "frontend");
 }
 

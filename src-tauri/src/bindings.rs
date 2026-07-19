@@ -49,12 +49,11 @@ pub fn ipc_builder() -> Builder<tauri::Wry> {
             crate::workspace_lifecycle::workspace_status,
             crate::workspace_lifecycle::workspace_close,
             crate::workspace_lifecycle::workspace_rebuild,
-            crate::workspace_lifecycle::workspace_author_node,
             crate::workspace_lifecycle::workspace_nodes,
             crate::workspace_lifecycle::workspace_metamodel_types,
-            crate::workspace_lifecycle::workspace_author_typed_node,
-            crate::workspace_lifecycle::workspace_author_typed_edge,
+            crate::workspace_lifecycle::workspace_apply_change_event,
             crate::workspace_lifecycle::workspace_edges,
+            crate::workspace_lifecycle::workspace_inspect_object,
             crate::workspace_lifecycle::workspace_set_claim,
             crate::workspace_lifecycle::workspace_state_at,
             crate::workspace_lifecycle::workspace_diff,
@@ -64,6 +63,7 @@ pub fn ipc_builder() -> Builder<tauri::Wry> {
         .events(collect_events![
             crate::jobs::WorkspaceLifecycleEvent,
             crate::jobs::WorkspaceReadinessEvent,
+            crate::jobs::RunTerminalEvent,
         ])
 }
 

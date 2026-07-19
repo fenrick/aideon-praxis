@@ -9,6 +9,7 @@ async fn invalid_traceparent_returns_envelope_error_without_echoing_raw_value() 
     let request = IpcRequest {
         request_id: "tp-bad".to_string(),
         traceparent: Some("not-w3c-format".to_string()),
+        idempotency_key: None,
         payload: (),
     };
     let response: IpcResponse<()> =
@@ -27,6 +28,7 @@ async fn valid_traceparent_proceeds_normally() {
     let request = IpcRequest {
         request_id: "tp-good".to_string(),
         traceparent: Some("00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01".to_string()),
+        idempotency_key: None,
         payload: (),
     };
     let response: IpcResponse<()> =
@@ -39,6 +41,7 @@ async fn absent_traceparent_proceeds_normally() {
     let request = IpcRequest {
         request_id: "tp-none".to_string(),
         traceparent: None,
+        idempotency_key: None,
         payload: (),
     };
     let response: IpcResponse<()> =
