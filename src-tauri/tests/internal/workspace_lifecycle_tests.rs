@@ -33,11 +33,8 @@ fn lifecycle_app() -> (App<MockRuntime>, WebviewWindow<MockRuntime>) {
             // The runtime-generic inner is what dispatches under MockRuntime; the
             // concrete `workspace_rebuild` wrapper is the registered codegen seam.
             super::workspace_rebuild_inner,
-            super::workspace_author_node,
             super::workspace_nodes,
             super::workspace_metamodel_types,
-            super::workspace_author_typed_node,
-            super::workspace_author_typed_edge,
             super::workspace_apply_change_event_inner,
             super::workspace_edges,
             super::workspace_inspect_object,
@@ -121,6 +118,114 @@ async fn wait_for_first_node(webview: &WebviewWindow<MockRuntime>) -> String {
         tokio::time::sleep(std::time::Duration::from_millis(10)).await;
     }
     panic!("accepted authoring job was not applied")
+}
+
+/// Poll the derived twin for a node of the given metamodel type, returning its
+/// id once the async authoring job has applied.
+async fn wait_for_node_of_type(webview: &WebviewWindow<MockRuntime>, type_label: &str) -> String {
+    for _ in 0..50 {
+        let nodes = dispatch(webview, "workspace_nodes", json!({})).expect("nodes ok");
+        if let Some(node_id) = nodes["result"].as_array().and_then(|nodes| {
+            nodes
+                .iter()
+                .find(|node| node["typeLabel"] == type_label)
+                .and_then(|node| node["nodeId"].as_str())
+        }) {
+            return node_id.to_string();
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    }
+    panic!("no `{type_label}` node was applied")
+}
+
+fn create_entity_action(type_id: &str, props: Value) -> Value {
+    json!({ "kind": "create_entity", "typeId": type_id, "props": props })
+}
+
+fn create_relationship_action(rel_type: &str, src_id: &str, dst_id: &str, props: Value) -> Value {
+    json!({
+        "kind": "create_relationship",
+        "relType": rel_type,
+        "srcId": src_id,
+        "dstId": dst_id,
+        "props": props,
+    })
+}
+
+fn change_event(rationale: &str, action: Value) -> Value {
+    json!({ "rationale": rationale, "action": action })
+}
+
+/// Accept one Change Event over the real `workspace_apply_change_event` seam
+/// and wait for its `run:terminal` event, returning `(accepted-envelope,
+/// terminal-payload)`. The task-first authoring path is asynchronous — an
+/// accepted job runs off-thread, so a test cannot observe success/failure from
+/// the dispatch response alone (see `AuthoringRunLedger`/`RunTerminalEvent`).
+async fn apply_change_event_and_wait(
+    app: &App<MockRuntime>,
+    webview: &WebviewWindow<MockRuntime>,
+    idempotency_key: &str,
+    payload: Value,
+) -> (Value, Value) {
+    use std::sync::mpsc;
+    use std::time::Duration;
+    use tauri::Listener;
+
+    let (tx, rx) = mpsc::channel::<Value>();
+    app.listen(super::EVENT_RUN_TERMINAL, move |event| {
+        if let Ok(payload) = serde_json::from_str::<Value>(event.payload()) {
+            let _ = tx.send(payload);
+        }
+    });
+
+    let accepted = dispatch_idempotent(
+        webview,
+        "workspace_apply_change_event_inner",
+        idempotency_key,
+        payload,
+    )
+    .expect("accepted envelope returned");
+    assert_eq!(
+        accepted["status"], "ok",
+        "change event accepted: {accepted:?}"
+    );
+
+    let terminal = rx
+        .recv_timeout(Duration::from_secs(20))
+        .expect("run:terminal event delivered");
+    assert_eq!(
+        terminal["runId"], accepted["result"]["runId"],
+        "terminal event binds to the accepted run"
+    );
+    (accepted, terminal)
+}
+
+/// Submit a Change Event expected to fail validation; assert the host error
+/// code on the terminal event and that the op log is unchanged. Unlike the
+/// synchronous typed-authoring commands this replaces, the async terminal
+/// event and run ledger only carry the stable `errorCode`
+/// (`AuthoringRunLedger`/`RunTerminalEvent`), not `ValidationError`'s specific
+/// message — so this can only assert the shared `VALIDATION_FAILED` code, not
+/// which rule fired.
+async fn assert_change_event_rejected(
+    app: &App<MockRuntime>,
+    webview: &WebviewWindow<MockRuntime>,
+    idempotency_key: &str,
+    payload: Value,
+) {
+    let before = dispatch(webview, "workspace_status", json!({})).expect("status ok");
+    let op_count = before["result"]["appliedOpCount"].clone();
+
+    let (_accepted, terminal) =
+        apply_change_event_and_wait(app, webview, idempotency_key, payload).await;
+    assert_eq!(terminal["succeeded"], false, "terminal event: {terminal:?}");
+    assert_eq!(terminal["errorCode"], "VALIDATION_FAILED");
+
+    let after = dispatch(webview, "workspace_status", json!({})).expect("status ok");
+    assert_eq!(
+        after["result"]["appliedOpCount"], op_count,
+        "a rejected write never enters model/ops/"
+    );
 }
 
 #[tokio::test]
@@ -444,36 +549,48 @@ async fn concurrent_rebuild_is_refused_with_backpressure() {
 /// The MVP end-to-end authoring slice ([golden-journey] steps 1 + 3 + 8–10):
 /// create → author nodes over the boundary → list the derived twin → close →
 /// reopen → the twin re-derives and the foundation hash is unchanged.
+/// Task-first equivalent of the retired untyped `workspace_author_node`: two
+/// typed entities land through the real Change Event seam, survive a
+/// close/reopen with the foundation hash unchanged, and the first entity's
+/// identity persists.
 #[tokio::test]
-async fn author_node_then_list_survives_reopen_with_hash_equality() {
+async fn author_typed_node_then_list_survives_reopen_with_hash_equality() {
     let dir = TempDir::new().unwrap();
-    let (_app, webview) = lifecycle_app();
+    let (app, webview) = lifecycle_app();
     let root = dir.path().to_string_lossy().to_string();
 
     dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
 
-    // Author two nodes through the real dispatch seam.
-    let first =
-        dispatch(&webview, "workspace_author_node", json!({ "typeId": null })).expect("author ok");
-    assert_eq!(first["status"], "ok");
-    let first_id = first["result"]["nodeId"]
-        .as_str()
-        .expect("nodeId")
-        .to_string();
-    assert_eq!(first["result"]["tombstoned"], false);
+    apply_change_event_and_wait(
+        &app,
+        &webview,
+        "author-first",
+        change_event(
+            "Model the first capability",
+            create_entity_action("Capability", json!({ "name": "First" })),
+        ),
+    )
+    .await;
+    let first_id = wait_for_first_node(&webview).await;
 
-    let second =
-        dispatch(&webview, "workspace_author_node", json!({ "typeId": null })).expect("author ok");
-    assert_ne!(second["result"]["nodeId"], first_id.as_str());
+    apply_change_event_and_wait(
+        &app,
+        &webview,
+        "author-second",
+        change_event(
+            "Model the second capability",
+            create_entity_action("Capability", json!({ "name": "Second" })),
+        ),
+    )
+    .await;
 
     // The derived twin lists both.
     let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
     assert_eq!(nodes["status"], "ok");
     assert_eq!(nodes["result"].as_array().map(Vec::len), Some(2));
 
-    // Op count: 1 session actor-declare + 2 create-node.
     let status = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    assert_eq!(status["result"]["appliedOpCount"], 3);
+    let op_count_before_reopen = status["result"]["appliedOpCount"].clone();
     let hash = status["result"]["foundationRebuildHash"]
         .as_str()
         .expect("hash")
@@ -488,6 +605,10 @@ async fn author_node_then_list_survives_reopen_with_hash_equality() {
     )
     .expect("open ok");
     assert_eq!(reopened["result"]["foundationRebuildHash"], hash.as_str());
+    assert_eq!(
+        reopened["result"]["appliedOpCount"], op_count_before_reopen,
+        "reopen re-derives the same canonical op count"
+    );
     let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
     assert_eq!(nodes["result"].as_array().map(Vec::len), Some(2));
     assert!(
@@ -496,15 +617,23 @@ async fn author_node_then_list_survives_reopen_with_hash_equality() {
             .unwrap()
             .iter()
             .any(|n| n["nodeId"] == first_id.as_str()),
-        "the first authored node survives reopen"
+        "the first authored entity survives reopen"
     );
 }
 
 #[tokio::test]
-async fn author_node_with_no_open_workspace_is_an_honest_error() {
+async fn author_typed_node_with_no_open_workspace_is_an_honest_error() {
     let (_app, webview) = lifecycle_app();
-    let authored = dispatch(&webview, "workspace_author_node", json!({ "typeId": null }))
-        .expect("envelope returned");
+    let authored = dispatch_idempotent(
+        &webview,
+        "workspace_apply_change_event_inner",
+        "author-no-workspace",
+        change_event(
+            "Model a capability",
+            create_entity_action("Capability", json!({ "name": "Orphan" })),
+        ),
+    )
+    .expect("envelope returned");
     assert_eq!(authored["status"], "error");
     assert_eq!(authored["error"]["code"], "WORKSPACE_NOT_OPEN");
 }
@@ -527,18 +656,22 @@ async fn metamodel_types_are_listed_without_an_open_workspace() {
 #[tokio::test]
 async fn plan_actual_claims_resolve_and_diff_over_dispatch() {
     let dir = TempDir::new().unwrap();
-    let (_app, webview) = lifecycle_app();
+    let (app, webview) = lifecycle_app();
     let root = dir.path().to_string_lossy().to_string();
     dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
 
     // Author an Application, then a plan claim and an actual claim on lifecycle.
-    let app = dispatch(
+    apply_change_event_and_wait(
+        &app,
         &webview,
-        "workspace_author_typed_node",
-        json!({ "typeId": "Application", "props": { "name": "Billing" } }),
+        "plan-actual-billing",
+        change_event(
+            "Model the Billing application",
+            create_entity_action("Application", json!({ "name": "Billing" })),
+        ),
     )
-    .expect("author ok");
-    let id = app["result"]["nodeId"].as_str().unwrap().to_string();
+    .await;
+    let id = wait_for_first_node(&webview).await;
 
     dispatch(
         &webview,
@@ -606,140 +739,109 @@ async fn plan_actual_claims_resolve_and_diff_over_dispatch() {
 #[tokio::test]
 async fn typed_authoring_validates_and_a_rejected_write_never_enters_the_op_log() {
     let dir = TempDir::new().unwrap();
-    let (_app, webview) = lifecycle_app();
+    let (app, webview) = lifecycle_app();
     let root = dir.path().to_string_lossy().to_string();
     dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
 
-    // A valid Capability lands through the dispatch seam.
-    let ok = dispatch(
+    // A valid Capability lands through the real Change Event seam.
+    let (_accepted, terminal) = apply_change_event_and_wait(
+        &app,
         &webview,
-        "workspace_author_typed_node",
-        json!({ "typeId": "Capability", "props": { "name": "Customer Insight", "tier": "Strategic" } }),
+        "capability-ok",
+        change_event(
+            "Model the customer insight capability",
+            create_entity_action(
+                "Capability",
+                json!({ "name": "Customer Insight", "tier": "Strategic" }),
+            ),
+        ),
     )
-    .expect("author ok");
-    assert_eq!(ok["status"], "ok");
-    assert_eq!(ok["result"]["typeLabel"], "Capability");
+    .await;
+    assert_eq!(terminal["succeeded"], true, "terminal event: {terminal:?}");
+    let nodes = dispatch(&webview, "workspace_nodes", json!({})).expect("nodes ok");
+    assert_eq!(nodes["result"].as_array().map(Vec::len), Some(1));
 
-    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    let op_count = before["result"]["appliedOpCount"].clone();
-
-    // A structurally-fine but metamodel-invalid write is refused …
-    let bad = dispatch(
+    // A structurally-fine but metamodel-invalid write is refused, and the
+    // canonical op log is unchanged (the M1 oracle assertion).
+    assert_change_event_rejected(
+        &app,
         &webview,
-        "workspace_author_typed_node",
-        json!({ "typeId": "Capability", "props": { "name": "Bad", "tier": "Tactical" } }),
+        "capability-bad-enum",
+        change_event(
+            "Model an invalid capability",
+            create_entity_action("Capability", json!({ "name": "Bad", "tier": "Tactical" })),
+        ),
     )
-    .expect("envelope returned");
-    assert_eq!(bad["status"], "error");
-    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
-
-    // … and the canonical op log is unchanged (the M1 oracle assertion).
-    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    assert_eq!(
-        after["result"]["appliedOpCount"], op_count,
-        "a rejected write never enters model/ops/"
-    );
+    .await;
 }
 
 /// Golden-journey step 3 at the host boundary: a valid entity + relationship
-/// land through the typed commands, and a metamodel-invalid relationship is
+/// land through the Change Event seam, and a metamodel-invalid relationship is
 /// refused with the canonical op log left unchanged.
 #[tokio::test]
 async fn author_typed_edge_round_trips_and_rejects_at_the_boundary() {
-    let dir = TempDir::new().unwrap();
-    let (_app, webview) = lifecycle_app();
-    let root = dir.path().to_string_lossy().to_string();
-    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+    let (_dir, app, webview) = created_lifecycle_app();
 
     // Author an Application and a Capability (both valid).
-    let app = dispatch(
+    apply_change_event_and_wait(
+        &app,
         &webview,
-        "workspace_author_typed_node",
-        json!({ "typeId": "Application", "props": { "name": "Insight Hub" } }),
+        "edge-app",
+        change_event(
+            "Model the Insight Hub application",
+            create_entity_action("Application", json!({ "name": "Insight Hub" })),
+        ),
     )
-    .expect("app envelope");
-    assert_eq!(app["status"], "ok");
-    let app_id = app["result"]["nodeId"]
-        .as_str()
-        .expect("app node id")
-        .to_string();
+    .await;
+    let app_id = wait_for_node_of_type(&webview, "Application").await;
 
-    let cap = dispatch(
+    apply_change_event_and_wait(
+        &app,
         &webview,
-        "workspace_author_typed_node",
-        json!({ "typeId": "Capability", "props": { "name": "Customer Insight" } }),
+        "edge-cap",
+        change_event(
+            "Model the customer insight capability",
+            create_entity_action("Capability", json!({ "name": "Customer Insight" })),
+        ),
     )
-    .expect("cap envelope");
-    assert_eq!(cap["status"], "ok");
-    let cap_id = cap["result"]["nodeId"]
-        .as_str()
-        .expect("cap node id")
-        .to_string();
+    .await;
+    let cap_id = wait_for_node_of_type(&webview, "Capability").await;
 
     // Application realises Capability — a valid seed relationship; it lands.
-    let edge = dispatch(
+    let (_accepted, terminal) = apply_change_event_and_wait(
+        &app,
         &webview,
-        "workspace_author_typed_edge",
-        json!({ "relType": "realises", "srcId": app_id, "dstId": cap_id, "props": {} }),
+        "edge-realises",
+        change_event(
+            "Insight Hub realises the customer insight capability",
+            create_relationship_action("realises", &app_id, &cap_id, json!({})),
+        ),
     )
-    .expect("edge envelope");
-    assert_eq!(edge["status"], "ok", "valid relationship lands: {edge:?}");
+    .await;
+    assert_eq!(
+        terminal["succeeded"], true,
+        "valid relationship lands: {terminal:?}"
+    );
 
     let edges = dispatch(&webview, "workspace_edges", json!({})).expect("edges ok");
     assert_eq!(edges["result"].as_array().expect("edge array").len(), 1);
 
-    let before = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    let op_count = before["result"]["appliedOpCount"].clone();
-
-    // A wrong-endpoint relationship (Capability cannot be a `realises` source) is refused …
-    let bad = dispatch(
+    // A wrong-endpoint relationship (Capability cannot be a `realises` source)
+    // is refused, and the canonical op log and edge count are unchanged.
+    assert_change_event_rejected(
+        &app,
         &webview,
-        "workspace_author_typed_edge",
-        json!({ "relType": "realises", "srcId": cap_id, "dstId": app_id, "props": {} }),
+        "edge-wrong-endpoint",
+        change_event(
+            "Attempt a wrong-endpoint realises",
+            create_relationship_action("realises", &cap_id, &app_id, json!({})),
+        ),
     )
-    .expect("bad envelope returned");
-    assert_eq!(bad["status"], "error");
-    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
-
-    // … and the canonical op log is unchanged (the M1 oracle assertion).
-    let after = dispatch(&webview, "workspace_status", json!({})).expect("status ok");
-    assert_eq!(
-        after["result"]["appliedOpCount"], op_count,
-        "a rejected relationship never enters model/ops/"
-    );
+    .await;
     let edges_after = dispatch(&webview, "workspace_edges", json!({})).expect("edges ok");
     assert_eq!(
         edges_after["result"].as_array().expect("edge array").len(),
         1
-    );
-}
-
-/// Dispatch a write expected to fail validation; assert the specific rule
-/// fired (via the RFC-9457 `detail` text, which carries `ValidationError`'s
-/// exact message) rather than only the shared `VALIDATION_FAILED` host code,
-/// and that the op log is unchanged.
-fn assert_validation_rejected(
-    webview: &WebviewWindow<MockRuntime>,
-    cmd: &str,
-    payload: Value,
-    expected_detail_fragment: &str,
-) {
-    let before = dispatch(webview, "workspace_status", json!({})).expect("status ok");
-    let op_count = before["result"]["appliedOpCount"].clone();
-
-    let bad = dispatch(webview, cmd, payload).expect("envelope returned");
-    assert_eq!(bad["status"], "error");
-    assert_eq!(bad["error"]["code"], "VALIDATION_FAILED");
-    let detail = bad["error"]["detail"].as_str().unwrap_or_default();
-    assert!(
-        detail.contains(expected_detail_fragment),
-        "expected detail to mention `{expected_detail_fragment}`, got: {detail:?}"
-    );
-
-    let after = dispatch(webview, "workspace_status", json!({})).expect("status ok");
-    assert_eq!(
-        after["result"]["appliedOpCount"], op_count,
-        "a rejected write never enters model/ops/"
     );
 }
 
@@ -759,30 +861,38 @@ fn created_lifecycle_app() -> (TempDir, App<MockRuntime>, WebviewWindow<MockRunt
 /// and the write never reaches the op log.
 #[tokio::test]
 async fn author_typed_node_rejects_a_missing_required_attribute() {
-    let (_dir, _app, webview) = created_lifecycle_app();
+    let (_dir, app, webview) = created_lifecycle_app();
 
     // Capability.name is required; omitting it is a structurally-fine but invalid write.
-    assert_validation_rejected(
+    assert_change_event_rejected(
+        &app,
         &webview,
-        "workspace_author_typed_node",
-        json!({ "typeId": "Capability", "props": { "tier": "Strategic" } }),
-        "missing required attribute `name`",
-    );
+        "missing-required",
+        change_event(
+            "Model an invalid capability",
+            create_entity_action("Capability", json!({ "tier": "Strategic" })),
+        ),
+    )
+    .await;
 }
 
 /// #347: a string over the metamodel's `maxLength` (256) is refused with
 /// `STRING_TOO_LONG` and the write never reaches the op log.
 #[tokio::test]
 async fn author_typed_node_rejects_a_string_over_max_length() {
-    let (_dir, _app, webview) = created_lifecycle_app();
+    let (_dir, app, webview) = created_lifecycle_app();
 
     let too_long = "x".repeat(257);
-    assert_validation_rejected(
+    assert_change_event_rejected(
+        &app,
         &webview,
-        "workspace_author_typed_node",
-        json!({ "typeId": "Capability", "props": { "name": too_long } }),
-        "exceeds max length",
-    );
+        "string-too-long",
+        change_event(
+            "Model an invalid capability",
+            create_entity_action("Capability", json!({ "name": too_long })),
+        ),
+    )
+    .await;
 }
 
 /// #347: `accesses` has `allowDuplicate=false`; a second identical relationship
@@ -790,45 +900,61 @@ async fn author_typed_node_rejects_a_string_over_max_length() {
 /// never reaches the op log.
 #[tokio::test]
 async fn author_typed_edge_rejects_a_duplicate_relationship() {
-    let dir = TempDir::new().unwrap();
-    let (_app, webview) = lifecycle_app();
-    let root = dir.path().to_string_lossy().to_string();
-    dispatch(&webview, "workspace_create", json!({ "root": root })).expect("create ok");
+    let (_dir, app, webview) = created_lifecycle_app();
 
-    let app = dispatch(
+    apply_change_event_and_wait(
+        &app,
         &webview,
-        "workspace_author_typed_node",
-        json!({ "typeId": "Application", "props": { "name": "Insight Hub" } }),
+        "dup-app",
+        change_event(
+            "Model the Insight Hub application",
+            create_entity_action("Application", json!({ "name": "Insight Hub" })),
+        ),
     )
-    .expect("app envelope");
-    let app_id = app["result"]["nodeId"].as_str().unwrap().to_string();
+    .await;
+    let app_id = wait_for_node_of_type(&webview, "Application").await;
 
-    let entity = dispatch(
+    apply_change_event_and_wait(
+        &app,
         &webview,
-        "workspace_author_typed_node",
-        json!({ "typeId": "DataEntity", "props": { "name": "Customer Profile" } }),
+        "dup-entity",
+        change_event(
+            "Model the customer profile data entity",
+            create_entity_action("DataEntity", json!({ "name": "Customer Profile" })),
+        ),
     )
-    .expect("entity envelope");
-    let entity_id = entity["result"]["nodeId"].as_str().unwrap().to_string();
+    .await;
+    let entity_id = wait_for_node_of_type(&webview, "DataEntity").await;
 
-    let first = dispatch(
+    let (_accepted, terminal) = apply_change_event_and_wait(
+        &app,
         &webview,
-        "workspace_author_typed_edge",
-        json!({ "relType": "accesses", "srcId": app_id, "dstId": entity_id,
-                "props": { "mode": "readwrite" } }),
+        "dup-first-access",
+        change_event(
+            "Insight Hub accesses the customer profile",
+            create_relationship_action(
+                "accesses",
+                &app_id,
+                &entity_id,
+                json!({ "mode": "readwrite" }),
+            ),
+        ),
     )
-    .expect("edge envelope");
+    .await;
     assert_eq!(
-        first["status"], "ok",
-        "the first access relationship lands: {first:?}"
+        terminal["succeeded"], true,
+        "the first access relationship lands: {terminal:?}"
     );
 
     // A second `accesses` between the same ordered pair is a duplicate.
-    assert_validation_rejected(
+    assert_change_event_rejected(
+        &app,
         &webview,
-        "workspace_author_typed_edge",
-        json!({ "relType": "accesses", "srcId": app_id, "dstId": entity_id,
-                "props": { "mode": "read" } }),
-        "forbids duplicate edges",
-    );
+        "dup-second-access",
+        change_event(
+            "Attempt a duplicate accesses relationship",
+            create_relationship_action("accesses", &app_id, &entity_id, json!({ "mode": "read" })),
+        ),
+    )
+    .await;
 }

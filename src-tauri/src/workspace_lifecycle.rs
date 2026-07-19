@@ -425,13 +425,6 @@ pub async fn workspace_status(
     )
 }
 
-/// Payload for authoring one node: an optional declared type id.
-#[derive(Debug, Deserialize, Type)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthorNodePayload {
-    pub type_id: Option<String>,
-}
-
 /// List the seed metamodel's authorable entity types and their attributes —
 /// the palette the renderer offers ([golden-journey] step 2). Read-only; needs
 /// no open workspace since the metamodel is embedded at build time.
@@ -444,100 +437,6 @@ pub async fn workspace_metamodel_types(
         "workspace_metamodel_types",
         request,
         |_payload| async move { Ok(Engine::metamodel_types_embedded()) },
-    )
-    .await)
-}
-
-/// Payload for authoring one typed entity: the domain type key plus a flat
-/// string-valued attribute map (name, enum choices, …).
-#[derive(Debug, Deserialize, Type)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthorTypedNodePayload {
-    pub type_id: String,
-    #[serde(default)]
-    pub props: std::collections::HashMap<String, String>,
-}
-
-/// Author one **metamodel-validated** entity into the open workspace's canonical
-/// log ([golden-journey] step 3). The write is checked against the seed
-/// effective schema before any operation is appended; an invalid write returns
-/// `VALIDATION_FAILED` and never enters the op log.
-#[tauri::command]
-#[specta::specta]
-pub async fn workspace_author_typed_node(
-    manager: State<'_, WorkspaceManager>,
-    request: IpcRequest<AuthorTypedNodePayload>,
-) -> Result<IpcResponse<NodeRecord>, HostError> {
-    Ok(command_envelope(
-        "workspace_author_typed_node",
-        request,
-        |payload| async move {
-            let props = serde_json::Value::Object(
-                payload
-                    .props
-                    .into_iter()
-                    .map(|(k, v)| (k, serde_json::Value::String(v)))
-                    .collect(),
-            );
-            let mut guard = manager.open.lock().await;
-            let engine = guard
-                .as_mut()
-                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
-            engine
-                .author_typed_node(&payload.type_id, props)
-                .map_err(map_store_error)
-        },
-    )
-    .await)
-}
-
-/// Payload for authoring one typed relationship: the relationship key, the two
-/// endpoint entity ids, and a flat string-valued attribute map.
-#[derive(Debug, Deserialize, Type)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthorTypedEdgePayload {
-    pub rel_type: String,
-    pub src_id: String,
-    pub dst_id: String,
-    #[serde(default)]
-    pub props: std::collections::HashMap<String, String>,
-}
-
-/// Author one **metamodel-validated** relationship into the open workspace's
-/// canonical log ([golden-journey] step 3). Endpoints, self-link, duplicate, and
-/// attribute rules are checked against the compiled effective schema before any
-/// operation is appended; an invalid write returns `VALIDATION_FAILED` and never
-/// enters the op log.
-#[tauri::command]
-#[specta::specta]
-pub async fn workspace_author_typed_edge(
-    manager: State<'_, WorkspaceManager>,
-    request: IpcRequest<AuthorTypedEdgePayload>,
-) -> Result<IpcResponse<EdgeRecord>, HostError> {
-    Ok(command_envelope(
-        "workspace_author_typed_edge",
-        request,
-        |payload| async move {
-            let props = serde_json::Value::Object(
-                payload
-                    .props
-                    .into_iter()
-                    .map(|(k, v)| (k, serde_json::Value::String(v)))
-                    .collect(),
-            );
-            let mut guard = manager.open.lock().await;
-            let engine = guard
-                .as_mut()
-                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
-            engine
-                .author_typed_edge(aideon_engine::TypedEdgeRequest {
-                    rel_type: &payload.rel_type,
-                    src_id: &payload.src_id,
-                    dst_id: &payload.dst_id,
-                    props,
-                })
-                .map_err(map_store_error)
-        },
     )
     .await)
 }
@@ -779,35 +678,6 @@ pub async fn workspace_diff(
             engine
                 .diff(&payload.before, &payload.after)
                 .map_err(map_store_error)
-        })
-        .await,
-    )
-}
-
-/// Author one `create-node` into the open workspace's canonical log
-/// ([golden-journey] step 3). The node id is minted host-side; a session
-/// actor self-declares on the first authoring of a fresh workspace.
-#[tauri::command]
-#[specta::specta]
-pub async fn workspace_author_node(
-    manager: State<'_, WorkspaceManager>,
-    request: IpcRequest<AuthorNodePayload>,
-) -> Result<IpcResponse<NodeRecord>, HostError> {
-    Ok(
-        command_envelope("workspace_author_node", request, |payload| async move {
-            let type_id = payload
-                .type_id
-                .map(|raw| {
-                    use std::str::FromStr;
-                    aideon_engine::Id::from_str(&raw)
-                        .map_err(|_| HostError::new("INVALID_TYPE_ID", "typeId is not a UUID"))
-                })
-                .transpose()?;
-            let mut guard = manager.open.lock().await;
-            let engine = guard
-                .as_mut()
-                .ok_or_else(|| HostError::new("WORKSPACE_NOT_OPEN", "no workspace is open"))?;
-            engine.author_node(type_id).map_err(map_store_error)
         })
         .await,
     )
