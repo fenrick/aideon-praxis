@@ -52,6 +52,7 @@ export {
   PanelRightClose,
   PanelRightOpen,
   Pencil,
+  Plus,
   Presentation,
   RefreshCcw,
   RefreshCw,

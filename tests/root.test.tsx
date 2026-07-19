@@ -39,6 +39,10 @@ vi.mock('platform', () => ({
   PlatformInspector: () => <div>Inspector</div>,
 }));
 
+vi.mock('aideon/shell/use-add-widget-command', () => ({
+  useAddWidgetCommand: () => ({ id: 'add-widget', label: 'Add widget', onSelect: vi.fn() }),
+}));
+
 import { AideonDesktopRoot } from '@/root';
 
 describe('AideonDesktopRoot', () => {

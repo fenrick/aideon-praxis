@@ -60,6 +60,7 @@ const meta = {
     layer: 'Plan',
     onSelectLayer: fn(),
     timeLoading: false,
+    onAddWidget: fn(),
   },
   render: (properties) => (
     <div className="border-border/60 border-t">
