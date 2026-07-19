@@ -1,7 +1,7 @@
 {
   "name": "aideon-desktop",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Aideon — a desktop-first, local-first, time-first digital-twin app (Tauri + Next.js)",
   "packageManager": "pnpm@11.6.0",
